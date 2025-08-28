@@ -71,7 +71,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         {/* Header Skeleton */}
         <div className="border-b bg-card/80 backdrop-blur-xl">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
               <div className="space-y-3">
                 <Skeleton className="h-12 w-80" />
@@ -112,10 +112,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <SiteHeader />
+      <SiteHeader className="hidden md:block" />
       {/* Enhanced Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
+        <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="space-y-4">
               {/* Personalized Greeting */}
@@ -136,14 +136,14 @@ export default function Dashboard() {
               {/* Dashboard Title */}
               <div className="space-y-2">
                 <h1 
-                  className="text-4xl sm:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
+                  className="text-2xl sm:text-4xl md:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
                   style={{
                     backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD, ${themeColors.primary}AA)`
                   }}
                 >
                   Trading Dashboard
                 </h1>
-                <p className="text-muted-foreground text-lg sm:text-xl font-medium max-w-2xl">
+                <p className="text-muted-foreground text-sm sm:text-lg md:text-xl font-medium max-w-2xl">
                   Track your performance and analyze your trades
                 </p>
               </div>
@@ -153,7 +153,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 sm:py-8 md:py-12 space-y-6 sm:space-y-8 md:space-y-12">
         {/* Top metrics row */}
         <div className="animate-in fade-in duration-300">
           <SectionCards />
@@ -165,7 +165,7 @@ export default function Dashboard() {
         </div>
         
         {/* Main content area - 2:1 ratio with enhanced spacing */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300 delay-100">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 animate-in fade-in duration-300 delay-100">
           {/* Equity curve - takes 2/3 width */}
           <div className="lg:col-span-2">
             <ChartAreaInteractive />

@@ -44,22 +44,22 @@ export default function Goals() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <SiteHeader />
+      <SiteHeader className="hidden md:block" />
       {/* Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
+        <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h1 
-                  className="text-4xl sm:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
+                  className="text-2xl sm:text-4xl md:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
                   style={{
                     backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD, ${themeColors.primary}AA)`
                   }}
                 >
                   Goals & Risk Management
                 </h1>
-                <p className="text-muted-foreground text-lg sm:text-xl font-medium max-w-2xl">
+                <p className="text-muted-foreground text-sm sm:text-lg md:text-xl font-medium max-w-2xl">
                   Set performance targets and manage your trading risk
                 </p>
               </div>
@@ -114,7 +114,7 @@ export default function Goals() {
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 sm:py-8 md:py-12 space-y-6 sm:space-y-8">
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-300">
           <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm">

@@ -6,7 +6,7 @@ import {
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { useLocation } from "react-router-dom"
 
-export function SiteHeader() {
+export function SiteHeader({ className }: { className?: string }) {
   const { themeColors } = useThemePresets()
   const location = useLocation()
   const pathname = location.pathname
@@ -34,7 +34,7 @@ export function SiteHeader() {
   const breadcrumbItems = getBreadcrumbItems()
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+    <header className={`flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <Breadcrumb>

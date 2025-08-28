@@ -182,13 +182,13 @@ export default function Settings() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader className="hidden md:block" />
       <div className="min-h-screen bg-background">
         <div className="w-full px-6 md:px-12 py-8 mx-auto" style={{maxWidth: '1200px'}}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">Settings</h1>
-              <p className="text-muted-foreground/85 text-lg leading-[1.6]">Manage your trading preferences and account settings</p>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">Settings</h1>
+              <p className="text-muted-foreground/85 text-sm sm:text-base md:text-lg leading-[1.6]">Manage your trading preferences and account settings</p>
             </div>
             <div className="flex gap-3">
               <Badge variant="secondary" className="px-3 py-1.5 text-sm font-semibold text-muted-foreground">{stats.total} Total Trades</Badge>
@@ -197,7 +197,7 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 h-12 p-1 bg-muted/50 rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto sm:h-12 p-1 bg-muted/50 rounded-lg">
               <TabsTrigger value="general" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
                 <FontAwesomeIcon icon={faPalette} className="h-4 w-4" />
                 General

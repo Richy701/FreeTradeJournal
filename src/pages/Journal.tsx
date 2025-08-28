@@ -335,10 +335,10 @@ export default function Journal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <SiteHeader />
+      <SiteHeader className="hidden md:block" />
       {/* Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
+        <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -350,12 +350,12 @@ export default function Journal() {
                     <FontAwesomeIcon icon={faBookOpen} className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Trading Journal</h1>
-                    <p className="text-muted-foreground">Document your trading thoughts, analysis, and market observations</p>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Trading Journal</h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">Document your trading thoughts and observations</p>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="hidden sm:flex gap-3">
                 {trades.length > 0 && (
                   <div className="flex gap-2">
                     <Button 
@@ -390,7 +390,7 @@ export default function Journal() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 space-y-4 sm:space-y-6">
 
         {showNewEntry && (
           <Card className="bg-card/80 backdrop-blur-sm border-2 shadow-xl">
@@ -849,6 +849,15 @@ export default function Journal() {
           )}
         </div>
       </div>
+      
+      {/* Mobile Floating Action Button */}
+      <Button 
+        onClick={() => setShowNewEntry(true)} 
+        className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+        style={{ backgroundColor: themeColors.primary }}
+      >
+        <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
+      </Button>
     </div>
   );
 }

@@ -706,7 +706,7 @@ export default function TradeLog() {
                   backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)`
                 }}
               >
-                Trade Journal
+                Trade Log
               </h1>
               <p className="text-muted-foreground text-lg">
                 Track, analyze, and improve your trading performance
@@ -840,7 +840,7 @@ export default function TradeLog() {
                     Add Trade
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[90vw] max-w-4xl max-h-[85vh] overflow-y-auto">
+                <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold">{editingTrade ? 'Edit Trade' : 'Add New Trade'}</DialogTitle>
                     <DialogDescription className="text-base">
@@ -1498,7 +1498,9 @@ export default function TradeLog() {
                 </div>
               </div>
             ) : (
-              <div className="w-full overflow-x-auto">
+              <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b hover:bg-transparent">
@@ -1589,6 +1591,99 @@ export default function TradeLog() {
                   </TableBody>
                 </Table>
               </div>
+              
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {trades.map((trade) => (
+                  <Card key={trade.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-lg">{trade.symbol}</span>
+                            <Badge 
+                              className={`font-medium text-xs px-2 py-0.5 ${
+                                trade.side === 'long' 
+                                  ? 'bg-green-500/10 text-green-600 border-green-500/20' 
+                                  : 'bg-red-500/10 text-red-600 border-red-500/20'
+                              }`}
+                            >
+                              {trade.side.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {format(new Date(trade.exitTime), 'MMM dd, yyyy')}
+                          </p>
+                        </div>
+                        <div className={`font-bold text-xl ${
+                          trade.pnl >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Entry:</span>
+                          <span className="ml-2 font-medium">{trade.entryPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Exit:</span>
+                          <span className="ml-2 font-medium">{trade.exitPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Lots:</span>
+                          <span className="ml-2 font-medium">{trade.lotSize}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">R:R:</span>
+                          <span className="ml-2 font-medium">
+                            {trade.riskReward ? `${trade.riskReward.toFixed(2)}:1` : '-'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {trade.strategy && (
+                        <div className="mt-3">
+                          <Badge variant="outline" className="bg-muted/50 font-medium">
+                            {trade.strategy}
+                          </Badge>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2 mt-4 pt-3 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingTrade(trade);
+                            form.reset({
+                              ...trade,
+                              entryTime: trade.entryTime,
+                              exitTime: trade.exitTime,
+                            });
+                            setIsDialogOpen(true);
+                          }}
+                          className="flex-1"
+                        >
+                          <Edit className="mr-2 h-3 w-3" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(trade.id)}
+                          className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              </>
             )}
           </CardContent>
         </Card>
