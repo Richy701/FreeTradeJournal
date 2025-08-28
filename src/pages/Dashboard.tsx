@@ -112,7 +112,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <SiteHeader className="hidden md:block" />
+      <SiteHeader />
       {/* Enhanced Header Section */}
       <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
         <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">

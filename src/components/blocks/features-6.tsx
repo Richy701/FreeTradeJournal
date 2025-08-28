@@ -9,9 +9,9 @@ export function TradeVaultFeatures() {
                     <p className="text-lg lg:text-xl text-gray-300 leading-relaxed max-w-lg sm:ml-auto">Comprehensive trading platform with mood tracking, screenshot attachments, and cloud sync. Features beautiful equity curves, professional analytics, and secure Firebase storage.</p>
                 </div>
                 <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
-                    <div className="aspect-[88/36] relative">
+                    <div className="relative">
                         <div className="bg-gradient-to-t z-1 from-background absolute inset-0 to-transparent"></div>
-                        <img src="/screenshots/Trading%20Dasboard%20original%20theme.png" className="absolute inset-0 z-10 w-full h-full object-cover rounded-2xl" alt="TradeVault Dashboard" width={2797} height={1137} />
+                        <img src="/images/landing/Trading dashboard New screenshot.png" className="z-10 w-full h-auto object-contain rounded-2xl" alt="TradeVault Dashboard" />
                     </div>
                 </div>
                 <div className="relative mx-auto grid grid-cols-2 gap-6 lg:gap-8 lg:grid-cols-4">

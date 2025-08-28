@@ -182,7 +182,7 @@ export default function Settings() {
 
   return (
     <>
-      <SiteHeader className="hidden md:block" />
+      <SiteHeader />
       <div className="min-h-screen bg-background">
         <div className="w-full px-6 md:px-12 py-8 mx-auto" style={{maxWidth: '1200px'}}>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
