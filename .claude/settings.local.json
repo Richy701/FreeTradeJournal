@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm install)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(npx:*)",
+      "Bash(mv:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(true)",
+      "Bash(cp:*)",
+      "Bash(pkill:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:www.shadcnblocks.com)",
+      "WebFetch(domain:21st.dev)",
+      "Bash(npm ls:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:webflow.com)"
+    ],
+    "deny": []
+  }
+}

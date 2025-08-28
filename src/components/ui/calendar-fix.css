@@ -1,0 +1,45 @@
+/* Calendar weekday header fix */
+.rdp-weekdays {
+  display: flex !important;
+  width: 100% !important;
+}
+
+.rdp-weekday {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.75rem !important; /* w-7 */
+  height: 1.75rem !important; /* h-7 */
+  font-size: 0.7rem !important;
+  color: hsl(var(--muted-foreground)) !important;
+  font-weight: normal !important;
+}
+
+.rdp-week {
+  display: flex !important;
+  width: 100% !important;
+  margin-top: 0.25rem !important;
+}
+
+.rdp-week td {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+}
+
+.rdp-day_button {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Fix navigation arrows visibility */
+.rdp-chevron {
+  fill: hsl(var(--foreground)) !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.rdp-button_previous:hover .rdp-chevron,
+.rdp-button_next:hover .rdp-chevron {
+  fill: hsl(var(--primary)) !important;
+}
