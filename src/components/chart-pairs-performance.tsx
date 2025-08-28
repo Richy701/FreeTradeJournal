@@ -96,9 +96,9 @@ export function ChartPairsPerformance() {
     }
   }, [refreshKey])
 
-  const totalPnL = chartData.reduce((sum, item) => sum + item.pnl, 0)
-  const profitablePairs = chartData.filter(item => item.pnl > 0).length
-  const losingPairs = chartData.filter(item => item.pnl < 0).length
+  const totalPnL = chartData.reduce((sum: number, item: any) => sum + item.pnl, 0)
+  const profitablePairs = chartData.filter((item: any) => item.pnl > 0).length
+  const losingPairs = chartData.filter((item: any) => item.pnl < 0).length
 
   return (
     <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
@@ -144,7 +144,7 @@ export function ChartPairsPerformance() {
                   content={<ChartTooltipContent />} 
                 />
                 <Bar dataKey="pnl" radius={[0, 4, 4, 0]}>
-                  {chartData.map((entry, index) => (
+                  {chartData.map((entry: any, index: number) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={entry.pnl >= 0 ? themeColors.profit : themeColors.loss}
@@ -166,8 +166,8 @@ export function ChartPairsPerformance() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-medium leading-none">
               Total P&L: 
-              <span className="font-semibold" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-                {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
+              <span className="font-semibold" style={{color: (totalPnL as number) >= 0 ? themeColors.profit : themeColors.loss}}>
+                {(totalPnL as number) >= 0 ? '+' : ''}${(totalPnL as number).toFixed(2)}
               </span>
             </div>
             <div className="h-4 w-px bg-border"></div>

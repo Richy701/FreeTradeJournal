@@ -67,9 +67,9 @@ export default function Journal() {
     content: '',
     tags: '',
     emotions: [] as string[],
-    mood: 'neutral' as const,
+    mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
     tradeId: '',
-    entryType: 'general' as const
+    entryType: 'general' as 'general' | 'pre-trade' | 'post-trade'
   });
 
   // Load trades from localStorage with loading state
@@ -140,7 +140,7 @@ export default function Journal() {
         setEntries([entry, ...entries]);
       }
 
-      setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral', tradeId: '', entryType: 'general' });
+      setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
       setSelectedTrade(null);
       setUploadedImages([]);
       setShowNewEntry(false);
@@ -195,7 +195,7 @@ export default function Journal() {
         : 'Trade outcome analysis and lessons learned...',
       tags: '',
       emotions: [],
-      mood: 'neutral',
+      mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
       tradeId: tradeId || '',
       entryType: type
     });
@@ -287,7 +287,7 @@ export default function Journal() {
 
   const cancelEdit = () => {
     setEditingEntry(null);
-    setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral', tradeId: '', entryType: 'general' });
+    setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
     setUploadedImages([]);
     setSelectedTrade(null);
     setShowNewEntry(false);

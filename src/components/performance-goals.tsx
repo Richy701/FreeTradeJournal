@@ -452,7 +452,13 @@ export function PerformanceGoals() {
                         variant="outline"
                         className="h-auto p-3 justify-start text-left hover:bg-muted/50"
                         onClick={() => {
-                          setNewGoal(preset)
+                          setNewGoal({
+                            ...preset,
+                            type: preset.type as Goal['type'],
+                            period: preset.period as Goal['period'],
+                            id: Math.random().toString(36).substr(2, 9),
+                            createdAt: new Date()
+                          })
                           addGoal()
                         }}
                       >

@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
@@ -206,9 +206,9 @@ export function CalendarHeatmap() {
       // Calculate win rate and R:R for the day
       const dayWinRate = dayTrades.length > 0 ? (winningTrades / dayTrades.length) * 100 : 0
       const avgWin = winningTrades > 0 ? 
-        winningTradesList.reduce((sum, t) => sum + t.pnl, 0) / winningTrades : 0
+        winningTradesList.reduce((sum: number, t: any) => sum + t.pnl, 0) / winningTrades : 0
       const avgLoss = losingTrades > 0 ? 
-        Math.abs(losingTradesList.reduce((sum, t) => sum + t.pnl, 0) / losingTrades) : 0
+        Math.abs(losingTradesList.reduce((sum: number, t: any) => sum + t.pnl, 0) / losingTrades) : 0
       const dayRR = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0
       
       days.push({

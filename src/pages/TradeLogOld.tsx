@@ -548,7 +548,7 @@ export default function TradeLog() {
                     </TableCell>
                     <TableCell>{trade.entryPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</TableCell>
                     <TableCell>{trade.exitPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</TableCell>
-                    <TableCell>{trade.lotSize || trade.quantity}</TableCell>
+                    <TableCell>{trade.lotSize || (trade as any).quantity || 1}</TableCell>
                     <TableCell className={trade.pnl >= 0 ? 'text-green-500' : 'text-red-500'}>
                       ${trade.pnl.toFixed(2)}
                     </TableCell>

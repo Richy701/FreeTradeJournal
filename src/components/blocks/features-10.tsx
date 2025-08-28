@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { BarChart3, TrendingUp } from 'lucide-react'
-import { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -20,11 +20,7 @@ const itemVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: { 
         opacity: 1, 
-        y: 0,
-        transition: {
-            duration: 0.6,
-            ease: "easeOut"
-        }
+        y: 0
     }
 }
 
@@ -207,31 +203,9 @@ const DualModeImage = ({ darkSrc, lightSrc, alt, width, height, className }: Dua
     </>
 )
 
-interface CircleConfig {
-    pattern: 'none' | 'border' | 'primary'
-}
+// Unused interfaces for CircularUI component
+// interface CircleConfig { ... }
+// interface CircularUIProps { ... }
 
-interface CircularUIProps {
-    label: string
-    circles: CircleConfig[]
-    className?: string
-}
-
-const CircularUI = ({ label, circles, className }: CircularUIProps) => (
-    <div className={className}>
-        <div className="bg-gradient-to-b from-border size-fit rounded-2xl to-transparent p-px">
-            <div className="bg-gradient-to-b from-background to-muted/25 relative flex aspect-square w-fit items-center -space-x-4 rounded-[15px] p-4">
-                {circles.map((circle, i) => (
-                    <div
-                        key={i}
-                        className={cn('size-7 rounded-full border sm:size-8', {
-                            'border-primary': circle.pattern === 'none',
-                            'border-primary bg-[repeating-linear-gradient(-45deg,hsl(var(--border)),hsl(var(--border))_1px,transparent_1px,transparent_4px)]': circle.pattern === 'border',
-                            'border-primary bg-background bg-[repeating-linear-gradient(-45deg,hsl(var(--primary)),hsl(var(--primary))_1px,transparent_1px,transparent_4px)]': circle.pattern === 'primary',
-                        })}></div>
-                ))}
-            </div>
-        </div>
-        <span className="text-muted-foreground mt-1.5 block text-center text-sm">{label}</span>
-    </div>
-)
+// CircularUI component commented out as it's not currently used
+// const CircularUI = ({ label, circles, className }: CircularUIProps) => (...

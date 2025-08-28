@@ -94,23 +94,23 @@ export function ChartRadarDefault() {
     }
     
     // Normalize P&L values for radar chart (scale 0-100)
-    const allPnls = rawPairData.map(d => d.pnl)
+    const allPnls = rawPairData.map((d: any) => d.pnl)
     const minPnl = Math.min(...allPnls)
     const maxPnl = Math.max(...allPnls)
     const range = maxPnl - minPnl || 1
     
     // Normalize to 0-100 scale, with negative values starting at 25
-    const normalizedData = rawPairData.map(item => ({
+    const normalizedData = rawPairData.map((item: any) => ({
       ...item,
-      score: item.pnl < 0 
-        ? Math.max(0, 25 + (item.pnl / Math.abs(minPnl)) * 25)
-        : 50 + (item.pnl / maxPnl) * 50
+      score: (item as any).pnl < 0 
+        ? Math.max(0, 25 + ((item as any).pnl / Math.abs(minPnl)) * 25)
+        : 50 + ((item as any).pnl / maxPnl) * 50
     }))
     
     return { chartData: normalizedData, rawData: rawPairData }
   }, [refreshKey])
 
-  const totalPnL = rawData.reduce((sum, item) => sum + item.actualPnl, 0)
+  const totalPnL = rawData.reduce((sum: number, item: any) => sum + item.actualPnl, 0)
 
   return (
     <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
@@ -171,14 +171,14 @@ export function ChartRadarDefault() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-medium leading-none">
               Total P&L: 
-              <span className="font-semibold" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-                {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
+              <span className="font-semibold" style={{color: (totalPnL as number) >= 0 ? themeColors.profit : themeColors.loss}}>
+                {(totalPnL as number) >= 0 ? '+' : ''}${(totalPnL as number).toFixed(2)}
               </span>
             </div>
             <div className="h-4 w-px bg-border"></div>
             <div className="flex items-center gap-2 leading-none">
               <span className="text-muted-foreground font-medium">
-                {totalPnL >= 1000 ? 'Strong Performance' : totalPnL >= 0 ? 'Profitable' : 'Needs Improvement'}
+                {(totalPnL as number) >= 1000 ? 'Strong Performance' : (totalPnL as number) >= 0 ? 'Profitable' : 'Needs Improvement'}
               </span>
             </div>
           </div>

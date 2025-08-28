@@ -31,7 +31,9 @@
       "Bash(git -C /Users/richy/Tradevault remote -v)",
       "Bash(npm --prefix /Users/richy/Tradevault run build)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

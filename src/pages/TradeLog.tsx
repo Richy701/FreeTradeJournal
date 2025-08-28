@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -127,6 +128,12 @@ export default function TradeLog() {
         ];
       case 'futures':
         return [
+          { category: 'Index Futures', instruments: [
+            { symbol: 'ES', name: 'E-mini S&P 500' },
+            { symbol: 'NQ', name: 'E-mini Nasdaq 100' },
+            { symbol: 'YM', name: 'E-mini Dow Jones' },
+            { symbol: 'RTY', name: 'E-mini Russell 2000' }
+          ]},
           { category: 'Energy', instruments: [
             { symbol: 'CL', name: 'Crude Oil' },
             { symbol: 'NG', name: 'Natural Gas' },
@@ -149,11 +156,22 @@ export default function TradeLog() {
         ];
       case 'indices':
         return [
-          { category: 'US Indices', instruments: [
-            { symbol: 'ES', name: 'S&P 500' },
-            { symbol: 'NQ', name: 'Nasdaq 100' },
-            { symbol: 'YM', name: 'Dow Jones' },
-            { symbol: 'RTY', name: 'Russell 2000' }
+          { category: 'US Index ETFs', instruments: [
+            { symbol: 'SPY', name: 'SPDR S&P 500 ETF' },
+            { symbol: 'QQQ', name: 'Invesco QQQ Trust' },
+            { symbol: 'DIA', name: 'SPDR Dow Jones ETF' },
+            { symbol: 'IWM', name: 'iShares Russell 2000 ETF' }
+          ]},
+          { category: 'Sector ETFs', instruments: [
+            { symbol: 'XLF', name: 'Financial Sector SPDR' },
+            { symbol: 'XLK', name: 'Technology Sector SPDR' },
+            { symbol: 'XLE', name: 'Energy Sector SPDR' },
+            { symbol: 'XLV', name: 'Health Care Sector SPDR' }
+          ]},
+          { category: 'International ETFs', instruments: [
+            { symbol: 'EFA', name: 'iShares MSCI EAFE ETF' },
+            { symbol: 'EEM', name: 'iShares MSCI Emerging Markets ETF' },
+            { symbol: 'VGK', name: 'Vanguard European ETF' }
           ]}
         ];
       default:
@@ -799,7 +817,6 @@ export default function TradeLog() {
                     <Button 
                       onClick={generateReport} 
                       disabled={reportType === 'custom' && (!reportStartDate || !reportEndDate)}
-                      className="px-6"
                       className="px-6 bg-primary text-primary-foreground"
                     >
                       <FileText className="mr-2 h-4 w-4" />

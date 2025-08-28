@@ -17,12 +17,7 @@ import {
 export default function ModernCTA() {
   const floatingVariants = {
     animate: {
-      y: [0, -10, 0],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
+      y: [0, -10, 0]
     }
   };
 

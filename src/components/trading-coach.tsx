@@ -53,10 +53,10 @@ export function TradingCoach() {
     const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0
     
     const avgWin = winningTrades.length > 0 
-      ? winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length 
+      ? winningTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / winningTrades.length 
       : 0
     const avgLoss = losingTrades.length > 0 
-      ? Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length)
+      ? Math.abs(losingTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / losingTrades.length)
       : 0
     const riskReward = avgLoss > 0 ? avgWin / avgLoss : 0
     
