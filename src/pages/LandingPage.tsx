@@ -25,12 +25,9 @@ export default function LandingPage() {
             <span className="text-2xl font-bold text-foreground">TradeVault</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-foreground/85 hover:text-foreground transition-opacity duration-200 font-medium px-3 py-2 rounded-md hover:opacity-80 focus:ring-2 focus:ring-gray-500/50">
-              Features
-            </a>
-            <a href="#benefits" className="text-foreground/85 hover:text-foreground transition-opacity duration-200 font-medium px-3 py-2 rounded-md hover:opacity-80 focus:ring-2 focus:ring-gray-500/50">
-              Benefits
-            </a>
+            <Link to="/login" className="text-foreground/85 hover:text-foreground transition-opacity duration-200 font-medium px-3 py-2 rounded-md hover:opacity-80 focus:ring-2 focus:ring-gray-500/50">
+              Sign In
+            </Link>
           </nav>
           <div className="flex items-center gap-4">
             <ThemeToggle />
@@ -45,9 +42,9 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <HeroGeometric 
-        badge="Professional Trading Analytics Platform"
-        title1="Track Forex & Futures"
-        title2="With Real-Time Metrics"
+        badge="Professional Trading Journal"
+        title1="Track. Analyze. Improve."
+        title2="Your Trading Performance"
       />
 
       {/* Features Section with Dashboard Preview */}
@@ -59,9 +56,9 @@ export default function LandingPage() {
           <div className="max-w-full">
             <div className="text-center space-y-8 mb-20" style={{marginBottom: '80px'}}>
               <p className="text-lg text-gray-300/85 max-w-4xl mx-auto leading-[1.6] font-normal">
-                Professional-grade trading analytics with real-time P&L tracking, win rate analysis,
-                profit factor calculations, and interactive equity curves. Track forex pairs, futures,
-                and indices with comprehensive trade journaling and performance metrics.
+                A modern, comprehensive trading journal designed for serious traders. Features real-time P&L tracking, 
+                interactive equity curves, mood tracking, screenshot attachments, and professional analytics. 
+                Cloud storage with multi-device sync keeps your data secure and accessible anywhere.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-8" style={{marginTop: '32px'}}>
                 <Link to="/dashboard">
@@ -70,9 +67,6 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button className="border border-gray-600 hover:border-gray-500 text-foreground/85 px-8 py-4 rounded-md font-semibold text-lg transition-opacity duration-200 min-w-[160px] hover:opacity-80 focus:ring-2 focus:ring-gray-500/50">
-                  Watch Demo
-                </Button>
               </div>
             </div>
 

@@ -165,7 +165,7 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-bold mb-6 md:mb-8 tracking-tight leading-tight">
+                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 md:mb-8 tracking-tight leading-tight">
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80">
                                 {title1}
                             </span>
@@ -187,8 +187,8 @@ function HeroGeometric({
                         animate="visible"
                     >
                         <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
-                            Start tracking your trading performance today with our 
-                            completely free trading journal. No credit card required.
+                            Modern trading journal with mood tracking, cloud sync, and professional analytics. 
+                            Start improving your trading performance today.
                         </p>
                     </motion.div>
 
@@ -205,9 +205,6 @@ function HeroGeometric({
                         >
                             Get Started Free
                         </a>
-                        <button className="inline-flex items-center justify-center border border-gray-600 hover:border-gray-500 text-foreground px-6 py-3 rounded-lg font-medium text-base transition-colors min-w-[160px]">
-                            Watch Demo
-                        </button>
                     </motion.div>
                 </div>
             </div>

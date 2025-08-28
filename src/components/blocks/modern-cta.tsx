@@ -97,13 +97,6 @@ export default function ModernCTA() {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-lg px-10 py-4 h-auto border-2 hover:bg-muted/50 transition-all duration-300"
-            >
-              Watch Demo
-            </Button>
           </motion.div>
         </div>
 

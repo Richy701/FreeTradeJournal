@@ -1,5 +1,5 @@
 import React from "react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
 interface Footer7Props {
   logo?: {
@@ -56,10 +56,7 @@ const defaultSections = [
 ];
 
 const defaultSocialLinks = [
-  { icon: <FaInstagram className="size-5" />, href: "#", label: "Instagram" },
-  { icon: <FaFacebook className="size-5" />, href: "#", label: "Facebook" },
-  { icon: <FaTwitter className="size-5" />, href: "#", label: "Twitter" },
-  { icon: <FaLinkedin className="size-5" />, href: "#", label: "LinkedIn" },
+  { icon: <FaXTwitter className="size-5" />, href: "#", label: "X" },
 ];
 
 const defaultLegalLinks = [
@@ -81,10 +78,10 @@ export const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
   return (
-    <section className="py-24 md:py-32 mt-24 md:mt-32 bg-background border-t border-gray-800">
+    <section className="py-12 md:py-16 mt-12 md:mt-16 bg-background border-t border-gray-800">
       <div className="container mx-auto px-6">
-        <div className="flex w-full flex-col justify-between gap-12 lg:flex-row lg:items-start lg:text-left">
-          <div className="flex w-full flex-col justify-between gap-8 lg:items-start lg:max-w-md">
+        <div className="flex w-full flex-col justify-between gap-8 lg:flex-row lg:items-start lg:text-left">
+          <div className="flex w-full flex-col justify-between gap-6 lg:items-start lg:max-w-md">
             {/* Logo */}
             <div className="flex items-center gap-3 lg:justify-start">
               <a href={logo.url} className="flex items-center gap-3">
@@ -145,7 +142,7 @@ export const Footer7 = ({
             ))}
           </div>
         </div>
-        <div className="mt-12 flex flex-col justify-between gap-6 border-t border-gray-800 pt-8 text-sm font-medium text-gray-400 md:flex-row md:items-center md:text-left">
+        <div className="mt-8 flex flex-col justify-between gap-4 border-t border-gray-800 pt-6 text-sm font-medium text-gray-400 md:flex-row md:items-center md:text-left">
           <p className="order-2 lg:order-1 text-gray-300">{copyright}</p>
           <ul className="order-1 flex flex-col gap-4 md:order-2 md:flex-row md:gap-8">
             {legalLinks.map((link, idx) => (

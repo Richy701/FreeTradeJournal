@@ -1,52 +1,56 @@
-# TradeVault - Trading Journal & Analytics Platform
+# TradeVault - Professional Trading Journal
 
-A comprehensive trading journal and analytics platform for tracking, analyzing, and improving your trading performance.
+A modern, comprehensive trading journal and analytics platform designed for serious traders who want to track, analyze, and improve their trading performance.
 
-## Features
+## ✨ Key Features
 
-### 📊 Dashboard
-- Real-time P&L tracking with equity curve visualization
-- Key performance metrics (win rate, profit factor, expectancy)
-- Daily P&L calendar heatmap
-- Top performing symbols and strategies
-- Recent trades overview
+### 📊 Interactive Dashboard
+- Real-time P&L tracking with beautiful equity curve visualization
+- Key performance metrics (win rate, profit factor, expectancy ratio)
+- Daily P&L calendar heatmap showing your trading performance
+- Top performing symbols and trading strategies
+- Recent trades overview with quick insights
 
-### 📝 Trade Logging
-- Manual trade entry with comprehensive fields
-- CSV import/export functionality
-- Edit and delete existing trades
-- Support for long/short positions
-- Strategy and notes tracking
-- Automatic P&L calculations
+### 📝 Advanced Trade Logging
+- Intuitive manual trade entry with comprehensive data fields
+- Bulk CSV import/export functionality for broker data
+- Full edit and delete capabilities for trade management
+- Support for both long and short positions
+- Strategy categorization and detailed notes
+- Automatic P&L calculations with commission tracking
 
-### 📈 Advanced Analytics
-- Win/loss distribution analysis
-- P&L distribution charts
-- Trade duration vs profitability correlation
-- Hourly and daily performance analysis
-- Monthly performance trends
-- Risk metrics (Sharpe ratio, Kelly percentage)
+### 🧠 Trading Journal
+- Personal trading journal with mood tracking
+- Pre-trade and post-trade analysis entries
+- Screenshot and chart attachment support
+- Emotion tracking to identify psychological patterns
+- Trade linking for complete context
 
-### 📑 Reports
-- Generate monthly, quarterly, yearly, or custom date range reports
-- Export to CSV or JSON formats
-- Print-friendly layouts
-- Performance breakdown by symbol and strategy
-- Tax-ready export formats
+### 📈 Professional Analytics
+- Detailed win/loss distribution analysis
+- P&L distribution charts and statistics
+- Performance correlation analysis
+- Hourly, daily, and monthly performance trends
+- Risk metrics and drawdown analysis
+- Goal tracking and performance monitoring
 
-### ⚙️ Settings
-- Dark/light theme toggle
-- Currency and timezone preferences
-- Default commission settings
-- Data backup and restore
-- Import/export all data
+### 🎨 Modern User Experience
+- Clean, responsive design that works on all devices
+- Dark/light theme toggle with multiple theme presets
+- Smooth animations and intuitive navigation
+- Professional charts and visualizations
 
-## Getting Started
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn package manager
 
 ### Installation
 
-1. Navigate to the project directory:
+1. Clone the repository:
 ```bash
+git clone https://github.com/yourusername/tradevault.git
 cd tradevault
 ```
 
@@ -55,61 +59,99 @@ cd tradevault
 npm install
 ```
 
-3. Start the development server:
+3. Set up Firebase (Authentication):
+```bash
+# Copy environment file
+cp .env.example .env.local
+# Add your Firebase configuration to .env.local
+```
+
+4. Start the development server:
 ```bash
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+5. Open your browser and navigate to `http://localhost:5173`
 
-### Building for Production
+### Production Deployment
 
 ```bash
 npm run build
 ```
 
-The built files will be in the `dist` directory.
+Deploy the `dist` directory to your hosting platform (Vercel, Netlify, etc.).
 
-## Usage
+## 📱 How to Use
 
-1. **First Visit**: Start on the landing page and click "Get Started" to access the dashboard
-2. **Add Trades**: Navigate to "Trade Log" and click "Add Trade" to record your trades
-3. **Import Data**: Use the CSV import feature to bulk import trades from your broker
-4. **View Analytics**: Check the Dashboard for overview metrics and Analytics for detailed analysis
-5. **Generate Reports**: Use the Reports section for tax preparation or performance review
+### Getting Started
+1. **Sign Up/Login**: Create an account or sign in with Google
+2. **Dashboard**: View your trading performance overview
+3. **Add Your First Trade**: Go to Trade Log → Add Trade
+4. **Import Bulk Data**: Use CSV import for existing trading history
+5. **Journal Your Trades**: Add context and analysis in the Journal section
+6. **Set Goals**: Define and track your trading objectives
 
-## Data Storage
+### Data Management
+- **Cloud Storage**: All data is securely stored in Firebase
+- **Export Options**: Download your data anytime
+- **Multi-device Sync**: Access your journal from anywhere
 
-All data is stored locally in your browser's localStorage. To backup your data:
-1. Go to Settings > Data Management
-2. Click "Export All Data" to save a backup file
-3. Use "Import Data" to restore from a backup
-
-## Technology Stack
+## 🛠 Technology Stack
 
 - **Frontend**: React 18 with TypeScript
+- **Authentication**: Firebase Auth with Google OAuth
+- **Database**: Firebase Firestore
 - **Build Tool**: Vite
-- **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
-- **Charts**: Recharts
-- **Forms**: React Hook Form
+- **UI Framework**: shadcn/ui (Radix UI + Tailwind CSS)
+- **Charts & Visualizations**: Recharts
+- **Forms**: React Hook Form with Zod validation
 - **Date Handling**: date-fns
 - **Routing**: React Router DOM
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS with custom theme system
+- **Icons**: Lucide React + FontAwesome
 
-## CSV Import Format
+## 📊 CSV Import Format
 
-When importing trades via CSV, use the following column headers:
-- symbol
-- side (long/short)
-- entryPrice
-- exitPrice
-- quantity
-- entryTime (YYYY-MM-DD HH:MM:SS)
-- exitTime (YYYY-MM-DD HH:MM:SS)
-- commission
-- strategy (optional)
-- notes (optional)
+For bulk trade imports, use these column headers:
 
-## License
+```csv
+symbol,side,entryPrice,exitPrice,quantity,entryTime,exitTime,commission,strategy,notes
+AAPL,long,150.00,155.00,100,2024-01-15 09:30:00,2024-01-15 15:30:00,2.00,Momentum,Strong breakout
+```
 
-MIT
+### Required Fields:
+- `symbol` - Trading instrument (e.g., AAPL, EURUSD)
+- `side` - Position type: "long" or "short"
+- `entryPrice` - Entry price per unit
+- `exitPrice` - Exit price per unit  
+- `quantity` - Number of shares/units/lots
+- `entryTime` - Entry timestamp (YYYY-MM-DD HH:MM:SS)
+- `exitTime` - Exit timestamp (YYYY-MM-DD HH:MM:SS)
+
+### Optional Fields:
+- `commission` - Total commission paid
+- `strategy` - Trading strategy used
+- `notes` - Additional trade notes
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🌟 Support
+
+If you find TradeVault helpful, please consider:
+- ⭐ Starring this repository
+- 🐛 Reporting bugs or requesting features
+- 💡 Contributing to the codebase
+
+---
+
+**TradeVault** - Track. Analyze. Improve. 📈
