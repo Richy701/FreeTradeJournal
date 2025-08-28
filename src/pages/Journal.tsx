@@ -4,7 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Plus, Search, Calendar, Tag, TrendingUp, TrendingDown, Minus, Clock, FileText, BarChart3, AlertCircle, Loader2, Upload, Image, X, Heart, Edit3, Trash2, MoreVertical } from 'lucide-react';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Minus, 
+  Clock, 
+  BarChart3, 
+  Loader2, 
+  AlertCircle, 
+  Heart, 
+  Upload, 
+  X, 
+  Edit3, 
+  Trash2 
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -275,7 +288,7 @@ export default function Journal() {
     });
     setUploadedImages(entry.screenshots || []);
     const linkedTrade = getLinkedTrade(entry.tradeId);
-    setSelectedTrade(linkedTrade);
+    setSelectedTrade(linkedTrade || null);
     setShowNewEntry(true);
   };
 
@@ -387,7 +400,7 @@ export default function Journal() {
                   className="p-2 rounded-lg"
                   style={{ backgroundColor: `${themeColors.primary}20` }}
                 >
-                  <FontAwesomeIcon icon={editingEntry ? Edit3 : faPlus} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" style={{ color: themeColors.primary }} />
                 </div>
                 {editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}
               </CardTitle>
@@ -515,7 +528,7 @@ export default function Journal() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Image className="h-3 w-3" />
+                  <Upload className="h-3 w-3" />
                   Screenshots & Charts
                 </label>
                 
@@ -765,7 +778,7 @@ export default function Journal() {
                     {entry.screenshots && entry.screenshots.length > 0 && (
                       <div className="space-y-3 mb-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <Image className="h-4 w-4" />
+                          <Upload className="h-4 w-4" />
                           Charts & Screenshots
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

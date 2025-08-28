@@ -1,23 +1,18 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+// import { Card } from '@/components/ui/card'; // unused
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { TradeVaultFeatures } from '@/components/blocks/features-8';
 import SectionWithMockup from '@/components/blocks/section-with-mockup';
 import { Footer7 } from '@/components/ui/footer-7';
 import { TradeVaultFeatures as Features6 } from '@/components/blocks/features-6';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Features as Features10 } from '@/components/blocks/features-10';
+// import { Features as Features10 } from '@/components/blocks/features-10'; // unused
 import {
   TrendingUp,
-  BarChart3,
-  FileText,
-  Shield,
-  Zap,
-  Target,
   ArrowRight,
-  CheckCircle,
 } from 'lucide-react';
+// Removed unused: BarChart3, FileText, Shield, Zap, Target, CheckCircle
 
 export default function LandingPage() {
   return (

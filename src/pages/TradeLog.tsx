@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Edit, Trash2, Upload, Download, BarChart3, TrendingUp, DollarSign, FileText, Crosshair } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText } from 'lucide-react';
+// Removed unused: TrendingUp, DollarSign, Crosshair
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faDollarSign, 
