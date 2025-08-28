@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import { faEye, faEyeSlash, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faChartLine, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Login() {
@@ -17,8 +17,11 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [formAnimation, setFormAnimation] = useState('');
 
   const { signIn, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
@@ -39,12 +42,18 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setFormAnimation('animate-pulse');
 
     try {
       await signIn(email, password);
-      navigate(getRedirectPath(), { replace: true });
+      setFormAnimation('animate-bounce');
+      setTimeout(() => {
+        navigate(getRedirectPath(), { replace: true });
+      }, 300);
     } catch (error: any) {
       setError(error.message || 'Failed to sign in');
+      setFormAnimation('animate-in slide-in-from-left-2 duration-300');
+      setTimeout(() => setFormAnimation(''), 300);
     } finally {
       setLoading(false);
     }
@@ -52,7 +61,7 @@ export default function Login() {
 
   const handleGoogleSignIn = async () => {
     setError('');
-    setLoading(true);
+    setGoogleLoading(true);
 
     try {
       await signInWithGoogle();
@@ -60,7 +69,7 @@ export default function Login() {
     } catch (error: any) {
       setError(error.message || 'Failed to sign in with Google');
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -71,11 +80,14 @@ export default function Login() {
     }
 
     setError('');
+    setResetLoading(true);
     try {
       await resetPassword(email);
       setResetEmailSent(true);
     } catch (error: any) {
       setError(error.message || 'Failed to send reset email');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -93,7 +105,7 @@ export default function Login() {
           <p className="text-muted-foreground/85">Sign in to your TradeVault account</p>
         </div>
 
-        <Card className="border-border/50 shadow-lg">
+        <Card className={`border-border/50 shadow-lg transition-all duration-300 ${formAnimation}`}>
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">Sign in</CardTitle>
             <CardDescription className="text-center">
@@ -102,14 +114,14 @@ export default function Login() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
+                <AlertDescription className="font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
             {resetEmailSent && (
-              <Alert>
-                <AlertDescription>
+              <Alert className="animate-in slide-in-from-top-2 duration-300">
+                <AlertDescription className="font-medium">
                   Password reset email sent! Check your inbox for instructions.
                 </AlertDescription>
               </Alert>
@@ -155,14 +167,23 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={handleResetPassword}
-                  className="text-sm text-primary hover:underline"
+                  disabled={resetLoading}
+                  className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center gap-2"
                 >
+                  {resetLoading && <FontAwesomeIcon icon={faSpinner} className="h-3 w-3 animate-spin" />}
                   Forgot password?
                 </button>
               </div>
 
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
+              <Button type="submit" className="w-full h-11 relative" disabled={loading || googleLoading}>
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
+                    Signing in...
+                  </div>
+                ) : (
+                  'Sign in'
+                )}
               </Button>
             </form>
 
@@ -180,11 +201,20 @@ export default function Login() {
                 <Button
                   variant="outline"
                   onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className="h-11"
+                  disabled={loading || googleLoading}
+                  className="h-11 relative"
                 >
-                  <FontAwesomeIcon icon={faGoogle} className="mr-2 h-4 w-4" />
-                  Google
+                  {googleLoading ? (
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
+                      Connecting...
+                    </div>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faGoogle} className="mr-2 h-4 w-4" />
+                      Continue with Google
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

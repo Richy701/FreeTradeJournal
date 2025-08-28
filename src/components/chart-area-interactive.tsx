@@ -86,7 +86,7 @@ export function ChartAreaInteractive() {
   const isPositive = totalPnL >= 0
 
   return (
-    <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
+    <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-0">
       <CardHeader className="pb-3 border-b border-border/30">
         <CardTitle className="flex items-center gap-3 text-lg font-semibold">
           <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
@@ -148,8 +148,8 @@ export function ChartAreaInteractive() {
         )}
       </CardContent>
       <CardFooter className="border-t border-border/30 bg-muted/20">
-        <div className="flex w-full items-center justify-between text-sm">
-          <div className="flex items-center gap-3">
+        <div className="flex w-full items-center justify-between text-sm mt-2">
+          <div className="flex items-center gap-3 mt-1">
             <div className="flex items-center gap-2 font-medium leading-none">
               {isPositive ? 'Trending up' : 'Trending down'} 
               <FontAwesomeIcon 
@@ -166,7 +166,7 @@ export function ChartAreaInteractive() {
               </span>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-1">
             {chartData.length} trades
           </div>
         </div>

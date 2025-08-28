@@ -3,10 +3,13 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
+import { Toaster } from 'sonner';
 import Layout from '@/components/Layout';
 import LandingPage from '@/pages/LandingPage';
 import Dashboard from '@/pages/Dashboard';
 import TradeLog from '@/pages/TradeLog';
+import Goals from '@/pages/Goals';
+import Journal from '@/pages/Journal';
 import Settings from '@/pages/Settings';
 import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
@@ -19,6 +22,17 @@ function App() {
       <ThemePresetsProvider>
         <AuthProvider>
           <Router>
+            <Toaster 
+              richColors 
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: 'hsl(var(--background))',
+                  color: 'hsl(var(--foreground))',
+                  border: '1px solid hsl(var(--border))',
+                },
+              }}
+            />
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<LandingPage />} />
@@ -31,6 +45,8 @@ function App() {
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/trades" element={<TradeLog />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/journal" element={<Journal />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/profile" element={<Profile />} />
               </Route>

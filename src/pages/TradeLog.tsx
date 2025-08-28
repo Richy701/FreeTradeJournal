@@ -12,11 +12,27 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Edit, Trash2, Upload, Download, BarChart3, TrendingUp, DollarSign, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download, BarChart3, TrendingUp, DollarSign, FileText, Crosshair } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faDollarSign, 
+  faBullseye, 
+  faTrophy, 
+  faBalanceScale, 
+  faChartLine, 
+  faArrowTrendUp, 
+  faArrowTrendDown, 
+  faFire, 
+  faStar, 
+  faTimesCircle, 
+  faCalendar, 
+  faCheckCircle, 
+  faExclamationTriangle 
+} from '@fortawesome/free-solid-svg-icons';
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker } from '@/components/ui/date-picker';
 import { parseCSV, validateCSVFile } from '@/utils/csv-parser';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SiteHeader } from '@/components/site-header';
 
 interface Trade {
   id: string
@@ -72,9 +88,6 @@ export default function TradeLog() {
   const [reportEndDate, setReportEndDate] = useState<string>('');
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
-    uploadSuccess: false,
-    uploadError: '',
-    parseResult: null as any,
   });
 
   const form = useForm<TradeFormData>({
@@ -148,28 +161,12 @@ export default function TradeLog() {
     }
   };
 
-  useEffect(() => {
-    const savedTrades = localStorage.getItem('trades');
-    if (savedTrades) {
-      try {
-        const parsedTrades = JSON.parse(savedTrades);
-        // Ensure dates are properly parsed
-        const tradesWithDates = parsedTrades.map((trade: any) => ({
-          ...trade,
-          entryTime: new Date(trade.entryTime),
-          exitTime: new Date(trade.exitTime)
-        }));
-        setTrades(tradesWithDates);
-      } catch (error) {
-        console.error('Error loading trades:', error);
-        setTrades([]);
-      }
-    }
-  }, []);
+  // This useEffect is replaced by the enhanced loading simulation below
 
   const saveTrades = (updatedTrades: Trade[]) => {
     setTrades(updatedTrades);
     localStorage.setItem('trades', JSON.stringify(updatedTrades));
+    calculateQuickStats(updatedTrades);
   };
 
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
@@ -199,16 +196,42 @@ export default function TradeLog() {
     // Calculate Risk-Reward ratio properly
     let riskReward = 0;
     if (stopLoss && takeProfit) {
-      // If we have SL and TP, calculate based on planned levels
-      const risk = Math.abs(entryPrice - stopLoss);
-      const reward = Math.abs(takeProfit - entryPrice);
-      riskReward = risk > 0 ? reward / risk : 0;
+      // If we have SL and TP, calculate based on planned levels and trade direction
+      let risk = 0;
+      let reward = 0;
+      
+      if (side === 'long') {
+        // Long trade: risk = entry - stop, reward = target - entry
+        risk = entryPrice - stopLoss;
+        reward = takeProfit - entryPrice;
+      } else {
+        // Short trade: risk = stop - entry, reward = entry - target
+        risk = stopLoss - entryPrice;
+        reward = entryPrice - takeProfit;
+      }
+      
+      // Ensure both risk and reward are positive for valid R:R calculation
+      if (risk > 0 && reward > 0) {
+        riskReward = reward / risk;
+      } else {
+        riskReward = 0; // Invalid stop/target levels for this trade direction
+      }
     } else {
-      // If no SL/TP, calculate based on actual result vs entry
-      const actualMove = Math.abs(exitPrice - entryPrice);
-      // Estimate risk as a percentage of the move (this is approximate)
-      const estimatedRisk = actualMove * 0.5; // Assume risk was half the move
-      riskReward = estimatedRisk > 0 ? actualMove / estimatedRisk : 0;
+      // Alternative R:R calculations when SL/TP not available
+      const actualPnL = Math.abs(exitPrice - entryPrice);
+      
+      // Method 1: Assume risk was 1% of entry price (common swing trading rule)
+      const estimatedRisk = entryPrice * 0.01;
+      if (estimatedRisk > 0) {
+        riskReward = actualPnL / estimatedRisk;
+      }
+      
+      // Method 2: For futures, assume risk was $50-100 per contract (adjust based on instrument)
+      // if (market === 'futures') {
+      //   const estimatedRiskDollars = 75; // $75 risk per contract
+      //   const actualMoveDollars = actualPnL * lotSize;
+      //   riskReward = actualMoveDollars / estimatedRiskDollars;
+      // }
     }
     
     return { pnl, pnlPercentage, riskReward };
@@ -258,12 +281,7 @@ export default function TradeLog() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setCsvUploadState({
-      isUploading: true,
-      uploadSuccess: false,
-      uploadError: '',
-      parseResult: null
-    });
+    setCsvUploadState({ isUploading: true });
 
     try {
       const content = await validateCSVFile(file);
@@ -304,29 +322,38 @@ export default function TradeLog() {
         // Add imported trades to existing trades
         saveTrades([...trades, ...importedTrades]);
         
-        setCsvUploadState({
-          isUploading: false,
-          uploadSuccess: true,
-          uploadError: '',
-          parseResult: result
+        // Show success toast
+        toast.success('CSV Import Successful!', {
+          description: `Imported ${result.summary.successfulParsed} trades${
+            result.summary.dateRange 
+              ? ` from ${result.summary.dateRange.earliest} to ${result.summary.dateRange.latest}`
+              : ''
+          }${
+            result.summary.failed > 0 
+              ? `. ${result.summary.failed} rows were skipped due to errors.`
+              : ''
+          }`,
+          duration: 6000
         });
         
+        setCsvUploadState({ isUploading: false });
+        
       } else {
-        setCsvUploadState({
-          isUploading: false,
-          uploadSuccess: false,
-          uploadError: result.errors.join('; '),
-          parseResult: result
+        // Show error toast
+        toast.error('CSV Import Failed', {
+          description: result.errors.join('; '),
+          duration: 8000
         });
+        setCsvUploadState({ isUploading: false });
       }
       
     } catch (error) {
-      setCsvUploadState({
-        isUploading: false,
-        uploadSuccess: false,
-        uploadError: error instanceof Error ? error.message : 'Failed to parse CSV file',
-        parseResult: null
+      // Show error toast
+      toast.error('Import Error', {
+        description: error instanceof Error ? error.message : 'Failed to parse CSV file',
+        duration: 8000
       });
+      setCsvUploadState({ isUploading: false });
     }
 
     // Reset file input
@@ -489,18 +516,181 @@ export default function TradeLog() {
     a.click();
   };
 
+  // Enhanced loading and stats state
+  const [isLoading, setIsLoading] = useState(true);
+  const [quickStats, setQuickStats] = useState({
+    totalPnL: 0,
+    winRate: 0,
+    totalTrades: 0,
+    avgRR: 0
+  });
+
+  // Calculate quick stats
+  const calculateQuickStats = (tradeList: Trade[]) => {
+    const totalTrades = tradeList.length;
+    const totalPnL = tradeList.reduce((sum, trade) => sum + trade.pnl, 0);
+    const winners = tradeList.filter(trade => trade.pnl > 0);
+    const winRate = totalTrades > 0 ? (winners.length / totalTrades) * 100 : 0;
+    
+    // Fix avgRR calculation with proper edge case handling
+    const validRRTrades = tradeList.filter(trade => trade.riskReward && trade.riskReward > 0);
+    const avgRR = validRRTrades.length > 0 
+      ? validRRTrades.reduce((sum, trade) => sum + (trade.riskReward || 0), 0) / validRRTrades.length
+      : 0;
+
+    setQuickStats({ totalPnL, winRate, totalTrades, avgRR });
+  };
+
+  // Enhanced loading simulation
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      const savedTrades = localStorage.getItem('trades');
+      if (savedTrades) {
+        try {
+          const parsedTrades = JSON.parse(savedTrades);
+          const tradesWithDates = parsedTrades.map((trade: any) => {
+            const tradeWithDates = {
+              ...trade,
+              entryTime: new Date(trade.entryTime),
+              exitTime: new Date(trade.exitTime)
+            };
+
+            // Recalculate RR if missing
+            if (tradeWithDates.riskReward === undefined || tradeWithDates.riskReward === null) {
+              let riskReward = 0;
+              if (trade.stopLoss && trade.takeProfit && trade.entryPrice) {
+                // Calculate R:R based on trade direction
+                let risk = 0;
+                let reward = 0;
+                
+                if (trade.side === 'long') {
+                  // Long trade: risk = entry - stop, reward = target - entry
+                  risk = trade.entryPrice - trade.stopLoss;
+                  reward = trade.takeProfit - trade.entryPrice;
+                } else {
+                  // Short trade: risk = stop - entry, reward = entry - target
+                  risk = trade.stopLoss - trade.entryPrice;
+                  reward = trade.entryPrice - trade.takeProfit;
+                }
+                
+                // Ensure both risk and reward are positive for valid R:R calculation
+                if (risk > 0 && reward > 0) {
+                  riskReward = reward / risk;
+                } else {
+                  riskReward = 0; // Invalid stop/target levels for this trade direction
+                }
+              } else {
+                // Alternative R:R calculations when SL/TP not available
+                const actualPnL = Math.abs(trade.exitPrice - trade.entryPrice);
+                
+                // Method 1: Assume risk was 1% of entry price (common swing trading rule)
+                const estimatedRisk = trade.entryPrice * 0.01;
+                if (estimatedRisk > 0) {
+                  riskReward = actualPnL / estimatedRisk;
+                }
+              }
+              tradeWithDates.riskReward = riskReward;
+            }
+
+            return tradeWithDates;
+          });
+          
+          setTrades(tradesWithDates);
+          calculateQuickStats(tradesWithDates);
+          
+          // Save the updated trades with RR calculations back to localStorage
+          localStorage.setItem('trades', JSON.stringify(tradesWithDates));
+        } catch (error) {
+          console.error('Error loading trades:', error);
+          setTrades([]);
+        }
+      }
+      setIsLoading(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Enhanced loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
+        <SiteHeader />
+        {/* Header Skeleton */}
+        <div className="border-b bg-card/80 backdrop-blur-xl">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+                <div className="h-4 w-96 bg-muted animate-pulse rounded"></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-9 w-24 bg-muted animate-pulse rounded"></div>
+                <div className="h-9 w-24 bg-muted animate-pulse rounded"></div>
+                <div className="h-9 w-32 bg-muted animate-pulse rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Skeleton */}
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-12 w-12 bg-muted rounded-lg"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-16 bg-muted rounded"></div>
+                      <div className="h-6 w-20 bg-muted rounded"></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Table Skeleton */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div className="h-6 w-32 bg-muted animate-pulse rounded"></div>
+                <div className="h-9 w-24 bg-muted animate-pulse rounded"></div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 w-full bg-muted animate-pulse rounded"></div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full">
-      {/* Header Section */}
-      <div className="border-b bg-background/95 backdrop-blur sticky top-0 z-10">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">
+    <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
+      <SiteHeader />
+      {/* Enhanced Header Section */}
+      <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-20 shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="space-y-2">
+              <h1 
+                className="text-3xl font-bold bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)`
+                }}
+              >
                 Trade Journal
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Track and analyze your forex & futures trades
+              <p className="text-muted-foreground text-lg">
+                Track, analyze, and improve your trading performance
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -531,30 +721,6 @@ export default function TradeLog() {
               </Button>
               
               {/* CSV Upload Feedback */}
-              {csvUploadState.uploadError && (
-                <div className="w-full">
-                  <Alert variant="destructive" className="mt-2">
-                    <AlertDescription>{csvUploadState.uploadError}</AlertDescription>
-                  </Alert>
-                </div>
-              )}
-
-              {csvUploadState.uploadSuccess && csvUploadState.parseResult && (
-                <div className="w-full">
-                  <Alert className="mt-2">
-                    <Upload className="h-4 w-4" />
-                    <AlertDescription>
-                      Successfully imported {csvUploadState.parseResult.summary.successfulParsed} trades
-                      {csvUploadState.parseResult.summary.dateRange && (
-                        <span> from {csvUploadState.parseResult.summary.dateRange.earliest} to {csvUploadState.parseResult.summary.dateRange.latest}</span>
-                      )}
-                      {csvUploadState.parseResult.summary.failed > 0 && (
-                        <span>. {csvUploadState.parseResult.summary.failed} rows had issues and were skipped.</span>
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
               
               <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
                 <DialogTrigger asChild>
@@ -997,60 +1163,277 @@ export default function TradeLog() {
 
       {/* Main Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {/* Stats Overview */}
-        {trades.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Trades</p>
-                  <p className="text-2xl font-bold mt-1">{trades.length}</p>
+        {/* Enhanced Trading Statistics */}
+        <div className="space-y-6 mb-8">
+          {/* Primary Stats Row */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in slide-in-from-bottom-2 duration-500">
+            {/* Total P&L Card */}
+            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
+              <CardContent className="relative p-5">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total P&L</p>
+                    <div className="flex items-baseline gap-1">
+                      <p className="text-2xl font-black tracking-tight" 
+                         style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                        {quickStats.totalPnL >= 0 ? '+' : ''}${Math.abs(quickStats.totalPnL).toFixed(0)}
+                      </p>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        .{(Math.abs(quickStats.totalPnL) % 1).toFixed(2).slice(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <FontAwesomeIcon 
+                        icon={quickStats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown} 
+                        className="h-3 w-3"
+                        style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
+                      />
+                      <span className="text-muted-foreground font-medium">
+                        {((quickStats.totalPnL / 10000) * 100).toFixed(1)}% from initial
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg shadow-sm" 
+                       style={{ backgroundColor: `${quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}20` }}>
+                    <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4" 
+                                   style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }} />
+                  </div>
                 </div>
-                <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              </div>
+              </CardContent>
             </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Win Rate</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {trades.length > 0 ? ((trades.filter(t => t.pnl > 0).length / trades.length) * 100).toFixed(1) : 0}%
-                  </p>
+
+            {/* Win Rate Card */}
+            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
+              <CardContent className="relative p-5">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
+                    <div className="flex items-baseline gap-1">
+                      <p className="text-2xl font-black tracking-tight" style={{ color: themeColors.primary }}>
+                        {quickStats.winRate.toFixed(0)}
+                      </p>
+                      <span className="text-lg font-bold text-muted-foreground">%</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <span style={{ color: themeColors.profit }} className="font-semibold">
+                          {trades.filter(t => t.pnl > 0).length}W
+                        </span>
+                        <span className="text-muted-foreground">/</span>
+                        <span style={{ color: themeColors.loss }} className="font-semibold">
+                          {trades.filter(t => t.pnl < 0).length}L
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                    <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
                 </div>
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              </div>
+              </CardContent>
             </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total P&L</p>
-                  <p className={`text-2xl font-bold mt-1 ${
-                    trades.reduce((sum, t) => sum + t.pnl, 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    ${trades.reduce((sum, t) => sum + t.pnl, 0).toFixed(2)}
-                  </p>
+
+            {/* Best Trade Card */}
+            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
+              <CardContent className="relative p-5">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Best Trade</p>
+                    <div className="flex items-baseline gap-1">
+                      <p className="text-2xl font-black tracking-tight" style={{ color: themeColors.profit }}>
+                        +${trades.length > 0 ? Math.max(0, ...trades.map(t => t.pnl)).toFixed(0) : '0'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground font-medium">
+                        {trades.length > 0 ? (trades.find(t => t.pnl === Math.max(0, ...trades.map(t => t.pnl)))?.symbol || '--') : '--'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.profit}20` }}>
+                    <FontAwesomeIcon icon={faTrophy} className="h-4 w-4" style={{ color: themeColors.profit }} />
+                  </div>
                 </div>
-                <DollarSign className="h-5 w-5 text-muted-foreground" />
-              </div>
+              </CardContent>
             </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg R:R</p>
-                  <p className="text-2xl font-bold mt-1">
-                    {trades.filter(t => t.riskReward).length > 0 ? 
-                      (trades.filter(t => t.riskReward).reduce((sum, t) => sum + (t.riskReward || 0), 0) / 
-                       trades.filter(t => t.riskReward).length).toFixed(2) : '0.00'}:1
-                  </p>
+
+            {/* Average R:R Card */}
+            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
+              <CardContent className="relative p-5">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg R:R</p>
+                    <div className="flex items-baseline gap-1">
+                      <p className="text-2xl font-black tracking-tight" style={{ color: themeColors.primary }}>
+                        {quickStats.avgRR > 0 ? quickStats.avgRR.toFixed(1) : '--'}
+                      </p>
+                      <span className="text-lg font-bold text-muted-foreground">:1</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <FontAwesomeIcon 
+                        icon={quickStats.avgRR >= 1.5 ? faCheckCircle : faExclamationTriangle}
+                        className="h-3 w-3"
+                        style={{ color: quickStats.avgRR >= 1.5 ? themeColors.profit : themeColors.loss }}
+                      />
+                      <span className="text-muted-foreground font-medium">
+                        {quickStats.avgRR >= 1.5 ? 'Good ratio' : 'Needs work'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                    <FontAwesomeIcon icon={faBalanceScale} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
                 </div>
-                <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              </div>
+              </CardContent>
             </Card>
           </div>
-        )}
+
+          {/* Secondary Stats Row */}
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 animate-in slide-in-from-bottom-2 duration-500 delay-100">
+            {/* Total Trades */}
+            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4 text-center">
+                <div className="space-y-1">
+                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
+                  <p className="text-lg font-bold text-foreground">{quickStats.totalTrades}</p>
+                  <p className="text-xs text-muted-foreground font-medium">Total Trades</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Average Win */}
+            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4 text-center">
+                <div className="space-y-1">
+                  <FontAwesomeIcon icon={faArrowTrendUp} className="h-4 w-4 mx-auto" style={{ color: themeColors.profit }} />
+                  <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
+                    ${(() => {
+                      const winningTrades = trades.filter(t => t.pnl > 0);
+                      return winningTrades.length > 0 
+                        ? (winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length).toFixed(0)
+                        : '0';
+                    })()}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">Avg Win</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Average Loss */}
+            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4 text-center">
+                <div className="space-y-1">
+                  <FontAwesomeIcon icon={faArrowTrendDown} className="h-4 w-4 mx-auto" style={{ color: themeColors.loss }} />
+                  <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                    ${(() => {
+                      const losingTrades = trades.filter(t => t.pnl < 0);
+                      return losingTrades.length > 0 
+                        ? Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length).toFixed(0)
+                        : '0';
+                    })()}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">Avg Loss</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Profit Factor */}
+            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4 text-center">
+                <div className="space-y-1">
+                  <FontAwesomeIcon icon={faFire} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
+                  <p className="text-lg font-bold text-foreground">
+                    {(() => {
+                      const totalWins = trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
+                      const totalLosses = Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
+                      if (totalLosses === 0 && totalWins > 0) return '∞';
+                      if (totalLosses === 0) return '--';
+                      return (totalWins / totalLosses).toFixed(1);
+                    })()}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">Profit Factor</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Current Streak */}
+            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4 text-center">
+                <div className="space-y-1">
+                  {(() => {
+                    if (trades.length === 0) return <FontAwesomeIcon icon={faStar} className="h-4 w-4 mx-auto text-muted-foreground" />
+                    const lastTrade = trades[trades.length - 1];
+                    let streak = 0;
+                    let isWinning = lastTrade.pnl > 0;
+                    for (let i = trades.length - 1; i >= 0; i--) {
+                      if ((trades[i].pnl > 0) === isWinning) {
+                        streak++;
+                      } else {
+                        break;
+                      }
+                    }
+                    return (
+                      <>
+                        <FontAwesomeIcon 
+                          icon={isWinning ? faFire : faTimesCircle} 
+                          className="h-4 w-4 mx-auto" 
+                          style={{ color: isWinning ? themeColors.profit : themeColors.loss }} 
+                        />
+                        <p className="text-lg font-bold" style={{ color: isWinning ? themeColors.profit : themeColors.loss }}>
+                          {streak}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          {isWinning ? 'Win' : 'Loss'} Streak
+                        </p>
+                      </>
+                    );
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* This Month */}
+            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4 text-center">
+                <div className="space-y-1">
+                  <FontAwesomeIcon icon={faCalendar} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
+                  <p className="text-lg font-bold" style={{ 
+                    color: (() => {
+                      const now = new Date();
+                      const thisMonth = now.getMonth();
+                      const thisYear = now.getFullYear();
+                      const monthlyPnL = trades
+                        .filter(t => {
+                          const tradeDate = new Date(t.exitTime);
+                          return tradeDate.getMonth() === thisMonth && tradeDate.getFullYear() === thisYear;
+                        })
+                        .reduce((sum, t) => sum + t.pnl, 0);
+                      return monthlyPnL >= 0 ? themeColors.profit : themeColors.loss;
+                    })()
+                  }}>
+                    {(() => {
+                      const now = new Date();
+                      const thisMonth = now.getMonth();
+                      const thisYear = now.getFullYear();
+                      const monthlyPnL = trades
+                        .filter(t => {
+                          const tradeDate = new Date(t.exitTime);
+                          return tradeDate.getMonth() === thisMonth && tradeDate.getFullYear() === thisYear;
+                        })
+                        .reduce((sum, t) => sum + t.pnl, 0);
+                      return `${monthlyPnL >= 0 ? '+' : ''}$${monthlyPnL.toFixed(0)}`;
+                    })()}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">This Month</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Trades Table */}
         <Card>

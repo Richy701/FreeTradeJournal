@@ -21,7 +21,14 @@ import {
   faYenSign,
   faGlobe,
   faClock,
-  faArrowUp
+  faArrowUp,
+  faSpinner,
+  faCheckCircle,
+  faUser,
+  faCog,
+  faDatabase,
+  faBullseye,
+  faRocket
 } from '@fortawesome/free-solid-svg-icons';
 
 interface OnboardingData {
@@ -46,12 +53,12 @@ interface OnboardingData {
 }
 
 const STEPS = [
-  { id: 1, title: 'Welcome', description: 'Let\'s get you started' },
-  { id: 2, title: 'Experience', description: 'Tell us about your trading background' },
-  { id: 3, title: 'Account Setup', description: 'Configure your trading preferences' },
-  { id: 4, title: 'Trading Data', description: 'Import your existing trades' },
-  { id: 5, title: 'Goals', description: 'Set your trading objectives' },
-  { id: 6, title: 'Complete', description: 'You\'re all set!' }
+  { id: 1, title: 'Welcome', description: 'Let\'s get you started', icon: faChartLine },
+  { id: 2, title: 'Experience', description: 'Tell us about your trading background', icon: faUser },
+  { id: 3, title: 'Account Setup', description: 'Configure your trading preferences', icon: faCog },
+  { id: 4, title: 'Trading Data', description: 'Import your existing trades', icon: faDatabase },
+  { id: 5, title: 'Goals', description: 'Set your trading objectives', icon: faBullseye },
+  { id: 6, title: 'Complete', description: 'You\'re all set!', icon: faRocket }
 ];
 
 export default function Onboarding() {
@@ -62,6 +69,7 @@ export default function Onboarding() {
     dataImportOption: 'fresh'
   });
   const [loading, setLoading] = useState(false);
+  const [stepAnimation, setStepAnimation] = useState('');
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
     uploadSuccess: false,
@@ -85,13 +93,21 @@ export default function Onboarding() {
 
   const handleNext = () => {
     if (currentStep < STEPS.length) {
-      setCurrentStep(currentStep + 1);
+      setStepAnimation('animate-out slide-out-to-left-2 duration-300');
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+        setStepAnimation('animate-in slide-in-from-right-2 duration-300');
+      }, 150);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setStepAnimation('animate-out slide-out-to-right-2 duration-300');
+      setTimeout(() => {
+        setCurrentStep(currentStep - 1);
+        setStepAnimation('animate-in slide-in-from-left-2 duration-300');
+      }, 150);
     }
   };
 
@@ -923,26 +939,28 @@ export default function Onboarding() {
             <span className="text-muted-foreground">{Math.round(progressPercentage)}% complete</span>
           </div>
           
-          {/* Step dots */}
+          {/* Enhanced Step indicators with icons */}
           <div className="flex justify-center space-x-4 mb-6">
             {STEPS.map((step, index) => (
               <div key={step.id} className="flex flex-col items-center space-y-2">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                  className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-500 ${
                     index + 1 < currentStep
-                      ? 'bg-primary text-white shadow-lg'
+                      ? 'bg-primary text-white shadow-lg transform scale-100 animate-in zoom-in-50 duration-300'
                       : index + 1 === currentStep
-                      ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg scale-110'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg scale-110 animate-pulse'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80 transition-colors'
                   }`}
                 >
                   {index + 1 < currentStep ? (
-                    <FontAwesomeIcon icon={faCheck} className="h-4 w-4" />
+                    <FontAwesomeIcon icon={faCheckCircle} className="h-5 w-5 animate-in zoom-in-50 duration-300" />
+                  ) : index + 1 === currentStep && loading ? (
+                    <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin" />
                   ) : (
-                    index + 1
+                    <FontAwesomeIcon icon={step.icon} className="h-5 w-5" />
                   )}
                 </div>
-                <span className={`text-xs font-medium ${
+                <span className={`text-xs font-medium transition-colors duration-300 ${
                   index + 1 <= currentStep ? 'text-foreground' : 'text-muted-foreground'
                 }`}>
                   {step.title}
@@ -969,7 +987,7 @@ export default function Onboarding() {
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="px-8 pb-8">
+          <CardContent className={`px-8 pb-8 ${stepAnimation}`}>
             {renderStepContent()}
           </CardContent>
         </Card>

@@ -71,7 +71,7 @@ export function DataTable({ data }: DataTableProps) {
   }
 
   return (
-    <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
+    <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-0">
       <CardHeader className="pb-3 border-b border-border/30">
         <CardTitle className="flex items-center gap-3 text-lg font-semibold">
           <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>

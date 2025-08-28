@@ -232,7 +232,7 @@ export function CalendarHeatmap() {
   }, [trades, currentDate])
 
   const getPnLColor = (pnl: number, trades: number) => {
-    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-muted/20 hover:border-muted/40 transition-all duration-200 cursor-default'
+    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-muted/20 transition-colors duration-200 cursor-default'
     
     // Use theme colors for styling
     const profitColor = themeColors.profit
@@ -240,13 +240,13 @@ export function CalendarHeatmap() {
     
     if (pnl > 0) {
       // Use theme profit color with different opacities for intensity
-      return 'border-2 shadow-md hover:shadow-lg hover:scale-110 transition-all duration-300 cursor-pointer'
+      return 'border-2 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer'
     } else if (pnl < 0) {
       // Use theme loss color
-      return 'border-2 shadow-sm hover:shadow-md hover:scale-110 transition-all duration-300 cursor-pointer'
+      return 'border-2 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer'
     }
     
-    return 'bg-gray-400 border-gray-300/50 shadow-sm hover:shadow-md hover:scale-110 transition-all duration-300 cursor-pointer' // Breakeven
+    return 'bg-gray-400 border-gray-300/50 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer' // Breakeven
   }
   
   const getPnLStyle = (pnl: number, trades: number) => {
@@ -254,20 +254,23 @@ export function CalendarHeatmap() {
     
     if (pnl > 0) {
       // Use theme profit color with opacity based on amount
-      const opacity = pnl >= 1000 ? 1 : pnl >= 500 ? 0.9 : pnl >= 100 ? 0.8 : 0.7
+      const opacity = pnl >= 1000 ? 0.9 : pnl >= 500 ? 0.8 : pnl >= 100 ? 0.7 : 0.6
       return { 
         backgroundColor: themeColors.profit,
         opacity: opacity,
         borderColor: themeColors.profit
       }
     } else if (pnl < 0) {
+      // Use theme loss color with consistent opacity
+      const opacity = Math.abs(pnl) >= 1000 ? 0.9 : Math.abs(pnl) >= 500 ? 0.8 : Math.abs(pnl) >= 100 ? 0.7 : 0.6
       return { 
         backgroundColor: themeColors.loss,
+        opacity: opacity,
         borderColor: themeColors.loss
       }
     }
     
-    return { backgroundColor: '#9ca3af' } // Gray for breakeven
+    return { backgroundColor: '#9ca3af', opacity: 0.7 } // Gray for breakeven
   }
 
   // Calculate monthly statistics
@@ -345,11 +348,11 @@ export function CalendarHeatmap() {
   }
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200 border-border/50">
+    <Card className="hover:shadow-lg transition-shadow duration-200 border-0">
       <CardHeader className="pb-4 border-b border-border/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+            <div className="p-2 rounded-lg -translate-y-4" style={{backgroundColor: `${themeColors.primary}20`}}>
               <FontAwesomeIcon icon={faCalendarDays} className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
             <div className="space-y-3">
@@ -505,9 +508,9 @@ export function CalendarHeatmap() {
                       <PopoverTrigger asChild>
                         <div
                           className={cn(
-                            "h-20 rounded-xl relative overflow-hidden backdrop-blur-sm",
+                            "h-20 rounded-xl relative overflow-hidden",
                             getPnLColor(day.pnl, day.trades),
-                            day.isCurrentMonth ? "opacity-100" : "opacity-50 hover:opacity-70",
+                            day.isCurrentMonth ? "opacity-100" : "opacity-50",
                             hasData && "hover:z-10"
                           )}
                           style={{
@@ -653,14 +656,22 @@ export function CalendarHeatmap() {
               <div className="flex items-center gap-2 group cursor-pointer">
                 <div className="w-3 h-3 rounded-md shadow-sm group-hover:scale-110 transition-transform" style={{backgroundColor: themeColors.profit}}></div>
                 <span className="font-medium text-muted-foreground group-hover:transition-colors" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
-                <Badge variant="outline" className="text-xs border-green-200 bg-green-50 dark:bg-green-950 group-hover:scale-105 transition-transform" style={{color: themeColors.profit}}>
+                <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform" style={{
+                  color: themeColors.profit, 
+                  borderColor: themeColors.profit,
+                  backgroundColor: `${themeColors.profit}15`
+                }}>
                   {monthlyStats.profitDays}
                 </Badge>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
                 <div className="w-3 h-3 rounded-md shadow-sm group-hover:scale-110 transition-transform" style={{backgroundColor: themeColors.loss}}></div>
                 <span className="font-medium text-muted-foreground transition-colors">Loss Days</span>
-                <Badge variant="outline" className="text-xs border-red-200 bg-red-50 dark:bg-red-950 group-hover:scale-105 transition-transform" style={{color: themeColors.loss}}>
+                <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform" style={{
+                  color: themeColors.loss,
+                  borderColor: themeColors.loss,
+                  backgroundColor: `${themeColors.loss}15`
+                }}>
                   {monthlyStats.lossDays}
                 </Badge>
               </div>

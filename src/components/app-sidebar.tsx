@@ -4,7 +4,10 @@ import { useAuth } from '@/contexts/auth-context'
 import {
   BarChart3,
   TrendingUp,
+  Target,
+  BookOpen,
   Settings2,
+  Home,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -33,8 +36,23 @@ const navItems = {
       url: "/trades",
       icon: TrendingUp,
     },
+    {
+      title: "Goals & Risk Management",
+      url: "/goals",
+      icon: Target,
+    },
+    {
+      title: "Journal",
+      url: "/journal",
+      icon: BookOpen,
+    },
   ],
   navSecondary: [
+    {
+      title: "Back to Home",
+      url: "/",
+      icon: Home,
+    },
     {
       title: "Settings",
       url: "/settings",
@@ -64,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/dashboard">
+              <a href="/">
                 <div 
                   className="flex aspect-square size-8 items-center justify-center rounded-lg text-white" 
                   style={{backgroundColor: themeColors.primary}}

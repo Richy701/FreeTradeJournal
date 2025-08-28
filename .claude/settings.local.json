@@ -24,7 +24,14 @@
       "Bash(npm run build:*)",
       "Bash(curl:*)",
       "Bash(node:*)",
-      "WebFetch(domain:webflow.com)"
+      "WebFetch(domain:webflow.com)",
+      "WebFetch(domain:tradingeconomics.com)",
+      "Bash(git --git-dir=/Users/richy/Tradevault/.git --work-tree=/Users/richy/Tradevault status)",
+      "Bash(git -C /Users/richy/Tradevault init)",
+      "Bash(git -C /Users/richy/Tradevault remote -v)",
+      "Bash(npm --prefix /Users/richy/Tradevault run build)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

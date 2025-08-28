@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/auth-context'
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
+import { TradingCoach } from "@/components/trading-coach"
+import { SiteHeader } from "@/components/site-header"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useState, useEffect } from "react"
 
@@ -39,7 +41,7 @@ export default function Dashboard() {
 
   // Skeleton loader components
   const MetricCardSkeleton = () => (
-    <div className="bg-muted/30 backdrop-blur-sm rounded-lg border p-6 space-y-4">
+    <div className="bg-muted/30 backdrop-blur-sm rounded-lg border-0 p-6 space-y-4">
       <div className="flex justify-between items-center">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-8 w-8 rounded-lg" />
@@ -110,6 +112,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <SiteHeader />
       {/* Enhanced Header Section */}
       <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -150,14 +153,19 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12 overflow-visible">
-        {/* Top metrics row with staggered animation */}
-        <div className="animate-in slide-in-from-bottom-4 duration-500 delay-100 overflow-visible">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12">
+        {/* Top metrics row */}
+        <div className="animate-in fade-in duration-300">
           <SectionCards />
         </div>
         
+        {/* AI Trading Coach */}
+        <div className="animate-in fade-in duration-300 delay-50">
+          <TradingCoach />
+        </div>
+        
         {/* Main content area - 2:1 ratio with enhanced spacing */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-500 delay-200">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300 delay-100">
           {/* Equity curve - takes 2/3 width */}
           <div className="lg:col-span-2">
             <ChartAreaInteractive />
@@ -170,7 +178,7 @@ export default function Dashboard() {
         </div>
         
         {/* Calendar Section */}
-        <div className="animate-in slide-in-from-bottom-4 duration-500 delay-300">
+        <div className="animate-in fade-in duration-300 delay-150">
           <CalendarHeatmap />
         </div>
       </div>

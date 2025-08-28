@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Edit, Mail, Calendar, Shield } from 'lucide-react';
 import { format } from 'date-fns';
+import { SiteHeader } from '@/components/site-header';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -58,6 +59,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <SiteHeader />
       {/* Header */}
       <div className="border-b bg-card/80 backdrop-blur-xl">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">

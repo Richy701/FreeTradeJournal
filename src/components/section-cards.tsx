@@ -116,7 +116,7 @@ export function SectionCards() {
   return (
     <TooltipProvider>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 overflow-visible">
-        <Card className="hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible">
+        <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total P&L</CardTitle>
@@ -152,7 +152,7 @@ export function SectionCards() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible hover:z-[10001]">
+      <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible hover:z-[10001] border-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</CardTitle>
@@ -217,7 +217,7 @@ export function SectionCards() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible">
+      <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Trades</CardTitle>
@@ -251,7 +251,7 @@ export function SectionCards() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible">
+      <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Profit Factor</CardTitle>
