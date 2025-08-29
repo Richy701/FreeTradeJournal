@@ -9,6 +9,7 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { TradeVaultFeatures as Features6 } from '@/components/blocks/features-6';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
+import { FeedbackButton } from '@/components/ui/feedback-button';
 // import { Features as Features10 } from '@/components/blocks/features-10'; // unused
 import {
   TrendingUp,
@@ -54,6 +55,7 @@ export default function LandingPage() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
+            <FeedbackButton variant="outline" />
             <BuyMeCoffee username="richy701" variant="outline" />
             <ThemeToggle />
             <Link to="/dashboard">

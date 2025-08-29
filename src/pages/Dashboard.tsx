@@ -7,6 +7,7 @@ import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
 import { Skeleton } from "@/components/ui/skeleton"
+import { FeedbackButton } from "@/components/ui/feedback-button"
 import { useState, useEffect } from "react"
 
 export default function Dashboard() {
@@ -182,6 +183,9 @@ export default function Dashboard() {
           <CalendarHeatmap />
         </div>
       </div>
+      
+      {/* Floating Feedback Button */}
+      <FeedbackButton variant="floating" />
     </div>
   )
 }
