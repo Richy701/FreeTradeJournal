@@ -187,8 +187,8 @@ function HeroGeometric({
                         animate="visible"
                     >
                         <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
-                            Modern trading journal with mood tracking, cloud sync, and professional analytics. 
-                            Start improving your trading performance today.
+                            The complete trading journal platform for serious traders. 
+                            Track, analyze, and optimize your trading performance with professional tools.
                         </p>
                     </motion.div>
 
