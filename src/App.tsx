@@ -4,6 +4,7 @@ import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Toaster } from 'sonner';
+import { Analytics } from '@vercel/analytics/react';
 import Layout from '@/components/Layout';
 import LandingPage from '@/pages/LandingPage';
 import Dashboard from '@/pages/Dashboard';
@@ -33,6 +34,7 @@ function App() {
                 },
               }}
             />
+            <Analytics />
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<LandingPage />} />
