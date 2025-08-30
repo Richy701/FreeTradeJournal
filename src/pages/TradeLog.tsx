@@ -58,6 +58,9 @@ interface Trade {
   tags?: string[]
   screenshots?: string[]
   market?: 'forex' | 'futures' | 'indices'
+  useManualPnL?: boolean
+  manualPnL?: number
+  customMultiplier?: number
 }
 
 interface TradeFormData {
@@ -77,6 +80,9 @@ interface TradeFormData {
   strategy?: string
   market?: 'forex' | 'futures' | 'indices'
   tags?: string[]
+  useManualPnL?: boolean
+  manualPnL?: number
+  customMultiplier?: number
 }
 
 export default function TradeLog() {
@@ -129,18 +135,30 @@ export default function TradeLog() {
         ];
       case 'futures':
         return [
-          { category: 'Index Futures', instruments: [
+          { category: 'Micro Index Futures', instruments: [
+            { symbol: 'MES', name: 'Micro E-mini S&P 500' },
+            { symbol: 'MNQ', name: 'Micro E-mini Nasdaq 100' },
+            { symbol: 'MYM', name: 'Micro E-mini Dow Jones' },
+            { symbol: 'M2K', name: 'Micro E-mini Russell 2000' }
+          ]},
+          { category: 'Standard Index Futures', instruments: [
             { symbol: 'ES', name: 'E-mini S&P 500' },
             { symbol: 'NQ', name: 'E-mini Nasdaq 100' },
             { symbol: 'YM', name: 'E-mini Dow Jones' },
             { symbol: 'RTY', name: 'E-mini Russell 2000' }
           ]},
-          { category: 'Energy', instruments: [
+          { category: 'Micro Energy', instruments: [
+            { symbol: 'MCL', name: 'Micro Crude Oil' }
+          ]},
+          { category: 'Standard Energy', instruments: [
             { symbol: 'CL', name: 'Crude Oil' },
             { symbol: 'NG', name: 'Natural Gas' },
             { symbol: 'RB', name: 'Gasoline' }
           ]},
-          { category: 'Metals', instruments: [
+          { category: 'Micro Metals', instruments: [
+            { symbol: 'MGC', name: 'Micro Gold' }
+          ]},
+          { category: 'Standard Metals', instruments: [
             { symbol: 'GC', name: 'Gold' },
             { symbol: 'SI', name: 'Silver' },
             { symbol: 'HG', name: 'Copper' }
@@ -189,27 +207,91 @@ export default function TradeLog() {
   };
 
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
-    const { side, entryPrice, exitPrice, stopLoss, takeProfit, lotSize, commission, swap, spread, market = 'forex' } = data;
+    const { side, entryPrice, exitPrice, stopLoss, takeProfit, lotSize, commission, swap, spread, market = 'forex', customMultiplier } = data;
     let grossPnL = 0;
     let multiplier = 1;
+    let spreadCost = 0;
     
-    // Set multipliers based on market type
-    if (market === 'forex') {
-      multiplier = 100000; // Standard lot for most forex pairs
+    // Use custom multiplier if provided
+    if (customMultiplier && customMultiplier > 0) {
+      multiplier = customMultiplier;
+      spreadCost = spread * multiplier * lotSize;
+    } else {
+      // Set multipliers based on market type
+      if (market === 'forex') {
+      const symbol = data.symbol?.toUpperCase() || '';
+      
+      // For forex: 1 standard lot = 100,000 units of base currency
+      // Pip value calculation depends on the pair
+      if (symbol.includes('JPY') || symbol.includes('THB') || symbol.includes('HUF')) {
+        // JPY pairs: price quoted to 2 decimals, 1 pip = 0.01
+        // For 1 standard lot of USDJPY: 1 pip = 1000 JPY / current rate ≈ $10
+        multiplier = 1000 * lotSize; // Yen per pip * lot size
+      } else {
+        // Standard pairs: price quoted to 4 decimals, 1 pip = 0.0001
+        // For 1 standard lot: 1 pip = $10 (for USD quote currency)
+        multiplier = 100000 * lotSize; // Standard lot size * lots
+      }
+      
+      // Calculate spread cost (spread is in pips)
+      const pipValue = 10; // $10 per pip for standard lot
+      spreadCost = spread * lotSize * pipValue;
+      
     } else if (market === 'futures') {
-      multiplier = 1; // Futures are already per point
+      // Check for micro futures based on symbol
+      const symbol = data.symbol?.toUpperCase() || '';
+      
+      // Micro futures (1/10th of standard contracts)
+      if (symbol.includes('MES')) {
+        multiplier = 5; // Micro E-mini S&P 500 ($5 per point)
+      } else if (symbol.includes('MNQ')) {
+        multiplier = 2; // Micro E-mini Nasdaq ($2 per point)
+      } else if (symbol.includes('MYM')) {
+        multiplier = 0.5; // Micro E-mini Dow ($0.50 per point)
+      } else if (symbol.includes('M2K')) {
+        multiplier = 5; // Micro E-mini Russell 2000 ($5 per point)
+      } else if (symbol.includes('MGC')) {
+        multiplier = 10; // Micro Gold ($10 per troy ounce)
+      } else if (symbol.includes('MCL')) {
+        multiplier = 100; // Micro WTI Crude Oil ($100 per barrel)
+      } else if (symbol.includes('M6E')) {
+        multiplier = 1250; // Micro Euro FX ($1.25 per pip)
+      } else if (symbol.includes('M6B')) {
+        multiplier = 625; // Micro British Pound ($6.25 per pip)
+      } else if (symbol.includes('ES')) {
+        multiplier = 50; // E-mini S&P 500 ($50 per point)
+      } else if (symbol.includes('NQ')) {
+        multiplier = 20; // E-mini Nasdaq ($20 per point)
+      } else if (symbol.includes('YM')) {
+        multiplier = 5; // E-mini Dow ($5 per point)
+      } else if (symbol.includes('RTY')) {
+        multiplier = 50; // E-mini Russell 2000 ($50 per point)
+      } else if (symbol.includes('GC')) {
+        multiplier = 100; // Gold ($100 per troy ounce)
+      } else if (symbol.includes('CL')) {
+        multiplier = 1000; // WTI Crude Oil ($1000 per barrel)
+      } else {
+        multiplier = 1; // Default futures multiplier
+      }
+      
+      // For futures, spread is usually in ticks, calculate cost based on contract
+      spreadCost = spread * multiplier * lotSize;
+      
     } else if (market === 'indices') {
       multiplier = 1; // Indices per point
+      spreadCost = spread * lotSize; // Spread in points
+    }
     }
     
     if (side === 'long') {
-      grossPnL = (exitPrice - entryPrice) * lotSize * multiplier;
+      grossPnL = (exitPrice - entryPrice) * multiplier;
     } else {
-      grossPnL = (entryPrice - exitPrice) * lotSize * multiplier;
+      grossPnL = (entryPrice - exitPrice) * multiplier;
     }
     
-    const pnl = grossPnL - commission - swap - (spread * lotSize);
-    const investment = entryPrice * lotSize * multiplier;
+    // Use calculated spreadCost instead of spread * lotSize
+    const pnl = grossPnL - commission - swap - spreadCost;
+    const investment = entryPrice * (market === 'forex' ? 100000 * lotSize : lotSize * multiplier);
     const pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
     
     // Calculate Risk-Reward ratio properly
@@ -257,7 +339,38 @@ export default function TradeLog() {
   };
 
   const onSubmit = (data: TradeFormData) => {
-    const { pnl, pnlPercentage, riskReward } = calculatePnL(data);
+    let pnl: number;
+    let pnlPercentage: number;
+    let riskReward: number;
+    
+    if (data.useManualPnL && data.manualPnL !== undefined) {
+      // Use manual P&L
+      pnl = data.manualPnL;
+      
+      // Calculate percentage based on manual P&L
+      const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
+      pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
+      
+      // Calculate risk-reward based on manual P&L
+      if (data.stopLoss) {
+        const risk = data.side === 'long' 
+          ? data.entryPrice - data.stopLoss 
+          : data.stopLoss - data.entryPrice;
+        const actualMove = Math.abs(data.exitPrice - data.entryPrice);
+        riskReward = risk > 0 ? actualMove / risk : 0;
+      } else {
+        // Estimate based on 1% risk assumption
+        const estimatedRisk = data.entryPrice * 0.01;
+        const actualMove = Math.abs(data.exitPrice - data.entryPrice);
+        riskReward = estimatedRisk > 0 ? actualMove / estimatedRisk : 0;
+      }
+    } else {
+      // Use auto-calculated P&L
+      const calculated = calculatePnL(data);
+      pnl = calculated.pnl;
+      pnlPercentage = calculated.pnlPercentage;
+      riskReward = calculated.riskReward;
+    }
     
     const newTrade: Trade = {
       id: editingTrade?.id || Date.now().toString(),
@@ -287,6 +400,8 @@ export default function TradeLog() {
       ...trade,
       entryTime: trade.entryTime as any,
       exitTime: trade.exitTime as any,
+      useManualPnL: trade.useManualPnL || false,
+      manualPnL: trade.manualPnL,
     });
     setIsDialogOpen(true);
   };
@@ -1116,6 +1231,119 @@ export default function TradeLog() {
                             </FormItem>
                           )}
                         />
+                      </div>
+
+                      {/* Custom Multiplier Field */}
+                      <div className="space-y-2">
+                        <FormField
+                          control={form.control}
+                          name="customMultiplier"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-semibold">
+                                Custom Multiplier (Optional)
+                              </FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  placeholder="Leave blank to use default multiplier"
+                                  className="text-lg"
+                                  {...field} 
+                                  onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} 
+                                />
+                              </FormControl>
+                              <p className="text-sm text-muted-foreground">
+                                Override the default multiplier for custom contracts or specific broker settings
+                              </p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Contract Info Display for Futures */}
+                      {watchedMarket === 'futures' && form.watch('symbol') && (
+                        <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-muted-foreground">Contract Details</p>
+                              <p className="text-lg font-bold">
+                                {(() => {
+                                  const symbol = form.watch('symbol')?.toUpperCase() || '';
+                                  if (symbol.includes('MES')) return 'Micro E-mini S&P 500 - $5 per point';
+                                  if (symbol.includes('MNQ')) return 'Micro E-mini Nasdaq - $2 per point';
+                                  if (symbol.includes('MYM')) return 'Micro E-mini Dow - $0.50 per point';
+                                  if (symbol.includes('M2K')) return 'Micro Russell 2000 - $5 per point';
+                                  if (symbol.includes('MGC')) return 'Micro Gold - $10 per oz';
+                                  if (symbol.includes('MCL')) return 'Micro Crude Oil - $100 per barrel';
+                                  if (symbol.includes('ES')) return 'E-mini S&P 500 - $50 per point';
+                                  if (symbol.includes('NQ')) return 'E-mini Nasdaq - $20 per point';
+                                  if (symbol.includes('YM')) return 'E-mini Dow - $5 per point';
+                                  if (symbol.includes('RTY')) return 'Russell 2000 - $50 per point';
+                                  if (symbol.includes('GC')) return 'Gold - $100 per oz';
+                                  if (symbol.includes('CL')) return 'Crude Oil - $1,000 per barrel';
+                                  return 'Custom Contract - $1 per point';
+                                })()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-muted-foreground">
+                                {form.watch('lotSize') || 1} contract{(form.watch('lotSize') || 1) !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Manual P&L Override */}
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="useManualPnL"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  checked={field.value}
+                                  onChange={(e) => field.onChange(e.target.checked)}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-base font-semibold cursor-pointer">
+                                Use Manual P&L (Override Auto-Calculation)
+                              </FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {form.watch('useManualPnL') && (
+                          <FormField
+                            control={form.control}
+                            name="manualPnL"
+                            rules={{ required: form.watch('useManualPnL') ? 'Manual P&L is required when override is enabled' : false }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-base font-semibold">Manual P&L *</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="Enter exact P&L (e.g., -50.00 for loss, 100.00 for profit)"
+                                    className="text-lg font-semibold"
+                                    {...field} 
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Enter the exact profit/loss from your broker statement
+                                </p>
+                              </FormItem>
+                            )}
+                          />
+                        )}
                       </div>
 
                       {/* Additional Info */}
