@@ -465,13 +465,13 @@ export function CalendarHeatmap() {
     
     if (pnl > 0) {
       // Use theme profit color with different opacities for intensity
-      return 'border-2 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer'
+      return 'border-2 shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer'
     } else if (pnl < 0) {
       // Use theme loss color
-      return 'border-2 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer'
+      return 'border-2 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer'
     }
     
-    return 'bg-gray-400 border-gray-300/50 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer' // Breakeven
+    return 'bg-gray-400 border-gray-300/50 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer' // Breakeven
   }
   
   const getPnLStyle = (pnl: number, trades: number) => {
@@ -928,9 +928,9 @@ export function CalendarHeatmap() {
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 rounded-md shadow-sm group-hover:scale-110 transition-transform" style={{backgroundColor: themeColors.profit}}></div>
+                <div className="w-3 h-3 rounded-md shadow-sm " style={{backgroundColor: themeColors.profit}}></div>
                 <span className="font-medium text-muted-foreground group-hover:transition-colors" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
-                <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform" style={{
+                <Badge variant="outline" className="text-xs " style={{
                   color: themeColors.profit, 
                   borderColor: themeColors.profit,
                   backgroundColor: `${themeColors.profit}15`
@@ -939,9 +939,9 @@ export function CalendarHeatmap() {
                 </Badge>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 rounded-md shadow-sm group-hover:scale-110 transition-transform" style={{backgroundColor: themeColors.loss}}></div>
+                <div className="w-3 h-3 rounded-md shadow-sm " style={{backgroundColor: themeColors.loss}}></div>
                 <span className="font-medium text-muted-foreground transition-colors">Loss Days</span>
-                <Badge variant="outline" className="text-xs group-hover:scale-105 transition-transform" style={{
+                <Badge variant="outline" className="text-xs " style={{
                   color: themeColors.loss,
                   borderColor: themeColors.loss,
                   backgroundColor: `${themeColors.loss}15`
@@ -950,11 +950,11 @@ export function CalendarHeatmap() {
                 </Badge>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 bg-gray-400 rounded-md shadow-sm group-hover:scale-110 transition-transform"></div>
+                <div className="w-3 h-3 bg-gray-400 rounded-md shadow-sm "></div>
                 <span className="font-medium text-muted-foreground group-hover:text-gray-600 transition-colors">Breakeven</span>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 bg-muted/20 rounded-md border border-muted/30 group-hover:scale-110 transition-transform"></div>
+                <div className="w-3 h-3 bg-muted/20 rounded-md border border-muted/30 "></div>
                 <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">No Trading</span>
               </div>
               

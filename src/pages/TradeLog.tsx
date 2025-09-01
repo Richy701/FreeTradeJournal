@@ -1886,7 +1886,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(trade)}
-                              className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-all duration-200 hover:scale-110"
+                              className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-all duration-200 hover:shadow-md"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -1894,7 +1894,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(trade.id)}
-                              className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-all duration-200 hover:scale-110"
+                              className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-all duration-200 hover:shadow-md"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
