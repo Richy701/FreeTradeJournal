@@ -308,18 +308,18 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-6">
+            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
-                className="flex-1 h-12 rounded-xl font-medium"
+                className="flex-1 h-12 rounded-xl font-medium min-w-0"
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="mr-2 h-4 w-4" />
                 Back
               </Button>
               <Button 
                 onClick={handleNext} 
-                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg min-w-0"
                 disabled={!data.experience || !data.riskTolerance}
               >
                 Continue
@@ -430,18 +430,18 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-6">
+            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
-                className="flex-1 h-12 rounded-xl font-medium"
+                className="flex-1 h-12 rounded-xl font-medium min-w-0"
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="mr-2 h-4 w-4" />
                 Back
               </Button>
               <Button 
                 onClick={handleNext} 
-                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg min-w-0"
                 disabled={!data.accountSize || !data.currency || !data.timezone}
               >
                 Continue
@@ -793,18 +793,18 @@ export default function Onboarding() {
               )}
             </div>
 
-            <div className="flex gap-4 pt-6">
+            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
-                className="flex-1 h-12 rounded-xl font-medium"
+                className="flex-1 h-12 rounded-xl font-medium min-w-0"
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="mr-2 h-4 w-4" />
                 Back
               </Button>
               <Button 
                 onClick={handleNext} 
-                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg min-w-0"
                 disabled={!data.currentBalance || data.currentBalance.trim() === '' || parseFloat(data.currentBalance) <= 0}
               >
                 Continue
@@ -852,18 +852,18 @@ export default function Onboarding() {
               ))}
             </div>
 
-            <div className="flex gap-4 pt-6">
+            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
-                className="flex-1 h-12 rounded-xl font-medium"
+                className="flex-1 h-12 rounded-xl font-medium min-w-0"
               >
                 <FontAwesomeIcon icon={faArrowLeft} className="mr-2 h-4 w-4" />
                 Back
               </Button>
               <Button 
                 onClick={handleNext} 
-                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+                className="flex-1 h-12 rounded-xl font-medium bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg min-w-0"
                 disabled={!data.tradingGoals?.length}
               >
                 Continue
@@ -916,7 +916,7 @@ export default function Onboarding() {
         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
       
-      <div className="w-full max-w-2xl space-y-8 relative">
+      <div className="w-full max-w-2xl space-y-8 relative min-w-0">
         {/* Logo and brand */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -977,17 +977,17 @@ export default function Onboarding() {
 
         {/* Content card with modern design */}
         <Card className="border-0 shadow-2xl bg-background/80 backdrop-blur-xl rounded-3xl overflow-hidden">
-          <CardHeader className="pb-6 pt-8 px-8">
+          <CardHeader className="pb-6 pt-6 sm:pt-8 px-4 sm:px-8">
             <div className="text-center space-y-3">
-              <CardTitle className="text-2xl font-bold text-foreground">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
                 {STEPS[currentStep - 1]?.title}
               </CardTitle>
-              <CardDescription className="text-base text-muted-foreground max-w-md mx-auto">
+              <CardDescription className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
                 {STEPS[currentStep - 1]?.description}
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className={`px-8 pb-8 ${stepAnimation}`}>
+          <CardContent className={`px-4 sm:px-8 pb-6 sm:pb-8 ${stepAnimation}`}>
             {renderStepContent()}
           </CardContent>
         </Card>
