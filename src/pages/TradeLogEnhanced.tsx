@@ -43,6 +43,7 @@ interface Trade {
   tags?: string[]
   screenshots?: string[]
   market?: 'forex' | 'futures' | 'indices'
+  propFirm?: string
 }
 
 interface TradeFormData {
@@ -62,6 +63,7 @@ interface TradeFormData {
   strategy?: string
   market?: 'forex' | 'futures' | 'indices'
   tags?: string[]
+  propFirm?: string
 }
 
 // Enhanced filter state
@@ -73,6 +75,7 @@ interface FilterState {
   profitLoss: string
   dateRange: string
   symbol: string
+  propFirm: string
 }
 
 export default function TradeLogEnhanced() {
@@ -100,7 +103,8 @@ export default function TradeLogEnhanced() {
     side: 'all',
     profitLoss: 'all',
     dateRange: 'all',
-    symbol: 'all'
+    symbol: 'all',
+    propFirm: 'all'
   });
 
   const [csvUploadState, setCsvUploadState] = useState({
@@ -212,6 +216,11 @@ export default function TradeLogEnhanced() {
       filtered = filtered.filter(trade => trade.symbol === filters.symbol);
     }
 
+    // Prop firm filter
+    if (filters.propFirm !== 'all') {
+      filtered = filtered.filter(trade => trade.propFirm === filters.propFirm);
+    }
+
     // Sort
     filtered.sort((a, b) => {
       const aVal = a[sortBy];
@@ -257,7 +266,8 @@ export default function TradeLogEnhanced() {
       side: 'all',
       profitLoss: 'all',
       dateRange: 'all',
-      symbol: 'all'
+      symbol: 'all',
+      propFirm: 'all'
     });
   };
 

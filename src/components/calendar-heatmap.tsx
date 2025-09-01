@@ -1,11 +1,13 @@
 import { useMemo, useState, useEffect } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight, faBookOpen, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { Link } from "react-router-dom"
+import { Plus } from "lucide-react"
 import {
   Popover,
   PopoverContent,
@@ -18,6 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog"
+import { Input } from "./ui/input"
+import { Label } from "./ui/label"
+import { Textarea } from "./ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 
 // Define interfaces
 interface Trade {
@@ -74,6 +87,50 @@ export function CalendarHeatmap() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [isAnimating, setIsAnimating] = useState(false)
+  const [isTradeDialogOpen, setIsTradeDialogOpen] = useState(false)
+  const [selectedDateForTrade, setSelectedDateForTrade] = useState<Date | null>(null)
+  const [journalNote, setJournalNote] = useState("")
+  const [journalTitle, setJournalTitle] = useState("")
+  const [journalMood, setJournalMood] = useState<'bullish' | 'bearish' | 'neutral'>('neutral')
+  const [journalTags, setJournalTags] = useState("")
+  const [selectedTradeId, setSelectedTradeId] = useState("none")
+  const [selectedDateEntries, setSelectedDateEntries] = useState<any[]>([])
+  const [tradeForm, setTradeForm] = useState({
+    symbol: "",
+    side: "long" as "long" | "short",
+    market: "forex" as "forex" | "futures" | "indices",
+    entryPrice: "",
+    exitPrice: "",
+    lotSize: "",
+    pnl: "",
+    strategy: "",
+    notes: "",
+    propFirm: ""
+  })
+
+  const propFirms = [
+    "E8 Markets",
+    "Funded FX", 
+    "FundingPips",
+    "TopStep",
+    "FTMO",
+    "Alpha Capital Group",
+    "Apex Trader Funding",
+    "The5ers"
+  ]
+
+  const getInstrumentsByMarket = (market: string) => {
+    switch (market) {
+      case 'forex':
+        return ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP'];
+      case 'futures':
+        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'SI', 'ZB', 'ZN', 'ZF'];
+      case 'indices':
+        return ['SPX500', 'NAS100', 'US30', 'GER40', 'UK100', 'FRA40', 'JPN225', 'AUS200'];
+      default:
+        return [];
+    }
+  }
 
   // Get trades from localStorage
   const trades = useMemo(() => {
@@ -91,6 +148,29 @@ export function CalendarHeatmap() {
       return []
     }
   }, [])
+
+  // Get journal entries from localStorage (now supports multiple entries per day)
+  const journalEntries = useMemo(() => {
+    const savedEntries = localStorage.getItem('journalEntries')
+    if (!savedEntries) return {}
+    
+    try {
+      const entries = JSON.parse(savedEntries)
+      const journalByDate = {}
+      
+      entries.forEach((entry: any) => {
+        const dateKey = new Date(entry.date).toISOString().split('T')[0]
+        if (!journalByDate[dateKey]) {
+          journalByDate[dateKey] = []
+        }
+        journalByDate[dateKey].push(entry)
+      })
+      
+      return journalByDate
+    } catch {
+      return {}
+    }
+  }, [isTradeDialogOpen]) // Re-check when modal closes
 
   // Navigation functions with animation
   const navigateWithAnimation = (callback: () => void) => {
@@ -141,6 +221,151 @@ export function CalendarHeatmap() {
       setSelectedMonth(month)
       setSelectedYear(year)
     })
+  }
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDateForTrade(date)
+    
+    // Load existing journal entries for this date
+    const savedEntries = localStorage.getItem('journalEntries')
+    let dayEntries = []
+    if (savedEntries) {
+      try {
+        const entries = JSON.parse(savedEntries)
+        const dateKey = date.toISOString().split('T')[0]
+        dayEntries = entries.filter((entry: any) => {
+          const entryDate = new Date(entry.date).toISOString().split('T')[0]
+          return entryDate === dateKey
+        })
+      } catch {
+        dayEntries = []
+      }
+    }
+    setSelectedDateEntries(dayEntries)
+    
+    // Reset form for new journal entry (always start fresh)
+    setJournalNote("")
+    setJournalTitle(`Trading Day - ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)
+    setJournalMood('neutral')
+    setJournalTags("")
+    setSelectedTradeId("none")
+    
+    setIsTradeDialogOpen(true)
+  }
+
+  const handleSaveJournal = () => {
+    if (!selectedDateForTrade || !journalNote.trim()) return
+    
+    const savedEntries = localStorage.getItem('journalEntries')
+    let entries = []
+    
+    if (savedEntries) {
+      try {
+        entries = JSON.parse(savedEntries)
+      } catch {
+        entries = []
+      }
+    }
+    
+    // Always create a new journal entry (no longer replace existing ones)
+    const journalEntry = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Ensure unique ID
+      title: journalTitle.trim(),
+      content: journalNote.trim(),
+      date: selectedDateForTrade,
+      tags: journalTags.split(',').map(tag => tag.trim()).filter(Boolean),
+      mood: journalMood,
+      entryType: 'general' as const,
+      tradeId: selectedTradeId === "none" ? undefined : selectedTradeId || undefined
+    }
+    
+    // Add new entry to the beginning of the array
+    entries.unshift(journalEntry)
+    
+    localStorage.setItem('journalEntries', JSON.stringify(entries))
+    
+    // Reset form
+    setJournalNote("")
+    setJournalTitle("")
+    setJournalMood('neutral')
+    setJournalTags("")
+    setSelectedTradeId("none")
+    setIsTradeDialogOpen(false)
+    
+    // Update the selected date entries to reflect the new entry
+    const dateKey = selectedDateForTrade.toISOString().split('T')[0]
+    const updatedDayEntries = [...(journalEntries[dateKey] || []), journalEntry]
+    setSelectedDateEntries(updatedDayEntries)
+    
+    // Show success feedback
+    const feedback = document.createElement('div')
+    feedback.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-in slide-in-from-right-full duration-300'
+    feedback.textContent = '✓ Journal entry saved successfully!'
+    document.body.appendChild(feedback)
+    
+    setTimeout(() => {
+      feedback.classList.add('animate-out', 'slide-out-to-right-full')
+      setTimeout(() => document.body.removeChild(feedback), 300)
+    }, 2000)
+  }
+
+  const handleSaveTrade = () => {
+    if (!selectedDateForTrade || !tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
+    
+    const savedTrades = localStorage.getItem('trades')
+    let trades = []
+    
+    if (savedTrades) {
+      try {
+        trades = JSON.parse(savedTrades)
+      } catch {
+        trades = []
+      }
+    }
+    
+    const entryPrice = parseFloat(tradeForm.entryPrice)
+    const exitPrice = parseFloat(tradeForm.exitPrice)
+    const lotSize = parseFloat(tradeForm.lotSize) || 1
+    const pnl = parseFloat(tradeForm.pnl) || ((exitPrice - entryPrice) * lotSize * (tradeForm.side === 'long' ? 1 : -1))
+    
+    const newTrade = {
+      id: Date.now().toString(),
+      symbol: tradeForm.symbol.toUpperCase(),
+      side: tradeForm.side,
+      entryPrice,
+      exitPrice,
+      lotSize,
+      entryTime: selectedDateForTrade,
+      exitTime: selectedDateForTrade,
+      spread: 0,
+      commission: 0,
+      swap: 0,
+      pnl,
+      pnlPercentage: entryPrice > 0 ? (pnl / (entryPrice * lotSize)) * 100 : 0,
+      notes: tradeForm.notes,
+      strategy: tradeForm.strategy,
+      market: tradeForm.market,
+      propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm
+    }
+    
+    trades.unshift(newTrade)
+    localStorage.setItem('trades', JSON.stringify(trades))
+    
+    // Reset form
+    setTradeForm({
+      symbol: "",
+      side: "long",
+      market: "forex",
+      entryPrice: "",
+      exitPrice: "",
+      lotSize: "",
+      pnl: "",
+      strategy: "",
+      notes: "",
+      propFirm: "none"
+    })
+    
+    setIsTradeDialogOpen(false)
   }
 
   // Keyboard navigation
@@ -430,7 +655,7 @@ export function CalendarHeatmap() {
                 </div>
               </div>
               <CardDescription className="text-muted-foreground font-medium">
-                Daily performance overview • Use ← → keys to navigate • Click days for details
+                Daily performance overview • Use ← → keys to navigate • Click days to add trades or view details
               </CardDescription>
             </div>
           </div>
@@ -478,7 +703,7 @@ export function CalendarHeatmap() {
       <CardContent className="pt-4">
         <div className="space-y-3">
           {/* Day headers */}
-          <div className="grid grid-cols-7 gap-4 mb-3">
+          <div className="grid grid-cols-7 gap-1 sm:gap-4 mb-3">
             {DAYS.map((day) => (
               <div key={day} className="text-center text-sm font-semibold text-muted-foreground py-2">
                 {day}
@@ -494,7 +719,7 @@ export function CalendarHeatmap() {
             {weeks.map((week, weekIndex) => (
               <div 
                 key={`${currentDate.getFullYear()}-${currentDate.getMonth()}-${weekIndex}`} 
-                className="grid grid-cols-7 gap-4"
+                className="grid grid-cols-7 gap-1 sm:gap-4"
                 style={{
                   animationDelay: `${weekIndex * 50}ms`
                 }}
@@ -502,16 +727,19 @@ export function CalendarHeatmap() {
                 {week.map((day) => {
                   const isToday = day.date.toDateString() === today.toDateString()
                   const hasData = day.trades > 0
+                  const dateKey = day.date.toISOString().split('T')[0]
+                  const hasJournal = journalEntries[dateKey] && journalEntries[dateKey].length > 0
                   
                   return (
                     <Popover key={day.date.toISOString()} open={isPopoverOpen && selectedDay?.date.toISOString() === day.date.toISOString()}>
                       <PopoverTrigger asChild>
                         <div
                           className={cn(
-                            "h-20 rounded-xl relative overflow-hidden",
+                            "h-16 sm:h-20 rounded-lg sm:rounded-xl relative overflow-hidden",
                             getPnLColor(day.pnl, day.trades),
                             day.isCurrentMonth ? "opacity-100" : "opacity-50",
-                            hasData && "hover:z-10"
+                            hasData && "hover:z-10",
+                            day.isCurrentMonth && "cursor-pointer"
                           )}
                           style={{
                             ...getPnLStyle(day.pnl, day.trades),
@@ -529,6 +757,11 @@ export function CalendarHeatmap() {
                           onMouseLeave={() => {
                             setIsPopoverOpen(false)
                             setSelectedDay(null)
+                          }}
+                          onClick={() => {
+                            if (day.isCurrentMonth) {
+                              handleDateClick(day.date)
+                            }
                           }}
                         >
                           {/* Subtle gradient overlay for depth */}
@@ -566,10 +799,31 @@ export function CalendarHeatmap() {
                           {isToday && (
                             <div className="absolute top-1 right-1 w-2 h-2 rounded-full shadow-sm" style={{backgroundColor: themeColors.primary}} />
                           )}
+                          
+                          {/* Add trade indicator for empty dates */}
+                          {!hasData && day.isCurrentMonth && (
+                            <div className="absolute bottom-1 right-1 opacity-0 hover:opacity-100 transition-opacity">
+                              <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+                                <Plus className="h-2 w-2 text-primary" />
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Journal indicator with count */}
+                          {hasJournal && (
+                            <div className="absolute top-1 left-1 flex items-center gap-1">
+                              <FontAwesomeIcon icon={faBookOpen} className="h-3 w-3 text-slate-800 dark:text-white drop-shadow-lg" />
+                              {journalEntries[dateKey].length > 1 && (
+                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center drop-shadow-lg">
+                                  {journalEntries[dateKey].length}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </PopoverTrigger>
                       {hasData && (
-                        <PopoverContent className="w-64 p-0 border-0 shadow-xl" side="top" align="center">
+                        <PopoverContent className="w-[90vw] max-w-64 p-0 border-0 shadow-xl" side="top" align="center">
                           <div className="bg-card/95 backdrop-blur-md rounded-lg border p-4 space-y-3">
                             <div className="flex items-center justify-between pb-2 border-b border-border/50">
                               <div className="flex items-center gap-2">
@@ -726,6 +980,365 @@ export function CalendarHeatmap() {
           </div>
         </div>
       </CardContent>
+      
+      {/* Trade Entry & Journal Modal */}
+      <Dialog open={isTradeDialogOpen} onOpenChange={setIsTradeDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {selectedDateForTrade?.toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'long', 
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </span>
+              {selectedDateEntries.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedDateEntries.length} {selectedDateEntries.length === 1 ? 'entry' : 'entries'}
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              Add trades or journal notes for this trading day
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="journal" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="journal">Journal</TabsTrigger>
+              <TabsTrigger value="trade">Add Trade</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="journal" className="space-y-4">
+              {/* Show existing journal entries for this day */}
+              {selectedDateEntries.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <FontAwesomeIcon icon={faBookOpen} className="h-4 w-4" />
+                    Existing Journal Entries ({selectedDateEntries.length})
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {selectedDateEntries.map((entry: any, index: number) => (
+                      <div key={entry.id} className="p-3 rounded-md bg-muted/20 border border-border/30">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="text-sm font-medium">{entry.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {entry.mood === 'bullish' ? '📈' : entry.mood === 'bearish' ? '📉' : '😐'} {entry.mood}
+                            </Badge>
+                            {entry.tradeId && (
+                              <Badge variant="secondary" className="text-xs">Trade Linked</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{entry.content}</p>
+                        {entry.tags && entry.tags.length > 0 && (
+                          <div className="flex gap-1 mt-2">
+                            {entry.tags.slice(0, 3).map((tag: string) => (
+                              <Badge key={tag} variant="outline" className="text-[10px] px-1 py-0.5">{tag}</Badge>
+                            ))}
+                            {entry.tags.length > 3 && (
+                              <Badge variant="outline" className="text-[10px] px-1 py-0.5">+{entry.tags.length - 3}</Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="h-px bg-border/30 my-4"></div>
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                  Add New Journal Entry
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="journal-title">Entry Title</Label>
+                  <Input
+                    id="journal-title"
+                    placeholder="What's your focus for this trading day?"
+                    value={journalTitle}
+                    onChange={(e) => setJournalTitle(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Link to Trade (Optional)</Label>
+                    <Select value={selectedTradeId} onValueChange={(value) => {
+                      setSelectedTradeId(value)
+                      
+                      // Auto-fill market sentiment based on trade side
+                      if (value !== "none") {
+                        const selectedTrade = trades.find(trade => trade.id === value)
+                        if (selectedTrade) {
+                          setJournalMood(selectedTrade.side === 'long' ? 'bullish' : 'bearish')
+                        }
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a trade to analyze..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No trade linked</SelectItem>
+                        {trades.map((trade) => {
+                          const isWin = trade.pnl > 0;
+                          return (
+                            <SelectItem key={trade.id} value={trade.id}>
+                              {trade.symbol} {trade.side.toUpperCase()} • {isWin ? '+' : ''}${trade.pnl.toFixed(2)} • {trade.entryTime.toLocaleDateString()}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Market Sentiment</Label>
+                      <Select value={journalMood} onValueChange={(value: 'bullish' | 'bearish' | 'neutral') => setJournalMood(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="neutral">😐 Neutral</SelectItem>
+                          <SelectItem value="bullish">📈 Bullish (Long)</SelectItem>
+                          <SelectItem value="bearish">📉 Bearish (Short)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="journal-tags">Tags</Label>
+                      <Input
+                        id="journal-tags"
+                        placeholder="market-analysis, strategy, etc."
+                        value={journalTags}
+                        onChange={(e) => setJournalTags(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="journal-content">Trading Notes</Label>
+                  <Textarea
+                    id="journal-content"
+                    placeholder="Record your thoughts, market observations, lessons learned, trading plan, or anything noteworthy about this day..."
+                    value={journalNote}
+                    onChange={(e) => setJournalNote(e.target.value)}
+                    className="min-h-[120px]"
+                  />
+                </div>
+                
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <Link to="/journal" onClick={() => setIsTradeDialogOpen(false)}>
+                    <Button variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Full Journal Features
+                    </Button>
+                  </Link>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveJournal} disabled={!journalNote.trim() || !journalTitle.trim()}>
+                      Save Journal Entry
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="trade" className="space-y-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Market</Label>
+                    <Select value={tradeForm.market} onValueChange={(value: "forex" | "futures" | "indices") => {
+                      setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="forex">💱 Forex</SelectItem>
+                        <SelectItem value="futures">📊 Futures</SelectItem>
+                        <SelectItem value="indices">📈 Indices</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Side</Label>
+                    <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="long">📈 Long (Buy)</SelectItem>
+                        <SelectItem value="short">📉 Short (Sell)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="trade-symbol">Symbol</Label>
+                    <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select instrument" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
+                          <SelectItem key={instrument} value={instrument}>
+                            {instrument}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Prop Firm</Label>
+                    <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Optional" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {propFirms.map((firm) => (
+                          <SelectItem key={firm} value={firm}>
+                            {firm}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="trade-entry">Entry Price</Label>
+                    <Input
+                      id="trade-entry"
+                      type="number"
+                      step="0.00001"
+                      placeholder="1.08450"
+                      value={tradeForm.entryPrice}
+                      onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="trade-exit">Exit Price</Label>
+                    <Input
+                      id="trade-exit"
+                      type="number"
+                      step="0.00001"
+                      placeholder="1.08650"
+                      value={tradeForm.exitPrice}
+                      onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="trade-size">Lot Size</Label>
+                    <Input
+                      id="trade-size"
+                      type="number"
+                      step="0.01"
+                      placeholder="1.00"
+                      value={tradeForm.lotSize}
+                      onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="trade-pnl">P&L (optional)</Label>
+                    <Input
+                      id="trade-pnl"
+                      type="number"
+                      step="0.01"
+                      placeholder="Auto-calculated"
+                      value={tradeForm.pnl}
+                      onChange={(e) => setTradeForm(prev => ({ ...prev, pnl: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="trade-strategy">Strategy</Label>
+                  <Input
+                    id="trade-strategy"
+                    placeholder="Breakout, Support/Resistance, etc."
+                    value={tradeForm.strategy}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="trade-notes">Notes</Label>
+                  <Textarea
+                    id="trade-notes"
+                    placeholder="Trade reasoning, market conditions, etc."
+                    value={tradeForm.notes}
+                    onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => {
+                      // Save form data to pre-fill Trade Log
+                      const prefilledData = {
+                        symbol: tradeForm.symbol,
+                        side: tradeForm.side,
+                        market: tradeForm.market,
+                        entryPrice: tradeForm.entryPrice,
+                        exitPrice: tradeForm.exitPrice,
+                        lotSize: tradeForm.lotSize,
+                        strategy: tradeForm.strategy,
+                        notes: tradeForm.notes,
+                        propFirm: tradeForm.propFirm,
+                        entryTime: selectedDateForTrade,
+                        exitTime: selectedDateForTrade
+                      };
+                      localStorage.setItem('prefilledTradeForm', JSON.stringify(prefilledData));
+                      setIsTradeDialogOpen(false);
+                      window.location.href = '/trades';
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Full Trade Journal
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSaveTrade} 
+                      disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                    >
+                      Save Trade
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

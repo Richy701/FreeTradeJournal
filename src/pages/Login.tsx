@@ -96,11 +96,6 @@ export default function Login() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo/Brand */}
         <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="p-3 rounded-xl bg-primary/10">
-              <FontAwesomeIcon icon={faChartLine} className="h-8 w-8 text-primary" />
-            </div>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
           <p className="text-muted-foreground/85">Sign in to your TradeVault account</p>
         </div>

@@ -85,6 +85,26 @@ export default function Journal() {
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade'
   });
 
+  // Load entries from localStorage
+  useEffect(() => {
+    const loadEntries = () => {
+      try {
+        const savedEntries = localStorage.getItem('journalEntries');
+        if (savedEntries) {
+          const parsedEntries = JSON.parse(savedEntries).map((entry: any) => ({
+            ...entry,
+            date: new Date(entry.date)
+          }));
+          setEntries(parsedEntries);
+        }
+      } catch (error) {
+        console.error('Error loading journal entries:', error);
+      }
+    };
+
+    loadEntries();
+  }, []);
+
   // Load trades from localStorage with loading state
   useEffect(() => {
     const loadTrades = async () => {
@@ -98,6 +118,7 @@ export default function Journal() {
             exitTime: new Date(trade.exitTime)
           }));
           setTrades(parsedTrades);
+          
         }
       } catch (error) {
         console.error('Error loading trades:', error);
@@ -131,14 +152,18 @@ export default function Journal() {
           screenshots: uploadedImages.length > 0 ? uploadedImages : undefined
         };
 
-        setEntries(prev => prev.map(entry => 
+        const updatedEntries = entries.map(entry => 
           entry.id === editingEntry.id ? updatedEntry : entry
-        ));
+        );
+        setEntries(updatedEntries);
+        
+        // Save to localStorage
+        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
         setEditingEntry(null);
       } else {
-        // Create new entry
+        // Create new entry with unique ID
         const entry: JournalEntry = {
-          id: Date.now().toString(),
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           title: newEntry.title,
           content: newEntry.content,
           date: new Date(),
@@ -151,6 +176,10 @@ export default function Journal() {
         };
 
         setEntries([entry, ...entries]);
+        
+        // Save to localStorage
+        const updatedEntries = [entry, ...entries];
+        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
       }
 
       setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
@@ -294,7 +323,9 @@ export default function Journal() {
 
   const deleteEntry = (entryId: string) => {
     if (confirm('Are you sure you want to delete this journal entry?')) {
-      setEntries(prev => prev.filter(entry => entry.id !== entryId));
+      const updatedEntries = entries.filter(entry => entry.id !== entryId);
+      setEntries(updatedEntries);
+      localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
     }
   };
 
@@ -735,40 +766,40 @@ export default function Journal() {
                   <CardContent className="pt-0 space-y-4">
                     {linkedTrade && (
                       <div className="p-3 rounded-md bg-muted/20 border border-border/30">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-muted-foreground">
-                            Linked Trade: {linkedTrade.symbol}
-                          </h4>
-                          <Badge 
-                            variant="outline"
-                            className={`text-xs font-medium ${
-                              linkedTrade.pnl > 0 
-                                ? 'text-green-700 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950' 
-                                : 'text-red-700 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950'
-                            }`}
-                          >
-                            {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
-                          </Badge>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-muted-foreground">
+                              Trade Details: {linkedTrade.symbol}
+                            </h4>
+                            <Badge 
+                              variant="outline"
+                              className={`text-xs font-medium ${
+                                linkedTrade.pnl > 0 
+                                  ? 'text-green-700 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950' 
+                                  : 'text-red-700 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950'
+                              }`}
+                            >
+                              {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground/70">Side</span>
+                              <div className="font-medium text-foreground">{linkedTrade.side.toUpperCase()}</div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground/70">Entry</span>
+                              <div className="font-medium text-foreground">{linkedTrade.entryPrice}</div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground/70">Exit</span>
+                              <div className="font-medium text-foreground">{linkedTrade.exitPrice}</div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground/70">R:R</span>
+                              <div className="font-medium text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground/70">Side</span>
-                            <div className="font-medium text-foreground">{linkedTrade.side.toUpperCase()}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground/70">Entry</span>
-                            <div className="font-medium text-foreground">{linkedTrade.entryPrice}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground/70">Exit</span>
-                            <div className="font-medium text-foreground">{linkedTrade.exitPrice}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground/70">R:R</span>
-                            <div className="font-medium text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</div>
-                          </div>
-                        </div>
-                      </div>
                     )}
                     
                     <div className="p-4 rounded-lg bg-muted/30 border border-border/20">

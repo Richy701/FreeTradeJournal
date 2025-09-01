@@ -8,12 +8,123 @@ import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FeedbackButton } from "@/components/ui/feedback-button"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function Dashboard() {
   const { themeColors } = useThemePresets()
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
+  const [tradeForm, setTradeForm] = useState({
+    symbol: "",
+    side: "long" as "long" | "short",
+    market: "forex" as "forex" | "futures" | "indices",
+    entryPrice: "",
+    exitPrice: "",
+    lotSize: "",
+    pnl: "",
+    strategy: "",
+    notes: "",
+    propFirm: "none"
+  })
+
+  const propFirms = [
+    "E8 Markets", "Funded FX", "FundingPips", "TopStep",
+    "FTMO", "Alpha Capital Group", "Apex Trader Funding", "The5ers"
+  ]
+
+  const getInstrumentsByMarket = (market: string) => {
+    switch (market) {
+      case 'forex':
+        return ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP'];
+      case 'futures':
+        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'SI', 'ZB', 'ZN', 'ZF'];
+      case 'indices':
+        return ['SPX500', 'NAS100', 'US30', 'GER40', 'UK100', 'FRA40', 'JPN225', 'AUS200'];
+      default:
+        return [];
+    }
+  }
+
+  const handleSaveTrade = () => {
+    if (!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
+    
+    const savedTrades = localStorage.getItem('trades')
+    let trades = []
+    
+    if (savedTrades) {
+      try {
+        trades = JSON.parse(savedTrades)
+      } catch {
+        trades = []
+      }
+    }
+    
+    const entryPrice = parseFloat(tradeForm.entryPrice)
+    const exitPrice = parseFloat(tradeForm.exitPrice)
+    const lotSize = parseFloat(tradeForm.lotSize) || 1
+    const pnl = parseFloat(tradeForm.pnl) || ((exitPrice - entryPrice) * lotSize * (tradeForm.side === 'long' ? 1 : -1))
+    
+    const newTrade = {
+      id: Date.now().toString(),
+      symbol: tradeForm.symbol.toUpperCase(),
+      side: tradeForm.side,
+      entryPrice,
+      exitPrice,
+      lotSize,
+      entryTime: new Date(),
+      exitTime: new Date(),
+      spread: 0,
+      commission: 0,
+      swap: 0,
+      pnl,
+      pnlPercentage: entryPrice > 0 ? (pnl / (entryPrice * lotSize)) * 100 : 0,
+      notes: tradeForm.notes,
+      strategy: tradeForm.strategy,
+      market: tradeForm.market,
+      propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm
+    }
+    
+    trades.unshift(newTrade)
+    localStorage.setItem('trades', JSON.stringify(trades))
+    
+    // Reset form
+    setTradeForm({
+      symbol: "",
+      side: "long",
+      market: "forex",
+      entryPrice: "",
+      exitPrice: "",
+      lotSize: "",
+      pnl: "",
+      strategy: "",
+      notes: "",
+      propFirm: "none"
+    })
+    
+    setIsTradeModalOpen(false)
+  }
 
   // Generate personalized greeting
   const getGreeting = () => {
@@ -148,6 +259,174 @@ export default function Dashboard() {
                   Track your performance and analyze your trades
                 </p>
               </div>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="flex items-center gap-3">
+              <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Trade
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add Trade</DialogTitle>
+                    <DialogDescription>
+                      Quick trade entry for your dashboard
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Market</Label>
+                        <Select value={tradeForm.market} onValueChange={(value: "forex" | "futures" | "indices") => {
+                          setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="forex">💱 Forex</SelectItem>
+                            <SelectItem value="futures">📊 Futures</SelectItem>
+                            <SelectItem value="indices">📈 Indices</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Side</Label>
+                        <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="long">📈 Long (Buy)</SelectItem>
+                            <SelectItem value="short">📉 Short (Sell)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Symbol</Label>
+                        <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select instrument" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
+                              <SelectItem key={instrument} value={instrument}>
+                                {instrument}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Prop Firm</Label>
+                        <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Optional" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {propFirms.map((firm) => (
+                              <SelectItem key={firm} value={firm}>
+                                {firm}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="entry-price">Entry Price</Label>
+                        <Input
+                          id="entry-price"
+                          type="number"
+                          step="0.00001"
+                          placeholder="1.08450"
+                          value={tradeForm.entryPrice}
+                          onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="exit-price">Exit Price</Label>
+                        <Input
+                          id="exit-price"
+                          type="number"
+                          step="0.00001"
+                          placeholder="1.08650"
+                          value={tradeForm.exitPrice}
+                          onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="lot-size">Lot Size</Label>
+                        <Input
+                          id="lot-size"
+                          type="number"
+                          step="0.01"
+                          placeholder="1.00"
+                          value={tradeForm.lotSize}
+                          onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="trade-strategy">Strategy</Label>
+                        <Input
+                          id="trade-strategy"
+                          placeholder="Breakout, Support/Resistance, etc."
+                          value={tradeForm.strategy}
+                          onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="trade-notes">Notes</Label>
+                      <Textarea
+                        id="trade-notes"
+                        placeholder="Trade reasoning, market conditions, etc."
+                        value={tradeForm.notes}
+                        onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
+                        className="min-h-[80px]"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t gap-3 sm:gap-0">
+                      <Link to="/trades" onClick={() => setIsTradeModalOpen(false)}>
+                        <Button variant="outline" className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Full Trade Journal
+                        </Button>
+                      </Link>
+                      <div className="flex gap-2 w-full sm:w-auto justify-end">
+                        <Button variant="outline" onClick={() => setIsTradeModalOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleSaveTrade} 
+                          disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                        >
+                          Save Trade
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>

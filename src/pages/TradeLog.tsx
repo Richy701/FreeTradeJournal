@@ -61,6 +61,7 @@ interface Trade {
   useManualPnL?: boolean
   manualPnL?: number
   customMultiplier?: number
+  propFirm?: string
 }
 
 interface TradeFormData {
@@ -83,6 +84,7 @@ interface TradeFormData {
   useManualPnL?: boolean
   manualPnL?: number
   customMultiplier?: number
+  propFirm?: string
 }
 
 export default function TradeLog() {
@@ -112,6 +114,7 @@ export default function TradeLog() {
       strategy: '',
       market: 'forex',
       tags: [],
+      propFirm: '',
     },
     mode: 'onChange',
   });
@@ -412,79 +415,95 @@ export default function TradeLog() {
   };
 
   const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
 
     setCsvUploadState({ isUploading: true });
+    let allImportedTrades: Trade[] = [];
+    let allErrors: string[] = [];
+    let totalSuccessful = 0;
+    let totalFailed = 0;
 
     try {
-      const content = await validateCSVFile(file);
-      const result = parseCSV(content);
-      
-      if (result.success) {
-        // Convert parsed trades to Trade format
-        const importedTrades: Trade[] = result.trades.map((trade, index) => {
-          const tradeFormData: TradeFormData = {
-            symbol: trade.symbol,
-            side: trade.side,
-            entryPrice: parseFloat(trade.entryPrice) || 0,
-            exitPrice: parseFloat(trade.exitPrice) || 0,
-            lotSize: parseFloat(trade.quantity) || 1,
-            entryTime: new Date(trade.date),
-            exitTime: new Date(trade.date),
-            spread: 0,
-            commission: 0,
-            swap: 0,
-            market: 'futures', // Assume futures since your data is MNQU5
-          };
-
-          const { pnl, pnlPercentage, riskReward } = calculatePnL(tradeFormData);
+      // Process each file
+      for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+        const file = files[fileIndex];
+        try {
+          const content = await validateCSVFile(file);
+          const result = parseCSV(content);
           
-          return {
-            id: `import-${Date.now()}-${index}`,
-            ...tradeFormData,
-            pnl: parseFloat(trade.pnl) || pnl, // Use actual PnL from CSV if available
-            pnlPercentage,
-            riskReward,
-            entryTime: new Date(trade.date),
-            exitTime: new Date(trade.date),
-            notes: `Imported from CSV`,
-            strategy: '',
-          };
-        });
-        
-        // Add imported trades to existing trades
-        saveTrades([...trades, ...importedTrades]);
-        
-        // Show success toast
-        toast.success('CSV Import Successful!', {
-          description: `Imported ${result.summary.successfulParsed} trades${
-            result.summary.dateRange 
-              ? ` from ${result.summary.dateRange.earliest} to ${result.summary.dateRange.latest}`
-              : ''
+          if (result.success) {
+            // Convert parsed trades to Trade format
+            const importedTrades: Trade[] = result.trades.map((trade, index) => {
+              const tradeFormData: TradeFormData = {
+                symbol: trade.symbol,
+                side: trade.side,
+                entryPrice: parseFloat(trade.entryPrice) || 0,
+                exitPrice: parseFloat(trade.exitPrice) || 0,
+                lotSize: parseFloat(trade.quantity) || 1,
+                entryTime: new Date(trade.date),
+                exitTime: new Date(trade.date),
+                spread: 0,
+                commission: 0,
+                swap: 0,
+                market: 'futures', // Assume futures since your data is MNQU5
+              };
+
+              const { pnl, pnlPercentage, riskReward } = calculatePnL(tradeFormData);
+              
+              return {
+                id: `import-${Date.now()}-${fileIndex}-${index}`,
+                ...tradeFormData,
+                pnl: parseFloat(trade.pnl) || pnl, // Use actual PnL from CSV if available
+                pnlPercentage,
+                riskReward,
+                entryTime: new Date(trade.date),
+                exitTime: new Date(trade.date),
+                notes: `Imported from ${file.name}`,
+                strategy: '',
+              };
+            });
+            
+            allImportedTrades.push(...importedTrades);
+            totalSuccessful += result.summary.successfulParsed;
+            totalFailed += result.summary.failed;
+            
+          } else {
+            allErrors.push(`${file.name}: ${result.errors.join(', ')}`);
+          }
+        } catch (fileError) {
+          allErrors.push(`${file.name}: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`);
+        }
+      }
+      
+      // Add all imported trades to existing trades
+      if (allImportedTrades.length > 0) {
+        saveTrades([...trades, ...allImportedTrades]);
+      }
+      
+      // Show comprehensive success/error toast
+      if (totalSuccessful > 0) {
+        toast.success(`CSV Import ${allErrors.length > 0 ? 'Partially ' : ''}Successful!`, {
+          description: `Imported ${totalSuccessful} trades from ${files.length} file${files.length > 1 ? 's' : ''}${
+            totalFailed > 0 ? `. ${totalFailed} rows were skipped due to errors.` : ''
           }${
-            result.summary.failed > 0 
-              ? `. ${result.summary.failed} rows were skipped due to errors.`
-              : ''
+            allErrors.length > 0 ? ` Some files had errors.` : ''
           }`,
-          duration: 6000
-        });
-        
-        setCsvUploadState({ isUploading: false });
-        
-      } else {
-        // Show error toast
-        toast.error('CSV Import Failed', {
-          description: result.errors.join('; '),
           duration: 8000
         });
-        setCsvUploadState({ isUploading: false });
+      } else {
+        toast.error('CSV Import Failed', {
+          description: allErrors.length > 0 ? allErrors.slice(0, 2).join('; ') + (allErrors.length > 2 ? '...' : '') : 'No valid trades found in any file',
+          duration: 8000
+        });
       }
+      
+      setCsvUploadState({ isUploading: false });
       
     } catch (error) {
       // Show error toast
       toast.error('Import Error', {
-        description: error instanceof Error ? error.message : 'Failed to parse CSV file',
+        description: error instanceof Error ? error.message : 'Failed to process CSV files',
         duration: 8000
       });
       setCsvUploadState({ isUploading: false });
@@ -740,6 +759,49 @@ export default function TradeLog() {
           setTrades([]);
         }
       }
+
+      // Check for prefilled trade form data
+      const prefilledTradeForm = localStorage.getItem('prefilledTradeForm');
+      if (prefilledTradeForm) {
+        try {
+          const formData = JSON.parse(prefilledTradeForm);
+          
+          // Set form values
+          form.reset({
+            symbol: formData.symbol || '',
+            side: formData.side || 'long',
+            entryPrice: formData.entryPrice || 0,
+            exitPrice: formData.exitPrice || 0,
+            stopLoss: formData.stopLoss,
+            takeProfit: formData.takeProfit,
+            lotSize: formData.lotSize || 1,
+            entryTime: formData.entryTime ? new Date(formData.entryTime) : new Date(),
+            exitTime: formData.exitTime ? new Date(formData.exitTime) : new Date(),
+            spread: formData.spread || 0,
+            commission: formData.commission || 0,
+            swap: formData.swap || 0,
+            notes: formData.notes || '',
+            strategy: formData.strategy || '',
+            market: formData.market || 'forex',
+            tags: formData.tags || [],
+            useManualPnL: formData.useManualPnL || false,
+            manualPnL: formData.manualPnL,
+            customMultiplier: formData.customMultiplier,
+            propFirm: formData.propFirm || '',
+          });
+          
+          // Open the dialog
+          setIsDialogOpen(true);
+          
+          // Clear the prefilled data from localStorage
+          localStorage.removeItem('prefilledTradeForm');
+        } catch (error) {
+          console.error('Error parsing prefilled trade form data:', error);
+          // Clear invalid data
+          localStorage.removeItem('prefilledTradeForm');
+        }
+      }
+      
       setIsLoading(false);
     }, 800);
 
@@ -892,7 +954,7 @@ export default function TradeLog() {
                     </div>
                     
                     {reportType === 'custom' && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-base font-semibold">Start Date</Label>
                           <Input 
@@ -955,7 +1017,7 @@ export default function TradeLog() {
                     Add Trade
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] sm:w-[90vw] max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold">{editingTrade ? 'Edit Trade' : 'Add New Trade'}</DialogTitle>
                     <DialogDescription className="text-base">
@@ -965,7 +1027,7 @@ export default function TradeLog() {
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       {/* Basic Trade Info */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <FormField
                           control={form.control}
                           name="symbol"
@@ -1060,10 +1122,39 @@ export default function TradeLog() {
                             </FormItem>
                           )}
                         />
+                        
+                        <FormField
+                          control={form.control}
+                          name="propFirm"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-semibold">Prop Firm</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="text-lg">
+                                    <SelectValue placeholder="Select prop firm" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  <SelectItem value="E8 Markets">E8 Markets</SelectItem>
+                                  <SelectItem value="Funded FX">Funded FX</SelectItem>
+                                  <SelectItem value="FundingPips">FundingPips</SelectItem>
+                                  <SelectItem value="TopStep">TopStep</SelectItem>
+                                  <SelectItem value="FTMO">FTMO</SelectItem>
+                                  <SelectItem value="Alpha Capital Group">Alpha Capital Group</SelectItem>
+                                  <SelectItem value="Apex Trader Funding">Apex Trader Funding</SelectItem>
+                                  <SelectItem value="The5ers">The5ers</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
 
                       {/* Pricing */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <FormField
                           control={form.control}
                           name="entryPrice"
@@ -1128,7 +1219,7 @@ export default function TradeLog() {
                       </div>
 
                       {/* Costs */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <FormField
                           control={form.control}
                           name="spread"
@@ -1192,7 +1283,7 @@ export default function TradeLog() {
                       </div>
 
                       {/* Timing */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <FormField
                           control={form.control}
                           name="entryTime"
@@ -1850,7 +1941,7 @@ export default function TradeLog() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">Entry:</span>
                           <span className="ml-2 font-medium">{trade.entryPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</span>

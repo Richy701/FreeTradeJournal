@@ -65,6 +65,10 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  .theme {
+    --animate-accordion-down: accordion-down 0.2s ease-out;
+    --animate-accordion-up: accordion-up 0.2s ease-out;
+  }
 }
 
 @layer base {
@@ -74,21 +78,37 @@
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    margin: 0;
+    padding: 0;
   }
   
+  html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+  }
+
   /* Consistent typography for trading app */
   .trade-value-positive {
     @apply text-green-500 font-medium;
   }
-  
+
   .trade-value-negative {
     @apply text-red-500 font-medium;
   }
-  
+
   .trade-value-neutral {
     @apply text-muted-foreground font-medium;
   }
@@ -126,72 +146,104 @@
     /* Improve touch targets */
     button, a, [role="button"] {
       min-height: 44px;
-      min-width: 44px;
     }
     
+    /* Ensure adequate spacing between interactive elements */
+    button + button, a + a {
+      margin-top: 8px;
+    }
+
     /* Better mobile scrolling */
     * {
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
     }
-    
+
     /* Smooth scrolling on iOS */
     .overflow-auto, .overflow-y-auto, .overflow-x-auto {
       -webkit-overflow-scrolling: touch;
     }
-    
+
     /* Prevent horizontal scroll */
     html, body {
       overflow-x: hidden;
     }
-    
+
     /* Better mobile dialog/modal experience */
     [role="dialog"] {
       margin: 0 !important;
     }
-    
+
     /* Mobile-friendly form inputs */
     input, select, textarea {
       font-size: 16px !important; /* Prevents zoom on iOS */
     }
-    
+
     /* Better spacing for mobile */
     .container {
       padding-left: 1rem;
       padding-right: 1rem;
     }
   }
-  
+
   /* Touch device optimizations */
   @media (hover: none) and (pointer: coarse) {
     /* Remove hover effects on touch devices */
     .hover\:bg-muted\/50:hover {
       background-color: transparent;
     }
-    
+
     /* Add active states for better feedback */
     button:active, a:active, [role="button"]:active {
       opacity: 0.8;
       transform: scale(0.98);
     }
   }
-  
+
   /* Safe area insets for notched devices */
   @supports (padding: max(0px)) {
     .safe-top {
       padding-top: max(1rem, env(safe-area-inset-top));
     }
-    
+
     .safe-bottom {
       padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
-    
+
     .safe-left {
       padding-left: max(1rem, env(safe-area-inset-left));
     }
-    
+
     .safe-right {
       padding-right: max(1rem, env(safe-area-inset-right));
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  @keyframes accordion-down {
+  from {
+    height: 0;
+    }
+  to {
+    height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    }
+  to {
+    height: 0;
     }
   }
 }

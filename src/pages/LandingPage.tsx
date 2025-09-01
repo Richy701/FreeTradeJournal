@@ -10,6 +10,8 @@ import { TradeVaultFeatures as Features6 } from '@/components/blocks/features-6'
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { FeedbackButton } from '@/components/ui/feedback-button';
+import { FAQSection } from '@/components/blocks/faq-section';
+import { LogoCloud } from '@/components/blocks/logo-cloud';
 // import { Features as Features10 } from '@/components/blocks/features-10'; // unused
 import {
   TrendingUp,
@@ -43,14 +45,14 @@ export default function LandingPage() {
   return (
     <div className="w-full">
       {/* Navigation overlay */}
-      <header className="absolute top-0 left-0 right-0 z-50 border-b border-border/10 backdrop-blur-sm">
+      <header className="absolute top-0 left-0 right-0 z-50 border-b border-border/40 backdrop-blur-md bg-background/60">
         <div className="container mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <TrendingUp className="h-9 w-9 text-primary" />
             <span className="text-2xl font-bold text-foreground">TradeVault</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/login" className="text-foreground/85 hover:text-foreground transition-opacity duration-200 font-medium px-3 py-2 rounded-md hover:opacity-80 focus:ring-2 focus:ring-gray-500/50">
+            <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md focus:ring-2 focus:ring-ring/50">
               Sign In
             </Link>
           </nav>
@@ -74,6 +76,9 @@ export default function LandingPage() {
         title2="Your Trading Performance"
       />
 
+      {/* Logo Cloud - Prop Firms */}
+      <LogoCloud />
+
       {/* Features Section with Dashboard Preview */}
       <Features6 />
         
@@ -82,7 +87,7 @@ export default function LandingPage() {
         <section className="py-20 px-6 md:px-12" style={{maxWidth: '1200px', margin: '0 auto'}}>
           <div className="max-w-full">
             <div className="text-center space-y-8 mb-20" style={{marginBottom: '80px'}}>
-              <p className="text-lg text-gray-300/85 max-w-4xl mx-auto leading-[1.6] font-normal">
+              <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-[1.6] font-normal">
                 Take control of your trading journey with TradeVault - the comprehensive journaling platform built for serious traders. 
                 Track every trade, analyze your performance with professional-grade metrics, and identify patterns that impact your profitability. 
                 From detailed P&L tracking to psychological insights, TradeVault gives you the tools to transform your trading.
@@ -174,8 +179,8 @@ export default function LandingPage() {
         reverseLayout={true}
       />
 
-
-
+      {/* FAQ Section */}
+      <FAQSection />
 
       <Footer7 
         logo={{
@@ -215,7 +220,10 @@ export default function LandingPage() {
           }
         ]}
         copyright="© 2025 TradeVault. All rights reserved."
-        legalLinks={[]}
+        legalLinks={[
+          { name: "Privacy Policy", href: "/privacy" },
+          { name: "Terms and Conditions", href: "/terms" },
+        ]}
       />
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator"
 import { useThemePresets } from '@/contexts/theme-presets'
 import {
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { useLocation } from "react-router-dom"
@@ -11,6 +12,15 @@ export function SiteHeader({ className }: { className?: string }) {
   const { themeColors } = useThemePresets()
   const location = useLocation()
   const pathname = location.pathname
+  
+  // Check if we're in a sidebar context
+  let hasSidebar = false
+  try {
+    useSidebar()
+    hasSidebar = true
+  } catch {
+    hasSidebar = false
+  }
   
   const getBreadcrumbItems = () => {
     const segments = pathname.split('/').filter(Boolean)
@@ -53,8 +63,12 @@ export function SiteHeader({ className }: { className?: string }) {
 
   return (
     <header className={`flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
+      {hasSidebar && (
+        <>
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+        </>
+      )}
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbItems.map((item, index) => (

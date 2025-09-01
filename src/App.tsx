@@ -16,6 +16,8 @@ import Profile from '@/pages/Profile';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
 import Onboarding from '@/pages/Onboarding';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import TermsAndConditions from '@/pages/TermsAndConditions';
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
               
               {/* Protected routes */}
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
