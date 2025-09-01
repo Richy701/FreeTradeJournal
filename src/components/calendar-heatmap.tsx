@@ -1150,11 +1150,11 @@ export function CalendarHeatmap() {
                       Full Journal Features
                     </Button>
                   </Link>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)}>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)} className="w-full sm:w-auto">
                       Cancel
                     </Button>
-                    <Button onClick={handleSaveJournal} disabled={!journalNote.trim() || !journalTitle.trim()}>
+                    <Button onClick={handleSaveJournal} disabled={!journalNote.trim() || !journalTitle.trim()} className="w-full sm:w-auto">
                       Save Journal Entry
                     </Button>
                   </div>
@@ -1330,13 +1330,14 @@ export function CalendarHeatmap() {
                     <Plus className="h-4 w-4" />
                     Full Trade Journal
                   </Button>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)}>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)} className="w-full sm:w-auto">
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleSaveTrade} 
                       disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                      className="w-full sm:w-auto"
                     >
                       Save Trade
                     </Button>
