@@ -308,7 +308,7 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
+            <div className="flex flex-row flex-nowrap gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
@@ -430,7 +430,7 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
+            <div className="flex flex-row flex-nowrap gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
@@ -793,7 +793,7 @@ export default function Onboarding() {
               )}
             </div>
 
-            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
+            <div className="flex flex-row flex-nowrap gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
@@ -852,7 +852,7 @@ export default function Onboarding() {
               ))}
             </div>
 
-            <div className="flex flex-row gap-3 sm:gap-4 pt-6 w-full">
+            <div className="flex flex-row flex-nowrap gap-3 sm:gap-4 pt-6 w-full">
               <Button 
                 variant="outline" 
                 onClick={handleBack} 
