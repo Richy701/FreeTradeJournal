@@ -926,10 +926,10 @@ export function CalendarHeatmap() {
           
           {/* Enhanced Legend */}
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-2 group cursor-pointer">
-                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: themeColors.profit, border: `2px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
-                <span className="font-medium text-muted-foreground group-hover:transition-colors" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
+            <div className="flex items-center gap-2 sm:gap-4 text-xs">
+              <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
+                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.profit, border: `1px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
+                <span className="font-medium text-muted-foreground group-hover:transition-colors text-xs" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
                 <Badge variant="outline" className="text-xs " style={{
                   color: themeColors.profit, 
                   borderColor: themeColors.profit,
@@ -938,9 +938,9 @@ export function CalendarHeatmap() {
                   {monthlyStats.profitDays}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 group cursor-pointer">
-                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: themeColors.loss, border: `2px solid ${themeColors.loss}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
-                <span className="font-medium text-muted-foreground transition-colors">Loss Days</span>
+              <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
+                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.loss, border: `1px solid ${themeColors.loss}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
+                <span className="font-medium text-muted-foreground transition-colors text-xs">Loss Days</span>
                 <Badge variant="outline" className="text-xs " style={{
                   color: themeColors.loss,
                   borderColor: themeColors.loss,
@@ -949,13 +949,13 @@ export function CalendarHeatmap() {
                   {monthlyStats.lossDays}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 group cursor-pointer">
-                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: '#9ca3af', border: '2px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
-                <span className="font-medium text-muted-foreground group-hover:text-gray-600 transition-colors">Breakeven</span>
+              <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
+                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: '#9ca3af', border: '1px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
+                <span className="font-medium text-muted-foreground group-hover:text-gray-600 transition-colors text-xs">Breakeven</span>
               </div>
-              <div className="flex items-center gap-2 group cursor-pointer">
-                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: 'transparent', border: '2px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
-                <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">No Trading</span>
+              <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
+                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: 'transparent', border: '1px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
+                <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors text-xs">No Trading</span>
               </div>
               
               {/* Interactive shortcuts */}
