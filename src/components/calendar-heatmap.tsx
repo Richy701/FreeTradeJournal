@@ -1062,7 +1062,7 @@ export function CalendarHeatmap() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No trade linked</SelectItem>
-                        {trades.map((trade) => (
+                        {trades.map((trade: any) => (
                           <SelectItem key={trade.id} value={trade.id} className="text-xs">
                             {trade.symbol} {trade.side.toUpperCase()} • {trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}
                           </SelectItem>
@@ -1075,7 +1075,7 @@ export function CalendarHeatmap() {
                   <div className="grid grid-cols-2 gap-3 dialog-form-field">
                     <div className="space-y-1.5">
                       <Label className="text-xs sm:text-sm">Sentiment</Label>
-                      <Select value={journalMood} onValueChange={setJournalMood}>
+                      <Select value={journalMood} onValueChange={(value: 'bullish' | 'bearish' | 'neutral') => setJournalMood(value)}>
                         <SelectTrigger className="h-8 sm:h-9 text-sm !py-1">
                           <SelectValue />
                         </SelectTrigger>
