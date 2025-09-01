@@ -9,7 +9,6 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { TradeVaultFeatures as Features6 } from '@/components/blocks/features-6';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
-import { FeedbackButton } from '@/components/ui/feedback-button';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
 // import { Features as Features10 } from '@/components/blocks/features-10'; // unused
@@ -56,15 +55,9 @@ export default function LandingPage() {
               Sign In
             </Link>
           </nav>
-          <div className="flex items-center gap-4">
-            <FeedbackButton variant="outline" />
-            <BuyMeCoffee username="richy701" variant="outline" />
+          <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
-            <Link to="/dashboard">
-              <Button className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-4 rounded-md font-bold transition-all duration-200 shadow-md hover:shadow-lg focus:ring-2 focus:ring-primary/50">
-                Get Started
-              </Button>
-            </Link>
+            <BuyMeCoffee username="richy701" variant="outline" />
           </div>
         </div>
       </header>

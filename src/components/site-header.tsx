@@ -62,18 +62,12 @@ export function SiteHeader({ className }: { className?: string }) {
   const breadcrumbItems = getBreadcrumbItems()
 
   return (
-    <header className={`flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
-      {hasSidebar && (
-        <>
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-        </>
-      )}
+    <header className={`hidden md:flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbItems.map((item, index) => (
             <React.Fragment key={item.href}>
-              <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbItem>
                 {item.isActive ? (
                   <BreadcrumbPage style={{color: themeColors.primary}}>{item.label}</BreadcrumbPage>
                 ) : (
@@ -83,7 +77,7 @@ export function SiteHeader({ className }: { className?: string }) {
                 )}
               </BreadcrumbItem>
               {index < breadcrumbItems.length - 1 && (
-                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbSeparator />
               )}
             </React.Fragment>
           ))}

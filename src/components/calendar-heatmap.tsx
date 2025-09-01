@@ -562,6 +562,17 @@ export function CalendarHeatmap() {
     }).format(amount)
   }
 
+  const formatCurrencyMobile = (amount: number) => {
+    const abs = Math.abs(amount)
+    if (abs >= 1000) {
+      return `$${(amount/1000).toFixed(1)}k`
+    } else if (abs >= 100) {
+      return `$${Math.round(amount)}`
+    } else {
+      return `$${amount.toFixed(0)}`
+    }
+  }
+
   const today = new Date()
   const currentMonthName = MONTHS[currentDate.getMonth()]
   const currentYear = currentDate.getFullYear()
@@ -575,136 +586,123 @@ export function CalendarHeatmap() {
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200 border-0">
       <CardHeader className="pb-4 border-b border-border/30">
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
+          {/* Title and icon - Mobile friendly v2 */}
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg -translate-y-4" style={{backgroundColor: `${themeColors.primary}20`}}>
+            <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
               <FontAwesomeIcon icon={faCalendarDays} className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
-            <div className="space-y-3">
-              {/* Mobile: Stack everything vertically, Desktop: Keep horizontal */}
-              <div className="flex flex-col gap-3">
-                <CardTitle className="text-center sm:text-left text-lg font-semibold">Trading Calendar</CardTitle>
-                
-                {/* Navigation and date selectors */}
-                <div className="flex items-center justify-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={goToPreviousMonth}
-                    className="h-9 w-9 p-0 hover:scale-110 transition-transform shrink-0"
-                    title="Previous month (←)"
-                  >
-                    <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
-                  </Button>
-                  
-                  <div className="flex items-center gap-2">
-                    <Select value={selectedMonth.toString()} onValueChange={(value) => jumpToMonth(parseInt(value), selectedYear)}>
-                      <SelectTrigger className="w-24 sm:w-28 h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent align="center">
-                        {MONTHS.map((month, index) => (
-                          <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={selectedYear.toString()} onValueChange={(value) => jumpToMonth(selectedMonth, parseInt(value))}>
-                      <SelectTrigger className="w-20 sm:w-24 h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent align="center">
-                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={goToNextMonth}
-                    className="h-9 w-9 p-0 hover:scale-110 transition-transform shrink-0"
-                    title="Next month (→)"
-                  >
-                    <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
-                  </Button>
-                </div>
-                
-                {/* Today button and active indicator */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{backgroundColor: themeColors.profit}}></div>
-                    <span className="font-medium">{monthlyStats.activeDays} active</span>
-                  </div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={goToToday}
-                    className="h-8 px-3 text-xs font-medium hover:scale-105 transition-transform"
-                    style={{
-                      background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}CC)`,
-                      color: 'white'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = `linear-gradient(to right, ${themeColors.primary}E6, ${themeColors.primary}B3)`
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}CC)`
-                    }}
-                    title="Jump to today (Home)"
-                  >
-                    Today
-                  </Button>
-                </div>
+            <CardTitle className="text-lg sm:text-xl font-semibold">
+              Trading Calendar
+            </CardTitle>
+          </div>
+
+          {/* Mobile-first navigation */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Navigation controls */}
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousMonth}
+                className="h-10 w-10 p-0 touch-manipulation"
+                title="Previous month (←)"
+              >
+                <FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
+              </Button>
+
+              <div className="flex gap-2">
+                <Select value={selectedMonth.toString()} onValueChange={(value) => jumpToMonth(parseInt(value), selectedYear)}>
+                  <SelectTrigger className="w-20 h-10 text-sm touch-manipulation">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((month, index) => (
+                      <SelectItem key={index} value={index.toString()}>{month.slice(0,3)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedYear.toString()} onValueChange={(value) => jumpToMonth(selectedMonth, parseInt(value))}>
+                  <SelectTrigger className="w-20 h-10 text-sm touch-manipulation">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <CardDescription className="text-xs sm:text-sm text-muted-foreground font-medium">
-                <span className="hidden sm:inline">Daily performance overview • Use ← → keys to navigate • Click days to add trades or view details</span>
-                <span className="sm:hidden">Daily performance overview • Use ← → keys to add trades or view details</span>
-              </CardDescription>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextMonth}
+                className="h-10 w-10 p-0 touch-manipulation"
+                title="Next month (→)"
+              >
+                <FontAwesomeIcon icon={faChevronRight} className="h-4 w-4" />
+              </Button>
             </div>
+
+            {/* Today button */}
+            <Button
+              onClick={goToToday}
+              className="h-10 px-6"
+              style={{
+                background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}CC)`,
+                color: 'white'
+              }}
+            >
+              Today
+            </Button>
+          </div>
+
+          {/* Mobile instruction text */}
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground font-medium text-center sm:text-left">
+            <span className="hidden sm:inline">Daily performance overview • Use ← → keys to navigate • Click days to add trades or view details</span>
+            <span className="sm:hidden">Tap dates to add trades or view details</span>
+          </CardDescription>
+        </div>
+
+        {/* Mobile-optimized stats panel */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-4 bg-muted/30 rounded-lg">
+          <div className="text-center space-y-1">
+            <div className="text-lg sm:text-xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+              {monthlyStats.totalPnL >= 0 ? '+' : ''}{formatCurrency(monthlyStats.totalPnL)}
+            </div>
+            <div className="text-xs text-muted-foreground">Monthly P&L</div>
           </div>
           
-          {/* Monthly Summary Statistics */}
-          <div className="space-y-4">
-            {/* P&L prominently displayed */}
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-black tracking-tight" style={{letterSpacing: '-0.02em', color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-                {monthlyStats.totalPnL >= 0 ? '+' : ''}{formatCurrency(monthlyStats.totalPnL)}
-              </div>
-              <div className="text-xs text-muted-foreground font-semibold">Monthly P&L</div>
+          <div className="text-center space-y-1">
+            <div className="text-lg sm:text-xl font-bold">
+              {monthlyStats.winRate.toFixed(1)}%
             </div>
-            
-            {/* Stats grid - 2x2 on mobile, 1x4 on desktop */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: themeColors.primary}}>
-                  {monthlyStats.winRate.toFixed(1)}%
-                </div>
-                <div className="text-[10px] text-muted-foreground font-medium">Win Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: themeColors.primary}}>
-                  {monthlyStats.riskReward === Infinity ? '∞' : monthlyStats.riskReward.toFixed(2)}
-                </div>
-                <div className="text-[10px] text-muted-foreground font-medium">R:R</div>
-              </div>
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold tracking-tight" style={{letterSpacing: '-0.02em'}}>
-                  <span style={{color: themeColors.profit}}>{monthlyStats.totalWinningTrades}</span>
-                  <span className="text-muted-foreground text-xs sm:text-sm mx-0.5">/</span>
-                  <span style={{color: themeColors.loss}}>{monthlyStats.totalLosingTrades}</span>
-                </div>
-                <div className="text-[10px] text-muted-foreground font-medium">W/L</div>
-              </div>
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold tracking-tight text-foreground" style={{letterSpacing: '-0.02em'}}>
-                  {monthlyStats.totalTrades}
-                </div>
-                <div className="text-[10px] text-muted-foreground font-medium">Trades</div>
-              </div>
-            </div>
+            <div className="text-xs text-muted-foreground">Win Rate</div>
           </div>
+          
+          <div className="text-center space-y-1">
+            <div className="text-lg sm:text-xl font-bold">
+              <span style={{color: themeColors.profit}}>{monthlyStats.totalWinningTrades}</span>
+              <span className="text-muted-foreground mx-1">/</span>
+              <span style={{color: themeColors.loss}}>{monthlyStats.totalLosingTrades}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">W/L</div>
+          </div>
+          
+          <div className="text-center space-y-1">
+            <div className="text-lg sm:text-xl font-bold">
+              {monthlyStats.totalTrades}
+            </div>
+            <div className="text-xs text-muted-foreground">Trades</div>
+          </div>
+        </div>
+        
+        {/* Active trades indicator */}
+        <div className="flex items-center gap-2 text-sm">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <span className="text-muted-foreground">{monthlyStats.activeDays} active</span>
         </div>
       </CardHeader>
       <CardContent className="pt-4">
@@ -789,17 +787,30 @@ export function CalendarHeatmap() {
                             </div>
                             
                             {hasData && (
-                              <>
-                                <div className="text-lg leading-none font-black text-white drop-shadow-sm">
-                                  {day.pnl >= 0 ? '+' : ''}${Math.abs(day.pnl) >= 1000 ? 
-                                    `${(Math.abs(day.pnl) / 1000).toFixed(1)}k` : 
-                                    Math.abs(day.pnl).toFixed(0)
-                                  }
+                              <div className="flex flex-col items-center justify-center h-full px-1 relative z-10">
+                                {/* Mobile: Single line with just P&L */}
+                                <div className="sm:hidden text-center">
+                                  <div className="text-xs font-bold text-white drop-shadow-sm leading-none">
+                                    {day.pnl >= 0 ? '+' : ''}${Math.abs(day.pnl) >= 1000 ? 
+                                      `${(day.pnl/1000).toFixed(1)}k` : 
+                                      Math.abs(day.pnl).toFixed(0)
+                                    }
+                                  </div>
                                 </div>
-                                <div className="text-[8px] leading-none font-semibold text-white/70 drop-shadow-sm mt-0.5 text-center">
-                                  {day.trades} {day.trades === 1 ? 'trade' : 'trades'} • {day.winRate.toFixed(0)}%
+
+                                {/* Desktop: Full details */}
+                                <div className="hidden sm:flex sm:flex-col sm:items-center sm:justify-center sm:h-full">
+                                  <div className="text-lg leading-none font-black text-white drop-shadow-sm">
+                                    {day.pnl >= 0 ? '+' : ''}${Math.abs(day.pnl) >= 1000 ?
+                                      `${(Math.abs(day.pnl) / 1000).toFixed(1)}k` :
+                                      Math.abs(day.pnl).toFixed(0)
+                                    }
+                                  </div>
+                                  <div className="text-[8px] leading-none font-semibold text-white/70 drop-shadow-sm mt-0.5 text-center">
+                                    {day.trades} {day.trades === 1 ? 'trade' : 'trades'} • {day.winRate.toFixed(0)}%
+                                  </div>
                                 </div>
-                              </>
+                              </div>
                             )}
                           </div>
                           
@@ -848,13 +859,14 @@ export function CalendarHeatmap() {
                                 </div>
                               </div>
                               <div 
-                                className="text-sm font-bold px-2 py-1 rounded-md"
+                                className="text-xs sm:text-sm font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-md"
                                 style={{
                                   color: 'white',
                                   backgroundColor: day.pnl >= 0 ? themeColors.profit : themeColors.loss
                                 }}
                               >
-                                {day.pnl >= 0 ? '+' : ''}{formatCurrency(day.pnl)}
+                                <span className="hidden sm:inline">{day.pnl >= 0 ? '+' : ''}{formatCurrency(day.pnl)}</span>
+                                <span className="sm:hidden">{day.pnl >= 0 ? '+' : ''}{formatCurrencyMobile(day.pnl)}</span>
                               </div>
                             </div>
                             
@@ -991,173 +1003,139 @@ export function CalendarHeatmap() {
       
       {/* Trade Entry & Journal Modal */}
       <Dialog open={isTradeDialogOpen} onOpenChange={setIsTradeDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>
-                {selectedDateForTrade?.toLocaleDateString('en-US', { 
-                  weekday: 'long',
-                  month: 'long', 
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </span>
-              {selectedDateEntries.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {selectedDateEntries.length} {selectedDateEntries.length === 1 ? 'entry' : 'entries'}
-                </Badge>
-              )}
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-2 pb-4">
+            <DialogTitle className="text-base sm:text-lg">
+              {selectedDateForTrade?.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              })}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Add trades or journal notes for this trading day
             </DialogDescription>
           </DialogHeader>
-          
+
           <Tabs defaultValue="journal" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="journal">Journal</TabsTrigger>
-              <TabsTrigger value="trade">Add Trade</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-7 sm:h-9 p-0.5 sm:p-1 mb-4 sm:mb-5">
+              <TabsTrigger 
+                value="journal" 
+                className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
+              >
+                Journal
+              </TabsTrigger>
+              <TabsTrigger 
+                value="trade" 
+                className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
+              >
+                Add Trade
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="journal" className="space-y-4">
-              {/* Show existing journal entries for this day */}
-              {selectedDateEntries.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <FontAwesomeIcon icon={faBookOpen} className="h-4 w-4" />
-                    Existing Journal Entries ({selectedDateEntries.length})
-                  </div>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {selectedDateEntries.map((entry: any, index: number) => (
-                      <div key={entry.id} className="p-3 rounded-md bg-muted/20 border border-border/30">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-sm font-medium">{entry.title}</h4>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {entry.mood === 'bullish' ? '📈' : entry.mood === 'bearish' ? '📉' : '😐'} {entry.mood}
-                            </Badge>
-                            {entry.tradeId && (
-                              <Badge variant="secondary" className="text-xs">Trade Linked</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{entry.content}</p>
-                        {entry.tags && entry.tags.length > 0 && (
-                          <div className="flex gap-1 mt-2">
-                            {entry.tags.slice(0, 3).map((tag: string) => (
-                              <Badge key={tag} variant="outline" className="text-[10px] px-1 py-0.5">{tag}</Badge>
-                            ))}
-                            {entry.tags.length > 3 && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0.5">+{entry.tags.length - 3}</Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="h-px bg-border/30 my-4"></div>
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+            <TabsContent value="journal" className="space-y-3 sm:space-y-4 mt-6 sm:mt-8">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
+                  <FontAwesomeIcon icon={faPlus} className="h-3 w-3 sm:h-4 sm:w-4" />
                   Add New Journal Entry
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="journal-title">Entry Title</Label>
-                  <Input
-                    id="journal-title"
-                    placeholder="What's your focus for this trading day?"
-                    value={journalTitle}
-                    onChange={(e) => setJournalTitle(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Link to Trade (Optional)</Label>
-                    <Select value={selectedTradeId} onValueChange={(value) => {
-                      setSelectedTradeId(value)
-                      
-                      // Auto-fill market sentiment based on trade side
-                      if (value !== "none") {
-                        const selectedTrade = trades.find((trade: any) => trade.id === value)
-                        if (selectedTrade) {
-                          setJournalMood(selectedTrade.side === 'long' ? 'bullish' : 'bearish')
-                        }
-                      }
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a trade to analyze..." />
+
+                {/* Compact form fields */}
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="journal-title" className="text-xs sm:text-sm">Entry Title</Label>
+                    <Input
+                      id="journal-title"
+                      placeholder="Focus for this trading day"
+                      value={journalTitle}
+                      onChange={(e) => setJournalTitle(e.target.value)}
+                      className="h-8 sm:h-9 text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Link to Trade (Optional)</Label>
+                    <Select value={selectedTradeId} onValueChange={setSelectedTradeId}>
+                      <SelectTrigger className="h-8 sm:h-9 text-sm">
+                        <SelectValue placeholder="No trade linked" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No trade linked</SelectItem>
-                        {trades.map((trade: any) => {
-                          const isWin = trade.pnl > 0;
-                          return (
-                            <SelectItem key={trade.id} value={trade.id}>
-                              {trade.symbol} {trade.side.toUpperCase()} • {isWin ? '+' : ''}${trade.pnl.toFixed(2)} • {trade.entryTime.toLocaleDateString()}
-                            </SelectItem>
-                          );
-                        })}
+                        {trades.map((trade) => (
+                          <SelectItem key={trade.id} value={trade.id} className="text-xs">
+                            {trade.symbol} {trade.side.toUpperCase()} • {trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Market Sentiment</Label>
-                      <Select value={journalMood} onValueChange={(value: 'bullish' | 'bearish' | 'neutral') => setJournalMood(value)}>
-                        <SelectTrigger>
+
+                  {/* Compact grid layout */}
+                  <div className="grid grid-cols-2 gap-3 dialog-form-field">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs sm:text-sm">Sentiment</Label>
+                      <Select value={journalMood} onValueChange={setJournalMood}>
+                        <SelectTrigger className="h-8 sm:h-9 text-sm !py-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="neutral">😐 Neutral</SelectItem>
-                          <SelectItem value="bullish">📈 Bullish (Long)</SelectItem>
-                          <SelectItem value="bearish">📉 Bearish (Short)</SelectItem>
+                          <SelectItem value="bullish">📈 Bullish</SelectItem>
+                          <SelectItem value="bearish">📉 Bearish</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="journal-tags">Tags</Label>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="journal-tags" className="text-xs sm:text-sm">Tags</Label>
                       <Input
                         id="journal-tags"
-                        placeholder="market-analysis, strategy, etc."
+                        placeholder="strategy, analysis..."
                         value={journalTags}
                         onChange={(e) => setJournalTags(e.target.value)}
+                        className="h-8 sm:h-9 text-sm"
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="journal-content" className="text-xs sm:text-sm">Trading Notes</Label>
+                    <Textarea
+                      id="journal-content"
+                      placeholder="Record thoughts, observations, lessons learned..."
+                      value={journalNote}
+                      onChange={(e) => setJournalNote(e.target.value)}
+                      className="min-h-[60px] sm:min-h-[80px] md:min-h-[120px] resize-none text-sm"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="journal-content">Trading Notes</Label>
-                  <Textarea
-                    id="journal-content"
-                    placeholder="Record your thoughts, market observations, lessons learned, trading plan, or anything noteworthy about this day..."
-                    value={journalNote}
-                    onChange={(e) => setJournalNote(e.target.value)}
-                    className="min-h-[120px]"
-                  />
-                </div>
-                
-                <div className="flex justify-between items-center pt-2 border-t">
+                {/* Mobile-optimized button layout */}
+                <div className="flex flex-col gap-2 pt-3 border-t border-border/50">
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsTradeDialogOpen(false)} 
+                      className="flex-1 h-9 text-sm"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSaveJournal} 
+                      disabled={!journalNote.trim() || !journalTitle.trim()} 
+                      className="flex-1 h-9 text-sm"
+                    >
+                      Save Entry
+                    </Button>
+                  </div>
+                  
                   <Link to="/journal" onClick={() => setIsTradeDialogOpen(false)}>
-                    <Button variant="outline" className="gap-2">
-                      <Plus className="h-4 w-4" />
+                    <Button variant="outline" className="w-full h-8 text-xs gap-1.5">
+                      <Plus className="h-3 w-3" />
                       Full Journal Features
                     </Button>
                   </Link>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)} className="w-full sm:w-auto">
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveJournal} disabled={!journalNote.trim() || !journalTitle.trim()} className="w-full sm:w-auto">
-                      Save Journal Entry
-                    </Button>
-                  </div>
                 </div>
               </div>
             </TabsContent>

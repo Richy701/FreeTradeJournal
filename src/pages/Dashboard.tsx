@@ -7,7 +7,6 @@ import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { FeedbackButton } from "@/components/ui/feedback-button"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -223,19 +222,19 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
-      {/* Enhanced Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
-        <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-            <div className="space-y-4">
+      {/* Mobile-optimized Header Section */}
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+          <div className="flex flex-col gap-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* Personalized Greeting */}
-              <div className="space-y-1">
-                <p className="text-lg font-semibold text-foreground opacity-90">
+              <div className="space-y-1 text-center sm:text-left">
+                <p className="text-base sm:text-lg font-semibold text-foreground opacity-90">
                   {getGreeting()}
                 </p>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   {new Date().toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -246,31 +245,31 @@ export default function Dashboard() {
               </div>
               
               {/* Dashboard Title */}
-              <div className="space-y-2">
+              <div className="space-y-2 text-center sm:text-left">
                 <h1 
-                  className="text-2xl sm:text-4xl md:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
+                  className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
                   style={{
                     backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD, ${themeColors.primary}AA)`
                   }}
                 >
                   Trading Dashboard
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-lg md:text-xl font-medium max-w-2xl">
+                <p className="text-muted-foreground text-xs sm:text-sm md:text-lg font-medium max-w-2xl mx-auto sm:mx-0">
                   Track your performance and analyze your trades
                 </p>
               </div>
             </div>
             
-            {/* Quick Actions */}
-            <div className="flex items-center gap-3">
+            {/* Quick Actions - Centered on mobile */}
+            <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3">
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
-                  <Button size="lg" className="gap-2">
+                  <Button size="default" className="gap-2 h-10 sm:h-11 touch-manipulation">
                     <Plus className="h-4 w-4" />
-                    Add Trade
+                    <span className="text-sm sm:text-base">Add Trade</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl">
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Add Trade</DialogTitle>
                     <DialogDescription>
@@ -432,8 +431,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 sm:py-8 md:py-12 space-y-6 sm:space-y-8 md:space-y-12">
+      {/* Mobile-optimized Main Content */}
+      <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Top metrics row */}
         <div className="animate-in fade-in duration-300">
           <SectionCards />
@@ -444,16 +443,16 @@ export default function Dashboard() {
           <TradingCoach />
         </div>
         
-        {/* Main content area - 2:1 ratio with enhanced spacing */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 animate-in fade-in duration-300 delay-100">
-          {/* Equity curve - takes 2/3 width */}
-          <div className="lg:col-span-2">
-            <ChartAreaInteractive />
+        {/* Main content area - Stack on mobile, side-by-side on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 animate-in fade-in duration-300 delay-100">
+          {/* Recent trades - Show first on mobile for quick access */}
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            <DataTable />
           </div>
           
-          {/* Recent trades - takes 1/3 width */}
-          <div className="lg:col-span-1">
-            <DataTable />
+          {/* Equity curve */}
+          <div className="lg:col-span-2 order-2 lg:order-1">
+            <ChartAreaInteractive />
           </div>
         </div>
         
@@ -463,8 +462,6 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* Floating Feedback Button */}
-      <FeedbackButton variant="floating" />
     </div>
   )
 }

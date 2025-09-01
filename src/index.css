@@ -153,6 +153,19 @@
       margin-top: 0 !important;
     }
 
+    /* Allow tabs to be smaller than 44px min-height */
+    [role="tab"] {
+      min-height: auto !important;
+    }
+
+    /* Force consistent input and select heights */
+    .dialog-form-field input,
+    .dialog-form-field [role="combobox"] {
+      height: 32px !important;
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+    }
+
     /* Better mobile scrolling */
     * {
       -webkit-tap-highlight-color: transparent;

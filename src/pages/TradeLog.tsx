@@ -877,12 +877,8 @@ export default function TradeLog() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-2">
-              <h1 
-                className="text-3xl font-bold bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)`
-                }}
-              >
+              <h1 className="text-3xl font-bold bg-clip-text text-transparent" 
+                  style={{backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)`}}>
                 Trade Log
               </h1>
               <p className="text-muted-foreground text-lg">
@@ -890,6 +886,17 @@ export default function TradeLog() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button 
+                size="sm"
+                onClick={() => {
+                  setEditingTrade(null);
+                  form.reset();
+                  setIsDialogOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Trade
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm"
@@ -906,6 +913,7 @@ export default function TradeLog() {
                 className="hidden"
                 onChange={handleCSVImport}
               />
+              
               <Button 
                 variant="outline" 
                 size="sm"
@@ -916,20 +924,22 @@ export default function TradeLog() {
                 Export
               </Button>
               
-              {/* CSV Upload Feedback */}
-              
-              <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    disabled={trades.length === 0}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Report
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[90vw] max-w-lg">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsReportDialogOpen(true)}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Report
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Report Dialog */}
+      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        <DialogContent className="w-[90vw] max-w-lg">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold">Generate Trading Report</DialogTitle>
                     <DialogDescription className="text-base">
@@ -1002,22 +1012,11 @@ export default function TradeLog() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+      </Dialog>
               
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    size="sm"
-                    onClick={() => {
-                      setEditingTrade(null);
-                      form.reset();
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Trade
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+      {/* Add Trade Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold">{editingTrade ? 'Edit Trade' : 'Add New Trade'}</DialogTitle>
                     <DialogDescription className="text-base">
@@ -1492,11 +1491,7 @@ export default function TradeLog() {
                     </form>
                   </Form>
                 </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </div>
-      </div>
+      </Dialog>
 
       {/* Main Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
