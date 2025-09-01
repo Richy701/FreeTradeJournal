@@ -30,43 +30,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<Auth | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
+
+  const initAuth = async () => {
+    if (authInitialized) return auth;
+    setAuthInitialized(true);
+    
+    try {
+      const authInstance = await getFirebaseAuth();
+      setAuth(authInstance);
+      
+      const { onAuthStateChanged } = await import('firebase/auth');
+      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+      
+      return authInstance;
+    } catch (error) {
+      console.error('Failed to initialize Firebase Auth:', error);
+      setLoading(false);
+      return null;
+    }
+  };
 
   useEffect(() => {
-    let unsubscribe: (() => void) | null = null;
-
-    const initAuth = async () => {
-      try {
-        // Defer auth initialization slightly to allow page to render first
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const authInstance = await getFirebaseAuth();
-        setAuth(authInstance);
-        
-        const { onAuthStateChanged } = await import('firebase/auth');
-        unsubscribe = onAuthStateChanged(authInstance, (user) => {
-          setUser(user);
-          setLoading(false);
-        });
-      } catch (error) {
-        console.error('Failed to initialize Firebase Auth:', error);
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    // Only initialize auth on landing page after significant delay
+    // For other pages, initialize immediately when auth methods are called
+    if (window.location.pathname === '/') {
+      const timer = setTimeout(() => {
+        setLoading(false); // Allow page to render without auth
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      initAuth();
+    }
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string): Promise<User> => {
-    if (!auth) throw new Error('Auth not initialized');
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
     
     const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
     
     if (displayName && userCredential.user) {
       await updateProfile(userCredential.user, {
@@ -80,34 +86,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const signIn = async (email: string, password: string): Promise<User> => {
-    if (!auth) throw new Error('Auth not initialized');
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
     
     const { signInWithEmailAndPassword } = await import('firebase/auth');
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
     return userCredential.user;
   };
 
   const signInWithGoogle = async (): Promise<User> => {
-    if (!auth) throw new Error('Auth not initialized');
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
     
     const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
     const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
+    const userCredential = await signInWithPopup(authInstance, provider);
     return userCredential.user;
   };
 
   const logout = async (): Promise<void> => {
-    if (!auth) throw new Error('Auth not initialized');
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
     
     const { signOut } = await import('firebase/auth');
-    await signOut(auth);
+    await signOut(authInstance);
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    if (!auth) throw new Error('Auth not initialized');
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
     
     const { sendPasswordResetEmail } = await import('firebase/auth');
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(authInstance, email);
   };
 
   const value: AuthContextType = {

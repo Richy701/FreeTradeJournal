@@ -928,7 +928,7 @@ export function CalendarHeatmap() {
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 rounded-md shadow-sm " style={{backgroundColor: themeColors.profit}}></div>
+                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: themeColors.profit, border: `2px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
                 <span className="font-medium text-muted-foreground group-hover:transition-colors" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
                 <Badge variant="outline" className="text-xs " style={{
                   color: themeColors.profit, 
@@ -939,7 +939,7 @@ export function CalendarHeatmap() {
                 </Badge>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 rounded-md shadow-sm " style={{backgroundColor: themeColors.loss}}></div>
+                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: themeColors.loss, border: `2px solid ${themeColors.loss}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
                 <span className="font-medium text-muted-foreground transition-colors">Loss Days</span>
                 <Badge variant="outline" className="text-xs " style={{
                   color: themeColors.loss,
@@ -950,11 +950,11 @@ export function CalendarHeatmap() {
                 </Badge>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 bg-gray-400 rounded-md shadow-sm "></div>
+                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: '#9ca3af', border: '2px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
                 <span className="font-medium text-muted-foreground group-hover:text-gray-600 transition-colors">Breakeven</span>
               </div>
               <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="w-3 h-3 bg-muted/20 rounded-md border border-muted/30 "></div>
+                <div style={{width: '12px', height: '12px', borderRadius: '6px', backgroundColor: 'transparent', border: '2px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}}></div>
                 <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">No Trading</span>
               </div>
               
