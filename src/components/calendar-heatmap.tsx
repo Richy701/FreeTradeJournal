@@ -581,58 +581,62 @@ export function CalendarHeatmap() {
               <FontAwesomeIcon icon={faCalendarDays} className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <CardTitle className="text-lg font-semibold sm:hidden">Trading Calendar</CardTitle>
+              {/* Mobile: Stack everything vertically, Desktop: Keep horizontal */}
+              <div className="flex flex-col gap-3">
+                <CardTitle className="text-center sm:text-left text-lg font-semibold">Trading Calendar</CardTitle>
                 
-                <div className="flex items-center justify-between sm:gap-3 w-full">
+                {/* Navigation and date selectors */}
+                <div className="flex items-center justify-center gap-3">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={goToPreviousMonth}
-                    className="h-9 w-9 p-0 hover:scale-110 transition-transform"
+                    className="h-9 w-9 p-0 hover:scale-110 transition-transform shrink-0"
                     title="Previous month (←)"
                   >
                     <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
                   </Button>
                   
-                  <div className="flex flex-col sm:flex-row items-center gap-2">
-                    <CardTitle className="hidden sm:block text-lg font-semibold">Trading Calendar</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Select value={selectedMonth.toString()} onValueChange={(value) => jumpToMonth(parseInt(value), selectedYear)}>
-                        <SelectTrigger className="w-20 sm:w-24 h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent align="center">
-                          {MONTHS.map((month, index) => (
-                            <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={selectedYear.toString()} onValueChange={(value) => jumpToMonth(selectedMonth, parseInt(value))}>
-                        <SelectTrigger className="w-16 sm:w-20 h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent align="center">
-                          {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedMonth.toString()} onValueChange={(value) => jumpToMonth(parseInt(value), selectedYear)}>
+                      <SelectTrigger className="w-24 sm:w-28 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent align="center">
+                        {MONTHS.map((month, index) => (
+                          <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedYear.toString()} onValueChange={(value) => jumpToMonth(selectedMonth, parseInt(value))}>
+                      <SelectTrigger className="w-20 sm:w-24 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent align="center">
+                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={goToNextMonth}
-                    className="h-9 w-9 p-0 hover:scale-110 transition-transform"
+                    className="h-9 w-9 p-0 hover:scale-110 transition-transform shrink-0"
                     title="Next month (→)"
                   >
                     <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
                   </Button>
                 </div>
                 
-                <div className="flex justify-center sm:justify-start">
+                {/* Today button and active indicator */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{backgroundColor: themeColors.profit}}></div>
+                    <span className="font-medium">{monthlyStats.activeDays} active</span>
+                  </div>
                   <Button
                     variant="default"
                     size="sm"
@@ -653,12 +657,6 @@ export function CalendarHeatmap() {
                     Today
                   </Button>
                 </div>
-                
-                {/* Quick stats indicator */}
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{backgroundColor: themeColors.profit}}></div>
-                  <span className="font-medium">{monthlyStats.activeDays} active</span>
-                </div>
               </div>
               <CardDescription className="text-xs sm:text-sm text-muted-foreground font-medium">
                 <span className="hidden sm:inline">Daily performance overview • Use ← → keys to navigate • Click days to add trades or view details</span>
@@ -668,15 +666,17 @@ export function CalendarHeatmap() {
           </div>
           
           {/* Monthly Summary Statistics */}
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="text-center px-2">
+          <div className="space-y-4">
+            {/* P&L prominently displayed */}
+            <div className="text-center">
               <div className="text-2xl sm:text-3xl font-black tracking-tight" style={{letterSpacing: '-0.02em', color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
                 {monthlyStats.totalPnL >= 0 ? '+' : ''}{formatCurrency(monthlyStats.totalPnL)}
               </div>
               <div className="text-xs text-muted-foreground font-semibold">Monthly P&L</div>
             </div>
-            <div className="hidden sm:block h-12 w-px bg-border"></div>
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
+            
+            {/* Stats grid - 2x2 on mobile, 1x4 on desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <div className="text-center">
                 <div className="text-base sm:text-lg font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: themeColors.primary}}>
                   {monthlyStats.winRate.toFixed(1)}%
