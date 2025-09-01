@@ -35,7 +35,13 @@
       "Bash(git remote add:*)",
       "Bash(git push:*)",
       "Bash(git commit:*)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(for img in *.png)",
+      "Bash(do echo \"Optimizing logo $img...\")",
+      "Bash(magick:*)",
+      "Bash(done)",
+      "Bash(for file in * *.webp)",
+      "Bash(do mv \"$file\" \"$file// /_\")"
     ],
     "deny": []
   }

@@ -5,6 +5,15 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    // Essential dynamic classes only
+    { pattern: /^(bg|text|border)-(green|red|blue|yellow|primary|muted)-(500|600)$/ },
+    { pattern: /^fill-(green|red|blue|yellow|primary)-(500|600)$/ },
+    'animate-in',
+    'fade-in',
+    'animate-marquee',
+    'touch-manipulation'
+  ],
   theme: {
   	container: {
   		center: true,

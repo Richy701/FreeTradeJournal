@@ -61,24 +61,6 @@ export function FAQSection() {
           </Accordion>
         </div>
         
-        <div className="mt-16 text-center">
-          <p className="text-muted-foreground mb-4">
-            Still have questions?
-          </p>
-          <a 
-            href="#" 
-            onClick={(e) => {
-              e.preventDefault();
-              const feedbackButton = document.querySelector('[data-feedback-button]');
-              if (feedbackButton instanceof HTMLElement) {
-                feedbackButton.click();
-              }
-            }}
-            className="text-primary hover:text-primary/80 font-medium transition-colors"
-          >
-            Contact our support team →
-          </a>
-        </div>
       </div>
     </section>
   );

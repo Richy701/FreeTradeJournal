@@ -4,18 +4,18 @@ export function LogoCloud() {
   const propFirms = [
     { 
       name: "E8 Markets",
-      url: "/logos/e8-markets-logo.png",
+      url: "/logos/e8-markets-logo.webp",
       className: "text-[#6366F1] font-black",
       style: "height: 48px; width: auto; max-width: 140px;"
     },
     { 
       name: "Funded FX", 
-      url: "/logos/funded-fx-logo.png",
+      url: "/logos/funded-fx-logo.webp",
       className: "text-[#8B5CF6] font-black" 
     },
     { 
       name: "FundingPips", 
-      url: "/logos/fundingpips-logo-alt.png",
+      url: "/logos/fundingpips-logo-alt.webp",
       className: "text-[#10B981] font-black"
     },
     { 
@@ -31,17 +31,17 @@ export function LogoCloud() {
     },
     { 
       name: "Alpha Capital Group", 
-      url: "/logos/alpha-capital-group-logo.png",
+      url: "/logos/alpha-capital-group-logo.webp",
       className: "text-[#EC4899] font-black" 
     },
     { 
       name: "Apex Trader Funding", 
-      url: "/logos/apex-trader-funding-logo.png",
+      url: "/logos/apex-trader-funding-logo.webp",
       className: "text-[#3B82F6] font-black" 
     },
     { 
       name: "The5ers", 
-      url: "/logos/the5ers-logo.png",
+      url: "/logos/the5ers-logo.webp",
       className: "text-[#DC2626] font-black"
     }
   ];

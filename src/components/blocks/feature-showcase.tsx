@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { ResponsiveImage } from "@/components/ui/responsive-image";
 
 interface FeatureShowcaseProps {
     title: string | React.ReactNode;
@@ -66,11 +67,11 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
                                 viewport={{ once: true }}
                             >
-                                <img
+                                <ResponsiveImage
                                     src={img.src}
                                     alt={img.alt}
                                     className={cn(
-                                        "w-full h-full object-cover hover:scale-105 transition-transform duration-500",
+                                        "w-full h-full object-cover transition-transform duration-500",
                                         img.className
                                     )}
                                 />
@@ -104,7 +105,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                 viewport={{ once: true }}
                                 whileHover={{ scale: 1.02 }}
                             >
-                                <img
+                                <ResponsiveImage
                                     src={img.src}
                                     alt={img.alt}
                                     className={cn(
@@ -130,7 +131,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                     transition={{ duration: 0.5, delay: index * 0.1 }}
                                     viewport={{ once: true }}
                                 >
-                                    <img
+                                    <ResponsiveImage
                                         src={img.src}
                                         alt={img.alt}
                                         className={cn(
@@ -174,7 +175,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                     whileHover={{ scale: 1.02 }}
                                     transition={{ duration: 0.3 }}
                                 >
-                                    <img
+                                    <ResponsiveImage
                                         src={images[0].src}
                                         alt={images[0].alt}
                                         className={cn(
@@ -224,7 +225,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                     transition: { duration: 0.3 }
                                 }}
                             >
-                                <img
+                                <ResponsiveImage
                                     src={img.src}
                                     alt={img.alt}
                                     className={cn(

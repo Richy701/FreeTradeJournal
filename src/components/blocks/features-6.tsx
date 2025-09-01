@@ -1,4 +1,5 @@
 import { BarChart3, Lock, TrendingUp, Zap } from 'lucide-react'
+import { ResponsiveImage } from '@/components/ui/responsive-image'
 
 export function TradeVaultFeatures() {
     return (
@@ -11,7 +12,13 @@ export function TradeVaultFeatures() {
                 <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
                     <div className="relative">
                         <div className="bg-gradient-to-t z-1 dark:from-background from-transparent absolute inset-0 to-transparent"></div>
-                        <img src="/images/landing/Trading dashboard New screenshot.png" className="z-10 w-full h-auto object-contain rounded-2xl" alt="TradeVault Dashboard" />
+                        <img 
+                          src="/images/landing/Trading dashboard New screenshot.png" 
+                          alt="TradeVault Dashboard"
+                          className="z-10 w-full h-auto rounded-2xl"
+                          loading="lazy"
+                          decoding="async"
+                        />
                     </div>
                 </div>
                 <div className="relative mx-auto grid grid-cols-2 gap-6 lg:gap-8 lg:grid-cols-4">

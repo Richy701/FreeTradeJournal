@@ -44,7 +44,7 @@ export default function LandingPage() {
   return (
     <div className="w-full">
       {/* Navigation overlay */}
-      <header className="absolute top-0 left-0 right-0 z-50 border-b border-border/40 backdrop-blur-md bg-background/60">
+      <header className="absolute top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <TrendingUp className="h-9 w-9 text-primary" />
@@ -189,13 +189,6 @@ export default function LandingPage() {
               { name: "Dashboard", href: "/dashboard" },
               { name: "Trade Log", href: "/trades" },
               { name: "Settings", href: "/settings" },
-            ],
-          },
-          {
-            title: "Account",
-            links: [
-              { name: "Sign Up", href: "/signup" },
-              { name: "Sign In", href: "/login" },
             ],
           },
         ]}

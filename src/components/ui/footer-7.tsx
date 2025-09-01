@@ -155,6 +155,14 @@ export const Footer7 = ({
                 </a>
               </li>
             ))}
+            <li className="hover:text-foreground transition-colors duration-150">
+              <a 
+                href="mailto:feedback@tradevault.com"
+                className="hover:underline underline-offset-4"
+              > 
+                Feedback
+              </a>
+            </li>
           </ul>
         </div>
       </div>

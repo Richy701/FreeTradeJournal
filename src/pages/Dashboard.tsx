@@ -1,7 +1,5 @@
-import { SectionCards } from "@/components/section-cards"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
@@ -9,7 +7,11 @@ import { SiteHeader } from "@/components/site-header"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
+
+// Lazy load chart components to reduce initial bundle size
+const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
+const ChartAreaInteractive = lazy(() => import("@/components/chart-area-interactive").then(m => ({ default: m.ChartAreaInteractive })))
 import { Link } from "react-router-dom"
 import {
   Dialog,
@@ -435,7 +437,13 @@ export default function Dashboard() {
       <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Top metrics row */}
         <div className="animate-in fade-in duration-300">
-          <SectionCards />
+          <Suspense fallback={<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>}>
+            <SectionCards />
+          </Suspense>
         </div>
         
         {/* AI Trading Coach */}
@@ -452,7 +460,9 @@ export default function Dashboard() {
           
           {/* Equity curve */}
           <div className="lg:col-span-2 order-2 lg:order-1">
-            <ChartAreaInteractive />
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              <ChartAreaInteractive />
+            </Suspense>
           </div>
         </div>
         
