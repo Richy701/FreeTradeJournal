@@ -38,7 +38,6 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                     logo.name === "The5ers" && "brightness-0 dark:brightness-100",
                     logo.name === "FTMO" && "dark:brightness-0 dark:invert"
                   )}
-                  style={logo.style ? { cssText: logo.style } : undefined}
                   onError={(e) => {
                     console.log(`Failed to load logo: ${logo.url}`);
                     (e.target as HTMLImageElement).style.display = 'none';

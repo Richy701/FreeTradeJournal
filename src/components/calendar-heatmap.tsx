@@ -152,11 +152,11 @@ export function CalendarHeatmap() {
   // Get journal entries from localStorage (now supports multiple entries per day)
   const journalEntries = useMemo(() => {
     const savedEntries = localStorage.getItem('journalEntries')
-    if (!savedEntries) return {}
+    if (!savedEntries) return {} as Record<string, any[]>
     
     try {
       const entries = JSON.parse(savedEntries)
-      const journalByDate = {}
+      const journalByDate: Record<string, any[]> = {}
       
       entries.forEach((entry: any) => {
         const dateKey = new Date(entry.date).toISOString().split('T')[0]
@@ -168,7 +168,7 @@ export function CalendarHeatmap() {
       
       return journalByDate
     } catch {
-      return {}
+      return {} as Record<string, any[]>
     }
   }, [isTradeDialogOpen]) // Re-check when modal closes
 
@@ -1074,7 +1074,7 @@ export function CalendarHeatmap() {
                       
                       // Auto-fill market sentiment based on trade side
                       if (value !== "none") {
-                        const selectedTrade = trades.find(trade => trade.id === value)
+                        const selectedTrade = trades.find((trade: any) => trade.id === value)
                         if (selectedTrade) {
                           setJournalMood(selectedTrade.side === 'long' ? 'bullish' : 'bearish')
                         }
@@ -1085,7 +1085,7 @@ export function CalendarHeatmap() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No trade linked</SelectItem>
-                        {trades.map((trade) => {
+                        {trades.map((trade: any) => {
                           const isWin = trade.pnl > 0;
                           return (
                             <SelectItem key={trade.id} value={trade.id}>
