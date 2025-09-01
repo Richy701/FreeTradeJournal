@@ -148,8 +148,12 @@
       min-height: 44px;
     }
     
-    /* Ensure adequate spacing between interactive elements */
-    button + button, a + a {
+    /* Ensure adequate spacing between interactive elements when not in flex containers */
+    .space-y-2 > button + button,
+    .space-y-3 > button + button,
+    .space-y-4 > button + button,
+    .grid > button + button,
+    .block > button + button {
       margin-top: 8px;
     }
 
