@@ -521,8 +521,8 @@ export default function Journal() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
-        <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -534,8 +534,8 @@ export default function Journal() {
                     <FontAwesomeIcon icon={faBookOpen} className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Trading Journal</h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">Document your trading thoughts and observations</p>
+                    <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">Trading Journal</h1>
+                    <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Document your trading thoughts and observations</p>
                   </div>
                 </div>
               </div>
@@ -574,7 +574,7 @@ export default function Journal() {
         </div>
       </div>
 
-      <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 space-y-4 sm:space-y-6">
 
         {showNewEntry && (
           <Card className="bg-card/80 backdrop-blur-sm border-2 shadow-xl">
@@ -606,11 +606,11 @@ export default function Journal() {
                   placeholder="Share your thoughts, analysis, market observations, lessons learned, or trading insights..."
                   value={newEntry.content}
                   onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-                  className="min-h-40 bg-background/50 border-muted-foreground/20 focus:border-primary/50 resize-none"
+                  className="min-h-32 sm:min-h-40 bg-background/50 border-muted-foreground/20 focus:border-primary/50 resize-none"
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground block pb-1">Entry Type</label>
                   <select
@@ -672,7 +672,7 @@ export default function Journal() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <FontAwesomeIcon icon={faTag} className="h-3 w-3" />
@@ -751,13 +751,13 @@ export default function Journal() {
                 </div>
 
                 {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="relative group">
                         <img 
                           src={image} 
                           alt={`Upload ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border"
+                          className="w-full h-20 sm:h-24 object-cover rounded-lg border"
                         />
                         <button
                           type="button"
@@ -839,16 +839,16 @@ export default function Journal() {
               />
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap sm:flex-nowrap">
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-initial"
               >
                 <Filter className="h-4 w-4" />
-                Filters
+                <span className="sm:inline">Filters</span>
                 {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5">
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5 text-xs">
                     {activeFilterCount}
                   </Badge>
                 )}
@@ -856,13 +856,13 @@ export default function Journal() {
               
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2 flex-1 sm:flex-initial">
                     <ArrowUpDown className="h-4 w-4" />
-                    Sort
+                    <span className="sm:inline">Sort</span>
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56">
+                <PopoverContent className="w-56" align="end" sideOffset={5}>
                   <div className="space-y-3">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Sort By</label>
@@ -899,7 +899,7 @@ export default function Journal() {
                   variant="ghost"
                   size="sm"
                   onClick={resetFilters}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground hidden sm:inline-flex"
                 >
                   Clear All
                 </Button>
@@ -913,23 +913,23 @@ export default function Journal() {
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Date Range Filter */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-1">
                     <label className="text-sm font-medium flex items-center gap-2">
                       <Calendar className="h-3 w-3" />
                       Date Range
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Input
                         type="date"
                         value={dateRange.start}
                         onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                        className="bg-background/50 border-muted-foreground/20"
+                        className="bg-background/50 border-muted-foreground/20 w-full"
                       />
                       <Input
                         type="date"
                         value={dateRange.end}
                         onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                        className="bg-background/50 border-muted-foreground/20"
+                        className="bg-background/50 border-muted-foreground/20 w-full"
                       />
                     </div>
                   </div>
@@ -1098,15 +1098,15 @@ export default function Journal() {
               const linkedTrade = getLinkedTrade(entry.tradeId);
               
               return (
-                <Card key={entry.id} className="bg-card border-border/50 hover:shadow-lg transition-all duration-200">
+                <Card key={entry.id} className="bg-card border-border/50 hover:shadow-lg transition-all duration-200 overflow-hidden">
                   <CardHeader className="pb-3">
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg font-semibold leading-tight text-foreground">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base sm:text-lg font-semibold leading-tight text-foreground break-words">
                           {entry.title}
                         </CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs font-medium shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          <Badge variant="secondary" className="text-xs font-medium shrink-0 hidden sm:inline-flex">
                             {entry.entryType === 'general' ? 'General' : 
                              entry.entryType === 'pre-trade' ? 'Pre-Trade' : 'Post-Trade'}
                           </Badge>
@@ -1130,7 +1130,7 @@ export default function Journal() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 text-sm">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <FontAwesomeIcon icon={faCalendarAlt} className="h-3 w-3" />
                           <span>{format(entry.date, 'MMM dd, yyyy')}</span>
@@ -1194,13 +1194,13 @@ export default function Journal() {
                           <Upload className="h-4 w-4" />
                           Charts & Screenshots
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {entry.screenshots.map((screenshot, index) => (
                             <div key={index} className="group relative">
                               <img 
                                 src={screenshot} 
                                 alt={`Chart ${index + 1}`}
-                                className="w-full h-48 object-cover rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
+                                className="w-full h-32 sm:h-48 object-cover rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
                                 onClick={() => window.open(screenshot, '_blank')}
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
