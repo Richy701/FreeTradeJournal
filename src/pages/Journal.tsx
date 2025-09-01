@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,13 +16,31 @@ import {
   Upload, 
   X, 
   Edit3, 
-  Trash2 
+  Trash2,
+  Filter,
+  SlidersHorizontal,
+  Calendar,
+  DollarSign,
+  ArrowUpDown,
+  ChevronDown
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Trade {
   id: string
@@ -75,6 +93,24 @@ export default function Journal() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: '',
+    end: ''
+  });
+  const [selectedMarket, setSelectedMarket] = useState<string>('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [pnlRange, setPnlRange] = useState<{ min: string; max: string }>({
+    min: '',
+    max: ''
+  });
+  const [selectedMood, setSelectedMood] = useState<string>('all');
+  const [selectedEntryType, setSelectedEntryType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'title'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
   const [newEntry, setNewEntry] = useState({
     title: '',
     content: '',
@@ -342,11 +378,128 @@ export default function Journal() {
     return trades.find(t => t.id === tradeId);
   };
 
-  const filteredEntries = entries.filter(entry =>
-    entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Extract all unique tags from entries
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    entries.forEach(entry => {
+      entry.tags.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [entries]);
+
+  // Filter and sort entries
+  const filteredAndSortedEntries = useMemo(() => {
+    let filtered = entries.filter(entry => {
+      // Search filter
+      const matchesSearch = searchTerm === '' || 
+        entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (!matchesSearch) return false;
+      
+      // Date range filter
+      if (dateRange.start && dateRange.end) {
+        const entryDate = new Date(entry.date);
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        endDate.setHours(23, 59, 59, 999); // Include the entire end day
+        
+        if (!isWithinInterval(entryDate, { start: startDate, end: endDate })) {
+          return false;
+        }
+      }
+      
+      // Market filter
+      if (selectedMarket !== 'all') {
+        const linkedTrade = getLinkedTrade(entry.tradeId);
+        if (!linkedTrade || linkedTrade.market !== selectedMarket) {
+          return false;
+        }
+      }
+      
+      // Tags filter
+      if (selectedTags.length > 0) {
+        const hasAllTags = selectedTags.every(tag => entry.tags.includes(tag));
+        if (!hasAllTags) return false;
+      }
+      
+      // P&L range filter
+      if ((pnlRange.min || pnlRange.max) && entry.tradeId) {
+        const linkedTrade = getLinkedTrade(entry.tradeId);
+        if (linkedTrade) {
+          const pnl = linkedTrade.pnl;
+          if (pnlRange.min && pnl < parseFloat(pnlRange.min)) return false;
+          if (pnlRange.max && pnl > parseFloat(pnlRange.max)) return false;
+        } else {
+          return false; // No linked trade, so can't filter by P&L
+        }
+      }
+      
+      // Mood filter
+      if (selectedMood !== 'all' && entry.mood !== selectedMood) {
+        return false;
+      }
+      
+      // Entry type filter
+      if (selectedEntryType !== 'all' && entry.entryType !== selectedEntryType) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    // Sort entries
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'pnl':
+          const tradeA = getLinkedTrade(a.tradeId);
+          const tradeB = getLinkedTrade(b.tradeId);
+          const pnlA = tradeA ? tradeA.pnl : 0;
+          const pnlB = tradeB ? tradeB.pnl : 0;
+          comparison = pnlA - pnlB;
+          break;
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    return filtered;
+  }, [entries, searchTerm, dateRange, selectedMarket, selectedTags, pnlRange, selectedMood, selectedEntryType, sortBy, sortOrder, trades]);
+
+  // Reset filters
+  const resetFilters = () => {
+    setDateRange({ start: '', end: '' });
+    setSelectedMarket('all');
+    setSelectedTags([]);
+    setPnlRange({ min: '', max: '' });
+    setSelectedMood('all');
+    setSelectedEntryType('all');
+    setSortBy('date');
+    setSortOrder('desc');
+    setSearchTerm('');
+  };
+
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (dateRange.start && dateRange.end) count++;
+    if (selectedMarket !== 'all') count++;
+    if (selectedTags.length > 0) count++;
+    if (pnlRange.min || pnlRange.max) count++;
+    if (selectedMood !== 'all') count++;
+    if (selectedEntryType !== 'all') count++;
+    if (searchTerm) count++;
+    return count;
+  }, [dateRange, selectedMarket, selectedTags, pnlRange, selectedMood, selectedEntryType, searchTerm]);
 
   const getMoodColor = (mood: string) => {
     switch (mood) {
@@ -673,20 +826,249 @@ export default function Journal() {
           </Card>
         )}
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1 max-w-sm">
-            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search entries..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-background/50 border-muted-foreground/20 focus:border-primary/50"
-            />
+        <div className="space-y-4 mb-6">
+          {/* Search and Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search entries..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-background/50 border-muted-foreground/20 focus:border-primary/50"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <ArrowUpDown className="h-4 w-4" />
+                    Sort
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56">
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Sort By</label>
+                      <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="date">Date</SelectItem>
+                          <SelectItem value="pnl">P&L</SelectItem>
+                          <SelectItem value="title">Title</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Order</label>
+                      <Select value={sortOrder} onValueChange={(value: any) => setSortOrder(value)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="desc">Newest First</SelectItem>
+                          <SelectItem value="asc">Oldest First</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {activeFilterCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Clear All
+                </Button>
+              )}
+            </div>
           </div>
+          
+          {/* Filter Panel */}
+          {showFilters && (
+            <Card className="bg-card/60 backdrop-blur-sm border-muted-foreground/20">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Date Range Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Calendar className="h-3 w-3" />
+                      Date Range
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                        className="bg-background/50 border-muted-foreground/20"
+                      />
+                      <Input
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                        className="bg-background/50 border-muted-foreground/20"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Market Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <BarChart3 className="h-3 w-3" />
+                      Market
+                    </label>
+                    <Select value={selectedMarket} onValueChange={setSelectedMarket}>
+                      <SelectTrigger className="bg-background/50 border-muted-foreground/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Markets</SelectItem>
+                        <SelectItem value="forex">Forex</SelectItem>
+                        <SelectItem value="futures">Futures</SelectItem>
+                        <SelectItem value="indices">Indices</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Mood Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Mood</label>
+                    <Select value={selectedMood} onValueChange={setSelectedMood}>
+                      <SelectTrigger className="bg-background/50 border-muted-foreground/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Moods</SelectItem>
+                        <SelectItem value="bullish">Bullish</SelectItem>
+                        <SelectItem value="bearish">Bearish</SelectItem>
+                        <SelectItem value="neutral">Neutral</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Entry Type Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Entry Type</label>
+                    <Select value={selectedEntryType} onValueChange={setSelectedEntryType}>
+                      <SelectTrigger className="bg-background/50 border-muted-foreground/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="general">General</SelectItem>
+                        <SelectItem value="pre-trade">Pre-Trade</SelectItem>
+                        <SelectItem value="post-trade">Post-Trade</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* P&L Range Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <DollarSign className="h-3 w-3" />
+                      P&L Range
+                    </label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={pnlRange.min}
+                        onChange={(e) => setPnlRange({ ...pnlRange, min: e.target.value })}
+                        className="bg-background/50 border-muted-foreground/20"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={pnlRange.max}
+                        onChange={(e) => setPnlRange({ ...pnlRange, max: e.target.value })}
+                        className="bg-background/50 border-muted-foreground/20"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Tags Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <FontAwesomeIcon icon={faTag} className="h-3 w-3" />
+                      Tags
+                    </label>
+                    <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-background/50 border-muted-foreground/20 min-h-[40px] max-h-24 overflow-y-auto">
+                      {allTags.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">No tags available</span>
+                      ) : (
+                        allTags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTags(
+                                selectedTags.includes(tag)
+                                  ? selectedTags.filter(t => t !== tag)
+                                  : [...selectedTags, tag]
+                              );
+                            }}
+                            className={`px-2 py-1 text-xs rounded-full border transition-colors ${
+                              selectedTags.includes(tag)
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-muted-foreground/30 hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Filter Summary */}
+                {activeFilterCount > 0 && (
+                  <div className="mt-4 pt-4 border-t border-muted-foreground/10">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">
+                        Showing {filteredAndSortedEntries.length} of {entries.length} entries
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetFilters}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="grid gap-6">
-          {filteredEntries.length === 0 ? (
+          {filteredAndSortedEntries.length === 0 ? (
             <Card className="bg-card/60 backdrop-blur-sm border-2 border-dashed border-muted-foreground/20">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <div 
@@ -712,7 +1094,7 @@ export default function Journal() {
               </CardContent>
             </Card>
           ) : (
-            filteredEntries.map((entry) => {
+            filteredAndSortedEntries.map((entry) => {
               const linkedTrade = getLinkedTrade(entry.tradeId);
               
               return (
