@@ -54,7 +54,7 @@ export default function ModernCTA() {
               <span className="text-primary">Trading Excellence</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Join thousands of traders who are using TradeVault for free to track their performance, 
+              Join thousands of traders who are using FreeTradeJournal for free to track their performance, 
               analyze their trades, and improve their results with data-driven insights.
             </p>
           </motion.div>

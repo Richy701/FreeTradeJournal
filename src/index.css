@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* TradeVault light theme */
+    /* FreeTradeJournal light theme */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -36,7 +36,7 @@
   }
 
   .dark {
-    /* TradeVault dark theme - matching hero background */
+    /* FreeTradeJournal dark theme - matching hero background */
     --background: 0 0% 1.2%; /* #030303 equivalent */
     --foreground: 210 40% 98%;
     --card: 0 0% 3.5%; /* Slightly lighter for cards */

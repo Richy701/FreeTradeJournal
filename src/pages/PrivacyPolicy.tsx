@@ -36,7 +36,7 @@ export default function PrivacyPolicy() {
               <section className="space-y-4">
                 <h2 className="text-2xl font-semibold">Information We Collect</h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>TradeVault operates as a local-first application. All your trading data is stored locally on your device and is not transmitted to our servers unless you explicitly choose to use cloud sync features.</p>
+                  <p>FreeTradeJournal operates as a local-first application. All your trading data is stored locally on your device and is not transmitted to our servers unless you explicitly choose to use cloud sync features.</p>
                   <p>We may collect the following information:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Account information (email, name) if you create an account</li>
@@ -51,7 +51,7 @@ export default function PrivacyPolicy() {
                 <div className="space-y-3 text-muted-foreground">
                   <p>Your information is used to:</p>
                   <ul className="list-disc pl-6 space-y-2">
-                    <li>Provide and maintain the TradeVault application</li>
+                    <li>Provide and maintain the FreeTradeJournal application</li>
                     <li>Improve our services and user experience</li>
                     <li>Send important service updates and notifications</li>
                     <li>Provide customer support when requested</li>
@@ -70,7 +70,7 @@ export default function PrivacyPolicy() {
               <section className="space-y-4">
                 <h2 className="text-2xl font-semibold">Third-Party Services</h2>
                 <div className="space-y-3 text-muted-foreground">
-                  <p>TradeVault may integrate with third-party services to enhance functionality:</p>
+                  <p>FreeTradeJournal may integrate with third-party services to enhance functionality:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Analytics services for usage tracking (anonymous)</li>
                     <li>Authentication services for secure login</li>
@@ -98,7 +98,7 @@ export default function PrivacyPolicy() {
                 <div className="space-y-3 text-muted-foreground">
                   <p>If you have any questions about this Privacy Policy or your data, please contact us:</p>
                   <ul className="list-disc pl-6 space-y-2">
-                    <li>Email: privacy@tradevault.app</li>
+                    <li>Email: privacy@freetradejournal.com</li>
                     <li>Through our feedback system in the application</li>
                   </ul>
                 </div>

@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export function FAQSection() {
   const faqs = [
     {
-      question: "What markets does TradeVault support?",
-      answer: "TradeVault supports comprehensive tracking for Forex pairs, Futures contracts, and major Indices. You can log trades with detailed information including lot sizes, spreads, commissions, and swap costs specific to each market type."
+      question: "What markets does FreeTradeJournal support?",
+      answer: "FreeTradeJournal supports comprehensive tracking for Forex pairs, Futures contracts, and major Indices. You can log trades with detailed information including lot sizes, spreads, commissions, and swap costs specific to each market type."
     },
     {
       question: "How accurate are the P&L calculations?",
@@ -18,15 +18,15 @@ export function FAQSection() {
     },
     {
       question: "What analytics and metrics are available?",
-      answer: "TradeVault offers professional-grade analytics including win rate, profit factor, average R:R ratio, maximum drawdown, daily/weekly/monthly performance breakdowns, and detailed performance metrics by instrument, strategy, and time period."
+      answer: "FreeTradeJournal offers professional-grade analytics including win rate, profit factor, average R:R ratio, maximum drawdown, daily/weekly/monthly performance breakdowns, and detailed performance metrics by instrument, strategy, and time period."
     },
     {
       question: "Is my trading data secure?",
       answer: "Absolutely. We use industry-standard encryption to protect your data both in transit and at rest. Your trading information is private and secure, accessible only to you through your authenticated account."
     },
     {
-      question: "How much does TradeVault cost?",
-      answer: "TradeVault offers a free tier to get you started with core features. We also have premium plans with advanced analytics, unlimited trade history, and additional features for serious traders."
+      question: "How much does FreeTradeJournal cost?",
+      answer: "FreeTradeJournal offers a free tier to get you started with core features. We also have premium plans with advanced analytics, unlimited trade history, and additional features for serious traders."
     }
   ];
 
@@ -38,7 +38,7 @@ export function FAQSection() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to know about TradeVault and how it can transform your trading journey
+            Everything you need to know about FreeTradeJournal and how it can transform your trading journey
           </p>
         </div>
         

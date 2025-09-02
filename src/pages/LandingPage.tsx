@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 // import { Card } from '@/components/ui/card'; // unused
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { TradeVaultFeatures } from '@/components/blocks/features-8';
+import { FreeTradeJournalFeatures } from '@/components/blocks/features-8';
 import FeatureShowcase from '@/components/blocks/feature-showcase';
 import { Footer7 } from '@/components/ui/footer-7';
-import { TradeVaultFeatures as Features6 } from '@/components/blocks/features-6';
+import { FreeTradeJournalFeatures as Features6 } from '@/components/blocks/features-6';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { FAQSection } from '@/components/blocks/faq-section';
@@ -29,7 +29,7 @@ export default function LandingPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary"></div>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-primary">Loading TradeVault...</span>
+            <span className="text-sm font-medium text-primary">Loading FreeTradeJournal...</span>
           </div>
         </div>
       </div>
@@ -48,7 +48,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <TrendingUp className="h-9 w-9 text-primary" />
-            <span className="text-2xl font-bold text-foreground">TradeVault</span>
+            <span className="text-2xl font-bold text-foreground">FreeTradeJournal</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md focus:ring-2 focus:ring-ring/50">
@@ -64,9 +64,9 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <HeroGeometric 
-        badge="Professional Trading Journal"
-        title1="Track. Analyze. Improve."
-        title2="Your Trading Performance"
+        badge="100% Free Trading Journal - No Credit Card Required"
+        title1="Track Every Trade. Analyze Performance."
+        title2="Improve Your Trading Results"
       />
 
       {/* Logo Cloud - Prop Firms */}
@@ -80,10 +80,12 @@ export default function LandingPage() {
         <section className="py-20 px-6 md:px-12" style={{maxWidth: '1200px', margin: '0 auto'}}>
           <div className="max-w-full">
             <div className="text-center space-y-8 mb-20" style={{marginBottom: '80px'}}>
+              <h2 className="text-2xl font-semibold mb-4">The Complete Free Trading Journal for Forex, Futures & Stock Traders</h2>
               <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-[1.6] font-normal">
-                Take control of your trading journey with TradeVault - the comprehensive journaling platform built for serious traders. 
-                Track every trade, analyze your performance with professional-grade metrics, and identify patterns that impact your profitability. 
-                From detailed P&L tracking to psychological insights, TradeVault gives you the tools to transform your trading.
+                <strong>FreeTradeJournal</strong> is the ultimate free trading journal designed for serious forex traders, futures traders, and stock investors. 
+                Track every trade with precision, analyze your performance using professional-grade metrics, and identify profitable patterns with our advanced analytics dashboard. 
+                Whether you're a day trader, swing trader, or working with prop firms like FTMO, Apex, or TopStep, our comprehensive trading journal provides 
+                P&L tracking, risk management calculators, calendar heatmaps, win rate analysis, and AI-powered insights - all 100% free, forever.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-8" style={{marginTop: '32px'}}>
                 <Link to="/dashboard">
@@ -98,8 +100,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TradeVault Features Section */}
-      <TradeVaultFeatures />
+      {/* FreeTradeJournal Features Section */}
+      <FreeTradeJournalFeatures />
 
 
       
@@ -179,8 +181,8 @@ export default function LandingPage() {
         logo={{
           url: "/",
           src: "",
-          alt: "TradeVault Logo",
-          title: "TradeVault"
+          alt: "FreeTradeJournal Logo",
+          title: "FreeTradeJournal"
         }}
         sections={[
           {
@@ -205,7 +207,7 @@ export default function LandingPage() {
             label: "Buy me a coffee"
           }
         ]}
-        copyright="© 2025 TradeVault. All rights reserved."
+        copyright="© 2025 FreeTradeJournal. All rights reserved."
         legalLinks={[
           { name: "Privacy Policy", href: "/privacy" },
           { name: "Terms and Conditions", href: "/terms" },

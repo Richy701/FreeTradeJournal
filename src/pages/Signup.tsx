@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import { faEye, faEyeSlash, faChartLine, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faCheck, faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Signup() {
@@ -115,7 +115,7 @@ export default function Signup() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">Sign up</CardTitle>
             <CardDescription className="text-center">
-              Create your TradeVault account to get started
+              Create your FreeTradeJournal account to get started
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

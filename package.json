@@ -1,5 +1,5 @@
 {
-  "name": "tradevault",
+  "name": "freetradejournal",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -45,7 +45,6 @@
     "firebase": "^12.1.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
-    "next": "^15.5.2",
     "node-fetch": "^2.7.0",
     "postcss": "^8.5.6",
     "react": "^19.1.1",

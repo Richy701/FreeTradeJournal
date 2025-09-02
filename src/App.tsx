@@ -5,6 +5,7 @@ import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
 import { AccountProvider } from '@/contexts/account-context';
 import { ProtectedRoute } from '@/components/protected-route';
+import { SEOMeta } from '@/components/seo-meta';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/react';
 import Layout from '@/components/Layout';
@@ -25,11 +26,12 @@ const TermsAndConditions = lazy(() => import('@/pages/TermsAndConditions'));
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="tradevault-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="ftj-theme">
       <ThemePresetsProvider>
         <AuthProvider>
           <AccountProvider>
             <Router>
+            <SEOMeta />
             <Toaster 
               richColors 
               position="top-right"

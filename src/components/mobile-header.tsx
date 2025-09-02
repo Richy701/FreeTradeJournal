@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { AccountSwitcher } from '@/components/account-switcher';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { cn } from '@/lib/utils';
 
 export function MobileHeader({ title }: { title?: string }) {
@@ -31,10 +33,10 @@ export function MobileHeader({ title }: { title?: string }) {
             className="w-5 h-5 rounded flex items-center justify-center text-white flex-shrink-0"
             style={{ backgroundColor: themeColors.primary }}
           >
-            <span className="text-xs font-bold">T</span>
+            <FontAwesomeIcon icon={faChartLine} className="size-3" />
           </div>
           <span className="font-semibold text-xs truncate">
-            {title || 'TradeVault'}
+            {title || 'FreeTradeJournal'}
           </span>
         </div>
         

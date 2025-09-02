@@ -265,7 +265,7 @@ export default function Onboarding() {
               </div>
             </div>
             <div className="space-y-4 max-w-md mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome to TradeVault</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome to FreeTradeJournal</h2>
               <p className="text-muted-foreground text-base leading-relaxed">
                 Let's set up your trading journal to track your performance and improve your results.
                 This will only take a few minutes.
@@ -973,7 +973,7 @@ export default function Onboarding() {
             <div className="space-y-4 max-w-md mx-auto">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">You're all set!</h2>
               <p className="text-muted-foreground text-base leading-relaxed">
-                Your TradeVault account is configured and ready to use. Start logging your trades and tracking your performance.
+                Your FreeTradeJournal account is configured and ready to use. Start logging your trades and tracking your performance.
               </p>
             </div>
             <div className="space-y-4 pt-4">
@@ -983,7 +983,7 @@ export default function Onboarding() {
                 className="w-full max-w-sm mx-auto h-14 text-base rounded-2xl font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-xl transition-all duration-300 hover:scale-105" 
                 disabled={loading}
               >
-                {loading ? 'Setting up...' : 'Enter TradeVault'}
+                {loading ? 'Setting up...' : 'Enter FreeTradeJournal'}
               </Button>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                 You can always change these settings later in your account preferences.
@@ -1016,7 +1016,7 @@ export default function Onboarding() {
           </div>
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-              Welcome to TradeVault
+              Welcome to FreeTradeJournal
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg max-w-md mx-auto">
               Let's get your trading journal set up in just a few steps

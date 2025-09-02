@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import { faEye, faEyeSlash, faChartLine, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Login() {
@@ -97,7 +97,7 @@ export default function Login() {
         {/* Logo/Brand */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-          <p className="text-muted-foreground/85">Sign in to your TradeVault account</p>
+          <p className="text-muted-foreground/85">Sign in to your FreeTradeJournal account</p>
         </div>
 
         <Card className={`border-border/50 shadow-lg transition-all duration-300 ${formAnimation}`}>

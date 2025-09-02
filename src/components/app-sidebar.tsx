@@ -1,6 +1,8 @@
 import * as React from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChartLine } from '@fortawesome/free-solid-svg-icons'
 import {
   BarChart3,
   TrendingUp,
@@ -88,10 +90,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="flex aspect-square size-8 items-center justify-center rounded-lg text-white" 
                   style={{backgroundColor: themeColors.primary}}
                 >
-                  <TrendingUp className="size-4" />
+                  <FontAwesomeIcon icon={faChartLine} className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">TradeVault</span>
+                  <span className="truncate font-semibold">FreeTradeJournal</span>
                   <span className="truncate text-xs">Forex & Futures Journal</span>
                 </div>
               </a>

@@ -114,7 +114,7 @@ function FeedbackDialog({
         <DialogHeader className="sr-only">
           <DialogTitle>Send Feedback</DialogTitle>
           <DialogDescription>
-            Share your feedback, report bugs, or request features for TradeVault
+            Share your feedback, report bugs, or request features for FreeTradeJournal
           </DialogDescription>
         </DialogHeader>
         {open && (

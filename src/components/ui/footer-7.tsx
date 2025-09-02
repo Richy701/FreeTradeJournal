@@ -1,5 +1,7 @@
 import React from "react";
 import { FaXTwitter } from "react-icons/fa6";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 interface Footer7Props {
   logo?: {
@@ -94,9 +96,7 @@ export const Footer7 = ({
                   />
                 ) : (
                   <div className="h-10 w-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                    <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
+                    <FontAwesomeIcon icon={faChartLine} className="h-6 w-6 text-primary" />
                   </div>
                 )}
                 <h2 className="text-2xl font-bold text-foreground">{logo.title}</h2>
@@ -157,7 +157,7 @@ export const Footer7 = ({
             ))}
             <li className="hover:text-foreground transition-colors duration-150">
               <a 
-                href="mailto:feedback@tradevault.com"
+                href="mailto:feedback@freetradejournal.com"
                 className="hover:underline underline-offset-4"
               > 
                 Feedback

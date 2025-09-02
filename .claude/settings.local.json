@@ -41,7 +41,8 @@
       "Bash(magick:*)",
       "Bash(done)",
       "Bash(for file in * *.webp)",
-      "Bash(do mv \"$file\" \"$file// /_\")"
+      "Bash(do mv \"$file\" \"$file// /_\")",
+      "Bash(vercel:*)"
     ],
     "deny": []
   }

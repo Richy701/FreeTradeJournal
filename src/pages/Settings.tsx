@@ -143,7 +143,7 @@ export default function Settings() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('href', url);
-    a.setAttribute('download', `tradevault_backup_${new Date().toISOString().split('T')[0]}.json`);
+    a.setAttribute('download', `ftj_backup_${new Date().toISOString().split('T')[0]}.json`);
     a.click();
   };
 
@@ -1046,7 +1046,7 @@ export default function Settings() {
                       <div>
                         <div className="font-semibold text-foreground">Browser Notifications</div>
                         <div className="text-sm text-muted-foreground/85 mt-1 leading-[1.6]">
-                          Enable browser notifications to receive alerts even when TradeVault is not actively open. 
+                          Enable browser notifications to receive alerts even when FreeTradeJournal is not actively open. 
                           You can manage these in your browser settings.
                         </div>
                       </div>

@@ -1,7 +1,7 @@
 import { BarChart3, Lock, TrendingUp, Zap } from 'lucide-react'
 import { ResponsiveImage } from '@/components/ui/responsive-image'
 
-export function TradeVaultFeatures() {
+export function FreeTradeJournalFeatures() {
     return (
         <section className="py-16 md:py-24">
             <div className="mx-auto max-w-6xl space-y-16 px-6">
@@ -14,7 +14,7 @@ export function TradeVaultFeatures() {
                         <div className="bg-gradient-to-t z-1 dark:from-background from-transparent absolute inset-0 to-transparent"></div>
                         <img 
                           src="/images/landing/Trading dashboard New screenshot.png" 
-                          alt="TradeVault Dashboard"
+                          alt="FreeTradeJournal Dashboard"
                           className="z-10 w-full h-auto rounded-2xl"
                           loading="lazy"
                           decoding="async"

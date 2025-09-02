@@ -65,7 +65,7 @@ export default function WhyChooseSection() {
 
   const stats = [
     { icon: TrendingUp, value: "92%", label: "Performance Improvement", sublabel: "within 30 days" },
-    { icon: Users, value: "10K+", label: "Active Traders", sublabel: "trust TradeVault" },
+    { icon: Users, value: "10K+", label: "Active Traders", sublabel: "trust FreeTradeJournal" },
     { icon: Award, value: "4.9★", label: "User Rating", sublabel: "from 500+ reviews" }
   ];
 
@@ -85,11 +85,11 @@ export default function WhyChooseSection() {
             Why Professional Traders
             <br />
             <span className="bg-gradient-to-r from-primary to-green-500 bg-clip-text text-transparent">
-              Choose TradeVault
+              Choose FreeTradeJournal
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Join thousands of successful traders who rely on TradeVault for superior performance, 
+            Join thousands of successful traders who rely on FreeTradeJournal for superior performance, 
             security, and insights that drive consistent profits.
           </p>
         </motion.div>
@@ -146,7 +146,7 @@ export default function WhyChooseSection() {
                 <div className="text-6xl font-bold text-primary mb-2">92%</div>
                 <h3 className="text-2xl font-bold mb-2">Performance Boost</h3>
                 <p className="text-muted-foreground text-lg">
-                  of traders improved their results within 30 days of using TradeVault 
+                  of traders improved their results within 30 days of using FreeTradeJournal 
                   to track and analyze their trades
                 </p>
                 <div className="flex items-center justify-center gap-1 mt-4">

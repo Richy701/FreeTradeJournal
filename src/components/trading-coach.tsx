@@ -118,7 +118,7 @@ export function TradingCoach() {
         {
           icon: faLightbulb,
           type: 'tip',
-          title: "Welcome to TradeVault!",
+          title: "Welcome to FreeTradeJournal!",
           message: "Start logging your trades to get personalized coaching insights."
         },
         {
