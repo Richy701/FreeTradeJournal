@@ -5,6 +5,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { AccountSwitcher } from "@/components/account-switcher"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { useLocation } from "react-router-dom"
 
@@ -36,17 +37,17 @@ export function SiteHeader({ className }: { className?: string }) {
     }
     
     if (segments.length === 0) {
-      return [{ label: 'Home', href: '/', isActive: true }]
+      return [{ label: 'Home', href: '/dashboard', isActive: true }]
     }
     
     if (segments.length === 1 && segments[0] === 'dashboard') {
       return [
-        { label: 'Home', href: '/', isActive: false },
+        { label: 'Home', href: '/dashboard', isActive: false },
         { label: 'Dashboard', href: '/dashboard', isActive: true }
       ]
     }
     
-    const items = [{ label: 'Home', href: '/', isActive: false }]
+    const items = [{ label: 'Home', href: '/dashboard', isActive: false }]
     
     segments.forEach((segment, index) => {
       const href = '/' + segments.slice(0, index + 1).join('/')
@@ -63,6 +64,8 @@ export function SiteHeader({ className }: { className?: string }) {
 
   return (
     <header className={`hidden md:flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
+      {hasSidebar && <SidebarTrigger />}
+      <Separator orientation="vertical" className="mr-2 h-4" />
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbItems.map((item, index) => (
@@ -83,6 +86,9 @@ export function SiteHeader({ className }: { className?: string }) {
           ))}
         </BreadcrumbList>
       </Breadcrumb>
+      <div className="ml-auto">
+        <AccountSwitcher onManageAccounts={() => window.location.href = '/settings?tab=accounts'} />
+      </div>
     </header>
   )
 }

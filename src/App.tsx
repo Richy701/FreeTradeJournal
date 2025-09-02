@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
+import { AccountProvider } from '@/contexts/account-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/react';
@@ -27,7 +28,8 @@ function App() {
     <ThemeProvider defaultTheme="dark" storageKey="tradevault-theme">
       <ThemePresetsProvider>
         <AuthProvider>
-          <Router>
+          <AccountProvider>
+            <Router>
             <Toaster 
               richColors 
               position="top-right"
@@ -66,7 +68,8 @@ function App() {
                 </Route>
               </Routes>
             </Suspense>
-          </Router>
+            </Router>
+          </AccountProvider>
         </AuthProvider>
       </ThemePresetsProvider>
     </ThemeProvider>

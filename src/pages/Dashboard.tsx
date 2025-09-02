@@ -1,5 +1,6 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
+import { useAccounts } from '@/contexts/account-context'
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
@@ -35,6 +36,7 @@ import {
 export default function Dashboard() {
   const { themeColors } = useThemePresets()
   const { user } = useAuth()
+  const { activeAccount } = useAccounts()
   const [isLoading, setIsLoading] = useState(true)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
   const [tradeForm, setTradeForm] = useState({
@@ -89,6 +91,7 @@ export default function Dashboard() {
     
     const newTrade = {
       id: Date.now().toString(),
+      accountId: activeAccount?.id || 'default',
       symbol: tradeForm.symbol.toUpperCase(),
       side: tradeForm.side,
       entryPrice,

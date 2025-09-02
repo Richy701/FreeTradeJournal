@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useAccounts } from '@/contexts/account-context'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight, faBookOpen, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,7 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom"
-import { Plus } from "lucide-react"
+import { Plus, DollarSign, Target, TrendingUp, BarChart3, Activity } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
 import {
   Popover,
   PopoverContent,
@@ -79,6 +81,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors } = useThemePresets()
+  const { activeAccount } = useAccounts()
   
   // State for current viewing month/year
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -132,22 +135,24 @@ export function CalendarHeatmap() {
     }
   }
 
-  // Get trades from localStorage
+  // Get trades from localStorage filtered by active account
   const trades = useMemo(() => {
     const storedTrades = localStorage.getItem('trades')
-    if (!storedTrades) return []
+    if (!storedTrades || !activeAccount) return []
     
     try {
       const parsedTrades = JSON.parse(storedTrades)
-      return parsedTrades.map((trade: any) => ({
-        ...trade,
-        entryTime: new Date(trade.entryTime),
-        exitTime: new Date(trade.exitTime)
-      }))
+      return parsedTrades
+        .filter((trade: any) => trade.accountId === activeAccount.id || (!trade.accountId && activeAccount.id.includes('default')))
+        .map((trade: any) => ({
+          ...trade,
+          entryTime: new Date(trade.entryTime),
+          exitTime: new Date(trade.exitTime)
+        }))
     } catch {
       return []
     }
-  }, [])
+  }, [activeAccount])
 
   // Get journal entries from localStorage (now supports multiple entries per day)
   const journalEntries = useMemo(() => {
@@ -667,42 +672,63 @@ export function CalendarHeatmap() {
         </div>
 
         {/* Mobile-optimized stats panel */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-4 bg-muted/30 rounded-lg">
-          <div className="text-center space-y-1">
-            <div className="text-lg sm:text-xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+        <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-0 p-3 md:p-4 md:px-6 bg-muted/30 md:bg-transparent rounded-lg md:rounded-none">
+          <div className="text-center md:text-left md:flex-1">
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
               {monthlyStats.totalPnL >= 0 ? '+' : ''}{formatCurrency(monthlyStats.totalPnL)}
             </div>
-            <div className="text-xs text-muted-foreground">Monthly P&L</div>
+            <div className="text-xs md:text-sm text-muted-foreground mt-1">Monthly P&L</div>
           </div>
           
-          <div className="text-center space-y-1">
-            <div className="text-lg sm:text-xl font-bold">
+          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
+          
+          <div className="text-center md:text-left md:flex-1">
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : '#ef4444'}}>
               {monthlyStats.winRate.toFixed(1)}%
             </div>
-            <div className="text-xs text-muted-foreground">Win Rate</div>
+            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
+              <Target className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+              <div className="text-xs md:text-sm text-muted-foreground">Win Rate</div>
+            </div>
           </div>
           
-          <div className="text-center space-y-1">
-            <div className="text-lg sm:text-xl font-bold">
+          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
+          
+          <div className="text-center md:text-left md:flex-1 hidden md:block">
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
+              {monthlyStats.riskReward === Infinity ? '∞' : monthlyStats.riskReward.toFixed(2)}
+            </div>
+            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+              <div className="text-xs md:text-sm text-muted-foreground">R:R</div>
+            </div>
+          </div>
+          
+          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
+          
+          <div className="text-center md:text-left md:flex-1">
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold">
               <span style={{color: themeColors.profit}}>{monthlyStats.totalWinningTrades}</span>
               <span className="text-muted-foreground mx-1">/</span>
               <span style={{color: themeColors.loss}}>{monthlyStats.totalLosingTrades}</span>
             </div>
-            <div className="text-xs text-muted-foreground">W/L</div>
+            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
+              <BarChart3 className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+              <div className="text-xs md:text-sm text-muted-foreground">W/L</div>
+            </div>
           </div>
           
-          <div className="text-center space-y-1">
-            <div className="text-lg sm:text-xl font-bold">
+          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
+          
+          <div className="text-center md:text-left">
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
               {monthlyStats.totalTrades}
             </div>
-            <div className="text-xs text-muted-foreground">Trades</div>
+            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
+              <Activity className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
+              <div className="text-xs md:text-sm text-muted-foreground">Trades</div>
+            </div>
           </div>
-        </div>
-        
-        {/* Active trades indicator */}
-        <div className="flex items-center gap-2 text-sm">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-muted-foreground">{monthlyStats.activeDays} active</span>
         </div>
       </CardHeader>
       <CardContent className="pt-4">

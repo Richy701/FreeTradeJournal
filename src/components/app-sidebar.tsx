@@ -13,6 +13,7 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { AccountSwitcher } from "@/components/account-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -49,8 +50,8 @@ const navItems = {
   ],
   navSecondary: [
     {
-      title: "Back to Home",
-      url: "/",
+      title: "Dashboard",
+      url: "/dashboard",
       icon: Home,
     },
     {
@@ -82,7 +83,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
+              <a href="/dashboard">
                 <div 
                   className="flex aspect-square size-8 items-center justify-center rounded-lg text-white" 
                   style={{backgroundColor: themeColors.primary}}
@@ -99,6 +100,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <div className="px-3 pb-2">
+          <AccountSwitcher />
+        </div>
         <NavMain items={navItems.navMain} />
         <NavSecondary items={navItems.navSecondary} className="mt-auto" />
       </SidebarContent>

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
+import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faExclamationTriangle, 
@@ -35,7 +36,9 @@ import {
   faEuroSign,
   faPoundSign,
   faYenSign,
-  faCalculator
+  faCalculator,
+  faBuilding,
+  faPencil
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 
@@ -43,6 +46,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors } = useThemePresets();
   const { logout, user } = useAuth();
+  const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const navigate = useNavigate();
   const [defaultCommission, setDefaultCommission] = useState<string>('0');
   const [currency, setCurrency] = useState<string>('USD');
@@ -61,6 +65,17 @@ export default function Settings() {
     defaultChartPeriod: '1M'
   });
   const [saved, setSaved] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [accountForm, setAccountForm] = useState({
+    name: '',
+    type: 'demo' as TradingAccount['type'],
+    broker: '',
+    currency: 'USD',
+    balance: '',
+    isDefault: false
+  });
+  const [editingAccount, setEditingAccount] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<TradingAccount | null>(null);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('settings');
@@ -197,10 +212,14 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto sm:h-12 p-1 bg-muted/50 rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto sm:h-12 p-1 bg-muted/50 rounded-lg">
               <TabsTrigger value="general" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
                 <FontAwesomeIcon icon={faPalette} className="h-4 w-4" />
                 General
+              </TabsTrigger>
+              <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
+                <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" />
+                Accounts
               </TabsTrigger>
               <TabsTrigger value="trading" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
                 <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
@@ -484,6 +503,327 @@ export default function Settings() {
                         />
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="accounts" className="mt-6">
+              <div className="space-y-6">
+                <Card className="border-border/50 shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faBuilding} className="h-5 w-5" />
+                      Trading Accounts
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground/85 leading-[1.6]">
+                      Manage your trading accounts to track performance separately
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Account List */}
+                    <div className="space-y-4">
+                      {accounts.map((account) => (
+                        <div key={account.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-border/50 rounded-lg bg-muted/20 gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold truncate">
+                                    {account.name}
+                                  </span>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {account.isDefault && (
+                                      <Badge variant="secondary" className="text-xs">Default</Badge>
+                                    )}
+                                    {activeAccount?.id === account.id && (
+                                      <Badge variant="outline" className="text-xs">Active</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-sm text-muted-foreground truncate">
+                                  {account.broker} • {account.type} • {account.currency}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditForm(account)}
+                                className="h-8 w-8 p-0 hover:bg-muted ml-2"
+                              >
+                                <FontAwesomeIcon icon={faPencil} className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateAccount(account.id, { isDefault: true })}
+                              disabled={account.isDefault}
+                              className="flex-1 sm:flex-none"
+                            >
+                              Set Default
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => deleteAccount(account.id)}
+                              disabled={accounts.length <= 1}
+                              className="flex-1 sm:flex-none"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Edit Account Form */}
+                    {editForm && (
+                      <div className="p-4 border border-border/50 rounded-lg bg-muted/10">
+                        <h4 className="font-semibold mb-4">Edit Account</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Account Name</Label>
+                            <Input
+                              placeholder="e.g., Main Live Account"
+                              value={editForm.name}
+                              onChange={(e) => setEditForm(prev => prev ? { ...prev, name: e.target.value } : null)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Account Type</Label>
+                            <Select value={editForm.type} onValueChange={(value: TradingAccount['type']) => setEditForm(prev => prev ? { ...prev, type: value } : null)}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="demo">Demo Account</SelectItem>
+                                <SelectItem value="live">Live Account</SelectItem>
+                                <SelectItem value="prop-firm">Prop Firm</SelectItem>
+                                <SelectItem value="paper">Paper Trading</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Broker</Label>
+                            <Select value={editForm.broker} onValueChange={(value) => setEditForm(prev => prev ? { ...prev, broker: value } : null)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select broker..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="OANDA">OANDA</SelectItem>
+                                <SelectItem value="IC Markets">IC Markets</SelectItem>
+                                <SelectItem value="MetaTrader 4">MetaTrader 4</SelectItem>
+                                <SelectItem value="MetaTrader 5">MetaTrader 5</SelectItem>
+                                <SelectItem value="Pepperstone">Pepperstone</SelectItem>
+                                <SelectItem value="IG">IG</SelectItem>
+                                <SelectItem value="Interactive Brokers">Interactive Brokers</SelectItem>
+                                <SelectItem value="FTMO">FTMO</SelectItem>
+                                <SelectItem value="The5ers">The5ers</SelectItem>
+                                <SelectItem value="Apex Trader Funding">Apex Trader Funding</SelectItem>
+                                <SelectItem value="E8 Markets">E8 Markets</SelectItem>
+                                <SelectItem value="Topfutures Funded">Topfutures Funded</SelectItem>
+                                <SelectItem value="FundedNext">FundedNext</SelectItem>
+                                <SelectItem value="Lux Trading Firm">Lux Trading Firm</SelectItem>
+                                <SelectItem value="NinjaTrader">NinjaTrader</SelectItem>
+                                <SelectItem value="TradingView">TradingView</SelectItem>
+                                <SelectItem value="Tradovate">Tradovate</SelectItem>
+                                <SelectItem value="AMP Futures">AMP Futures</SelectItem>
+                                <SelectItem value="Discount Trading">Discount Trading</SelectItem>
+                                <SelectItem value="Schwab">Schwab</SelectItem>
+                                <SelectItem value="E*TRADE">E*TRADE</SelectItem>
+                                <SelectItem value="TopstepTrader">TopstepTrader</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Currency</Label>
+                            <Select value={editForm.currency} onValueChange={(value) => setEditForm(prev => prev ? { ...prev, currency: value } : null)}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="USD">USD - US Dollar</SelectItem>
+                                <SelectItem value="EUR">EUR - Euro</SelectItem>
+                                <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                                <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                                <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                                <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Balance (Optional)</Label>
+                            <Input
+                              type="number"
+                              placeholder="10000"
+                              value={editForm.balance || ''}
+                              onChange={(e) => setEditForm(prev => prev ? { ...prev, balance: e.target.value ? parseFloat(e.target.value) : undefined } : null)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Default Account</Label>
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={editForm.isDefault}
+                                onCheckedChange={(checked) => setEditForm(prev => prev ? { ...prev, isDefault: checked } : null)}
+                              />
+                              <Label>Set as default account</Label>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            onClick={() => {
+                              if (editForm.name && editForm.broker) {
+                                updateAccount(editForm.id, editForm);
+                                setEditForm(null);
+                              }
+                            }}
+                            disabled={!editForm.name || !editForm.broker}
+                          >
+                            Save Changes
+                          </Button>
+                          <Button variant="outline" onClick={() => setEditForm(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Account Form */}
+                    {showAddAccount && (
+                      <div className="p-4 border border-border/50 rounded-lg bg-muted/10">
+                        <h4 className="font-semibold mb-4">Add New Account</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Account Name</Label>
+                            <Input
+                              placeholder="e.g., Main Live Account"
+                              value={accountForm.name}
+                              onChange={(e) => setAccountForm(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Account Type</Label>
+                            <Select value={accountForm.type} onValueChange={(value: TradingAccount['type']) => setAccountForm(prev => ({ ...prev, type: value }))}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="demo">Demo Account</SelectItem>
+                                <SelectItem value="live">Live Account</SelectItem>
+                                <SelectItem value="prop-firm">Prop Firm</SelectItem>
+                                <SelectItem value="paper">Paper Trading</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Broker</Label>
+                            <Select value={accountForm.broker} onValueChange={(value) => setAccountForm(prev => ({ ...prev, broker: value }))}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select broker..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="OANDA">OANDA</SelectItem>
+                                <SelectItem value="IC Markets">IC Markets</SelectItem>
+                                <SelectItem value="MetaTrader 4">MetaTrader 4</SelectItem>
+                                <SelectItem value="MetaTrader 5">MetaTrader 5</SelectItem>
+                                <SelectItem value="Pepperstone">Pepperstone</SelectItem>
+                                <SelectItem value="IG">IG</SelectItem>
+                                <SelectItem value="Interactive Brokers">Interactive Brokers</SelectItem>
+                                <SelectItem value="FTMO">FTMO</SelectItem>
+                                <SelectItem value="The5ers">The5ers</SelectItem>
+                                <SelectItem value="Apex Trader Funding">Apex Trader Funding</SelectItem>
+                                <SelectItem value="E8 Markets">E8 Markets</SelectItem>
+                                <SelectItem value="Topfutures Funded">Topfutures Funded</SelectItem>
+                                <SelectItem value="FundedNext">FundedNext</SelectItem>
+                                <SelectItem value="Lux Trading Firm">Lux Trading Firm</SelectItem>
+                                <SelectItem value="NinjaTrader">NinjaTrader</SelectItem>
+                                <SelectItem value="TradingView">TradingView</SelectItem>
+                                <SelectItem value="Tradovate">Tradovate</SelectItem>
+                                <SelectItem value="AMP Futures">AMP Futures</SelectItem>
+                                <SelectItem value="Discount Trading">Discount Trading</SelectItem>
+                                <SelectItem value="Schwab">Schwab</SelectItem>
+                                <SelectItem value="E*TRADE">E*TRADE</SelectItem>
+                                <SelectItem value="TopstepTrader">TopstepTrader</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Currency</Label>
+                            <Select value={accountForm.currency} onValueChange={(value) => setAccountForm(prev => ({ ...prev, currency: value }))}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="USD">USD - US Dollar</SelectItem>
+                                <SelectItem value="EUR">EUR - Euro</SelectItem>
+                                <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                                <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                                <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                                <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Initial Balance (Optional)</Label>
+                            <Input
+                              type="number"
+                              placeholder="10000"
+                              value={accountForm.balance}
+                              onChange={(e) => setAccountForm(prev => ({ ...prev, balance: e.target.value }))}
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={accountForm.isDefault}
+                              onCheckedChange={(checked) => setAccountForm(prev => ({ ...prev, isDefault: checked }))}
+                            />
+                            <Label>Set as default account</Label>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            onClick={() => {
+                              if (accountForm.name && accountForm.broker) {
+                                addAccount({
+                                  ...accountForm,
+                                  balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined
+                                });
+                                setAccountForm({
+                                  name: '',
+                                  type: 'demo',
+                                  broker: '',
+                                  currency: 'USD',
+                                  balance: '',
+                                  isDefault: false
+                                });
+                                setShowAddAccount(false);
+                              }
+                            }}
+                            disabled={!accountForm.name || !accountForm.broker}
+                          >
+                            Add Account
+                          </Button>
+                          <Button variant="outline" onClick={() => setShowAddAccount(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add Account Button */}
+                    {!showAddAccount && !editForm && (
+                      <Button onClick={() => setShowAddAccount(true)} className="w-full" variant="outline">
+                        <FontAwesomeIcon icon={faBuilding} className="mr-2 h-4 w-4" />
+                        Add New Account
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>
