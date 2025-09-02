@@ -598,7 +598,7 @@ export default function Onboarding() {
               <div className="space-y-4">
                 <Label className="text-base font-medium">How would you like to get started?</Label>
                 <div className="space-y-3">
-                  {[
+                  {([
                     { 
                       key: 'fresh', 
                       title: 'Start Fresh', 
@@ -614,7 +614,7 @@ export default function Onboarding() {
                       title: 'Import CSV/Excel', 
                       description: 'Upload your trading history file' 
                     }
-                  ].map((option) => (
+                  ] as const).map((option) => (
                     <button
                       key={option.key}
                       type="button"
