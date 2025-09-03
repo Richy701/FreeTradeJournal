@@ -179,8 +179,10 @@ export default function Onboarding() {
         completedAt: new Date().toISOString()
       } as OnboardingData;
 
+      let newAccountId = 'default-main-account';
+      
       if (data.accountName && data.accountType && data.broker && data.currency) {
-        addAccount({
+        const account = addAccount({
           name: data.accountName,
           type: data.accountType,
           broker: data.broker,
@@ -188,6 +190,7 @@ export default function Onboarding() {
           balance: data.currentBalance ? parseFloat(data.currentBalance) : undefined,
           isDefault: true
         });
+        newAccountId = account?.id || newAccountId;
       }
 
       localStorage.setItem('onboarding', JSON.stringify(onboardingData));
@@ -208,7 +211,8 @@ export default function Onboarding() {
           pnlPercentage: 0,
           notes: 'Imported during onboarding',
           strategy: 'Manual Entry',
-          tags: ['onboarding']
+          tags: ['onboarding'],
+          accountId: newAccountId
         }));
 
         localStorage.setItem('trades', JSON.stringify(formattedTrades));
