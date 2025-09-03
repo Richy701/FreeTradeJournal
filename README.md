@@ -1,4 +1,4 @@
-# TradeVault - Professional Trading Journal
+# Free Trade Journal - Professional Trading Journal
 
 A modern, comprehensive trading journal and analytics platform designed for serious traders who want to track, analyze, and improve their trading performance.
 
@@ -50,8 +50,8 @@ A modern, comprehensive trading journal and analytics platform designed for seri
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/tradevault.git
-cd tradevault
+git clone https://github.com/yourusername/free-trade-journal.git
+cd free-trade-journal
 ```
 
 2. Install dependencies:
@@ -147,11 +147,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🌟 Support
 
-If you find TradeVault helpful, please consider:
+If you find Free Trade Journal helpful, please consider:
 - ⭐ Starring this repository
 - 🐛 Reporting bugs or requesting features
 - 💡 Contributing to the codebase
 
 ---
 
-**TradeVault** - Track. Analyze. Improve. 📈
+**Free Trade Journal** - Track. Analyze. Improve. 📈
