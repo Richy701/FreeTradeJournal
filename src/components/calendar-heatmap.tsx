@@ -350,7 +350,8 @@ export function CalendarHeatmap() {
       notes: tradeForm.notes,
       strategy: tradeForm.strategy,
       market: tradeForm.market,
-      propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm
+      propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm,
+      accountId: activeAccount?.id || 'default-main-account'
     }
     
     trades.unshift(newTrade)

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useAccounts } from '@/contexts/account-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +63,7 @@ interface Trade {
   manualPnL?: number
   customMultiplier?: number
   propFirm?: string
+  accountId?: string
 }
 
 interface TradeFormData {
@@ -89,6 +91,7 @@ interface TradeFormData {
 
 export default function TradeLog() {
   const { themeColors } = useThemePresets();
+  const { activeAccount } = useAccounts();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -383,6 +386,7 @@ export default function TradeLog() {
       riskReward,
       entryTime: new Date(data.entryTime),
       exitTime: new Date(data.exitTime),
+      accountId: activeAccount?.id || 'default-main-account',
     };
 
     if (editingTrade) {
@@ -461,6 +465,7 @@ export default function TradeLog() {
                 exitTime: new Date(trade.date),
                 notes: `Imported from ${file.name}`,
                 strategy: '',
+                accountId: activeAccount?.id || 'default-main-account',
               };
             });
             
