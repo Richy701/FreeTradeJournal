@@ -44,7 +44,6 @@
     "express": "^5.1.0",
     "firebase": "^12.1.0",
     "framer-motion": "^12.23.12",
-    "gtag": "^1.0.1",
     "lucide-react": "^0.542.0",
     "node-fetch": "^2.7.0",
     "postcss": "^8.5.6",
