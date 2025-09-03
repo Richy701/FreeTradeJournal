@@ -44,7 +44,11 @@
       "Bash(do mv \"$file\" \"$file// /_\")",
       "Bash(vercel:*)",
       "Bash(git remote set-url:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(rsvg-convert:*)",
+      "Bash(qlmanage:*)",
+      "Bash(for size in 16 32 48 64 192 512)",
+      "Bash(do magick favicon.svg -resize $sizex$size -quality 100 favicon-$sizex$size.png)"
     ],
     "deny": []
   }
