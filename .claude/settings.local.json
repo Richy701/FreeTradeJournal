@@ -43,7 +43,8 @@
       "Bash(for file in * *.webp)",
       "Bash(do mv \"$file\" \"$file// /_\")",
       "Bash(vercel:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": []
   }
