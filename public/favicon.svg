@@ -1,4 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#117937"/>
-  <text x="16" y="21" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="10" font-weight="800" fill="white" text-anchor="middle" letter-spacing="-0.5px">FTJ</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#065f46;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Background with gradient and rounded corners -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)" />
+  
+  <!-- Inner highlight for depth -->
+  <rect x="24" y="24" width="464" height="464" rx="72" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  
+  <!-- Main text with better typography -->
+  <text x="256" y="320" 
+        font-family="'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" 
+        font-size="180" 
+        font-weight="800" 
+        fill="white" 
+        text-anchor="middle" 
+        dominant-baseline="middle"
+        letter-spacing="-8px"
+        filter="url(#shadow)">FTJ</text>
+  
+  <!-- Chart icon accent -->
+  <path d="M100 380 L140 340 L180 360 L220 320 L260 300 L300 280 L340 240 L380 200" 
+        stroke="rgba(255,255,255,0.3)" 
+        stroke-width="8" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none"/>
+  
+  <!-- Trend arrow -->
+  <path d="M360 200 L380 200 L380 220" 
+        stroke="rgba(255,255,255,0.3)" 
+        stroke-width="8" 
+        stroke-linecap="round" 
+        fill="none"/>
 </svg>
