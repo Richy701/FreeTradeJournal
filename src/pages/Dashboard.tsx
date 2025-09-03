@@ -498,12 +498,30 @@ export default function Dashboard() {
                     </div>
                     
                     <div className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t gap-3 sm:gap-0">
-                      <Link to="/trades" onClick={() => setIsTradeModalOpen(false)}>
-                        <Button variant="outline" className="gap-2">
-                          <Plus className="h-4 w-4" />
-                          Full Trade Journal
+                      <div className="flex gap-2">
+                        <Link to="/trades" onClick={() => setIsTradeModalOpen(false)}>
+                          <Button variant="outline" className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Full Trade Journal
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="outline" 
+                          className="gap-2"
+                          onClick={() => document.getElementById('dashboard-csv-import')?.click()}
+                          disabled={csvUploadState.isUploading}
+                        >
+                          <Upload className="h-4 w-4" />
+                          {csvUploadState.isUploading ? 'Importing...' : 'Import CSV'}
                         </Button>
-                      </Link>
+                        <input
+                          id="dashboard-csv-import"
+                          type="file"
+                          accept=".csv"
+                          className="hidden"
+                          onChange={handleCSVImport}
+                        />
+                      </div>
                       <div className="flex gap-2 w-full sm:w-auto justify-end">
                         <Button variant="outline" onClick={() => setIsTradeModalOpen(false)}>
                           Cancel
@@ -519,26 +537,6 @@ export default function Dashboard() {
                   </div>
                 </DialogContent>
               </Dialog>
-              
-              <Button 
-                variant="outline" 
-                size="default" 
-                className="gap-2 h-10 sm:h-11 touch-manipulation"
-                onClick={() => document.getElementById('dashboard-csv-import')?.click()}
-                disabled={csvUploadState.isUploading}
-              >
-                <Upload className="h-4 w-4" />
-                <span className="text-sm sm:text-base">
-                  {csvUploadState.isUploading ? 'Importing...' : 'Import CSV'}
-                </span>
-              </Button>
-              <input
-                id="dashboard-csv-import"
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={handleCSVImport}
-              />
             </div>
           </div>
         </div>
