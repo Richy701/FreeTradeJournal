@@ -53,7 +53,7 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
         }
       }}
     >
-      <SelectTrigger className="w-full bg-sidebar-background/80 border-sidebar-border/50 h-10 text-sidebar-foreground">
+      <SelectTrigger className="w-full h-10 bg-card border-border/60 text-foreground hover:border-border">
         <SelectValue>
           <span className="truncate font-medium">{activeAccount.name}</span>
         </SelectValue>

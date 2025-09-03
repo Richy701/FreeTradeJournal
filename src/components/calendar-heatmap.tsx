@@ -731,10 +731,10 @@ export function CalendarHeatmap() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-4 px-2 sm:px-6">
         <div className="space-y-3">
           {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-4 mb-3">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-4 mb-3">
             {DAYS.map((day) => (
               <div key={day} className="text-center text-xs sm:text-sm font-semibold text-muted-foreground py-1 sm:py-2">
                 <span className="sm:hidden">{day.slice(0, 1)}</span>
@@ -751,7 +751,7 @@ export function CalendarHeatmap() {
             {weeks.map((week, weekIndex) => (
               <div 
                 key={`${currentDate.getFullYear()}-${currentDate.getMonth()}-${weekIndex}`} 
-                className="grid grid-cols-7 gap-1 sm:gap-4"
+                className="grid grid-cols-7 gap-0.5 sm:gap-4"
                 style={{
                   animationDelay: `${weekIndex * 50}ms`
                 }}
@@ -767,7 +767,7 @@ export function CalendarHeatmap() {
                       <PopoverTrigger asChild>
                         <div
                           className={cn(
-                            "h-16 sm:h-20 rounded-lg sm:rounded-xl relative overflow-hidden",
+                            "h-20 sm:h-20 rounded-lg sm:rounded-xl relative overflow-hidden",
                             getPnLColor(day.pnl, day.trades),
                             day.isCurrentMonth ? "opacity-100" : "opacity-50",
                             hasData && "hover:z-10",
@@ -816,10 +816,12 @@ export function CalendarHeatmap() {
                               <div className="flex flex-col items-center justify-center h-full px-1 relative z-10">
                                 {/* Mobile: Single line with just P&L */}
                                 <div className="sm:hidden text-center">
-                                  <div className="text-xs font-bold text-white drop-shadow-sm leading-none">
-                                    {day.pnl >= 0 ? '+' : ''}${Math.abs(day.pnl) >= 1000 ? 
-                                      `${(day.pnl/1000).toFixed(1)}k` : 
-                                      Math.abs(day.pnl).toFixed(0)
+                                  <div className="text-[10px] sm:text-xs font-bold text-white drop-shadow-sm leading-none">
+                                    {Math.abs(day.pnl) >= 1000 ? 
+                                      `${day.pnl >= 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
+                                      Math.abs(day.pnl) >= 10 ?
+                                        `${day.pnl >= 0 ? '+' : ''}${Math.round(day.pnl)}` :
+                                        `${day.pnl >= 0 ? '+' : ''}${day.pnl.toFixed(1)}`
                                     }
                                   </div>
                                 </div>
@@ -951,7 +953,7 @@ export function CalendarHeatmap() {
           </div>
           
           {/* Enhanced Legend */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
+          <div className="hidden sm:flex items-center justify-between mt-4 pt-3 border-t border-border/30">
             <div className="flex items-center gap-2 sm:gap-4 text-xs">
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.profit, border: `1px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>

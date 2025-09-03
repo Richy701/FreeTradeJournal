@@ -69,7 +69,7 @@ export function SiteHeader({ className }: { className?: string }) {
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbItems.map((item, index) => (
-            <React.Fragment key={item.href}>
+            <React.Fragment key={`${item.href}-${index}`}>
               <BreadcrumbItem>
                 {item.isActive ? (
                   <BreadcrumbPage style={{color: themeColors.primary}}>{item.label}</BreadcrumbPage>
