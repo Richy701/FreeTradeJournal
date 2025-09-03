@@ -45,19 +45,19 @@ export default function LandingPage() {
     <div className="w-full">
       {/* Navigation overlay */}
       <header className="absolute top-0 left-0 right-0 z-50">
-        <div className="container mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <TrendingUp className="h-9 w-9 text-primary" />
-            <span className="text-2xl font-bold text-foreground">FreeTradeJournal</span>
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+            <TrendingUp className="h-7 w-7 sm:h-9 sm:w-9 text-primary" />
+            <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground truncate">FreeTradeJournal</span>
           </div>
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md focus:ring-2 focus:ring-ring/50">
               Sign In
             </Link>
           </nav>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <ThemeToggle />
-            <BuyMeCoffee username="richy701" variant="outline" />
+            <BuyMeCoffee username="richy701" variant="outline" size="sm" />
           </div>
         </div>
       </header>

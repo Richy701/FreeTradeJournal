@@ -167,14 +167,13 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 md:mb-8 tracking-tight leading-tight">
-                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 md:mb-10 tracking-tight leading-[1.1] sm:leading-tight">
+                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80 block">
                                 {title1}
                             </span>
-                            <br />
                             <span
                                 className={cn(
-                                    "bg-clip-text text-transparent bg-gradient-to-r from-primary via-foreground/90 to-primary/70"
+                                    "bg-clip-text text-transparent bg-gradient-to-r from-primary via-foreground/90 to-primary/70 block mt-1 sm:mt-1"
                                 )}
                             >
                                 {title2}
@@ -188,7 +187,7 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-4">
+                        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 md:mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-2 sm:px-4">
                             The complete trading journal platform for serious traders. 
                             Track, analyze, and optimize your trading performance with professional tools.
                         </p>
@@ -203,7 +202,7 @@ function HeroGeometric({
                     >
                         <a 
                             href="/dashboard" 
-                            className="inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 min-w-[200px]"
+                            className="inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none"
                         >
                             Get Started Free
                         </a>
