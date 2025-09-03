@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -8,6 +8,7 @@ import { ProtectedRoute } from '@/components/protected-route';
 import { SEOMeta } from '@/components/seo-meta';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/react';
+import { initGA } from '@/lib/analytics';
 import Layout from '@/components/Layout';
 import LandingPage from '@/pages/LandingPage';
 import Login from '@/pages/Login';
@@ -25,6 +26,10 @@ const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('@/pages/TermsAndConditions'));
 
 function App() {
+  useEffect(() => {
+    initGA();
+  }, []);
+
   return (
     <ThemeProvider defaultTheme="dark" storageKey="ftj-theme">
       <ThemePresetsProvider>
