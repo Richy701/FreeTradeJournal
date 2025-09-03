@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { migrateTradesToAccountId } from '@/utils/trade-migration';
 
 export interface TradingAccount {
   id: string;
@@ -79,6 +80,12 @@ export function AccountProvider({ children }: AccountProviderProps) {
       setActiveAccountState(defaultAccount);
       localStorage.setItem('trading-accounts', JSON.stringify([defaultAccount]));
       localStorage.setItem('active-account-id', defaultAccount.id);
+    }
+    
+    // Run trade migration to add accountId to existing trades
+    const migrationResult = migrateTradesToAccountId();
+    if (migrationResult.migrated > 0) {
+      console.log(`✅ Migrated ${migrationResult.migrated} trades to include accountId`);
     }
     
     setLoading(false);
