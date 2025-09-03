@@ -15,7 +15,7 @@ interface AccountContextType {
   accounts: TradingAccount[];
   activeAccount: TradingAccount | null;
   setActiveAccount: (account: TradingAccount) => void;
-  addAccount: (account: Omit<TradingAccount, 'id' | 'createdAt'>) => void;
+  addAccount: (account: Omit<TradingAccount, 'id' | 'createdAt'>) => TradingAccount;
   updateAccount: (id: string, updates: Partial<TradingAccount>) => void;
   deleteAccount: (id: string) => void;
   loading: boolean;
@@ -96,7 +96,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
     localStorage.setItem('active-account-id', account.id);
   };
 
-  const addAccount = (accountData: Omit<TradingAccount, 'id' | 'createdAt'>) => {
+  const addAccount = (accountData: Omit<TradingAccount, 'id' | 'createdAt'>): TradingAccount => {
     const newAccount: TradingAccount = {
       ...accountData,
       id: 'account-' + Date.now(),
@@ -114,6 +114,8 @@ export function AccountProvider({ children }: AccountProviderProps) {
     if (accounts.length === 0 || accountData.isDefault) {
       setActiveAccount(newAccount);
     }
+
+    return newAccount;
   };
 
   const updateAccount = (id: string, updates: Partial<TradingAccount>) => {
