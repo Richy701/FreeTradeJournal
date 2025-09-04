@@ -10,6 +10,7 @@ import {
   BookOpen,
   Settings2,
   Home,
+  Coffee,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -115,6 +116,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarThemeToggle />
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton size="sm" asChild>
+                    <a href="https://buymeacoffee.com/richy701" target="_blank" rel="noopener noreferrer">
+                      <Coffee className="h-4 w-4" />
+                      <span>Buy me a coffee</span>
+                    </a>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
