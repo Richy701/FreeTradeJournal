@@ -678,10 +678,10 @@ export function TradingCoach() {
           "transition-all duration-200",
           isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"
         )}>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
+          <div className="text-center space-y-3">
+            <div className="flex flex-col items-center gap-3">
               <div 
-                className="p-2 rounded-lg flex-shrink-0"
+                className="p-2 rounded-lg"
                 style={{backgroundColor: `${getTipColor(currentTip.type)}20`}}
               >
                 <FontAwesomeIcon 
@@ -690,11 +690,11 @@ export function TradingCoach() {
                   style={{color: getTipColor(currentTip.type)}}
                 />
               </div>
-              <div className="flex-1">
+              <div>
                 <h3 className="font-semibold text-base mb-2" style={{color: getTipColor(currentTip.type)}}>
                   {currentTip.title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
                   {currentTip.message}
                 </p>
               </div>

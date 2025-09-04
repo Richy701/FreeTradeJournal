@@ -16,6 +16,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { AccountSwitcher } from "@/components/account-switcher"
+import { SidebarThemeToggle } from "@/components/sidebar-theme-toggle"
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar"
 
 const navItems = {
@@ -106,7 +109,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <AccountSwitcher />
         </div>
         <NavMain items={navItems.navMain} />
-        <NavSecondary items={navItems.navSecondary} className="mt-auto" />
+        <div className="mt-auto">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarThemeToggle />
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <NavSecondary items={navItems.navSecondary} />
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={navUser} />

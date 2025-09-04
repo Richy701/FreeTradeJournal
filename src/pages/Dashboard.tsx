@@ -357,7 +357,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3">
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
-                  <Button size="default" className="gap-2 h-10 sm:h-11 touch-manipulation">
+                  <Button 
+                    size="default" 
+                    className="gap-2 h-10 sm:h-11 touch-manipulation"
+                    style={{backgroundColor: themeColors.primary, color: 'white'}}
+                  >
                     <Plus className="h-4 w-4" />
                     <span className="text-sm sm:text-base">Add Trade</span>
                   </Button>
