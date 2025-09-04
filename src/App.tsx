@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { AccountProvider } from '@/contexts/account-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { SEOMeta } from '@/components/seo-meta';
+import { CookieConsent } from '@/components/CookieConsent';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/react';
 import { initGA } from '@/lib/analytics';
@@ -49,6 +50,7 @@ function App() {
               }}
             />
             <Analytics />
+            <CookieConsent />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
