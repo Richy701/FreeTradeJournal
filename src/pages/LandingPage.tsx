@@ -184,17 +184,35 @@ export default function LandingPage() {
           alt: "FreeTradeJournal Logo",
           title: "FreeTradeJournal"
         }}
+        description="Free, open-source trading journal for forex and futures traders. Track your performance, analyze patterns, and improve your trading with AI-powered insights."
         sections={[
           {
-            title: "App",
+            title: "Product",
             links: [
+              { name: "Features", href: "/#features" },
               { name: "Dashboard", href: "/dashboard" },
               { name: "Trade Log", href: "/trades" },
-              { name: "Settings", href: "/settings" },
-            ],
+              { name: "Goals", href: "/goals" }
+            ]
           },
+          {
+            title: "Resources",
+            links: [
+              { name: "Documentation", href: "/documentation" },
+              { name: "Support", href: "mailto:support@freetradejournal.com" },
+              { name: "Community", href: "#" },
+              { name: "Blog", href: "/blog" }
+            ]
+          },
+          {
+            title: "Legal",
+            links: [
+              { name: "Privacy Policy", href: "/privacy" },
+              { name: "Terms & Conditions", href: "/terms" },
+              { name: "Cookie Policy", href: "/cookie-policy" }
+            ]
+          }
         ]}
-        description="Track your forex and futures trading performance with professional-grade analytics and journaling tools."
         socialLinks={[
           { 
             icon: <svg className="size-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
@@ -207,7 +225,7 @@ export default function LandingPage() {
             label: "Buy me a coffee"
           }
         ]}
-        copyright="© 2025 FreeTradeJournal. All rights reserved."
+        copyright="© 2024 FreeTradeJournal. All rights reserved."
         legalLinks={[
           { name: "Privacy Policy", href: "/privacy" },
           { name: "Terms and Conditions", href: "/terms" },
