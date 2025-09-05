@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendar, faUser, faArrowLeft, faTag } from '@fortawesome/free-solid-svg-icons';
+import { faCalendar, faUser, faArrowLeft, faTag, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { Link, useParams } from 'react-router-dom';
 
 export default function BlogPost() {
