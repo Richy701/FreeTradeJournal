@@ -118,8 +118,33 @@ export const Footer7 = ({
                 </li>
               ))}
             </ul>
-            {/* Product Hunt Badge */}
-            <div className="mt-4">
+          </div>
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full lg:max-w-3xl">
+            <div className="grid w-full gap-8 md:grid-cols-3 lg:gap-16">
+              {sections.map((section, sectionIdx) => (
+                <div key={sectionIdx}>
+                  <h3 className="mb-6 font-bold text-lg text-foreground">{section.title}</h3>
+                  <ul className="space-y-4 text-base text-muted-foreground">
+                    {section.links.map((link, linkIdx) => (
+                      <li
+                        key={linkIdx}
+                        className="font-medium hover:text-foreground transition-colors duration-150"
+                      >
+                        <a 
+                          href={link.href}
+                          className="hover:underline underline-offset-4"
+                        >
+                          {link.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            {/* Badges */}
+            <div className="flex flex-col gap-4 lg:ml-auto">
+              {/* Product Hunt Badge */}
               <a 
                 href="https://www.producthunt.com/products/freetradejournal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-freetradejournal" 
                 target="_blank"
@@ -133,29 +158,15 @@ export const Footer7 = ({
                   height="54" 
                 />
               </a>
+              {/* Peerlist Badge */}
+              <a href="https://peerlist.io/richy7/project/free-trade-journal" target="_blank" rel="noreferrer">
+                <img
+                  src="https://peerlist.io/api/v1/projects/embed/PRJHEOG6A7OOGQDDMIO6KA9M7ABO7A?showUpvote=false&theme=light"
+                  alt="Free Trade journal"
+                  style={{ width: 'auto', height: '72px' }}
+                />
+              </a>
             </div>
-          </div>
-          <div className="grid w-full gap-8 md:grid-cols-3 lg:gap-16 lg:max-w-2xl">
-            {sections.map((section, sectionIdx) => (
-              <div key={sectionIdx}>
-                <h3 className="mb-6 font-bold text-lg text-foreground">{section.title}</h3>
-                <ul className="space-y-4 text-base text-muted-foreground">
-                  {section.links.map((link, linkIdx) => (
-                    <li
-                      key={linkIdx}
-                      className="font-medium hover:text-foreground transition-colors duration-150"
-                    >
-                      <a 
-                        href={link.href}
-                        className="hover:underline underline-offset-4"
-                      >
-                        {link.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
         </div>
         <div className="mt-8 flex flex-col justify-between gap-4 border-t border-border pt-6 text-sm font-medium text-muted-foreground md:flex-row md:items-center md:text-left">
