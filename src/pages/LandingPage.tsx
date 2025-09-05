@@ -225,7 +225,7 @@ export default function LandingPage() {
             label: "Buy me a coffee"
           }
         ]}
-        copyright="© 2024 FreeTradeJournal. All rights reserved."
+        copyright="© 2025 FreeTradeJournal. All rights reserved."
         legalLinks={[
           { name: "Privacy Policy", href: "/privacy" },
           { name: "Terms and Conditions", href: "/terms" },

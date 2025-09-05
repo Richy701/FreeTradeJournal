@@ -1,5 +1,6 @@
 import { SiteHeader } from '@/components/site-header';
 import { Card, CardContent } from '@/components/ui/card';
+import { Footer7 } from '@/components/ui/footer-7';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGavel } from '@fortawesome/free-solid-svg-icons';
@@ -113,6 +114,52 @@ export default function TermsAndConditions() {
           </Card>
         </div>
       </div>
+      
+      <Footer7 
+        logo={{
+          url: "/",
+          src: "",
+          alt: "FreeTradeJournal",
+          title: "FreeTradeJournal"
+        }}
+        description="Free, open-source trading journal for forex and futures traders. Track your performance, analyze patterns, and improve your trading with AI-powered insights."
+        sections={[
+          {
+            title: "Product",
+            links: [
+              { name: "Features", href: "/#features" },
+              { name: "Dashboard", href: "/dashboard" },
+              { name: "Trade Log", href: "/trades" },
+              { name: "Goals", href: "/goals" }
+            ]
+          },
+          {
+            title: "Resources",
+            links: [
+              { name: "Documentation", href: "/documentation" },
+              { name: "Support", href: "mailto:support@freetradejournal.com" },
+              { name: "Community", href: "#" },
+              { name: "Blog", href: "/blog" }
+            ]
+          },
+          {
+            title: "Legal",
+            links: [
+              { name: "Privacy Policy", href: "/privacy" },
+              { name: "Terms & Conditions", href: "/terms" },
+              { name: "Cookie Policy", href: "/cookie-policy" }
+            ]
+          }
+        ]}
+        socialLinks={[
+          // Add social links when available
+        ]}
+        copyright="© 2025 FreeTradeJournal. All rights reserved."
+        legalLinks={[
+          { name: "Terms and Conditions", href: "/terms" },
+          { name: "Privacy Policy", href: "/privacy" }
+        ]}
+      />
     </div>
   );
 }
