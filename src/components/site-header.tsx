@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Separator } from "@/components/ui/separator"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useAuth } from '@/contexts/auth-context'
 import {
   SidebarTrigger,
   useSidebar,
@@ -11,6 +12,7 @@ import { useLocation } from "react-router-dom"
 
 export function SiteHeader({ className }: { className?: string }) {
   const { themeColors } = useThemePresets()
+  const { user } = useAuth()
   const location = useLocation()
   const pathname = location.pathname
   
@@ -33,21 +35,30 @@ export function SiteHeader({ className }: { className?: string }) {
       'goals': 'Goals & Risk Management',
       'journal': 'Journal',
       'settings': 'Settings',
-      'profile': 'Profile'
+      'profile': 'Profile',
+      'privacy': 'Privacy Policy',
+      'terms': 'Terms & Conditions',
+      'cookie-policy': 'Cookie Policy',
+      'documentation': 'Documentation',
+      'blog': 'Blog'
     }
     
+    // For public pages (privacy, terms), Home should link to landing page
+    const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation', 'blog'].includes(segments[0])
+    const homeHref = user && !isPublicPage ? '/dashboard' : '/'
+    
     if (segments.length === 0) {
-      return [{ label: 'Home', href: '/dashboard', isActive: true }]
+      return [{ label: 'Home', href: homeHref, isActive: true }]
     }
     
     if (segments.length === 1 && segments[0] === 'dashboard') {
       return [
-        { label: 'Home', href: '/dashboard', isActive: false },
+        { label: 'Home', href: homeHref, isActive: false },
         { label: 'Dashboard', href: '/dashboard', isActive: true }
       ]
     }
     
-    const items = [{ label: 'Home', href: '/dashboard', isActive: false }]
+    const items = [{ label: 'Home', href: homeHref, isActive: false }]
     
     segments.forEach((segment, index) => {
       const href = '/' + segments.slice(0, index + 1).join('/')
@@ -86,9 +97,11 @@ export function SiteHeader({ className }: { className?: string }) {
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-auto">
-        <AccountSwitcher onManageAccounts={() => window.location.href = '/settings?tab=accounts'} />
-      </div>
+      {user && hasSidebar && (
+        <div className="ml-auto">
+          <AccountSwitcher onManageAccounts={() => window.location.href = '/settings?tab=accounts'} />
+        </div>
+      )}
     </header>
   )
 }

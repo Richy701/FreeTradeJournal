@@ -200,7 +200,8 @@ export default function LandingPage() {
             links: [
               { name: "Documentation", href: "/documentation" },
               { name: "Support", href: "mailto:support@freetradejournal.com" },
-              { name: "Community", href: "#" },
+              { name: "Community", href: "https://t.me/+UI6uTKgfswUwNzhk" },
+              { name: "Traders Group", href: "https://t.me/+JgEanSLm1AE3MWY0" },
               { name: "Blog", href: "/blog" }
             ]
           },

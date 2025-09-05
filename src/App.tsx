@@ -25,6 +25,10 @@ const Signup = lazy(() => import('@/pages/Signup'));
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('@/pages/TermsAndConditions'));
+const CookiePolicy = lazy(() => import('@/pages/CookiePolicy'));
+const Documentation = lazy(() => import('@/pages/Documentation'));
+const Blog = lazy(() => import('@/pages/Blog'));
+const BlogPost = lazy(() => import('@/pages/BlogPost'));
 
 function App() {
   useEffect(() => {
@@ -63,6 +67,10 @@ function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/documentation" element={<Documentation />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogPost />} />
                 
                 {/* Protected routes */}
                 <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
