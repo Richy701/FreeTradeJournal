@@ -11,7 +11,9 @@ import {
   Settings2,
   Home,
   Coffee,
+  MessageSquare,
 } from "lucide-react"
+import { FeedbackButton } from '@/components/ui/feedback-button'
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -124,6 +126,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <span>Buy me a coffee</span>
                     </a>
                   </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <FeedbackButton 
+                    variant="ghost" 
+                    className="w-full justify-start h-8 px-2 text-sm"
+                    buttonText="Send Feedback"
+                  />
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>

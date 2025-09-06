@@ -22,7 +22,7 @@ const Journal = lazy(() => import('@/pages/Journal'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Profile = lazy(() => import('@/pages/Profile'));
 const Signup = lazy(() => import('@/pages/Signup'));
-const Onboarding = lazy(() => import('@/pages/Onboarding'));
+const Onboarding = lazy(() => import('@/pages/OnboardingSimplified'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('@/pages/TermsAndConditions'));
 const CookiePolicy = lazy(() => import('@/pages/CookiePolicy'));

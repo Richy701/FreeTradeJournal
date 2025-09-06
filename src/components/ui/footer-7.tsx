@@ -2,6 +2,7 @@ import React from "react";
 import { FaXTwitter } from "react-icons/fa6";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { FeedbackButton } from './feedback-button';
 
 interface Footer7Props {
   logo?: {
@@ -182,13 +183,12 @@ export const Footer7 = ({
                 </a>
               </li>
             ))}
-            <li className="hover:text-foreground transition-colors duration-150">
-              <a 
-                href="mailto:feedback@freetradejournal.com"
-                className="hover:underline underline-offset-4"
-              > 
-                Feedback
-              </a>
+            <li>
+              <FeedbackButton 
+                variant="ghost" 
+                className="h-auto p-0 text-muted-foreground hover:text-foreground text-sm font-medium"
+                buttonText="Feedback"
+              />
             </li>
           </ul>
         </div>

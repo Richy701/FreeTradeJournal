@@ -4,6 +4,9 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DotFilledIcon } from "@radix-ui/react-icons";
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
+import { Link, useNavigate } from "react-router-dom";
 
 function ElegantShape({
     className,
@@ -82,6 +85,8 @@ function HeroGeometric({
     title1?: string;
     title2?: string;
 }) {
+    const { enterDemoMode } = useAuth();
+    const navigate = useNavigate();
     const fadeUpVariants = {
         hidden: { opacity: 0, y: 30 },
         visible: {
@@ -200,12 +205,23 @@ function HeroGeometric({
                         animate="visible"
                         className="flex flex-col sm:flex-row gap-4 justify-center items-center"
                     >
-                        <a 
-                            href="/dashboard" 
-                            className="inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none"
+                        <Button
+                            onClick={() => {
+                                enterDemoMode();
+                                navigate('/dashboard');
+                            }}
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none"
                         >
-                            Get Started Free
-                        </a>
+                            View Live Demo
+                        </Button>
+                        <Link to="/signup">
+                            <Button 
+                                variant="outline" 
+                                className="px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg shadow-md hover:shadow-lg transition-all duration-200 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none border-2"
+                            >
+                                Sign Up Free
+                            </Button>
+                        </Link>
                     </motion.div>
                 </div>
             </div>

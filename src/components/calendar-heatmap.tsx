@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight, faBookOpen, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -82,6 +83,7 @@ export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors } = useThemePresets()
   const { activeAccount } = useAccounts()
+  const { getTrades, isDemo } = useDemoData()
   
   // State for current viewing month/year
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -135,8 +137,20 @@ export function CalendarHeatmap() {
     }
   }
 
-  // Get trades from localStorage filtered by active account
+  // Get trades from localStorage or demo data
   const trades = useMemo(() => {
+    if (isDemo) {
+      // Use demo data
+      const demoTrades = getTrades()
+      return demoTrades.map((trade: any) => ({
+        ...trade,
+        entryTime: trade.entryTime instanceof Date ? trade.entryTime : new Date(trade.entryTime),
+        exitTime: trade.exitTime instanceof Date ? trade.exitTime : new Date(trade.exitTime),
+        accountId: activeAccount?.id || 'demo-account'
+      }))
+    }
+    
+    // Use localStorage data for real users
     const storedTrades = localStorage.getItem('trades')
     if (!storedTrades || !activeAccount) return []
     
@@ -152,7 +166,7 @@ export function CalendarHeatmap() {
     } catch {
       return []
     }
-  }, [activeAccount])
+  }, [activeAccount, isDemo, getTrades])
 
   // Get journal entries from localStorage (now supports multiple entries per day)
   const journalEntries = useMemo(() => {

@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, isDemo } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -29,15 +29,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  // Allow demo users through without authentication
+  if (!user && !isDemo) {
     // Redirect to login page with return url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If user is authenticated but hasn't completed onboarding, redirect to onboarding
-  // Exception: if they're already on the onboarding page, let them through
-  if (!hasCompletedOnboarding() && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
+  // Skip onboarding check for demo users
+  if (!isDemo) {
+    // If user is authenticated but hasn't completed onboarding, redirect to onboarding
+    // Exception: if they're already on the onboarding page, let them through
+    if (!hasCompletedOnboarding() && location.pathname !== '/onboarding') {
+      return <Navigate to="/onboarding" replace />;
+    }
   }
 
   return <>{children}</>;

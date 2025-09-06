@@ -11,6 +11,8 @@ import { Plus, Upload } from "lucide-react"
 import { useState, useEffect, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile } from '@/utils/csv-parser'
+import { useDemoData } from '@/hooks/use-demo-data'
+import { DemoCtaCard } from '@/components/demo-cta-card'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -37,8 +39,9 @@ import {
 
 export default function Dashboard() {
   const { themeColors } = useThemePresets()
-  const { user } = useAuth()
+  const { user, isDemo } = useAuth()
   const { activeAccount } = useAccounts()
+  const { getTrades } = useDemoData()
   const [isLoading, setIsLoading] = useState(true)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
   const [csvUploadState, setCsvUploadState] = useState({
@@ -77,6 +80,11 @@ export default function Dashboard() {
 
   const handleSaveTrade = () => {
     if (!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
+    
+    if (isDemo) {
+      toast.info('Sign up to save your real trades!');
+      return;
+    }
     
     const savedTrades = localStorage.getItem('trades')
     let trades = []
@@ -583,6 +591,13 @@ export default function Dashboard() {
         <div className="animate-in fade-in duration-300 delay-150">
           <CalendarHeatmap />
         </div>
+        
+        {/* Demo CTA Card - Only show in demo mode */}
+        {isDemo && (
+          <div className="animate-in fade-in duration-300 delay-200 mt-8">
+            <DemoCtaCard />
+          </div>
+        )}
       </div>
       
     </div>

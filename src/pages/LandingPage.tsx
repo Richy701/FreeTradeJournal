@@ -1,4 +1,4 @@
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 // import { Card } from '@/components/ui/card'; // unused
@@ -19,7 +19,8 @@ import {
 // Removed unused: BarChart3, FileText, Shield, Zap, Target, CheckCircle
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, enterDemoMode } = useAuth();
+  const navigate = useNavigate();
   
   // If loading, show nothing or a spinner
   if (loading) {
@@ -87,11 +88,20 @@ export default function LandingPage() {
                 Whether you're a day trader, swing trader, or working with prop firms like FTMO, Apex, or TopStep, our comprehensive trading journal provides 
                 P&L tracking, risk management calculators, calendar heatmaps, win rate analysis, and AI-powered insights - all 100% free, forever.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-8" style={{marginTop: '32px'}}>
-                <Link to="/dashboard">
-                  <Button className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-4 rounded-md font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px] focus:ring-2 focus:ring-primary/50">
-                    Start Free Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8" style={{marginTop: '32px'}}>
+                <Button 
+                  onClick={() => {
+                    enterDemoMode();
+                    navigate('/dashboard');
+                  }}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-md font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px] focus:ring-2 focus:ring-primary/50"
+                >
+                  View Live Demo
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Link to="/signup">
+                  <Button variant="outline" className="px-8 py-4 rounded-md font-bold text-lg shadow-md hover:shadow-lg transition-all duration-200 min-w-[200px] border-2 focus:ring-2 focus:ring-ring/50">
+                    Sign Up Free
                   </Button>
                 </Link>
               </div>

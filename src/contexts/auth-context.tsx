@@ -1,15 +1,19 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User, Auth } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
+import { DEMO_USER } from '@/data/demo-data';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isDemo: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<User>;
   signIn: (email: string, password: string) => Promise<User>;
   signInWithGoogle: () => Promise<User>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  enterDemoMode: () => void;
+  exitDemoMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +35,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<Auth | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
 
   const initAuth = async () => {
     if (authInitialized) return auth;
@@ -105,11 +110,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async (): Promise<void> => {
+    if (isDemo) {
+      setUser(null);
+      setIsDemo(false);
+      return;
+    }
+    
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
     
     const { signOut } = await import('firebase/auth');
     await signOut(authInstance);
+  };
+  
+  const enterDemoMode = () => {
+    setUser(DEMO_USER as any);
+    setIsDemo(true);
+    setLoading(false);
+  };
+  
+  const exitDemoMode = () => {
+    setUser(null);
+    setIsDemo(false);
   };
 
   const resetPassword = async (email: string): Promise<void> => {
@@ -123,11 +145,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     user,
     loading,
+    isDemo,
     signUp,
     signIn,
     signInWithGoogle,
     logout,
-    resetPassword
+    resetPassword,
+    enterDemoMode,
+    exitDemoMode
   };
 
   return (
