@@ -69,11 +69,11 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      // Clear any existing onboarding data for fresh signup
-      clearOnboardingData();
-      
       const displayName = `${formData.firstName} ${formData.lastName}`.trim();
-      await signUp(formData.email, formData.password, displayName);
+      const user = await signUp(formData.email, formData.password, displayName);
+      
+      // Clear any existing onboarding data for fresh signup
+      clearOnboardingData(user.uid);
       navigate('/onboarding');
     } catch (error: any) {
       setError(error.message || 'Failed to create account');

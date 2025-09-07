@@ -31,11 +31,11 @@ export default function Login() {
   const isFromProtectedRoute = location.state?.from?.pathname && 
     ['/dashboard', '/trades', '/settings'].includes(location.state.from.pathname);
   
-  const getRedirectPath = () => {
+  const getRedirectPath = (userId: string | null = null) => {
     if (isFromProtectedRoute) {
-      return getOnboardingRedirect();
+      return getOnboardingRedirect(userId);
     }
-    return location.state?.from?.pathname || getOnboardingRedirect();
+    return location.state?.from?.pathname || getOnboardingRedirect(userId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,10 +45,10 @@ export default function Login() {
     setFormAnimation('animate-pulse');
 
     try {
-      await signIn(email, password);
+      const user = await signIn(email, password);
       setFormAnimation('animate-bounce');
       setTimeout(() => {
-        navigate(getRedirectPath(), { replace: true });
+        navigate(getRedirectPath(user.uid), { replace: true });
       }, 300);
     } catch (error: any) {
       setError(error.message || 'Failed to sign in');
@@ -64,8 +64,8 @@ export default function Login() {
     setGoogleLoading(true);
 
     try {
-      await signInWithGoogle();
-      navigate(getRedirectPath(), { replace: true });
+      const user = await signInWithGoogle();
+      navigate(getRedirectPath(user.uid), { replace: true });
     } catch (error: any) {
       setError(error.message || 'Failed to sign in with Google');
     } finally {
