@@ -94,6 +94,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser({ ...userCredential.user });
     }
     
+    // Send welcome email
+    try {
+      const { EmailService } = await import('@/lib/resend');
+      const firstName = displayName?.split(' ')[0] || 'Trader';
+      await EmailService.sendWelcomeEmail({
+        firstName,
+        email: userCredential.user.email || email,
+      });
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Don't fail signup if email fails
+    }
+    
     return userCredential.user;
   };
 

@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
+import { useEmailNotifications, sendTestEmail } from '@/hooks/use-email-notifications';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faExclamationTriangle, 
@@ -49,6 +50,7 @@ export default function Settings() {
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors } = useThemePresets();
   const { logout, user } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
+  const { getNotificationSettings, updateNotificationSettings } = useEmailNotifications();
   const userStorage = useUserStorage();
   const navigate = useNavigate();
   const [defaultCommission, setDefaultCommission] = useState<string>('0');
@@ -62,6 +64,8 @@ export default function Settings() {
     weeklyReports: true,
     riskAlerts: true
   });
+  const [emailNotifications, setEmailNotifications] = useState(getNotificationSettings());
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [displaySettings, setDisplaySettings] = useState({
     showPnlAsPercentage: false,
     hideSmallTrades: false,
@@ -1038,6 +1042,132 @@ export default function Settings() {
                         checked={notifications.riskAlerts}
                         onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, riskAlerts: checked }))}
                       />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faBell} className="h-4 w-4 text-primary" />
+                      <h3 className="text-lg font-semibold">Email Notifications</h3>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Welcome Emails</Label>
+                        <p className="text-sm text-muted-foreground">Send welcome email to new users</p>
+                      </div>
+                      <Switch
+                        checked={emailNotifications.welcomeEmails}
+                        onCheckedChange={(checked) => {
+                          const updated = { ...emailNotifications, welcomeEmails: checked };
+                          setEmailNotifications(updated);
+                          updateNotificationSettings(updated);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>All Trade Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Email for every trade closed</p>
+                      </div>
+                      <Switch
+                        checked={emailNotifications.tradeAlerts}
+                        onCheckedChange={(checked) => {
+                          const updated = { ...emailNotifications, tradeAlerts: checked };
+                          setEmailNotifications(updated);
+                          updateNotificationSettings(updated);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Big Win Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Email alerts for significant winning trades</p>
+                      </div>
+                      <Switch
+                        checked={emailNotifications.bigWinAlerts}
+                        onCheckedChange={(checked) => {
+                          const updated = { ...emailNotifications, bigWinAlerts: checked };
+                          setEmailNotifications(updated);
+                          updateNotificationSettings(updated);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Big Loss Alerts</Label>
+                        <p className="text-sm text-muted-foreground">Email alerts for significant losing trades</p>
+                      </div>
+                      <Switch
+                        checked={emailNotifications.bigLossAlerts}
+                        onCheckedChange={(checked) => {
+                          const updated = { ...emailNotifications, bigLossAlerts: checked };
+                          setEmailNotifications(updated);
+                          updateNotificationSettings(updated);
+                        }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="winThreshold">Big Win Threshold ($)</Label>
+                        <Input
+                          id="winThreshold"
+                          type="number"
+                          value={emailNotifications.winThreshold}
+                          onChange={(e) => {
+                            const updated = { ...emailNotifications, winThreshold: Number(e.target.value) };
+                            setEmailNotifications(updated);
+                            updateNotificationSettings(updated);
+                          }}
+                          className="max-w-[200px]"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lossThreshold">Big Loss Threshold ($)</Label>
+                        <Input
+                          id="lossThreshold"
+                          type="number"
+                          value={emailNotifications.lossThreshold}
+                          onChange={(e) => {
+                            const updated = { ...emailNotifications, lossThreshold: Number(e.target.value) };
+                            setEmailNotifications(updated);
+                            updateNotificationSettings(updated);
+                          }}
+                          className="max-w-[200px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          if (!user?.email) return;
+                          setIsTestingEmail(true);
+                          const result = await sendTestEmail(user.email);
+                          setIsTestingEmail(false);
+                          if (result.success) {
+                            alert('Test email sent successfully! Check your inbox.');
+                          } else {
+                            alert(`Failed to send test email: ${result.error}`);
+                          }
+                        }}
+                        disabled={!user?.email || isTestingEmail}
+                        className="w-fit"
+                      >
+                        {isTestingEmail ? 'Sending...' : 'Send Test Email'}
+                      </Button>
+                      {!user?.email && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Email address required for email notifications
+                        </p>
+                      )}
                     </div>
                   </div>
 
