@@ -303,7 +303,7 @@ export default function Documentation() {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
-                  <span><strong>Email Support:</strong> support@freetradejournal.com</span>
+                  <span><strong>Community Support:</strong> <a href="https://t.me/+UI6uTKgfswUwNzhk" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Join our Telegram</a></span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
@@ -342,7 +342,7 @@ export default function Documentation() {
             title: "Resources",
             links: [
               { name: "Documentation", href: "/documentation" },
-              { name: "Support", href: "mailto:support@freetradejournal.com" },
+              { name: "Get Help", href: "https://t.me/+UI6uTKgfswUwNzhk" },
               { name: "Community", href: "#" },
               { name: "Blog", href: "#" }
             ]

@@ -176,7 +176,7 @@ export default function CookiePolicy() {
             title: "Resources",
             links: [
               { name: "Documentation", href: "#" },
-              { name: "Support", href: "mailto:support@freetradejournal.com" },
+              { name: "Get Help", href: "https://t.me/+UI6uTKgfswUwNzhk" },
               { name: "Community", href: "#" },
               { name: "Blog", href: "#" }
             ]
