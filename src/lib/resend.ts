@@ -24,7 +24,9 @@ export interface TradeAlertData {
 }
 
 export class EmailService {
-  private static defaultFrom = 'FreeTradeJournal <noreply@freetradejournal.com>';
+  // Use resend.dev domain until custom domain is verified
+  // Change this to 'FreeTradeJournal <noreply@freetradejournal.com>' once domain is set up
+  private static defaultFrom = 'FreeTradeJournal <onboarding@resend.dev>';
 
   static async sendEmail(options: EmailOptions) {
     try {

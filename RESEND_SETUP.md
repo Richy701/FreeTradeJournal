@@ -25,14 +25,27 @@ All emails use professionally designed HTML templates with:
 2. Verify your email address
 3. Navigate to **API Keys** in your dashboard
 
-### 2. Domain Setup (Recommended)
+### 2. Domain Setup (Optional)
 
-For production use, you'll want to verify your sending domain:
+**You can start sending emails immediately without a custom domain!**
+
+#### Using Resend's Default Domain (Quick Start)
+- Your emails will be sent from `onboarding@resend.dev`
+- No domain verification needed
+- Perfect for testing and getting started
+- The app is already configured to use this
+
+#### Using Custom Domain (Production - When Available)
+If/when you have a domain for FreeTradeJournal:
 
 1. Go to **Domains** in your Resend dashboard
-2. Add your domain: `freetradejournal.com`
+2. Add your domain: `freetradejournal.com` or any domain you own
 3. Add the required DNS records to verify domain ownership
 4. Wait for verification (usually takes a few minutes)
+5. Update `/src/lib/resend.ts` to use your domain:
+   ```typescript
+   private static defaultFrom = 'FreeTradeJournal <noreply@yourdomain.com>';
+   ```
 
 ### 3. Get Your API Key
 
