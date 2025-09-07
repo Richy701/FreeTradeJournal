@@ -1,12 +1,22 @@
+import { useState } from 'react';
 import { SiteHeader } from '@/components/site-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
+import { FeedbackButton } from '@/components/ui/feedback-button';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBook, faChartLine, faCalendarAlt, faFileText, faBullseye, faCog, faUpload, faDownload, faFilter, faCalculator } from '@fortawesome/free-solid-svg-icons';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 export default function Documentation() {
   const { themeColors } = useThemePresets();
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const featureCards = [
     {
@@ -307,7 +317,7 @@ export default function Documentation() {
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
-                  <span><strong>Feedback:</strong> Use the in-app feedback system</span>
+                  <span><strong>Feedback:</strong> <button onClick={() => setShowFeedback(true)} className="text-primary hover:underline">Send us feedback</button></span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
@@ -365,6 +375,32 @@ export default function Documentation() {
           { name: "Privacy Policy", href: "/privacy" }
         ]}
       />
+      
+      {/* Feedback Dialog */}
+      <Dialog open={showFeedback} onOpenChange={setShowFeedback}>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Send Feedback</DialogTitle>
+            <DialogDescription>
+              Share your feedback, report bugs, or request features for FreeTradeJournal
+            </DialogDescription>
+          </DialogHeader>
+          {showFeedback && (
+            <iframe
+              data-tally-src="https://tally.so/embed/meV7rl?alignLeft=1&hideTitle=0&transparentBackground=0&dynamicHeight=1"
+              src="https://tally.so/embed/meV7rl?alignLeft=1&hideTitle=0&transparentBackground=0&dynamicHeight=1"
+              loading="lazy"
+              width="100%"
+              height="600"
+              frameBorder="0"
+              marginHeight={0}
+              marginWidth={0}
+              title="Feedback form"
+              style={{ border: 0 }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
