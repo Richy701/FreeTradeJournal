@@ -243,8 +243,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     };
 
     return (
-        <section className="relative py-16 md:py-24 overflow-hidden">
-            <div className="w-full px-4 sm:px-6 md:px-12 relative z-10 mx-auto" style={{maxWidth: '1280px'}}>
+        <section className="relative py-16 overflow-hidden">
+            <div className="w-full px-6 relative z-10 mx-auto" style={{maxWidth: '1280px'}}>
                 <motion.div
                     className={`grid grid-cols-1 gap-12 lg:gap-20 w-full items-center ${layoutClasses}`}
                     variants={containerVariants}

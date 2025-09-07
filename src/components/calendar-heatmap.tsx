@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { useUserStorage } from '@/utils/user-storage'
+import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight, faBookOpen, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,7 +85,8 @@ export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors } = useThemePresets()
   const { activeAccount } = useAccounts()
-  const { getTrades, isDemo } = useDemoData()
+  const { getTrades, getJournalEntries, isDemo } = useDemoData()
+  const userStorage = useUserStorage()
   
   // State for current viewing month/year
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -113,28 +116,9 @@ export function CalendarHeatmap() {
     propFirm: ""
   })
 
-  const propFirms = [
-    "E8 Markets",
-    "Funded FX", 
-    "FundingPips",
-    "TopStep",
-    "FTMO",
-    "Alpha Capital Group",
-    "Apex Trader Funding",
-    "The5ers"
-  ]
 
-  const getInstrumentsByMarket = (market: string) => {
-    switch (market) {
-      case 'forex':
-        return ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP'];
-      case 'futures':
-        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'SI', 'ZB', 'ZN', 'ZF'];
-      case 'indices':
-        return ['SPX500', 'NAS100', 'US30', 'GER40', 'UK100', 'FRA40', 'JPN225', 'AUS200'];
-      default:
-        return [];
-    }
+  const getInstrumentsByMarket = (market: MarketType) => {
+    return MARKET_INSTRUMENTS[market] || [];
   }
 
   // Get trades from localStorage or demo data
@@ -151,7 +135,7 @@ export function CalendarHeatmap() {
     }
     
     // Use localStorage data for real users
-    const storedTrades = localStorage.getItem('trades')
+    const storedTrades = userStorage.getItem('trades')
     if (!storedTrades || !activeAccount) return []
     
     try {
@@ -168,28 +152,34 @@ export function CalendarHeatmap() {
     }
   }, [activeAccount, isDemo, getTrades])
 
-  // Get journal entries from localStorage (now supports multiple entries per day)
+  // Get journal entries from demo data or localStorage
   const journalEntries = useMemo(() => {
-    const savedEntries = localStorage.getItem('journalEntries')
-    if (!savedEntries) return {} as Record<string, any[]>
+    let entries = []
     
-    try {
-      const entries = JSON.parse(savedEntries)
-      const journalByDate: Record<string, any[]> = {}
+    if (isDemo) {
+      entries = getJournalEntries()
+    } else {
+      const savedEntries = userStorage.getItem('journalEntries')
+      if (!savedEntries) return {} as Record<string, any[]>
       
-      entries.forEach((entry: any) => {
-        const dateKey = new Date(entry.date).toISOString().split('T')[0]
-        if (!journalByDate[dateKey]) {
-          journalByDate[dateKey] = []
-        }
-        journalByDate[dateKey].push(entry)
-      })
-      
-      return journalByDate
-    } catch {
-      return {} as Record<string, any[]>
+      try {
+        entries = JSON.parse(savedEntries)
+      } catch {
+        return {} as Record<string, any[]>
+      }
     }
-  }, [isTradeDialogOpen]) // Re-check when modal closes
+    
+    const journalByDate: Record<string, any[]> = {}
+    entries.forEach((entry: any) => {
+      const dateKey = new Date(entry.date).toISOString().split('T')[0]
+      if (!journalByDate[dateKey]) {
+        journalByDate[dateKey] = []
+      }
+      journalByDate[dateKey].push(entry)
+    })
+    
+    return journalByDate
+  }, [isDemo, getJournalEntries, isTradeDialogOpen])
 
   // Navigation functions with animation
   const navigateWithAnimation = (callback: () => void) => {
@@ -246,20 +236,12 @@ export function CalendarHeatmap() {
     setSelectedDateForTrade(date)
     
     // Load existing journal entries for this date
-    const savedEntries = localStorage.getItem('journalEntries')
-    let dayEntries = []
-    if (savedEntries) {
-      try {
-        const entries = JSON.parse(savedEntries)
-        const dateKey = date.toISOString().split('T')[0]
-        dayEntries = entries.filter((entry: any) => {
-          const entryDate = new Date(entry.date).toISOString().split('T')[0]
-          return entryDate === dateKey
-        })
-      } catch {
-        dayEntries = []
-      }
-    }
+    const entries = getJournalEntries()
+    const dateKey = date.toISOString().split('T')[0]
+    const dayEntries = entries.filter((entry: any) => {
+      const entryDate = new Date(entry.date).toISOString().split('T')[0]
+      return entryDate === dateKey
+    })
     setSelectedDateEntries(dayEntries)
     
     // Reset form for new journal entry (always start fresh)
@@ -275,16 +257,7 @@ export function CalendarHeatmap() {
   const handleSaveJournal = () => {
     if (!selectedDateForTrade || !journalNote.trim()) return
     
-    const savedEntries = localStorage.getItem('journalEntries')
-    let entries = []
-    
-    if (savedEntries) {
-      try {
-        entries = JSON.parse(savedEntries)
-      } catch {
-        entries = []
-      }
-    }
+    let entries = getJournalEntries()
     
     // Always create a new journal entry (no longer replace existing ones)
     const journalEntry = {
@@ -301,7 +274,7 @@ export function CalendarHeatmap() {
     // Add new entry to the beginning of the array
     entries.unshift(journalEntry)
     
-    localStorage.setItem('journalEntries', JSON.stringify(entries))
+    userStorage.setItem('journalEntries', JSON.stringify(entries))
     
     // Reset form
     setJournalNote("")
@@ -331,16 +304,7 @@ export function CalendarHeatmap() {
   const handleSaveTrade = () => {
     if (!selectedDateForTrade || !tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
     
-    const savedTrades = localStorage.getItem('trades')
-    let trades = []
-    
-    if (savedTrades) {
-      try {
-        trades = JSON.parse(savedTrades)
-      } catch {
-        trades = []
-      }
-    }
+    let trades = getTrades()
     
     const entryPrice = parseFloat(tradeForm.entryPrice)
     const exitPrice = parseFloat(tradeForm.exitPrice)
@@ -369,7 +333,7 @@ export function CalendarHeatmap() {
     }
     
     trades.unshift(newTrade)
-    localStorage.setItem('trades', JSON.stringify(trades))
+    userStorage.setItem('trades', JSON.stringify(trades))
     
     // Reset form
     setTradeForm({
@@ -1241,7 +1205,7 @@ export function CalendarHeatmap() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        {propFirms.map((firm) => (
+                        {PROP_FIRMS.map((firm) => (
                           <SelectItem key={firm} value={firm}>
                             {firm}
                           </SelectItem>
@@ -1343,7 +1307,7 @@ export function CalendarHeatmap() {
                         entryTime: selectedDateForTrade,
                         exitTime: selectedDateForTrade
                       };
-                      localStorage.setItem('prefilledTradeForm', JSON.stringify(prefilledData));
+                      userStorage.setItem('prefilledTradeForm', JSON.stringify(prefilledData));
                       setIsTradeDialogOpen(false);
                       window.location.href = '/trades';
                     }}

@@ -13,6 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
+import { useUserStorage } from '@/utils/user-storage';
+import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faExclamationTriangle, 
@@ -47,12 +49,13 @@ export default function Settings() {
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors } = useThemePresets();
   const { logout, user } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
+  const userStorage = useUserStorage();
   const navigate = useNavigate();
   const [defaultCommission, setDefaultCommission] = useState<string>('0');
-  const [currency, setCurrency] = useState<string>('USD');
-  const [timezone, setTimezone] = useState<string>('America/New_York');
-  const [riskPerTrade, setRiskPerTrade] = useState<string>('2');
-  const [accountSize, setAccountSize] = useState<string>('10000');
+  const [currency, setCurrency] = useState<string>(DEFAULT_VALUES.CURRENCY);
+  const [timezone, setTimezone] = useState<string>(DEFAULT_VALUES.TIMEZONE);
+  const [riskPerTrade, setRiskPerTrade] = useState<string>(DEFAULT_VALUES.RISK_PER_TRADE.toString());
+  const [accountSize, setAccountSize] = useState<string>(DEFAULT_VALUES.STARTING_BALANCE.toString());
   const [notifications, setNotifications] = useState({
     tradeAlerts: true,
     dailyReports: false,
@@ -78,14 +81,14 @@ export default function Settings() {
   const [editForm, setEditForm] = useState<TradingAccount | null>(null);
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem('settings');
+    const savedSettings = userStorage.getItem('settings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
       setDefaultCommission(settings.defaultCommission || '0');
-      setCurrency(settings.currency || 'USD');
-      setTimezone(settings.timezone || 'America/New_York');
-      setRiskPerTrade(settings.riskPerTrade || '2');
-      setAccountSize(settings.accountSize || '10000');
+      setCurrency(settings.currency || DEFAULT_VALUES.CURRENCY);
+      setTimezone(settings.timezone || DEFAULT_VALUES.TIMEZONE);
+      setRiskPerTrade(settings.riskPerTrade || DEFAULT_VALUES.RISK_PER_TRADE.toString());
+      setAccountSize(settings.accountSize || DEFAULT_VALUES.STARTING_BALANCE.toString());
       setNotifications(settings.notifications || {
         tradeAlerts: true,
         dailyReports: false,
@@ -110,13 +113,13 @@ export default function Settings() {
       notifications,
       displaySettings
     };
-    localStorage.setItem('settings', JSON.stringify(settings));
+    userStorage.setItem('settings', JSON.stringify(settings));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
   const getTradeStats = () => {
-    const trades = JSON.parse(localStorage.getItem('trades') || '[]');
+    const trades = JSON.parse(userStorage.getItem('trades') || '[]');
     return {
       total: trades.length,
       thisMonth: trades.filter((t: any) => {
@@ -131,8 +134,8 @@ export default function Settings() {
   const stats = getTradeStats();
 
   const exportData = () => {
-    const trades = localStorage.getItem('trades') || '[]';
-    const settings = localStorage.getItem('settings') || '{}';
+    const trades = userStorage.getItem('trades') || '[]';
+    const settings = userStorage.getItem('settings') || '{}';
     const data = {
       trades: JSON.parse(trades),
       settings: JSON.parse(settings),
@@ -156,13 +159,13 @@ export default function Settings() {
       try {
         const data = JSON.parse(e.target?.result as string);
         if (data.trades) {
-          localStorage.setItem('trades', JSON.stringify(data.trades));
+          userStorage.setItem('trades', JSON.stringify(data.trades));
         }
         if (data.settings) {
-          localStorage.setItem('settings', JSON.stringify(data.settings));
+          userStorage.setItem('settings', JSON.stringify(data.settings));
           setDefaultCommission(data.settings.defaultCommission || '0');
           setCurrency(data.settings.currency || 'USD');
-          setTimezone(data.settings.timezone || 'America/New_York');
+          setTimezone(data.settings.timezone || DEFAULT_VALUES.TIMEZONE);
         }
         setSaved(true);
         setTimeout(() => {
@@ -180,8 +183,8 @@ export default function Settings() {
 
   const clearAllData = () => {
     if (confirm('Are you sure you want to delete all data? This action cannot be undone.')) {
-      localStorage.removeItem('trades');
-      localStorage.removeItem('settings');
+      userStorage.removeItem('trades');
+      userStorage.removeItem('settings');
       window.location.reload();
     }
   };

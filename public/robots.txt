@@ -1,5 +1,5 @@
 # FreeTradeJournal Robots.txt
-# https://freetradejournal.com
+# https://www.freetradejournal.com
 
 # Allow all crawlers
 User-agent: *
@@ -38,4 +38,4 @@ User-agent: MJ12bot
 Disallow: /
 
 # Sitemap location
-Sitemap: https://freetradejournal.com/sitemap.xml
+Sitemap: https://www.freetradejournal.com/sitemap.xml

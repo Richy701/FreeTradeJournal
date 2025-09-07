@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
   faDollarSign, 
@@ -43,25 +44,19 @@ interface Trade {
 }
 
 export function SectionCards() {
-  // Get theme colors
+  // Get theme colors and demo data
   const { themeColors } = useThemePresets()
+  const { getTrades } = useDemoData()
   
-  // Get trades from localStorage
+  // Get trades from demo data or localStorage
   const trades = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
-    if (!storedTrades) return []
-    
-    try {
-      const parsedTrades = JSON.parse(storedTrades)
-      return parsedTrades.map((trade: any) => ({
-        ...trade,
-        entryTime: new Date(trade.entryTime),
-        exitTime: new Date(trade.exitTime)
-      }))
-    } catch {
-      return []
-    }
-  }, [])
+    const tradesData = getTrades()
+    return tradesData.map((trade: any) => ({
+      ...trade,
+      entryTime: new Date(trade.entryTime),
+      exitTime: new Date(trade.exitTime)
+    }))
+  }, [getTrades])
 
   // Calculate metrics
   const metrics = useMemo(() => {

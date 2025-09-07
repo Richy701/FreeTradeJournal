@@ -1,5 +1,6 @@
 import { PerformanceGoals } from "@/components/performance-goals"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useUserStorage } from '@/utils/user-storage'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBullseye, faChartLine, faTrophy, faShieldAlt } from '@fortawesome/free-solid-svg-icons'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,10 +10,11 @@ import { useMemo } from 'react'
 
 export default function Goals() {
   const { themeColors } = useThemePresets()
+  const userStorage = useUserStorage()
   
   // Get trades for statistics
   const trades = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
+    const storedTrades = userStorage.getItem('trades')
     if (!storedTrades) return []
     
     try {
@@ -24,11 +26,11 @@ export default function Goals() {
 
   // Calculate achievement statistics
   const stats = useMemo(() => {
-    const storedGoals = localStorage.getItem('tradingGoals')
+    const storedGoals = userStorage.getItem('tradingGoals')
     const goals = storedGoals ? JSON.parse(storedGoals) : []
     const achievedGoals = goals.filter((g: any) => g.achieved).length
     
-    const storedRules = localStorage.getItem('riskRules')
+    const storedRules = userStorage.getItem('riskRules')
     const rules = storedRules ? JSON.parse(storedRules) : []
     const activeRules = rules.filter((r: any) => r.enabled).length
     const violations = rules.reduce((sum: number, r: any) => sum + (r.violations || 0), 0)

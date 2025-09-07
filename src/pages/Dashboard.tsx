@@ -1,6 +1,7 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useAccounts } from '@/contexts/account-context'
+import { PageSEO } from '@/components/seo/page-seo'
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
@@ -13,6 +14,8 @@ import { toast } from 'sonner'
 import { parseCSV, validateCSVFile } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { DemoCtaCard } from '@/components/demo-cta-card'
+import { useUserStorage } from '@/utils/user-storage'
+import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -42,7 +45,8 @@ export default function Dashboard() {
   const { user, isDemo } = useAuth()
   const { activeAccount } = useAccounts()
   const { getTrades } = useDemoData()
-  const [isLoading, setIsLoading] = useState(true)
+  const userStorage = useUserStorage()
+  const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
@@ -60,22 +64,8 @@ export default function Dashboard() {
     propFirm: "none"
   })
 
-  const propFirms = [
-    "E8 Markets", "Funded FX", "FundingPips", "TopStep",
-    "FTMO", "Alpha Capital Group", "Apex Trader Funding", "The5ers"
-  ]
-
-  const getInstrumentsByMarket = (market: string) => {
-    switch (market) {
-      case 'forex':
-        return ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURJPY', 'GBPJPY', 'EURGBP'];
-      case 'futures':
-        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'SI', 'ZB', 'ZN', 'ZF'];
-      case 'indices':
-        return ['SPX500', 'NAS100', 'US30', 'GER40', 'UK100', 'FRA40', 'JPN225', 'AUS200'];
-      default:
-        return [];
-    }
+  const getInstrumentsByMarket = (market: MarketType) => {
+    return MARKET_INSTRUMENTS[market] || [];
   }
 
   const handleSaveTrade = () => {
@@ -86,7 +76,7 @@ export default function Dashboard() {
       return;
     }
     
-    const savedTrades = localStorage.getItem('trades')
+    const savedTrades = userStorage.getItem('trades')
     let trades = []
     
     if (savedTrades) {
@@ -124,7 +114,7 @@ export default function Dashboard() {
     }
     
     trades.unshift(newTrade)
-    localStorage.setItem('trades', JSON.stringify(trades))
+    userStorage.setItem('trades', JSON.stringify(trades))
     
     // Reset form
     setTradeForm({
@@ -158,7 +148,7 @@ export default function Dashboard() {
           const result = parseCSV(content);
           
           if (result.success) {
-            const savedTrades = localStorage.getItem('trades');
+            const savedTrades = userStorage.getItem('trades');
             let existingTrades = [];
             
             if (savedTrades) {
@@ -192,7 +182,7 @@ export default function Dashboard() {
             }));
             
             const updatedTrades = [...existingTrades, ...importedTrades];
-            localStorage.setItem('trades', JSON.stringify(updatedTrades));
+            userStorage.setItem('trades', JSON.stringify(updatedTrades));
             
             totalSuccessful += result.summary.successfulParsed;
             totalFailed += result.summary.failed;
@@ -226,11 +216,13 @@ export default function Dashboard() {
     }
   };
 
-  // Generate personalized greeting
+  // Generate personalized greeting with consistent length to prevent layout shift
   const getGreeting = () => {
     const hour = new Date().getHours()
-    const firstName = user?.displayName?.split(' ')[0] || 'Trader'
+    // Limit firstName length to prevent layout shift with very long names
+    const firstName = user?.displayName?.split(' ')[0]?.substring(0, 15) || 'Trader'
     
+    // Use consistent greeting length to prevent layout shift
     if (hour >= 5 && hour < 12) {
       return `Good morning, ${firstName}!`
     } else if (hour >= 12 && hour < 17) {
@@ -242,14 +234,7 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    // Simulate initial load time for better UX
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 800)
-
-    return () => clearTimeout(timer)
-  }, [])
+  // No loading state needed - render content immediately
 
   // Skeleton loader components
   const MetricCardSkeleton = () => (
@@ -281,17 +266,27 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Header Skeleton */}
-        <div className="border-b bg-card/80 backdrop-blur-xl">
-          <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-              <div className="space-y-3">
-                <Skeleton className="h-12 w-80" />
-                <Skeleton className="h-6 w-96" />
+        {/* Header Skeleton - Match exact layout */}
+        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+          <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+            <div className="flex flex-col gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                {/* Personalized Greeting Skeleton */}
+                <div className="space-y-1 text-center sm:text-left">
+                  <Skeleton className="h-5 sm:h-7 w-72 mx-auto sm:mx-0" />
+                  <Skeleton className="h-4 sm:h-5 w-80 mx-auto sm:mx-0" />
+                </div>
+                
+                {/* Dashboard Title Skeleton */}
+                <div className="space-y-2 text-center sm:text-left">
+                  <Skeleton className="h-7 sm:h-8 md:h-12 lg:h-16 w-64 sm:w-96 mx-auto sm:mx-0" />
+                  <Skeleton className="h-4 sm:h-5 md:h-7 w-80 sm:w-full max-w-2xl mx-auto sm:mx-0" />
+                </div>
               </div>
-              <div className="flex gap-3">
-                <Skeleton className="h-10 w-32" />
-                <Skeleton className="h-10 w-24" />
+              
+              {/* Quick Actions Skeleton */}
+              <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3">
+                <Skeleton className="h-10 sm:h-11 w-32" />
               </div>
             </div>
           </div>
@@ -323,19 +318,26 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageSEO 
+        title="Trading Dashboard" 
+        description="Professional trading dashboard with performance analytics, P&L tracking, and equity curves for forex and futures traders."
+        canonical="/dashboard"
+        keywords="trading dashboard, performance analytics, P&L tracking, trading statistics, equity curve"
+      />
+      <div className="min-h-screen bg-background">
       <SiteHeader />
       {/* Mobile-optimized Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
           <div className="flex flex-col gap-4">
             <div className="space-y-3 sm:space-y-4">
               {/* Personalized Greeting */}
               <div className="space-y-1 text-center sm:text-left">
-                <p className="text-base sm:text-lg font-semibold text-foreground opacity-90">
+                <p className="text-lg font-semibold text-foreground opacity-90">
                   {getGreeting()}
                 </p>
-                <div className="text-xs sm:text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   {new Date().toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -348,14 +350,14 @@ export default function Dashboard() {
               {/* Dashboard Title */}
               <div className="space-y-2 text-center sm:text-left">
                 <h1 
-                  className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
+                  className="text-4xl font-black bg-clip-text text-transparent leading-tight"
                   style={{
-                    backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD, ${themeColors.primary}AA)`
+                    backgroundImage: `linear-gradient(to right, ${themeColors.primary || 'hsl(var(--primary))'}, ${themeColors.primary || 'hsl(var(--primary))'}DD, ${themeColors.primary || 'hsl(var(--primary))'}AA)`
                   }}
                 >
                   Trading Dashboard
                 </h1>
-                <p className="text-muted-foreground text-xs sm:text-sm md:text-lg font-medium max-w-2xl mx-auto sm:mx-0">
+                <p className="text-muted-foreground text-base font-medium max-w-2xl mx-auto sm:mx-0">
                   Track your performance and analyze your trades
                 </p>
               </div>
@@ -367,11 +369,11 @@ export default function Dashboard() {
                 <DialogTrigger asChild>
                   <Button 
                     size="default" 
-                    className="gap-2 h-10 sm:h-11 touch-manipulation"
-                    style={{backgroundColor: themeColors.primary, color: 'white'}}
+                    className="gap-2 h-11 touch-manipulation"
+                    style={{backgroundColor: themeColors.primary || 'hsl(var(--primary))', color: 'white'}}
                   >
                     <Plus className="h-4 w-4" />
-                    <span className="text-sm sm:text-base">Add Trade</span>
+                    <span>Add Trade</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -385,7 +387,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Market</Label>
-                        <Select value={tradeForm.market} onValueChange={(value: "forex" | "futures" | "indices") => {
+                        <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
                           setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
                         }}>
                           <SelectTrigger>
@@ -438,7 +440,7 @@ export default function Dashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
-                            {propFirms.map((firm) => (
+                            {PROP_FIRMS.map((firm) => (
                               <SelectItem key={firm} value={firm}>
                                 {firm}
                               </SelectItem>
@@ -600,6 +602,7 @@ export default function Dashboard() {
         )}
       </div>
       
-    </div>
+      </div>
+    </>
   )
 }

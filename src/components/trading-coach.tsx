@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
   faUserTie, 
@@ -38,24 +39,19 @@ interface Trade {
 
 export function TradingCoach() {
   const { themeColors } = useThemePresets()
+  const { getTrades } = useDemoData()
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
 
-  // Get trades from localStorage
+  // Get trades from demo data or localStorage
   const trades = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
-    if (!storedTrades) return []
-    
-    try {
-      return JSON.parse(storedTrades).map((trade: any) => ({
-        ...trade,
-        exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
-        entryTime: trade.entryTime ? new Date(trade.entryTime) : undefined
-      }))
-    } catch {
-      return []
-    }
-  }, [])
+    const tradesData = getTrades()
+    return tradesData.map((trade: any) => ({
+      ...trade,
+      exitTime: trade.exitTime ? new Date(trade.exitTime) : undefined,
+      entryTime: trade.entryTime ? new Date(trade.entryTime) : undefined
+    }))
+  }, [getTrades])
 
   // Advanced pattern detection
   const detectTradingPatterns = (trades: Trade[]) => {

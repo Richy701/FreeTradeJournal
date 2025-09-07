@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { PageSEO } from '@/components/seo/page-seo';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAccounts } from '@/contexts/account-context';
+import { useUserStorage } from '@/utils/user-storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,6 +94,7 @@ interface TradeFormData {
 export default function TradeLog() {
   const { themeColors } = useThemePresets();
   const { activeAccount } = useAccounts();
+  const userStorage = useUserStorage();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -208,7 +211,7 @@ export default function TradeLog() {
 
   const saveTrades = (updatedTrades: Trade[]) => {
     setTrades(updatedTrades);
-    localStorage.setItem('trades', JSON.stringify(updatedTrades));
+    userStorage.setItem('trades', JSON.stringify(updatedTrades));
     calculateQuickStats(updatedTrades);
   };
 
@@ -703,7 +706,7 @@ export default function TradeLog() {
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => {
-      const savedTrades = localStorage.getItem('trades');
+      const savedTrades = userStorage.getItem('trades');
       if (savedTrades) {
         try {
           const parsedTrades = JSON.parse(savedTrades);
@@ -758,7 +761,7 @@ export default function TradeLog() {
           calculateQuickStats(tradesWithDates);
           
           // Save the updated trades with RR calculations back to localStorage
-          localStorage.setItem('trades', JSON.stringify(tradesWithDates));
+          userStorage.setItem('trades', JSON.stringify(tradesWithDates));
         } catch (error) {
           console.error('Error loading trades:', error);
           setTrades([]);
@@ -766,7 +769,7 @@ export default function TradeLog() {
       }
 
       // Check for prefilled trade form data
-      const prefilledTradeForm = localStorage.getItem('prefilledTradeForm');
+      const prefilledTradeForm = userStorage.getItem('prefilledTradeForm');
       if (prefilledTradeForm) {
         try {
           const formData = JSON.parse(prefilledTradeForm);
@@ -799,11 +802,11 @@ export default function TradeLog() {
           setIsDialogOpen(true);
           
           // Clear the prefilled data from localStorage
-          localStorage.removeItem('prefilledTradeForm');
+          userStorage.removeItem('prefilledTradeForm');
         } catch (error) {
           console.error('Error parsing prefilled trade form data:', error);
           // Clear invalid data
-          localStorage.removeItem('prefilledTradeForm');
+          userStorage.removeItem('prefilledTradeForm');
         }
       }
       
@@ -875,7 +878,14 @@ export default function TradeLog() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
+    <>
+      <PageSEO 
+        title="Trade Log" 
+        description="Comprehensive trade logging with detailed performance metrics, profit/loss tracking, and trade analysis for forex and futures trading."
+        canonical="/trades"
+        keywords="trade log, trading journal, trade tracking, P&L analysis, forex trades, futures trading"
+      />
+      <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Enhanced Header Section */}
       <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-20 shadow-sm">
@@ -2007,6 +2017,7 @@ export default function TradeLog() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

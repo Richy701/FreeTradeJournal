@@ -38,7 +38,7 @@ export function migrateTradesToAccountId(): { migrated: number; total: number } 
     // Save updated trades if any were migrated
     if (migratedCount > 0) {
       localStorage.setItem('trades', JSON.stringify(updatedTrades));
-      console.log(`Trade Migration: Added accountId to ${migratedCount} trades`);
+      // Trade Migration: Added accountId to trades
     }
     
     // Mark migration as completed

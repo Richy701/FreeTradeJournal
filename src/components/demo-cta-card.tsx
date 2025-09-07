@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
-import { Sparkles, TrendingUp, Lock } from 'lucide-react';
+import { User, TrendingUp, Lock } from 'lucide-react';
 
 export function DemoCtaCard() {
   const { isDemo, exitDemoMode } = useAuth();
@@ -13,7 +13,7 @@ export function DemoCtaCard() {
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+          <User className="h-5 w-5 text-primary" />
           Ready to Track Your Real Trades?
         </CardTitle>
         <CardDescription>

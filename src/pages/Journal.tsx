@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useUserStorage } from '@/utils/user-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
@@ -83,6 +84,7 @@ const mockEntries: JournalEntry[] = [];
 
 export default function Journal() {
   const { themeColors } = useThemePresets();
+  const userStorage = useUserStorage();
   const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
@@ -125,7 +127,7 @@ export default function Journal() {
   useEffect(() => {
     const loadEntries = () => {
       try {
-        const savedEntries = localStorage.getItem('journalEntries');
+        const savedEntries = userStorage.getItem('journalEntries');
         if (savedEntries) {
           const parsedEntries = JSON.parse(savedEntries).map((entry: any) => ({
             ...entry,
@@ -146,7 +148,7 @@ export default function Journal() {
     const loadTrades = async () => {
       setIsLoadingTrades(true);
       try {
-        const storedTrades = localStorage.getItem('trades');
+        const storedTrades = userStorage.getItem('trades');
         if (storedTrades) {
           const parsedTrades = JSON.parse(storedTrades).map((trade: any) => ({
             ...trade,
@@ -194,7 +196,7 @@ export default function Journal() {
         setEntries(updatedEntries);
         
         // Save to localStorage
-        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+        userStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
         setEditingEntry(null);
       } else {
         // Create new entry with unique ID
@@ -215,7 +217,7 @@ export default function Journal() {
         
         // Save to localStorage
         const updatedEntries = [entry, ...entries];
-        localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+        userStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
       }
 
       setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
@@ -361,7 +363,7 @@ export default function Journal() {
     if (confirm('Are you sure you want to delete this journal entry?')) {
       const updatedEntries = entries.filter(entry => entry.id !== entryId);
       setEntries(updatedEntries);
-      localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      userStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
     }
   };
 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
-import { X, Sparkles } from 'lucide-react';
+import { X, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export function DemoBanner() {
@@ -32,7 +32,7 @@ export function DemoBanner() {
     >
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 animate-pulse" />
+          <Info className="h-5 w-5" />
           <p className="text-sm font-medium">
             You're viewing a demo with sample data. Sign up to save your real trades!
           </p>

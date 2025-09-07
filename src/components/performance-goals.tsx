@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useUserStorage } from '@/utils/user-storage'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
   faBullseye,
@@ -71,6 +72,7 @@ interface RiskRule {
 
 export function PerformanceGoals() {
   const { themeColors } = useThemePresets()
+  const userStorage = useUserStorage()
   const [goals, setGoals] = useState<Goal[]>([])
   const [riskRules, setRiskRules] = useState<RiskRule[]>([])
   const [showGoalDialog, setShowGoalDialog] = useState(false)
@@ -118,8 +120,8 @@ export function PerformanceGoals() {
 
   // Load goals and risk rules from localStorage
   useEffect(() => {
-    const storedGoals = localStorage.getItem('tradingGoals')
-    const storedRules = localStorage.getItem('riskRules')
+    const storedGoals = userStorage.getItem('tradingGoals')
+    const storedRules = userStorage.getItem('riskRules')
     
     if (storedGoals) {
       setGoals(JSON.parse(storedGoals).map((g: any) => ({
@@ -146,7 +148,7 @@ export function PerformanceGoals() {
         }
       ]
       setGoals(defaultGoals)
-      localStorage.setItem('tradingGoals', JSON.stringify(defaultGoals))
+      userStorage.setItem('tradingGoals', JSON.stringify(defaultGoals))
     }
     
     if (storedRules) {
@@ -177,13 +179,13 @@ export function PerformanceGoals() {
         }
       ]
       setRiskRules(defaultRules)
-      localStorage.setItem('riskRules', JSON.stringify(defaultRules))
+      userStorage.setItem('riskRules', JSON.stringify(defaultRules))
     }
   }, [])
 
   // Get trades and calculate current progress
   const trades = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
+    const storedTrades = userStorage.getItem('trades')
     if (!storedTrades) return []
     
     try {
@@ -273,7 +275,7 @@ export function PerformanceGoals() {
         goal.achievedAt = new Date()
         // Update in localStorage
         const updatedGoals = goals.map(g => g.id === goal.id ? { ...g, achieved: true, achievedAt: new Date() } : g)
-        localStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
+        userStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
       }
       
       return { ...goal, current, achieved }
@@ -322,7 +324,7 @@ export function PerformanceGoals() {
       
       if (violated) {
         rule.violations = (rule.violations || 0) + 1
-        localStorage.setItem('riskRules', JSON.stringify(riskRules))
+        userStorage.setItem('riskRules', JSON.stringify(riskRules))
       }
     })
   }
@@ -338,7 +340,7 @@ export function PerformanceGoals() {
     
     const updatedGoals = [...goals, goal]
     setGoals(updatedGoals)
-    localStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
+    userStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
     setShowGoalDialog(false)
     
     toast.success('Goal Added!', {
@@ -349,7 +351,7 @@ export function PerformanceGoals() {
   const deleteGoal = (id: string) => {
     const updatedGoals = goals.filter(g => g.id !== id)
     setGoals(updatedGoals)
-    localStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
+    userStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
   }
 
   const toggleRiskRule = (id: string) => {
@@ -357,7 +359,7 @@ export function PerformanceGoals() {
       r.id === id ? { ...r, enabled: !r.enabled } : r
     )
     setRiskRules(updatedRules)
-    localStorage.setItem('riskRules', JSON.stringify(updatedRules))
+    userStorage.setItem('riskRules', JSON.stringify(updatedRules))
   }
 
   const updateRiskRule = (rule: RiskRule) => {
@@ -375,7 +377,7 @@ export function PerformanceGoals() {
     }
     
     setRiskRules(updatedRules)
-    localStorage.setItem('riskRules', JSON.stringify(updatedRules))
+    userStorage.setItem('riskRules', JSON.stringify(updatedRules))
     setEditingRule(null)
     setShowRuleDialog(false)
     
@@ -399,7 +401,7 @@ export function PerformanceGoals() {
       g.id === id ? { ...g, achieved: false, achievedAt: undefined } : g
     )
     setGoals(updatedGoals)
-    localStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
+    userStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
     
     toast.info('Goal Reset', {
       description: 'Progress has been reset for this goal.'

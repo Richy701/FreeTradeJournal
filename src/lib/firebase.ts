@@ -33,7 +33,6 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true'
     }
   } catch (error) {
     // Emulators might already be connected
-    console.log('Firebase emulators already connected or not available');
   }
 }
 

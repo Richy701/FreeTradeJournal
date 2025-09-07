@@ -15,6 +15,7 @@ import { LogoCloud } from '@/components/blocks/logo-cloud';
 import {
   TrendingUp,
   ArrowRight,
+  Bitcoin,
 } from 'lucide-react';
 // Removed unused: BarChart3, FileText, Shield, Zap, Target, CheckCircle
 
@@ -78,7 +79,7 @@ export default function LandingPage() {
         
       {/* Content sections */}
       <div className="bg-background">
-        <section className="py-20 px-6 md:px-12" style={{maxWidth: '1200px', margin: '0 auto'}}>
+        <section className="py-20 px-6" style={{maxWidth: '1200px', margin: '0 auto'}}>
           <div className="max-w-full">
             <div className="text-center space-y-8 mb-20" style={{marginBottom: '80px'}}>
               <h2 className="text-2xl font-semibold mb-4">The Complete Free Trading Journal for Forex, Futures & Stock Traders</h2>
@@ -183,6 +184,22 @@ export default function LandingPage() {
         imageLayout="stack"
         reverseLayout={true}
       />
+
+      {/* Crypto Tracking Coming Soon Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 mb-6">
+              <Bitcoin className="h-5 w-5" />
+              <span className="font-medium">Crypto Support Coming Soon</span>
+            </div>
+            <h3 className="text-2xl font-bold mb-4">Cryptocurrency Trading Support</h3>
+            <p className="text-lg text-muted-foreground">
+              Track your Bitcoin, Ethereum, and altcoin trades with the same powerful analytics you love for forex and futures.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* FAQ Section */}
       <FAQSection />

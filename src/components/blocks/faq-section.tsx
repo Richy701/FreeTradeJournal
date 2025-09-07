@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 export function FAQSection() {
   const faqs = [
@@ -29,6 +30,42 @@ export function FAQSection() {
       answer: "FreeTradeJournal offers a free tier to get you started with core features. We also have premium plans with advanced analytics, unlimited trade history, and additional features for serious traders."
     }
   ];
+
+  useEffect(() => {
+    // Add FAQ structured data
+    const faqStructuredData = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqs.map((faq) => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer
+        }
+      }))
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(faqStructuredData);
+    script.id = 'faq-structured-data';
+    
+    // Remove existing script if present
+    const existingScript = document.getElementById('faq-structured-data');
+    if (existingScript) {
+      document.head.removeChild(existingScript);
+    }
+    
+    document.head.appendChild(script);
+
+    return () => {
+      const scriptToRemove = document.getElementById('faq-structured-data');
+      if (scriptToRemove) {
+        document.head.removeChild(scriptToRemove);
+      }
+    };
+  }, []);
 
   return (
     <section className="py-24 px-6 md:px-12">

@@ -83,10 +83,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
     }
     
     // Run trade migration to add accountId to existing trades
-    const migrationResult = migrateTradesToAccountId();
-    if (migrationResult.migrated > 0) {
-      console.log(`✅ Migrated ${migrationResult.migrated} trades to include accountId`);
-    }
+    migrateTradesToAccountId();
     
     setLoading(false);
   }, []);

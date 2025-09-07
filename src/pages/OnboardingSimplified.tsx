@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
+import { useUserStorage } from '@/utils/user-storage';
+import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,15 +38,16 @@ const STEPS = [
 export default function OnboardingSimplified() {
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<SimplifiedOnboardingData>({
-    accountName: 'Main Account',
-    accountType: 'demo',
+    accountName: DEFAULT_VALUES.ACCOUNT_NAME,
+    accountType: DEFAULT_VALUES.ACCOUNT_TYPE,
     broker: '',
-    currency: 'USD',
-    currentBalance: '10000'
+    currency: DEFAULT_VALUES.CURRENCY,
+    currentBalance: DEFAULT_VALUES.STARTING_BALANCE.toString()
   });
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { addAccount } = useAccounts();
+  const userStorage = useUserStorage();
   const navigate = useNavigate();
 
   const handleSkipOnboarding = async () => {
@@ -52,11 +55,11 @@ export default function OnboardingSimplified() {
     
     // Create a default account with minimal info
     const defaultAccount = {
-      name: 'Main Account',
-      type: 'demo' as const,
+      name: DEFAULT_VALUES.ACCOUNT_NAME,
+      type: DEFAULT_VALUES.ACCOUNT_TYPE,
       broker: 'Not specified',
-      currency: 'USD',
-      balance: 10000,
+      currency: DEFAULT_VALUES.CURRENCY,
+      balance: DEFAULT_VALUES.STARTING_BALANCE,
       isDefault: true
     };
 
@@ -64,8 +67,8 @@ export default function OnboardingSimplified() {
       await addAccount(defaultAccount);
       
       // Mark onboarding as completed
-      localStorage.setItem('onboardingCompleted', 'true');
-      localStorage.setItem('onboarding', JSON.stringify({
+      userStorage.setItem('onboardingCompleted', 'true');
+      userStorage.setItem('onboarding', JSON.stringify({
         skipped: true,
         completedAt: new Date().toISOString()
       }));
@@ -82,11 +85,11 @@ export default function OnboardingSimplified() {
     setLoading(true);
 
     const newAccount = {
-      name: data.accountName || 'Main Account',
+      name: data.accountName || DEFAULT_VALUES.ACCOUNT_NAME,
       type: data.accountType,
       broker: data.broker || 'Not specified',
       currency: data.currency,
-      balance: parseFloat(data.currentBalance) || 10000,
+      balance: parseFloat(data.currentBalance) || DEFAULT_VALUES.STARTING_BALANCE,
       isDefault: true
     };
 
@@ -99,8 +102,8 @@ export default function OnboardingSimplified() {
         completedAt: new Date().toISOString()
       };
       
-      localStorage.setItem('onboarding', JSON.stringify(onboardingData));
-      localStorage.setItem('onboardingCompleted', 'true');
+      userStorage.setItem('onboarding', JSON.stringify(onboardingData));
+      userStorage.setItem('onboardingCompleted', 'true');
       
       toast.success('Setup complete! Welcome to FreeTradeJournal!');
       navigate('/dashboard');
@@ -170,7 +173,7 @@ export default function OnboardingSimplified() {
                   id="accountName"
                   value={data.accountName}
                   onChange={(e) => setData({ ...data, accountName: e.target.value })}
-                  placeholder="e.g., Main Account"
+                  placeholder={`e.g., ${DEFAULT_VALUES.ACCOUNT_NAME}`}
                 />
               </div>
 
@@ -205,12 +208,11 @@ export default function OnboardingSimplified() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD ($)</SelectItem>
-                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                      <SelectItem value="GBP">GBP (£)</SelectItem>
-                      <SelectItem value="JPY">JPY (¥)</SelectItem>
-                      <SelectItem value="AUD">AUD ($)</SelectItem>
-                      <SelectItem value="CAD">CAD ($)</SelectItem>
+                      {SUPPORTED_CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.code} ({currency.symbol})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -233,7 +235,7 @@ export default function OnboardingSimplified() {
                   type="number"
                   value={data.currentBalance}
                   onChange={(e) => setData({ ...data, currentBalance: e.target.value })}
-                  placeholder="10000"
+                  placeholder={DEFAULT_VALUES.STARTING_BALANCE.toString()}
                 />
               </div>
             </div>

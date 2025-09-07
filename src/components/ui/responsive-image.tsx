@@ -54,7 +54,7 @@ export function ResponsiveImage({ src, alt, className = '', priority = false }: 
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
       {/* Loading placeholder */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-muted/20 animate-pulse rounded-2xl" />
+        <div className="w-full aspect-video bg-muted/20 animate-pulse rounded-2xl" />
       )}
       
       {/* Lazy load optimized image with WebP support */}
@@ -68,7 +68,7 @@ export function ResponsiveImage({ src, alt, className = '', priority = false }: 
           <img
             src={getOptimizedSrc(src)}
             alt={alt}
-            className={`w-full h-auto object-contain rounded-2xl transition-opacity duration-300 ${
+            className={`w-full aspect-video object-contain rounded-2xl transition-opacity duration-300 ${
               isLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setIsLoaded(true)}

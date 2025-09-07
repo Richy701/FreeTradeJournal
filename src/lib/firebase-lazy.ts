@@ -29,7 +29,7 @@ export async function getFirebaseAuth(): Promise<Auth> {
         connectAuthEmulator(authInstance, 'http://localhost:9099');
       }
     } catch (error) {
-      console.log('Firebase auth emulator already connected or not available');
+      // Firebase auth emulator already connected or not available
     }
   }
 
@@ -60,7 +60,7 @@ export async function getFirebaseFirestore(): Promise<Firestore> {
         connectFirestoreEmulator(dbInstance, 'localhost', 8080);
       }
     } catch (error) {
-      console.log('Firebase firestore emulator already connected or not available');
+      // Firebase firestore emulator already connected or not available
     }
   }
 

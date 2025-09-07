@@ -39,7 +39,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!isDemo) {
     // If user is authenticated but hasn't completed onboarding, redirect to onboarding
     // Exception: if they're already on the onboarding page, let them through
-    if (!hasCompletedOnboarding() && location.pathname !== '/onboarding') {
+    const userId = user?.uid || null;
+    if (!hasCompletedOnboarding(userId) && location.pathname !== '/onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
   }

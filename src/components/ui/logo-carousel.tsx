@@ -78,7 +78,6 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                     logo.name === "FTMO" && "dark:brightness-0 dark:invert"
                   )}
                   onError={(e) => {
-                    console.log(`Failed to load logo: ${logo.url}`);
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />

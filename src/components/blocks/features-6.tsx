@@ -3,11 +3,11 @@ import { ResponsiveImage } from '@/components/ui/responsive-image'
 
 export function FreeTradeJournalFeatures() {
     return (
-        <section className="py-16 md:py-24">
+        <section className="py-16">
             <div className="mx-auto max-w-6xl space-y-16 px-6">
                 <div className="relative z-10 grid items-center gap-6 md:grid-cols-2 md:gap-16">
-                    <h2 className="text-4xl lg:text-5xl font-bold leading-tight">Professional trading journal & analytics</h2>
-                    <p className="text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Comprehensive trading platform with mood tracking, screenshot attachments, and cloud sync. Features beautiful equity curves, professional analytics, and secure Firebase storage.</p>
+                    <h2 className="text-4xl font-bold leading-tight">Professional trading journal & analytics</h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Comprehensive trading platform with mood tracking, screenshot attachments, and cloud sync. Features beautiful equity curves, professional analytics, and secure Firebase storage.</p>
                 </div>
                 <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
                     <div className="relative">
@@ -15,7 +15,7 @@ export function FreeTradeJournalFeatures() {
                         <img 
                           src="/images/landing/Trading dashboard New screenshot.png" 
                           alt="FreeTradeJournal Dashboard"
-                          className="z-10 w-full h-auto rounded-2xl"
+                          className="z-10 w-full aspect-video rounded-2xl object-cover"
                           loading="lazy"
                           decoding="async"
                         />
@@ -34,7 +34,7 @@ export function FreeTradeJournalFeatures() {
                             <BarChart3 className="size-6 text-green-500" />
                             <h3 className="text-base font-semibold">Multi-Market Support</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm leading-relaxed font-medium flex-1">Track forex pairs, futures contracts, and indices with instrument-specific analytics.</p>
+                        <p className="text-muted-foreground text-sm leading-relaxed font-medium flex-1">Track forex pairs, futures contracts, and indices with instrument-specific analytics. <span className="text-primary font-medium">Crypto support coming soon!</span></p>
                     </div>
                     <div className="space-y-4 p-6 rounded-xl hover:bg-muted/50 transition-colors duration-150 min-h-[140px] flex flex-col">
                         <div className="flex items-center gap-3">

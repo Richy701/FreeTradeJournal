@@ -138,7 +138,6 @@ export function parseCSV(csvContent: string): CSVParseResult {
 
     // Parse header
     const headers = parseCSVLine(lines[0]);
-    console.log('Headers found:', headers);
 
     // Find column indices
     const columnIndices = {
@@ -152,7 +151,6 @@ export function parseCSV(csvContent: string): CSVParseResult {
       closeTime: findColumnIndex(headers, COLUMN_MAPPINGS.standard.closeTime),
     };
 
-    console.log('Column indices:', columnIndices);
 
     // Validate required columns
     const requiredColumns = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];

@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faList, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -36,24 +37,19 @@ interface DataTableProps {
 }
 
 export function DataTable({ data }: DataTableProps) {
-  // Get theme colors
+  // Get theme colors and demo data
   const { themeColors } = useThemePresets()
-  // Get trades from localStorage
+  const { getTrades } = useDemoData()
+  
+  // Get trades from demo data or localStorage
   const trades = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
-    if (!storedTrades) return []
-    
-    try {
-      const parsedTrades = JSON.parse(storedTrades)
-      return parsedTrades.map((trade: any) => ({
-        ...trade,
-        entryTime: new Date(trade.entryTime),
+    const tradesData = getTrades()
+    return tradesData.map((trade: any) => ({
+      ...trade,
+      entryTime: new Date(trade.entryTime),
         exitTime: new Date(trade.exitTime)
       })).sort((a: Trade, b: Trade) => b.exitTime.getTime() - a.exitTime.getTime()) // Sort by most recent first
-    } catch {
-      return []
-    }
-  }, [])
+  }, [getTrades])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

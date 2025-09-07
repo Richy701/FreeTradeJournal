@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { faChartArea, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
@@ -48,20 +49,20 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function ChartAreaInteractive() {
-  // Get theme colors
+  // Get theme colors and demo data
   const { themeColors } = useThemePresets()
+  const { getTrades } = useDemoData()
   
-  // Get trades from localStorage and generate equity curve data
+  // Get trades from demo data or localStorage and generate equity curve data
   const chartData = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
-    if (!storedTrades) return []
+    const tradesData = getTrades()
+    if (!tradesData || tradesData.length === 0) return []
     
-    try {
-      const parsedTrades: Trade[] = JSON.parse(storedTrades).map((trade: any) => ({
-        ...trade,
-        entryTime: new Date(trade.entryTime),
-        exitTime: new Date(trade.exitTime)
-      }))
+    const parsedTrades: Trade[] = tradesData.map((trade: any) => ({
+      ...trade,
+      entryTime: new Date(trade.entryTime),
+      exitTime: new Date(trade.exitTime)
+    }))
 
       // Sort trades by exit time
       const sortedTrades = parsedTrades.sort((a, b) => a.exitTime.getTime() - b.exitTime.getTime())
@@ -77,10 +78,7 @@ export function ChartAreaInteractive() {
           trade: index + 1,
         }
       })
-    } catch {
-      return []
-    }
-  }, [])
+  }, [getTrades])
 
   const totalPnL = chartData.length > 0 ? chartData[chartData.length - 1].cumulative : 0
   const isPositive = totalPnL >= 0

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { User, Auth } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
 import { DEMO_USER } from '@/data/demo-data';
+import { UserStorage } from '@/utils/user-storage';
 
 interface AuthContextType {
   user: User | null;
@@ -47,6 +48,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       const { onAuthStateChanged } = await import('firebase/auth');
       const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+        if (user) {
+          // Migrate existing unscoped data to user-scoped data
+          if (!UserStorage.hasUserData(user.uid)) {
+            UserStorage.migrateUserData(user.uid);
+          }
+        }
         setUser(user);
         setLoading(false);
       });

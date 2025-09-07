@@ -3,6 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartBar } from '@fortawesome/free-solid-svg-icons'
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useUserStorage } from '@/utils/user-storage'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts"
 import { useMemo, useEffect, useState } from "react"
 
@@ -32,6 +33,7 @@ const chartConfig = {
 
 export function ChartPairsPerformance() {
   const { themeColors } = useThemePresets()
+  const userStorage = useUserStorage()
   const [refreshKey, setRefreshKey] = useState(0)
 
   // Listen for storage changes to refresh chart when trades are updated
@@ -51,7 +53,7 @@ export function ChartPairsPerformance() {
 
   // Generate trading pairs performance data based on actual trades
   const chartData = useMemo(() => {
-    const storedTrades = localStorage.getItem('trades')
+    const storedTrades = userStorage.getItem('trades')
     
     if (!storedTrades) {
       // Show sample trading pairs for demo purposes
