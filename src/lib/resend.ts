@@ -1,7 +1,20 @@
 import { Resend } from 'resend';
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.VITE_RESEND_API_KEY);
+// Initialize Resend with API key - only on server side
+const getResendClient = () => {
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined') {
+    return null; // Return null in browser
+  }
+  
+  const apiKey = process.env.VITE_RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('VITE_RESEND_API_KEY not found');
+    return null;
+  }
+  
+  return new Resend(apiKey);
+};
 
 export interface EmailOptions {
   to: string;
@@ -30,6 +43,17 @@ export class EmailService {
 
   static async sendEmail(options: EmailOptions) {
     try {
+      const resendClient = getResendClient();
+      
+      // If no Resend client available (browser environment or missing API key)
+      if (!resendClient) {
+        console.warn('Resend client not available - email not sent');
+        return { 
+          success: false, 
+          error: 'Email service not available in browser environment' 
+        };
+      }
+
       const emailData: any = {
         from: options.from || this.defaultFrom,
         to: options.to,
@@ -43,7 +67,7 @@ export class EmailService {
         emailData.text = options.text;
       }
 
-      const result = await resend.emails.send(emailData);
+      const result = await resendClient.emails.send(emailData);
 
       return { success: true, data: result };
     } catch (error) {
@@ -257,4 +281,4 @@ export class EmailService {
   }
 }
 
-export default resend;
+export default EmailService;

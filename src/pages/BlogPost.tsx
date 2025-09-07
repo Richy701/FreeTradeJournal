@@ -1,13 +1,13 @@
 import { SiteHeader } from '@/components/site-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
-import { useThemePresets } from '@/contexts/theme-presets';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendar, faUser, faArrowLeft, faTag, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { Link, useParams } from 'react-router-dom';
 
 export default function BlogPost() {
-  const { themeColors } = useThemePresets();
+  ;
   const { id } = useParams<{ id: string }>();
 
   const blogPosts = [
@@ -197,10 +197,7 @@ export default function BlogPost() {
           <div className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <span 
-                  className="px-3 py-1 rounded-full text-sm font-medium text-white"
-                  style={{ backgroundColor: themeColors.primary }}
-                >
+                <span className="px-3 py-1 rounded-full text-sm font-medium text-white bg-primary">
                   <FontAwesomeIcon icon={faTag} className="h-3 w-3 mr-1" />
                   {post.category}
                 </span>
@@ -228,11 +225,7 @@ export default function BlogPost() {
           <Card className="border-0 shadow-xl">
             <CardContent className="p-8">
               <div 
-                className="prose prose-gray dark:prose-invert max-w-none"
-                style={{
-                  '--tw-prose-headings': themeColors.primary,
-                  '--tw-prose-links': themeColors.primary,
-                } as React.CSSProperties}
+                className="prose prose-gray dark:prose-invert max-w-none prose-headings:text-primary prose-a:text-primary"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
             </CardContent>

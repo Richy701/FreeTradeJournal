@@ -1,12 +1,12 @@
 import { SiteHeader } from '@/components/site-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
-import { useThemePresets } from '@/contexts/theme-presets';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCookie } from '@fortawesome/free-solid-svg-icons';
 
 export default function CookiePolicy() {
-  const { themeColors } = useThemePresets();
+  ;
 
   return (
     <div className="min-h-screen bg-background">
@@ -17,10 +17,7 @@ export default function CookiePolicy() {
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <div 
-                className="p-3 rounded-xl shadow-lg"
-                style={{ backgroundColor: themeColors.primary }}
-              >
+              <div className="p-3 rounded-xl shadow-lg bg-primary">
                 <FontAwesomeIcon icon={faCookie} className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Cookie Policy</h1>

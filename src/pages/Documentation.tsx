@@ -2,20 +2,10 @@ import { useState } from 'react';
 import { SiteHeader } from '@/components/site-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
-import { FeedbackButton } from '@/components/ui/feedback-button';
-import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBook, faChartLine, faCalendarAlt, faFileText, faBullseye, faCog, faUpload, faDownload, faFilter, faCalculator } from '@fortawesome/free-solid-svg-icons';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 
 export default function Documentation() {
-  const { themeColors } = useThemePresets();
   const [showFeedback, setShowFeedback] = useState(false);
 
   const featureCards = [
@@ -87,10 +77,7 @@ export default function Documentation() {
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <div 
-                className="p-3 rounded-xl shadow-lg"
-                style={{ backgroundColor: themeColors.primary }}
-              >
+              <div className="p-3 rounded-xl shadow-lg bg-primary">
                 <FontAwesomeIcon icon={faBook} className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Documentation</h1>
@@ -135,11 +122,8 @@ export default function Documentation() {
                 <Card key={index} className="border-0 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-3">
-                      <div 
-                        className="p-2 rounded-lg"
-                        style={{ backgroundColor: `${themeColors.primary}20` }}
-                      >
-                        <FontAwesomeIcon icon={feature.icon} className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <FontAwesomeIcon icon={feature.icon} className="h-5 w-5 text-primary" />
                       </div>
                       {feature.title}
                     </CardTitle>
@@ -149,7 +133,7 @@ export default function Documentation() {
                     <ul className="space-y-2">
                       {feature.features.map((item, idx) => (
                         <li key={idx} className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
                           {item}
                         </li>
                       ))}
@@ -174,10 +158,7 @@ export default function Documentation() {
                     <ol className="space-y-3">
                       {guide.steps.map((step, idx) => (
                         <li key={idx} className="flex gap-3 text-sm">
-                          <span 
-                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-xs"
-                            style={{ backgroundColor: themeColors.primary }}
-                          >
+                          <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-xs bg-primary">
                             {idx + 1}
                           </span>
                           <span className="text-muted-foreground">{step}</span>
@@ -199,7 +180,7 @@ export default function Documentation() {
               
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faUpload} className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  <FontAwesomeIcon icon={faUpload} className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold">CSV Import</h3>
                 </div>
                 <div className="space-y-3 text-muted-foreground">
@@ -214,7 +195,7 @@ export default function Documentation() {
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faCalculator} className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  <FontAwesomeIcon icon={faCalculator} className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold">Advanced Analytics</h3>
                 </div>
                 <div className="space-y-3 text-muted-foreground">
@@ -230,7 +211,7 @@ export default function Documentation() {
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faFilter} className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  <FontAwesomeIcon icon={faFilter} className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold">Filtering & Search</h3>
                 </div>
                 <div className="space-y-3 text-muted-foreground">
@@ -246,7 +227,7 @@ export default function Documentation() {
 
               <section className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faDownload} className="h-5 w-5" style={{ color: themeColors.primary }} />
+                  <FontAwesomeIcon icon={faDownload} className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold">Export & Reporting</h3>
                 </div>
                 <div className="space-y-3 text-muted-foreground">
@@ -312,15 +293,15 @@ export default function Documentation() {
               <p className="text-muted-foreground">If you need additional support or have questions not covered in this documentation:</p>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
                   <span><strong>Community Support:</strong> <a href="https://t.me/+UI6uTKgfswUwNzhk" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Join our Telegram</a></span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
-                  <span><strong>Feedback:</strong> <button onClick={() => setShowFeedback(true)} className="text-primary hover:underline">Send us feedback</button></span>
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                  <span><strong>Feedback:</strong> <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Send us feedback</a></span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
                   <span><strong>Community:</strong> Join our trading community discussions</span>
                 </li>
               </ul>
@@ -375,32 +356,6 @@ export default function Documentation() {
           { name: "Privacy Policy", href: "/privacy" }
         ]}
       />
-      
-      {/* Feedback Dialog */}
-      <Dialog open={showFeedback} onOpenChange={setShowFeedback}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Send Feedback</DialogTitle>
-            <DialogDescription>
-              Share your feedback, report bugs, or request features for FreeTradeJournal
-            </DialogDescription>
-          </DialogHeader>
-          {showFeedback && (
-            <iframe
-              data-tally-src="https://tally.so/embed/meV7rl?alignLeft=1&hideTitle=0&transparentBackground=0&dynamicHeight=1"
-              src="https://tally.so/embed/meV7rl?alignLeft=1&hideTitle=0&transparentBackground=0&dynamicHeight=1"
-              loading="lazy"
-              width="100%"
-              height="600"
-              frameBorder="0"
-              marginHeight={0}
-              marginWidth={0}
-              title="Feedback form"
-              style={{ border: 0 }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

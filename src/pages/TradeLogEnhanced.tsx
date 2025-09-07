@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { useThemePresets } from '@/contexts/theme-presets';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -79,7 +78,6 @@ interface FilterState {
 }
 
 export default function TradeLogEnhanced() {
-  const { themeColors } = useThemePresets();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [filteredTrades, setFilteredTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
@@ -339,12 +337,7 @@ export default function TradeLogEnhanced() {
           <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="space-y-2">
-                <h1 
-                  className="text-3xl font-bold bg-clip-text text-transparent"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)`
-                  }}
-                >
+                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                   Trade Journal
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -422,12 +415,11 @@ export default function TradeLogEnhanced() {
         {/* Enhanced Quick Stats */}
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card className="group hover:shadow-lg transition-all duration-300 border-l-4" 
-                  style={{ borderLeftColor: themeColors.primary }}>
+            <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.primary}20` }}>
-                    <DollarSign className="h-6 w-6" style={{ color: themeColors.primary }} />
+                  <div className="p-3 rounded-xl bg-primary/20">
+                    <DollarSign className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total P&L</p>
@@ -440,16 +432,15 @@ export default function TradeLogEnhanced() {
               </CardContent>
             </Card>
 
-            <Card className="group hover:shadow-lg transition-all duration-300 border-l-4" 
-                  style={{ borderLeftColor: themeColors.profit }}>
+            <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-green-500">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 rounded-xl" style={{ backgroundColor: `${themeColors.profit}20` }}>
-                    <Target className="h-6 w-6" style={{ color: themeColors.profit }} />
+                  <div className="p-3 rounded-xl bg-green-500/20">
+                    <Target className="h-6 w-6 text-green-500" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Win Rate</p>
-                    <p className="text-2xl font-bold" style={{ color: themeColors.profit }}>
+                    <p className="text-2xl font-bold text-green-500">
                       {quickStats.winRate.toFixed(1)}%
                     </p>
                   </div>

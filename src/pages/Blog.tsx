@@ -1,14 +1,12 @@
 import { SiteHeader } from '@/components/site-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
-import { useThemePresets } from '@/contexts/theme-presets';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBlog, faCalendar, faUser, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Blog() {
-  const { themeColors } = useThemePresets();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [email, setEmail] = useState("");
 
@@ -100,10 +98,7 @@ export default function Blog() {
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3">
-              <div 
-                className="p-3 rounded-xl shadow-lg"
-                style={{ backgroundColor: themeColors.primary }}
-              >
+              <div className="p-3 rounded-xl shadow-lg bg-primary">
                 <FontAwesomeIcon icon={faBlog} className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Trading Blog</h1>
@@ -121,10 +116,7 @@ export default function Blog() {
                 <Card key={post.id} className="border-0 shadow-xl hover:shadow-2xl transition-shadow duration-200">
                   <CardHeader className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span 
-                        className="px-3 py-1 rounded-full text-xs font-medium text-white"
-                        style={{ backgroundColor: themeColors.primary }}
-                      >
+                      <span className="px-3 py-1 rounded-full text-xs font-medium text-white bg-primary">
                         {post.category}
                       </span>
                       <span className="text-sm text-muted-foreground">{post.readTime}</span>
@@ -144,8 +136,7 @@ export default function Blog() {
                       </div>
                       <Link 
                         to={`/blog/${post.id}`}
-                        className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                        style={{ color: themeColors.primary }}
+                        className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors text-primary"
                       >
                         Read More
                         <FontAwesomeIcon icon={faArrowRight} className="h-3 w-3" />
@@ -165,11 +156,11 @@ export default function Blog() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className="px-4 py-2 rounded-lg border border-border hover:border-primary transition-colors text-sm font-medium"
-                  style={{ 
-                    backgroundColor: category === selectedCategory ? `${themeColors.primary}20` : 'transparent',
-                    color: category === selectedCategory ? themeColors.primary : 'inherit'
-                  }}
+                  className={`px-4 py-2 rounded-lg border transition-colors text-sm font-medium ${
+                    category === selectedCategory 
+                      ? 'bg-primary/10 text-primary border-primary' 
+                      : 'border-border hover:border-primary'
+                  }`}
                 >
                   {category}
                 </button>
@@ -190,8 +181,7 @@ export default function Blog() {
                       <span 
                         className="px-2 py-1 rounded-full text-xs font-medium"
                         style={{ 
-                          backgroundColor: `${themeColors.primary}20`,
-                          color: themeColors.primary 
+ 
                         }}
                       >
                         {post.category}
@@ -210,8 +200,7 @@ export default function Blog() {
                       </div>
                       <Link 
                         to={`/blog/${post.id}`}
-                        className="flex items-center gap-1 text-xs font-medium hover:text-primary transition-colors"
-                        style={{ color: themeColors.primary }}
+                        className="flex items-center gap-1 text-xs font-medium hover:text-primary transition-colors text-primary"
                       >
                         Read
                         <FontAwesomeIcon icon={faArrowRight} className="h-2 w-2" />
@@ -241,8 +230,7 @@ export default function Blog() {
                 />
                 <button 
                   type="submit"
-                  className="px-6 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: themeColors.primary }}
+                  className="px-6 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity bg-primary"
                 >
                   Subscribe
                 </button>

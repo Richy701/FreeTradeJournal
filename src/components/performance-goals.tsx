@@ -682,13 +682,15 @@ export function PerformanceGoals() {
                         </div>
                       </div>
                     </div>
-                    <Progress 
-                      value={progress} 
-                      className="h-2"
-                      style={{
-                        '--progress-background': goal.achieved ? themeColors.profit : themeColors.primary
-                      } as any}
-                    />
+                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                      <div 
+                        className="h-full transition-all rounded-full"
+                        style={{ 
+                          width: `${progress}%`,
+                          backgroundColor: goal.achieved ? themeColors.profit : themeColors.primary
+                        }}
+                      />
+                    </div>
                     {goal.achieved && (
                       <div className="flex items-center gap-1 text-xs" style={{color: themeColors.profit}}>
                         <FontAwesomeIcon icon={faTrophy} className="h-3 w-3" />

@@ -257,7 +257,7 @@ export default function Journal() {
 
   const formatTradeOption = (trade: Trade) => {
     const isWin = trade.pnl > 0;
-    const pnlColor = isWin ? 'text-green-600' : 'text-red-600';
+    const pnlColor = isWin ? themeColors.profit : themeColors.loss;
     const pnlPrefix = isWin ? '+' : '';
     return {
       label: `${trade.symbol} ${trade.side.toUpperCase()} • ${pnlPrefix}$${trade.pnl.toFixed(2)} • ${format(trade.entryTime, 'MMM dd')}`,
@@ -503,11 +503,26 @@ export default function Journal() {
     return count;
   }, [dateRange, selectedMarket, selectedTags, pnlRange, selectedMood, selectedEntryType, searchTerm]);
 
-  const getMoodColor = (mood: string) => {
+  const getMoodStyle = (mood: string) => {
     switch (mood) {
-      case 'bullish': return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-      case 'bearish': return 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-300 dark:border-red-500/30';
-      default: return 'bg-slate-500/10 text-slate-700 border-slate-500/20 dark:text-slate-300 dark:border-slate-500/30';
+      case 'bullish': 
+        return {
+          backgroundColor: `${themeColors.profit}15`,
+          color: themeColors.profit,
+          borderColor: `${themeColors.profit}30`
+        };
+      case 'bearish': 
+        return {
+          backgroundColor: `${themeColors.loss}15`,
+          color: themeColors.loss,
+          borderColor: `${themeColors.loss}30`
+        };
+      default: 
+        return {
+          backgroundColor: 'hsl(var(--muted))',
+          color: 'hsl(var(--muted-foreground))',
+          borderColor: 'hsl(var(--border))'
+        };
     }
   };
 
@@ -565,7 +580,7 @@ export default function Journal() {
                 <Button 
                   onClick={() => setShowNewEntry(true)} 
                   className="gap-2 shadow-lg"
-                  style={{ backgroundColor: themeColors.primary }}
+                  style={{ backgroundColor: themeColors.primary, color: 'white' }}
                 >
                   <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
                   New Entry
@@ -638,7 +653,7 @@ export default function Journal() {
                     </div>
                   ) : trades.length === 0 ? (
                     <div className="w-full h-10 px-3 py-2 border rounded-md bg-background/50 border-muted-foreground/20 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                      <AlertCircle className="h-4 w-4 text-orange-500" />
                       <span className="text-sm text-muted-foreground">No trades found. Upload trades in Trade Log first.</span>
                     </div>
                   ) : (
@@ -740,10 +755,7 @@ export default function Journal() {
                           onChange={handleFileUpload}
                           className="hidden"
                         />
-                        <span 
-                          className="text-sm cursor-pointer hover:underline"
-                          style={{ color: themeColors.primary }}
-                        >
+                        <span className="text-sm cursor-pointer hover:underline text-primary">
                           browse files
                         </span>
                       </label>
@@ -764,7 +776,8 @@ export default function Journal() {
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-2 -right-2 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ backgroundColor: themeColors.loss }}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -786,7 +799,7 @@ export default function Journal() {
                     </div>
                     <div className="space-y-1">
                       <span className="font-medium text-muted-foreground/70">P&L</span>
-                      <div className={`font-semibold ${selectedTrade.pnl > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      <div className="font-semibold" style={{ color: selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss }}>
                         {selectedTrade.pnl > 0 ? '+' : ''}${selectedTrade.pnl.toFixed(2)}
                       </div>
                     </div>
@@ -813,8 +826,7 @@ export default function Journal() {
                 </Button>
                 <Button 
                   onClick={handleAddEntry}
-                  className="shadow-md gap-2"
-                  style={{ backgroundColor: themeColors.primary }}
+                  className="shadow-md gap-2 bg-primary"
                   disabled={isSubmitting || !newEntry.title.trim() || !newEntry.content.trim()}
                 >
                   {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1073,10 +1085,7 @@ export default function Journal() {
           {filteredAndSortedEntries.length === 0 ? (
             <Card className="bg-card/60 backdrop-blur-sm border-2 border-dashed border-muted-foreground/20">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <div 
-                  className="p-4 rounded-full mb-6"
-                  style={{ backgroundColor: `${themeColors.primary}10` }}
-                >
+                <div className="p-4 rounded-full mb-6 bg-primary/10">
                   <FontAwesomeIcon icon={faBookOpen} className="h-8 w-8" style={{ color: themeColors.primary }} />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No entries found</h3>
@@ -1087,7 +1096,7 @@ export default function Journal() {
                   <Button 
                     onClick={() => setShowNewEntry(true)} 
                     className="gap-2 shadow-lg"
-                    style={{ backgroundColor: themeColors.primary }}
+                  style={{ backgroundColor: themeColors.primary, color: 'white' }}
                   >
                     <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
                     Create First Entry
@@ -1139,7 +1148,8 @@ export default function Journal() {
                         </div>
                         <Badge 
                           variant="outline" 
-                          className={`${getMoodColor(entry.mood)} flex items-center gap-1.5 font-medium`}
+                          className="flex items-center gap-1.5 font-medium border"
+                          style={getMoodStyle(entry.mood)}
                         >
                           {getMoodIcon(entry.mood)}
                           {entry.mood}
@@ -1156,11 +1166,12 @@ export default function Journal() {
                             </h4>
                             <Badge 
                               variant="outline"
-                              className={`text-xs font-medium ${
-                                linkedTrade.pnl > 0 
-                                  ? 'text-green-700 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950' 
-                                  : 'text-red-700 border-red-200 bg-red-50 dark:text-red-400 dark:border-red-800 dark:bg-red-950'
-                              }`}
+                              className="text-xs font-medium border"
+                              style={{
+                                color: linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss,
+                                backgroundColor: linkedTrade.pnl > 0 ? `${themeColors.profit}15` : `${themeColors.loss}15`,
+                                borderColor: linkedTrade.pnl > 0 ? `${themeColors.profit}30` : `${themeColors.loss}30`
+                              }}
                             >
                               {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
                             </Badge>
@@ -1268,8 +1279,7 @@ export default function Journal() {
       {/* Mobile Floating Action Button */}
       <Button 
         onClick={() => setShowNewEntry(true)} 
-        className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-        style={{ backgroundColor: themeColors.primary }}
+        className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary"
       >
         <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
       </Button>

@@ -593,7 +593,7 @@ export function TradingCoach() {
     switch (type) {
       case 'success': return themeColors.profit
       case 'warning': return themeColors.loss
-      case 'critical': return '#ff4444'
+      case 'critical': return themeColors.loss
       case 'action': return themeColors.primary
       case 'info': return themeColors.primary
       default: return themeColors.primary
@@ -639,7 +639,13 @@ export function TradingCoach() {
             </div>
             <span>AI Trading Coach</span>
             {currentTip.type === 'critical' && (
-              <span className="px-2 py-1 text-xs font-bold rounded bg-red-500/20 text-red-500 animate-pulse">
+              <span 
+                className="px-2 py-1 text-xs font-bold rounded animate-pulse"
+                style={{ 
+                  backgroundColor: `${themeColors.loss}20`, 
+                  color: themeColors.loss 
+                }}
+              >
                 URGENT
               </span>
             )}
@@ -729,8 +735,8 @@ export function TradingCoach() {
         
         {/* Severity indicator for critical alerts */}
         {currentTip.type === 'critical' && (
-          <div className="mt-3 pt-3 border-t border-red-500/20">
-            <div className="flex items-center gap-2 text-xs text-red-500">
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: `${themeColors.loss}20` }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: themeColors.loss }}>
               <FontAwesomeIcon icon={faExclamationTriangle} className="h-3 w-3" />
               <span>Immediate action recommended</span>
             </div>

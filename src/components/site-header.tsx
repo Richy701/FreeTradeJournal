@@ -72,6 +72,9 @@ export function SiteHeader({ className }: { className?: string }) {
   }
 
   const breadcrumbItems = getBreadcrumbItems()
+  
+  // Determine if we should use landing page theme (for public pages) or dashboard theme
+  const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation', 'blog'].includes(pathname.split('/').filter(Boolean)[0])
 
   return (
     <header className={`hidden md:flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
@@ -83,7 +86,12 @@ export function SiteHeader({ className }: { className?: string }) {
             <React.Fragment key={`${item.href}-${index}`}>
               <BreadcrumbItem>
                 {item.isActive ? (
-                  <BreadcrumbPage style={{color: themeColors.primary}}>{item.label}</BreadcrumbPage>
+                  <BreadcrumbPage 
+                    className={isPublicPage ? "text-primary" : ""}
+                    style={!isPublicPage ? {color: themeColors.primary} : {}}
+                  >
+                    {item.label}
+                  </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink href={item.href}>
                     {item.label}
