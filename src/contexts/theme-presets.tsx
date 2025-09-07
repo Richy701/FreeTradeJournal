@@ -137,8 +137,15 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
   }, [])
 
-  // Update CSS variables when theme changes
+  // Update CSS variables when theme changes (only for dashboard pages)
   useEffect(() => {
+    // Check if we're on a public page (landing, footer pages)
+    const isPublicPage = ['/', '/privacy', '/terms', '/cookie-policy', '/documentation', '/blog'].includes(window.location.pathname) 
+      || window.location.pathname.startsWith('/blog/')
+    
+    // Don't update CSS variables for public pages
+    if (isPublicPage) return
+    
     const colors = themePresets[currentTheme].colors
     const root = document.documentElement
     
@@ -166,7 +173,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
     }
     
-    // Update CSS variables
+    // Update CSS variables for dashboard pages
     root.style.setProperty('--primary', hexToHsl(colors.primary))
     root.style.setProperty('--ring', hexToHsl(colors.primary))
   }, [currentTheme])
