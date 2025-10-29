@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { AccountProvider } from '@/contexts/account-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { SEOMeta } from '@/components/seo-meta';
+import { StructuredData } from '@/components/structured-data';
 import { CookieConsent } from '@/components/CookieConsent';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/react';
@@ -42,6 +43,7 @@ function App() {
           <AccountProvider>
             <Router>
             <SEOMeta />
+            <StructuredData />
             <Toaster 
               richColors 
               position="top-right"
@@ -86,6 +88,7 @@ function App() {
               </Routes>
             </Suspense>
             </Router>
+            <Analytics />
           </AccountProvider>
         </AuthProvider>
       </ThemePresetsProvider>

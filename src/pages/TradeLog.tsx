@@ -446,8 +446,8 @@ export default function TradeLog() {
       });
       
     } catch (error) {
-      toast.error('CSV File Error', {
-        description: error instanceof Error ? error.message : 'Failed to read CSV file',
+      toast.error('File Import Error', {
+        description: error instanceof Error ? error.message : 'Failed to read file',
         duration: 5000
       });
     } finally {
@@ -509,14 +509,14 @@ export default function TradeLog() {
         setCsvPreview({ show: false, file: null, parseResult: null });
         
       } else {
-        toast.error('Failed to import CSV file', {
+        toast.error('Failed to import file', {
           description: result.errors.join(', ')
         });
       }
       
     } catch (error) {
       console.error('Import error:', error);
-      toast.error('Failed to import CSV file');
+      toast.error('Failed to import file');
     } finally {
       setCsvUploadState({ isUploading: false });
       // Reset the file input
@@ -929,7 +929,7 @@ export default function TradeLog() {
               <input
                 id="csv-import"
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 className="hidden"
                 onChange={handleCSVImport}
               />
@@ -1809,7 +1809,7 @@ export default function TradeLog() {
                 <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No trades recorded yet</h3>
                 <p className="text-muted-foreground mb-6">
-                  Click "Add Trade" to record your first trade or import from CSV.
+                  Click "Add Trade" to record your first trade or import from CSV/Excel.
                 </p>
                 <div className="flex gap-2 justify-center">
                   <Button 
@@ -2036,7 +2036,7 @@ export default function TradeLog() {
                 <Upload className="h-5 w-5" style={{ color: themeColors.primary }} />
               </div>
               <div>
-                <DialogTitle className="text-xl">CSV Import Preview</DialogTitle>
+                <DialogTitle className="text-xl">Import Preview</DialogTitle>
                 <DialogDescription className="text-sm">
                   Review and validate your trading data before importing
                 </DialogDescription>

@@ -129,7 +129,7 @@ export class EmailService {
         <h2 style="color: #1f2937; margin-bottom: 20px;">Hey ${data.firstName}! 👋</h2>
         
         <p style="margin-bottom: 20px; font-size: 16px; color: #4b5563;">
-            We're thrilled to have you join the FreeTradeJournal community! You've just taken a crucial step towards becoming a more disciplined and profitable trader.
+            We're thrilled to have you join FreeTradeJournal! You've just taken a crucial step towards becoming a more disciplined and profitable trader.
         </p>
         
         <div style="background: #f9fafb; border-left: 4px solid #10b981; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
@@ -157,7 +157,7 @@ export class EmailService {
         </div>
         
         <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
-            Need help getting started? Check out our <a href="https://www.freetradejournal.com/documentation" style="color: #10b981;">documentation</a> or join our <a href="https://t.me/+UI6uTKgfswUwNzhk" style="color: #10b981;">Telegram community</a>.
+            Need help getting started? Check out our <a href="https://www.freetradejournal.com/documentation" style="color: #10b981;">documentation</a> or <a href="https://t.me/+UI6uTKgfswUwNzhk" style="color: #10b981;">get support on Telegram</a>.
         </p>
         
         <div style="border-top: 1px solid #e5e7eb; margin-top: 30px; padding-top: 20px; text-align: center;">

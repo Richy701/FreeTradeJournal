@@ -102,7 +102,7 @@ Users can configure their email preferences in **Settings → Notifications**:
 ### Welcome Email
 - Professional greeting with user's name
 - Quick start guide and tips
-- Links to documentation and community
+- Links to documentation and support
 - Call-to-action to complete setup
 
 ### Trade Alert Email
@@ -199,7 +199,7 @@ function YourComponent() {
 ### Getting Help
 
 - **Resend Documentation**: [resend.com/docs](https://resend.com/docs)
-- **FreeTradeJournal Community**: [Telegram Group](https://t.me/+UI6uTKgfswUwNzhk)
+- **FreeTradeJournal Support**: [Telegram Group](https://t.me/+UI6uTKgfswUwNzhk)
 - **Email Issues**: Check browser console for error messages
 
 ## Security Best Practices
@@ -236,4 +236,4 @@ If you encounter issues with email setup:
 1. Check the browser console for JavaScript errors
 2. Verify your API key in the Resend dashboard
 3. Test with a simple email first
-4. Join our community for help: [Telegram](https://t.me/+UI6uTKgfswUwNzhk)
+4. Get help on: [Telegram](https://t.me/+UI6uTKgfswUwNzhk)

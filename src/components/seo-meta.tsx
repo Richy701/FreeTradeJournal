@@ -12,13 +12,13 @@ const pageMeta: Record<string, SEOMetaProps> = {
   '/': {
     title: 'FreeTradeJournal - Free Trading Journal for Forex, Futures & Stock Traders',
     description: 'Free professional trading journal. Track trades, analyze performance metrics, manage risk. Features include P&L tracking, calendar heatmaps, and AI insights. 100% free forever.',
-    keywords: 'free trading journal, forex journal, futures trading tracker, stock trading log, prop firm dashboard',
-    image: 'https://freetradejournal.com/og-image.png'
+    keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker',
+    image: 'https://freetradejournal.com/og-image.webp'
   },
   '/dashboard': {
     title: 'Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics',
     description: 'Comprehensive trading dashboard with real-time P&L, win rate analysis, equity curve, and performance metrics. Track your forex, futures, and stock trades.',
-    keywords: 'trading dashboard, P&L tracker, equity curve, trading analytics, performance metrics'
+    keywords: 'trading dashboard, P&L tracker, equity curve, trading analytics, performance metrics, trading statistics, win rate calculator, profit loss tracker, trading performance analysis, forex dashboard, futures trading analytics'
   },
   '/trades': {
     title: 'Trade Log | FreeTradeJournal - Track All Your Trades',
@@ -44,6 +44,26 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Sign Up Free | FreeTradeJournal - Start Your Trading Journal',
     description: 'Create your free trading journal account. No credit card required. Start tracking trades and improving your performance today.',
     keywords: 'sign up, register, free account, trading journal signup'
+  },
+  '/documentation': {
+    title: 'Documentation | FreeTradeJournal - Trading Journal Guide & Help',
+    description: 'Complete guide to using FreeTradeJournal. Learn how to track trades, import CSV data, analyze performance, and improve trading results.',
+    keywords: 'trading journal guide, documentation, help, CSV import, trade tracking tutorial'
+  },
+  '/blog': {
+    title: 'Trading Blog | FreeTradeJournal - Trading Tips & Strategies',
+    description: 'Expert trading tips, journal strategies, and market insights. Learn how to improve your trading performance with proper journaling.',
+    keywords: 'trading blog, trading tips, journal strategies, forex tips, futures trading'
+  },
+  '/privacy': {
+    title: 'Privacy Policy | FreeTradeJournal - Your Data Protection',
+    description: 'FreeTradeJournal privacy policy. Learn how we protect your trading data and personal information.',
+    keywords: 'privacy policy, data protection, trading data security'
+  },
+  '/terms': {
+    title: 'Terms & Conditions | FreeTradeJournal - Service Terms',
+    description: 'FreeTradeJournal terms and conditions of service. User agreement and service terms.',
+    keywords: 'terms of service, user agreement, terms and conditions'
   }
 };
 
@@ -56,7 +76,7 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     const finalTitle = title || meta.title || 'FreeTradeJournal - Free Trading Journal';
     const finalDescription = description || meta.description || 'Free professional trading journal for forex, futures and stock traders.';
     const finalKeywords = keywords || meta.keywords || 'trading journal, forex, futures, stocks';
-    const finalImage = image || meta.image || 'https://freetradejournal.com/og-image.png';
+    const finalImage = image || meta.image || 'https://freetradejournal.com/og-image.webp';
     
     // Update document title
     document.title = finalTitle;

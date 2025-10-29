@@ -8,10 +8,13 @@ import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import { Plus, Upload } from "lucide-react"
 import { useState, useEffect, lazy, Suspense } from "react"
 import { toast } from 'sonner'
-import { parseCSV, validateCSVFile } from '@/utils/csv-parser'
+import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { DemoCtaCard } from '@/components/demo-cta-card'
 import { useUserStorage } from '@/utils/user-storage'
@@ -51,6 +54,11 @@ export default function Dashboard() {
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
   })
+  const [csvPreview, setCsvPreview] = useState<{
+    show: boolean;
+    file: File | null;
+    parseResult: CSVParseResult | null;
+  }>({ show: false, file: null, parseResult: null })
   const [tradeForm, setTradeForm] = useState({
     symbol: "",
     side: "long" as "long" | "short",
@@ -137,82 +145,101 @@ export default function Dashboard() {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
+    const file = files[0];
     setCsvUploadState({ isUploading: true });
-    let totalSuccessful = 0;
-    let totalFailed = 0;
 
     try {
-      for (const file of files) {
-        try {
-          const content = await validateCSVFile(file);
-          const result = parseCSV(content);
-          
-          if (result.success) {
-            const savedTrades = userStorage.getItem('trades');
-            let existingTrades = [];
-            
-            if (savedTrades) {
-              try {
-                existingTrades = JSON.parse(savedTrades);
-              } catch {
-                existingTrades = [];
-              }
-            }
-
-            // Convert parsed trades to dashboard format with accountId
-            const importedTrades = result.trades.map((trade, index) => ({
-              id: `dashboard-import-${Date.now()}-${index}`,
-              accountId: activeAccount?.id || 'default-main-account',
-              symbol: trade.symbol.toUpperCase(),
-              side: trade.side,
-              entryPrice: parseFloat(trade.entryPrice) || 0,
-              exitPrice: parseFloat(trade.exitPrice) || 0,
-              lotSize: parseFloat(trade.quantity) || 1,
-              entryTime: new Date(trade.date),
-              exitTime: new Date(trade.date),
-              spread: 0,
-              commission: 0,
-              swap: 0,
-              pnl: parseFloat(trade.pnl) || 0,
-              pnlPercentage: 0,
-              notes: `Imported from ${file.name} via Dashboard`,
-              strategy: '',
-              market: 'forex',
-              propFirm: ''
-            }));
-            
-            const updatedTrades = [...existingTrades, ...importedTrades];
-            userStorage.setItem('trades', JSON.stringify(updatedTrades));
-            
-            totalSuccessful += result.summary.successfulParsed;
-            totalFailed += result.summary.failed;
-          }
-        } catch (fileError) {
-          totalFailed++;
-        }
-      }
+      const content = await validateCSVFile(file);
+      const result = parseCSV(content);
       
-      if (totalSuccessful > 0) {
-        toast.success(`CSV Import Successful!`, {
-          description: `Imported ${totalSuccessful} trades${totalFailed > 0 ? `. ${totalFailed} rows were skipped due to errors.` : ''}`,
-          duration: 5000
-        });
-      } else {
-        toast.error('CSV Import Failed', {
-          description: 'No valid trades found in the file',
-          duration: 5000
-        });
-      }
+      // Show preview dialog instead of immediately importing
+      setCsvPreview({ 
+        show: true, 
+        file: file, 
+        parseResult: result 
+      });
       
     } catch (error) {
-      toast.error('CSV Import Failed', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
+      toast.error('File Import Error', {
+        description: error instanceof Error ? error.message : 'Failed to read file',
         duration: 5000
       });
     } finally {
       setCsvUploadState({ isUploading: false });
-      // Clear the file input
+      // Reset the file input
       event.target.value = '';
+    }
+  };
+
+  // New function to actually perform the import after confirmation
+  const handleConfirmImport = async () => {
+    if (!csvPreview.parseResult || !csvPreview.file) return;
+    
+    const { parseResult: result, file } = csvPreview;
+    setCsvUploadState({ isUploading: true });
+
+    try {
+      if (result.success) {
+        const savedTrades = userStorage.getItem('trades');
+        let existingTrades = [];
+        
+        if (savedTrades) {
+          try {
+            existingTrades = JSON.parse(savedTrades);
+          } catch {
+            existingTrades = [];
+          }
+        }
+
+        // Convert parsed trades to dashboard format with accountId
+        const importedTrades = result.trades.map((trade, index) => ({
+          id: `dashboard-import-${Date.now()}-${index}`,
+          accountId: activeAccount?.id || 'default-main-account',
+          symbol: trade.symbol.toUpperCase(),
+          side: trade.side,
+          entryPrice: parseFloat(trade.entryPrice) || 0,
+          exitPrice: parseFloat(trade.exitPrice) || 0,
+          lotSize: parseFloat(trade.quantity) || 1,
+          entryTime: new Date(trade.date),
+          exitTime: new Date(trade.date),
+          spread: 0,
+          commission: 0,
+          swap: 0,
+          pnl: parseFloat(trade.pnl) || 0,
+          pnlPercentage: 0,
+          notes: `Imported from ${file.name} via Dashboard`,
+          strategy: '',
+          market: 'forex',
+          propFirm: ''
+        }));
+        
+        const updatedTrades = [...existingTrades, ...importedTrades];
+        userStorage.setItem('trades', JSON.stringify(updatedTrades));
+        
+        toast.success(
+          `Successfully imported ${importedTrades.length} trades from ${file.name}`,
+          {
+            description: result.errors.length > 0 
+              ? `${result.summary.failed} rows had errors and were skipped`
+              : undefined,
+            duration: 5000
+          }
+        );
+        
+        // Close preview dialog
+        setCsvPreview({ show: false, file: null, parseResult: null });
+        
+      } else {
+        toast.error('Failed to import file', {
+          description: result.errors.join(', ')
+        });
+      }
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import file');
+    } finally {
+      setCsvUploadState({ isUploading: false });
     }
   };
 
@@ -531,7 +558,7 @@ export default function Dashboard() {
                         <input
                           id="dashboard-csv-import"
                           type="file"
-                          accept=".csv"
+                          accept=".csv,.xlsx,.xls"
                           className="hidden"
                           onChange={handleCSVImport}
                         />
@@ -601,6 +628,116 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      
+      {/* CSV Preview Dialog */}
+      <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Import Preview</DialogTitle>
+            <DialogDescription>
+              Review your trading data before importing to Dashboard
+            </DialogDescription>
+          </DialogHeader>
+          
+          {csvPreview.parseResult && (
+            <div className="space-y-4">
+              {/* File Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">File</p>
+                  <p className="font-medium">{csvPreview.file?.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Rows</p>
+                  <p className="font-medium">{csvPreview.parseResult.summary.totalRows}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valid Trades</p>
+                  <p className="font-medium text-green-600">{csvPreview.parseResult.summary.successfulParsed}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Errors</p>
+                  <p className="font-medium text-red-600">{csvPreview.parseResult.summary.failed}</p>
+                </div>
+              </div>
+
+              {/* Sample Trades Preview */}
+              {csvPreview.parseResult.trades.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium">Preview (first 5 trades)</h3>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Symbol</TableHead>
+                          <TableHead>Side</TableHead>
+                          <TableHead>Entry</TableHead>
+                          <TableHead>Exit</TableHead>
+                          <TableHead>Size</TableHead>
+                          <TableHead>P&L</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{trade.symbol}</TableCell>
+                            <TableCell>
+                              <Badge variant={trade.side === 'long' ? 'default' : 'secondary'}>
+                                {trade.side}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{parseFloat(trade.entryPrice).toFixed(4)}</TableCell>
+                            <TableCell>{parseFloat(trade.exitPrice).toFixed(4)}</TableCell>
+                            <TableCell>{trade.quantity}</TableCell>
+                            <TableCell className={parseFloat(trade.pnl) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              ${parseFloat(trade.pnl).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {csvPreview.parseResult.trades.length > 5 && (
+                    <p className="text-sm text-muted-foreground">
+                      + {csvPreview.parseResult.trades.length - 5} more trades will be imported
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Errors */}
+              {csvPreview.parseResult.errors.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-red-600">Import Errors</h3>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {csvPreview.parseResult.errors.map((error, index) => (
+                      <p key={index} className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                        {error}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-end pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setCsvPreview({ show: false, file: null, parseResult: null })}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmImport}
+                  disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
+                >
+                  {csvUploadState.isUploading ? 'Importing...' : `Import ${csvPreview.parseResult.trades.length} Trades`}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       
       </div>
     </>

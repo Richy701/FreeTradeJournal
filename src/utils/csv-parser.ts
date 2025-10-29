@@ -241,9 +241,13 @@ export function parseCSV(csvContent: string): CSVParseResult {
 }
 
 export function validateCSVFile(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      reject(new Error('Please select a CSV file'));
+  return new Promise(async (resolve, reject) => {
+    const fileName = file.name.toLowerCase();
+    const isCSV = fileName.endsWith('.csv');
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    
+    if (!isCSV && !isExcel) {
+      reject(new Error('Please select a CSV or Excel file'));
       return;
     }
 
@@ -257,14 +261,30 @@ export function validateCSVFile(file: File): Promise<string> {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      resolve(content);
-    };
-    reader.onerror = () => {
-      reject(new Error('Failed to read file'));
-    };
-    reader.readAsText(file);
+    try {
+      if (isExcel) {
+        // Handle Excel files
+        const XLSX = await import('xlsx');
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csvData = XLSX.utils.sheet_to_csv(worksheet);
+        resolve(csvData);
+      } else {
+        // Handle CSV files
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          resolve(content);
+        };
+        reader.onerror = () => {
+          reject(new Error('Failed to read the file'));
+        };
+        reader.readAsText(file);
+      }
+    } catch (error) {
+      reject(new Error(`Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    }
   });
 }

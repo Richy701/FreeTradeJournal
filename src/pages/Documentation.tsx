@@ -300,10 +300,6 @@ export default function Documentation() {
                   <div className="w-2 h-2 rounded-full bg-primary"></div>
                   <span><strong>Feedback:</strong> <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Send us feedback</a></span>
                 </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <span><strong>Community:</strong> Join our trading community discussions</span>
-                </li>
               </ul>
             </CardContent>
           </Card>
@@ -333,9 +329,6 @@ export default function Documentation() {
             title: "Resources",
             links: [
               { name: "Documentation", href: "/documentation" },
-              { name: "Get Help", href: "https://t.me/+UI6uTKgfswUwNzhk" },
-              { name: "Community", href: "#" },
-              { name: "Blog", href: "#" }
             ]
           },
           {

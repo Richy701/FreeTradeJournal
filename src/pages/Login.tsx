@@ -51,7 +51,21 @@ export default function Login() {
         navigate(getRedirectPath(user.uid), { replace: true });
       }, 300);
     } catch (error: any) {
-      setError(error.message || 'Failed to sign in');
+      let errorMessage = 'Failed to sign in';
+      
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        errorMessage = 'Invalid email or password';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       setFormAnimation('animate-in slide-in-from-left-2 duration-300');
       setTimeout(() => setFormAnimation(''), 300);
     } finally {

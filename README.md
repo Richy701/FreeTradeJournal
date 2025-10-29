@@ -184,10 +184,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Mobile Optimization**: Improved responsive design and mobile experience
 - **Performance Improvements**: Faster loading and better error handling
 
-## 🌟 Support & Community
+## 🌟 Support
 
 ### Get Help:
-- 💬 **Community Support**: [Join our Telegram](https://t.me/+UI6uTKgfswUwNzhk)
+- 💬 **Support**: [Join our Telegram](https://t.me/+UI6uTKgfswUwNzhk)
 - 📝 **Feedback**: [Send us feedback](https://tally.so/r/meV7rl)
 - 🐛 **Bug Reports**: Open an issue on GitHub
 - 💡 **Feature Requests**: Contribute to discussions
@@ -202,4 +202,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **FreeTradeJournal** - Track. Analyze. Improve. 📈
 
-*Built with ❤️ for the trading community*
+*Built with ❤️ for traders*

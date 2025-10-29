@@ -109,6 +109,28 @@
     <priority>0.6</priority>
   </url>
   
+  <!-- Additional landing pages for SEO -->
+  <url>
+    <loc>https://www.freetradejournal.com/forex-trading-journal</loc>
+    <lastmod>2025-01-15T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.freetradejournal.com/futures-trading-tracker</loc>
+    <lastmod>2025-01-15T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://www.freetradejournal.com/prop-firm-dashboard</loc>
+    <lastmod>2025-01-15T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
   <!-- Information Pages -->
   <url>
     <loc>https://www.freetradejournal.com/documentation</loc>

@@ -173,9 +173,6 @@ export default function CookiePolicy() {
             title: "Resources",
             links: [
               { name: "Documentation", href: "#" },
-              { name: "Get Help", href: "https://t.me/+UI6uTKgfswUwNzhk" },
-              { name: "Community", href: "#" },
-              { name: "Blog", href: "#" }
             ]
           },
           {

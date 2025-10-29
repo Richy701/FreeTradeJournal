@@ -134,9 +134,6 @@ export default function TermsAndConditions() {
             title: "Resources",
             links: [
               { name: "Documentation", href: "/documentation" },
-              { name: "Get Help", href: "https://t.me/+UI6uTKgfswUwNzhk" },
-              { name: "Community", href: "#" },
-              { name: "Blog", href: "/blog" }
             ]
           },
           {

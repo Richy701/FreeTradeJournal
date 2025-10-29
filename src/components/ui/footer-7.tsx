@@ -43,7 +43,6 @@ const defaultSections = [
     links: [
       { name: "About", href: "#" },
       { name: "Team", href: "#" },
-      { name: "Blog", href: "#" },
       { name: "Careers", href: "#" },
     ],
   },

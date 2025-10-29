@@ -51,7 +51,10 @@
       "Bash(do magick favicon.svg -resize $sizex$size -quality 100 favicon-$sizex$size.png)",
       "Bash(do magick favicon.svg -resize $sizex$size -quality 100 -sharpen 0x1 favicon-$sizex$size.png)",
       "Bash(rg:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(for:*)",
+      "Bash(do sed -i '' '/{ name: \"\"Community\"\", href: \"\"#\"\" },/d' \"$file\")",
+      "Bash(do)"
     ],
     "deny": []
   }

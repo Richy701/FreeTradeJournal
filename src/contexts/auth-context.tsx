@@ -67,16 +67,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    // Only initialize auth on landing page after significant delay
-    // For other pages, initialize immediately when auth methods are called
-    if (window.location.pathname === '/') {
-      const timer = setTimeout(() => {
-        setLoading(false); // Allow page to render without auth
-      }, 100);
-      return () => clearTimeout(timer);
-    } else {
-      initAuth();
-    }
+    // Initialize auth for all pages
+    initAuth();
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string): Promise<User> => {
