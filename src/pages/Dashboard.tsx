@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Upload } from "lucide-react"
+import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react"
 import { useState, useEffect, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -175,7 +175,9 @@ export default function Dashboard() {
     if (!csvPreview.parseResult || !csvPreview.file) return;
     
     const { parseResult: result, file } = csvPreview;
+    
     setCsvUploadState({ isUploading: true });
+    setCsvPreview({ show: false, file: null, parseResult: null });
 
     try {
       if (result.success) {
@@ -225,8 +227,7 @@ export default function Dashboard() {
           }
         );
         
-        // Close preview dialog
-        setCsvPreview({ show: false, file: null, parseResult: null });
+        // Dialog already closed at start of function
         
       } else {
         toast.error('Failed to import file', {
@@ -630,66 +631,165 @@ export default function Dashboard() {
       
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Import Preview</DialogTitle>
-            <DialogDescription>
-              Review your trading data before importing to Dashboard
-            </DialogDescription>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-4">
+              <div 
+                className="p-3 rounded-xl shadow-sm"
+                style={{ 
+                  backgroundColor: `${themeColors.primary}10`,
+                  border: `1px solid ${themeColors.primary}20`
+                }}
+              >
+                <FileText className="h-6 w-6" style={{ color: themeColors.primary }} />
+              </div>
+              <div className="flex-1">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  Import Preview
+                </DialogTitle>
+                <DialogDescription className="text-base text-muted-foreground mt-1">
+                  Review your trading data before importing to Dashboard
+                </DialogDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Step 2 of 2</p>
+                <div className="flex gap-1 mt-1">
+                  <div className="w-4 h-1 bg-primary rounded-full"></div>
+                  <div className="w-4 h-1 bg-primary rounded-full"></div>
+                </div>
+              </div>
+            </div>
           </DialogHeader>
           
           {csvPreview.parseResult && (
-            <div className="space-y-4">
-              {/* File Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
-                <div>
-                  <p className="text-sm text-muted-foreground">File</p>
-                  <p className="font-medium">{csvPreview.file?.name}</p>
+            <div className="space-y-6 overflow-auto pr-1">
+              {/* File Summary - Slick Design */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* File Info Card */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-muted">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">File</p>
+                      <p className="text-sm font-semibold truncate" title={csvPreview.file?.name}>
+                        {csvPreview.file?.name}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Rows</p>
-                  <p className="font-medium">{csvPreview.parseResult.summary.totalRows}</p>
+
+                {/* Total Rows */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}15` }}>
+                      <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Rows</p>
+                      <p className="text-2xl font-bold" style={{ color: themeColors.primary }}>
+                        {csvPreview.parseResult.summary.totalRows}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valid Trades</p>
-                  <p className="font-medium text-green-600">{csvPreview.parseResult.summary.successfulParsed}</p>
+
+                {/* Successful */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.profit}15` }}>
+                      <CheckCircle2 className="h-4 w-4" style={{ color: themeColors.profit }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Valid Trades</p>
+                      <p className="text-2xl font-bold" style={{ color: themeColors.profit }}>
+                        {csvPreview.parseResult.summary.successfulParsed}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Errors</p>
-                  <p className="font-medium text-red-600">{csvPreview.parseResult.summary.failed}</p>
+
+                {/* Failed */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.loss}15` }}>
+                      <AlertCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Errors</p>
+                      <p className="text-2xl font-bold" style={{ color: themeColors.loss }}>
+                        {csvPreview.parseResult.summary.failed}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Date Range - If Available */}
+              {csvPreview.parseResult.summary.dateRange && (
+                <div 
+                  className="rounded-xl p-4 border"
+                  style={{ 
+                    backgroundColor: `${themeColors.primary}05`,
+                    borderColor: `${themeColors.primary}15`
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    <span className="font-medium text-muted-foreground">Date Range:</span>
+                    <span className="font-bold" style={{ color: themeColors.primary }}>
+                      {csvPreview.parseResult.summary.dateRange.earliest} → {csvPreview.parseResult.summary.dateRange.latest}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Sample Trades Preview */}
               {csvPreview.parseResult.trades.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-medium">Preview (first 5 trades)</h3>
-                  <div className="border rounded-lg overflow-hidden">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground">Preview (first 5 trades)</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {csvPreview.parseResult.trades.length} total
+                    </Badge>
+                  </div>
+                  <div className="border rounded-xl overflow-hidden shadow-sm">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Symbol</TableHead>
-                          <TableHead>Side</TableHead>
-                          <TableHead>Entry</TableHead>
-                          <TableHead>Exit</TableHead>
-                          <TableHead>Size</TableHead>
-                          <TableHead>P&L</TableHead>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="font-semibold">Symbol</TableHead>
+                          <TableHead className="font-semibold">Side</TableHead>
+                          <TableHead className="font-semibold">Entry</TableHead>
+                          <TableHead className="font-semibold">Exit</TableHead>
+                          <TableHead className="font-semibold">Size</TableHead>
+                          <TableHead className="font-semibold">P&L</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index}>
+                          <TableRow key={index} className="hover:bg-muted/50">
                             <TableCell className="font-medium">{trade.symbol}</TableCell>
                             <TableCell>
-                              <Badge variant={trade.side === 'long' ? 'default' : 'secondary'}>
-                                {trade.side}
+                              <Badge 
+                                variant={trade.side === 'long' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {trade.side.toUpperCase()}
                               </Badge>
                             </TableCell>
-                            <TableCell>{parseFloat(trade.entryPrice).toFixed(4)}</TableCell>
-                            <TableCell>{parseFloat(trade.exitPrice).toFixed(4)}</TableCell>
-                            <TableCell>{trade.quantity}</TableCell>
-                            <TableCell className={parseFloat(trade.pnl) >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              ${parseFloat(trade.pnl).toFixed(2)}
+                            <TableCell className="font-mono text-sm">{parseFloat(trade.entryPrice).toFixed(4)}</TableCell>
+                            <TableCell className="font-mono text-sm">{parseFloat(trade.exitPrice).toFixed(4)}</TableCell>
+                            <TableCell className="font-medium">{trade.quantity}</TableCell>
+                            <TableCell>
+                              <span 
+                                className={`font-semibold ${parseFloat(trade.pnl) >= 0 ? '' : ''}`}
+                                style={{ 
+                                  color: parseFloat(trade.pnl) >= 0 ? themeColors.profit : themeColors.loss 
+                                }}
+                              >
+                                ${parseFloat(trade.pnl).toFixed(2)}
+                              </span>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -697,46 +797,111 @@ export default function Dashboard() {
                     </Table>
                   </div>
                   {csvPreview.parseResult.trades.length > 5 && (
-                    <p className="text-sm text-muted-foreground">
-                      + {csvPreview.parseResult.trades.length - 5} more trades will be imported
-                    </p>
+                    <div 
+                      className="text-center py-3 rounded-lg border"
+                      style={{ backgroundColor: `${themeColors.primary}05` }}
+                    >
+                      <p className="text-sm font-medium text-muted-foreground">
+                        + {csvPreview.parseResult.trades.length - 5} more trades will be imported
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
 
               {/* Errors */}
               {csvPreview.parseResult.errors.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="font-medium text-red-600">Import Errors</h3>
-                  <div className="max-h-32 overflow-y-auto space-y-1">
-                    {csvPreview.parseResult.errors.map((error, index) => (
-                      <p key={index} className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                        {error}
+                <div 
+                  className="rounded-xl p-5 border"
+                  style={{ 
+                    backgroundColor: `${themeColors.loss}08`,
+                    borderColor: `${themeColors.loss}20`
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div 
+                      className="p-2 rounded-lg"
+                      style={{ backgroundColor: `${themeColors.loss}15` }}
+                    >
+                      <AlertCircle className="h-5 w-5" style={{ color: themeColors.loss }} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg" style={{ color: themeColors.loss }}>
+                        Import Errors
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {csvPreview.parseResult.errors.length} issue{csvPreview.parseResult.errors.length > 1 ? 's' : ''} found
                       </p>
+                    </div>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto space-y-3">
+                    {csvPreview.parseResult.errors.map((error, index) => (
+                      <div 
+                        key={index} 
+                        className="text-sm p-4 rounded-xl border-l-4 bg-card"
+                        style={{ 
+                          borderLeftColor: themeColors.loss
+                        }}
+                      >
+                        <span className="font-medium">Row {index + 2}:</span> {error}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-2 justify-end pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setCsvPreview({ show: false, file: null, parseResult: null })}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleConfirmImport}
-                  disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
-                >
-                  {csvUploadState.isUploading ? 'Importing...' : `Import ${csvPreview.parseResult.trades.length} Trades`}
-                </Button>
+              <div className="flex gap-4 justify-between items-center pt-6 border-t border-border">
+                <div className="text-sm text-muted-foreground">
+                  {csvPreview.parseResult.trades.length > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      Ready to import {csvPreview.parseResult.trades.length} trades
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      No valid trades to import
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCsvPreview({ show: false, file: null, parseResult: null })}
+                    className="px-8"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmImport}
+                    disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
+                    className="px-8 shadow-lg hover:shadow-xl transition-all"
+                    style={{ 
+                      backgroundColor: themeColors.primary,
+                      borderColor: themeColors.primary
+                    }}
+                  >
+                    {csvUploadState.isUploading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Importing...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Import {csvPreview.parseResult.trades.length} Trades
+                      </span>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+
       
       </div>
     </>

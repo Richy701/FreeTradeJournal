@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
 // Removed unused: TrendingUp, DollarSign, Crosshair
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -132,6 +132,35 @@ export default function TradeLog() {
 
   // Watch the market type to filter instruments
   const watchedMarket = form.watch('market');
+
+  // Function to detect market type based on symbol
+  const detectMarketFromSymbol = (symbol: string): 'forex' | 'futures' | 'indices' => {
+    const upperSymbol = symbol.toUpperCase();
+    
+    // Futures symbols (base symbols without month/year codes)
+    const futuresSymbols = [
+      'ES', 'NQ', 'YM', 'RTY', 'MES', 'MNQ', 'MYM', 'M2K',
+      'CL', 'MCL', 'NG', 'RB', 'GC', 'MGC', 'SI', 'HG',
+      'ZC', 'ZS', 'ZW', 'ZN', 'ZB', 'M6E', 'M6B',
+      'NAS100', 'SPX500', 'US30', 'US100', 'GER40', 'UK100',
+      'XAUUSD', 'XAGUSD', 'XPTUSD', 'XPDUSD',  // Metals futures
+      'USOIL', 'UKOIL', 'NATGAS'  // Energy futures
+    ];
+    
+    // Check if it's a futures symbol (handle month/year codes like MNQU5, ESU24, etc.)
+    if (futuresSymbols.some(fut => upperSymbol.startsWith(fut))) {
+      return 'futures';
+    }
+    
+    // Index ETF symbols
+    const indexSymbols = ['SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK'];
+    if (indexSymbols.includes(upperSymbol)) {
+      return 'indices';
+    }
+    
+    // Default to forex for currency pairs
+    return 'forex';
+  };
 
   const getInstrumentsByMarket = (market: string) => {
     switch (market) {
@@ -462,6 +491,8 @@ export default function TradeLog() {
     if (!csvPreview.parseResult || !csvPreview.file) return;
     
     setCsvUploadState({ isUploading: true });
+    setCsvPreview({ show: false, file: null, parseResult: null });
+    
     const result = csvPreview.parseResult;
     const file = csvPreview.file;
     
@@ -484,7 +515,7 @@ export default function TradeLog() {
             exitTime: new Date(`${trade.date}T00:00:00`),
             notes: `Imported from ${file.name}`,
             strategy: '',
-            market: 'futures' as const,
+            market: detectMarketFromSymbol(trade.symbol),
             pnl: pnl,
             pnlPercentage: 0, // Will be calculated
             riskReward: 0, // Will be calculated
@@ -505,8 +536,7 @@ export default function TradeLog() {
           }
         );
         
-        // Close preview dialog
-        setCsvPreview({ show: false, file: null, parseResult: null });
+        // Dialog already closed at start of function
         
       } else {
         toast.error('Failed to import file', {
@@ -668,7 +698,7 @@ export default function TradeLog() {
       'Individual Trade Details',
       'Date,Symbol,Market,Side,Entry,Exit,Lots,Spread,Commission,Swap,P&L,R:R,Strategy,Notes',
       ...reportData.trades.map((t: Trade) => 
-        `${format(new Date(t.exitTime), 'MM/dd/yyyy HH:mm')},${t.symbol},${t.market || 'forex'},${t.side},${t.entryPrice},${t.exitPrice},${t.lotSize},${t.spread},${t.commission},${t.swap},${t.pnl.toFixed(2)},${t.riskReward ? t.riskReward.toFixed(2) : ''},${t.strategy || ''},"${t.notes || ''}"`
+        `${format(new Date(t.exitTime), 'MM/dd/yyyy HH:mm')},${t.symbol},${detectMarketFromSymbol(t.symbol)},${t.side},${t.entryPrice},${t.exitPrice},${t.lotSize},${t.spread},${t.commission},${t.swap},${t.pnl.toFixed(2)},${t.riskReward ? t.riskReward.toFixed(2) : ''},${t.strategy || ''},"${t.notes || ''}"`
       ),
     ];
 
@@ -1056,7 +1086,12 @@ export default function TradeLog() {
                             return (
                               <FormItem>
                                 <FormLabel className="text-base font-semibold">Instrument *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Auto-detect and set market type
+                                  const detectedMarket = detectMarketFromSymbol(value);
+                                  form.setValue('market', detectedMarket);
+                                }} value={field.value}>
                                   <FormControl>
                                     <SelectTrigger className="text-lg">
                                       <SelectValue placeholder={`Select ${watchedMarket || 'forex'} instrument`} />
@@ -1861,12 +1896,12 @@ export default function TradeLog() {
                           <Badge 
                             variant="outline" 
                             className={`text-xs font-medium px-2 py-0.5 ${
-                              trade.market === 'forex' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400' :
-                              trade.market === 'futures' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400' :
+                              detectMarketFromSymbol(trade.symbol) === 'forex' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400' :
+                              detectMarketFromSymbol(trade.symbol) === 'futures' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400' :
                               'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400'
                             }`}
                           >
-                            {trade.market?.toUpperCase() || 'FX'}
+                            {detectMarketFromSymbol(trade.symbol).toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -2026,101 +2061,119 @@ export default function TradeLog() {
       
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden">
-          <DialogHeader className="pb-4">
-            <div className="flex items-center gap-3">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+          <DialogHeader className="pb-6">
+            <div className="flex items-center gap-4">
               <div 
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: `${themeColors.primary}15` }}
+                className="p-3 rounded-xl shadow-sm"
+                style={{ 
+                  backgroundColor: `${themeColors.primary}10`,
+                  border: `1px solid ${themeColors.primary}20`
+                }}
               >
-                <Upload className="h-5 w-5" style={{ color: themeColors.primary }} />
+                <FileText className="h-6 w-6" style={{ color: themeColors.primary }} />
               </div>
-              <div>
-                <DialogTitle className="text-xl">Import Preview</DialogTitle>
-                <DialogDescription className="text-sm">
+              <div className="flex-1">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  Import Preview
+                </DialogTitle>
+                <DialogDescription className="text-base text-muted-foreground mt-1">
                   Review and validate your trading data before importing
                 </DialogDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Step 2 of 2</p>
+                <div className="flex gap-1 mt-1">
+                  <div className="w-4 h-1 bg-primary rounded-full"></div>
+                  <div className="w-4 h-1 bg-primary rounded-full"></div>
+                </div>
               </div>
             </div>
           </DialogHeader>
           
           {csvPreview.parseResult && (
             <div className="space-y-6 overflow-auto pr-1">
-              {/* File Summary - Theme Aware */}
-              <div 
-                className="rounded-xl p-6 border"
-                style={{ 
-                  backgroundColor: `${themeColors.primary}08`,
-                  borderColor: `${themeColors.primary}20`
-                }}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  <h3 className="font-semibold text-foreground">File Summary</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="text-center">
-                    <div className="bg-card rounded-lg p-3 shadow-sm border">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">File Name</p>
-                      <p className="text-sm font-semibold truncate text-foreground" title={csvPreview.file?.name}>
+              {/* File Summary - Slick Design */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* File Info Card */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-muted">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">File</p>
+                      <p className="text-sm font-semibold truncate" title={csvPreview.file?.name}>
                         {csvPreview.file?.name}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="text-center">
-                    <div className="bg-card rounded-lg p-3 shadow-sm border">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Total Rows</p>
-                      <p className="text-lg font-bold text-foreground">
+                </div>
+
+                {/* Total Rows */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}15` }}>
+                      <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Rows</p>
+                      <p className="text-2xl font-bold" style={{ color: themeColors.primary }}>
                         {csvPreview.parseResult.summary.totalRows}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="text-center">
-                    <div 
-                      className="rounded-lg p-3 shadow-sm border"
-                      style={{ 
-                        backgroundColor: `${themeColors.profit}15`,
-                        borderColor: `${themeColors.profit}30`
-                      }}
-                    >
-                      <p className="text-xs font-medium mb-1" style={{ color: themeColors.profit }}>Successful</p>
-                      <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
+                </div>
+
+                {/* Successful */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.profit}15` }}>
+                      <CheckCircle2 className="h-4 w-4" style={{ color: themeColors.profit }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Valid Trades</p>
+                      <p className="text-2xl font-bold" style={{ color: themeColors.profit }}>
                         {csvPreview.parseResult.summary.successfulParsed}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="text-center">
-                    <div 
-                      className="rounded-lg p-3 shadow-sm border"
-                      style={{ 
-                        backgroundColor: `${themeColors.loss}15`,
-                        borderColor: `${themeColors.loss}30`
-                      }}
-                    >
-                      <p className="text-xs font-medium mb-1" style={{ color: themeColors.loss }}>Failed</p>
-                      <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                </div>
+
+                {/* Failed */}
+                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.loss}15` }}>
+                      <AlertCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Errors</p>
+                      <p className="text-2xl font-bold" style={{ color: themeColors.loss }}>
                         {csvPreview.parseResult.summary.failed}
                       </p>
                     </div>
                   </div>
                 </div>
-                
-                {csvPreview.parseResult.summary.dateRange && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <div className="flex items-center gap-2 text-sm">
-                      <FontAwesomeIcon icon={faCalendar} className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-muted-foreground">Date Range:</span>
-                      <span className="font-semibold text-foreground">
-                        {csvPreview.parseResult.summary.dateRange.earliest} → {csvPreview.parseResult.summary.dateRange.latest}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
+
+              {/* Date Range - If Available */}
+              {csvPreview.parseResult.summary.dateRange && (
+                <div 
+                  className="rounded-xl p-4 border"
+                  style={{ 
+                    backgroundColor: `${themeColors.primary}05`,
+                    borderColor: `${themeColors.primary}15`
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
+                    <span className="font-medium text-muted-foreground">Date Range:</span>
+                    <span className="font-bold" style={{ color: themeColors.primary }}>
+                      {csvPreview.parseResult.summary.dateRange.earliest} → {csvPreview.parseResult.summary.dateRange.latest}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Sample Preview - Theme Aware Table */}
               {csvPreview.parseResult.trades.length > 0 && (
@@ -2305,6 +2358,8 @@ export default function TradeLog() {
           )}
         </DialogContent>
       </Dialog>
+
+
       
       </div>
     </>

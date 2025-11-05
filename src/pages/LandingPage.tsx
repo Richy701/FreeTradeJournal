@@ -64,7 +64,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section with A/B Testing */}
       <HeroGeometric 
         badge="100% Free Trading Journal - No Credit Card Required"
         title1="Track Every Trade. Analyze Performance."

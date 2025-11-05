@@ -111,6 +111,102 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       };
     }
 
+    // Forex Trading Journal page
+    if (currentPath === '/forex-trading-journal') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Forex Trading Journal - Professional FX Tracker",
+        "description": "Professional forex trading journal for FX traders. Track currency pairs, analyze pip performance, manage risk with position sizing.",
+        "url": `${baseUrl}${currentPath}`,
+        "mainEntity": {
+          "@type": "SoftwareApplication",
+          "name": "FreeTradeJournal Forex Module",
+          "applicationCategory": "FinanceApplication",
+          "applicationSubCategory": "Forex Trading Journal",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Track all major, minor, and exotic currency pairs",
+            "Automatic pip calculation for all pairs including JPY",
+            "Session analysis (London, New York, Tokyo, Sydney)",
+            "Currency correlation matrix",
+            "Risk management with position sizing",
+            "MT4/MT5 integration and CSV import",
+            "Economic calendar integration"
+          ]
+        }
+      };
+    }
+
+    // Futures Trading Tracker page
+    if (currentPath === '/futures-trading-tracker') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Futures Trading Tracker - Professional Futures Journal",
+        "description": "Track futures contracts, analyze tick performance, manage margin requirements for ES, NQ, CL, GC traders.",
+        "url": `${baseUrl}${currentPath}`,
+        "mainEntity": {
+          "@type": "SoftwareApplication",
+          "name": "FreeTradeJournal Futures Module",
+          "applicationCategory": "FinanceApplication",
+          "applicationSubCategory": "Futures Trading Tracker",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Track E-mini S&P 500, Nasdaq, Crude Oil, Gold contracts",
+            "Automatic tick and point value calculation",
+            "Volume profile analysis",
+            "Margin and leverage tracking",
+            "Time-based analytics for scalping",
+            "Contract roll tracking",
+            "Commission and fee tracking"
+          ]
+        }
+      };
+    }
+
+    // Prop Firm Dashboard page
+    if (currentPath === '/prop-firm-dashboard') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Prop Firm Dashboard - Funded Trader Journal",
+        "description": "Professional dashboard for FTMO, Apex, TopStep traders. Track evaluations, manage drawdown limits, monitor funded accounts.",
+        "url": `${baseUrl}${currentPath}`,
+        "mainEntity": {
+          "@type": "SoftwareApplication",
+          "name": "FreeTradeJournal Prop Firm Module",
+          "applicationCategory": "FinanceApplication",
+          "applicationSubCategory": "Prop Trading Dashboard",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Real-time drawdown management and alerts",
+            "Daily loss limit tracking",
+            "Evaluation progress monitoring",
+            "Multi-account support for different prop firms",
+            "Payout and profit split tracking",
+            "Challenge and verification analytics",
+            "Support for 20+ prop firms including FTMO, Apex, TopStep"
+          ]
+        }
+      };
+    }
+
     // Blog page - Article
     if (currentPath.startsWith('/blog')) {
       return {
