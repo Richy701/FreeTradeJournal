@@ -1116,75 +1116,214 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="risk">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faShield} className="h-5 w-5" />
-                    Risk Management
-                  </CardTitle>
-                  <CardDescription>
-                    Configure risk parameters and position sizing
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label>Max Risk per Trade (%)</Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.1"
-                          min="0.1"
-                          max="10"
-                          value={settings.riskPerTrade}
-                          onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })}
-                          className="pr-8"
-                        />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">%</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Recommended: 1-2% for conservative trading
-                      </p>
+            <TabsContent value="risk" className="mt-6 space-y-6">
+              {/* Risk Management Header */}
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500/10 via-orange-500/5 to-background p-6 border border-red-500/20 shadow-lg">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl animate-pulse delay-1000" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/20 shadow-lg">
+                      <FontAwesomeIcon icon={faShield} className="h-6 w-6 text-red-500" />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label>Position Size Calculator</Label>
-                      <div className="p-4 rounded-lg bg-muted/50">
-                        <div className="flex justify-between text-sm">
-                          <span>Max Risk Amount:</span>
-                          <span className="font-medium">
-                            {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm mt-2">
-                          <span>Account Size:</span>
-                          <span className="font-medium">{formatCurrency(settings.accountSize, false)}</span>
-                        </div>
-                      </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">Risk Management</h3>
+                      <p className="text-muted-foreground">Protect your capital with smart position sizing</p>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <Separator />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Risk Parameters Card */}
+                <Card className="lg:col-span-2 relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-muted/20">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
+                  <CardHeader className="relative">
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/20">
+                        <FontAwesomeIcon icon={faCalculator} className="h-4 w-4 text-primary" />
+                      </div>
+                      Risk Parameters
+                    </CardTitle>
+                    <CardDescription>Configure your risk tolerance and position sizing</CardDescription>
+                  </CardHeader>
+                  <CardContent className="relative space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
+                          <FontAwesomeIcon icon={faPercent} className="h-4 w-4 text-orange-500" />
+                          Risk per Trade (%)
+                        </Label>
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              step="0.1"
+                              min="0.1"
+                              max="10"
+                              value={settings.riskPerTrade}
+                              onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })}
+                              className="h-12 pr-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-all"
+                            />
+                            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-muted-foreground">%</span>
+                          </div>
+                          {/* Risk Level Indicator */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Conservative</span>
+                              <span>Aggressive</span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full transition-all duration-500 rounded-full" 
+                                style={{ 
+                                  width: `${Math.min((settings.riskPerTrade / 5) * 100, 100)}%`,
+                                  backgroundColor: settings.riskPerTrade <= 2 ? '#10b981' : settings.riskPerTrade <= 4 ? '#f59e0b' : '#ef4444'
+                                }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {settings.riskPerTrade <= 2 ? '✅ Conservative (Recommended)' : 
+                               settings.riskPerTrade <= 4 ? '⚠️ Moderate Risk' : 
+                               '🔥 High Risk'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
+                          <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4 text-green-500" />
+                          Account Size
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            step="1000"
+                            value={settings.accountSize}
+                            onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })}
+                            placeholder="10000"
+                            className="h-12 pl-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-all"
+                          />
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-muted-foreground">{getCurrencySymbol()}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Your total trading capital</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Risk Guidelines</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                      <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-                        <div className="font-semibold text-primary">Conservative (1-2%)</div>
-                        <div className="text-muted-foreground/85">Recommended for beginners and steady growth</div>
+                {/* Risk Calculator Card */}
+                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-green-500/5 to-blue-500/5">
+                  <div className="absolute top-0 left-0 w-20 h-20 bg-green-500/10 rounded-full blur-xl" />
+                  <CardHeader className="relative">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-green-500" />
+                      Risk Calculator
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="relative space-y-4">
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
+                        <div className="text-sm text-muted-foreground mb-1">Max Risk per Trade</div>
+                        <div className="text-xl font-bold text-green-500">
+                          {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
+                        </div>
                       </div>
-                      <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-                        <div className="font-semibold text-primary">Moderate (2-3%)</div>
-                        <div className="text-muted-foreground/85">For experienced traders with proven systems</div>
+                      
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+                        <div className="text-sm text-muted-foreground mb-1">Account Balance</div>
+                        <div className="text-xl font-bold text-blue-500">
+                          {formatCurrency(settings.accountSize, false)}
+                        </div>
                       </div>
-                      <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-                        <div className="font-semibold text-primary">Aggressive (3-5%)</div>
-                        <div className="text-muted-foreground/85">High risk, only for very experienced traders</div>
+
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+                        <div className="text-sm text-muted-foreground mb-1">Risk Ratio</div>
+                        <div className="text-lg font-bold text-orange-500">
+                          1:{Math.round(100 / settings.riskPerTrade)}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {Math.round(100 / settings.riskPerTrade)} trades to lose account
+                        </div>
                       </div>
-                      <div className="p-4 rounded-lg border border-border/50 bg-muted/20">
-                        <div className="font-semibold text-destructive">Dangerous (5%+)</div>
-                        <div className="text-muted-foreground/85">Not recommended - high blow-up risk</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Enhanced Risk Guidelines */}
+              <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-yellow-500/5">
+                <div className="absolute bottom-0 right-0 w-40 h-40 bg-yellow-500/5 rounded-full blur-3xl" />
+                <CardHeader className="relative">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-yellow-500/20">
+                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4 text-yellow-500" />
+                    </div>
+                    Risk Guidelines & Tips
+                  </CardTitle>
+                  <CardDescription>Professional risk management recommendations</CardDescription>
+                </CardHeader>
+                <CardContent className="relative space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <div className="font-bold text-green-600">Conservative</div>
+                      </div>
+                      <div className="text-lg font-bold text-green-500 mb-1">1-2%</div>
+                      <div className="text-sm text-muted-foreground">Perfect for beginners and steady growth</div>
+                    </div>
+                    
+                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="font-bold text-yellow-600">Moderate</div>
+                      </div>
+                      <div className="text-lg font-bold text-yellow-500 mb-1">2-3%</div>
+                      <div className="text-sm text-muted-foreground">For experienced traders</div>
+                    </div>
+                    
+                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <div className="font-bold text-orange-600">Aggressive</div>
+                      </div>
+                      <div className="text-lg font-bold text-orange-500 mb-1">3-5%</div>
+                      <div className="text-sm text-muted-foreground">High risk, proven systems only</div>
+                    </div>
+                    
+                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20 hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        <div className="font-bold text-red-600">Dangerous</div>
+                      </div>
+                      <div className="text-lg font-bold text-red-500 mb-1">5%+</div>
+                      <div className="text-sm text-muted-foreground">High blow-up risk</div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FontAwesomeIcon icon={faMedal} className="h-4 w-4 text-blue-500" />
+                      <span className="font-bold text-blue-600">Pro Tips</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">✓</span>
+                        <span>Never risk more than you can afford to lose</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">✓</span>
+                        <span>Always use stop losses on every trade</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">✓</span>
+                        <span>Keep risk consistent across all trades</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">✓</span>
+                        <span>Size positions based on distance to stop loss</span>
                       </div>
                     </div>
                   </div>
