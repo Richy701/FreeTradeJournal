@@ -593,10 +593,10 @@ export default function Settings() {
                   <CardContent className="relative space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                       {Object.entries(availableThemes).map(([key, preset]) => (
-                        <button
+                        <div
                           key={key}
                           onClick={() => setColorTheme(key)}
-                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0"
+                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full cursor-pointer"
                           style={{
                             background: currentTheme === key 
                               ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
@@ -604,11 +604,10 @@ export default function Settings() {
                             border: currentTheme === key 
                               ? `2px solid ${preset.colors.primary}40`
                               : '2px solid rgb(var(--border))',
-                            outline: 'none !important',
-                            boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none !important',
+                            boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none',
                             transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)'
                           }}
-                          >
+                        >
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <div className="text-base font-bold">{preset.name}</div>
@@ -652,7 +651,7 @@ export default function Settings() {
                               </div>
                             </div>
                           </div>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   </CardContent>
