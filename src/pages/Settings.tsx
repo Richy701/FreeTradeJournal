@@ -1118,13 +1118,20 @@ export default function Settings() {
 
             <TabsContent value="risk" className="mt-6 space-y-6">
               {/* Risk Management Header */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-500/10 via-orange-500/5 to-background p-6 border border-red-500/20 shadow-lg">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl animate-pulse delay-1000" />
+              <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
+                   style={{ 
+                     background: `linear-gradient(135deg, ${themeColors.loss}10 0%, ${themeColors.loss}05 50%, transparent 100%)`,
+                     borderColor: `${themeColors.loss}20`
+                   }}>
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
+                     style={{ backgroundColor: `${themeColors.loss}10` }} />
+                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
+                     style={{ backgroundColor: `${themeColors.primary}10` }} />
                 <div className="relative z-10">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/20 shadow-lg">
-                      <FontAwesomeIcon icon={faShield} className="h-6 w-6 text-red-500" />
+                    <div className="p-3 rounded-xl shadow-lg" 
+                         style={{ background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.primary}20)` }}>
+                      <FontAwesomeIcon icon={faShield} className="h-6 w-6" style={{ color: themeColors.loss }} />
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold">Risk Management</h3>
@@ -1151,7 +1158,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label className="flex items-center gap-2 text-sm font-semibold">
-                          <FontAwesomeIcon icon={faPercent} className="h-4 w-4 text-orange-500" />
+                          <FontAwesomeIcon icon={faPercent} className="h-4 w-4" style={{ color: themeColors.primary }} />
                           Risk per Trade (%)
                         </Label>
                         <div className="space-y-3">
@@ -1178,7 +1185,7 @@ export default function Settings() {
                                 className="h-full transition-all duration-500 rounded-full" 
                                 style={{ 
                                   width: `${Math.min((settings.riskPerTrade / 5) * 100, 100)}%`,
-                                  backgroundColor: settings.riskPerTrade <= 2 ? '#10b981' : settings.riskPerTrade <= 4 ? '#f59e0b' : '#ef4444'
+                                  backgroundColor: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss
                                 }}
                               />
                             </div>
@@ -1193,7 +1200,7 @@ export default function Settings() {
                       
                       <div className="space-y-3">
                         <Label className="flex items-center gap-2 text-sm font-semibold">
-                          <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4 text-green-500" />
+                          <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4" style={{ color: themeColors.profit }} />
                           Account Size
                         </Label>
                         <div className="relative">
@@ -1214,33 +1221,47 @@ export default function Settings() {
                 </Card>
 
                 {/* Risk Calculator Card */}
-                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-green-500/5 to-blue-500/5">
-                  <div className="absolute top-0 left-0 w-20 h-20 bg-green-500/10 rounded-full blur-xl" />
+                <Card className="relative overflow-hidden border-border/50 shadow-xl" 
+                      style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, ${themeColors.primary}05)` }}>
+                  <div className="absolute top-0 left-0 w-20 h-20 rounded-full blur-xl" 
+                       style={{ backgroundColor: `${themeColors.profit}10` }} />
                   <CardHeader className="relative">
                     <CardTitle className="flex items-center gap-2 text-lg">
-                      <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-green-500" />
+                      <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.profit }} />
                       Risk Calculator
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="relative space-y-4">
                     <div className="space-y-4">
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.profit}05)`,
+                             borderColor: `${themeColors.profit}20`
+                           }}>
                         <div className="text-sm text-muted-foreground mb-1">Max Risk per Trade</div>
-                        <div className="text-xl font-bold text-green-500">
+                        <div className="text-xl font-bold" style={{ color: themeColors.profit }}>
                           {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
                         </div>
                       </div>
                       
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.primary}05)`,
+                             borderColor: `${themeColors.primary}20`
+                           }}>
                         <div className="text-sm text-muted-foreground mb-1">Account Balance</div>
-                        <div className="text-xl font-bold text-blue-500">
+                        <div className="text-xl font-bold" style={{ color: themeColors.primary }}>
                           {formatCurrency(settings.accountSize, false)}
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.loss}10, ${themeColors.loss}05)`,
+                             borderColor: `${themeColors.loss}20`
+                           }}>
                         <div className="text-sm text-muted-foreground mb-1">Risk Ratio</div>
-                        <div className="text-lg font-bold text-orange-500">
+                        <div className="text-lg font-bold" style={{ color: themeColors.loss }}>
                           1:{Math.round(100 / settings.riskPerTrade)}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
@@ -1253,12 +1274,14 @@ export default function Settings() {
               </div>
 
               {/* Enhanced Risk Guidelines */}
-              <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-yellow-500/5">
-                <div className="absolute bottom-0 right-0 w-40 h-40 bg-yellow-500/5 rounded-full blur-3xl" />
+              <Card className="relative overflow-hidden border-border/50 shadow-xl" 
+                    style={{ background: `linear-gradient(135deg, transparent, ${themeColors.primary}05)` }}>
+                <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full blur-3xl" 
+                     style={{ backgroundColor: `${themeColors.primary}05` }} />
                 <CardHeader className="relative">
                   <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-yellow-500/20">
-                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4 text-yellow-500" />
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.primary }} />
                     </div>
                     Risk Guidelines & Tips
                   </CardTitle>
@@ -1266,63 +1289,83 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="relative space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg transition-all">
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.profit}05)`,
+                           borderColor: `${themeColors.profit}20`
+                         }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <div className="font-bold text-green-600">Conservative</div>
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.profit }}></div>
+                        <div className="font-bold" style={{ color: themeColors.profit }}>Conservative</div>
                       </div>
-                      <div className="text-lg font-bold text-green-500 mb-1">1-2%</div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.profit }}>1-2%</div>
                       <div className="text-sm text-muted-foreground">Perfect for beginners and steady growth</div>
                     </div>
                     
-                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20 hover:shadow-lg transition-all">
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.primary}05)`,
+                           borderColor: `${themeColors.primary}20`
+                         }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div className="font-bold text-yellow-600">Moderate</div>
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
+                        <div className="font-bold" style={{ color: themeColors.primary }}>Moderate</div>
                       </div>
-                      <div className="text-lg font-bold text-yellow-500 mb-1">2-3%</div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.primary }}>2-3%</div>
                       <div className="text-sm text-muted-foreground">For experienced traders</div>
                     </div>
                     
-                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-orange-500/10 to-orange-500/5 border-orange-500/20 hover:shadow-lg transition-all">
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.loss}15, ${themeColors.loss}08)`,
+                           borderColor: `${themeColors.loss}25`
+                         }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                        <div className="font-bold text-orange-600">Aggressive</div>
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.loss }}></div>
+                        <div className="font-bold" style={{ color: themeColors.loss }}>Aggressive</div>
                       </div>
-                      <div className="text-lg font-bold text-orange-500 mb-1">3-5%</div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.loss }}>3-5%</div>
                       <div className="text-sm text-muted-foreground">High risk, proven systems only</div>
                     </div>
                     
-                    <div className="group p-4 rounded-xl border bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20 hover:shadow-lg transition-all">
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.loss}10)`,
+                           borderColor: `${themeColors.loss}30`
+                         }}>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                        <div className="font-bold text-red-600">Dangerous</div>
+                        <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: themeColors.loss }}></div>
+                        <div className="font-bold" style={{ color: themeColors.loss }}>Dangerous</div>
                       </div>
-                      <div className="text-lg font-bold text-red-500 mb-1">5%+</div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.loss }}>5%+</div>
                       <div className="text-sm text-muted-foreground">High blow-up risk</div>
                     </div>
                   </div>
                   
-                  <div className="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl">
+                  <div className="p-4 rounded-xl border" 
+                       style={{ 
+                         background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.profit}10)`,
+                         borderColor: `${themeColors.primary}20`
+                       }}>
                     <div className="flex items-center gap-2 mb-3">
-                      <FontAwesomeIcon icon={faMedal} className="h-4 w-4 text-blue-500" />
-                      <span className="font-bold text-blue-600">Pro Tips</span>
+                      <FontAwesomeIcon icon={faMedal} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      <span className="font-bold" style={{ color: themeColors.primary }}>Pro Tips</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                       <div className="flex items-start gap-2">
-                        <span className="text-green-500 mt-1">✓</span>
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
                         <span>Never risk more than you can afford to lose</span>
                       </div>
                       <div className="flex items-start gap-2">
-                        <span className="text-green-500 mt-1">✓</span>
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
                         <span>Always use stop losses on every trade</span>
                       </div>
                       <div className="flex items-start gap-2">
-                        <span className="text-green-500 mt-1">✓</span>
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
                         <span>Keep risk consistent across all trades</span>
                       </div>
                       <div className="flex items-start gap-2">
-                        <span className="text-green-500 mt-1">✓</span>
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
                         <span>Size positions based on distance to stop loss</span>
                       </div>
                     </div>
