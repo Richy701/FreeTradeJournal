@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useUserStorage } from '@/utils/user-storage';
 import { DEFAULT_VALUES } from '@/constants/trading';
 

@@ -298,9 +298,10 @@ export default function Settings() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="general" className="mt-6 space-y-6">
-              {/* Main Appearance Card */}
-              <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
+            <TabsContent value="general" className="mt-6">
+              <div className="space-y-6">
+                {/* Main Appearance Card */}
+                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
                 <CardHeader className="relative pb-6">
