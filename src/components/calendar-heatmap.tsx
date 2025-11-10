@@ -654,7 +654,7 @@ export function CalendarHeatmap() {
         <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-0 p-3 md:p-4 md:px-6 bg-muted/30 md:bg-transparent rounded-lg md:rounded-none">
           <div className="text-center md:text-left md:flex-1">
             <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-              {monthlyStats.totalPnL >= 0 ? '+' : ''}{formatCurrency(monthlyStats.totalPnL)}
+              {formatCurrency(monthlyStats.totalPnL)}
             </div>
             <div className="text-xs md:text-sm text-muted-foreground mt-1">Monthly P&L</div>
           </div>
@@ -872,8 +872,8 @@ export function CalendarHeatmap() {
                                   backgroundColor: day.pnl >= 0 ? themeColors.profit : themeColors.loss
                                 }}
                               >
-                                <span className="hidden sm:inline">{day.pnl >= 0 ? '+' : ''}{formatCurrency(day.pnl)}</span>
-                                <span className="sm:hidden">{day.pnl >= 0 ? '+' : ''}{formatCurrencyMobile(day.pnl)}</span>
+                                <span className="hidden sm:inline">{formatCurrency(day.pnl)}</span>
+                                <span className="sm:hidden">{formatCurrencyMobile(day.pnl)}</span>
                               </div>
                             </div>
                             

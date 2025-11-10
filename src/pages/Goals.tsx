@@ -2,9 +2,13 @@ import { PerformanceGoals } from "@/components/performance-goals"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useUserStorage } from '@/utils/user-storage'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBullseye, faChartLine, faTrophy, faShieldAlt } from '@fortawesome/free-solid-svg-icons'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { 
+  faTrophy, 
+  faShield,
+  faFire,
+  faChartBar
+} from '@fortawesome/free-solid-svg-icons'
+import { Card } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
 import { useMemo } from 'react'
 
@@ -45,161 +49,99 @@ export default function Goals() {
   }, [trades])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
-      {/* Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl md:sticky md:top-0 z-10 shadow-sm">
-        <div className="w-full px-4 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h1 
-                  className="text-2xl sm:text-4xl md:text-5xl font-black bg-clip-text text-transparent leading-tight pb-1"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD, ${themeColors.primary}AA)`
-                  }}
-                >
-                  Goals & Risk Management
-                </h1>
-                <p className="text-muted-foreground text-sm sm:text-lg md:text-xl font-medium max-w-2xl">
-                  Set performance targets and manage your trading risk
-                </p>
-              </div>
-              
-              {/* Quick Stats */}
-              <div className="hidden lg:flex items-center gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold" style={{color: themeColors.profit}}>
-                    {stats.achievedGoals}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Goals Achieved</div>
-                </div>
-                <div className="h-12 w-px bg-border"></div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold" style={{color: themeColors.primary}}>
-                    {stats.activeRules}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Active Rules</div>
-                </div>
-                {stats.violations > 0 && (
-                  <>
-                    <div className="h-12 w-px bg-border"></div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold" style={{color: themeColors.loss}}>
-                        {stats.violations}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Violations</div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Mobile Stats */}
-            <div className="flex lg:hidden items-center gap-4 pt-2">
-              <Badge variant="outline" className="gap-1">
-                <FontAwesomeIcon icon={faTrophy} className="h-3 w-3" style={{color: themeColors.profit}} />
-                {stats.achievedGoals} Achieved
-              </Badge>
-              <Badge variant="outline" className="gap-1">
-                <FontAwesomeIcon icon={faShieldAlt} className="h-3 w-3" style={{color: themeColors.primary}} />
-                {stats.activeRules} Rules
-              </Badge>
-              {stats.violations > 0 && (
-                <Badge variant="outline" className="gap-1" style={{borderColor: themeColors.loss}}>
-                  {stats.violations} Violations
-                </Badge>
-              )}
-            </div>
+      
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Goals & Risk Management</h1>
+            <p className="text-sm text-muted-foreground">Track your trading progress and manage risks effectively</p>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 sm:py-8 md:py-12 space-y-6 sm:space-y-8">
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-300">
-          <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{color: themeColors.primary}} />
-                Set Goals
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Define clear, measurable targets for your trading performance. Track profit, win rate, and more.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                <FontAwesomeIcon icon={faShieldAlt} className="h-4 w-4" style={{color: themeColors.primary}} />
-                Risk Rules
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Set automated risk management rules to protect your capital and maintain discipline.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                <FontAwesomeIcon icon={faTrophy} className="h-4 w-4" style={{color: themeColors.primary}} />
-                Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Celebrate your wins and track your progress with achievement badges and notifications.
-              </p>
-            </CardContent>
-          </Card>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { 
+              icon: faTrophy, 
+              value: stats.achievedGoals, 
+              label: 'Goals Achieved',
+              total: stats.totalGoals,
+              color: themeColors.profit,
+              trend: stats.achievedGoals > 0 ? '+' : null
+            },
+            { 
+              icon: faShield, 
+              value: stats.activeRules, 
+              label: 'Active Rules',
+              color: themeColors.primary,
+              subtitle: 'Risk protection'
+            },
+            { 
+              icon: faChartBar, 
+              value: stats.trades, 
+              label: 'Total Trades',
+              color: themeColors.primary,
+              subtitle: 'All time'
+            },
+            { 
+              icon: faFire, 
+              value: stats.violations || 0, 
+              label: 'Risk Violations',
+              color: themeColors.loss,
+              subtitle: 'Recent alerts'
+            }
+          ].map((stat, index) => (
+            <Card key={index} className="p-5 hover:shadow-md transition-shadow">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: `${stat.color}15` }}>
+                    <FontAwesomeIcon icon={stat.icon} className="h-4 w-4" style={{ color: stat.color }} />
+                  </div>
+                  {stat.trend && (
+                    <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${themeColors.profit}15`, color: themeColors.profit }}>
+                      {stat.trend}{stat.value}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold" style={{ color: stat.color }}>
+                      {stat.value}
+                    </span>
+                    {stat.total && (
+                      <span className="text-sm text-muted-foreground">of {stat.total}</span>
+                    )}
+                  </div>
+                  <div className="text-sm font-medium text-foreground">{stat.label}</div>
+                  {stat.subtitle && (
+                    <div className="text-xs text-muted-foreground">{stat.subtitle}</div>
+                  )}
+                </div>
+                {stat.total && (
+                  <div className="mt-2">
+                    <div className="w-full bg-muted rounded-full h-1.5">
+                      <div 
+                        className="h-1.5 rounded-full transition-all duration-300" 
+                        style={{ 
+                          backgroundColor: stat.color,
+                          width: `${Math.min((stat.value / stat.total) * 100, 100)}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ))}
         </div>
-        
-        {/* Performance Goals Component */}
-        <div className="animate-in fade-in duration-300 delay-100">
+
+        {/* Performance Goals Section */}
+        <div className="mt-8">
           <PerformanceGoals />
         </div>
-        
-        {/* Tips Section */}
-        <Card className="animate-in fade-in duration-300 delay-200 hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm">
-          <CardHeader className="pb-3 border-b border-border/30">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{color: themeColors.primary}} />
-              Goal Setting Tips
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-foreground">SMART Goals</h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• <strong>Specific:</strong> Clear and well-defined targets</li>
-                  <li>• <strong>Measurable:</strong> Quantifiable metrics to track</li>
-                  <li>• <strong>Achievable:</strong> Realistic based on your history</li>
-                  <li>• <strong>Relevant:</strong> Aligned with your trading strategy</li>
-                  <li>• <strong>Time-bound:</strong> Daily, weekly, or monthly periods</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-semibold text-foreground">Risk Management Best Practices</h4>
-                <ul className="space-y-1 text-muted-foreground">
-                  <li>• Never risk more than 1-2% per trade</li>
-                  <li>• Set daily loss limits (e.g., 3% of account)</li>
-                  <li>• Use stop losses on every trade</li>
-                  <li>• Maintain minimum 1.5:1 risk/reward ratio</li>
-                  <li>• Limit number of concurrent open positions</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

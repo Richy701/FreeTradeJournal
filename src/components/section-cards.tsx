@@ -129,7 +129,7 @@ export function SectionCards() {
         <CardContent className="pt-0">
           <div className="space-y-2">
             <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-              {metrics.totalPnL >= 0 ? '+' : ''}{formatCurrency(metrics.totalPnL)}
+              {formatCurrency(metrics.totalPnL)}
             </div>
             <div className="flex items-center gap-1">
               <FontAwesomeIcon 

@@ -110,6 +110,21 @@ export default function TradeLog() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null });
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Calculate pagination
+  const totalPages = Math.ceil(trades.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTrades = trades.slice(startIndex, endIndex);
+
+  // Reset to first page when trades change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [trades.length]);
 
   const form = useForm<TradeFormData>({
     defaultValues: {
@@ -1895,29 +1910,31 @@ export default function TradeLog() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {trades.map((trade) => (
+                    {paginatedTrades.map((trade) => (
                       <TableRow key={trade.id} className="hover:bg-muted/20 transition-colors duration-200 border-b border-border/50">
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
                           <Badge 
                             variant="outline" 
-                            className={`text-xs font-medium px-2 py-0.5 ${
-                              detectMarketFromSymbol(trade.symbol) === 'forex' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400' :
-                              detectMarketFromSymbol(trade.symbol) === 'futures' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400' :
-                              'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400'
-                            }`}
+                            className="text-xs font-medium px-2 py-0.5"
+                            style={{
+                              backgroundColor: `${themeColors.primary}15`,
+                              color: themeColors.primary,
+                              borderColor: `${themeColors.primary}30`
+                            }}
                           >
                             {detectMarketFromSymbol(trade.symbol).toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge 
-                            className={`font-medium text-xs px-2 py-0.5 ${
-                              trade.side === 'long' 
-                                ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30' 
-                                : 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30'
-                            }`}
+                            className="font-medium text-xs px-2 py-0.5"
+                            style={{
+                              backgroundColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}15`,
+                              color: trade.side === 'long' ? themeColors.profit : themeColors.loss,
+                              borderColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}30`
+                            }}
                             variant="outline"
                           >
                             {trade.side.toUpperCase()}
@@ -1926,9 +1943,10 @@ export default function TradeLog() {
                         <TableCell className="font-medium text-sm tabular-nums">{trade.entryPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</TableCell>
                         <TableCell className="font-medium text-sm tabular-nums">{trade.exitPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</TableCell>
                         <TableCell className="font-medium text-sm">{trade.lotSize}</TableCell>
-                        <TableCell className={`font-bold text-base ${
-                          trade.pnl >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <TableCell 
+                          className="font-bold text-base"
+                          style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
+                        >
                           {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
                         </TableCell>
                         <TableCell className="font-medium text-sm text-muted-foreground">
@@ -1971,7 +1989,7 @@ export default function TradeLog() {
               
               {/* Mobile Card View */}
               <div className="md:hidden space-y-4">
-                {trades.map((trade) => (
+                {paginatedTrades.map((trade) => (
                   <Card key={trade.id} className="overflow-hidden">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
@@ -1979,11 +1997,12 @@ export default function TradeLog() {
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-lg">{trade.symbol}</span>
                             <Badge 
-                              className={`font-medium text-xs px-2 py-0.5 ${
-                                trade.side === 'long' 
-                                  ? 'bg-green-500/10 text-green-600 border-green-500/20' 
-                                  : 'bg-red-500/10 text-red-600 border-red-500/20'
-                              }`}
+                              className="font-medium text-xs px-2 py-0.5"
+                              style={{
+                                backgroundColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}15`,
+                                color: trade.side === 'long' ? themeColors.profit : themeColors.loss,
+                                borderColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}30`
+                              }} 
                             >
                               {trade.side.toUpperCase()}
                             </Badge>
@@ -1992,9 +2011,10 @@ export default function TradeLog() {
                             {format(new Date(trade.exitTime), 'MMM dd, yyyy')}
                           </p>
                         </div>
-                        <div className={`font-bold text-xl ${
-                          trade.pnl >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
+                        <div 
+                          className="font-bold text-xl"
+                          style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
+                        >
                           {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
                         </div>
                       </div>
@@ -2061,6 +2081,62 @@ export default function TradeLog() {
                 ))}
               </div>
               </>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between p-4 border-t bg-muted/20">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1} to {Math.min(endIndex, trades.length)} of {trades.length} trades
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          variant={currentPage === pageNumber ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNumber}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
