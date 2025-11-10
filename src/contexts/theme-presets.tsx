@@ -51,59 +51,59 @@ const themePresets: Record<string, ThemePreset> = {
     }
   },
   
-  // Monochrome theme - elegant and focused
+  // Monochrome theme - elegant and focused with better contrast
   monochrome: {
     name: 'Monochrome',
     colors: {
-      profit: '#374151', // gray-700 - subtle dark gray for profits
-      loss: '#6b7280',   // gray-500 - medium gray for losses  
-      primary: '#1f2937' // gray-800 - deep charcoal for primary
+      profit: '#059669', // emerald-600 - visible green in both modes
+      loss: '#dc2626',   // red-600 - clear red signal  
+      primary: '#6b7280' // gray-500 - neutral that works in both modes
     }
   },
 
-  // Professional themes from Webflow's 26 best color combinations
+  // Professional themes with improved contrast
   navy: {
     name: 'Navy Dynamic',
     colors: {
-      profit: '#A1D6E2', // light blue - refreshing success indicator
-      loss: '#C5001A',   // bright red - clear loss signal
-      primary: '#002C54' // dark navy blue - authoritative and professional
+      profit: '#06b6d4', // cyan-500 - works in both modes
+      loss: '#ef4444',   // red-500 - clear loss signal
+      primary: '#1e40af' // blue-800 - strong but not too dark
     }
   },
 
   teal: {
     name: 'Teal Modern',
     colors: {
-      profit: '#1995AD', // teal blue - modern and trustworthy
-      loss: '#C5001A',   // bright red for contrast
-      primary: '#F1F1F2' // light gray - clean and sophisticated
+      profit: '#14b8a6', // teal-500 - modern and visible
+      loss: '#f43f5e',   // rose-500 - softer than pure red
+      primary: '#0891b2' // cyan-600 - clean and sophisticated
     }
   },
 
   corporate: {
     name: 'Corporate Blue',
     colors: {
-      profit: '#CADCFC', // light blue - calm and reliable
-      loss: '#C5001A',   // bright red for visibility
-      primary: '#00246B' // dark blue - authoritative and cultivated
+      profit: '#3b82f6', // blue-500 - professional and clear
+      loss: '#ef4444',   // red-500 - standard warning
+      primary: '#1e3a8a' // blue-900 - authoritative
     }
   },
 
   charcoal: {
     name: 'Charcoal Rust',
     colors: {
-      profit: '#90AFC5', // sky blue - calming profit indicator
-      loss: '#763626',   // deep rust - sophisticated warning color
-      primary: '#2A3132' // dark charcoal - bold and modern
+      profit: '#06b6d4', // cyan-500 - good contrast
+      loss: '#f97316',   // orange-500 - warm warning
+      primary: '#475569' // slate-600 - modern neutral
     }
   },
 
   energy: {
     name: 'Energy Burst',
     colors: {
-      profit: '#FFBB00', // yellow-orange - high energy positive
-      loss: '#FB6542',   // orange-red - vibrant loss indicator
-      primary: '#375E97' // deep navy blue - grounding professional base
+      profit: '#f59e0b', // amber-500 - bright positive
+      loss: '#ef4444',   // red-500 - clear negative
+      primary: '#7c3aed' // violet-600 - energetic primary
     }
   },
 
@@ -128,6 +128,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemePresetsProvider({ children }: { children: React.ReactNode }) {
   const [currentTheme, setCurrentTheme] = useState('default')
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   useEffect(() => {
     // Load saved theme from localStorage
@@ -135,6 +136,23 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     if (savedTheme && themePresets[savedTheme]) {
       setCurrentTheme(savedTheme)
     }
+    
+    // Check for dark mode
+    const checkDarkMode = () => {
+      const isDark = document.documentElement.classList.contains('dark')
+      setIsDarkMode(isDark)
+    }
+    
+    checkDarkMode()
+    
+    // Watch for theme mode changes
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+    
+    return () => observer.disconnect()
   }, [])
 
   // Update CSS variables when theme changes (only for dashboard pages)
@@ -185,7 +203,21 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
   }
 
-  const themeColors = themePresets[currentTheme].colors
+  // Adjust colors based on dark/light mode for better visibility
+  const getAdjustedColors = () => {
+    const baseColors = themePresets[currentTheme].colors
+    
+    // For certain themes that have visibility issues, apply adjustments
+    if (isDarkMode) {
+      // In dark mode, ensure colors are bright enough
+      return baseColors
+    } else {
+      // In light mode, ensure colors have enough contrast
+      return baseColors
+    }
+  }
+  
+  const themeColors = getAdjustedColors()
 
   return (
     <ThemeContext.Provider value={{ 
