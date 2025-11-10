@@ -193,6 +193,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     
     // Update CSS variables for dashboard pages
     root.style.setProperty('--primary', hexToHsl(colors.primary))
+    root.style.setProperty('--ring', hexToHsl(colors.primary)) // Fix green hover issue
   }, [currentTheme])
 
   const setTheme = (theme: string) => {
