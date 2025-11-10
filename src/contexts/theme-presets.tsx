@@ -210,12 +210,12 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     if (isDarkMode) {
       // In dark mode, ensure colors are bright enough and visible
       if (currentTheme === 'monochrome') {
-        // Deep Yellow theme adjustments for dark mode
+        // Deep Yellow theme adjustments for dark mode - maintain pure yellow/black aesthetic
         return {
           ...baseColors,
-          loss: '#ef4444', // red-500 - bright red instead of dark gray for visibility
-          profit: '#fcd34d', // amber-300 - brighter yellow for better contrast
-          primary: '#f59e0b' // amber-500 - maintain bright primary
+          loss: '#9ca3af', // gray-400 - light gray that's visible in dark mode, represents "black" element
+          profit: '#fbbf24', // yellow-400 - bright yellow for profits (keep original)
+          primary: '#f59e0b' // yellow-500 - rich yellow primary (keep original)
         }
       }
       
