@@ -26,12 +26,12 @@ const themePresets: Record<string, ThemePreset> = {
       primary: '#0ea5e9' // sky-500
     }
   },
-  forest: {
-    name: 'Forest',
+  neon: {
+    name: 'Neon',
     colors: {
-      profit: '#22c55e', // green-500
-      loss: '#dc2626',   // red-600
-      primary: '#16a34a' // green-600
+      profit: '#00ff88', // bright neon green
+      loss: '#ff0080',   // hot pink
+      primary: '#00ffff' // cyan neon
     }
   },
   sunset: {
@@ -51,50 +51,50 @@ const themePresets: Record<string, ThemePreset> = {
     }
   },
   
-  // Monochrome theme - elegant and focused with better contrast
+  // Deep Yellow & Black theme - bold and striking
   monochrome: {
-    name: 'Monochrome',
+    name: 'Deep Yellow',
     colors: {
-      profit: '#059669', // emerald-600 - visible green in both modes
-      loss: '#dc2626',   // red-600 - clear red signal  
-      primary: '#6b7280' // gray-500 - neutral that works in both modes
+      profit: '#fbbf24', // yellow-400 - bright deep yellow for profits
+      loss: '#1f2937',   // gray-800 - deep black/dark gray for losses  
+      primary: '#f59e0b' // yellow-500 - rich yellow primary
     }
   },
 
-  // Professional themes with improved contrast
-  navy: {
-    name: 'Navy Dynamic',
+  // Rich and elegant theme
+  rose: {
+    name: 'Rose Gold',
     colors: {
-      profit: '#06b6d4', // cyan-500 - works in both modes
-      loss: '#ef4444',   // red-500 - clear loss signal
-      primary: '#1e40af' // blue-800 - strong but not too dark
+      profit: '#f59e0b', // gold
+      loss: '#e11d48',   // rose-600
+      primary: '#be185d' // pink-700
     }
   },
 
-  teal: {
-    name: 'Teal Modern',
+  mint: {
+    name: 'Mint Frost',
     colors: {
-      profit: '#14b8a6', // teal-500 - modern and visible
-      loss: '#f43f5e',   // rose-500 - softer than pure red
-      primary: '#0891b2' // cyan-600 - clean and sophisticated
+      profit: '#10b981', // emerald
+      loss: '#6366f1',   // indigo-500 - cool loss color
+      primary: '#06b6d4' // cyan-500
     }
   },
 
-  corporate: {
-    name: 'Corporate Blue',
+  ice: {
+    name: 'Ice',
     colors: {
-      profit: '#3b82f6', // blue-500 - professional and clear
-      loss: '#ef4444',   // red-500 - standard warning
-      primary: '#1e3a8a' // blue-900 - authoritative
+      profit: '#67e8f9', // cyan-300 - ice blue
+      loss: '#e879f9',   // fuchsia-400 - cool magenta
+      primary: '#0891b2' // cyan-600 - deep ice
     }
   },
 
-  charcoal: {
-    name: 'Charcoal Rust',
+  crimson: {
+    name: 'Crimson',
     colors: {
-      profit: '#06b6d4', // cyan-500 - good contrast
-      loss: '#f97316',   // orange-500 - warm warning
-      primary: '#475569' // slate-600 - modern neutral
+      profit: '#fcd34d', // amber-300 - bright gold
+      loss: '#991b1b',   // red-800 - deep crimson
+      primary: '#dc2626' // red-600 - bold crimson
     }
   },
 
@@ -193,7 +193,6 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     
     // Update CSS variables for dashboard pages
     root.style.setProperty('--primary', hexToHsl(colors.primary))
-    root.style.setProperty('--ring', hexToHsl(colors.primary))
   }, [currentTheme])
 
   const setTheme = (theme: string) => {

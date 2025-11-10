@@ -791,8 +791,15 @@ export default function TradeLog() {
             return tradeWithDates;
           });
           
-          setTrades(tradesWithDates);
-          calculateQuickStats(tradesWithDates);
+          // Filter trades by active account
+          const filteredTrades = tradesWithDates.filter((trade: any) => 
+            !activeAccount || 
+            trade.accountId === activeAccount.id || 
+            (!trade.accountId && activeAccount.id.includes('default'))
+          );
+          
+          setTrades(filteredTrades);
+          calculateQuickStats(filteredTrades);
           
           // Save the updated trades with RR calculations back to localStorage
           userStorage.setItem('trades', JSON.stringify(tradesWithDates));
@@ -848,7 +855,7 @@ export default function TradeLog() {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [activeAccount]);
 
   // Enhanced loading state
   if (isLoading) {

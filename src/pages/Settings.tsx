@@ -49,7 +49,8 @@ import {
   faArrowTrendDown,
   faPercent,
   faMedal,
-  faChartSimple
+  faChartSimple,
+  faChartBar
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 
@@ -251,12 +252,20 @@ export default function Settings() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-3">
-                  <Badge className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-green-500/20 to-green-600/20 border-green-500/30 backdrop-blur-sm">
-                    <FontAwesomeIcon icon={faChartLine} className="mr-2 h-3 w-3 text-green-500" />
+                  <Badge className="px-4 py-2 text-sm font-bold backdrop-blur-sm" 
+                         style={{ 
+                           background: `linear-gradient(to right, ${themeColors.profit}20, ${themeColors.profit}30)`,
+                           borderColor: `${themeColors.profit}30`
+                         }}>
+                    <FontAwesomeIcon icon={faChartLine} className="mr-2 h-3 w-3" style={{ color: themeColors.profit }} />
                     {stats.total} Total Trades
                   </Badge>
-                  <Badge className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-blue-500/20 to-blue-600/20 border-blue-500/30 backdrop-blur-sm">
-                    <FontAwesomeIcon icon={faClock} className="mr-2 h-3 w-3 text-blue-500" />
+                  <Badge className="px-4 py-2 text-sm font-bold backdrop-blur-sm" 
+                         style={{ 
+                           background: `linear-gradient(to right, ${themeColors.primary}20, ${themeColors.primary}30)`,
+                           borderColor: `${themeColors.primary}30`
+                         }}>
+                    <FontAwesomeIcon icon={faClock} className="mr-2 h-3 w-3" style={{ color: themeColors.primary }} />
                     {stats.thisMonth} This Month
                   </Badge>
                 </div>
@@ -300,61 +309,154 @@ export default function Settings() {
 
             <TabsContent value="general" className="mt-6">
               <div className="space-y-6">
-                {/* Main Appearance Card */}
-                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
-                <CardHeader className="relative pb-6">
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
-                      <FontAwesomeIcon icon={faPalette} className="h-5 w-5 text-primary" />
-                    </div>
-                    Appearance & Localization
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground leading-relaxed">
-                    Customize your trading journal appearance and regional settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="relative space-y-8 pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-3">
-                        <Label className="flex items-center gap-2 text-sm font-semibold">
-                          <FontAwesomeIcon icon={faSun} className="h-4 w-4 text-primary" />
-                          Theme
-                        </Label>
-                        <Select value={theme} onValueChange={setTheme}>
-                          <SelectTrigger className="h-12 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-200">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="light">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faSun} className="h-4 w-4" />
-                                Light Mode
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="dark">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faMoon} className="h-4 w-4" />
-                                Dark Mode
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="system">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faDesktop} className="h-4 w-4" />
-                                System Default
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground">
-                          Choose your preferred color scheme
-                        </p>
+                {/* Enhanced Appearance & Localization Header */}
+                <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
+                     style={{ 
+                       background: `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.primary}05 50%, transparent 100%)`,
+                       borderColor: `${themeColors.primary}20`
+                     }}>
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
+                       style={{ backgroundColor: `${themeColors.primary}10` }} />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
+                       style={{ backgroundColor: `${themeColors.profit}10` }} />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl shadow-lg" 
+                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.profit}20)` }}>
+                        <FontAwesomeIcon icon={faPalette} className="h-6 w-6" style={{ color: themeColors.primary }} />
                       </div>
+                      <div>
+                        <h3 className="text-2xl font-bold">Appearance & Localization</h3>
+                        <p className="text-muted-foreground">Customize your trading journal experience</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                      <div className="space-y-3">
+                {/* Enhanced Theme & Regional Settings */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  {/* Theme Settings Card */}
+                  <Card className="xl:col-span-2 relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
+                    <CardHeader className="relative pb-6">
+                      <CardTitle className="flex items-center gap-3 text-xl">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
+                          <FontAwesomeIcon icon={faSun} className="h-5 w-5 text-primary" />
+                        </div>
+                        Theme & Display
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground leading-relaxed">
+                        Control your visual experience and display preferences
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative space-y-8">
+                      <div className="space-y-6">
+                        <div className="space-y-4">
+                          <Label className="flex items-center gap-2 text-base font-bold">
+                            <FontAwesomeIcon icon={faSun} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                            Theme Mode
+                          </Label>
+                          <Select value={theme} onValueChange={setTheme}>
+                            <SelectTrigger className="h-14 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-300 text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="light">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faSun} className="h-4 w-4 text-yellow-500" />
+                                  <span>Light Mode</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="dark">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faMoon} className="h-4 w-4 text-blue-400" />
+                                  <span>Dark Mode</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="system">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faDesktop} className="h-4 w-4 text-muted-foreground" />
+                                  <span>System Default</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-4">
+                          <Label className="flex items-center gap-2 text-base font-bold">
+                            <FontAwesomeIcon icon={faChartSimple} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                            Default Chart Period
+                          </Label>
+                          <Select 
+                            value={settings.displaySettings.defaultChartPeriod} 
+                            onValueChange={(value) => updateSettings({ displaySettings: { ...settings.displaySettings, defaultChartPeriod: value } })}
+                          >
+                            <SelectTrigger className="h-14 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-300 text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1W">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faClock} className="h-4 w-4" />
+                                  1 Week
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="1M">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
+                                  1 Month
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="3M">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
+                                  3 Months
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="6M">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
+                                  6 Months
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="1Y">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faChartBar} className="h-4 w-4" />
+                                  1 Year
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="ALL">
+                                <div className="flex items-center gap-2">
+                                  <FontAwesomeIcon icon={faChartSimple} className="h-4 w-4" />
+                                  All Time
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-muted-foreground">
+                            Default time period for analytics charts and reports
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Regional Settings Card */}
+                  <Card className="relative overflow-hidden border-border/50 shadow-xl" 
+                        style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, transparent 50%)` }}>
+                    <div className="absolute top-0 left-0 w-20 h-20 rounded-full blur-xl" 
+                         style={{ backgroundColor: `${themeColors.profit}10` }} />
+                    <CardHeader className="relative">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" style={{ color: themeColors.profit }} />
+                        Regional Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="relative space-y-6">
+                      <div className="space-y-4">
                         <Label className="flex items-center gap-2 text-sm font-semibold">
-                          <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4 text-primary" />
+                          <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" style={{ color: themeColors.profit }} />
                           Currency
                         </Label>
                         <Select value={settings.currency} onValueChange={(value) => updateSettings({ currency: value })}>
@@ -400,15 +502,18 @@ export default function Settings() {
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           Default currency for P&L calculations
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Timezone</Label>
+                      <div className="space-y-4">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
+                          <FontAwesomeIcon icon={faClock} className="h-3 w-3" style={{ color: themeColors.profit }} />
+                          Timezone
+                        </Label>
                         <Select value={settings.timezone} onValueChange={(value) => updateSettings({ timezone: value })}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-200">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -462,98 +567,129 @@ export default function Settings() {
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           Used for trade timestamps and market hours
                         </p>
                       </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-                      <div className="space-y-2">
-                        <Label>Default Chart Period</Label>
-                        <Select 
-                          value={settings.displaySettings.defaultChartPeriod} 
-                          onValueChange={(value) => updateSettings({ displaySettings: { ...settings.displaySettings, defaultChartPeriod: value } })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1W">1 Week</SelectItem>
-                            <SelectItem value="1M">1 Month</SelectItem>
-                            <SelectItem value="3M">3 Months</SelectItem>
-                            <SelectItem value="6M">6 Months</SelectItem>
-                            <SelectItem value="1Y">1 Year</SelectItem>
-                            <SelectItem value="ALL">All Time</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground">
-                          Default time period for analytics charts
-                        </p>
+                {/* Enhanced Color Theme Selection */}
+                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-muted/20">
+                  <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full blur-3xl" 
+                       style={{ backgroundColor: `${themeColors.primary}05` }} />
+                  <CardHeader className="relative">
+                    <CardTitle className="flex items-center gap-3 text-xl">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
+                        <FontAwesomeIcon icon={faPalette} className="h-5 w-5 text-primary" />
                       </div>
-                    </div>
-
-                    <Separator />
-                    
-                    {/* Color Theme Selection */}
-                    <div className="space-y-6">
-                      <h4 className="text-lg font-semibold">Color Theme</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {Object.entries(availableThemes).map(([key, preset]) => (
+                      Color Themes
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground leading-relaxed">
+                      Choose colors for profit/loss visualization and UI elements
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="relative space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {Object.entries(availableThemes).map(([key, preset]) => (
+                        <div
+                          key={key}
+                          className="rounded-xl border-2 transition-all duration-300 hover:shadow-lg"
+                          style={{
+                            background: currentTheme === key 
+                              ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
+                              : 'transparent',
+                            borderColor: currentTheme === key 
+                              ? preset.colors.primary + '40'
+                              : 'rgb(var(--border))'
+                          }}
+                        >
                           <button
-                            key={key}
                             onClick={() => setColorTheme(key)}
-                            className={`p-6 rounded-xl border-2 transition-all hover:shadow-md ${
+                            className={`group p-6 rounded-xl w-full transition-all duration-300 hover:scale-105 ${
                               currentTheme === key 
-                                ? 'border-primary bg-muted/30 shadow-sm' 
-                                : 'border-border/50 hover:border-primary/30 hover:bg-muted/20'
+                                ? 'shadow-lg transform scale-105' 
+                                : ''
                             }`}
+                            style={{ 
+                              background: 'transparent',
+                              border: 'none',
+                              outline: 'none'
+                            }}
                           >
-                            <div className="space-y-4">
-                              <div className="text-base font-semibold">{preset.name}</div>
-                              <div className="flex gap-3 justify-center">
-                                <div 
-                                  className="w-7 h-7 rounded-full border-2 border-background shadow-md" 
-                                  style={{ backgroundColor: preset.colors.profit }}
-                                />
-                                <div 
-                                  className="w-7 h-7 rounded-full border-2 border-background shadow-md" 
-                                  style={{ backgroundColor: preset.colors.loss }}
-                                />
-                                <div 
-                                  className="w-7 h-7 rounded-full border-2 border-background shadow-md" 
-                                  style={{ backgroundColor: preset.colors.primary }}
-                                />
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="text-base font-bold">{preset.name}</div>
+                              {currentTheme === key && (
+                                <div className="p-1.5 rounded-full" style={{ backgroundColor: `${preset.colors.primary}20` }}>
+                                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3" style={{ color: preset.colors.primary }} />
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-3 justify-center">
+                              <div 
+                                className="w-8 h-8 rounded-full border-2 border-background shadow-lg group-hover:scale-110 transition-transform" 
+                                style={{ backgroundColor: preset.colors.profit }}
+                                title="Profit Color"
+                              />
+                              <div 
+                                className="w-8 h-8 rounded-full border-2 border-background shadow-lg group-hover:scale-110 transition-transform" 
+                                style={{ backgroundColor: preset.colors.loss }}
+                                title="Loss Color"
+                              />
+                              <div 
+                                className="w-8 h-8 rounded-full border-2 border-background shadow-lg group-hover:scale-110 transition-transform" 
+                                style={{ backgroundColor: preset.colors.primary }}
+                                title="Primary Color"
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div 
+                                className="py-3 px-3 rounded-lg text-white text-center font-bold shadow-md group-hover:shadow-lg transition-shadow"
+                                style={{ backgroundColor: preset.colors.profit }}
+                              >
+                                +$250
                               </div>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div 
-                                  className="py-2 px-3 rounded-lg text-white text-center font-semibold shadow-sm"
-                                  style={{ backgroundColor: preset.colors.profit }}
-                                >
-                                  +$250
-                                </div>
-                                <div 
-                                  className="py-2 px-3 rounded-lg text-white text-center font-semibold shadow-sm"
-                                  style={{ backgroundColor: preset.colors.loss }}
-                                >
-                                  -$150
-                                </div>
+                              <div 
+                                className="py-3 px-3 rounded-lg text-white text-center font-bold shadow-md group-hover:shadow-lg transition-shadow"
+                                style={{ backgroundColor: preset.colors.loss }}
+                              >
+                                -$150
                               </div>
                             </div>
+                          </div>
                           </button>
-                        ))}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Choose a color theme for profit/loss visualization and UI elements
-                      </p>
+                        </div>
+                      ))}
                     </div>
+                  </CardContent>
+                </Card>
 
-                    <Separator />
-                    
+                {/* Enhanced Display Preferences */}
+                <Card className="relative overflow-hidden border-border/50 shadow-xl" 
+                      style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, transparent 50%)` }}>
+                  <div className="absolute top-0 left-0 w-24 h-24 rounded-full blur-xl" 
+                       style={{ backgroundColor: `${themeColors.profit}10` }} />
+                  <CardHeader className="relative">
+                    <CardTitle className="flex items-center gap-3 text-xl">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
+                        <FontAwesomeIcon icon={faChartSimple} className="h-5 w-5 text-primary" />
+                      </div>
+                      Display Preferences
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground leading-relaxed">
+                      Configure how data is displayed throughout the application
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="relative space-y-6">
                     <div className="space-y-6">
-                      <h4 className="text-lg font-semibold">Display Preferences</h4>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Show P&L as Percentage</Label>
+                      <div className="flex items-center justify-between p-4 rounded-xl border" 
+                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}08, transparent)` }}>
+                        <div className="space-y-1">
+                          <Label className="text-base font-semibold">Show P&L as Percentage</Label>
                           <p className="text-sm text-muted-foreground">Display returns as % instead of dollar amounts</p>
                         </div>
                         <Switch
@@ -562,10 +698,11 @@ export default function Settings() {
                         />
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Hide Small Trades</Label>
-                          <p className="text-sm text-muted-foreground">Hide trades under $10 from charts</p>
+                      <div className="flex items-center justify-between p-4 rounded-xl border" 
+                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}08, transparent)` }}>
+                        <div className="space-y-1">
+                          <Label className="text-base font-semibold">Hide Small Trades</Label>
+                          <p className="text-sm text-muted-foreground">Hide trades under $10 from charts and analytics</p>
                         </div>
                         <Switch
                           checked={settings.displaySettings.hideSmallTrades}
@@ -580,70 +717,156 @@ export default function Settings() {
 
             <TabsContent value="accounts" className="mt-6">
               <div className="space-y-6">
-                <Card className="border-border/50 shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faBuilding} className="h-5 w-5" />
-                      Trading Accounts
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground/85 leading-[1.6]">
-                      Manage your trading accounts to track performance separately
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Account List */}
-                    <div className="space-y-4">
-                      {accounts.map((account) => (
-                        <div key={account.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-border/50 rounded-lg bg-muted/20 gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
+                {/* Enhanced Trading Accounts Header */}
+                <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
+                     style={{ 
+                       background: `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.primary}05 50%, transparent 100%)`,
+                       borderColor: `${themeColors.primary}20`
+                     }}>
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
+                       style={{ backgroundColor: `${themeColors.primary}10` }} />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
+                       style={{ backgroundColor: `${themeColors.profit}10` }} />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl shadow-lg" 
+                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.profit}20)` }}>
+                        <FontAwesomeIcon icon={faBuilding} className="h-6 w-6" style={{ color: themeColors.primary }} />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold">Trading Accounts</h3>
+                        <p className="text-muted-foreground">Manage your accounts to track performance separately</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
+                  <CardContent className="relative space-y-6 pt-6">
+                    {/* Enhanced Account List */}
+                    <div className="grid gap-4">
+                      {accounts.map((account, index) => (
+                        <div key={account.id} 
+                             className="group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:border-primary/30" 
+                             style={{ 
+                               background: `linear-gradient(135deg, ${index % 2 === 0 ? themeColors.primary : themeColors.profit}05 0%, transparent 50%)`,
+                               borderColor: activeAccount?.id === account.id ? `${themeColors.primary}40` : 'rgb(var(--border))'
+                             }}>
+                          <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl opacity-30" 
+                               style={{ backgroundColor: index % 2 === 0 ? `${themeColors.primary}20` : `${themeColors.profit}20` }} />
+                          
+                          <div className="relative p-6">
+                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                              {/* Account Info Section */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold truncate">
-                                    {account.name}
-                                  </span>
-                                  <div className="flex gap-2 flex-wrap">
-                                    {account.isDefault && (
-                                      <Badge variant="secondary" className="text-xs">Default</Badge>
-                                    )}
-                                    {activeAccount?.id === account.id && (
-                                      <Badge variant="outline" className="text-xs">Active</Badge>
-                                    )}
+                                <div className="flex items-center gap-3 mb-3">
+                                  {/* Account Icon */}
+                                  <div className="p-2.5 rounded-lg shadow-md" 
+                                       style={{ 
+                                         background: `linear-gradient(135deg, ${account.type === 'live' ? themeColors.profit : themeColors.primary}20, ${account.type === 'live' ? themeColors.profit : themeColors.primary}10)` 
+                                       }}>
+                                    <FontAwesomeIcon 
+                                      icon={account.type === 'live' ? faCoins : account.type === 'demo' ? faChartLine : faTrophy} 
+                                      className="h-4 w-4"
+                                      style={{ color: account.type === 'live' ? themeColors.profit : themeColors.primary }}
+                                    />
                                   </div>
-                                </div>
-                                <div className="text-sm text-muted-foreground truncate">
-                                  {account.broker} • {account.type} • {account.currency}
+                                  
+                                  {/* Account Name & Badges */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-bold text-lg truncate">
+                                        {account.name}
+                                      </h4>
+                                      <div className="flex gap-2 flex-wrap">
+                                        {account.isDefault && (
+                                          <Badge className="text-xs font-semibold" 
+                                                 style={{ 
+                                                   backgroundColor: `${themeColors.profit}15`,
+                                                   color: themeColors.profit,
+                                                   borderColor: `${themeColors.profit}30`
+                                                 }}>
+                                            <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-1" />
+                                            Default
+                                          </Badge>
+                                        )}
+                                        {activeAccount?.id === account.id && (
+                                          <Badge className="text-xs font-semibold" 
+                                                 style={{ 
+                                                   backgroundColor: `${themeColors.primary}15`,
+                                                   color: themeColors.primary,
+                                                   borderColor: `${themeColors.primary}30`
+                                                 }}>
+                                            <FontAwesomeIcon icon={faFire} className="h-3 w-3 mr-1" />
+                                            Active
+                                          </Badge>
+                                        )}
+                                        <Badge variant="outline" className="text-xs font-medium capitalize">
+                                          {account.type.replace('-', ' ')}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                      <div className="flex items-center gap-1.5">
+                                        <FontAwesomeIcon icon={faBuilding} className="h-3 w-3" />
+                                        <span className="font-medium">{account.broker}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <FontAwesomeIcon icon={faCoins} className="h-3 w-3" />
+                                        <span className="font-medium">{account.currency}</span>
+                                      </div>
+                                      {account.balance && (
+                                        <div className="flex items-center gap-1.5">
+                                          <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" />
+                                          <span className="font-semibold" style={{ color: themeColors.profit }}>
+                                            {formatCurrency(account.balance, false)}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Edit Button */}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditForm(account)}
+                                    className="h-10 w-10 p-0 rounded-lg hover:bg-background/80 transition-all"
+                                  >
+                                    <FontAwesomeIcon icon={faPencil} className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setEditForm(account)}
-                                className="h-8 w-8 p-0 hover:bg-muted ml-2"
-                              >
-                                <FontAwesomeIcon icon={faPencil} className="h-3 w-3" />
-                              </Button>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex flex-col sm:flex-row gap-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => updateAccount(account.id, { isDefault: true })}
+                                  disabled={account.isDefault}
+                                  className="min-w-[120px] font-semibold hover:shadow-md transition-all"
+                                  style={account.isDefault ? {} : { 
+                                    borderColor: `${themeColors.primary}30`,
+                                    color: themeColors.primary 
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-2" />
+                                  {account.isDefault ? 'Default' : 'Set Default'}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteAccount(account.id)}
+                                  disabled={accounts.length <= 1}
+                                  className="min-w-[100px] font-semibold hover:shadow-md transition-all hover:border-destructive hover:text-destructive"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} className="h-3 w-3 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateAccount(account.id, { isDefault: true })}
-                              disabled={account.isDefault}
-                              className="flex-1 sm:flex-none"
-                            >
-                              Set Default
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteAccount(account.id)}
-                              disabled={accounts.length <= 1}
-                              className="flex-1 sm:flex-none"
-                            >
-                              Delete
-                            </Button>
                           </div>
                         </div>
                       ))}
@@ -651,8 +874,21 @@ export default function Settings() {
 
                     {/* Edit Account Form */}
                     {editForm && (
-                      <div className="p-4 border border-border/50 rounded-lg bg-muted/10">
-                        <h4 className="font-semibold mb-4">Edit Account</h4>
+                      <div className="relative overflow-hidden rounded-xl border shadow-lg" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.primary}08, transparent 50%)`,
+                             borderColor: `${themeColors.primary}20`
+                           }}>
+                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-30" 
+                             style={{ backgroundColor: `${themeColors.primary}15` }} />
+                        <div className="relative p-6">
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2.5 rounded-lg shadow-md" 
+                                 style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.primary}10)` }}>
+                              <FontAwesomeIcon icon={faPencil} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                            </div>
+                            <h4 className="text-xl font-bold">Edit Account</h4>
+                          </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>Account Name</Label>
@@ -745,29 +981,49 @@ export default function Settings() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            onClick={() => {
-                              if (editForm.name && editForm.broker) {
-                                updateAccount(editForm.id, editForm);
-                                setEditForm(null);
-                              }
-                            }}
-                            disabled={!editForm.name || !editForm.broker}
-                          >
-                            Save Changes
-                          </Button>
-                          <Button variant="outline" onClick={() => setEditForm(null)}>
-                            Cancel
-                          </Button>
+                          <div className="flex gap-3 mt-6">
+                            <Button
+                              onClick={() => {
+                                if (editForm.name && editForm.broker) {
+                                  updateAccount(editForm.id, editForm);
+                                  setEditForm(null);
+                                }
+                              }}
+                              disabled={!editForm.name || !editForm.broker}
+                              className="font-semibold hover:shadow-md transition-all"
+                              style={{ 
+                                backgroundColor: themeColors.primary,
+                                borderColor: themeColors.primary
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faCheck} className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </Button>
+                            <Button variant="outline" onClick={() => setEditForm(null)} className="font-semibold">
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {/* Add Account Form */}
                     {showAddAccount && (
-                      <div className="p-4 border border-border/50 rounded-lg bg-muted/10">
-                        <h4 className="font-semibold mb-4">Add New Account</h4>
+                      <div className="relative overflow-hidden rounded-xl border shadow-lg" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.profit}08, transparent 50%)`,
+                             borderColor: `${themeColors.profit}20`
+                           }}>
+                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-30" 
+                             style={{ backgroundColor: `${themeColors.profit}15` }} />
+                        <div className="relative p-6">
+                          <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2.5 rounded-lg shadow-md" 
+                                 style={{ background: `linear-gradient(135deg, ${themeColors.profit}20, ${themeColors.profit}10)` }}>
+                              <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" style={{ color: themeColors.profit }} />
+                            </div>
+                            <h4 className="text-xl font-bold">Add New Account</h4>
+                          </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>Account Name</Label>
@@ -857,42 +1113,66 @@ export default function Settings() {
                             <Label>Set as default account</Label>
                           </div>
                         </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            onClick={() => {
-                              if (accountForm.name && accountForm.broker) {
-                                addAccount({
-                                  ...accountForm,
-                                  balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined
-                                });
-                                setAccountForm({
-                                  name: '',
-                                  type: 'demo',
-                                  broker: '',
-                                  currency: 'USD',
-                                  balance: '',
-                                  isDefault: false
-                                });
-                                setShowAddAccount(false);
-                              }
-                            }}
-                            disabled={!accountForm.name || !accountForm.broker}
-                          >
-                            Add Account
-                          </Button>
-                          <Button variant="outline" onClick={() => setShowAddAccount(false)}>
-                            Cancel
-                          </Button>
+                          <div className="flex gap-3 mt-6">
+                            <Button
+                              onClick={() => {
+                                if (accountForm.name && accountForm.broker) {
+                                  addAccount({
+                                    ...accountForm,
+                                    balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined
+                                  });
+                                  setAccountForm({
+                                    name: '',
+                                    type: 'demo',
+                                    broker: '',
+                                    currency: 'USD',
+                                    balance: '',
+                                    isDefault: false
+                                  });
+                                  setShowAddAccount(false);
+                                }
+                              }}
+                              disabled={!accountForm.name || !accountForm.broker}
+                              className="font-semibold hover:shadow-md transition-all"
+                              style={{ 
+                                backgroundColor: themeColors.profit,
+                                borderColor: themeColors.profit
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faBuilding} className="h-4 w-4 mr-2" />
+                              Add Account
+                            </Button>
+                            <Button variant="outline" onClick={() => setShowAddAccount(false)} className="font-semibold">
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {/* Add Account Button */}
                     {!showAddAccount && !editForm && (
-                      <Button onClick={() => setShowAddAccount(true)} className="w-full" variant="outline">
-                        <FontAwesomeIcon icon={faBuilding} className="mr-2 h-4 w-4" />
-                        Add New Account
-                      </Button>
+                      <div className="relative group">
+                        <Button 
+                          onClick={() => setShowAddAccount(true)} 
+                          className="w-full h-14 font-bold text-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.primary}10)`,
+                            borderColor: `${themeColors.profit}30`,
+                            color: themeColors.profit
+                          }}
+                          variant="outline"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <div className="relative flex items-center gap-3">
+                            <div className="p-2 rounded-lg" 
+                                 style={{ backgroundColor: `${themeColors.profit}20` }}>
+                              <FontAwesomeIcon icon={faBuilding} className="h-5 w-5" style={{ color: themeColors.profit }} />
+                            </div>
+                            <span>Add New Account</span>
+                          </div>
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -969,14 +1249,16 @@ export default function Settings() {
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Total P&L</p>
-                            <p className={`text-2xl font-bold mt-2 ${stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            <p className="text-2xl font-bold mt-2" 
+                               style={{ color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
                               {formatCurrency(stats.totalPnL, true)}
                             </p>
                           </div>
-                          <div className={`rounded-lg p-2 ${stats.totalPnL >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                          <div className="rounded-lg p-2">
                             <FontAwesomeIcon 
                               icon={stats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown} 
-                              className={`h-5 w-5 ${stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                              className="h-5 w-5"
+                              style={{ color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                             />
                           </div>
                         </div>
@@ -992,7 +1274,7 @@ export default function Settings() {
                               {stats.wins}W / {stats.losses}L
                             </p>
                           </div>
-                          <div className="rounded-lg p-2" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                          <div className="rounded-lg p-2">
                             <FontAwesomeIcon 
                               icon={faPercent} 
                               className="h-5 w-5"
@@ -1003,7 +1285,7 @@ export default function Settings() {
                         {/* Win rate progress bar */}
                         <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className="h-full transition-all duration-500"
+                            className="h-full transition-all duration-500 rounded-full"
                             style={{ 
                               width: `${stats.winRate}%`,
                               backgroundColor: stats.winRate >= 50 ? themeColors.profit : themeColors.loss
@@ -1024,10 +1306,11 @@ export default function Settings() {
                               {stats.profitFactor > 1 ? 'Profitable' : stats.profitFactor === 0 ? 'No Data' : 'Unprofitable'}
                             </p>
                           </div>
-                          <div className={`rounded-lg p-2 ${stats.profitFactor > 1 ? 'bg-green-500/10' : 'bg-orange-500/10'}`}>
+                          <div className="rounded-lg p-2">
                             <FontAwesomeIcon 
                               icon={faTrophy} 
-                              className={`h-5 w-5 ${stats.profitFactor > 1 ? 'text-green-500' : 'text-orange-500'}`}
+                              className="h-5 w-5"
+                              style={{ color: stats.profitFactor > 1 ? themeColors.profit : themeColors.primary }}
                             />
                           </div>
                         </div>
@@ -1038,17 +1321,22 @@ export default function Settings() {
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
-                            <p className={`text-2xl font-bold mt-2 ${stats.currentStreak > 0 ? 'text-green-500' : stats.currentStreak < 0 ? 'text-red-500' : ''}`}>
+                            <p className="text-2xl font-bold mt-2" 
+                               style={{ 
+                                 color: stats.currentStreak > 0 ? themeColors.profit : 
+                                        stats.currentStreak < 0 ? themeColors.loss : 'inherit'
+                               }}>
                               {Math.abs(stats.currentStreak)} {stats.currentStreak > 0 ? 'Wins' : stats.currentStreak < 0 ? 'Losses' : 'N/A'}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
                               Max: {stats.maxWinStreak}W / {stats.maxLossStreak}L
                             </p>
                           </div>
-                          <div className={`rounded-lg p-2 ${Math.abs(stats.currentStreak) >= 3 ? 'bg-orange-500/10' : 'bg-muted'}`}>
+                          <div className="rounded-lg p-2">
                             <FontAwesomeIcon 
                               icon={faFire} 
-                              className={`h-5 w-5 ${Math.abs(stats.currentStreak) >= 3 ? 'text-orange-500' : 'text-muted-foreground'}`}
+                              className="h-5 w-5"
+                              style={{ color: Math.abs(stats.currentStreak) >= 3 ? themeColors.primary : themeColors.primary }}
                             />
                           </div>
                         </div>
@@ -1070,13 +1358,13 @@ export default function Settings() {
                       </div>
                       <div className="space-y-2 p-4 rounded-lg bg-muted/30">
                         <p className="text-xs font-medium text-muted-foreground">Avg Win</p>
-                        <p className="text-xl font-bold text-green-500">
+                        <p className="text-xl font-bold" style={{ color: themeColors.profit }}>
                           {formatCurrency(stats.avgWin, true)}
                         </p>
                       </div>
                       <div className="space-y-2 p-4 rounded-lg bg-muted/30">
                         <p className="text-xs font-medium text-muted-foreground">Avg Loss</p>
-                        <p className="text-xl font-bold text-red-500">
+                        <p className="text-xl font-bold" style={{ color: themeColors.loss }}>
                           {formatCurrency(-stats.avgLoss, true)}
                         </p>
                       </div>
@@ -1084,27 +1372,29 @@ export default function Settings() {
 
                     {/* Best/Worst Trade */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-green-500/5 to-green-500/10">
+                      <div className="flex items-center justify-between p-4 rounded-lg border" 
+                           style={{ background: `linear-gradient(to right, ${themeColors.profit}05, ${themeColors.profit}10)` }}>
                         <div className="flex items-center gap-3">
-                          <div className="rounded-lg p-2 bg-green-500/20">
-                            <FontAwesomeIcon icon={faMedal} className="h-4 w-4 text-green-500" />
+                          <div className="rounded-lg p-2">
+                            <FontAwesomeIcon icon={faMedal} className="h-4 w-4" style={{ color: themeColors.profit }} />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Best Trade</p>
-                            <p className="text-lg font-bold text-green-500">
+                            <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
                               {formatCurrency(stats.bestTrade, true)}
                             </p>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-red-500/5 to-red-500/10">
+                      <div className="flex items-center justify-between p-4 rounded-lg border" 
+                           style={{ background: `linear-gradient(to right, ${themeColors.loss}05, ${themeColors.loss}10)` }}>
                         <div className="flex items-center gap-3">
-                          <div className="rounded-lg p-2 bg-red-500/20">
-                            <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4 text-red-500" />
+                          <div className="rounded-lg p-2">
+                            <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.loss }} />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Worst Trade</p>
-                            <p className="text-lg font-bold text-red-500">
+                            <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
                               {formatCurrency(stats.worstTrade, true)}
                             </p>
                           </div>
