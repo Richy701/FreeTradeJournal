@@ -593,30 +593,27 @@ export default function Settings() {
                   <CardContent className="relative space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                       {Object.entries(availableThemes).map(([key, preset]) => (
-                        <div
+                        <button
                           key={key}
-                          className="rounded-xl border-2 transition-all duration-300 hover:shadow-lg"
+                          onClick={() => setColorTheme(key)}
+                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full"
                           style={{
                             background: currentTheme === key 
                               ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
                               : 'transparent',
-                            borderColor: currentTheme === key 
-                              ? preset.colors.primary + '40'
-                              : 'rgb(var(--border))'
+                            border: currentTheme === key 
+                              ? `2px solid ${preset.colors.primary}40`
+                              : '2px solid rgb(var(--border))',
+                            outline: 'none',
+                            boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none',
+                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)',
+                            // Force override all ring and focus styles
+                            '--tw-ring-shadow': 'none !important',
+                            '--tw-ring-offset-shadow': 'none !important',
+                            '--tw-ring-opacity': '0 !important',
+                            '--tw-ring-color': 'transparent !important'
                           }}
-                        >
-                          <button
-                            onClick={() => setColorTheme(key)}
-                            className={`group p-6 rounded-xl w-full transition-all duration-300 hover:scale-105 ${
-                              currentTheme === key 
-                                ? 'shadow-lg transform scale-105' 
-                                : ''
-                            }`}
-                            style={{ 
-                              background: 'transparent',
-                              border: 'none',
-                              outline: 'none'
-                            }}
+                          onFocus={(e) => e.target.style.boxShadow = currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none'}
                           >
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
@@ -661,8 +658,7 @@ export default function Settings() {
                               </div>
                             </div>
                           </div>
-                          </button>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </CardContent>
