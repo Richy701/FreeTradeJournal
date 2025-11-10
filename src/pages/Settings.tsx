@@ -197,9 +197,7 @@ export default function Settings() {
         }
         if (data.settings) {
           userStorage.setItem('settings', JSON.stringify(data.settings));
-          setDefaultCommission(data.settings.defaultCommission || '0');
-          setCurrency(data.settings.currency || 'USD');
-          setTimezone(data.settings.timezone || DEFAULT_VALUES.TIMEZONE);
+          // Settings are loaded from context, no need to set them here
         }
         setSaved(true);
         setTimeout(() => {
@@ -324,7 +322,7 @@ export default function Settings() {
 
                       <div className="space-y-2">
                         <Label>Currency</Label>
-                        <Select value={currency} onValueChange={setCurrency}>
+                        <Select value={settings.currency} onValueChange={(value) => updateSettings({ currency: value })}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -374,7 +372,7 @@ export default function Settings() {
 
                       <div className="space-y-2">
                         <Label>Timezone</Label>
-                        <Select value={timezone} onValueChange={setTimezone}>
+                        <Select value={settings.timezone} onValueChange={(value) => updateSettings({ timezone: value })}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -437,8 +435,8 @@ export default function Settings() {
                       <div className="space-y-2">
                         <Label>Default Chart Period</Label>
                         <Select 
-                          value={displaySettings.defaultChartPeriod} 
-                          onValueChange={(value) => setDisplaySettings(prev => ({ ...prev, defaultChartPeriod: value }))}
+                          value={settings.displaySettings.defaultChartPeriod} 
+                          onValueChange={(value) => updateSettings({ displaySettings: { ...settings.displaySettings, defaultChartPeriod: value } })}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -524,8 +522,8 @@ export default function Settings() {
                           <p className="text-sm text-muted-foreground">Display returns as % instead of dollar amounts</p>
                         </div>
                         <Switch
-                          checked={displaySettings.showPnlAsPercentage}
-                          onCheckedChange={(checked) => setDisplaySettings(prev => ({ ...prev, showPnlAsPercentage: checked }))}
+                          checked={settings.displaySettings.showPnlAsPercentage}
+                          onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, showPnlAsPercentage: checked } })}
                         />
                       </div>
                       
@@ -535,8 +533,8 @@ export default function Settings() {
                           <p className="text-sm text-muted-foreground">Hide trades under $10 from charts</p>
                         </div>
                         <Switch
-                          checked={displaySettings.hideSmallTrades}
-                          onCheckedChange={(checked) => setDisplaySettings(prev => ({ ...prev, hideSmallTrades: checked }))}
+                          checked={settings.displaySettings.hideSmallTrades}
+                          onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, hideSmallTrades: checked } })}
                         />
                       </div>
                     </div>
@@ -885,8 +883,8 @@ export default function Settings() {
                         <Input
                           type="number"
                           step="0.01"
-                          value={defaultCommission}
-                          onChange={(e) => setDefaultCommission(e.target.value)}
+                          value={settings.defaultCommission}
+                          onChange={(e) => updateSettings({ defaultCommission: parseFloat(e.target.value) || 0 })}
                           placeholder="0.00"
                           className="pl-8"
                         />
@@ -1104,8 +1102,8 @@ export default function Settings() {
                           step="0.1"
                           min="0.1"
                           max="10"
-                          value={riskPerTrade}
-                          onChange={(e) => setRiskPerTrade(e.target.value)}
+                          value={settings.riskPerTrade}
+                          onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })}
                           className="pr-8"
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">%</span>
@@ -1178,8 +1176,8 @@ export default function Settings() {
                         <p className="text-sm text-muted-foreground">Get notified when you add new trades</p>
                       </div>
                       <Switch
-                        checked={notifications.tradeAlerts}
-                        onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, tradeAlerts: checked }))}
+                        checked={settings.notifications.tradeAlerts}
+                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, tradeAlerts: checked } })}
                       />
                     </div>
                     
@@ -1189,8 +1187,8 @@ export default function Settings() {
                         <p className="text-sm text-muted-foreground">Daily summary of your trading activity</p>
                       </div>
                       <Switch
-                        checked={notifications.dailyReports}
-                        onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, dailyReports: checked }))}
+                        checked={settings.notifications.dailyReports}
+                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, dailyReports: checked } })}
                       />
                     </div>
                     
@@ -1200,8 +1198,8 @@ export default function Settings() {
                         <p className="text-sm text-muted-foreground">Weekly analysis of your trading performance</p>
                       </div>
                       <Switch
-                        checked={notifications.weeklyReports}
-                        onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, weeklyReports: checked }))}
+                        checked={settings.notifications.weeklyReports}
+                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, weeklyReports: checked } })}
                       />
                     </div>
                     
@@ -1211,8 +1209,8 @@ export default function Settings() {
                         <p className="text-sm text-muted-foreground">Alerts when approaching risk limits</p>
                       </div>
                       <Switch
-                        checked={notifications.riskAlerts}
-                        onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, riskAlerts: checked }))}
+                        checked={settings.notifications.riskAlerts}
+                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, riskAlerts: checked } })}
                       />
                     </div>
                   </div>
