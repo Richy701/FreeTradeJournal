@@ -54,6 +54,29 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 
+// Custom CSS to force override orange borders
+const themeCardStyles = `
+.theme-card-override {
+  border: 2px solid rgb(var(--border)) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.theme-card-override:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.theme-card-override:hover {
+  outline: none !important;
+}
+.theme-card-override:active {
+  outline: none !important;
+}
+.theme-card-override.selected {
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+`;
+
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors } = useThemePresets();
@@ -233,6 +256,7 @@ export default function Settings() {
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: themeCardStyles }} />
       <SiteHeader />
       <div className="min-h-screen bg-background">
         <div className="w-full px-6 md:px-12 py-8 mx-auto" style={{maxWidth: '1200px'}}>
@@ -598,18 +622,15 @@ export default function Settings() {
                           onClick={() => setColorTheme(key)}
                           tabIndex={0}
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full cursor-pointer focus:outline-none"
+                          className={`theme-card-override ${currentTheme === key ? 'selected' : ''} group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full cursor-pointer`}
                           style={{
                             background: currentTheme === key 
                               ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
                               : 'transparent',
-                            border: currentTheme === key 
-                              ? `2px solid ${preset.colors.primary}40`
-                              : '2px solid rgb(var(--border))',
-                            boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none',
-                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)',
-                            outline: 'none !important',
-                            WebkitTapHighlightColor: 'transparent'
+                            borderColor: currentTheme === key 
+                              ? `${preset.colors.primary}40`
+                              : 'rgb(var(--border))',
+                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)'
                           }}
                         >
                           <div className="space-y-4">
