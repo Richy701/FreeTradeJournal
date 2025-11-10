@@ -596,7 +596,7 @@ export default function Settings() {
                         <button
                           key={key}
                           onClick={() => setColorTheme(key)}
-                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full"
+                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full focus:outline-none focus:ring-0 focus-visible:ring-0 ring-0"
                           style={{
                             background: currentTheme === key 
                               ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
@@ -604,16 +604,10 @@ export default function Settings() {
                             border: currentTheme === key 
                               ? `2px solid ${preset.colors.primary}40`
                               : '2px solid rgb(var(--border))',
-                            outline: 'none',
-                            boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none',
-                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)',
-                            // Force override all ring and focus styles
-                            '--tw-ring-shadow': 'none !important',
-                            '--tw-ring-offset-shadow': 'none !important',
-                            '--tw-ring-opacity': '0 !important',
-                            '--tw-ring-color': 'transparent !important'
+                            outline: 'none !important',
+                            boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none !important',
+                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)'
                           }}
-                          onFocus={(e) => e.target.style.boxShadow = currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none'}
                           >
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
