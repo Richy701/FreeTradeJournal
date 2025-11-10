@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faList, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
@@ -39,6 +40,7 @@ interface DataTableProps {
 export function DataTable({ data }: DataTableProps) {
   // Get theme colors and demo data
   const { themeColors } = useThemePresets()
+  const { formatCurrency } = useSettings()
   const { getTrades } = useDemoData()
   
   // Get trades from demo data or localStorage
@@ -51,12 +53,7 @@ export function DataTable({ data }: DataTableProps) {
       })).sort((a: Trade, b: Trade) => b.exitTime.getTime() - a.exitTime.getTime()) // Sort by most recent first
   }, [getTrades])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
-  }
+  // Remove local formatCurrency - using from settings context
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -123,7 +120,7 @@ export function DataTable({ data }: DataTableProps) {
                         className="font-semibold"
                         style={{color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss}}
                       >
-                        {trade.pnl >= 0 ? '+' : ''}{formatCurrency(trade.pnl)}
+                        {formatCurrency(trade.pnl, true)}
                       </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground font-medium">{formatDate(trade.exitTime)}</TableCell>

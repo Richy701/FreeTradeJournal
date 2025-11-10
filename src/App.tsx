@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
 import { AccountProvider } from '@/contexts/account-context';
+import { SettingsProvider } from '@/contexts/settings-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
@@ -44,7 +45,8 @@ function App() {
       <ThemePresetsProvider>
         <AuthProvider>
           <AccountProvider>
-            <Router>
+            <SettingsProvider>
+              <Router>
             <SEOMeta />
             <StructuredData />
             <Toaster 
@@ -97,6 +99,7 @@ function App() {
             </Suspense>
             </Router>
             <Analytics />
+            </SettingsProvider>
           </AccountProvider>
         </AuthProvider>
       </ThemePresetsProvider>

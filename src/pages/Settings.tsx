@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useSettings } from '@/contexts/settings-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,28 +58,13 @@ export default function Settings() {
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors } = useThemePresets();
   const { logout, user } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
+  const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
   const { getNotificationSettings, updateNotificationSettings } = useEmailNotifications();
   const userStorage = useUserStorage();
   const navigate = useNavigate();
-  const [defaultCommission, setDefaultCommission] = useState<string>('0');
-  const [currency, setCurrency] = useState<string>(DEFAULT_VALUES.CURRENCY);
-  const [timezone, setTimezone] = useState<string>(DEFAULT_VALUES.TIMEZONE);
-  const [riskPerTrade, setRiskPerTrade] = useState<string>(DEFAULT_VALUES.RISK_PER_TRADE.toString());
-  const [accountSize, setAccountSize] = useState<string>(DEFAULT_VALUES.STARTING_BALANCE.toString());
-  const [notifications, setNotifications] = useState({
-    tradeAlerts: true,
-    dailyReports: false,
-    weeklyReports: true,
-    riskAlerts: true
-  });
+  const [saved, setSaved] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(getNotificationSettings());
   const [isTestingEmail, setIsTestingEmail] = useState(false);
-  const [displaySettings, setDisplaySettings] = useState({
-    showPnlAsPercentage: false,
-    hideSmallTrades: false,
-    defaultChartPeriod: '1M'
-  });
-  const [saved, setSaved] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [accountForm, setAccountForm] = useState({
     name: '',
@@ -91,40 +77,10 @@ export default function Settings() {
   const [editingAccount, setEditingAccount] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<TradingAccount | null>(null);
 
-  useEffect(() => {
-    const savedSettings = userStorage.getItem('settings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      setDefaultCommission(settings.defaultCommission || '0');
-      setCurrency(settings.currency || DEFAULT_VALUES.CURRENCY);
-      setTimezone(settings.timezone || DEFAULT_VALUES.TIMEZONE);
-      setRiskPerTrade(settings.riskPerTrade || DEFAULT_VALUES.RISK_PER_TRADE.toString());
-      setAccountSize(settings.accountSize || DEFAULT_VALUES.STARTING_BALANCE.toString());
-      setNotifications(settings.notifications || {
-        tradeAlerts: true,
-        dailyReports: false,
-        weeklyReports: true,
-        riskAlerts: true
-      });
-      setDisplaySettings(settings.displaySettings || {
-        showPnlAsPercentage: false,
-        hideSmallTrades: false,
-        defaultChartPeriod: '1M'
-      });
-    }
-  }, []);
+  // No need to load settings from localStorage anymore - using context
 
   const saveSettings = () => {
-    const settings = {
-      defaultCommission,
-      currency,
-      timezone,
-      riskPerTrade,
-      accountSize,
-      notifications,
-      displaySettings
-    };
-    userStorage.setItem('settings', JSON.stringify(settings));
+    // Settings are automatically saved via context
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -947,8 +903,8 @@ export default function Settings() {
                         <Input
                           type="number"
                           step="1000"
-                          value={accountSize}
-                          onChange={(e) => setAccountSize(e.target.value)}
+                          value={settings.accountSize}
+                          onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })}
                           placeholder="10000"
                           className="pl-8"
                         />
@@ -981,7 +937,7 @@ export default function Settings() {
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Total P&L</p>
                             <p className={`text-2xl font-bold mt-2 ${stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              {stats.totalPnL >= 0 ? '+' : ''}{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{Math.abs(stats.totalPnL).toFixed(2)}
+                              {formatCurrency(stats.totalPnL, true)}
                             </p>
                           </div>
                           <div className={`rounded-lg p-2 ${stats.totalPnL >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
@@ -1076,19 +1032,19 @@ export default function Settings() {
                         <p className="text-xs font-medium text-muted-foreground">This Month</p>
                         <p className="text-xl font-bold">{stats.thisMonth}</p>
                         <p className="text-xs text-muted-foreground">
-                          P&L: {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.monthlyPnL.toFixed(2)}
+                          P&L: {formatCurrency(stats.monthlyPnL, true)}
                         </p>
                       </div>
                       <div className="space-y-2 p-4 rounded-lg bg-muted/30">
                         <p className="text-xs font-medium text-muted-foreground">Avg Win</p>
                         <p className="text-xl font-bold text-green-500">
-                          +{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.avgWin.toFixed(2)}
+                          {formatCurrency(stats.avgWin, true)}
                         </p>
                       </div>
                       <div className="space-y-2 p-4 rounded-lg bg-muted/30">
                         <p className="text-xs font-medium text-muted-foreground">Avg Loss</p>
                         <p className="text-xl font-bold text-red-500">
-                          -{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.avgLoss.toFixed(2)}
+                          {formatCurrency(-stats.avgLoss, true)}
                         </p>
                       </div>
                     </div>
@@ -1103,7 +1059,7 @@ export default function Settings() {
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Best Trade</p>
                             <p className="text-lg font-bold text-green-500">
-                              +{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.bestTrade.toFixed(2)}
+                              {formatCurrency(stats.bestTrade, true)}
                             </p>
                           </div>
                         </div>
@@ -1116,7 +1072,7 @@ export default function Settings() {
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Worst Trade</p>
                             <p className="text-lg font-bold text-red-500">
-                              {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.worstTrade.toFixed(2)}
+                              {formatCurrency(stats.worstTrade, true)}
                             </p>
                           </div>
                         </div>
@@ -1165,12 +1121,12 @@ export default function Settings() {
                         <div className="flex justify-between text-sm">
                           <span>Max Risk Amount:</span>
                           <span className="font-medium">
-                            ${((parseFloat(accountSize) * parseFloat(riskPerTrade)) / 100).toFixed(2)}
+                            {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm mt-2">
                           <span>Account Size:</span>
-                          <span className="font-medium">${parseFloat(accountSize).toLocaleString()}</span>
+                          <span className="font-medium">{formatCurrency(settings.accountSize, false)}</span>
                         </div>
                       </div>
                     </div>

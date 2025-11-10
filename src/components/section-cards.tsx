@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
@@ -46,6 +47,7 @@ interface Trade {
 export function SectionCards() {
   // Get theme colors and demo data
   const { themeColors } = useThemePresets()
+  const { formatCurrency: formatCurrencyFromSettings } = useSettings()
   const { getTrades } = useDemoData()
   
   // Get trades from demo data or localStorage
@@ -97,12 +99,8 @@ export function SectionCards() {
     }
   }, [trades])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
-  }
+  // Use formatCurrency from settings context
+  const formatCurrency = (amount: number) => formatCurrencyFromSettings(amount, true)
 
   const formatPercentage = (value: number) => {
     return `${value.toFixed(1)}%`
