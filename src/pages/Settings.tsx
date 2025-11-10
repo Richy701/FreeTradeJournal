@@ -235,63 +235,94 @@ export default function Settings() {
       <SiteHeader />
       <div className="min-h-screen bg-background">
         <div className="w-full px-6 md:px-12 py-8 mx-auto" style={{maxWidth: '1200px'}}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
-            <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">Settings</h1>
-              <p className="text-muted-foreground/85 text-sm sm:text-base md:text-lg leading-[1.6]">Manage your trading preferences and account settings</p>
-            </div>
-            <div className="flex gap-3">
-              <Badge variant="secondary" className="px-3 py-1.5 text-sm font-semibold text-muted-foreground">{stats.total} Total Trades</Badge>
-              <Badge variant="outline" className="px-3 py-1.5 text-sm font-semibold text-muted-foreground">{stats.thisMonth} This Month</Badge>
+          {/* Animated Header with Gradient Background */}
+          <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8 border border-primary/20 shadow-xl">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-pulse delay-1000" />
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent">
+                    Settings
+                  </h1>
+                  <p className="text-muted-foreground text-base md:text-lg mt-2 max-w-2xl">
+                    Personalize your trading experience and manage your preferences
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Badge className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-green-500/20 to-green-600/20 border-green-500/30 backdrop-blur-sm">
+                    <FontAwesomeIcon icon={faChartLine} className="mr-2 h-3 w-3 text-green-500" />
+                    {stats.total} Total Trades
+                  </Badge>
+                  <Badge className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-blue-500/20 to-blue-600/20 border-blue-500/30 backdrop-blur-sm">
+                    <FontAwesomeIcon icon={faClock} className="mr-2 h-3 w-3 text-blue-500" />
+                    {stats.thisMonth} This Month
+                  </Badge>
+                </div>
+              </div>
             </div>
           </div>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto sm:h-12 p-1 bg-muted/50 rounded-lg">
-              <TabsTrigger value="general" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
-                <FontAwesomeIcon icon={faPalette} className="h-4 w-4" />
-                General
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto p-2 bg-gradient-to-br from-muted/30 to-muted/50 backdrop-blur-sm rounded-xl border border-border/50">
+              <TabsTrigger value="general" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
+                <FontAwesomeIcon icon={faPalette} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
+                <span className="relative">General</span>
               </TabsTrigger>
-              <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
-                <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" />
-                Accounts
+              <TabsTrigger value="accounts" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
+                <FontAwesomeIcon icon={faBuilding} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
+                <span className="relative">Accounts</span>
               </TabsTrigger>
-              <TabsTrigger value="trading" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
-                <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
-                Trading
+              <TabsTrigger value="trading" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
+                <FontAwesomeIcon icon={faChartLine} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
+                <span className="relative">Trading</span>
               </TabsTrigger>
-              <TabsTrigger value="risk" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
-                <FontAwesomeIcon icon={faShield} className="h-4 w-4" />
-                Risk
+              <TabsTrigger value="risk" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
+                <FontAwesomeIcon icon={faShield} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
+                <span className="relative">Risk</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
-                <FontAwesomeIcon icon={faBell} className="h-4 w-4" />
-                Alerts
+              <TabsTrigger value="notifications" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
+                <FontAwesomeIcon icon={faBell} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
+                <span className="relative">Alerts</span>
               </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground transition-all">
-                <FontAwesomeIcon icon={faDatabase} className="h-4 w-4" />
-                Data
+              <TabsTrigger value="data" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
+                <FontAwesomeIcon icon={faDatabase} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
+                <span className="relative">Data</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="general" className="mt-6">
-              <div className="space-y-6">
-                <Card className="border-border/50 shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faPalette} className="h-5 w-5" />
-                      Appearance & Localization
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground/85 leading-[1.6]">
-                      Customize your trading journal appearance and regional settings
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-8 pt-6">
+            <TabsContent value="general" className="mt-6 space-y-6">
+              {/* Main Appearance Card */}
+              <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
+                <CardHeader className="relative pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
+                      <FontAwesomeIcon icon={faPalette} className="h-5 w-5 text-primary" />
+                    </div>
+                    Appearance & Localization
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground leading-relaxed">
+                    Customize your trading journal appearance and regional settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="relative space-y-8 pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-2">
-                        <Label>Theme</Label>
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
+                          <FontAwesomeIcon icon={faSun} className="h-4 w-4 text-primary" />
+                          Theme
+                        </Label>
                         <Select value={theme} onValueChange={setTheme}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-200">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -320,10 +351,13 @@ export default function Settings() {
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Currency</Label>
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
+                          <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4 text-primary" />
+                          Currency
+                        </Label>
                         <Select value={settings.currency} onValueChange={(value) => updateSettings({ currency: value })}>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-12 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-200">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1443,16 +1477,24 @@ export default function Settings() {
           </div>
             </TabsContent>
             
-            <div className="flex justify-end pt-8">
-              <Button onClick={saveSettings} size="lg" className="px-8 py-3 font-semibold">
+            <div className="flex justify-center pt-8">
+              <Button 
+                onClick={saveSettings} 
+                size="lg" 
+                className="relative px-12 py-4 font-bold text-lg bg-gradient-to-r from-primary via-primary/90 to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              >
                 {saved ? (
-                  <>
-                    <FontAwesomeIcon icon={faCheck} className="mr-2 h-4 w-4" />
+                  <div className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faCheck} className="h-5 w-5 text-green-400 animate-pulse" />
                     Settings Saved!
-                  </>
+                  </div>
                 ) : (
-                  'Save All Settings'
+                  <div className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faCheck} className="h-5 w-5" />
+                    Save All Settings
+                  </div>
                 )}
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-pulse opacity-30" />
               </Button>
             </div>
           </Tabs>
