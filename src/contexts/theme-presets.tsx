@@ -56,7 +56,7 @@ const themePresets: Record<string, ThemePreset> = {
     name: 'Deep Yellow',
     colors: {
       profit: '#fbbf24', // yellow-400 - bright deep yellow for profits
-      loss: '#1f2937',   // gray-800 - deep black/dark gray for losses  
+      loss: '#374151',   // gray-700 - darker but still visible in light mode
       primary: '#f59e0b' // yellow-500 - rich yellow primary
     }
   },
@@ -93,7 +93,7 @@ const themePresets: Record<string, ThemePreset> = {
     name: 'Crimson',
     colors: {
       profit: '#fcd34d', // amber-300 - bright gold
-      loss: '#991b1b',   // red-800 - deep crimson
+      loss: '#dc2626',   // red-600 - crimson but brighter than red-800
       primary: '#dc2626' // red-600 - bold crimson
     }
   },
@@ -208,8 +208,59 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     
     // For certain themes that have visibility issues, apply adjustments
     if (isDarkMode) {
-      // In dark mode, ensure colors are bright enough
-      return baseColors
+      // In dark mode, ensure colors are bright enough and visible
+      if (currentTheme === 'monochrome') {
+        // Deep Yellow theme adjustments for dark mode
+        return {
+          ...baseColors,
+          loss: '#ef4444', // red-500 - bright red instead of dark gray for visibility
+          profit: '#fcd34d', // amber-300 - brighter yellow for better contrast
+          primary: '#f59e0b' // amber-500 - maintain bright primary
+        }
+      }
+      
+      // Check for other themes that might have dark colors that become invisible
+      const adjustedColors = { ...baseColors }
+      
+      // Convert colors to RGB to check brightness
+      const hexToRgb = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16)
+        const g = parseInt(hex.slice(3, 5), 16)
+        const b = parseInt(hex.slice(5, 7), 16)
+        return { r, g, b }
+      }
+      
+      const getBrightness = (hex: string) => {
+        const { r, g, b } = hexToRgb(hex)
+        return (r * 299 + g * 587 + b * 114) / 1000
+      }
+      
+      // If any color is too dark (brightness < 100), make it brighter
+      if (getBrightness(adjustedColors.loss) < 100) {
+        // Make loss color brighter for dark mode
+        if (adjustedColors.loss.startsWith('#1f') || adjustedColors.loss.startsWith('#0f')) {
+          adjustedColors.loss = '#ef4444' // red-500
+        }
+      }
+      
+      if (getBrightness(adjustedColors.profit) < 80) {
+        // Ensure profit color is visible
+        adjustedColors.profit = adjustedColors.profit.replace('#', '#').substring(0, 7)
+        if (getBrightness(adjustedColors.profit) < 80) {
+          const { r, g, b } = hexToRgb(adjustedColors.profit)
+          const factor = 1.5
+          adjustedColors.profit = `#${Math.min(255, Math.round(r * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(g * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(b * factor)).toString(16).padStart(2, '0')}`
+        }
+      }
+      
+      if (getBrightness(adjustedColors.primary) < 80) {
+        // Ensure primary color is visible
+        const { r, g, b } = hexToRgb(adjustedColors.primary)
+        const factor = 1.3
+        adjustedColors.primary = `#${Math.min(255, Math.round(r * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(g * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(b * factor)).toString(16).padStart(2, '0')}`
+      }
+      
+      return adjustedColors
     } else {
       // In light mode, ensure colors have enough contrast
       return baseColors
