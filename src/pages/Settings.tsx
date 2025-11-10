@@ -596,7 +596,9 @@ export default function Settings() {
                         <div
                           key={key}
                           onClick={() => setColorTheme(key)}
-                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full cursor-pointer"
+                          tabIndex={0}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
+                          className="group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full cursor-pointer focus:outline-none"
                           style={{
                             background: currentTheme === key 
                               ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
@@ -605,7 +607,9 @@ export default function Settings() {
                               ? `2px solid ${preset.colors.primary}40`
                               : '2px solid rgb(var(--border))',
                             boxShadow: currentTheme === key ? '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' : 'none',
-                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)'
+                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)',
+                            outline: 'none !important',
+                            WebkitTapHighlightColor: 'transparent'
                           }}
                         >
                           <div className="space-y-4">
