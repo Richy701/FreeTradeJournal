@@ -50,10 +50,7 @@ import {
   faPercent,
   faMedal,
   faChartSimple,
-  faChartBar,
-  faGraduationCap,
-  faBalanceScale,
-  faRocket
+  faChartBar
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 
@@ -1423,133 +1420,52 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="risk" className="mt-6 space-y-8">
-              {/* Modern Risk Management Hero Section */}
-              <div className="relative overflow-hidden rounded-3xl p-8 border shadow-2xl" 
+            <TabsContent value="risk" className="mt-6 space-y-6">
+              {/* Risk Management Header */}
+              <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
                    style={{ 
-                     background: `linear-gradient(135deg, ${themeColors.primary}15 0%, ${themeColors.profit}08 50%, transparent 100%)`,
-                     borderColor: `${themeColors.primary}30`
+                     background: `linear-gradient(135deg, ${themeColors.loss}10 0%, ${themeColors.loss}05 50%, transparent 100%)`,
+                     borderColor: `${themeColors.loss}20`
                    }}>
-                <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl animate-pulse" 
-                     style={{ backgroundColor: `${themeColors.primary}20` }} />
-                <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full blur-2xl animate-pulse delay-1000" 
-                     style={{ backgroundColor: `${themeColors.profit}15` }} />
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
+                     style={{ backgroundColor: `${themeColors.loss}10` }} />
+                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
+                     style={{ backgroundColor: `${themeColors.primary}10` }} />
                 <div className="relative z-10">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-6">
-                      <div className="p-4 rounded-2xl shadow-xl relative overflow-hidden" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}25, ${themeColors.profit}20)` }}>
-                        <FontAwesomeIcon icon={faShield} className="h-8 w-8 relative z-10" style={{ color: themeColors.primary }} />
-                        <div className="absolute inset-0 bg-white/10 rounded-2xl"></div>
-                      </div>
-                      <div>
-                        <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                          Risk Management Center
-                        </h2>
-                        <p className="text-lg text-muted-foreground mt-2">
-                          Professional tools to protect and grow your capital
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl shadow-lg" 
+                         style={{ background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.primary}20)` }}>
+                      <FontAwesomeIcon icon={faShield} className="h-6 w-6" style={{ color: themeColors.loss }} />
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-2 px-4 py-2 rounded-full" 
-                           style={{ backgroundColor: `${themeColors.profit}20` }}>
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.profit }}></div>
-                        <span className="text-sm font-medium">Capital Protected</span>
-                      </div>
-                      <div className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                        {formatCurrency(settings.accountSize, false)}
-                      </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">Risk Management</h3>
+                      <p className="text-muted-foreground">Protect your capital with smart position sizing</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                {[
-                  { 
-                    label: 'Risk per Trade', 
-                    value: `${settings.riskPerTrade}%`, 
-                    color: themeColors.primary,
-                    icon: faPercent,
-                    subtitle: `${formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)} max loss`
-                  },
-                  { 
-                    label: 'Capital Protected', 
-                    value: formatCurrency(settings.accountSize, false), 
-                    color: themeColors.profit,
-                    icon: faDollarSign,
-                    subtitle: 'Total account size'
-                  },
-                  { 
-                    label: 'Risk Ratio', 
-                    value: `1:${Math.round(100 / settings.riskPerTrade)}`, 
-                    color: themeColors.loss,
-                    icon: faCalculator,
-                    subtitle: 'Reward to risk ratio'
-                  },
-                  { 
-                    label: 'Safety Trades', 
-                    value: Math.round(100 / settings.riskPerTrade), 
-                    color: themeColors.primary,
-                    icon: faShield,
-                    subtitle: 'Trades to lose account'
-                  }
-                ].map((stat, index) => (
-                  <div key={index} 
-                       className="relative overflow-hidden rounded-2xl p-6 border shadow-lg group hover:scale-105 transition-all duration-300"
-                       style={{ 
-                         background: `linear-gradient(135deg, ${stat.color}08, transparent 70%)`,
-                         borderColor: `${stat.color}20`
-                       }}>
-                    <div className="absolute top-0 right-0 w-16 h-16 rounded-full blur-xl opacity-50" 
-                         style={{ backgroundColor: stat.color }} />
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-3">
-                        <FontAwesomeIcon icon={stat.icon} className="h-5 w-5" style={{ color: stat.color }} />
-                        <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: stat.color }}></div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Risk Parameters Card */}
+                <Card className="lg:col-span-2 relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-muted/20">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
+                  <CardHeader className="relative">
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/20">
+                        <FontAwesomeIcon icon={faCalculator} className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="space-y-1">
-                        <div className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
-                        <div className="text-sm font-medium text-foreground">{stat.label}</div>
-                        <div className="text-xs text-muted-foreground">{stat.subtitle}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* Enhanced Risk Configuration */}
-                <Card className="xl:col-span-2 relative overflow-hidden border shadow-xl" 
-                      style={{ 
-                        background: `linear-gradient(135deg, ${themeColors.primary}05, ${themeColors.profit}03, transparent 70%)`,
-                        borderColor: `${themeColors.primary}20`
-                      }}>
-                  <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-30" 
-                       style={{ backgroundColor: themeColors.primary }} />
-                  <CardHeader className="relative pb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl shadow-lg" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.profit}15)` }}>
-                        <FontAwesomeIcon icon={faCalculator} className="h-6 w-6" style={{ color: themeColors.primary }} />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">Risk Configuration</CardTitle>
-                        <CardDescription className="text-base">Fine-tune your risk parameters for optimal capital protection</CardDescription>
-                      </div>
-                    </div>
+                      Risk Parameters
+                    </CardTitle>
+                    <CardDescription>Configure your risk tolerance and position sizing</CardDescription>
                   </CardHeader>
-                  <CardContent className="relative space-y-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      {/* Risk Percentage */}
-                      <div className="space-y-4">
-                        <Label className="flex items-center gap-3 text-base font-bold">
+                  <CardContent className="relative space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
                           <FontAwesomeIcon icon={faPercent} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          Risk per Trade
+                          Risk per Trade (%)
                         </Label>
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           <div className="relative">
                             <Input
                               type="number"
@@ -1558,178 +1474,102 @@ export default function Settings() {
                               max="10"
                               value={settings.riskPerTrade}
                               onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })}
-                              className="h-16 pr-16 text-xl font-bold bg-background/80 backdrop-blur-sm border-2 transition-all duration-300 focus:scale-105"
-                              style={{ borderColor: `${themeColors.primary}30` }}
+                              className="h-12 pr-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-all"
                             />
-                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-xl font-bold" style={{ color: themeColors.primary }}>%</div>
+                            <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-muted-foreground">%</span>
                           </div>
-                          
-                          {/* Enhanced Risk Level Indicator */}
-                          <div className="space-y-3">
-                            <div className="flex justify-between text-sm font-medium">
-                              <span style={{ color: themeColors.profit }}>Conservative</span>
-                              <span style={{ color: themeColors.loss }}>Aggressive</span>
+                          {/* Risk Level Indicator */}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Conservative</span>
+                              <span>Aggressive</span>
                             </div>
-                            <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden backdrop-blur-sm">
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
                               <div 
-                                className="h-full transition-all duration-700 rounded-full relative overflow-hidden" 
+                                className="h-full transition-all duration-500 rounded-full" 
                                 style={{ 
                                   width: `${Math.min((settings.riskPerTrade / 5) * 100, 100)}%`,
-                                  background: `linear-gradient(90deg, ${themeColors.profit}, ${themeColors.primary}, ${themeColors.loss})`
+                                  backgroundColor: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss
                                 }}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-full"></div>
-                              </div>
+                              />
                             </div>
-                            <div className="text-center">
-                              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold"
-                                   style={{ 
-                                     backgroundColor: (settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss) + '20',
-                                     color: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss
-                                   }}>
-                                <FontAwesomeIcon icon={settings.riskPerTrade <= 2 ? faShield : settings.riskPerTrade <= 4 ? faExclamationTriangle : faExclamationTriangle} className="h-3 w-3" />
-                                {settings.riskPerTrade <= 2 ? 'Conservative (Recommended)' : 
-                                 settings.riskPerTrade <= 4 ? 'Moderate Risk' : 
-                                 'High Risk Zone'}
-                              </div>
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {settings.riskPerTrade <= 2 ? '✅ Conservative (Recommended)' : 
+                               settings.riskPerTrade <= 4 ? '⚠️ Moderate Risk' : 
+                               '🔥 High Risk'}
+                            </p>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Account Size */}
-                      <div className="space-y-4">
-                        <Label className="flex items-center gap-3 text-base font-bold">
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2 text-sm font-semibold">
                           <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4" style={{ color: themeColors.profit }} />
-                          Account Balance
+                          Account Size
                         </Label>
-                        <div className="space-y-4">
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              step="1000"
-                              value={settings.accountSize}
-                              onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })}
-                              placeholder="10000"
-                              className="h-16 pl-16 text-xl font-bold bg-background/80 backdrop-blur-sm border-2 transition-all duration-300 focus:scale-105"
-                              style={{ borderColor: `${themeColors.profit}30` }}
-                            />
-                            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl font-bold" style={{ color: themeColors.profit }}>
-                              {getCurrencySymbol()}
-                            </div>
-                          </div>
-                          <div className="p-4 rounded-xl border" 
-                               style={{ 
-                                 background: `linear-gradient(135deg, ${themeColors.profit}10, transparent)`,
-                                 borderColor: `${themeColors.profit}20`
-                               }}>
-                            <div className="text-sm text-muted-foreground mb-1">Your protected capital</div>
-                            <div className="text-lg font-bold" style={{ color: themeColors.profit }}>
-                              Maximum loss per trade: {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
-                            </div>
-                          </div>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            step="1000"
+                            value={settings.accountSize}
+                            onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })}
+                            placeholder="10000"
+                            className="h-12 pl-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-all"
+                          />
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-muted-foreground">{getCurrencySymbol()}</span>
                         </div>
+                        <p className="text-sm text-muted-foreground">Your total trading capital</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Advanced Risk Analytics */}
-                <Card className="relative overflow-hidden border shadow-xl" 
-                      style={{ 
-                        background: `linear-gradient(135deg, ${themeColors.loss}05, ${themeColors.primary}05, transparent)`,
-                        borderColor: `${themeColors.loss}20`
-                      }}>
-                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-40" 
-                       style={{ backgroundColor: themeColors.loss }} />
-                  <CardHeader className="relative pb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl shadow-lg" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.primary}15)` }}>
-                        <FontAwesomeIcon icon={faChartLine} className="h-6 w-6" style={{ color: themeColors.loss }} />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">Risk Analytics</CardTitle>
-                        <CardDescription className="text-base">Real-time risk calculations and safety metrics</CardDescription>
-                      </div>
-                    </div>
+                {/* Risk Calculator Card */}
+                <Card className="relative overflow-hidden border-border/50 shadow-xl" 
+                      style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, ${themeColors.primary}05)` }}>
+                  <div className="absolute top-0 left-0 w-20 h-20 rounded-full blur-xl" 
+                       style={{ backgroundColor: `${themeColors.profit}10` }} />
+                  <CardHeader className="relative">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.profit }} />
+                      Risk Calculator
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="relative space-y-6">
-                    <div className="space-y-6">
-                      {/* Risk Meter */}
-                      <div className="text-center space-y-4">
-                        <div className="text-sm font-medium text-muted-foreground">Current Risk Level</div>
-                        <div className="relative w-32 h-32 mx-auto">
-                          <svg className="transform -rotate-90 w-32 h-32">
-                            <circle
-                              cx="64"
-                              cy="64"
-                              r="56"
-                              stroke="currentColor"
-                              strokeWidth="8"
-                              fill="transparent"
-                              className="text-muted/30"
-                            />
-                            <circle
-                              cx="64"
-                              cy="64"
-                              r="56"
-                              strokeWidth="8"
-                              fill="transparent"
-                              strokeLinecap="round"
-                              style={{
-                                stroke: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss,
-                                strokeDasharray: `${Math.min((settings.riskPerTrade / 5) * 351.86, 351.86)} 351.86`
-                              }}
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold" style={{ color: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss }}>
-                                {settings.riskPerTrade}%
-                              </div>
-                              <div className="text-xs text-muted-foreground">Risk</div>
-                            </div>
-                          </div>
+                  <CardContent className="relative space-y-4">
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl border" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.profit}05)`,
+                             borderColor: `${themeColors.profit}20`
+                           }}>
+                        <div className="text-sm text-muted-foreground mb-1">Max Risk per Trade</div>
+                        <div className="text-xl font-bold" style={{ color: themeColors.profit }}>
+                          {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
                         </div>
-                        <div className="text-lg font-bold" style={{ color: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss }}>
-                          {settings.riskPerTrade <= 2 ? 'Safe Zone' : settings.riskPerTrade <= 4 ? 'Moderate' : 'Danger Zone'}
+                      </div>
+                      
+                      <div className="p-4 rounded-xl border" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.primary}05)`,
+                             borderColor: `${themeColors.primary}20`
+                           }}>
+                        <div className="text-sm text-muted-foreground mb-1">Account Balance</div>
+                        <div className="text-xl font-bold" style={{ color: themeColors.primary }}>
+                          {formatCurrency(settings.accountSize, false)}
                         </div>
                       </div>
 
-                      {/* Key Metrics */}
-                      <div className="grid grid-cols-1 gap-4">
-                        <div className="p-4 rounded-xl border text-center" 
-                             style={{ 
-                               background: `linear-gradient(135deg, ${themeColors.profit}10, transparent)`,
-                               borderColor: `${themeColors.profit}20`
-                             }}>
-                          <div className="text-sm text-muted-foreground mb-1">Max Loss per Trade</div>
-                          <div className="text-xl font-bold" style={{ color: themeColors.profit }}>
-                            {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
-                          </div>
+                      <div className="p-4 rounded-xl border" 
+                           style={{ 
+                             background: `linear-gradient(135deg, ${themeColors.loss}10, ${themeColors.loss}05)`,
+                             borderColor: `${themeColors.loss}20`
+                           }}>
+                        <div className="text-sm text-muted-foreground mb-1">Risk Ratio</div>
+                        <div className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                          1:{Math.round(100 / settings.riskPerTrade)}
                         </div>
-
-                        <div className="p-4 rounded-xl border text-center" 
-                             style={{ 
-                               background: `linear-gradient(135deg, ${themeColors.loss}10, transparent)`,
-                               borderColor: `${themeColors.loss}20`
-                             }}>
-                          <div className="text-sm text-muted-foreground mb-1">Trades to Ruin</div>
-                          <div className="text-xl font-bold" style={{ color: themeColors.loss }}>
-                            {Math.round(100 / settings.riskPerTrade)}
-                          </div>
-                        </div>
-
-                        <div className="p-4 rounded-xl border text-center" 
-                             style={{ 
-                               background: `linear-gradient(135deg, ${themeColors.primary}10, transparent)`,
-                               borderColor: `${themeColors.primary}20`
-                             }}>
-                          <div className="text-sm text-muted-foreground mb-1">Recommended R:R</div>
-                          <div className="text-xl font-bold" style={{ color: themeColors.primary }}>
-                            1:{Math.max(2, Math.round(100 / settings.riskPerTrade / 20))}
-                          </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {Math.round(100 / settings.riskPerTrade)} trades to lose account
                         </div>
                       </div>
                     </div>
@@ -1737,100 +1577,105 @@ export default function Settings() {
                 </Card>
               </div>
 
-              {/* Professional Risk Guidelines */}
-              <Card className="relative overflow-hidden border shadow-2xl" 
-                    style={{ 
-                      background: `linear-gradient(135deg, ${themeColors.primary}08, ${themeColors.profit}05, transparent 70%)`,
-                      borderColor: `${themeColors.primary}20`
-                    }}>
-                <div className="absolute bottom-0 right-0 w-48 h-48 rounded-full blur-3xl opacity-20" 
-                     style={{ backgroundColor: themeColors.primary }} />
-                <CardHeader className="relative pb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl shadow-lg" 
-                         style={{ background: `linear-gradient(135deg, ${themeColors.primary}25, ${themeColors.profit}20)` }}>
-                      <FontAwesomeIcon icon={faGraduationCap} className="h-6 w-6" style={{ color: themeColors.primary }} />
+              {/* Enhanced Risk Guidelines */}
+              <Card className="relative overflow-hidden border-border/50 shadow-xl" 
+                    style={{ background: `linear-gradient(135deg, transparent, ${themeColors.primary}05)` }}>
+                <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full blur-3xl" 
+                     style={{ backgroundColor: `${themeColors.primary}05` }} />
+                <CardHeader className="relative">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.primary }} />
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">Professional Risk Guidelines</CardTitle>
-                      <CardDescription className="text-base">Industry-standard recommendations for different trading styles</CardDescription>
+                    Risk Guidelines & Tips
+                  </CardTitle>
+                  <CardDescription>Professional risk management recommendations</CardDescription>
+                </CardHeader>
+                <CardContent className="relative space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.profit}05)`,
+                           borderColor: `${themeColors.profit}20`
+                         }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.profit }}></div>
+                        <div className="font-bold" style={{ color: themeColors.profit }}>Conservative</div>
+                      </div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.profit }}>1-2%</div>
+                      <div className="text-sm text-muted-foreground">Perfect for beginners and steady growth</div>
+                    </div>
+                    
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.primary}05)`,
+                           borderColor: `${themeColors.primary}20`
+                         }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
+                        <div className="font-bold" style={{ color: themeColors.primary }}>Moderate</div>
+                      </div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.primary }}>2-3%</div>
+                      <div className="text-sm text-muted-foreground">For experienced traders</div>
+                    </div>
+                    
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.loss}15, ${themeColors.loss}08)`,
+                           borderColor: `${themeColors.loss}25`
+                         }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.loss }}></div>
+                        <div className="font-bold" style={{ color: themeColors.loss }}>Aggressive</div>
+                      </div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.loss }}>3-5%</div>
+                      <div className="text-sm text-muted-foreground">High risk, proven systems only</div>
+                    </div>
+                    
+                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
+                         style={{ 
+                           background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.loss}10)`,
+                           borderColor: `${themeColors.loss}30`
+                         }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: themeColors.loss }}></div>
+                        <div className="font-bold" style={{ color: themeColors.loss }}>Dangerous</div>
+                      </div>
+                      <div className="text-lg font-bold mb-1" style={{ color: themeColors.loss }}>5%+</div>
+                      <div className="text-sm text-muted-foreground">High blow-up risk</div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[
-                      {
-                        title: 'Conservative',
-                        range: '0.5-1%',
-                        color: themeColors.profit,
-                        icon: faShield,
-                        description: 'Beginners & capital preservation',
-                        features: ['Lower stress', 'Steady growth', 'High survivability']
-                      },
-                      {
-                        title: 'Moderate',
-                        range: '1-2%',
-                        color: themeColors.primary,
-                        icon: faBalanceScale,
-                        description: 'Experienced traders',
-                        features: ['Balanced approach', 'Good growth potential', 'Manageable risk']
-                      },
-                      {
-                        title: 'Aggressive',
-                        range: '2-3%',
-                        color: themeColors.loss,
-                        icon: faRocket,
-                        description: 'Expert traders only',
-                        features: ['High growth potential', 'Proven strategy required', 'Emotional control essential']
-                      },
-                      {
-                        title: 'Extreme',
-                        range: '3%+',
-                        color: themeColors.loss,
-                        icon: faExclamationTriangle,
-                        description: 'Professional prop traders',
-                        features: ['Maximum risk', 'Institutional backing', 'Not recommended for retail']
-                      }
-                    ].map((guide, index) => (
-                      <div key={index} 
-                           className="group relative overflow-hidden rounded-2xl p-6 border hover:scale-105 transition-all duration-300 cursor-pointer"
-                           style={{ 
-                             background: `linear-gradient(135deg, ${guide.color}10, ${guide.color}05, transparent 70%)`,
-                             borderColor: `${guide.color}25`
-                           }}>
-                        <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl opacity-30" 
-                             style={{ backgroundColor: guide.color }} />
-                        <div className="relative z-10 space-y-4">
-                          <div className="flex items-center justify-between">
-                            <FontAwesomeIcon icon={guide.icon} className="h-6 w-6" style={{ color: guide.color }} />
-                            <div className="px-3 py-1 rounded-full text-xs font-bold"
-                                 style={{ 
-                                   backgroundColor: guide.color + '20',
-                                   color: guide.color
-                                 }}>
-                              {guide.range}
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-lg font-bold mb-1" style={{ color: guide.color }}>{guide.title}</h4>
-                            <p className="text-sm text-muted-foreground mb-3">{guide.description}</p>
-                            <ul className="space-y-1">
-                              {guide.features.map((feature, idx) => (
-                                <li key={idx} className="text-xs text-muted-foreground flex items-center gap-2">
-                                  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: guide.color }}></div>
-                                  {feature}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
+                  
+                  <div className="p-4 rounded-xl border" 
+                       style={{ 
+                         background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.profit}10)`,
+                         borderColor: `${themeColors.primary}20`
+                       }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <FontAwesomeIcon icon={faMedal} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      <span className="font-bold" style={{ color: themeColors.primary }}>Pro Tips</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
+                        <span>Never risk more than you can afford to lose</span>
                       </div>
-                    ))}
+                      <div className="flex items-start gap-2">
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
+                        <span>Always use stop losses on every trade</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
+                        <span>Keep risk consistent across all trades</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="mt-1" style={{ color: themeColors.profit }}>✓</span>
+                        <span>Size positions based on distance to stop loss</span>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-
             </TabsContent>
 
             <TabsContent value="notifications">
