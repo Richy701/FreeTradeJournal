@@ -41,7 +41,14 @@ import {
   faYenSign,
   faCalculator,
   faBuilding,
-  faPencil
+  faPencil,
+  faTrophy,
+  faFire,
+  faArrowTrendUp,
+  faArrowTrendDown,
+  faPercent,
+  faMedal,
+  faChartSimple
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 
@@ -123,15 +130,82 @@ export default function Settings() {
   };
 
   const getTradeStats = () => {
-    const trades = JSON.parse(userStorage.getItem('trades') || '[]');
+    const trades = JSON.parse(userStorage.getItem('trades') || '[]')
+      .filter((t: any) => !activeAccount || t.accountId === activeAccount.id || (!t.accountId && activeAccount.id.includes('default')));
+    
+    const now = new Date();
+    const thisMonth = trades.filter((t: any) => {
+      const tradeDate = new Date(t.exitTime);
+      return tradeDate.getMonth() === now.getMonth() && tradeDate.getFullYear() === now.getFullYear();
+    });
+    
+    const winningTrades = trades.filter((t: any) => t.pnl > 0);
+    const losingTrades = trades.filter((t: any) => t.pnl < 0);
+    
+    const totalPnL = trades.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
+    const monthlyPnL = thisMonth.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
+    
+    const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0;
+    const avgWin = winningTrades.length > 0 
+      ? winningTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / winningTrades.length 
+      : 0;
+    const avgLoss = losingTrades.length > 0 
+      ? Math.abs(losingTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / losingTrades.length)
+      : 0;
+    const profitFactor = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0;
+    
+    // Calculate best and worst trades
+    const bestTrade = trades.length > 0 
+      ? Math.max(...trades.map((t: any) => t.pnl || 0))
+      : 0;
+    const worstTrade = trades.length > 0 
+      ? Math.min(...trades.map((t: any) => t.pnl || 0))
+      : 0;
+    
+    // Calculate streak
+    let currentStreak = 0;
+    let maxWinStreak = 0;
+    let maxLossStreak = 0;
+    let tempWinStreak = 0;
+    let tempLossStreak = 0;
+    
+    const sortedTrades = [...trades].sort((a: any, b: any) => 
+      new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime()
+    );
+    
+    for (const trade of sortedTrades) {
+      if (trade.pnl > 0) {
+        tempWinStreak++;
+        tempLossStreak = 0;
+        if (currentStreak >= 0) currentStreak++;
+        else currentStreak = 1;
+        maxWinStreak = Math.max(maxWinStreak, tempWinStreak);
+      } else if (trade.pnl < 0) {
+        tempLossStreak++;
+        tempWinStreak = 0;
+        if (currentStreak <= 0) currentStreak--;
+        else currentStreak = -1;
+        maxLossStreak = Math.max(maxLossStreak, tempLossStreak);
+      }
+    }
+    
     return {
       total: trades.length,
-      thisMonth: trades.filter((t: any) => {
-        const tradeDate = new Date(t.exitTime);
-        const now = new Date();
-        return tradeDate.getMonth() === now.getMonth() && tradeDate.getFullYear() === now.getFullYear();
-      }).length,
-      totalPnL: trades.reduce((sum: number, t: any) => sum + t.pnl, 0)
+      thisMonth: thisMonth.length,
+      totalPnL,
+      monthlyPnL,
+      winRate,
+      wins: winningTrades.length,
+      losses: losingTrades.length,
+      avgWin,
+      avgLoss,
+      profitFactor,
+      bestTrade,
+      worstTrade,
+      currentStreak,
+      maxWinStreak,
+      maxLossStreak,
+      accountName: activeAccount?.name || 'All Accounts'
     };
   };
 
@@ -889,21 +963,163 @@ export default function Settings() {
                   <Separator />
                   
                   <div className="space-y-6">
-                    <h4 className="text-lg font-semibold">Performance Summary</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="flex flex-col space-y-2 p-6 rounded-xl bg-muted/30 border border-border/50">
-                        <span className="text-sm font-semibold text-muted-foreground">Total Trades</span>
-                        <span className="text-3xl font-bold">{stats.total}</span>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold flex items-center gap-2">
+                        <FontAwesomeIcon icon={faChartSimple} className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        Performance Summary
+                      </h4>
+                      <Badge variant="outline" className="font-medium">
+                        {stats.accountName}
+                      </Badge>
+                    </div>
+                    
+                    {/* Main Performance Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Total P&L Card */}
+                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Total P&L</p>
+                            <p className={`text-2xl font-bold mt-2 ${stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {stats.totalPnL >= 0 ? '+' : ''}{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{Math.abs(stats.totalPnL).toFixed(2)}
+                            </p>
+                          </div>
+                          <div className={`rounded-lg p-2 ${stats.totalPnL >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                            <FontAwesomeIcon 
+                              icon={stats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown} 
+                              className={`h-5 w-5 ${stats.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-col space-y-2 p-6 rounded-xl bg-muted/30 border border-border/50">
-                        <span className="text-sm font-semibold text-muted-foreground">This Month</span>
-                        <span className="text-3xl font-bold">{stats.thisMonth}</span>
+
+                      {/* Win Rate Card */}
+                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Win Rate</p>
+                            <p className="text-2xl font-bold mt-2">{stats.winRate.toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {stats.wins}W / {stats.losses}L
+                            </p>
+                          </div>
+                          <div className="rounded-lg p-2" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                            <FontAwesomeIcon 
+                              icon={faPercent} 
+                              className="h-5 w-5"
+                              style={{ color: themeColors.primary }}
+                            />
+                          </div>
+                        </div>
+                        {/* Win rate progress bar */}
+                        <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full transition-all duration-500"
+                            style={{ 
+                              width: `${stats.winRate}%`,
+                              backgroundColor: stats.winRate >= 50 ? themeColors.profit : themeColors.loss
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="flex flex-col space-y-2 p-6 rounded-xl bg-muted/30 border border-border/50">
-                        <span className="text-sm font-semibold text-muted-foreground">Total P&L</span>
-                        <span className={`text-3xl font-bold ${stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          ${stats.totalPnL >= 0 ? '+' : ''}{stats.totalPnL.toFixed(2)}
-                        </span>
+
+                      {/* Profit Factor Card */}
+                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Profit Factor</p>
+                            <p className="text-2xl font-bold mt-2">
+                              {stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2)}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {stats.profitFactor > 1 ? 'Profitable' : stats.profitFactor === 0 ? 'No Data' : 'Unprofitable'}
+                            </p>
+                          </div>
+                          <div className={`rounded-lg p-2 ${stats.profitFactor > 1 ? 'bg-green-500/10' : 'bg-orange-500/10'}`}>
+                            <FontAwesomeIcon 
+                              icon={faTrophy} 
+                              className={`h-5 w-5 ${stats.profitFactor > 1 ? 'text-green-500' : 'text-orange-500'}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Current Streak Card */}
+                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
+                            <p className={`text-2xl font-bold mt-2 ${stats.currentStreak > 0 ? 'text-green-500' : stats.currentStreak < 0 ? 'text-red-500' : ''}`}>
+                              {Math.abs(stats.currentStreak)} {stats.currentStreak > 0 ? 'Wins' : stats.currentStreak < 0 ? 'Losses' : 'N/A'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Max: {stats.maxWinStreak}W / {stats.maxLossStreak}L
+                            </p>
+                          </div>
+                          <div className={`rounded-lg p-2 ${Math.abs(stats.currentStreak) >= 3 ? 'bg-orange-500/10' : 'bg-muted'}`}>
+                            <FontAwesomeIcon 
+                              icon={faFire} 
+                              className={`h-5 w-5 ${Math.abs(stats.currentStreak) >= 3 ? 'text-orange-500' : 'text-muted-foreground'}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="space-y-2 p-4 rounded-lg bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground">Total Trades</p>
+                        <p className="text-xl font-bold">{stats.total}</p>
+                      </div>
+                      <div className="space-y-2 p-4 rounded-lg bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground">This Month</p>
+                        <p className="text-xl font-bold">{stats.thisMonth}</p>
+                        <p className="text-xs text-muted-foreground">
+                          P&L: {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.monthlyPnL.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="space-y-2 p-4 rounded-lg bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground">Avg Win</p>
+                        <p className="text-xl font-bold text-green-500">
+                          +{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.avgWin.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="space-y-2 p-4 rounded-lg bg-muted/30">
+                        <p className="text-xs font-medium text-muted-foreground">Avg Loss</p>
+                        <p className="text-xl font-bold text-red-500">
+                          -{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.avgLoss.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Best/Worst Trade */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-green-500/5 to-green-500/10">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-lg p-2 bg-green-500/20">
+                            <FontAwesomeIcon icon={faMedal} className="h-4 w-4 text-green-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Best Trade</p>
+                            <p className="text-lg font-bold text-green-500">
+                              +{currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.bestTrade.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-lg border bg-gradient-to-r from-red-500/5 to-red-500/10">
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-lg p-2 bg-red-500/20">
+                            <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4 text-red-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Worst Trade</p>
+                            <p className="text-lg font-bold text-red-500">
+                              {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '¥'}{stats.worstTrade.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
