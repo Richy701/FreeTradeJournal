@@ -29,9 +29,9 @@ const themePresets: Record<string, ThemePreset> = {
   neon: {
     name: 'Neon',
     colors: {
-      profit: '#00ff88', // bright neon green
-      loss: '#ff0080',   // hot pink
-      primary: '#00ffff' // cyan neon
+      profit: '#10b981', // emerald-500 - vibrant but readable green
+      loss: '#ec4899',   // pink-500 - bright but readable pink  
+      primary: '#06b6d4' // cyan-500 - vibrant cyan
     }
   },
   sunset: {
@@ -51,13 +51,13 @@ const themePresets: Record<string, ThemePreset> = {
     }
   },
   
-  // Deep Yellow & Black theme - bold and striking
+  // Deep Yellow & White theme - bold and striking
   monochrome: {
     name: 'Deep Yellow',
     colors: {
-      profit: '#fbbf24', // yellow-400 - bright deep yellow for profits
-      loss: '#374151',   // gray-700 - darker but still visible in light mode
-      primary: '#f59e0b' // yellow-500 - rich yellow primary
+      profit: '#FFC000', // your perfect yellow
+      loss: '#374151',   // gray-700 - dark gray in light mode, white in dark mode
+      primary: '#FFC000' // your perfect yellow for primary
     }
   },
 
@@ -99,11 +99,11 @@ const themePresets: Record<string, ThemePreset> = {
   },
 
   energy: {
-    name: 'Energy Burst',
+    name: 'Mono Black & White',
     colors: {
-      profit: '#f59e0b', // amber-500 - bright positive
-      loss: '#ef4444',   // red-500 - clear negative
-      primary: '#7c3aed' // violet-600 - energetic primary
+      profit: '#ffffff', // pure white for profits
+      loss: '#000000',   // pure black for losses
+      primary: '#6b7280' // gray-500 - neutral gray primary
     }
   },
 
@@ -211,12 +211,22 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     if (isDarkMode) {
       // In dark mode, ensure colors are bright enough and visible
       if (currentTheme === 'monochrome') {
-        // Deep Yellow theme adjustments for dark mode - maintain pure yellow/black aesthetic
+        // Deep Yellow theme adjustments for dark mode - yellow and white aesthetic
         return {
           ...baseColors,
-          loss: '#9ca3af', // gray-400 - light gray that's visible in dark mode, represents "black" element
-          profit: '#fbbf24', // yellow-400 - bright yellow for profits (keep original)
-          primary: '#f59e0b' // yellow-500 - rich yellow primary (keep original)
+          loss: '#f8fafc', // slate-50 - clean white for losses in dark mode
+          profit: baseColors.profit, // keep same amber-600 color
+          primary: baseColors.primary // keep same amber-600 primary
+        }
+      }
+      
+      if (currentTheme === 'energy') {
+        // Mono Black & White theme adjustments for dark mode
+        return {
+          ...baseColors,
+          profit: '#f8fafc', // white profits visible in dark mode
+          loss: '#ffffff',   // white losses visible in dark mode 
+          primary: '#9ca3af' // lighter gray primary for dark mode
         }
       }
       
@@ -263,7 +273,17 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       
       return adjustedColors
     } else {
-      // In light mode, ensure colors have enough contrast
+      // In light mode, keep colors consistent with dark mode but ensure readability
+      if (currentTheme === 'energy') {
+        // Mono Black & White theme adjustments for light mode
+        return {
+          ...baseColors,
+          profit: '#000000', // black profits visible in light mode
+          loss: '#000000',   // black losses visible in light mode
+          primary: '#374151' // darker gray primary for light mode
+        }
+      }
+      
       return baseColors
     }
   }

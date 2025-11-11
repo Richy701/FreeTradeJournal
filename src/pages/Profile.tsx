@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Edit, Mail, Calendar, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { SiteHeader } from '@/components/site-header';
+import { Footer7 } from '@/components/ui/footer-7';
+import { footerConfig } from '@/components/ui/footer-config';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -249,6 +251,7 @@ export default function Profile() {
           </Card>
         </div>
       </div>
+      <Footer7 {...footerConfig} />
     </div>
   );
 }

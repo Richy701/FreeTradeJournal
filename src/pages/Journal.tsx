@@ -30,6 +30,8 @@ import { useUserStorage } from '@/utils/user-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
+import { Footer7 } from '@/components/ui/footer-7';
+import { footerConfig } from '@/components/ui/footer-config';
 import {
   Popover,
   PopoverContent,
@@ -1284,5 +1286,6 @@ export default function Journal() {
         <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
       </Button>
     </div>
+    <Footer7 {...footerConfig} />
   );
 }

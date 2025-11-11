@@ -662,7 +662,7 @@ export function CalendarHeatmap() {
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
           
           <div className="text-center md:text-left md:flex-1">
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : '#ef4444'}}>
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
               {monthlyStats.winRate.toFixed(1)}%
             </div>
             <div className="flex items-center justify-center md:justify-start gap-1 mt-1">

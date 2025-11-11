@@ -6,6 +6,8 @@ import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
+import { Footer7 } from "@/components/ui/footer-7"
+import { footerConfig } from "@/components/ui/footer-config"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -904,6 +906,7 @@ export default function Dashboard() {
 
       
       </div>
+      <Footer7 {...footerConfig} />
     </>
   )
 }

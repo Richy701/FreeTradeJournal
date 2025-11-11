@@ -53,28 +53,19 @@ import {
   faChartBar
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
+import { Footer7 } from '@/components/ui/footer-7';
+import { footerConfig } from '@/components/ui/footer-config';
 
-// Custom CSS to force override orange borders
+// Custom CSS to force override orange borders with white
 const themeCardStyles = `
-.theme-card-override {
-  border: 2px solid rgb(var(--border)) !important;
-  outline: none !important;
-  box-shadow: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-}
-.theme-card-override:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-.theme-card-override:hover {
-  outline: none !important;
-}
-.theme-card-override:active {
-  outline: none !important;
-}
-.theme-card-override.selected {
-  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
+  div[tabindex]:focus {
+    outline: 2px solid white !important;
+    outline-offset: -2px !important;
+  }
+  div[tabindex]:focus-visible {
+    outline: 2px solid white !important;
+    outline-offset: -2px !important;
+  }
 `;
 
 export default function Settings() {
@@ -268,7 +259,7 @@ export default function Settings() {
             <div className="relative z-10">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div>
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground leading-normal">
                     Settings
                   </h1>
                   <p className="text-muted-foreground text-base md:text-lg mt-2 max-w-2xl">
@@ -622,60 +613,80 @@ export default function Settings() {
                           onClick={() => setColorTheme(key)}
                           tabIndex={0}
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                          className={`theme-card-override ${currentTheme === key ? 'selected' : ''} group p-6 rounded-xl transition-all duration-300 hover:scale-105 w-full cursor-pointer`}
+                          className={`group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer`}
                           style={{
-                            background: currentTheme === key 
-                              ? `linear-gradient(135deg, ${preset.colors.primary}08, transparent)` 
-                              : 'transparent',
-                            borderColor: currentTheme === key 
-                              ? `${preset.colors.primary}40`
-                              : 'rgb(var(--border))',
-                            transform: currentTheme === key ? 'scale(1.05)' : 'scale(1)'
+                            background: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? '#09090b' : '#ffffff',
+                            transform: currentTheme === key ? 'scale(1.02)' : 'scale(1)',
+                            border: '1px solid hsl(var(--border))',
+                            outline: 'none'
                           }}
                         >
-                          <div className="space-y-4">
+                          {/* Header with theme name and selection indicator */}
+                          <div className="p-4 border-b border-border/30">
                             <div className="flex items-center justify-between">
-                              <div className="text-base font-bold">{preset.name}</div>
+                              <div className="text-sm font-semibold text-foreground">{preset.name}</div>
                               {currentTheme === key && (
-                                <div className="p-1.5 rounded-full" style={{ backgroundColor: `${preset.colors.primary}20` }}>
+                                <div className="p-1.5 rounded-full animate-pulse" style={{ backgroundColor: `${preset.colors.primary}20` }}>
                                   <FontAwesomeIcon icon={faCheck} className="h-3 w-3" style={{ color: preset.colors.primary }} />
                                 </div>
                               )}
                             </div>
-                            
-                            <div className="flex gap-3 justify-center">
-                              <div 
-                                className="w-8 h-8 rounded-full border-2 border-background shadow-lg group-hover:scale-110 transition-transform" 
-                                style={{ backgroundColor: preset.colors.profit }}
-                                title="Profit Color"
-                              />
-                              <div 
-                                className="w-8 h-8 rounded-full border-2 border-background shadow-lg group-hover:scale-110 transition-transform" 
-                                style={{ backgroundColor: preset.colors.loss }}
-                                title="Loss Color"
-                              />
-                              <div 
-                                className="w-8 h-8 rounded-full border-2 border-background shadow-lg group-hover:scale-110 transition-transform" 
-                                style={{ backgroundColor: preset.colors.primary }}
-                                title="Primary Color"
-                              />
+                          </div>
+
+                          {/* Mini trading interface preview */}
+                          <div className="p-4 space-y-3">
+                            {/* Stats row */}
+                            <div className="flex justify-between items-center">
+                              <div className="text-xs text-muted-foreground font-medium">Portfolio</div>
+                              <div className="text-xs font-bold" style={{ color: preset.colors.primary }}>
+                                100%
+                              </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div 
-                                className="py-3 px-3 rounded-lg text-white text-center font-bold shadow-md group-hover:shadow-lg transition-shadow"
-                                style={{ backgroundColor: preset.colors.profit }}
-                              >
-                                +$250
+                            {/* P&L examples */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="p-2 rounded-lg bg-background/50 border border-border/30">
+                                <div className="text-xs text-muted-foreground mb-1">Win</div>
+                                <div className="text-sm font-bold" style={{ color: preset.colors.profit }}>
+                                  +$485
+                                </div>
                               </div>
-                              <div 
-                                className="py-3 px-3 rounded-lg text-white text-center font-bold shadow-md group-hover:shadow-lg transition-shadow"
-                                style={{ backgroundColor: preset.colors.loss }}
-                              >
-                                -$150
+                              <div className="p-2 rounded-lg bg-background/50 border border-border/30">
+                                <div className="text-xs text-muted-foreground mb-1">Loss</div>
+                                <div className="text-sm font-bold" style={{ color: preset.colors.loss }}>
+                                  -$240
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Mini chart representation */}
+                            <div className="flex items-end gap-1 h-8 justify-center">
+                              <div className="w-1 rounded-sm" style={{ height: '60%', backgroundColor: preset.colors.profit }}></div>
+                              <div className="w-1 rounded-sm" style={{ height: '40%', backgroundColor: preset.colors.loss }}></div>
+                              <div className="w-1 rounded-sm" style={{ height: '80%', backgroundColor: preset.colors.profit }}></div>
+                              <div className="w-1 rounded-sm" style={{ height: '30%', backgroundColor: preset.colors.loss }}></div>
+                              <div className="w-1 rounded-sm" style={{ height: '70%', backgroundColor: preset.colors.profit }}></div>
+                              <div className="w-1 rounded-sm" style={{ height: '50%', backgroundColor: preset.colors.primary }}></div>
+                              <div className="w-1 rounded-sm" style={{ height: '90%', backgroundColor: preset.colors.profit }}></div>
+                            </div>
+                            
+                            {/* Color indicators */}
+                            <div className="flex justify-center gap-2 pt-2 border-t border-border/20">
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.colors.profit }} />
+                                <span className="text-xs text-muted-foreground">Profit</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.colors.loss }} />
+                                <span className="text-xs text-muted-foreground">Loss</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.colors.primary }} />
+                                <span className="text-xs text-muted-foreground">UI</span>
                               </div>
                             </div>
                           </div>
+
                         </div>
                       ))}
                     </div>
@@ -765,7 +776,7 @@ export default function Settings() {
                              className="group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:border-primary/30" 
                              style={{ 
                                background: `linear-gradient(135deg, ${index % 2 === 0 ? themeColors.primary : themeColors.profit}05 0%, transparent 50%)`,
-                               borderColor: activeAccount?.id === account.id ? `${themeColors.primary}40` : 'rgb(var(--border))'
+                               borderColor: activeAccount?.id === account.id ? `${themeColors.primary}40` : 'hsl(var(--border))'
                              }}>
                           <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl opacity-30" 
                                style={{ backgroundColor: index % 2 === 0 ? `${themeColors.primary}20` : `${themeColors.profit}20` }} />
@@ -1987,6 +1998,7 @@ export default function Settings() {
           </Tabs>
         </div>
       </div>
+      <Footer7 {...footerConfig} />
     </>
   );
 }

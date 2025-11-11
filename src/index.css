@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Remove ALL outlines from focusable elements */
+[tabindex] {
+  outline: none !important;
+}
+
+[tabindex]:focus {
+  outline: none !important;
+}
+
+[tabindex]:focus-visible {
+  outline: none !important;
+}
+
+[tabindex]:active {
+  outline: none !important;
+}
+
+/* Remove the orange tap highlight on mobile/webkit browsers */
+[tabindex] {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+
 
 @layer base {
   :root {

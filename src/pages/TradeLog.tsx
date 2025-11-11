@@ -38,6 +38,8 @@ import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, end
 import { DateTimePicker } from '@/components/ui/date-picker';
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
+import { Footer7 } from '@/components/ui/footer-7';
+import { footerConfig } from '@/components/ui/footer-config';
 
 interface Trade {
   id: string
@@ -2445,6 +2447,7 @@ export default function TradeLog() {
 
       
       </div>
+      <Footer7 {...footerConfig} />
     </>
   );
 }

@@ -10,6 +10,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Card } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
+import { Footer7 } from "@/components/ui/footer-7"
+import { footerConfig } from "@/components/ui/footer-config"
 import { useMemo } from 'react'
 
 export default function Goals() {
@@ -143,6 +145,7 @@ export default function Goals() {
           <PerformanceGoals />
         </div>
       </div>
+      <Footer7 {...footerConfig} />
     </div>
   )
 }
