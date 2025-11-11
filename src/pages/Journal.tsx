@@ -1285,7 +1285,7 @@ export default function Journal() {
       >
         <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
       </Button>
+      <Footer7 {...footerConfig} />
     </div>
-    <Footer7 {...footerConfig} />
   );
 }
