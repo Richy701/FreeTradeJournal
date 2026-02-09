@@ -158,7 +158,7 @@ export default function CookiePolicy() {
           alt: "FreeTradeJournal",
           title: "FreeTradeJournal"
         }}
-        description="Free, open-source trading journal for forex and futures traders. Track your performance, analyze patterns, and improve your trading with AI-powered insights."
+        description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
         sections={[
           {
             title: "Product",

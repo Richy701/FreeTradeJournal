@@ -166,10 +166,10 @@ export function SectionCards() {
           <div className="flex items-center gap-3">
             <div className="flex-1 space-y-2">
               <div className="text-3xl font-bold tracking-tight text-foreground" style={{letterSpacing: '-0.02em'}}>{formatPercentage(metrics.winRate)}</div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-bold" style={{ color: themeColors.profit }}>{trades.filter((t: Trade) => t.pnl > 0).length}W</span>
-                <span className="text-muted-foreground font-medium">/</span>
-                <span className="font-bold" style={{ color: themeColors.loss }}>{trades.filter((t: Trade) => t.pnl < 0).length}L</span>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                <span>{trades.filter((t: Trade) => t.pnl > 0).length}W</span>
+                <span>/</span>
+                <span>{trades.filter((t: Trade) => t.pnl < 0).length}L</span>
               </div>
             </div>
             <div className="w-16 h-16 relative z-[10000]">

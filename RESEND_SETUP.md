@@ -199,7 +199,6 @@ function YourComponent() {
 ### Getting Help
 
 - **Resend Documentation**: [resend.com/docs](https://resend.com/docs)
-- **FreeTradeJournal Support**: [Telegram Group](https://t.me/+UI6uTKgfswUwNzhk)
 - **Email Issues**: Check browser console for error messages
 
 ## Security Best Practices
@@ -236,4 +235,4 @@ If you encounter issues with email setup:
 1. Check the browser console for JavaScript errors
 2. Verify your API key in the Resend dashboard
 3. Test with a simple email first
-4. Get help on: [Telegram](https://t.me/+UI6uTKgfswUwNzhk)
+4. Check the Resend documentation for more details

@@ -6,6 +6,7 @@ interface ThemePreset {
     profit: string
     loss: string
     primary: string
+    primaryButtonText?: string
   }
 }
 
@@ -55,9 +56,9 @@ const themePresets: Record<string, ThemePreset> = {
   monochrome: {
     name: 'Deep Yellow',
     colors: {
-      profit: '#FFC000', // your perfect yellow
-      loss: '#374151',   // gray-700 - dark gray in light mode, white in dark mode
-      primary: '#FFC000' // your perfect yellow for primary
+      profit: '#FFC000', // yellow for wins
+      loss: '#374151',   // gray-700 for losses in light mode
+      primary: '#FFC000' // yellow primary
     }
   },
 
@@ -129,6 +130,25 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemePresetsProvider({ children }: { children: React.ReactNode }) {
   const [currentTheme, setCurrentTheme] = useState('default')
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [pathname, setPathname] = useState(window.location.pathname)
+
+  // Track route changes for SPA navigation
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname)
+    window.addEventListener('popstate', onPopState)
+
+    // Patch pushState/replaceState to detect React Router navigations
+    const origPush = history.pushState.bind(history)
+    const origReplace = history.replaceState.bind(history)
+    history.pushState = (...args) => { origPush(...args); setPathname(window.location.pathname) }
+    history.replaceState = (...args) => { origReplace(...args); setPathname(window.location.pathname) }
+
+    return () => {
+      window.removeEventListener('popstate', onPopState)
+      history.pushState = origPush
+      history.replaceState = origReplace
+    }
+  }, [])
 
   useEffect(() => {
     // Load saved theme from localStorage
@@ -155,15 +175,8 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     return () => observer.disconnect()
   }, [])
 
-  // Update CSS variables when theme changes (only for dashboard pages)
+  // Update CSS variables when theme changes
   useEffect(() => {
-    // Check if we're on a public page (landing, footer pages)
-    const isPublicPage = ['/', '/privacy', '/terms', '/cookie-policy', '/documentation', '/blog'].includes(window.location.pathname) 
-      || window.location.pathname.startsWith('/blog/')
-    
-    // Don't update CSS variables for public pages
-    if (isPublicPage) return
-    
     const colors = themePresets[currentTheme].colors
     const root = document.documentElement
     
@@ -191,10 +204,30 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
     }
     
+    // On public pages, reset CSS variables to defaults so landing page isn't themed
+    const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/blog', '/documentation']
+    const isPublicPage = publicPaths.some(p =>
+      pathname === p || pathname.startsWith('/blog/')
+    )
+
+    if (isPublicPage) {
+      // Reset to CSS-defined defaults (remove inline overrides)
+      root.style.removeProperty('--primary')
+      root.style.removeProperty('--ring')
+      root.style.removeProperty('--primary-foreground')
+      return
+    }
+
     // Update CSS variables for dashboard pages
     root.style.setProperty('--primary', hexToHsl(colors.primary))
-    root.style.setProperty('--ring', hexToHsl(colors.primary)) // Fix green hover issue
-  }, [currentTheme])
+    root.style.setProperty('--ring', hexToHsl(colors.primary))
+    // Set primary-foreground for contrast (buttons, badges)
+    const r = parseInt(colors.primary.slice(1, 3), 16)
+    const g = parseInt(colors.primary.slice(3, 5), 16)
+    const b = parseInt(colors.primary.slice(5, 7), 16)
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    root.style.setProperty('--primary-foreground', lum > 0.55 ? '0 0% 0%' : '0 0% 100%')
+  }, [currentTheme, pathname])
 
   const setTheme = (theme: string) => {
     if (themePresets[theme]) {
@@ -211,12 +244,12 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     if (isDarkMode) {
       // In dark mode, ensure colors are bright enough and visible
       if (currentTheme === 'monochrome') {
-        // Deep Yellow theme adjustments for dark mode - yellow and white aesthetic
+        // Deep Yellow theme - yellow and white aesthetic
         return {
           ...baseColors,
           loss: '#f8fafc', // slate-50 - clean white for losses in dark mode
-          profit: baseColors.profit, // keep same amber-600 color
-          primary: baseColors.primary // keep same amber-600 primary
+          profit: baseColors.profit, // keep same yellow color
+          primary: baseColors.primary // keep same yellow primary
         }
       }
       
@@ -288,7 +321,21 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
   }
   
-  const themeColors = getAdjustedColors()
+  // Compute contrast-aware button text color from primary
+  const getContrastText = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    // W3C relative luminance formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.55 ? '#000000' : '#ffffff'
+  }
+
+  const adjustedColors = getAdjustedColors()
+  const themeColors = {
+    ...adjustedColors,
+    primaryButtonText: getContrastText(adjustedColors.primary),
+  }
 
   return (
     <ThemeContext.Provider value={{ 

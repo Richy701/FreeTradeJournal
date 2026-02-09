@@ -4,6 +4,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ResponsiveImage } from "@/components/ui/responsive-image";
+import { useAuth } from "@/contexts/auth-context";
+import { useNavigate } from "react-router-dom";
 
 interface FeatureShowcaseProps {
     title: string | React.ReactNode;
@@ -24,6 +26,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     reverseLayout = false,
     imageLayout = 'stack',
 }) => {
+    const { enterDemoMode } = useAuth();
+    const navigate = useNavigate();
 
     const containerVariants = {
         hidden: {},
@@ -166,11 +170,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             transition={{ duration: 0.7, ease: "easeOut" }}
                             viewport={{ once: true }}
                         >
-                            {/* Decorative background blur */}
-                            <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/10 blur-3xl opacity-50" />
-                            
                             {/* Main image container */}
-                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/10">
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/30">
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
                                     transition={{ duration: 0.3 }}
@@ -183,8 +184,6 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                             images[0].className
                                         )}
                                     />
-                                    {/* Subtle gradient overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
                                 </motion.div>
                             </div>
                         </motion.div>
@@ -233,8 +232,6 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                         img.className
                                     )}
                                 />
-                                {/* Gradient overlay for depth */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
                             </motion.div>
                         ))}
                     </div>
@@ -243,8 +240,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     };
 
     return (
-        <section className="relative py-16 overflow-hidden">
-            <div className="w-full px-6 relative z-10 mx-auto" style={{maxWidth: '1280px'}}>
+        <section className="relative py-24 overflow-hidden">
+            <div className="w-full max-w-7xl px-6 relative z-10 mx-auto">
                 <motion.div
                     className={`grid grid-cols-1 gap-12 lg:gap-20 w-full items-center ${layoutClasses}`}
                     variants={containerVariants}
@@ -258,7 +255,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         variants={itemVariants}
                     >
                         <div className="space-y-4 w-full">
-                            <h2 className="text-foreground text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
+                            <h2 className="text-foreground text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
                                 {title}
                             </h2>
                         </div>
@@ -268,11 +265,20 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         </p>
                         
                         <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                            <button className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
+                            <button
+                                onClick={() => {
+                                    enterDemoMode();
+                                    navigate('/dashboard');
+                                }}
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+                            >
                                 Try It Now
                             </button>
-                            <button className="border border-border hover:border-primary/50 text-foreground px-6 py-3 rounded-lg font-semibold transition-all duration-200">
-                                Learn More
+                            <button
+                                onClick={() => navigate('/signup')}
+                                className="border-2 border-border hover:border-primary/50 text-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+                            >
+                                Sign Up Free
                             </button>
                         </div>
                     </motion.div>
@@ -287,10 +293,6 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                 </motion.div>
             </div>
 
-            {/* Background decoration */}
-            <div className="absolute inset-0 -z-10">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
-            </div>
         </section>
     );
 };

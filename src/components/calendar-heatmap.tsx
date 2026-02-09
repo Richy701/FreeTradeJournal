@@ -440,46 +440,65 @@ export function CalendarHeatmap() {
     return days
   }, [trades, currentDate])
 
+  // Round to nearest cent to avoid floating point breakeven artifacts
+  const roundedPnl = (pnl: number) => Math.round(pnl * 100) / 100
+
   const getPnLColor = (pnl: number, trades: number) => {
     if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-muted/20 transition-colors duration-200 cursor-default'
-    
-    // Use theme colors for styling
-    const profitColor = themeColors.profit
-    const lossColor = themeColors.loss
-    
-    if (pnl > 0) {
-      // Use theme profit color with different opacities for intensity
+
+    const rounded = roundedPnl(pnl)
+    if (rounded > 0) {
       return 'border-2 shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer'
-    } else if (pnl < 0) {
-      // Use theme loss color
+    } else if (rounded < 0) {
       return 'border-2 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer'
     }
-    
-    return 'bg-gray-400 border-gray-300/50 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer' // Breakeven
+
+    return 'border-2 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer' // Breakeven
   }
   
+  // Determine if a color is light (needs dark text) or dark (needs white text)
+  const isLightColor = (hex: string) => {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    // Perceived brightness formula
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000
+    return brightness > 160
+  }
+
+  // Breakeven uses dark charcoal — clearly neutral
+  const breakevenColor = '#27272a' // zinc-800
+
   const getPnLStyle = (pnl: number, trades: number) => {
     if (trades === 0) return {}
-    
-    if (pnl > 0) {
-      // Use theme profit color with opacity based on amount
-      const opacity = pnl >= 1000 ? 0.9 : pnl >= 500 ? 0.8 : pnl >= 100 ? 0.7 : 0.6
-      return { 
+
+    const rounded = roundedPnl(pnl)
+    if (rounded > 0) {
+      return {
         backgroundColor: themeColors.profit,
-        opacity: opacity,
         borderColor: themeColors.profit
       }
-    } else if (pnl < 0) {
-      // Use theme loss color with consistent opacity
-      const opacity = Math.abs(pnl) >= 1000 ? 0.9 : Math.abs(pnl) >= 500 ? 0.8 : Math.abs(pnl) >= 100 ? 0.7 : 0.6
-      return { 
+    } else if (rounded < 0) {
+      return {
         backgroundColor: themeColors.loss,
-        opacity: opacity,
         borderColor: themeColors.loss
       }
     }
-    
-    return { backgroundColor: '#9ca3af', opacity: 0.7 } // Gray for breakeven
+
+    return { backgroundColor: breakevenColor, borderColor: breakevenColor } // Breakeven
+  }
+
+  // Get text color class based on the cell's background color
+  const getCellTextColor = (pnl: number, trades: number) => {
+    if (trades === 0) return 'text-foreground'
+
+    const rounded = roundedPnl(pnl)
+    let bgColor: string
+    if (rounded > 0) bgColor = themeColors.profit
+    else if (rounded < 0) bgColor = themeColors.loss
+    else bgColor = breakevenColor
+
+    return isLightColor(bgColor) ? 'text-black' : 'text-white'
   }
 
   // Calculate monthly statistics
@@ -581,23 +600,20 @@ export function CalendarHeatmap() {
             </CardTitle>
           </div>
 
-          {/* Mobile-first navigation */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            {/* Navigation controls */}
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
+          {/* Navigation */}
+          <div className="flex items-center justify-between sm:justify-start gap-3">
+            <div className="flex items-center gap-1 rounded-full bg-muted/30 p-1">
+              <button
                 onClick={goToPreviousMonth}
-                className="h-10 w-10 p-0 touch-manipulation"
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors touch-manipulation"
                 title="Previous month (←)"
               >
-                <FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
-              </Button>
+                <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3 text-muted-foreground" />
+              </button>
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-1 px-1">
                 <Select value={selectedMonth.toString()} onValueChange={(value) => jumpToMonth(parseInt(value), selectedYear)}>
-                  <SelectTrigger className="w-20 h-10 text-sm touch-manipulation">
+                  <SelectTrigger className="w-16 h-8 text-xs font-semibold border-0 bg-transparent shadow-none focus:ring-0 px-2 touch-manipulation">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -608,7 +624,7 @@ export function CalendarHeatmap() {
                 </Select>
 
                 <Select value={selectedYear.toString()} onValueChange={(value) => jumpToMonth(selectedMonth, parseInt(value))}>
-                  <SelectTrigger className="w-20 h-10 text-sm touch-manipulation">
+                  <SelectTrigger className="w-16 h-8 text-xs font-semibold border-0 bg-transparent shadow-none focus:ring-0 px-2 touch-manipulation">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -619,93 +635,87 @@ export function CalendarHeatmap() {
                 </Select>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={goToNextMonth}
-                className="h-10 w-10 p-0 touch-manipulation"
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors touch-manipulation"
                 title="Next month (→)"
               >
-                <FontAwesomeIcon icon={faChevronRight} className="h-4 w-4" />
-              </Button>
+                <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3 text-muted-foreground" />
+              </button>
             </div>
 
-            {/* Today button */}
-            <Button
+            <button
               onClick={goToToday}
-              className="h-10 px-6"
+              className="h-8 px-4 rounded-full text-xs font-semibold transition-all hover:opacity-90 touch-manipulation"
               style={{
-                background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}CC)`,
-                color: 'white'
+                backgroundColor: themeColors.primary,
+                color: isLightColor(themeColors.primary) ? '#000' : '#fff'
               }}
             >
               Today
-            </Button>
+            </button>
           </div>
-
-          {/* Mobile instruction text */}
-          <CardDescription className="text-xs sm:text-sm text-muted-foreground font-medium text-center sm:text-left">
-            <span className="hidden sm:inline">Daily performance overview • Use ← → keys to navigate • Click days to add trades or view details</span>
-            <span className="sm:hidden">Tap dates to add trades or view details</span>
-          </CardDescription>
         </div>
 
-        {/* Mobile-optimized stats panel */}
-        <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-0 p-3 md:p-4 md:px-6 bg-muted/30 md:bg-transparent rounded-lg md:rounded-none">
+        {/* Stats panel */}
+        <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-0 p-3 md:p-4 md:px-6">
           <div className="text-center md:text-left md:flex-1">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <DollarSign className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-xs md:text-sm text-muted-foreground">Monthly P&L</div>
+            </div>
             <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
               {formatCurrency(monthlyStats.totalPnL)}
             </div>
-            <div className="text-xs md:text-sm text-muted-foreground mt-1">Monthly P&L</div>
           </div>
-          
+
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
-          
+
           <div className="text-center md:text-left md:flex-1">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <Target className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-xs md:text-sm text-muted-foreground">Win Rate</div>
+            </div>
             <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
               {monthlyStats.winRate.toFixed(1)}%
             </div>
-            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
-              <Target className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-              <div className="text-xs md:text-sm text-muted-foreground">Win Rate</div>
-            </div>
           </div>
-          
+
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
-          
+
           <div className="text-center md:text-left md:flex-1 hidden md:block">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-xs md:text-sm text-muted-foreground">R:R</div>
+            </div>
             <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
               {monthlyStats.riskReward === Infinity ? '∞' : monthlyStats.riskReward.toFixed(2)}
             </div>
-            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-              <div className="text-xs md:text-sm text-muted-foreground">R:R</div>
-            </div>
           </div>
-          
+
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
-          
+
           <div className="text-center md:text-left md:flex-1">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <BarChart3 className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-xs md:text-sm text-muted-foreground">W/L</div>
+            </div>
             <div className="text-xl md:text-3xl lg:text-4xl font-bold">
               <span style={{color: themeColors.profit}}>{monthlyStats.totalWinningTrades}</span>
               <span className="text-muted-foreground mx-1">/</span>
               <span style={{color: themeColors.loss}}>{monthlyStats.totalLosingTrades}</span>
             </div>
-            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
-              <BarChart3 className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-              <div className="text-xs md:text-sm text-muted-foreground">W/L</div>
-            </div>
           </div>
-          
+
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
-          
+
           <div className="text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <Activity className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-xs md:text-sm text-muted-foreground">Trades</div>
+            </div>
             <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
               {monthlyStats.totalTrades}
-            </div>
-            <div className="flex items-center justify-center md:justify-start gap-1 mt-1">
-              <Activity className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-              <div className="text-xs md:text-sm text-muted-foreground">Trades</div>
             </div>
           </div>
         </div>
@@ -713,9 +723,9 @@ export function CalendarHeatmap() {
       <CardContent className="pt-4 px-2 sm:px-6">
         <div className="space-y-3">
           {/* Day headers */}
-          <div className="grid grid-cols-7 gap-0.5 sm:gap-4 mb-3">
+          <div className="grid grid-cols-7 gap-1 sm:gap-3 mb-2">
             {DAYS.map((day) => (
-              <div key={day} className="text-center text-xs sm:text-sm font-semibold text-muted-foreground py-1 sm:py-2">
+              <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/60 py-1.5 sm:py-2">
                 <span className="sm:hidden">{day.slice(0, 1)}</span>
                 <span className="hidden sm:inline">{day}</span>
               </div>
@@ -724,13 +734,13 @@ export function CalendarHeatmap() {
           
           {/* Enhanced Calendar grid with better spacing and animations */}
           <div className={cn(
-            "space-y-4 transition-all duration-300",
+            "space-y-1 sm:space-y-3 transition-all duration-300",
             isAnimating ? "opacity-50 scale-95" : "opacity-100 scale-100"
           )}>
             {weeks.map((week, weekIndex) => (
-              <div 
-                key={`${currentDate.getFullYear()}-${currentDate.getMonth()}-${weekIndex}`} 
-                className="grid grid-cols-7 gap-0.5 sm:gap-4"
+              <div
+                key={`${currentDate.getFullYear()}-${currentDate.getMonth()}-${weekIndex}`}
+                className="grid grid-cols-7 gap-1 sm:gap-3"
                 style={{
                   animationDelay: `${weekIndex * 50}ms`
                 }}
@@ -746,9 +756,9 @@ export function CalendarHeatmap() {
                       <PopoverTrigger asChild>
                         <div
                           className={cn(
-                            "h-20 sm:h-20 rounded-lg sm:rounded-xl relative overflow-hidden",
+                            "h-[72px] sm:h-24 rounded-lg sm:rounded-xl relative overflow-hidden",
                             getPnLColor(day.pnl, day.trades),
-                            day.isCurrentMonth ? "opacity-100" : "opacity-50",
+                            day.isCurrentMonth ? "opacity-100" : "opacity-40",
                             hasData && "hover:z-10",
                             day.isCurrentMonth && "cursor-pointer"
                           )}
@@ -775,49 +785,50 @@ export function CalendarHeatmap() {
                             }
                           }}
                         >
-                          {/* Subtle gradient overlay for depth */}
-                          {hasData && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
+                          {/* Shine overlay on profit days */}
+                          {hasData && roundedPnl(day.pnl) > 0 && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none" />
                           )}
-                          
-                          <div className="flex flex-col items-center justify-center h-full px-2 relative z-10">
+
+                          <div className="flex flex-col items-center justify-between h-full py-1.5 sm:py-2.5 px-1 relative z-10">
+                            {/* Date number — top left aligned */}
                             <div className={cn(
-                              "text-xs font-bold leading-none mb-1",
-                              day.pnl > 0 ? "text-white/80 drop-shadow-sm" : 
-                              day.pnl < 0 ? "text-white/80 drop-shadow-sm" : 
-                              hasData ? "text-white/80 drop-shadow-sm" :
-                              day.isCurrentMonth ? "text-foreground" : "text-muted-foreground"
+                              "self-start pl-0.5 text-[10px] sm:text-[11px] font-medium leading-none tabular-nums",
+                              hasData ? `${getCellTextColor(day.pnl, day.trades)} opacity-60` :
+                              day.isCurrentMonth ? "text-foreground/50" : "text-muted-foreground/30"
                             )}>
                               {day.date.getDate()}
                             </div>
-                            
-                            {hasData && (
-                              <div className="flex flex-col items-center justify-center h-full px-1 relative z-10">
-                                {/* Mobile: Single line with just P&L */}
-                                <div className="sm:hidden text-center">
-                                  <div className="text-[10px] sm:text-xs font-bold text-white drop-shadow-sm leading-none">
-                                    {Math.abs(day.pnl) >= 1000 ? 
-                                      `${day.pnl >= 0 ? '+' : ''}${(day.pnl/1000).toFixed(1)}k` : 
-                                      Math.abs(day.pnl) >= 10 ?
-                                        `${day.pnl >= 0 ? '+' : ''}${Math.round(day.pnl)}` :
-                                        `${day.pnl >= 0 ? '+' : ''}${day.pnl.toFixed(1)}`
-                                    }
-                                  </div>
-                                </div>
 
-                                {/* Desktop: Full details */}
-                                <div className="hidden sm:flex sm:flex-col sm:items-center sm:justify-center sm:h-full">
-                                  <div className="text-lg leading-none font-black text-white drop-shadow-sm">
-                                    {day.pnl >= 0 ? '+' : ''}${Math.abs(day.pnl) >= 1000 ?
-                                      `${(Math.abs(day.pnl) / 1000).toFixed(1)}k` :
-                                      Math.abs(day.pnl).toFixed(0)
-                                    }
-                                  </div>
-                                  <div className="text-[8px] leading-none font-semibold text-white/70 drop-shadow-sm mt-0.5 text-center">
-                                    {day.trades} {day.trades === 1 ? 'trade' : 'trades'} • {day.winRate.toFixed(0)}%
-                                  </div>
+                            {/* P&L — center */}
+                            {hasData && (
+                              <div className="flex flex-col items-center gap-1">
+                                {/* Mobile */}
+                                <div className={cn("sm:hidden text-sm font-black tracking-tighter leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades))}>
+                                  {Math.abs(day.pnl) >= 1000
+                                    ? `${day.pnl >= 0 ? '+' : '-'}$${Math.abs(day.pnl/1000).toFixed(1)}k`
+                                    : Math.abs(day.pnl) >= 10
+                                      ? `${day.pnl >= 0 ? '+' : '-'}$${Math.abs(Math.round(day.pnl))}`
+                                      : `${day.pnl >= 0 ? '+' : '-'}$${Math.abs(day.pnl).toFixed(1)}`
+                                  }
+                                </div>
+                                {/* Desktop */}
+                                <div className={cn("hidden sm:block text-xl font-black tracking-tighter leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades))}>
+                                  {day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl) >= 1000
+                                    ? `${(Math.abs(day.pnl) / 1000).toFixed(1)}k`
+                                    : Math.abs(day.pnl).toFixed(0)
+                                  }
                                 </div>
                               </div>
+                            )}
+
+                            {/* Trade count + win rate — bottom */}
+                            {hasData ? (
+                              <div className={cn("text-[8px] sm:text-[10px] font-semibold leading-none opacity-75 tabular-nums", getCellTextColor(day.pnl, day.trades))}>
+                                {day.trades}t · {day.winRate.toFixed(0)}%
+                              </div>
+                            ) : (
+                              <div />
                             )}
                           </div>
                           
@@ -849,13 +860,13 @@ export function CalendarHeatmap() {
                         </div>
                       </PopoverTrigger>
                       {hasData && (
-                        <PopoverContent className="w-[90vw] max-w-64 p-0 border-0 shadow-xl" side="top" align="center">
+                        <PopoverContent className="w-[90vw] max-w-64 p-0 border-0 shadow-xl" side="bottom" align="center">
                           <div className="bg-card/95 backdrop-blur-md rounded-lg border p-4 space-y-3">
                             <div className="flex items-center justify-between pb-2 border-b border-border/50">
                               <div className="flex items-center gap-2">
                                 <div 
                                   className="w-3 h-3 rounded-full"
-                                  style={{backgroundColor: day.pnl > 0 ? themeColors.profit : day.pnl < 0 ? themeColors.loss : '#9ca3af'}}
+                                  style={{backgroundColor: day.pnl > 0 ? themeColors.profit : day.pnl < 0 ? themeColors.loss : breakevenColor}}
                                 />
                                 <div className="font-semibold text-sm">
                                   {day.date.toLocaleDateString('en-US', { 
@@ -865,10 +876,10 @@ export function CalendarHeatmap() {
                                   })}
                                 </div>
                               </div>
-                              <div 
+                              <div
                                 className="text-xs sm:text-sm font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-md"
                                 style={{
-                                  color: 'white',
+                                  color: isLightColor(day.pnl >= 0 ? themeColors.profit : themeColors.loss) ? '#000' : '#fff',
                                   backgroundColor: day.pnl >= 0 ? themeColors.profit : themeColors.loss
                                 }}
                               >
@@ -937,8 +948,8 @@ export function CalendarHeatmap() {
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.profit, border: `1px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
                 <span className="font-medium text-muted-foreground group-hover:transition-colors text-xs" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
-                <Badge variant="outline" className="text-xs " style={{
-                  color: themeColors.profit, 
+                <Badge variant="outline" className="text-xs" style={{
+                  color: themeColors.profit,
                   borderColor: themeColors.profit,
                   backgroundColor: `${themeColors.profit}15`
                 }}>
@@ -948,7 +959,7 @@ export function CalendarHeatmap() {
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.loss, border: `1px solid ${themeColors.loss}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
                 <span className="font-medium text-muted-foreground transition-colors text-xs">Loss Days</span>
-                <Badge variant="outline" className="text-xs " style={{
+                <Badge variant="outline" className="text-xs" style={{
                   color: themeColors.loss,
                   borderColor: themeColors.loss,
                   backgroundColor: `${themeColors.loss}15`
@@ -957,11 +968,11 @@ export function CalendarHeatmap() {
                 </Badge>
               </div>
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
-                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: '#9ca3af', border: '1px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
-                <span className="font-medium text-muted-foreground group-hover:text-gray-600 transition-colors text-xs">Breakeven</span>
+                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: breakevenColor, border: `1px solid ${breakevenColor}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
+                <span className="font-medium text-muted-foreground transition-colors text-xs">Breakeven</span>
               </div>
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
-                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: 'transparent', border: '1px solid #9ca3af', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
+                <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: 'transparent', border: '1px solid currentColor', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3 text-muted-foreground"></div>
                 <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors text-xs">No Trading</span>
               </div>
               

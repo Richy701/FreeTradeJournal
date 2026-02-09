@@ -187,7 +187,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🌟 Support
 
 ### Get Help:
-- 💬 **Support**: [Join our Telegram](https://t.me/+UI6uTKgfswUwNzhk)
 - 📝 **Feedback**: [Send us feedback](https://tally.so/r/meV7rl)
 - 🐛 **Bug Reports**: Open an issue on GitHub
 - 💡 **Feature Requests**: Contribute to discussions

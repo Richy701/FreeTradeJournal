@@ -80,8 +80,15 @@ export const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
   return (
-    <section className="py-16 mt-16 bg-background border-t border-border">
-      <div className="container mx-auto px-6">
+    <section className="relative py-16 mt-16 overflow-hidden">
+      {/* Glass background layer */}
+      <div className="absolute inset-0 bg-muted/30 backdrop-blur-sm" />
+      {/* Fade gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/50" />
+      {/* Gradient top border line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+      <div className="container mx-auto px-6 relative z-10">
         <div className="flex w-full flex-col justify-between gap-8 lg:flex-row lg:items-start lg:text-left">
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start lg:max-w-md">
             {/* Logo */}
@@ -95,23 +102,25 @@ export const Footer7 = ({
                     className="h-10"
                   />
                 ) : (
-                  <div className="h-10 w-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                  <div className="h-10 w-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-sm ring-1 ring-primary/10">
                     <FontAwesomeIcon icon={faChartLine} className="h-6 w-6 text-primary" />
                   </div>
                 )}
-                <h2 className="text-2xl font-bold text-foreground">{logo.title}</h2>
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{logo.title}</h2>
               </a>
             </div>
             <p className="text-base text-muted-foreground leading-relaxed font-medium">
               {description}
             </p>
-            <ul className="flex items-center space-x-8 text-muted-foreground">
+            <ul className="flex items-center space-x-4 text-muted-foreground">
               {socialLinks.map((social, idx) => (
-                <li key={idx} className="font-medium hover:text-primary transition-colors duration-150">
-                  <a 
-                    href={social.href} 
+                <li key={idx}>
+                  <a
+                    href={social.href}
                     aria-label={social.label}
-                    className="p-2 rounded-lg hover:bg-primary/10 transition-colors duration-150 block"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-xl bg-foreground/[0.05] border border-foreground/[0.08] flex items-center justify-center hover:bg-primary/10 hover:border-primary/20 hover:text-primary transition-all duration-200"
                   >
                     <div className="text-lg">{social.icon}</div>
                   </a>
@@ -123,16 +132,16 @@ export const Footer7 = ({
             <div className="grid w-full gap-8 md:grid-cols-3 lg:gap-16">
               {sections.map((section, sectionIdx) => (
                 <div key={sectionIdx}>
-                  <h3 className="mb-6 font-bold text-lg text-foreground">{section.title}</h3>
-                  <ul className="space-y-4 text-base text-muted-foreground">
+                  <h3 className="mb-6 font-semibold text-sm uppercase tracking-wider text-foreground">{section.title}</h3>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
                     {section.links.map((link, linkIdx) => (
                       <li
                         key={linkIdx}
-                        className="font-medium hover:text-foreground transition-colors duration-150"
+                        className="font-medium hover:text-foreground transition-all duration-200"
                       >
-                        <a 
+                        <a
                           href={link.href}
-                          className="hover:underline underline-offset-4"
+                          className="inline-block hover:translate-x-0.5 transition-transform duration-200"
                         >
                           {link.name}
                         </a>
@@ -143,49 +152,54 @@ export const Footer7 = ({
               ))}
             </div>
             {/* Badges */}
-            <div className="flex flex-col gap-4 lg:ml-auto">
+            <div className="flex flex-col gap-4 lg:ml-auto lg:items-end">
               {/* Product Hunt Badge */}
-              <a 
-                href="https://www.producthunt.com/products/freetradejournal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-freetradejournal" 
+              <a
+                href="https://www.producthunt.com/products/freetradejournal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-freetradejournal"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="opacity-80 hover:opacity-100 transition-opacity duration-200"
               >
-                <img 
-                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1012535&theme=neutral&t=1757000479250" 
-                  alt="FreeTradeJournal - Track, analyse, and improve your trading performance | Product Hunt" 
-                  style={{ width: '250px', height: '54px' }}
-                  width="250" 
-                  height="54" 
+                <img
+                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1012535&theme=neutral&t=1757000479250"
+                  alt="FreeTradeJournal - Track, analyse, and improve your trading performance | Product Hunt"
+                  className="w-[250px] h-[54px]"
+                  width="250"
+                  height="54"
                 />
               </a>
               {/* Peerlist Badge */}
-              <a href="https://peerlist.io/richy7/project/free-trade-journal" target="_blank" rel="noreferrer">
+              <a
+                href="https://peerlist.io/richy7/project/free-trade-journal"
+                target="_blank"
+                rel="noreferrer"
+                className="opacity-80 hover:opacity-100 transition-opacity duration-200"
+              >
                 <img
                   src="https://peerlist.io/api/v1/projects/embed/PRJHEOG6A7OOGQDDMIO6KA9M7ABO7A?showUpvote=false&theme=light"
                   alt="Free Trade journal"
-                  style={{ width: 'auto', height: '72px' }}
+                  className="w-auto h-[72px]"
                 />
               </a>
             </div>
           </div>
         </div>
-        <div className="mt-8 flex flex-col justify-between gap-4 border-t border-border pt-6 text-sm font-medium text-muted-foreground md:flex-row md:items-center md:text-left">
-          <p className="order-2 lg:order-1 text-muted-foreground">{copyright}</p>
-          <ul className="order-1 flex flex-col gap-4 md:order-2 md:flex-row md:gap-8">
+        {/* Gradient bottom divider */}
+        <div className="mt-10 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="pt-8 flex flex-col justify-between gap-4 text-sm font-medium text-muted-foreground/70 md:flex-row md:items-center md:text-left">
+          <p className="order-2 lg:order-1">{copyright}</p>
+          <ul className="order-1 flex flex-col gap-3 md:order-2 md:flex-row md:gap-6">
             {legalLinks.map((link, idx) => (
-              <li key={idx} className="hover:text-foreground transition-colors duration-150">
-                <a 
-                  href={link.href}
-                  className="hover:underline underline-offset-4"
-                > 
+              <li key={idx} className="hover:text-foreground transition-colors duration-200">
+                <a href={link.href}>
                   {link.name}
                 </a>
               </li>
             ))}
-            <li>
-              <FeedbackButton 
-                variant="ghost" 
-                className="h-auto p-0 text-muted-foreground hover:text-foreground text-sm font-medium"
+            <li className="md:border-l md:border-border/50 md:pl-6">
+              <FeedbackButton
+                variant="ghost"
+                className="h-auto p-0 text-muted-foreground/70 hover:text-foreground text-sm font-medium"
                 buttonText="Feedback"
               />
             </li>
@@ -195,4 +209,3 @@ export const Footer7 = ({
     </section>
   );
 };
-

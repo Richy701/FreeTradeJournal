@@ -35,8 +35,8 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 142 76% 27%; /* Trading green - reduced brightness by 25% */
-    --primary-foreground: 0 0% 98%;
+    --primary: 43 96% 56%; /* Amber/gold - premium finance */
+    --primary-foreground: 26 83% 8%; /* Dark brown-black */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -47,7 +47,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 142 76% 36%; /* Trading green ring */
+    --ring: 43 96% 56%; /* Amber/gold ring */
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -67,8 +67,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 0 0% 3.5%;
     --popover-foreground: 210 40% 98%;
-    --primary: 142 76% 27%; /* Trading green - reduced brightness by 25% */
-    --primary-foreground: 0 0% 98%;
+    --primary: 43 96% 56%; /* Amber/gold - premium finance */
+    --primary-foreground: 26 83% 8%; /* Dark brown-black */
     --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 40% 98%;
     --muted: 215 27.9% 16.9%;
@@ -79,7 +79,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 142 76% 36%;
+    --ring: 43 96% 56%; /* Amber/gold ring */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -206,6 +206,11 @@
 
   .animate-blob {
     animation: blob 7s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   .animation-delay-2000 {

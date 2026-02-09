@@ -1,9 +1,7 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
-// import { Card } from '@/components/ui/card'; // unused
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { FreeTradeJournalFeatures } from '@/components/blocks/features-8';
 import FeatureShowcase from '@/components/blocks/feature-showcase';
 import { Footer7 } from '@/components/ui/footer-7';
 import { FreeTradeJournalFeatures as Features6 } from '@/components/blocks/features-6';
@@ -11,13 +9,13 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
-// import { Features as Features10 } from '@/components/blocks/features-10'; // unused
 import {
   TrendingUp,
   ArrowRight,
-  Bitcoin,
+  CandlestickChart,
+  LineChart,
+  ShieldCheck,
 } from 'lucide-react';
-// Removed unused: BarChart3, FileText, Shield, Zap, Target, CheckCircle
 
 export default function LandingPage() {
   const { user, loading, enterDemoMode } = useAuth();
@@ -77,45 +75,62 @@ export default function LandingPage() {
       {/* Features Section with Dashboard Preview */}
       <Features6 />
         
-      {/* Content sections */}
+      {/* Why FreeTradeJournal */}
       <div className="bg-background">
-        <section className="py-20 px-6" style={{maxWidth: '1200px', margin: '0 auto'}}>
-          <div className="max-w-full">
-            <div className="text-center space-y-8 mb-20" style={{marginBottom: '80px'}}>
-              <h2 className="text-2xl font-semibold mb-4">The Complete Free Trading Journal for Forex, Futures & Stock Traders</h2>
-              <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-[1.6] font-normal">
-                <strong>FreeTradeJournal</strong> is the ultimate free trading journal designed for serious forex traders, futures traders, and stock investors. 
-                Track every trade with precision, analyze your performance using professional-grade metrics, and identify profitable patterns with our advanced analytics dashboard. 
-                Whether you're a day trader, swing trader, or working with prop firms like FTMO, Apex, or TopStep, our comprehensive trading journal provides 
-                P&L tracking, risk management calculators, calendar heatmaps, win rate analysis, and AI-powered insights - all 100% free, forever.
+        <section className="py-24 px-6 max-w-7xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
+              Everything you need to <span className="text-primary">trade smarter</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Built for forex, futures, and stock traders who want professional analytics without the price tag.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
+            <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-all duration-200">
+              <CandlestickChart className="h-12 w-12 text-primary mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Track Every Trade</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Log entries, exits, lot sizes, commissions, and swap costs. Filter by instrument, strategy, or account across all your markets.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8" style={{marginTop: '32px'}}>
-                <Button 
-                  onClick={() => {
-                    enterDemoMode();
-                    navigate('/dashboard');
-                  }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-md font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px] focus:ring-2 focus:ring-primary/50"
-                >
-                  View Live Demo
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Link to="/signup">
-                  <Button variant="outline" className="px-8 py-4 rounded-md font-bold text-lg shadow-md hover:shadow-lg transition-all duration-200 min-w-[200px] border-2 focus:ring-2 focus:ring-ring/50">
-                    Sign Up Free
-                  </Button>
-                </Link>
-              </div>
             </div>
+            <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-all duration-200">
+              <LineChart className="h-12 w-12 text-primary mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Spot Patterns Fast</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Calendar heatmaps, equity curves, win rate breakdowns, and profit factor analysis help you see what's working and what isn't.
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-all duration-200">
+              <ShieldCheck className="h-12 w-12 text-primary mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Stay Disciplined</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Set goals, manage risk with built-in calculators, and journal your mindset. Works with prop firms like FTMO, Apex, and TopStep.
+              </p>
+            </div>
+          </div>
 
-        </div>
-      </section>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              onClick={() => {
+                enterDemoMode();
+                navigate('/dashboard');
+              }}
+              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-8 py-3 rounded-lg text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 min-w-[200px] focus:ring-2 focus:ring-primary/50"
+            >
+              View Live Demo
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Link to="/signup">
+              <Button variant="outline" className="px-8 py-3 rounded-lg font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10 focus:ring-2 focus:ring-ring/50">
+                Sign Up Free
+              </Button>
+            </Link>
+          </div>
+        </section>
 
-      {/* FreeTradeJournal Features Section */}
-      <FreeTradeJournalFeatures />
 
-
-      
 
       {/* Trade Log Section */}
       <FeatureShowcase
@@ -185,22 +200,6 @@ export default function LandingPage() {
         reverseLayout={true}
       />
 
-      {/* Crypto Tracking Coming Soon Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 mb-6">
-              <Bitcoin className="h-5 w-5" />
-              <span className="font-medium">Crypto Support Coming Soon</span>
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Cryptocurrency Trading Support</h3>
-            <p className="text-lg text-muted-foreground">
-              Track your Bitcoin, Ethereum, and altcoin trades with the same powerful analytics you love for forex and futures.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ Section */}
       <FAQSection />
 
@@ -211,7 +210,7 @@ export default function LandingPage() {
           alt: "FreeTradeJournal Logo",
           title: "FreeTradeJournal"
         }}
-        description="Free, open-source trading journal for forex and futures traders. Track your performance, analyze patterns, and improve your trading with AI-powered insights."
+        description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
         sections={[
           {
             title: "Product",
@@ -249,7 +248,7 @@ export default function LandingPage() {
             label: "Buy me a coffee"
           }
         ]}
-        copyright="© 2025 FreeTradeJournal. All rights reserved."
+        copyright="© 2026 FreeTradeJournal. All rights reserved."
         legalLinks={[
           { name: "Privacy Policy", href: "/privacy" },
           { name: "Terms and Conditions", href: "/terms" },

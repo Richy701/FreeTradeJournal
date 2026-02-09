@@ -157,7 +157,7 @@ export class EmailService {
         </div>
         
         <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
-            Need help getting started? Check out our <a href="https://www.freetradejournal.com/documentation" style="color: #10b981;">documentation</a> or <a href="https://t.me/+UI6uTKgfswUwNzhk" style="color: #10b981;">get support on Telegram</a>.
+            Need help getting started? Check out our <a href="https://www.freetradejournal.com/documentation" style="color: #10b981;">documentation</a>.
         </p>
         
         <div style="border-top: 1px solid #e5e7eb; margin-top: 30px; padding-top: 20px; text-align: center;">

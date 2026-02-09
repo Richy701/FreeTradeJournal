@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react"
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
@@ -263,6 +263,54 @@ export default function Dashboard() {
     }
   }
 
+  // Compute dynamic header stats from trades
+  const headerInsight = useMemo(() => {
+    const tradesData = getTrades()
+    if (!tradesData || tradesData.length === 0) {
+      return 'Start logging trades to see your performance insights here'
+    }
+
+    const trades = tradesData.map((t: any) => ({
+      pnl: Number(t.pnl) || 0,
+      exitTime: new Date(t.exitTime),
+    }))
+
+    const totalPnl = trades.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
+    const wins = trades.filter((t: { pnl: number }) => t.pnl > 0).length
+    const winRate = Math.round((wins / trades.length) * 100)
+
+    // Calculate current win/loss streak
+    const sorted = [...trades].sort((a: { exitTime: Date }, b: { exitTime: Date }) => b.exitTime.getTime() - a.exitTime.getTime())
+    let streak = 0
+    const streakPositive = sorted[0]?.pnl > 0
+    for (const t of sorted) {
+      if ((t.pnl > 0) === streakPositive && t.pnl !== 0) streak++
+      else break
+    }
+
+    // Trades this week
+    const now = new Date()
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - now.getDay())
+    weekStart.setHours(0, 0, 0, 0)
+    const thisWeek = trades.filter((t: { exitTime: Date }) => t.exitTime >= weekStart)
+    const weekPnl = thisWeek.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
+
+    // Pick the most interesting insight
+    if (streak >= 3 && streakPositive) {
+      return `You're on a ${streak}-trade win streak — keep the momentum going`
+    }
+    if (thisWeek.length > 0) {
+      const sign = weekPnl >= 0 ? '+' : ''
+      return `${thisWeek.length} trade${thisWeek.length === 1 ? '' : 's'} this week · ${sign}$${weekPnl.toFixed(2)} P&L`
+    }
+    if (trades.length > 0) {
+      const sign = totalPnl >= 0 ? '+' : ''
+      return `${trades.length} trades logged · ${sign}$${totalPnl.toFixed(2)} total P&L · ${winRate}% win rate`
+    }
+    return 'Track your performance and analyze your trades'
+  }, [getTrades])
+
   // No loading state needed - render content immediately
 
   // Skeleton loader components
@@ -359,26 +407,26 @@ export default function Dashboard() {
       {/* Mobile-optimized Header Section */}
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
-          <div className="flex flex-col gap-4">
-            <div className="space-y-3 sm:space-y-4">
-              {/* Personalized Greeting */}
-              <div className="space-y-1 text-center sm:text-left">
-                <p className="text-lg font-semibold text-foreground opacity-90">
-                  {getGreeting()}
-                </p>
-                <div className="text-sm text-muted-foreground">
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </div>
+          <div className="flex flex-col gap-3">
+            {/* Greeting + Date */}
+            <div className="space-y-0.5 text-center sm:text-left">
+              <p className="text-lg font-semibold text-foreground opacity-90">
+                {getGreeting()}
+              </p>
+              <div className="text-sm text-muted-foreground">
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
               </div>
-              
-              {/* Dashboard Title */}
-              <div className="space-y-2 text-center sm:text-left">
-                <h1 
+            </div>
+
+            {/* Title row with action button inline on desktop */}
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div className="space-y-1.5 text-center sm:text-left">
+                <h1
                   className="text-4xl font-black bg-clip-text text-transparent leading-tight"
                   style={{
                     backgroundImage: `linear-gradient(to right, ${themeColors.primary || 'hsl(var(--primary))'}, ${themeColors.primary || 'hsl(var(--primary))'}DD, ${themeColors.primary || 'hsl(var(--primary))'}AA)`
@@ -386,20 +434,19 @@ export default function Dashboard() {
                 >
                   Trading Dashboard
                 </h1>
-                <p className="text-muted-foreground text-base font-medium max-w-2xl mx-auto sm:mx-0">
-                  Track your performance and analyze your trades
+                <p className="text-muted-foreground text-sm font-medium max-w-2xl mx-auto sm:mx-0">
+                  {headerInsight}
                 </p>
               </div>
-            </div>
-            
-            {/* Quick Actions - Centered on mobile */}
-            <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3">
+
+              {/* Quick Actions - inline with title on desktop */}
+              <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
                   <Button 
                     size="default" 
                     className="gap-2 h-11 touch-manipulation"
-                    style={{backgroundColor: themeColors.primary || 'hsl(var(--primary))', color: 'white'}}
+                    style={{backgroundColor: themeColors.primary || 'hsl(var(--primary))', color: themeColors.primaryButtonText}}
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Trade</span>
@@ -581,6 +628,7 @@ export default function Dashboard() {
                 </DialogContent>
               </Dialog>
             </div>
+            </div>
           </div>
         </div>
       </div>
@@ -634,11 +682,11 @@ export default function Dashboard() {
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader className="pb-6">
+          <DialogHeader className="pb-4">
             <div className="flex items-center gap-4">
-              <div 
+              <div
                 className="p-3 rounded-xl shadow-sm"
-                style={{ 
+                style={{
                   backgroundColor: `${themeColors.primary}10`,
                   border: `1px solid ${themeColors.primary}20`
                 }}
@@ -653,113 +701,103 @@ export default function Dashboard() {
                   Review your trading data before importing to Dashboard
                 </DialogDescription>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Step 2 of 2</p>
-                <div className="flex gap-1 mt-1">
-                  <div className="w-4 h-1 bg-primary rounded-full"></div>
-                  <div className="w-4 h-1 bg-primary rounded-full"></div>
-                </div>
-              </div>
             </div>
           </DialogHeader>
-          
+
           {csvPreview.parseResult && (
-            <div className="space-y-6 overflow-auto pr-1">
-              {/* File Summary - Slick Design */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* File Info Card */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">File</p>
-                      <p className="text-sm font-semibold truncate" title={csvPreview.file?.name}>
-                        {csvPreview.file?.name}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total Rows */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}15` }}>
-                      <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Rows</p>
-                      <p className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                        {csvPreview.parseResult.summary.totalRows}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Successful */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.profit}15` }}>
-                      <CheckCircle2 className="h-4 w-4" style={{ color: themeColors.profit }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Valid Trades</p>
-                      <p className="text-2xl font-bold" style={{ color: themeColors.profit }}>
-                        {csvPreview.parseResult.summary.successfulParsed}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Failed */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.loss}15` }}>
-                      <AlertCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Errors</p>
-                      <p className="text-2xl font-bold" style={{ color: themeColors.loss }}>
-                        {csvPreview.parseResult.summary.failed}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-4 overflow-auto pr-1">
+              {/* Compact Status Banner */}
+              <div
+                className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
+                style={{
+                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}08` : `${themeColors.profit}08`,
+                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}20` : `${themeColors.profit}20`
+                }}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm font-medium truncate" title={csvPreview.file?.name}>{csvPreview.file?.name}</span>
+                <span className="text-muted-foreground text-sm">—</span>
+                <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
+                  {csvPreview.parseResult.summary.successfulParsed} trades
+                </span>
+                {csvPreview.parseResult.summary.failed > 0 && (
+                  <>
+                    <span className="text-muted-foreground text-sm">·</span>
+                    <span className="text-sm font-semibold" style={{ color: themeColors.loss }}>
+                      {csvPreview.parseResult.summary.failed} errors
+                    </span>
+                  </>
+                )}
+                {csvPreview.parseResult.summary.dateRange && (
+                  <>
+                    <span className="text-muted-foreground text-sm ml-auto">·</span>
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {csvPreview.parseResult.summary.dateRange.earliest} — {csvPreview.parseResult.summary.dateRange.latest}
+                    </span>
+                  </>
+                )}
               </div>
 
-              {/* Date Range - If Available */}
-              {csvPreview.parseResult.summary.dateRange && (
-                <div 
-                  className="rounded-xl p-4 border"
-                  style={{ 
-                    backgroundColor: `${themeColors.primary}05`,
-                    borderColor: `${themeColors.primary}15`
-                  }}
-                >
-                  <div className="flex items-center justify-center gap-3">
-                    <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    <span className="font-medium text-muted-foreground">Date Range:</span>
-                    <span className="font-bold" style={{ color: themeColors.primary }}>
-                      {csvPreview.parseResult.summary.dateRange.earliest} → {csvPreview.parseResult.summary.dateRange.latest}
-                    </span>
-                  </div>
-                </div>
-              )}
+              {/* Trade Summary Stats */}
+              {csvPreview.parseResult.trades.length > 0 && (() => {
+                const trades = csvPreview.parseResult!.trades;
+                const pnls = trades.map(t => parseFloat(t.pnl));
+                const totalPnl = pnls.reduce((sum, p) => sum + p, 0);
+                const winCount = pnls.filter(p => p > 0).length;
+                const winRate = trades.length > 0 ? (winCount / trades.length) * 100 : 0;
+                const bestTrade = Math.max(...pnls);
+                const worstTrade = Math.min(...pnls);
 
-              {/* Sample Trades Preview */}
-              {csvPreview.parseResult.trades.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground">Preview (first 5 trades)</h3>
-                    <Badge variant="secondary" className="text-xs">
-                      {csvPreview.parseResult.trades.length} total
-                    </Badge>
+                return (
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
+                      <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
+                        {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                      <p className="text-lg font-bold" style={{ color: winRate >= 50 ? themeColors.profit : themeColors.loss }}>
+                        {winRate.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Best Trade</p>
+                      <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
+                        +${bestTrade.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Worst Trade</p>
+                      <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                        ${worstTrade.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="border rounded-xl overflow-hidden shadow-sm">
+                );
+              })()}
+
+              {/* Sample Preview - Theme Aware Table */}
+              {csvPreview.parseResult.trades.length > 0 && (
+                <div className="bg-card rounded-xl border overflow-hidden">
+                  <div
+                    className="px-6 py-3 border-b"
+                    style={{ backgroundColor: `${themeColors.primary}10` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      <h3 className="font-semibold text-foreground text-sm">
+                        Trade Preview <span className="font-normal text-muted-foreground">(First 5 rows)</span>
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow className="hover:bg-transparent">
+                        <TableRow className="hover:bg-transparent border-border">
                           <TableHead className="font-semibold">Symbol</TableHead>
                           <TableHead className="font-semibold">Side</TableHead>
                           <TableHead className="font-semibold">Entry</TableHead>
@@ -770,40 +808,59 @@ export default function Dashboard() {
                       </TableHeader>
                       <TableBody>
                         {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index} className="hover:bg-muted/50">
-                            <TableCell className="font-medium">{trade.symbol}</TableCell>
+                          <TableRow key={index} className="hover:bg-muted/50 border-border">
+                            <TableCell className="font-semibold text-foreground">
+                              {trade.symbol}
+                            </TableCell>
                             <TableCell>
-                              <Badge 
-                                variant={trade.side === 'long' ? 'default' : 'secondary'}
-                                className="text-xs"
+                              <Badge
+                                className="text-xs px-2.5 py-1 border"
+                                style={{
+                                  backgroundColor: trade.side === 'long'
+                                    ? `${themeColors.profit}15`
+                                    : `${themeColors.loss}15`,
+                                  color: trade.side === 'long'
+                                    ? themeColors.profit
+                                    : themeColors.loss,
+                                  borderColor: trade.side === 'long'
+                                    ? `${themeColors.profit}30`
+                                    : `${themeColors.loss}30`
+                                }}
                               >
                                 {trade.side.toUpperCase()}
                               </Badge>
                             </TableCell>
-                            <TableCell className="font-mono text-sm">{parseFloat(trade.entryPrice).toFixed(4)}</TableCell>
-                            <TableCell className="font-mono text-sm">{parseFloat(trade.exitPrice).toFixed(4)}</TableCell>
-                            <TableCell className="font-medium">{trade.quantity}</TableCell>
-                            <TableCell>
-                              <span 
-                                className={`font-semibold ${parseFloat(trade.pnl) >= 0 ? '' : ''}`}
-                                style={{ 
-                                  color: parseFloat(trade.pnl) >= 0 ? themeColors.profit : themeColors.loss 
-                                }}
-                              >
-                                ${parseFloat(trade.pnl).toFixed(2)}
-                              </span>
+                            <TableCell className="text-muted-foreground font-mono text-sm">
+                              {parseFloat(trade.entryPrice).toFixed(4)}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground font-mono text-sm">
+                              {parseFloat(trade.exitPrice).toFixed(4)}
+                            </TableCell>
+                            <TableCell className="font-medium text-foreground">
+                              {trade.quantity}
+                            </TableCell>
+                            <TableCell
+                              className="font-bold"
+                              style={{
+                                color: parseFloat(trade.pnl) >= 0
+                                  ? themeColors.profit
+                                  : themeColors.loss
+                              }}
+                            >
+                              {parseFloat(trade.pnl) >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
+
                   {csvPreview.parseResult.trades.length > 5 && (
-                    <div 
-                      className="text-center py-3 rounded-lg border"
+                    <div
+                      className="px-6 py-2.5 border-t text-center"
                       style={{ backgroundColor: `${themeColors.primary}05` }}
                     >
-                      <p className="text-sm font-medium text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         + {csvPreview.parseResult.trades.length - 5} more trades will be imported
                       </p>
                     </div>
@@ -813,76 +870,75 @@ export default function Dashboard() {
 
               {/* Errors */}
               {csvPreview.parseResult.errors.length > 0 && (
-                <div 
-                  className="rounded-xl p-5 border"
-                  style={{ 
+                <div
+                  className="rounded-xl border overflow-hidden"
+                  style={{
                     backgroundColor: `${themeColors.loss}08`,
-                    borderColor: `${themeColors.loss}20`
+                    borderColor: `${themeColors.loss}30`
                   }}
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div 
-                      className="p-2 rounded-lg"
-                      style={{ backgroundColor: `${themeColors.loss}15` }}
-                    >
-                      <AlertCircle className="h-5 w-5" style={{ color: themeColors.loss }} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg" style={{ color: themeColors.loss }}>
-                        Import Errors
+                  <div
+                    className="px-6 py-3 border-b"
+                    style={{
+                      backgroundColor: `${themeColors.loss}15`,
+                      borderColor: `${themeColors.loss}30`
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
+                      <h3 className="font-semibold text-sm" style={{ color: themeColors.loss }}>
+                        Import Warnings ({csvPreview.parseResult.errors.length})
                       </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {csvPreview.parseResult.errors.length} issue{csvPreview.parseResult.errors.length > 1 ? 's' : ''} found
-                      </p>
                     </div>
                   </div>
-                  <div className="max-h-40 overflow-y-auto space-y-3">
-                    {csvPreview.parseResult.errors.map((error, index) => (
-                      <div 
-                        key={index} 
-                        className="text-sm p-4 rounded-xl border-l-4 bg-card"
-                        style={{ 
-                          borderLeftColor: themeColors.loss
-                        }}
-                      >
-                        <span className="font-medium">Row {index + 2}:</span> {error}
-                      </div>
-                    ))}
+
+                  <div className="p-4">
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {csvPreview.parseResult.errors.slice(0, 5).map((error, index) => (
+                        <div key={index} className="flex items-start gap-2 text-sm">
+                          <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: themeColors.loss }}></div>
+                          <p style={{ color: themeColors.loss }}>{error}</p>
+                        </div>
+                      ))}
+                      {csvPreview.parseResult.errors.length > 5 && (
+                        <p className="text-xs pl-4" style={{ color: themeColors.loss }}>
+                          + {csvPreview.parseResult.errors.length - 5} more errors...
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-4 justify-between items-center pt-6 border-t border-border">
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="text-sm text-muted-foreground">
                   {csvPreview.parseResult.trades.length > 0 ? (
                     <span className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <CheckCircle2 className="h-4 w-4" style={{ color: themeColors.profit }} />
                       Ready to import {csvPreview.parseResult.trades.length} trades
                     </span>
                   ) : (
-                    <span className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-500" />
+                    <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
+                      <AlertCircle className="h-4 w-4" />
                       No valid trades to import
                     </span>
                   )}
                 </div>
+
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
                     onClick={() => setCsvPreview({ show: false, file: null, parseResult: null })}
-                    className="px-8"
+                    className="hover:bg-muted"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleConfirmImport}
                     disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
-                    className="px-8 shadow-lg hover:shadow-xl transition-all"
-                    style={{ 
-                      backgroundColor: themeColors.primary,
-                      borderColor: themeColors.primary
-                    }}
+                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                    className="hover:opacity-90 shadow-lg px-6 font-medium"
                   >
                     {csvUploadState.isUploading ? (
                       <span className="flex items-center gap-2">

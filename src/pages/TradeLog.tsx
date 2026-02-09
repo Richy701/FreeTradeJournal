@@ -93,6 +93,10 @@ interface TradeFormData {
   propFirm?: string
 }
 
+function formatPrice(price: number): string {
+  return price.toFixed(2);
+}
+
 export default function TradeLog() {
   const { themeColors } = useThemePresets();
   const { activeAccount } = useAccounts();
@@ -377,23 +381,8 @@ export default function TradeLog() {
       } else {
         riskReward = 0; // Invalid stop/target levels for this trade direction
       }
-    } else {
-      // Alternative R:R calculations when SL/TP not available
-      const actualPnL = Math.abs(exitPrice - entryPrice);
-      
-      // Method 1: Assume risk was 1% of entry price (common swing trading rule)
-      const estimatedRisk = entryPrice * 0.01;
-      if (estimatedRisk > 0) {
-        riskReward = actualPnL / estimatedRisk;
-      }
-      
-      // Method 2: For futures, assume risk was $50-100 per contract (adjust based on instrument)
-      // if (market === 'futures') {
-      //   const estimatedRiskDollars = 75; // $75 risk per contract
-      //   const actualMoveDollars = actualPnL * lotSize;
-      //   riskReward = actualMoveDollars / estimatedRiskDollars;
-      // }
     }
+    // Without SL/TP we can't calculate a meaningful R:R
     
     return { pnl, pnlPercentage, riskReward };
   };
@@ -401,29 +390,25 @@ export default function TradeLog() {
   const onSubmit = (data: TradeFormData) => {
     let pnl: number;
     let pnlPercentage: number;
-    let riskReward: number;
-    
+    let riskReward: number = 0;
+
     if (data.useManualPnL && data.manualPnL !== undefined) {
       // Use manual P&L
       pnl = data.manualPnL;
-      
+
       // Calculate percentage based on manual P&L
       const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
       pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
-      
+
       // Calculate risk-reward based on manual P&L
       if (data.stopLoss) {
-        const risk = data.side === 'long' 
-          ? data.entryPrice - data.stopLoss 
+        const risk = data.side === 'long'
+          ? data.entryPrice - data.stopLoss
           : data.stopLoss - data.entryPrice;
         const actualMove = Math.abs(data.exitPrice - data.entryPrice);
         riskReward = risk > 0 ? actualMove / risk : 0;
-      } else {
-        // Estimate based on 1% risk assumption
-        const estimatedRisk = data.entryPrice * 0.01;
-        const actualMove = Math.abs(data.exitPrice - data.entryPrice);
-        riskReward = estimatedRisk > 0 ? actualMove / estimatedRisk : 0;
       }
+      // Without stop loss we can't determine R:R
     } else {
       // Use auto-calculated P&L
       const calculated = calculatePnL(data);
@@ -768,41 +753,31 @@ export default function TradeLog() {
               exitTime: new Date(trade.exitTime)
             };
 
-            // Recalculate RR if missing
+            // Recalculate RR if missing — only when SL and TP are set
             if (tradeWithDates.riskReward === undefined || tradeWithDates.riskReward === null) {
               let riskReward = 0;
               if (trade.stopLoss && trade.takeProfit && trade.entryPrice) {
-                // Calculate R:R based on trade direction
                 let risk = 0;
                 let reward = 0;
-                
+
                 if (trade.side === 'long') {
-                  // Long trade: risk = entry - stop, reward = target - entry
                   risk = trade.entryPrice - trade.stopLoss;
                   reward = trade.takeProfit - trade.entryPrice;
                 } else {
-                  // Short trade: risk = stop - entry, reward = entry - target
                   risk = trade.stopLoss - trade.entryPrice;
                   reward = trade.entryPrice - trade.takeProfit;
                 }
-                
-                // Ensure both risk and reward are positive for valid R:R calculation
+
                 if (risk > 0 && reward > 0) {
                   riskReward = reward / risk;
-                } else {
-                  riskReward = 0; // Invalid stop/target levels for this trade direction
-                }
-              } else {
-                // Alternative R:R calculations when SL/TP not available
-                const actualPnL = Math.abs(trade.exitPrice - trade.entryPrice);
-                
-                // Method 1: Assume risk was 1% of entry price (common swing trading rule)
-                const estimatedRisk = trade.entryPrice * 0.01;
-                if (estimatedRisk > 0) {
-                  riskReward = actualPnL / estimatedRisk;
                 }
               }
+              // Without SL/TP we can't know the R:R — leave as 0
               tradeWithDates.riskReward = riskReward;
+            }
+            // Cap any previously stored garbage values
+            if (tradeWithDates.riskReward > 100) {
+              tradeWithDates.riskReward = 0;
             }
 
             return tradeWithDates;
@@ -900,14 +875,15 @@ export default function TradeLog() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 bg-muted rounded-lg"></div>
+              <Card key={i} className="bg-muted/30 backdrop-blur-sm border-0 animate-pulse">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <div className="h-4 w-16 bg-muted rounded"></div>
-                      <div className="h-6 w-20 bg-muted rounded"></div>
+                      <div className="h-3 w-16 bg-muted rounded"></div>
+                      <div className="h-8 w-24 bg-muted rounded"></div>
+                      <div className="h-3 w-20 bg-muted rounded"></div>
                     </div>
+                    <div className="h-10 w-10 bg-muted rounded-lg"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -915,17 +891,23 @@ export default function TradeLog() {
           </div>
 
           {/* Table Skeleton */}
-          <Card>
+          <Card className="bg-muted/30 backdrop-blur-sm border-0">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <div className="h-6 w-32 bg-muted animate-pulse rounded"></div>
-                <div className="h-9 w-24 bg-muted animate-pulse rounded"></div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-muted animate-pulse rounded-lg"></div>
+                  <div className="space-y-2">
+                    <div className="h-5 w-28 bg-muted animate-pulse rounded"></div>
+                    <div className="h-3 w-44 bg-muted animate-pulse rounded"></div>
+                  </div>
+                </div>
+                <div className="h-6 w-20 bg-muted animate-pulse rounded-full"></div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 w-full bg-muted animate-pulse rounded"></div>
+                  <div key={i} className="h-14 w-full bg-muted/50 animate-pulse rounded-lg"></div>
                 ))}
               </div>
             </CardContent>
@@ -966,7 +948,7 @@ export default function TradeLog() {
                   form.reset();
                   setIsDialogOpen(true);
                 }}
-                style={{ backgroundColor: themeColors.primary, color: 'white' }}
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Trade
@@ -1561,7 +1543,7 @@ export default function TradeLog() {
                           className="px-8"
                           style={{
                             background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}CC)`,
-                            color: 'white'
+                            color: themeColors.primaryButtonText
                           }}
                         >
                           {editingTrade ? 'Update Trade' : 'Add Trade'}
@@ -1579,24 +1561,18 @@ export default function TradeLog() {
           {/* Primary Stats Row */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in slide-in-from-bottom-2 duration-500">
             {/* Total P&L Card */}
-            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
-              <CardContent className="relative p-5">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total P&L</p>
-                    <div className="flex items-baseline gap-1">
-                      <p className="text-2xl font-black tracking-tight" 
-                         style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                        {quickStats.totalPnL >= 0 ? '+' : ''}${Math.abs(quickStats.totalPnL).toFixed(0)}
-                      </p>
-                      <span className="text-sm font-medium text-muted-foreground">
-                        .{(Math.abs(quickStats.totalPnL) % 1).toFixed(2).slice(2)}
-                      </span>
-                    </div>
+                    <p className="text-3xl font-black tracking-tight"
+                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                      {quickStats.totalPnL >= 0 ? '+' : '-'}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    </p>
                     <div className="flex items-center gap-2 text-xs">
-                      <FontAwesomeIcon 
-                        icon={quickStats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown} 
+                      <FontAwesomeIcon
+                        icon={quickStats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown}
                         className="h-3 w-3"
                         style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                       />
@@ -1605,9 +1581,9 @@ export default function TradeLog() {
                       </span>
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" 
+                  <div className="p-2.5 rounded-lg shadow-sm"
                        style={{ backgroundColor: `${quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}20` }}>
-                    <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4" 
+                    <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4"
                                    style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }} />
                   </div>
                 </div>
@@ -1615,46 +1591,38 @@ export default function TradeLog() {
             </Card>
 
             {/* Win Rate Card */}
-            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
-              <CardContent className="relative p-5">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
                     <div className="flex items-baseline gap-1">
-                      <p className="text-2xl font-black tracking-tight text-primary">
+                      <p className="text-3xl font-black tracking-tight" style={{ color: themeColors.primary }}>
                         {quickStats.winRate.toFixed(0)}
                       </p>
                       <span className="text-lg font-bold text-muted-foreground">%</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="flex items-center gap-1">
-                        <span style={{ color: themeColors.profit }} className="font-semibold">
-                          {trades.filter(t => t.pnl > 0).length}W
-                        </span>
-                        <span className="text-muted-foreground">/</span>
-                        <span style={{ color: themeColors.loss }} className="font-semibold">
-                          {trades.filter(t => t.pnl < 0).length}L
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                      <span>{trades.filter(t => t.pnl > 0).length}W</span>
+                      <span>/</span>
+                      <span>{trades.filter(t => t.pnl < 0).length}L</span>
                     </div>
                   </div>
                   <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
-                    <FontAwesomeIcon icon={faBullseye} className="h-4 w-4 text-primary" />
+                    <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Best Trade Card */}
-            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
-              <CardContent className="relative p-5">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Best Trade</p>
                     <div className="flex items-baseline gap-1">
-                      <p className="text-2xl font-black tracking-tight" style={{ color: themeColors.profit }}>
+                      <p className="text-3xl font-black tracking-tight" style={{ color: themeColors.profit }}>
                         +${trades.length > 0 ? Math.max(0, ...trades.map(t => t.pnl)).toFixed(0) : '0'}
                       </p>
                     </div>
@@ -1672,20 +1640,19 @@ export default function TradeLog() {
             </Card>
 
             {/* Average R:R Card */}
-            <Card className="relative overflow-hidden border-border/50 hover:shadow-lg transition-all duration-200">
-              <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-background"></div>
-              <CardContent className="relative p-5">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg R:R</p>
                     <div className="flex items-baseline gap-1">
-                      <p className="text-2xl font-black tracking-tight text-primary">
+                      <p className="text-3xl font-black tracking-tight" style={{ color: themeColors.primary }}>
                         {quickStats.avgRR > 0 ? quickStats.avgRR.toFixed(1) : '--'}
                       </p>
                       <span className="text-lg font-bold text-muted-foreground">:1</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
-                      <FontAwesomeIcon 
+                      <FontAwesomeIcon
                         icon={quickStats.avgRR >= 1.5 ? faCheckCircle : faExclamationTriangle}
                         className="h-3 w-3"
                         style={{ color: quickStats.avgRR >= 1.5 ? themeColors.profit : themeColors.loss }}
@@ -1696,7 +1663,7 @@ export default function TradeLog() {
                     </div>
                   </div>
                   <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
-                    <FontAwesomeIcon icon={faBalanceScale} className="h-4 w-4 text-primary" />
+                    <FontAwesomeIcon icon={faBalanceScale} className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </div>
                 </div>
               </CardContent>
@@ -1706,25 +1673,25 @@ export default function TradeLog() {
           {/* Secondary Stats Row */}
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 animate-in slide-in-from-bottom-2 duration-500 delay-100">
             {/* Total Trades */}
-            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
-                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 mx-auto text-primary" />
-                  <p className="text-lg font-bold text-foreground">{quickStats.totalTrades}</p>
+                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
+                  <p className="text-xl font-bold text-foreground">{quickStats.totalTrades}</p>
                   <p className="text-xs text-muted-foreground font-medium">Total Trades</p>
                 </div>
               </CardContent>
             </Card>
 
             {/* Average Win */}
-            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faArrowTrendUp} className="h-4 w-4 mx-auto" style={{ color: themeColors.profit }} />
-                  <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
+                  <p className="text-xl font-bold" style={{ color: themeColors.profit }}>
                     ${(() => {
                       const winningTrades = trades.filter(t => t.pnl > 0);
-                      return winningTrades.length > 0 
+                      return winningTrades.length > 0
                         ? (winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length).toFixed(0)
                         : '0';
                     })()}
@@ -1735,14 +1702,14 @@ export default function TradeLog() {
             </Card>
 
             {/* Average Loss */}
-            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faArrowTrendDown} className="h-4 w-4 mx-auto" style={{ color: themeColors.loss }} />
-                  <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                  <p className="text-xl font-bold" style={{ color: themeColors.loss }}>
                     ${(() => {
                       const losingTrades = trades.filter(t => t.pnl < 0);
-                      return losingTrades.length > 0 
+                      return losingTrades.length > 0
                         ? Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length).toFixed(0)
                         : '0';
                     })()}
@@ -1753,11 +1720,11 @@ export default function TradeLog() {
             </Card>
 
             {/* Profit Factor */}
-            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
-                  <FontAwesomeIcon icon={faFire} className="h-4 w-4 mx-auto text-primary" />
-                  <p className="text-lg font-bold text-foreground">
+                  <FontAwesomeIcon icon={faFire} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
+                  <p className="text-xl font-bold text-foreground">
                     {(() => {
                       const totalWins = trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
                       const totalLosses = Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
@@ -1772,7 +1739,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Current Streak */}
-            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   {(() => {
@@ -1789,12 +1756,12 @@ export default function TradeLog() {
                     }
                     return (
                       <>
-                        <FontAwesomeIcon 
-                          icon={isWinning ? faFire : faTimesCircle} 
-                          className="h-4 w-4 mx-auto" 
-                          style={{ color: isWinning ? themeColors.profit : themeColors.loss }} 
+                        <FontAwesomeIcon
+                          icon={isWinning ? faFire : faTimesCircle}
+                          className="h-4 w-4 mx-auto"
+                          style={{ color: isWinning ? themeColors.profit : themeColors.loss }}
                         />
-                        <p className="text-lg font-bold" style={{ color: isWinning ? themeColors.profit : themeColors.loss }}>
+                        <p className="text-xl font-bold" style={{ color: isWinning ? themeColors.profit : themeColors.loss }}>
                           {streak}
                         </p>
                         <p className="text-xs text-muted-foreground font-medium">
@@ -1808,11 +1775,11 @@ export default function TradeLog() {
             </Card>
 
             {/* This Month */}
-            <Card className="border-border/30 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
-                  <FontAwesomeIcon icon={faCalendar} className="h-4 w-4 mx-auto text-primary" />
-                  <p className="text-lg font-bold" style={{ 
+                  <FontAwesomeIcon icon={faCalendar} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
+                  <p className="text-xl font-bold" style={{
                     color: (() => {
                       const now = new Date();
                       const thisMonth = now.getMonth();
@@ -1847,16 +1814,25 @@ export default function TradeLog() {
         </div>
 
         {/* Trades Table */}
-        <Card>
+        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>All Trades</CardTitle>
-                <CardDescription>
-                  View and manage your trading records
-                </CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
+                  <CardDescription>
+                    View and manage your trading records
+                  </CardDescription>
+                </div>
               </div>
-              <Badge variant="outline">
+              <Badge
+                variant="outline"
+                className="text-xs font-medium"
+                style={{ borderColor: `${themeColors.primary}40`, color: themeColors.primary }}
+              >
                 {trades.length} {trades.length === 1 ? 'Trade' : 'Trades'}
               </Badge>
             </div>
@@ -1877,7 +1853,7 @@ export default function TradeLog() {
                       form.reset();
                       setIsDialogOpen(true);
                     }}
-                    style={{ backgroundColor: themeColors.primary, color: 'white' }}
+                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Trade
@@ -1897,23 +1873,23 @@ export default function TradeLog() {
               <div className="hidden md:block w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-b hover:bg-transparent">
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground py-4">Date</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Symbol</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Market</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Side</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Entry</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Exit</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Lots</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">P&L</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">R:R</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Strategy</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Actions</TableHead>
+                    <TableRow className="border-b border-border/30 hover:bg-transparent">
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80 py-3">Date</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Symbol</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Market</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Side</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Entry</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Exit</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Lots</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">P&L</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">R:R</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Strategy</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedTrades.map((trade) => (
-                      <TableRow key={trade.id} className="hover:bg-muted/20 transition-colors duration-200 border-b border-border/50">
+                      <TableRow key={trade.id} className="hover:bg-muted/30 transition-colors duration-200 border-b border-border/20" style={{ borderLeft: `3px solid ${trade.pnl >= 0 ? themeColors.profit : themeColors.loss}40` }}>
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
@@ -1942,8 +1918,8 @@ export default function TradeLog() {
                             {trade.side.toUpperCase()}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium text-sm tabular-nums">{trade.entryPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</TableCell>
-                        <TableCell className="font-medium text-sm tabular-nums">{trade.exitPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</TableCell>
+                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.entryPrice)}</TableCell>
+                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.exitPrice)}</TableCell>
                         <TableCell className="font-medium text-sm">{trade.lotSize}</TableCell>
                         <TableCell 
                           className="font-bold text-base"
@@ -1990,10 +1966,10 @@ export default function TradeLog() {
               </div>
               
               {/* Mobile Card View */}
-              <div className="md:hidden space-y-4">
+              <div className="md:hidden space-y-3 px-4 pb-4">
                 {paginatedTrades.map((trade) => (
-                  <Card key={trade.id} className="overflow-hidden">
-                    <CardContent className="p-4">
+                  <div key={trade.id} className="rounded-xl overflow-hidden transition-all duration-200 hover:shadow-md" style={{ border: `1px solid ${trade.pnl >= 0 ? themeColors.profit : themeColors.loss}20`, borderLeft: `3px solid ${trade.pnl >= 0 ? themeColors.profit : themeColors.loss}60` }}>
+                    <div className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="flex items-center gap-2">
@@ -2024,11 +2000,11 @@ export default function TradeLog() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">Entry:</span>
-                          <span className="ml-2 font-medium">{trade.entryPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</span>
+                          <span className="ml-2 font-medium">{formatPrice(trade.entryPrice)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Exit:</span>
-                          <span className="ml-2 font-medium">{trade.exitPrice.toFixed(trade.symbol?.includes('JPY') ? 3 : 5)}</span>
+                          <span className="ml-2 font-medium">{formatPrice(trade.exitPrice)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Lots:</span>
@@ -2050,7 +2026,7 @@ export default function TradeLog() {
                         </div>
                       )}
                       
-                      <div className="flex gap-2 mt-4 pt-3 border-t">
+                      <div className="flex gap-2 mt-4 pt-3 border-t border-border/20">
                         <Button
                           size="sm"
                           variant="outline"
@@ -2078,8 +2054,8 @@ export default function TradeLog() {
                           Delete
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
               </>
@@ -2087,7 +2063,7 @@ export default function TradeLog() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 border-t bg-muted/20">
+              <div className="flex items-center justify-between p-4 border-t border-border/20 bg-muted/10">
                 <div className="text-sm text-muted-foreground">
                   Showing {startIndex + 1} to {Math.min(endIndex, trades.length)} of {trades.length} trades
                 </div>
@@ -2147,11 +2123,11 @@ export default function TradeLog() {
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader className="pb-6">
+          <DialogHeader className="pb-4">
             <div className="flex items-center gap-4">
-              <div 
+              <div
                 className="p-3 rounded-xl shadow-sm"
-                style={{ 
+                style={{
                   backgroundColor: `${themeColors.primary}10`,
                   border: `1px solid ${themeColors.primary}20`
                 }}
@@ -2166,115 +2142,99 @@ export default function TradeLog() {
                   Review and validate your trading data before importing
                 </DialogDescription>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Step 2 of 2</p>
-                <div className="flex gap-1 mt-1">
-                  <div className="w-4 h-1 bg-primary rounded-full"></div>
-                  <div className="w-4 h-1 bg-primary rounded-full"></div>
-                </div>
-              </div>
             </div>
           </DialogHeader>
-          
+
           {csvPreview.parseResult && (
-            <div className="space-y-6 overflow-auto pr-1">
-              {/* File Summary - Slick Design */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* File Info Card */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">File</p>
-                      <p className="text-sm font-semibold truncate" title={csvPreview.file?.name}>
-                        {csvPreview.file?.name}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total Rows */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}15` }}>
-                      <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Rows</p>
-                      <p className="text-2xl font-bold" style={{ color: themeColors.primary }}>
-                        {csvPreview.parseResult.summary.totalRows}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Successful */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.profit}15` }}>
-                      <CheckCircle2 className="h-4 w-4" style={{ color: themeColors.profit }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Valid Trades</p>
-                      <p className="text-2xl font-bold" style={{ color: themeColors.profit }}>
-                        {csvPreview.parseResult.summary.successfulParsed}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Failed */}
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-xl p-4 border shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.loss}15` }}>
-                      <AlertCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Errors</p>
-                      <p className="text-2xl font-bold" style={{ color: themeColors.loss }}>
-                        {csvPreview.parseResult.summary.failed}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="space-y-4 overflow-auto pr-1">
+              {/* Compact Status Banner */}
+              <div
+                className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
+                style={{
+                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}08` : `${themeColors.profit}08`,
+                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}20` : `${themeColors.profit}20`
+                }}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm font-medium truncate" title={csvPreview.file?.name}>{csvPreview.file?.name}</span>
+                <span className="text-muted-foreground text-sm">—</span>
+                <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
+                  {csvPreview.parseResult.summary.successfulParsed} trades
+                </span>
+                {csvPreview.parseResult.summary.failed > 0 && (
+                  <>
+                    <span className="text-muted-foreground text-sm">·</span>
+                    <span className="text-sm font-semibold" style={{ color: themeColors.loss }}>
+                      {csvPreview.parseResult.summary.failed} errors
+                    </span>
+                  </>
+                )}
+                {csvPreview.parseResult.summary.dateRange && (
+                  <>
+                    <span className="text-muted-foreground text-sm ml-auto">·</span>
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {csvPreview.parseResult.summary.dateRange.earliest} — {csvPreview.parseResult.summary.dateRange.latest}
+                    </span>
+                  </>
+                )}
               </div>
 
-              {/* Date Range - If Available */}
-              {csvPreview.parseResult.summary.dateRange && (
-                <div 
-                  className="rounded-xl p-4 border"
-                  style={{ 
-                    backgroundColor: `${themeColors.primary}05`,
-                    borderColor: `${themeColors.primary}15`
-                  }}
-                >
-                  <div className="flex items-center justify-center gap-3">
-                    <Calendar className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    <span className="font-medium text-muted-foreground">Date Range:</span>
-                    <span className="font-bold" style={{ color: themeColors.primary }}>
-                      {csvPreview.parseResult.summary.dateRange.earliest} → {csvPreview.parseResult.summary.dateRange.latest}
-                    </span>
+              {/* Trade Summary Stats */}
+              {csvPreview.parseResult.trades.length > 0 && (() => {
+                const trades = csvPreview.parseResult!.trades;
+                const pnls = trades.map(t => parseFloat(t.pnl));
+                const totalPnl = pnls.reduce((sum, p) => sum + p, 0);
+                const winCount = pnls.filter(p => p > 0).length;
+                const winRate = trades.length > 0 ? (winCount / trades.length) * 100 : 0;
+                const bestTrade = Math.max(...pnls);
+                const worstTrade = Math.min(...pnls);
+
+                return (
+                  <div className="grid grid-cols-4 gap-3">
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
+                      <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
+                        {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                      <p className="text-lg font-bold" style={{ color: winRate >= 50 ? themeColors.profit : themeColors.loss }}>
+                        {winRate.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Best Trade</p>
+                      <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
+                        +${bestTrade.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Worst Trade</p>
+                      <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                        ${worstTrade.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Sample Preview - Theme Aware Table */}
               {csvPreview.parseResult.trades.length > 0 && (
                 <div className="bg-card rounded-xl border overflow-hidden">
-                  <div 
-                    className="px-6 py-4 border-b"
+                  <div
+                    className="px-6 py-3 border-b"
                     style={{ backgroundColor: `${themeColors.primary}10` }}
                   >
                     <div className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      <h3 className="font-semibold text-foreground">
-                        Trade Preview <span className="text-sm font-normal text-muted-foreground">(First 5 rows)</span>
+                      <h3 className="font-semibold text-foreground text-sm">
+                        Trade Preview <span className="font-normal text-muted-foreground">(First 5 rows)</span>
                       </h3>
                     </div>
                   </div>
-                  
+
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
@@ -2295,17 +2255,17 @@ export default function TradeLog() {
                               {trade.symbol}
                             </TableCell>
                             <TableCell>
-                              <Badge 
+                              <Badge
                                 className="text-xs px-2.5 py-1 border"
                                 style={{
-                                  backgroundColor: trade.side === 'long' 
-                                    ? `${themeColors.profit}15` 
+                                  backgroundColor: trade.side === 'long'
+                                    ? `${themeColors.profit}15`
                                     : `${themeColors.loss}15`,
-                                  color: trade.side === 'long' 
-                                    ? themeColors.profit 
+                                  color: trade.side === 'long'
+                                    ? themeColors.profit
                                     : themeColors.loss,
-                                  borderColor: trade.side === 'long' 
-                                    ? `${themeColors.profit}30` 
+                                  borderColor: trade.side === 'long'
+                                    ? `${themeColors.profit}30`
                                     : `${themeColors.loss}30`
                                 }}
                               >
@@ -2321,11 +2281,11 @@ export default function TradeLog() {
                             <TableCell className="font-medium text-foreground">
                               {trade.quantity}
                             </TableCell>
-                            <TableCell 
+                            <TableCell
                               className="font-bold"
-                              style={{ 
-                                color: parseFloat(trade.pnl) >= 0 
-                                  ? themeColors.profit 
+                              style={{
+                                color: parseFloat(trade.pnl) >= 0
+                                  ? themeColors.profit
                                   : themeColors.loss
                               }}
                             >
@@ -2339,10 +2299,10 @@ export default function TradeLog() {
                       </TableBody>
                     </Table>
                   </div>
-                  
+
                   {csvPreview.parseResult.trades.length > 5 && (
-                    <div 
-                      className="px-6 py-3 border-t text-center"
+                    <div
+                      className="px-6 py-2.5 border-t text-center"
                       style={{ backgroundColor: `${themeColors.primary}05` }}
                     >
                       <p className="text-xs text-muted-foreground">
@@ -2355,29 +2315,29 @@ export default function TradeLog() {
 
               {/* Errors - Theme Aware */}
               {csvPreview.parseResult.errors.length > 0 && (
-                <div 
+                <div
                   className="rounded-xl border overflow-hidden"
-                  style={{ 
+                  style={{
                     backgroundColor: `${themeColors.loss}08`,
                     borderColor: `${themeColors.loss}30`
                   }}
                 >
-                  <div 
-                    className="px-6 py-4 border-b"
-                    style={{ 
+                  <div
+                    className="px-6 py-3 border-b"
+                    style={{
                       backgroundColor: `${themeColors.loss}15`,
                       borderColor: `${themeColors.loss}30`
                     }}
                   >
                     <div className="flex items-center gap-2">
                       <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.loss }} />
-                      <h3 className="font-semibold" style={{ color: themeColors.loss }}>
+                      <h3 className="font-semibold text-sm" style={{ color: themeColors.loss }}>
                         Import Warnings ({csvPreview.parseResult.errors.length})
                       </h3>
                     </div>
                   </div>
-                  
-                  <div className="p-6">
+
+                  <div className="p-4">
                     <div className="space-y-2 max-h-32 overflow-y-auto">
                       {csvPreview.parseResult.errors.slice(0, 5).map((error, index) => (
                         <div key={index} className="flex items-start gap-2 text-sm">
@@ -2395,8 +2355,8 @@ export default function TradeLog() {
                 </div>
               )}
 
-              {/* Actions - Theme Aware Buttons */}
-              <div className="flex items-center justify-between pt-6 border-t border-border">
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="text-sm text-muted-foreground">
                   {csvPreview.parseResult.trades.length > 0 ? (
                     <span className="flex items-center gap-2">
@@ -2410,19 +2370,19 @@ export default function TradeLog() {
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex gap-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setCsvPreview({ show: false, file: null, parseResult: null })}
                     className="hover:bg-muted"
                   >
-                    Cancel Import
+                    Cancel
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleConfirmImport}
                     disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
-                    style={{ backgroundColor: themeColors.primary, color: 'white' }}
+                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                     className="hover:opacity-90 shadow-lg px-6 font-medium"
                   >
                     {csvUploadState.isUploading ? (

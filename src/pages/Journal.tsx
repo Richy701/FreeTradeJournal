@@ -28,7 +28,7 @@ import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useUserStorage } from '@/utils/user-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag, faArrowTrendUp as faTrendingUp, faArrowTrendDown as faTrendingDown, faLink } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
@@ -544,19 +544,16 @@ export default function Journal() {
         <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="p-3 rounded-xl shadow-lg"
-                    style={{ backgroundColor: themeColors.primary }}
-                  >
-                    <FontAwesomeIcon icon={faBookOpen} className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">Trading Journal</h1>
-                    <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Document your trading thoughts and observations</p>
-                  </div>
-                </div>
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
+                    style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)` }}>
+                  Trading Journal
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {entries.length > 0
+                    ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · ${entries.filter(e => e.mood === 'bullish').length} bullish · ${entries.filter(e => e.mood === 'bearish').length} bearish`
+                    : 'Document your trading thoughts and observations'}
+                </p>
               </div>
               <div className="hidden sm:flex gap-3">
                 {trades.length > 0 && (
@@ -582,7 +579,7 @@ export default function Journal() {
                 <Button 
                   onClick={() => setShowNewEntry(true)} 
                   className="gap-2 shadow-lg"
-                  style={{ backgroundColor: themeColors.primary, color: 'white' }}
+                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                 >
                   <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
                   New Entry
@@ -593,68 +590,186 @@ export default function Journal() {
         </div>
       </div>
 
-      <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+
+        {/* Quick Stats */}
+        {entries.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                icon: faBookOpen,
+                value: entries.length,
+                label: 'Total Entries',
+                color: themeColors.primary,
+                subtitle: 'All time'
+              },
+              {
+                icon: faTrendingUp,
+                value: entries.filter(e => e.mood === 'bullish').length,
+                label: 'Bullish',
+                color: themeColors.profit,
+                subtitle: `${entries.length > 0 ? Math.round((entries.filter(e => e.mood === 'bullish').length / entries.length) * 100) : 0}% of entries`
+              },
+              {
+                icon: faTrendingDown,
+                value: entries.filter(e => e.mood === 'bearish').length,
+                label: 'Bearish',
+                color: themeColors.loss,
+                subtitle: `${entries.length > 0 ? Math.round((entries.filter(e => e.mood === 'bearish').length / entries.length) * 100) : 0}% of entries`
+              },
+              {
+                icon: faLink,
+                value: entries.filter(e => e.tradeId).length,
+                label: 'Linked Trades',
+                color: themeColors.primary,
+                subtitle: 'Trade-connected'
+              }
+            ].map((stat, index) => (
+              <Card
+                key={index}
+                className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200"
+              >
+                <CardHeader className="pb-2 pt-5 px-5">
+                  <div
+                    className="p-2.5 rounded-lg shadow-sm w-fit"
+                    style={{ backgroundColor: `${stat.color}20` }}
+                  >
+                    <FontAwesomeIcon icon={stat.icon} className="h-4 w-4" style={{ color: stat.color }} />
+                  </div>
+                </CardHeader>
+                <CardContent className="px-5 pb-5">
+                  <div className="space-y-1">
+                    <span className="text-3xl font-bold" style={{ color: stat.color }}>
+                      {stat.value}
+                    </span>
+                    <CardTitle className="text-sm font-medium text-foreground">{stat.label}</CardTitle>
+                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {showNewEntry && (
-          <Card className="bg-card/80 backdrop-blur-sm border-2 shadow-xl">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2">
-                <div 
-                  className="p-2 rounded-lg"
+          <div className="space-y-4">
+            {/* Form Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="p-2.5 rounded-lg shadow-sm"
                   style={{ backgroundColor: `${themeColors.primary}20` }}
                 >
-                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  <FontAwesomeIcon icon={editingEntry ? faBookOpen : faPlus} className="h-4 w-4" style={{ color: themeColors.primary }} />
                 </div>
-                {editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Entry Title</label>
-                <Input
-                  placeholder="What's on your mind about the markets?"
-                  value={newEntry.title}
-                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                  className="bg-background/50 border-muted-foreground/20 focus:border-primary/50"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Content</label>
-                <Textarea
-                  placeholder="Share your thoughts, analysis, market observations, lessons learned, or trading insights..."
-                  value={newEntry.content}
-                  onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-                  className="min-h-32 sm:min-h-40 bg-background/50 border-muted-foreground/20 focus:border-primary/50 resize-none"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground block pb-1">Entry Type</label>
-                  <select
-                    value={newEntry.entryType}
-                    onChange={(e) => setNewEntry({ ...newEntry, entryType: e.target.value as any })}
-                    className="w-full h-10 px-3 py-2 border rounded-md bg-background/50 border-muted-foreground/20 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="general">General Thoughts</option>
-                    <option value="pre-trade">Pre-Trade Analysis</option>
-                    <option value="post-trade">Post-Trade Review</option>
-                  </select>
+                <div>
+                  <h2 className="text-lg font-semibold">{editingEntry ? 'Edit Entry' : 'New Journal Entry'}</h2>
+                  <p className="text-xs text-muted-foreground">Capture your trading insights</p>
                 </div>
-                
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cancelEdit}
+                className="h-8 w-8 p-0 rounded-full hover:bg-muted/50"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Entry Type Tabs */}
+            <div className="flex gap-2">
+              {([
+                { value: 'general', label: 'General', icon: <Minus className="h-3.5 w-3.5" /> },
+                { value: 'pre-trade', label: 'Pre-Trade', icon: <Clock className="h-3.5 w-3.5" /> },
+                { value: 'post-trade', label: 'Post-Trade', icon: <BarChart3 className="h-3.5 w-3.5" /> }
+              ] as const).map((type) => (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => setNewEntry({ ...newEntry, entryType: type.value })}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  style={newEntry.entryType === type.value
+                    ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, border: `1px solid ${themeColors.primary}30` }
+                    : { backgroundColor: 'transparent', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }
+                  }
+                >
+                  {type.icon}
+                  {type.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Content Card */}
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-5 sm:p-6 space-y-5">
+                {/* Title */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Title</label>
+                  <Input
+                    placeholder="What's on your mind about the markets?"
+                    value={newEntry.title}
+                    onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                    className="bg-background/60 border-border/30 focus:border-primary/50 h-11 text-base"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Content</label>
+                  <Textarea
+                    placeholder="Share your thoughts, analysis, market observations, lessons learned..."
+                    value={newEntry.content}
+                    onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
+                    className="min-h-36 sm:min-h-44 bg-background/60 border-border/30 focus:border-primary/50 resize-none text-sm leading-relaxed"
+                  />
+                </div>
+
+                {/* Mood Selector */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2 pb-1">
+                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Market Sentiment</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {([
+                      { value: 'bullish', label: 'Bullish', icon: <TrendingUp className="h-5 w-5" />, color: themeColors.profit },
+                      { value: 'neutral', label: 'Neutral', icon: <Minus className="h-5 w-5" />, color: themeColors.primary },
+                      { value: 'bearish', label: 'Bearish', icon: <TrendingDown className="h-5 w-5" />, color: themeColors.loss }
+                    ] as const).map((mood) => (
+                      <button
+                        key={mood.value}
+                        type="button"
+                        onClick={() => setNewEntry({ ...newEntry, mood: mood.value })}
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200"
+                        style={newEntry.mood === mood.value
+                          ? { backgroundColor: `${mood.color}15`, border: `2px solid ${mood.color}40`, color: mood.color }
+                          : { backgroundColor: 'transparent', border: '2px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                        }
+                      >
+                        {mood.icon}
+                        <span className="text-xs font-medium">{mood.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Trade Link & Tags Card */}
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-5 sm:p-6 space-y-5">
+                {/* Trade Link */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                     <BarChart3 className="h-3 w-3" />
-                    Link to Trade {isLoadingTrades && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Link to Trade
+                    {isLoadingTrades && <Loader2 className="h-3 w-3 animate-spin" />}
                   </label>
                   {isLoadingTrades ? (
-                    <div className="w-full h-10 px-3 py-2 border rounded-md bg-background/50 border-muted-foreground/20 flex items-center gap-2">
+                    <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/30 flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-muted-foreground">Loading trades...</span>
                     </div>
                   ) : trades.length === 0 ? (
-                    <div className="w-full h-10 px-3 py-2 border rounded-md bg-background/50 border-muted-foreground/20 flex items-center gap-2">
+                    <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/30 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-orange-500" />
                       <span className="text-sm text-muted-foreground">No trades found. Upload trades in Trade Log first.</span>
                     </div>
@@ -662,7 +777,7 @@ export default function Journal() {
                     <select
                       value={newEntry.tradeId}
                       onChange={(e) => handleTradeSelection(e.target.value)}
-                      className="w-full h-10 px-3 py-2 border rounded-md bg-background/50 border-muted-foreground/20 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full h-11 px-3 py-2 rounded-lg bg-background/60 border border-border/30 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                     >
                       <option value="">Choose a trade to analyze...</option>
                       {trades.map((trade) => {
@@ -676,24 +791,45 @@ export default function Journal() {
                     </select>
                   )}
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground block pb-1">Market Sentiment</label>
-                  <select
-                    value={newEntry.mood}
-                    onChange={(e) => setNewEntry({ ...newEntry, mood: e.target.value as any })}
-                    className="w-full h-10 px-3 py-2 border rounded-md bg-background/50 border-muted-foreground/20 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+
+                {/* Trade Preview */}
+                {selectedTrade && (
+                  <div
+                    className="p-4 rounded-xl"
+                    style={{
+                      backgroundColor: `${selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss}08`,
+                      border: `1px solid ${selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss}25`
+                    }}
                   >
-                    <option value="neutral">Neutral</option>
-                    <option value="bullish">Bullish</option>
-                    <option value="bearish">Bearish</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{selectedTrade.symbol} · {selectedTrade.side.toUpperCase()}</span>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss }}
+                      >
+                        {selectedTrade.pnl > 0 ? '+' : ''}${selectedTrade.pnl.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Entry</span>
+                        <div className="font-semibold text-foreground mt-0.5">{selectedTrade.entryPrice}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Exit</span>
+                        <div className="font-semibold text-foreground mt-0.5">{selectedTrade.exitPrice}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Date</span>
+                        <div className="font-semibold text-foreground mt-0.5">{format(selectedTrade.entryTime, 'MMM dd')}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                     <FontAwesomeIcon icon={faTag} className="h-3 w-3" />
                     Tags
                   </label>
@@ -701,54 +837,75 @@ export default function Journal() {
                     placeholder="e.g., EUR/USD, analysis, strategy"
                     value={newEntry.tags}
                     onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-                    className="bg-background/50 border-muted-foreground/20 focus:border-primary/50"
+                    className="bg-background/60 border-border/30 focus:border-primary/50 h-11"
                   />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            {/* Emotions Card */}
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-5 sm:p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                     <Heart className="h-3 w-3" />
                     Emotions
                   </label>
-                  <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-background/50 border-muted-foreground/20 min-h-[40px]">
-                    {availableEmotions.map((emotion) => (
+                  {newEntry.emotions.length > 0 && (
+                    <span className="text-[10px] font-medium" style={{ color: themeColors.primary }}>
+                      {newEntry.emotions.length} selected
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableEmotions.map((emotion) => {
+                    const isSelected = newEntry.emotions.includes(emotion);
+                    return (
                       <button
                         key={emotion}
                         type="button"
                         onClick={() => toggleEmotion(emotion)}
-                        className={`px-2 py-1 text-xs rounded-full border transition-colors ${
-                          newEntry.emotions.includes(emotion)
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-muted-foreground/30 hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground'
-                        }`}
+                        className="px-3 py-1.5 text-xs rounded-full transition-all duration-150"
+                        style={isSelected
+                          ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, border: `1px solid ${themeColors.primary}40` }
+                          : { backgroundColor: 'transparent', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }
+                        }
                       >
                         {emotion}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            {/* Screenshots Card */}
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-5 sm:p-6 space-y-3">
+                <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                   <Upload className="h-3 w-3" />
                   Screenshots & Charts
                 </label>
-                
-                <div 
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                    isDragOver 
-                      ? 'border-primary/50 bg-primary/5' 
-                      : 'border-muted-foreground/20 hover:border-muted-foreground/40'
-                  }`}
+
+                <div
+                  className="border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200"
+                  style={isDragOver
+                    ? { borderColor: `${themeColors.primary}50`, backgroundColor: `${themeColors.primary}05` }
+                    : { borderColor: 'hsl(var(--border))', backgroundColor: 'transparent' }
+                  }
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <div className="space-y-3">
-                    <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <div className="space-y-2">
+                    <div
+                      className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: `${themeColors.primary}10` }}
+                    >
+                      <Upload className="h-5 w-5" style={{ color: themeColors.primary }} />
+                    </div>
                     <div>
-                      <p className="text-sm font-medium">Drop chart screenshots here, or</p>
+                      <p className="text-sm font-medium">Drop chart screenshots here</p>
                       <label className="inline-block">
                         <input
                           type="file"
@@ -757,28 +914,28 @@ export default function Journal() {
                           onChange={handleFileUpload}
                           className="hidden"
                         />
-                        <span className="text-sm cursor-pointer hover:underline text-primary">
-                          browse files
+                        <span className="text-sm cursor-pointer hover:underline" style={{ color: themeColors.primary }}>
+                          or browse files
                         </span>
                       </label>
                     </div>
-                    <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB each</p>
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG up to 5MB each</p>
                   </div>
                 </div>
 
                 {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="relative group">
-                        <img 
-                          src={image} 
+                        <img
+                          src={image}
                           alt={`Upload ${index + 1}`}
-                          className="w-full h-20 sm:h-24 object-cover rounded-lg border"
+                          className="w-full h-24 sm:h-28 object-cover rounded-lg border border-border/20"
                         />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-2 -right-2 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                           style={{ backgroundColor: themeColors.loss }}
                         >
                           <X className="h-3 w-3" />
@@ -787,59 +944,40 @@ export default function Journal() {
                     ))}
                   </div>
                 )}
-              </div>
+              </CardContent>
+            </Card>
 
-              {selectedTrade && (
-                <div className="p-4 rounded-lg bg-muted/10 border border-muted-foreground/10">
-                  <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-                    Trade Preview: {selectedTrade.symbol}
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                    <div className="space-y-1">
-                      <span className="font-medium text-muted-foreground/70">Side</span>
-                      <div className="font-semibold text-foreground">{selectedTrade.side.toUpperCase()}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="font-medium text-muted-foreground/70">P&L</span>
-                      <div className="font-semibold" style={{ color: selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss }}>
-                        {selectedTrade.pnl > 0 ? '+' : ''}${selectedTrade.pnl.toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="font-medium text-muted-foreground/70">Entry</span>
-                      <div className="font-semibold text-foreground">{selectedTrade.entryPrice}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="font-medium text-muted-foreground/70">Date</span>
-                      <div className="font-semibold text-foreground">{format(selectedTrade.entryTime, 'MMM dd, yyyy')}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-3 justify-end pt-4 border-t border-muted-foreground/10">
-                <Button 
-                  variant="outline" 
+            {/* Action Bar */}
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                {newEntry.title.trim() && newEntry.content.trim()
+                  ? 'Ready to save'
+                  : 'Fill in title and content to save'}
+              </p>
+              <div className="flex gap-3 ml-auto">
+                <Button
+                  variant="outline"
                   onClick={cancelEdit}
-                  className="border-muted-foreground/20"
+                  className="border-border/50"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={handleAddEntry}
-                  className="shadow-md gap-2 bg-primary"
+                  className="shadow-lg gap-2 px-6"
+                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   disabled={isSubmitting || !newEntry.title.trim() || !newEntry.content.trim()}
                 >
                   {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {isSubmitting 
+                  {isSubmitting
                     ? (editingEntry ? 'Updating...' : 'Saving...')
                     : (editingEntry ? 'Update Entry' : 'Save Entry')
                   }
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         <div className="space-y-4 mb-6">
@@ -925,7 +1063,7 @@ export default function Journal() {
           
           {/* Filter Panel */}
           {showFilters && (
-            <Card className="bg-card/60 backdrop-blur-sm border-muted-foreground/20">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Date Range Filter */}
@@ -1085,20 +1223,23 @@ export default function Journal() {
 
         <div className="grid gap-6">
           {filteredAndSortedEntries.length === 0 ? (
-            <Card className="bg-card/60 backdrop-blur-sm border-2 border-dashed border-muted-foreground/20">
-              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="p-4 rounded-full mb-6 bg-primary/10">
-                  <FontAwesomeIcon icon={faBookOpen} className="h-8 w-8" style={{ color: themeColors.primary }} />
+            <Card className="bg-muted/20 backdrop-blur-sm border-0">
+              <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+                <div
+                  className="p-5 rounded-2xl mb-6 shadow-sm"
+                  style={{ backgroundColor: `${themeColors.primary}15` }}
+                >
+                  <FontAwesomeIcon icon={faBookOpen} className="h-10 w-10" style={{ color: themeColors.primary }} />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No entries found</h3>
-                <p className="text-muted-foreground mb-6 max-w-md">
+                <p className="text-muted-foreground mb-8 max-w-md">
                   {searchTerm ? 'Try adjusting your search terms or create a new entry' : 'Start documenting your trading journey with insights, analysis, and market observations'}
                 </p>
                 {!searchTerm && (
-                  <Button 
-                    onClick={() => setShowNewEntry(true)} 
+                  <Button
+                    onClick={() => setShowNewEntry(true)}
                     className="gap-2 shadow-lg"
-                  style={{ backgroundColor: themeColors.primary, color: 'white' }}
+                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
                     <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
                     Create First Entry
@@ -1111,165 +1252,141 @@ export default function Journal() {
               const linkedTrade = getLinkedTrade(entry.tradeId);
               
               return (
-                <Card key={entry.id} className="bg-card border-border/50 hover:shadow-lg transition-all duration-200 overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2">
+                <Card
+                  key={entry.id}
+                  className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                >
+                  <CardHeader className="pb-2 pt-5 px-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
                         <CardTitle className="text-base sm:text-lg font-semibold leading-tight text-foreground break-words">
                           {entry.title}
                         </CardTitle>
-                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                          <Badge variant="secondary" className="text-xs font-medium shrink-0 hidden sm:inline-flex">
-                            {entry.entryType === 'general' ? 'General' : 
-                             entry.entryType === 'pre-trade' ? 'Pre-Trade' : 'Post-Trade'}
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <span className="text-xs text-muted-foreground">
+                            {format(entry.date, 'MMM dd, yyyy')}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-1 font-medium border text-[10px] px-2 py-0"
+                            style={getMoodStyle(entry.mood)}
+                          >
+                            {getMoodIcon(entry.mood)}
+                            {entry.mood}
                           </Badge>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => startEdit(entry)}
-                              className="h-8 w-8 p-0 hover:bg-muted"
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteEntry(entry.id)}
-                              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <FontAwesomeIcon icon={faCalendarAlt} className="h-3 w-3" />
-                          <span>{format(entry.date, 'MMM dd, yyyy')}</span>
-                        </div>
-                        <Badge 
-                          variant="outline" 
-                          className="flex items-center gap-1.5 font-medium border"
-                          style={getMoodStyle(entry.mood)}
-                        >
-                          {getMoodIcon(entry.mood)}
-                          {entry.mood}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0 space-y-4">
-                    {linkedTrade && (
-                      <div className="p-3 rounded-md bg-muted/20 border border-border/30">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">
-                              Trade Details: {linkedTrade.symbol}
-                            </h4>
-                            <Badge 
+                          {linkedTrade && (
+                            <Badge
                               variant="outline"
-                              className="text-xs font-medium border"
+                              className="text-[10px] font-semibold border px-2 py-0"
                               style={{
                                 color: linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss,
-                                backgroundColor: linkedTrade.pnl > 0 ? `${themeColors.profit}15` : `${themeColors.loss}15`,
+                                backgroundColor: linkedTrade.pnl > 0 ? `${themeColors.profit}12` : `${themeColors.loss}12`,
                                 borderColor: linkedTrade.pnl > 0 ? `${themeColors.profit}30` : `${themeColors.loss}30`
                               }}
                             >
-                              {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
+                              {linkedTrade.symbol} {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
                             </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                            <div className="space-y-1">
-                              <span className="text-muted-foreground/70">Side</span>
-                              <div className="font-medium text-foreground">{linkedTrade.side.toUpperCase()}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-muted-foreground/70">Entry</span>
-                              <div className="font-medium text-foreground">{linkedTrade.entryPrice}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-muted-foreground/70">Exit</span>
-                              <div className="font-medium text-foreground">{linkedTrade.exitPrice}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-muted-foreground/70">R:R</span>
-                              <div className="font-medium text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</div>
-                            </div>
-                          </div>
+                          )}
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] font-medium hidden sm:inline-flex px-2 py-0"
+                          >
+                            {entry.entryType === 'general' ? 'General' :
+                             entry.entryType === 'pre-trade' ? 'Pre-Trade' : 'Post-Trade'}
+                          </Badge>
                         </div>
-                    )}
-                    
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border/20">
-                      <p className="text-sm leading-relaxed text-foreground">{entry.content}</p>
+                      </div>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEdit(entry)}
+                          className="h-8 w-8 p-0 hover:bg-muted/50"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteEntry(entry.id)}
+                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5 pt-2 space-y-3">
+                    <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
 
-                    {entry.screenshots && entry.screenshots.length > 0 && (
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <Upload className="h-4 w-4" />
-                          Charts & Screenshots
+                    {linkedTrade && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-lg bg-muted/30 text-xs">
+                        <div>
+                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Side</span>
+                          <span className="font-semibold text-foreground">{linkedTrade.side.toUpperCase()}</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {entry.screenshots.map((screenshot, index) => (
-                            <div key={index} className="group relative">
-                              <img 
-                                src={screenshot} 
-                                alt={`Chart ${index + 1}`}
-                                className="w-full h-32 sm:h-48 object-cover rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
-                                onClick={() => window.open(screenshot, '_blank')}
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white px-2 py-1 rounded text-xs">
-                                  Click to enlarge
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                        <div>
+                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Entry</span>
+                          <span className="font-semibold text-foreground">{linkedTrade.entryPrice}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Exit</span>
+                          <span className="font-semibold text-foreground">{linkedTrade.exitPrice}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">R:R</span>
+                          <span className="font-semibold text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</span>
                         </div>
                       </div>
                     )}
 
-                    <div className="space-y-3">
-                      {entry.emotions && entry.emotions.length > 0 && (
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Heart className="h-3 w-3" />
-                            <span className="text-xs font-medium">Emotions:</span>
+                    {entry.screenshots && entry.screenshots.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {entry.screenshots.map((screenshot, index) => (
+                          <div key={index} className="group relative">
+                            <img
+                              src={screenshot}
+                              alt={`Chart ${index + 1}`}
+                              className="w-full h-32 sm:h-48 object-cover rounded-lg border border-border/20 hover:border-primary/30 transition-colors cursor-pointer"
+                              onClick={() => window.open(screenshot, '_blank')}
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white px-2 py-1 rounded text-xs">
+                                Click to enlarge
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-2 flex-wrap">
-                            {entry.emotions.map((emotion) => (
-                              <Badge 
-                                key={emotion} 
-                                variant="outline" 
-                                className="text-xs bg-primary/5 border-primary/20 text-primary"
-                              >
-                                {emotion}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {entry.tags.length > 0 && (
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <FontAwesomeIcon icon={faTag} className="h-3 w-3" />
-                            <span className="text-xs font-medium">Tags:</span>
-                          </div>
-                          <div className="flex gap-2 flex-wrap">
-                            {entry.tags.map((tag) => (
-                              <Badge 
-                                key={tag} 
-                                variant="secondary" 
-                                className="text-xs bg-muted/50 hover:bg-muted/70 transition-colors"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {((entry.emotions && entry.emotions.length > 0) || entry.tags.length > 0) && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                        {entry.emotions && entry.emotions.map((emotion) => (
+                          <Badge
+                            key={emotion}
+                            variant="outline"
+                            className="text-[10px] border"
+                            style={{
+                              backgroundColor: `${themeColors.primary}08`,
+                              borderColor: `${themeColors.primary}25`,
+                              color: themeColors.primary
+                            }}
+                          >
+                            {emotion}
+                          </Badge>
+                        ))}
+                        {entry.tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="text-[10px] bg-muted/50 hover:bg-muted/70 transition-colors"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -1279,9 +1396,10 @@ export default function Journal() {
       </div>
       
       {/* Mobile Floating Action Button */}
-      <Button 
-        onClick={() => setShowNewEntry(true)} 
-        className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary"
+      <Button
+        onClick={() => setShowNewEntry(true)}
+        className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl z-50"
+        style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
       >
         <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
       </Button>

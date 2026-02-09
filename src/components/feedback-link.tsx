@@ -28,17 +28,3 @@ export function FeedbackLink({ children, className = '' }: FeedbackLinkProps) {
     </>
   );
 }
-
-// Alternative: Direct link to Telegram for support
-export function SupportLink({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <a 
-      href="https://t.me/+UI6uTKgfswUwNzhk" 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className={className || "text-current hover:text-primary transition-colors"}
-    >
-      {children}
-    </a>
-  );
-}

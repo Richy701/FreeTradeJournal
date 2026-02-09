@@ -248,123 +248,106 @@ export default function Settings() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: themeCardStyles }} />
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
-      <div className="min-h-screen bg-background">
-        <div className="w-full px-6 md:px-12 py-8 mx-auto" style={{maxWidth: '1200px'}}>
-          {/* Animated Header with Gradient Background */}
-          <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8 border border-primary/20 shadow-xl">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl animate-pulse delay-1000" />
-            <div className="relative z-10">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                <div>
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground leading-normal">
-                    Settings
-                  </h1>
-                  <p className="text-muted-foreground text-base md:text-lg mt-2 max-w-2xl">
-                    Personalize your trading experience and manage your preferences
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Badge className="px-4 py-2 text-sm font-bold backdrop-blur-sm" 
-                         style={{ 
-                           background: `linear-gradient(to right, ${themeColors.profit}20, ${themeColors.profit}30)`,
-                           borderColor: `${themeColors.profit}30`
-                         }}>
-                    <FontAwesomeIcon icon={faChartLine} className="mr-2 h-3 w-3" style={{ color: themeColors.profit }} />
-                    {stats.total} Total Trades
-                  </Badge>
-                  <Badge className="px-4 py-2 text-sm font-bold backdrop-blur-sm" 
-                         style={{ 
-                           background: `linear-gradient(to right, ${themeColors.primary}20, ${themeColors.primary}30)`,
-                           borderColor: `${themeColors.primary}30`
-                         }}>
-                    <FontAwesomeIcon icon={faClock} className="mr-2 h-3 w-3" style={{ color: themeColors.primary }} />
-                    {stats.thisMonth} This Month
-                  </Badge>
-                </div>
-              </div>
+      {/* Frosted Glass Header */}
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" style={{maxWidth: '1200px', margin: '0 auto'}}>
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
+                  style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)` }}>
+                Settings
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Personalize your trading experience and manage your preferences
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Badge
+                variant="outline"
+                className="px-3 py-1.5 text-xs font-semibold"
+                style={{
+                  backgroundColor: `${themeColors.profit}12`,
+                  color: themeColors.profit,
+                  borderColor: `${themeColors.profit}30`
+                }}>
+                <FontAwesomeIcon icon={faChartLine} className="mr-1.5 h-3 w-3" />
+                {stats.total} Trades
+              </Badge>
+              <Badge
+                variant="outline"
+                className="px-3 py-1.5 text-xs font-semibold"
+                style={{
+                  backgroundColor: `${themeColors.primary}12`,
+                  color: themeColors.primary,
+                  borderColor: `${themeColors.primary}30`
+                }}>
+                <FontAwesomeIcon icon={faClock} className="mr-1.5 h-3 w-3" />
+                {stats.thisMonth} This Month
+              </Badge>
             </div>
           </div>
+        </div>
+      </div>
+
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto" style={{maxWidth: '1200px'}}>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto p-2 bg-gradient-to-br from-muted/30 to-muted/50 backdrop-blur-sm rounded-xl border border-border/50">
-              <TabsTrigger value="general" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
-                <FontAwesomeIcon icon={faPalette} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
-                <span className="relative">General</span>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">
+              <TabsTrigger value="general" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faPalette} className="h-3.5 w-3.5" />
+                <span>General</span>
               </TabsTrigger>
-              <TabsTrigger value="accounts" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
-                <FontAwesomeIcon icon={faBuilding} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
-                <span className="relative">Accounts</span>
+              <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faBuilding} className="h-3.5 w-3.5" />
+                <span>Accounts</span>
               </TabsTrigger>
-              <TabsTrigger value="trading" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
-                <FontAwesomeIcon icon={faChartLine} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
-                <span className="relative">Trading</span>
+              <TabsTrigger value="trading" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+                <span>Trading</span>
               </TabsTrigger>
-              <TabsTrigger value="risk" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
-                <FontAwesomeIcon icon={faShield} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
-                <span className="relative">Risk</span>
+              <TabsTrigger value="risk" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faShield} className="h-3.5 w-3.5" />
+                <span>Risk</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
-                <FontAwesomeIcon icon={faBell} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
-                <span className="relative">Alerts</span>
+              <TabsTrigger value="notifications" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
+                <span>Alerts</span>
               </TabsTrigger>
-              <TabsTrigger value="data" className="group relative flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:border-primary/30 hover:bg-background/70">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/0 to-primary/0 group-data-[state=active]:from-primary/10 group-data-[state=active]:to-primary/5 transition-all" />
-                <FontAwesomeIcon icon={faDatabase} className="relative h-4 w-4 group-data-[state=active]:text-primary transition-colors" />
-                <span className="relative">Data</span>
+              <TabsTrigger value="data" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
+                <span>Data</span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="general" className="mt-6">
               <div className="space-y-6">
-                {/* Enhanced Appearance & Localization Header */}
-                <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
-                     style={{ 
-                       background: `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.primary}05 50%, transparent 100%)`,
-                       borderColor: `${themeColors.primary}20`
-                     }}>
-                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
-                       style={{ backgroundColor: `${themeColors.primary}10` }} />
-                  <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
-                       style={{ backgroundColor: `${themeColors.profit}10` }} />
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl shadow-lg" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.profit}20)` }}>
-                        <FontAwesomeIcon icon={faPalette} className="h-6 w-6" style={{ color: themeColors.primary }} />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold">Appearance & Localization</h3>
-                        <p className="text-muted-foreground">Customize your trading journal experience</p>
-                      </div>
-                    </div>
+                {/* Section Label */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                    <FontAwesomeIcon icon={faPalette} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Appearance & Localization</h3>
+                    <p className="text-xs text-muted-foreground">Customize your trading journal experience</p>
                   </div>
                 </div>
 
                 {/* Enhanced Theme & Regional Settings */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                   {/* Theme Settings Card */}
-                  <Card className="xl:col-span-2 relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
-                    <CardHeader className="relative pb-6">
-                      <CardTitle className="flex items-center gap-3 text-xl">
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
-                          <FontAwesomeIcon icon={faSun} className="h-5 w-5 text-primary" />
-                        </div>
+                  <Card className="xl:col-span-2 bg-muted/30 backdrop-blur-sm border-0">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <FontAwesomeIcon icon={faSun} className="h-4 w-4" style={{ color: themeColors.primary }} />
                         Theme & Display
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground leading-relaxed">
+                      <CardDescription>
                         Control your visual experience and display preferences
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="relative space-y-8">
+                    <CardContent className="space-y-6">
                       <div className="space-y-6">
                         <div className="space-y-4">
                           <Label className="flex items-center gap-2 text-base font-bold">
@@ -372,7 +355,7 @@ export default function Settings() {
                             Theme Mode
                           </Label>
                           <Select value={theme} onValueChange={setTheme}>
-                            <SelectTrigger className="h-14 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-300 text-base">
+                            <SelectTrigger className="h-11 bg-background/60 border-border/30">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -407,7 +390,7 @@ export default function Settings() {
                             value={settings.displaySettings.defaultChartPeriod} 
                             onValueChange={(value) => updateSettings({ displaySettings: { ...settings.displaySettings, defaultChartPeriod: value } })}
                           >
-                            <SelectTrigger className="h-14 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-300 text-base">
+                            <SelectTrigger className="h-11 bg-background/60 border-border/30">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -458,24 +441,21 @@ export default function Settings() {
                   </Card>
 
                   {/* Regional Settings Card */}
-                  <Card className="relative overflow-hidden border-border/50 shadow-xl" 
-                        style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, transparent 50%)` }}>
-                    <div className="absolute top-0 left-0 w-20 h-20 rounded-full blur-xl" 
-                         style={{ backgroundColor: `${themeColors.profit}10` }} />
-                    <CardHeader className="relative">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" style={{ color: themeColors.profit }} />
+                  <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" style={{ color: themeColors.primary }} />
                         Regional Settings
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="relative space-y-6">
+                    <CardContent className="space-y-6">
                       <div className="space-y-4">
                         <Label className="flex items-center gap-2 text-sm font-semibold">
                           <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" style={{ color: themeColors.profit }} />
                           Currency
                         </Label>
                         <Select value={settings.currency} onValueChange={(value) => updateSettings({ currency: value })}>
-                          <SelectTrigger className="h-12 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-200">
+                          <SelectTrigger className="h-11 bg-background/60 border-border/30">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -528,7 +508,7 @@ export default function Settings() {
                           Timezone
                         </Label>
                         <Select value={settings.timezone} onValueChange={(value) => updateSettings({ timezone: value })}>
-                          <SelectTrigger className="h-12 bg-background/50 border-border/60 hover:border-primary/50 transition-all duration-200">
+                          <SelectTrigger className="h-11 bg-background/60 border-border/30">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -590,150 +570,92 @@ export default function Settings() {
                   </Card>
                 </div>
 
-                {/* Enhanced Color Theme Selection */}
-                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-muted/20">
-                  <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full blur-3xl" 
-                       style={{ backgroundColor: `${themeColors.primary}05` }} />
-                  <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
-                        <FontAwesomeIcon icon={faPalette} className="h-5 w-5 text-primary" />
-                      </div>
+                {/* Color Theme Selection */}
+                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FontAwesomeIcon icon={faPalette} className="h-4 w-4" style={{ color: themeColors.primary }} />
                       Color Themes
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground leading-relaxed">
-                      Choose colors for profit/loss visualization and UI elements
+                    <CardDescription>
+                      Sets the colors for profit, loss, and UI accent across the app
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="relative space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {Object.entries(availableThemes).map(([key, preset]) => (
-                        <div
-                          key={key}
-                          onClick={() => setColorTheme(key)}
-                          tabIndex={0}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                          className={`group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer`}
-                          style={{
-                            background: theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? '#09090b' : '#ffffff',
-                            transform: currentTheme === key ? 'scale(1.02)' : 'scale(1)',
-                            border: '1px solid hsl(var(--border))',
-                            outline: 'none'
-                          }}
-                        >
-                          {/* Header with theme name and selection indicator */}
-                          <div className="p-4 border-b border-border/30">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm font-semibold text-foreground">{preset.name}</div>
-                              {currentTheme === key && (
-                                <div className="p-1.5 rounded-full animate-pulse" style={{ backgroundColor: `${preset.colors.primary}20` }}>
-                                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3" style={{ color: preset.colors.primary }} />
-                                </div>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {Object.entries(availableThemes).map(([key, preset]) => {
+                        const isSelected = currentTheme === key;
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => setColorTheme(key)}
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
+                            className="relative rounded-lg border-2 p-3 cursor-pointer transition-all duration-150 hover:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            style={{
+                              borderColor: isSelected ? preset.colors.primary : 'hsl(var(--border))',
+                              backgroundColor: isSelected ? `${preset.colors.primary}08` : 'transparent',
+                            }}
+                          >
+                            {/* Color bar — three swatches side by side */}
+                            <div className="flex rounded-md overflow-hidden h-3 mb-2.5">
+                              <div className="flex-1" style={{ backgroundColor: preset.colors.profit }} />
+                              <div className="flex-1" style={{ backgroundColor: preset.colors.primary }} />
+                              <div className="flex-1" style={{ backgroundColor: preset.colors.loss }} />
+                            </div>
+
+                            {/* Name + check */}
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium text-foreground truncate">{preset.name}</span>
+                              {isSelected && (
+                                <FontAwesomeIcon icon={faCheck} className="h-3 w-3 flex-shrink-0" style={{ color: preset.colors.primary }} />
                               )}
                             </div>
-                          </div>
 
-                          {/* Mini trading interface preview */}
-                          <div className="p-4 space-y-3">
-                            {/* Stats row */}
-                            <div className="flex justify-between items-center">
-                              <div className="text-xs text-muted-foreground font-medium">Portfolio</div>
-                              <div className="text-xs font-bold" style={{ color: preset.colors.primary }}>
-                                100%
-                              </div>
-                            </div>
-                            
-                            {/* P&L examples */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="p-2 rounded-lg bg-background/50 border border-border/30">
-                                <div className="text-xs text-muted-foreground mb-1">Win</div>
-                                <div className="text-sm font-bold" style={{ color: preset.colors.profit }}>
-                                  +$485
-                                </div>
-                              </div>
-                              <div className="p-2 rounded-lg bg-background/50 border border-border/30">
-                                <div className="text-xs text-muted-foreground mb-1">Loss</div>
-                                <div className="text-sm font-bold" style={{ color: preset.colors.loss }}>
-                                  -$240
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Mini chart representation */}
-                            <div className="flex items-end gap-1 h-8 justify-center">
-                              <div className="w-1 rounded-sm" style={{ height: '60%', backgroundColor: preset.colors.profit }}></div>
-                              <div className="w-1 rounded-sm" style={{ height: '40%', backgroundColor: preset.colors.loss }}></div>
-                              <div className="w-1 rounded-sm" style={{ height: '80%', backgroundColor: preset.colors.profit }}></div>
-                              <div className="w-1 rounded-sm" style={{ height: '30%', backgroundColor: preset.colors.loss }}></div>
-                              <div className="w-1 rounded-sm" style={{ height: '70%', backgroundColor: preset.colors.profit }}></div>
-                              <div className="w-1 rounded-sm" style={{ height: '50%', backgroundColor: preset.colors.primary }}></div>
-                              <div className="w-1 rounded-sm" style={{ height: '90%', backgroundColor: preset.colors.profit }}></div>
-                            </div>
-                            
-                            {/* Color indicators */}
-                            <div className="flex justify-center gap-2 pt-2 border-t border-border/20">
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.colors.profit }} />
-                                <span className="text-xs text-muted-foreground">Profit</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.colors.loss }} />
-                                <span className="text-xs text-muted-foreground">Loss</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.colors.primary }} />
-                                <span className="text-xs text-muted-foreground">UI</span>
-                              </div>
+                            {/* Labels under swatches */}
+                            <div className="flex mt-1.5 text-[10px] text-muted-foreground">
+                              <span className="flex-1">Profit</span>
+                              <span className="flex-1 text-center">Accent</span>
+                              <span className="flex-1 text-right">Loss</span>
                             </div>
                           </div>
-
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Enhanced Display Preferences */}
-                <Card className="relative overflow-hidden border-border/50 shadow-xl" 
-                      style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, transparent 50%)` }}>
-                  <div className="absolute top-0 left-0 w-24 h-24 rounded-full blur-xl" 
-                       style={{ backgroundColor: `${themeColors.profit}10` }} />
-                  <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
-                        <FontAwesomeIcon icon={faChartSimple} className="h-5 w-5 text-primary" />
-                      </div>
+                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FontAwesomeIcon icon={faChartSimple} className="h-4 w-4" style={{ color: themeColors.primary }} />
                       Display Preferences
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground leading-relaxed">
+                    <CardDescription>
                       Configure how data is displayed throughout the application
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="relative space-y-6">
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between p-4 rounded-xl border" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}08, transparent)` }}>
-                        <div className="space-y-1">
-                          <Label className="text-base font-semibold">Show P&L as Percentage</Label>
-                          <p className="text-sm text-muted-foreground">Display returns as % instead of dollar amounts</p>
-                        </div>
-                        <Switch
-                          checked={settings.displaySettings.showPnlAsPercentage}
-                          onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, showPnlAsPercentage: checked } })}
-                        />
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-background/40">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-medium">Show P&L as Percentage</Label>
+                        <p className="text-xs text-muted-foreground">Display returns as % instead of dollar amounts</p>
                       </div>
-                      
-                      <div className="flex items-center justify-between p-4 rounded-xl border" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}08, transparent)` }}>
-                        <div className="space-y-1">
-                          <Label className="text-base font-semibold">Hide Small Trades</Label>
-                          <p className="text-sm text-muted-foreground">Hide trades under $10 from charts and analytics</p>
-                        </div>
-                        <Switch
-                          checked={settings.displaySettings.hideSmallTrades}
-                          onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, hideSmallTrades: checked } })}
-                        />
+                      <Switch
+                        checked={settings.displaySettings.showPnlAsPercentage}
+                        onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, showPnlAsPercentage: checked } })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-background/40">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-medium">Hide Small Trades</Label>
+                        <p className="text-xs text-muted-foreground">Hide trades under $10 from charts and analytics</p>
                       </div>
+                      <Switch
+                        checked={settings.displaySettings.hideSmallTrades}
+                        onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, hideSmallTrades: checked } })}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -742,57 +664,36 @@ export default function Settings() {
 
             <TabsContent value="accounts" className="mt-6">
               <div className="space-y-6">
-                {/* Enhanced Trading Accounts Header */}
-                <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
-                     style={{ 
-                       background: `linear-gradient(135deg, ${themeColors.primary}10 0%, ${themeColors.primary}05 50%, transparent 100%)`,
-                       borderColor: `${themeColors.primary}20`
-                     }}>
-                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
-                       style={{ backgroundColor: `${themeColors.primary}10` }} />
-                  <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
-                       style={{ backgroundColor: `${themeColors.profit}10` }} />
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl shadow-lg" 
-                           style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.profit}20)` }}>
-                        <FontAwesomeIcon icon={faBuilding} className="h-6 w-6" style={{ color: themeColors.primary }} />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold">Trading Accounts</h3>
-                        <p className="text-muted-foreground">Manage your accounts to track performance separately</p>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                    <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Trading Accounts</h3>
+                    <p className="text-xs text-muted-foreground">Manage your accounts to track performance separately</p>
                   </div>
                 </div>
 
-                <Card className="relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background via-background/95 to-muted/30">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl" />
-                  <CardContent className="relative space-y-6 pt-6">
+                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                  <CardContent className="space-y-6 pt-6">
                     {/* Enhanced Account List */}
                     <div className="grid gap-4">
                       {accounts.map((account, index) => (
-                        <div key={account.id} 
-                             className="group relative overflow-hidden rounded-xl border transition-all duration-300 hover:shadow-lg hover:border-primary/30" 
-                             style={{ 
-                               background: `linear-gradient(135deg, ${index % 2 === 0 ? themeColors.primary : themeColors.profit}05 0%, transparent 50%)`,
-                               borderColor: activeAccount?.id === account.id ? `${themeColors.primary}40` : 'hsl(var(--border))'
+                        <div key={account.id}
+                             className="rounded-xl bg-background/40 hover:bg-background/60 transition-all duration-200 hover:shadow-md"
+                             style={{
+                               border: activeAccount?.id === account.id ? `1px solid ${themeColors.primary}30` : '1px solid transparent'
                              }}>
-                          <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl opacity-30" 
-                               style={{ backgroundColor: index % 2 === 0 ? `${themeColors.primary}20` : `${themeColors.profit}20` }} />
-                          
-                          <div className="relative p-6">
+                          <div className="p-5">
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                               {/* Account Info Section */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-3 mb-3">
                                   {/* Account Icon */}
-                                  <div className="p-2.5 rounded-lg shadow-md" 
-                                       style={{ 
-                                         background: `linear-gradient(135deg, ${account.type === 'live' ? themeColors.profit : themeColors.primary}20, ${account.type === 'live' ? themeColors.profit : themeColors.primary}10)` 
-                                       }}>
-                                    <FontAwesomeIcon 
-                                      icon={account.type === 'live' ? faCoins : account.type === 'demo' ? faChartLine : faTrophy} 
+                                  <div className="p-2 rounded-lg"
+                                       style={{ backgroundColor: `${account.type === 'live' ? themeColors.profit : themeColors.primary}20` }}>
+                                    <FontAwesomeIcon
+                                      icon={account.type === 'live' ? faCoins : account.type === 'demo' ? faChartLine : faTrophy}
                                       className="h-4 w-4"
                                       style={{ color: account.type === 'live' ? themeColors.profit : themeColors.primary }}
                                     />
@@ -899,20 +800,13 @@ export default function Settings() {
 
                     {/* Edit Account Form */}
                     {editForm && (
-                      <div className="relative overflow-hidden rounded-xl border shadow-lg" 
-                           style={{ 
-                             background: `linear-gradient(135deg, ${themeColors.primary}08, transparent 50%)`,
-                             borderColor: `${themeColors.primary}20`
-                           }}>
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-30" 
-                             style={{ backgroundColor: `${themeColors.primary}15` }} />
-                        <div className="relative p-6">
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2.5 rounded-lg shadow-md" 
-                                 style={{ background: `linear-gradient(135deg, ${themeColors.primary}20, ${themeColors.primary}10)` }}>
+                      <div className="rounded-xl bg-background/60 p-6"
+                           style={{ border: `1px solid ${themeColors.primary}20` }}>
+                          <div className="flex items-center gap-3 mb-5">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}20` }}>
                               <FontAwesomeIcon icon={faPencil} className="h-4 w-4" style={{ color: themeColors.primary }} />
                             </div>
-                            <h4 className="text-xl font-bold">Edit Account</h4>
+                            <h4 className="text-base font-semibold">Edit Account</h4>
                           </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -1024,30 +918,22 @@ export default function Settings() {
                               <FontAwesomeIcon icon={faCheck} className="h-4 w-4 mr-2" />
                               Save Changes
                             </Button>
-                            <Button variant="outline" onClick={() => setEditForm(null)} className="font-semibold">
+                            <Button variant="outline" onClick={() => setEditForm(null)}>
                               Cancel
                             </Button>
                           </div>
-                        </div>
                       </div>
                     )}
 
                     {/* Add Account Form */}
                     {showAddAccount && (
-                      <div className="relative overflow-hidden rounded-xl border shadow-lg" 
-                           style={{ 
-                             background: `linear-gradient(135deg, ${themeColors.profit}08, transparent 50%)`,
-                             borderColor: `${themeColors.profit}20`
-                           }}>
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-30" 
-                             style={{ backgroundColor: `${themeColors.profit}15` }} />
-                        <div className="relative p-6">
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2.5 rounded-lg shadow-md" 
-                                 style={{ background: `linear-gradient(135deg, ${themeColors.profit}20, ${themeColors.profit}10)` }}>
+                      <div className="rounded-xl bg-background/60 p-6"
+                           style={{ border: `1px solid ${themeColors.profit}20` }}>
+                          <div className="flex items-center gap-3 mb-5">
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.profit}20` }}>
                               <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" style={{ color: themeColors.profit }} />
                             </div>
-                            <h4 className="text-xl font-bold">Add New Account</h4>
+                            <h4 className="text-base font-semibold">Add New Account</h4>
                           </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -1167,37 +1053,27 @@ export default function Settings() {
                               <FontAwesomeIcon icon={faBuilding} className="h-4 w-4 mr-2" />
                               Add Account
                             </Button>
-                            <Button variant="outline" onClick={() => setShowAddAccount(false)} className="font-semibold">
+                            <Button variant="outline" onClick={() => setShowAddAccount(false)}>
                               Cancel
                             </Button>
                           </div>
-                        </div>
                       </div>
                     )}
 
                     {/* Add Account Button */}
                     {!showAddAccount && !editForm && (
-                      <div className="relative group">
-                        <Button 
-                          onClick={() => setShowAddAccount(true)} 
-                          className="w-full h-14 font-bold text-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl"
-                          style={{ 
-                            background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.primary}10)`,
-                            borderColor: `${themeColors.profit}30`,
-                            color: themeColors.profit
-                          }}
-                          variant="outline"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <div className="relative flex items-center gap-3">
-                            <div className="p-2 rounded-lg" 
-                                 style={{ backgroundColor: `${themeColors.profit}20` }}>
-                              <FontAwesomeIcon icon={faBuilding} className="h-5 w-5" style={{ color: themeColors.profit }} />
-                            </div>
-                            <span>Add New Account</span>
-                          </div>
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={() => setShowAddAccount(true)}
+                        variant="outline"
+                        className="w-full h-11 font-medium transition-all hover:shadow-md"
+                        style={{
+                          borderColor: `${themeColors.primary}30`,
+                          color: themeColors.primary
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faBuilding} className="h-4 w-4 mr-2" />
+                        Add New Account
+                      </Button>
                     )}
                   </CardContent>
                 </Card>
@@ -1205,13 +1081,13 @@ export default function Settings() {
             </TabsContent>
 
             <TabsContent value="trading" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faChartLine} className="h-5 w-5" />
+              <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.primary }} />
                     Trading Defaults
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground/85 leading-[1.6]">
+                  <CardDescription>
                     Configure default values and trading preferences
                   </CardDescription>
                 </CardHeader>
@@ -1270,7 +1146,7 @@ export default function Settings() {
                     {/* Main Performance Metrics */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {/* Total P&L Card */}
-                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                      <div className="rounded-xl bg-muted/30 p-5">
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Total P&L</p>
@@ -1290,7 +1166,7 @@ export default function Settings() {
                       </div>
 
                       {/* Win Rate Card */}
-                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                      <div className="rounded-xl bg-muted/30 p-5">
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Win Rate</p>
@@ -1320,7 +1196,7 @@ export default function Settings() {
                       </div>
 
                       {/* Profit Factor Card */}
-                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                      <div className="rounded-xl bg-muted/30 p-5">
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Profit Factor</p>
@@ -1342,7 +1218,7 @@ export default function Settings() {
                       </div>
 
                       {/* Current Streak Card */}
-                      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-background to-muted/20 p-6">
+                      <div className="rounded-xl bg-muted/30 p-5">
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
@@ -1397,8 +1273,7 @@ export default function Settings() {
 
                     {/* Best/Worst Trade */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between p-4 rounded-lg border" 
-                           style={{ background: `linear-gradient(to right, ${themeColors.profit}05, ${themeColors.profit}10)` }}>
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
                         <div className="flex items-center gap-3">
                           <div className="rounded-lg p-2">
                             <FontAwesomeIcon icon={faMedal} className="h-4 w-4" style={{ color: themeColors.profit }} />
@@ -1411,8 +1286,7 @@ export default function Settings() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between p-4 rounded-lg border" 
-                           style={{ background: `linear-gradient(to right, ${themeColors.loss}05, ${themeColors.loss}10)` }}>
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
                         <div className="flex items-center gap-3">
                           <div className="rounded-lg p-2">
                             <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.loss }} />
@@ -1432,44 +1306,27 @@ export default function Settings() {
             </TabsContent>
 
             <TabsContent value="risk" className="mt-6 space-y-6">
-              {/* Risk Management Header */}
-              <div className="relative overflow-hidden rounded-2xl p-6 border shadow-lg" 
-                   style={{ 
-                     background: `linear-gradient(135deg, ${themeColors.loss}10 0%, ${themeColors.loss}05 50%, transparent 100%)`,
-                     borderColor: `${themeColors.loss}20`
-                   }}>
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl animate-pulse" 
-                     style={{ backgroundColor: `${themeColors.loss}10` }} />
-                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-2xl animate-pulse delay-1000" 
-                     style={{ backgroundColor: `${themeColors.primary}10` }} />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl shadow-lg" 
-                         style={{ background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.primary}20)` }}>
-                      <FontAwesomeIcon icon={faShield} className="h-6 w-6" style={{ color: themeColors.loss }} />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold">Risk Management</h3>
-                      <p className="text-muted-foreground">Protect your capital with smart position sizing</p>
-                    </div>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.loss}20` }}>
+                  <FontAwesomeIcon icon={faShield} className="h-4 w-4" style={{ color: themeColors.loss }} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Risk Management</h3>
+                  <p className="text-xs text-muted-foreground">Protect your capital with smart position sizing</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Risk Parameters Card */}
-                <Card className="lg:col-span-2 relative overflow-hidden border-border/50 shadow-xl bg-gradient-to-br from-background to-muted/20">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
-                  <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/20">
-                        <FontAwesomeIcon icon={faCalculator} className="h-4 w-4 text-primary" />
-                      </div>
+                <Card className="lg:col-span-2 bg-muted/30 backdrop-blur-sm border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FontAwesomeIcon icon={faCalculator} className="h-4 w-4" style={{ color: themeColors.primary }} />
                       Risk Parameters
                     </CardTitle>
                     <CardDescription>Configure your risk tolerance and position sizing</CardDescription>
                   </CardHeader>
-                  <CardContent className="relative space-y-6">
+                  <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label className="flex items-center gap-2 text-sm font-semibold">
@@ -1536,45 +1393,33 @@ export default function Settings() {
                 </Card>
 
                 {/* Risk Calculator Card */}
-                <Card className="relative overflow-hidden border-border/50 shadow-xl" 
-                      style={{ background: `linear-gradient(135deg, ${themeColors.profit}05, ${themeColors.primary}05)` }}>
-                  <div className="absolute top-0 left-0 w-20 h-20 rounded-full blur-xl" 
-                       style={{ backgroundColor: `${themeColors.profit}10` }} />
-                  <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-2 text-lg">
+                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-base">
                       <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.profit }} />
                       Risk Calculator
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="relative space-y-4">
+                  <CardContent className="space-y-4">
                     <div className="space-y-4">
-                      <div className="p-4 rounded-xl border" 
-                           style={{ 
-                             background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.profit}05)`,
-                             borderColor: `${themeColors.profit}20`
-                           }}>
+                      <div className="p-4 rounded-lg bg-background/40"
+                           style={{ border: `1px solid ${themeColors.profit}20` }}>
                         <div className="text-sm text-muted-foreground mb-1">Max Risk per Trade</div>
                         <div className="text-xl font-bold" style={{ color: themeColors.profit }}>
                           {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
                         </div>
                       </div>
                       
-                      <div className="p-4 rounded-xl border" 
-                           style={{ 
-                             background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.primary}05)`,
-                             borderColor: `${themeColors.primary}20`
-                           }}>
+                      <div className="p-4 rounded-lg bg-background/40"
+                           style={{ border: `1px solid ${themeColors.primary}20` }}>
                         <div className="text-sm text-muted-foreground mb-1">Account Balance</div>
                         <div className="text-xl font-bold" style={{ color: themeColors.primary }}>
                           {formatCurrency(settings.accountSize, false)}
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-xl border" 
-                           style={{ 
-                             background: `linear-gradient(135deg, ${themeColors.loss}10, ${themeColors.loss}05)`,
-                             borderColor: `${themeColors.loss}20`
-                           }}>
+                      <div className="p-4 rounded-lg bg-background/40"
+                           style={{ border: `1px solid ${themeColors.loss}20` }}>
                         <div className="text-sm text-muted-foreground mb-1">Risk Ratio</div>
                         <div className="text-lg font-bold" style={{ color: themeColors.loss }}>
                           1:{Math.round(100 / settings.riskPerTrade)}
@@ -1589,26 +1434,18 @@ export default function Settings() {
               </div>
 
               {/* Enhanced Risk Guidelines */}
-              <Card className="relative overflow-hidden border-border/50 shadow-xl" 
-                    style={{ background: `linear-gradient(135deg, transparent, ${themeColors.primary}05)` }}>
-                <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full blur-3xl" 
-                     style={{ backgroundColor: `${themeColors.primary}05` }} />
-                <CardHeader className="relative">
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}20` }}>
-                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    </div>
+              <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.primary }} />
                     Risk Guidelines & Tips
                   </CardTitle>
                   <CardDescription>Professional risk management recommendations</CardDescription>
                 </CardHeader>
-                <CardContent className="relative space-y-6">
+                <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
-                         style={{ 
-                           background: `linear-gradient(135deg, ${themeColors.profit}10, ${themeColors.profit}05)`,
-                           borderColor: `${themeColors.profit}20`
-                         }}>
+                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                         style={{ border: `1px solid ${themeColors.profit}20` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.profit }}></div>
                         <div className="font-bold" style={{ color: themeColors.profit }}>Conservative</div>
@@ -1617,11 +1454,8 @@ export default function Settings() {
                       <div className="text-sm text-muted-foreground">Perfect for beginners and steady growth</div>
                     </div>
                     
-                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
-                         style={{ 
-                           background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.primary}05)`,
-                           borderColor: `${themeColors.primary}20`
-                         }}>
+                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                         style={{ border: `1px solid ${themeColors.primary}20` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
                         <div className="font-bold" style={{ color: themeColors.primary }}>Moderate</div>
@@ -1630,11 +1464,8 @@ export default function Settings() {
                       <div className="text-sm text-muted-foreground">For experienced traders</div>
                     </div>
                     
-                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
-                         style={{ 
-                           background: `linear-gradient(135deg, ${themeColors.loss}15, ${themeColors.loss}08)`,
-                           borderColor: `${themeColors.loss}25`
-                         }}>
+                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                         style={{ border: `1px solid ${themeColors.loss}25` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.loss }}></div>
                         <div className="font-bold" style={{ color: themeColors.loss }}>Aggressive</div>
@@ -1643,11 +1474,8 @@ export default function Settings() {
                       <div className="text-sm text-muted-foreground">High risk, proven systems only</div>
                     </div>
                     
-                    <div className="group p-4 rounded-xl border hover:shadow-lg transition-all" 
-                         style={{ 
-                           background: `linear-gradient(135deg, ${themeColors.loss}20, ${themeColors.loss}10)`,
-                           borderColor: `${themeColors.loss}30`
-                         }}>
+                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                         style={{ border: `1px solid ${themeColors.loss}30` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: themeColors.loss }}></div>
                         <div className="font-bold" style={{ color: themeColors.loss }}>Dangerous</div>
@@ -1657,11 +1485,8 @@ export default function Settings() {
                     </div>
                   </div>
                   
-                  <div className="p-4 rounded-xl border" 
-                       style={{ 
-                         background: `linear-gradient(135deg, ${themeColors.primary}10, ${themeColors.profit}10)`,
-                         borderColor: `${themeColors.primary}20`
-                       }}>
+                  <div className="p-4 rounded-lg bg-background/40"
+                       style={{ border: `1px solid ${themeColors.primary}20` }}>
                     <div className="flex items-center gap-2 mb-3">
                       <FontAwesomeIcon icon={faMedal} className="h-4 w-4" style={{ color: themeColors.primary }} />
                       <span className="font-bold" style={{ color: themeColors.primary }}>Pro Tips</span>
@@ -1690,10 +1515,10 @@ export default function Settings() {
             </TabsContent>
 
             <TabsContent value="notifications">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faBell} className="h-5 w-5" />
+              <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <FontAwesomeIcon icon={faBell} className="h-4 w-4" style={{ color: themeColors.primary }} />
                     Notifications & Alerts
                   </CardTitle>
                   <CardDescription>
@@ -1751,7 +1576,7 @@ export default function Settings() {
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faBell} className="h-4 w-4 text-primary" />
+                      <FontAwesomeIcon icon={faBell} className="h-4 w-4" style={{ color: themeColors.primary }} />
                       <h3 className="text-lg font-semibold">Email Notifications</h3>
                     </div>
                     
@@ -1877,7 +1702,7 @@ export default function Settings() {
 
                   <div className="p-6 rounded-xl bg-muted/20 border border-border/50">
                     <div className="flex items-start gap-3">
-                      <FontAwesomeIcon icon={faBell} className="h-5 w-5 text-primary mt-0.5" />
+                      <FontAwesomeIcon icon={faBell} className="h-5 w-5 mt-0.5" style={{ color: themeColors.primary }} />
                       <div>
                         <div className="font-semibold text-foreground">Browser Notifications</div>
                         <div className="text-sm text-muted-foreground/85 mt-1 leading-[1.6]">
@@ -1893,9 +1718,12 @@ export default function Settings() {
 
             <TabsContent value="data">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Backup & Restore</CardTitle>
+            <Card className="bg-muted/30 backdrop-blur-sm border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FontAwesomeIcon icon={faDatabase} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  Backup & Restore
+                </CardTitle>
                 <CardDescription>
                   Export your data for backup or import from a previous backup
                 </CardDescription>
@@ -1929,9 +1757,9 @@ export default function Settings() {
             </Card>
 
             {/* Account section */}
-            <Card className="border-border/50 shadow-sm">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0">
               <CardHeader className="pb-4">
-                <CardTitle>Account</CardTitle>
+                <CardTitle className="text-base">Account</CardTitle>
                 <CardDescription>
                   Manage your account settings
                 </CardDescription>
@@ -1949,10 +1777,10 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive flex items-center gap-2">
-                  <FontAwesomeIcon icon={faExclamationTriangle} className="h-5 w-5" />
+            <Card className="bg-muted/30 backdrop-blur-sm border-0" style={{ border: `1px solid hsl(var(--destructive) / 0.3)` }}>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-destructive flex items-center gap-2 text-base">
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" />
                   Danger Zone
                 </CardTitle>
                 <CardDescription>
@@ -1975,24 +1803,15 @@ export default function Settings() {
           </div>
             </TabsContent>
             
-            <div className="flex justify-center pt-8">
-              <Button 
-                onClick={saveSettings} 
-                size="lg" 
-                className="relative px-12 py-4 font-bold text-lg bg-gradient-to-r from-primary via-primary/90 to-primary hover:from-primary/90 hover:via-primary hover:to-primary/90 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            <div className="flex justify-center pt-6">
+              <Button
+                onClick={saveSettings}
+                size="lg"
+                className="px-8 py-3 font-medium shadow-lg gap-2"
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
               >
-                {saved ? (
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faCheck} className="h-5 w-5 text-green-400 animate-pulse" />
-                    Settings Saved!
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faCheck} className="h-5 w-5" />
-                    Save All Settings
-                  </div>
-                )}
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-pulse opacity-30" />
+                <FontAwesomeIcon icon={faCheck} className="h-4 w-4" />
+                {saved ? 'Settings Saved!' : 'Save All Settings'}
               </Button>
             </div>
           </Tabs>

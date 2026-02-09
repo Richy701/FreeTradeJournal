@@ -294,10 +294,6 @@ export default function Documentation() {
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <span><strong>Community Support:</strong> <a href="https://t.me/+UI6uTKgfswUwNzhk" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Join our Telegram</a></span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
                   <span><strong>Feedback:</strong> <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Send us feedback</a></span>
                 </li>
               </ul>
@@ -314,7 +310,7 @@ export default function Documentation() {
           alt: "FreeTradeJournal",
           title: "FreeTradeJournal"
         }}
-        description="Free, open-source trading journal for forex and futures traders. Track your performance, analyze patterns, and improve your trading with AI-powered insights."
+        description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
         sections={[
           {
             title: "Product",

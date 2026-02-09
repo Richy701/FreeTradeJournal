@@ -49,19 +49,19 @@ export function LogoCloud() {
   return (
     <section className="relative py-16 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="mb-12 text-center">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center gap-4 mb-10 max-w-xs mx-auto">
+          <div className="flex-1 h-px bg-border" />
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground whitespace-nowrap">
             Trusted by traders at
-          </h2>
-        </div>
-        
-        <LogoCarousel logos={propFirms} />
-        
-        <div className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Works with all major prop firms and brokers
           </p>
+          <div className="flex-1 h-px bg-border" />
         </div>
+
+        <LogoCarousel logos={propFirms} />
+
+        <p className="mt-8 text-center text-sm text-muted-foreground/70">
+          Compatible with every prop firm, broker, and market
+        </p>
       </div>
     </section>
   );

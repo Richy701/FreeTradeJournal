@@ -102,7 +102,7 @@ function HeroGeometric({
 
     return (
         <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-background">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.05] via-transparent to-yellow-600/[0.05] blur-3xl" />
 
             <div className="absolute inset-0 overflow-hidden">
                 <ElegantShape
@@ -110,7 +110,7 @@ function HeroGeometric({
                     width={600}
                     height={140}
                     rotate={12}
-                    gradient="dark:from-indigo-500/[0.15] from-indigo-500/[0.08]"
+                    gradient="dark:from-amber-500/[0.15] from-amber-500/[0.08]"
                     className="left-[-10%] md:left-[-5%] top-[15%] md:top-[20%]"
                 />
 
@@ -119,7 +119,7 @@ function HeroGeometric({
                     width={500}
                     height={120}
                     rotate={-15}
-                    gradient="dark:from-rose-500/[0.15] from-rose-500/[0.08]"
+                    gradient="dark:from-yellow-600/[0.15] from-yellow-600/[0.08]"
                     className="right-[-5%] md:right-[0%] top-[70%] md:top-[75%]"
                 />
 
@@ -128,7 +128,7 @@ function HeroGeometric({
                     width={300}
                     height={80}
                     rotate={-8}
-                    gradient="dark:from-violet-500/[0.15] from-violet-500/[0.08]"
+                    gradient="dark:from-amber-400/[0.15] from-amber-400/[0.08]"
                     className="left-[5%] md:left-[10%] bottom-[5%] md:bottom-[10%]"
                 />
 
@@ -146,7 +146,7 @@ function HeroGeometric({
                     width={150}
                     height={40}
                     rotate={-25}
-                    gradient="dark:from-cyan-500/[0.15] from-cyan-500/[0.08]"
+                    gradient="dark:from-yellow-500/[0.15] from-yellow-500/[0.08]"
                     className="left-[20%] md:left-[25%] top-[5%] md:top-[10%]"
                 />
             </div>
@@ -210,14 +210,14 @@ function HeroGeometric({
                                 enterDemoMode();
                                 navigate('/dashboard');
                             }}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none"
+                            className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-6 sm:px-8 py-3 rounded-lg text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none"
                         >
                             View Live Demo
                         </Button>
                         <Link to="/signup">
-                            <Button 
-                                variant="outline" 
-                                className="px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg shadow-md hover:shadow-lg transition-all duration-200 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none border-2"
+                            <Button
+                                variant="outline"
+                                className="px-6 sm:px-8 py-3 rounded-lg font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] max-w-[280px] sm:max-w-none border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
                             >
                                 Sign Up Free
                             </Button>

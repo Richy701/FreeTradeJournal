@@ -29,7 +29,7 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
           imgElement.src = imgElement.dataset.src || '';
           imgElement.removeAttribute('data-src');
           imgElement.classList.remove('logo-lazy');
-          imgElement.style.opacity = '0.95';
+          imgElement.style.opacity = '0.5';
         };
         newImg.src = imgElement.dataset.src || '';
       });
@@ -72,7 +72,7 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                   loading="lazy"
                   decoding="async"
                   className={cn(
-                    "h-16 w-auto max-w-[180px] opacity-30 transition-opacity object-contain logo-lazy",
+                    "h-16 w-auto max-w-[180px] opacity-50 hover:opacity-80 transition-opacity duration-300 object-contain logo-lazy",
                     logo.name === "FundingPips" && "dark:brightness-0 dark:invert",
                     logo.name === "The5ers" && "brightness-0 dark:brightness-100",
                     logo.name === "FTMO" && "dark:brightness-0 dark:invert"
@@ -82,7 +82,7 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                   }}
                 />
               ) : (
-                <span className={cn("text-lg font-bold opacity-60 hover:opacity-100 transition-opacity", logo.className)}>
+                <span className={cn("text-lg font-bold opacity-50 hover:opacity-80 transition-opacity duration-300", logo.className)}>
                   {logo.name}
                 </span>
               )}

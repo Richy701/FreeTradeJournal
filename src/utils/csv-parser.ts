@@ -26,16 +26,16 @@ export interface CSVParseResult {
 
 // Common column mappings for different trading platforms
 const COLUMN_MAPPINGS = {
-  // Your current format (MT5-like)
+  // Your current format (MT5-like) + Topstep + other prop firms
   standard: {
-    symbol: ['Symbol', 'Instrument', 'Pair'],
+    symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract'],
     side: ['Side', 'Type', 'Direction', 'Action'],
-    openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry'],
-    closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit'],
+    openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice'],
+    closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice'],
     quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units'],
     pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L'],
-    openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date'],
-    closeTime: ['Close Time', 'Exit Time', 'Close Date'],
+    openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
+    closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
   }
 };
 
@@ -80,28 +80,46 @@ function parseCurrency(value: string): number {
 
 function parseDateString(dateStr: string): string {
   try {
-    // Handle various date formats
+    // Strip timezone offset suffix like "+00:00" or "-06:00"
+    const cleaned = dateStr.replace(/\s*[+-]\d{2}:\d{2}\s*$/, '').trim();
+
     let date: Date;
-    
-    // Format: "28/08/2025 00:37:54" or "28/08/2025"
-    if (dateStr.includes('/')) {
-      const [datePart] = dateStr.split(' ');
-      const [day, month, year] = datePart.split('/');
-      date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+    // Format with slashes: could be DD/MM/YYYY or MM/DD/YYYY
+    if (cleaned.includes('/')) {
+      const [datePart] = cleaned.split(' ');
+      const parts = datePart.split('/');
+      const a = parseInt(parts[0]);
+      const b = parseInt(parts[1]);
+      const year = parseInt(parts[2]);
+
+      // If second part > 12, it must be MM/DD/YYYY (e.g. 01/28/2026 from Topstep)
+      // If first part > 12, it must be DD/MM/YYYY (e.g. 28/08/2025 from MT5)
+      // If both <= 12, try MM/DD/YYYY first (US format, more common in prop firm exports)
+      if (b > 12) {
+        // MM/DD/YYYY
+        date = new Date(year, a - 1, b);
+      } else if (a > 12) {
+        // DD/MM/YYYY
+        date = new Date(year, b - 1, a);
+      } else {
+        // Ambiguous — try MM/DD/YYYY first (US format)
+        date = new Date(year, a - 1, b);
+      }
     }
     // Format: "2025-08-28" or "2025-08-28 00:37:54"
-    else if (dateStr.includes('-')) {
-      date = new Date(dateStr.split(' ')[0]);
+    else if (cleaned.includes('-')) {
+      date = new Date(cleaned.split(' ')[0]);
     }
     // Fallback
     else {
-      date = new Date(dateStr);
+      date = new Date(cleaned);
     }
-    
+
     if (isNaN(date.getTime())) {
       return new Date().toISOString().split('T')[0];
     }
-    
+
     return date.toISOString().split('T')[0];
   } catch {
     return new Date().toISOString().split('T')[0];
@@ -117,6 +135,9 @@ function normalizeSide(side: string): 'long' | 'short' {
 }
 
 export function parseCSV(csvContent: string): CSVParseResult {
+  // Strip BOM character that some exports (e.g. Topstep) include
+  csvContent = csvContent.replace(/^\uFEFF/, '');
+
   const result: CSVParseResult = {
     success: false,
     trades: [],
