@@ -1,350 +1,122 @@
-import { useState } from 'react';
 import { SiteHeader } from '@/components/site-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer7 } from '@/components/ui/footer-7';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBook, faChartLine, faCalendarAlt, faFileText, faBullseye, faCog, faUpload, faDownload, faFilter, faCalculator } from '@fortawesome/free-solid-svg-icons';
+import { footerConfig } from '@/components/ui/footer-config';
 
 export default function Documentation() {
-  const [showFeedback, setShowFeedback] = useState(false);
-
-  const featureCards = [
-    {
-      icon: faChartLine,
-      title: "Trade Logging",
-      description: "Log trades with entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track forex, futures, and stock trades.",
-      features: ["Real-time P&L calculation", "Commission tracking", "Swap cost monitoring", "Multiple asset classes"]
-    },
-    {
-      icon: faCalendarAlt,
-      title: "Calendar Heatmap",
-      description: "Visual performance tracking with daily P&L heatmap. Identify patterns and consistency in your trading.",
-      features: ["Daily performance visualization", "Pattern recognition", "Streak tracking", "Monthly/yearly views"]
-    },
-    {
-      icon: faFileText,
-      title: "Trading Journal",
-      description: "Document strategies, market observations, and trading psychology. Include screenshots and detailed analysis.",
-      features: ["Mood tracking", "Strategy notes", "Market analysis", "Screenshot uploads"]
-    },
-    {
-      icon: faBullseye,
-      title: "Goals & Risk Management",
-      description: "Set trading goals and implement risk management rules. Track violations and maintain discipline.",
-      features: ["Goal setting", "Rule enforcement", "Risk monitoring", "Performance alerts"]
-    }
-  ];
-
-  const guides = [
-    {
-      title: "Getting Started",
-      description: "Learn the basics of setting up your trading journal",
-      steps: [
-        "Create your account and set up your profile",
-        "Import existing trades via CSV or add manually",
-        "Configure your trading goals and risk rules",
-        "Start logging new trades and journal entries"
-      ]
-    },
-    {
-      title: "Trade Management",
-      description: "How to effectively log and manage your trades",
-      steps: [
-        "Add trades with complete entry/exit information",
-        "Use tags and categories to organize trades",
-        "Set up alerts for risk rule violations",
-        "Review and analyze trade performance regularly"
-      ]
-    },
-    {
-      title: "Advanced Analytics",
-      description: "Leverage AI insights and advanced metrics",
-      steps: [
-        "Review AI-generated trading patterns",
-        "Monitor psychological trading indicators",
-        "Track advanced metrics like Sharpe ratio",
-        "Identify and fix trading weaknesses"
-      ]
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      
-      <div className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-12">
-        <div className="max-w-6xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3">
-              <div className="p-3 rounded-xl shadow-lg bg-primary">
-                <FontAwesomeIcon icon={faBook} className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Documentation</h1>
-            </div>
-            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-              Complete guide to using FreeTradeJournal effectively. Learn how to track your trades, analyze performance, and improve your trading results.
-            </p>
-          </div>
+
+      <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
+        <header>
+          <h1 className="text-3xl font-bold tracking-tight">Documentation</h1>
+          <p className="mt-2 text-muted-foreground">Everything you need to get started with FreeTradeJournal.</p>
+        </header>
+
+        <hr className="border-border" />
+
+        <div className="space-y-10 text-foreground/80 leading-relaxed">
 
           {/* Quick Start */}
-          <Card className="border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl">Quick Start Guide</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">1. Set Up Your Profile</h3>
-                  <p className="text-muted-foreground">Configure your trading preferences, account settings, and risk parameters to get started.</p>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">2. Add Your First Trade</h3>
-                  <p className="text-muted-foreground">Log your first trade with entry/exit prices, lot size, and all relevant costs for accurate P&L tracking.</p>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">3. Import Historical Data</h3>
-                  <p className="text-muted-foreground">Upload CSV files from your broker to import existing trade history and get comprehensive analytics.</p>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">4. Set Trading Goals</h3>
-                  <p className="text-muted-foreground">Define profit targets, risk limits, and trading rules to maintain discipline and track progress.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-4">Quick Start</h2>
+            <ol className="list-decimal pl-6 space-y-3">
+              <li><strong>Set up your profile</strong> — configure trading preferences, account settings, and risk parameters.</li>
+              <li><strong>Add your first trade</strong> — log entry/exit prices, lot size, and costs for accurate P&L tracking.</li>
+              <li><strong>Import historical data</strong> — upload CSV files from your broker to backfill your trade history.</li>
+              <li><strong>Set trading goals</strong> — define profit targets, risk limits, and rules to maintain discipline.</li>
+            </ol>
+          </section>
 
-          {/* Core Features */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Core Features</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {featureCards.map((feature, index) => (
-                <Card key={index} className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <FontAwesomeIcon icon={feature.icon} className="h-5 w-5 text-primary" />
-                      </div>
-                      {feature.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">{feature.description}</p>
-                    <ul className="space-y-2">
-                      {feature.features.map((item, idx) => (
-                        <li key={idx} className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+          {/* Trade Logging */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Trade Logging</h2>
+            <p>Log trades with entry/exit prices, lot sizes, spreads, commissions, and swap costs. Supports forex, futures, and stocks with real-time P&L calculation.</p>
+          </section>
 
-          {/* Step-by-Step Guides */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-center">Step-by-Step Guides</h2>
-            <div className="grid lg:grid-cols-3 gap-6">
-              {guides.map((guide, index) => (
-                <Card key={index} className="border-0 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{guide.title}</CardTitle>
-                    <p className="text-muted-foreground text-sm">{guide.description}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <ol className="space-y-3">
-                      {guide.steps.map((step, idx) => (
-                        <li key={idx} className="flex gap-3 text-sm">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-xs bg-primary">
-                            {idx + 1}
-                          </span>
-                          <span className="text-muted-foreground">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+          {/* Calendar Heatmap */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Calendar Heatmap</h2>
+            <p>Visualize daily performance with a color-coded heatmap. Identify patterns, track streaks, and view monthly or yearly performance at a glance.</p>
+          </section>
 
-          {/* Key Features Details */}
-          <Card className="border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl">Detailed Feature Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faUpload} className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">CSV Import</h3>
-                </div>
-                <div className="space-y-3 text-muted-foreground">
-                  <p>Import your trading history from any broker using CSV files. Supports major brokers including MetaTrader, TradingView, and prop firms.</p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Automatic field mapping for common CSV formats</li>
-                    <li>Duplicate trade detection and prevention</li>
-                    <li>Support for partial fills and complex orders</li>
-                  </ul>
-                </div>
-              </section>
+          {/* Trading Journal */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Trading Journal</h2>
+            <p>Document strategies, market observations, and trading psychology. Track your mood, attach screenshots, and build a searchable record of your decision-making.</p>
+          </section>
 
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faCalculator} className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Advanced Analytics</h3>
-                </div>
-                <div className="space-y-3 text-muted-foreground">
-                  <p>Professional-grade trading metrics and AI-powered insights to improve your performance.</p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Sharpe ratio, profit factor, and maximum drawdown calculations</li>
-                    <li>Psychological pattern detection (overtrading, revenge trading, FOMO)</li>
-                    <li>Win rate analysis by time, instrument, and strategy</li>
-                    <li>Risk-adjusted returns and consistency metrics</li>
-                  </ul>
-                </div>
-              </section>
+          {/* Goals & Risk */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Goals & Risk Management</h2>
+            <p>Set trading goals, enforce risk rules, and monitor violations. Stay disciplined with performance alerts and progress tracking.</p>
+          </section>
 
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faFilter} className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Filtering & Search</h3>
-                </div>
-                <div className="space-y-3 text-muted-foreground">
-                  <p>Powerful filtering options to analyze specific trading scenarios and patterns.</p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Filter by date range, instrument, strategy, or outcome</li>
-                    <li>Search trades by notes, tags, or custom fields</li>
-                    <li>Save and reuse common filter combinations</li>
-                    <li>Export filtered results to CSV or Excel</li>
-                  </ul>
-                </div>
-              </section>
+          {/* CSV Import */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">CSV Import</h2>
+            <p>Import trade history from any broker via CSV. Supports MetaTrader, TradingView, and most prop firm formats with automatic field mapping and duplicate detection.</p>
+          </section>
 
-              <section className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <FontAwesomeIcon icon={faDownload} className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Export & Reporting</h3>
-                </div>
-                <div className="space-y-3 text-muted-foreground">
-                  <p>Generate comprehensive reports for tax purposes, performance reviews, or prop firm evaluations.</p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Export trades in multiple formats (CSV, Excel, PDF)</li>
-                    <li>Generate performance reports with charts and metrics</li>
-                    <li>Tax-ready profit/loss statements</li>
-                    <li>Custom report templates for different needs</li>
-                  </ul>
-                </div>
-              </section>
+          {/* Advanced Analytics */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Advanced Analytics</h2>
+            <p>Professional-grade metrics including Sharpe ratio, profit factor, and maximum drawdown. AI-powered pattern detection identifies overtrading, revenge trading, and FOMO behaviors.</p>
+          </section>
 
-            </CardContent>
-          </Card>
+          {/* Filtering & Search */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Filtering & Search</h2>
+            <p>Filter by date, instrument, strategy, or outcome. Save common filter combinations and export results to CSV or Excel.</p>
+          </section>
+
+          {/* Export & Reporting */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Export & Reporting</h2>
+            <p>Generate reports for tax purposes, performance reviews, or prop firm evaluations. Export in CSV, Excel, or PDF with custom templates.</p>
+          </section>
 
           {/* FAQ */}
-          <Card className="border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl">Frequently Asked Questions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Is my trading data secure?</h3>
-                <p className="text-muted-foreground">Yes, your trading data is stored locally on your device by default. We use industry-standard encryption for any cloud sync features, and your sensitive financial information never leaves your control without your explicit consent.</p>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-4">FAQ</h2>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-medium text-foreground">Is my trading data secure?</h3>
+                <p className="mt-1">Yes. Data is stored locally on your device by default. Cloud sync uses industry-standard encryption, and your financial information never leaves your control without consent.</p>
               </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">What file formats can I import?</h3>
-                <p className="text-muted-foreground">We support CSV files from most major brokers and trading platforms. Common formats include MetaTrader, TradingView, Interactive Brokers, and most prop firm reporting formats.</p>
+              <div>
+                <h3 className="font-medium text-foreground">What file formats can I import?</h3>
+                <p className="mt-1">CSV files from most major brokers — MetaTrader, TradingView, Interactive Brokers, and common prop firm formats.</p>
               </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Can I use this for tax reporting?</h3>
-                <p className="text-muted-foreground">While FreeTradeJournal provides detailed P&L calculations and export capabilities, you should always verify data accuracy and consult with a tax professional for official tax reporting purposes.</p>
+              <div>
+                <h3 className="font-medium text-foreground">Can I use this for tax reporting?</h3>
+                <p className="mt-1">FreeTradeJournal provides detailed P&L calculations and exports, but always verify data accuracy and consult a tax professional.</p>
               </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Does FreeTradeJournal provide trading advice?</h3>
-                <p className="text-muted-foreground">No, FreeTradeJournal is purely an analysis and journaling tool. We do not provide investment advice, trading signals, or financial recommendations. All trading decisions remain your responsibility.</p>
+              <div>
+                <h3 className="font-medium text-foreground">Does FreeTradeJournal provide trading advice?</h3>
+                <p className="mt-1">No. FreeTradeJournal is purely an analysis and journaling tool. All trading decisions remain your responsibility.</p>
               </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">How do I export my data?</h3>
-                <p className="text-muted-foreground">Go to Settings → Data Management to export your trades, journal entries, and analytics data in various formats including CSV, Excel, and JSON.</p>
+              <div>
+                <h3 className="font-medium text-foreground">How do I export my data?</h3>
+                <p className="mt-1">Go to Settings &rarr; Data Management to export trades, journal entries, and analytics in CSV, Excel, or JSON.</p>
               </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Can I use this offline?</h3>
-                <p className="text-muted-foreground">Yes, FreeTradeJournal works offline by default since all data is stored locally. You can log trades, update your journal, and view analytics without an internet connection.</p>
+              <div>
+                <h3 className="font-medium text-foreground">Can I use this offline?</h3>
+                <p className="mt-1">Yes. All data is stored locally, so you can log trades, journal, and view analytics without an internet connection.</p>
               </div>
-
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {/* Support */}
-          <Card className="border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl">Need Help?</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">If you need additional support or have questions not covered in this documentation:</p>
-              <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <span><strong>Feedback:</strong> <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Send us feedback</a></span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Need Help?</h2>
+            <p>Have a question not covered here? <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Send us feedback</a>.</p>
+          </section>
 
         </div>
       </div>
-      
-      <Footer7 
-        logo={{
-          url: "/",
-          src: "",
-          alt: "FreeTradeJournal",
-          title: "FreeTradeJournal"
-        }}
-        description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
-        sections={[
-          {
-            title: "Product",
-            links: [
-              { name: "Features", href: "/#features" },
-              { name: "Dashboard", href: "/dashboard" },
-              { name: "Trade Log", href: "/trades" },
-              { name: "Goals", href: "/goals" }
-            ]
-          },
-          {
-            title: "Resources",
-            links: [
-              { name: "Documentation", href: "/documentation" },
-            ]
-          },
-          {
-            title: "Legal",
-            links: [
-              { name: "Privacy Policy", href: "/privacy" },
-              { name: "Terms & Conditions", href: "/terms" },
-              { name: "Cookie Policy", href: "/cookie-policy" }
-            ]
-          }
-        ]}
-        socialLinks={[
-          // Add social links when available
-        ]}
-        copyright="© 2025 FreeTradeJournal. All rights reserved."
-        legalLinks={[
-          { name: "Terms and Conditions", href: "/terms" },
-          { name: "Privacy Policy", href: "/privacy" }
-        ]}
-      />
+
+      <Footer7 {...footerConfig} />
     </div>
   );
 }
