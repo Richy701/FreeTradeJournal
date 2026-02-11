@@ -19,29 +19,10 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useEffect } from 'react';
 
 export default function FuturesTradingTracker() {
   const { user, enterDemoMode } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Futures Trading Tracker - Professional Futures & Options Journal | FreeTradeJournal';
-    
-    const metaDescription = document.querySelector('meta[name="description"]') || document.createElement('meta');
-    metaDescription.setAttribute('name', 'description');
-    metaDescription.setAttribute('content', 'Professional futures trading tracker for ES, NQ, CL, GC traders. Track futures contracts, analyze tick performance, manage margin requirements. Features P&L tracking, volume analysis, and risk management. 100% free.');
-    if (!document.querySelector('meta[name="description"]')) {
-      document.head.appendChild(metaDescription as Element);
-    }
-
-    const metaKeywords = document.querySelector('meta[name="keywords"]') || document.createElement('meta');
-    metaKeywords.setAttribute('name', 'keywords');
-    metaKeywords.setAttribute('content', 'futures trading tracker, futures journal, ES trading journal, NQ trading tracker, crude oil futures log, gold futures tracker, futures P&L tracker, futures risk management, tick counter, futures margin calculator, E-mini journal, micro futures tracker, futures performance analytics, futures trade log, CME futures journal, futures position tracker, commodity trading journal, index futures tracker');
-    if (!document.querySelector('meta[name="keywords"]')) {
-      document.head.appendChild(metaKeywords as Element);
-    }
-  }, []);
 
   if (user) {
     navigate('/dashboard');

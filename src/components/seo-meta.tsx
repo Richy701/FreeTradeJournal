@@ -13,7 +13,7 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'FreeTradeJournal - Free Trading Journal for Forex, Futures & Stock Traders',
     description: 'Free professional trading journal. Track trades, analyze performance metrics, manage risk. Features include P&L tracking, calendar heatmaps, and AI insights. 100% free forever.',
     keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker',
-    image: 'https://freetradejournal.com/og-image.webp'
+    image: 'https://www.freetradejournal.com/og-image.webp'
   },
   '/dashboard': {
     title: 'Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics',
@@ -59,6 +59,31 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Terms & Conditions | FreeTradeJournal - Service Terms',
     description: 'FreeTradeJournal terms and conditions of service. User agreement and service terms.',
     keywords: 'terms of service, user agreement, terms and conditions'
+  },
+  '/settings': {
+    title: 'Settings | FreeTradeJournal - Account Preferences',
+    description: 'Manage your FreeTradeJournal account settings, preferences, and trading configuration.',
+    keywords: 'trading journal settings, account preferences, trading configuration'
+  },
+  '/cookie-policy': {
+    title: 'Cookie Policy | FreeTradeJournal - How We Use Cookies',
+    description: 'FreeTradeJournal cookie policy. Learn about the cookies we use to improve your trading journal experience.',
+    keywords: 'cookie policy, cookies, tracking, privacy'
+  },
+  '/forex-trading-journal': {
+    title: 'Forex Trading Journal - Free Professional FX Trading Tracker | FreeTradeJournal',
+    description: 'Professional forex trading journal for FX traders. Track currency pairs, analyze pip performance, manage risk with position sizing. Features P&L tracking, win rate analysis, and drawdown management. 100% free.',
+    keywords: 'forex trading journal, FX trading tracker, currency trading log, forex performance tracker, pip counter, forex P&L tracker, MT4 journal, MT5 trading journal, forex risk management, currency pair analysis, forex win rate, FX trading diary, forex trade log, EURUSD tracker, GBPUSD journal, forex position sizing, pip calculator journal, forex drawdown tracker'
+  },
+  '/futures-trading-tracker': {
+    title: 'Futures Trading Tracker - Professional Futures & Options Journal | FreeTradeJournal',
+    description: 'Professional futures trading tracker for ES, NQ, CL, GC traders. Track futures contracts, analyze tick performance, manage margin requirements. Features P&L tracking, volume analysis, and risk management. 100% free.',
+    keywords: 'futures trading tracker, futures journal, ES trading journal, NQ trading tracker, crude oil futures log, gold futures tracker, futures P&L tracker, futures risk management, tick counter, futures margin calculator, E-mini journal, micro futures tracker, futures performance analytics, futures trade log, CME futures journal, futures position tracker, commodity trading journal, index futures tracker'
+  },
+  '/prop-firm-dashboard': {
+    title: 'Prop Firm Dashboard - Trading Journal for Funded Traders | FreeTradeJournal',
+    description: 'Professional prop firm dashboard for FTMO, Apex, TopStep traders. Track evaluation progress, manage drawdown limits, monitor daily loss limits. Built for funded and evaluation accounts. 100% free.',
+    keywords: 'prop firm dashboard, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, prop firm tracker, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, FTMO tracker, MFF journal, E8 funding tracker, prop firm analytics, challenge tracker, verification tracker, funded trader dashboard'
   }
 };
 
@@ -71,26 +96,36 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     const finalTitle = title || meta.title || 'FreeTradeJournal - Free Trading Journal';
     const finalDescription = description || meta.description || 'Free professional trading journal for forex, futures and stock traders.';
     const finalKeywords = keywords || meta.keywords || 'trading journal, forex, futures, stocks';
-    const finalImage = image || meta.image || 'https://freetradejournal.com/og-image.webp';
-    
+    const finalImage = image || meta.image || 'https://www.freetradejournal.com/og-image.webp';
+    const canonicalUrl = `https://www.freetradejournal.com${currentPath === '/' ? '/' : currentPath}`;
+
     // Update document title
     document.title = finalTitle;
-    
+
     // Update meta tags
     updateMetaTag('description', finalDescription);
     updateMetaTag('keywords', finalKeywords);
-    
+
     // Update Open Graph tags
     updateMetaTag('og:title', finalTitle, 'property');
     updateMetaTag('og:description', finalDescription, 'property');
     updateMetaTag('og:image', finalImage, 'property');
-    updateMetaTag('og:url', `https://freetradejournal.com${currentPath}`, 'property');
-    
+    updateMetaTag('og:url', canonicalUrl, 'property');
+
     // Update Twitter tags
     updateMetaTag('twitter:title', finalTitle);
     updateMetaTag('twitter:description', finalDescription);
     updateMetaTag('twitter:image', finalImage);
-    
+
+    // Update canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', canonicalUrl);
+
   }, [currentPath, title, description, keywords, image]);
   
   return null;

@@ -211,7 +211,12 @@ All public routes are pre-rendered at build time using Puppeteer for search engi
 - Legal pages (privacy policy, terms, cookie policy)
 - SEO landing pages for Forex, Futures, and Prop Firm traders
 
-Each route includes Open Graph tags, Twitter Cards, and JSON-LD structured data.
+Each route includes:
+- Unique `<title>` and `<meta description>` via a centralized `SEOMeta` component
+- Dynamic `<link rel="canonical">` for every route
+- Open Graph and Twitter Card tags
+- JSON-LD structured data (SoftwareApplication, WebPage, FAQPage)
+- Consistent `www.freetradejournal.com` domain across all URLs
 
 ## Contributing
 

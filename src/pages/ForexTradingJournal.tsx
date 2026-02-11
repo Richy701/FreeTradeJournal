@@ -19,30 +19,10 @@ import {
   Activity
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useEffect } from 'react';
 
 export default function ForexTradingJournal() {
   const { user, enterDemoMode } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Update meta tags for this specific page
-    document.title = 'Forex Trading Journal - Free Professional FX Trading Tracker | FreeTradeJournal';
-    
-    const metaDescription = document.querySelector('meta[name="description"]') || document.createElement('meta');
-    metaDescription.setAttribute('name', 'description');
-    metaDescription.setAttribute('content', 'Professional forex trading journal for FX traders. Track currency pairs, analyze pip performance, manage risk with position sizing. Features P&L tracking, win rate analysis, and drawdown management. 100% free.');
-    if (!document.querySelector('meta[name="description"]')) {
-      document.head.appendChild(metaDescription as Element);
-    }
-
-    const metaKeywords = document.querySelector('meta[name="keywords"]') || document.createElement('meta');
-    metaKeywords.setAttribute('name', 'keywords');
-    metaKeywords.setAttribute('content', 'forex trading journal, FX trading tracker, currency trading log, forex performance tracker, pip counter, forex P&L tracker, MT4 journal, MT5 trading journal, forex risk management, currency pair analysis, forex win rate, FX trading diary, forex trade log, EURUSD tracker, GBPUSD journal, forex position sizing, pip calculator journal, forex drawdown tracker');
-    if (!document.querySelector('meta[name="keywords"]')) {
-      document.head.appendChild(metaKeywords as Element);
-    }
-  }, []);
 
   if (user) {
     navigate('/dashboard');

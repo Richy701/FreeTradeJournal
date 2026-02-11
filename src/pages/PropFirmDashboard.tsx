@@ -19,29 +19,10 @@ import {
   Calculator
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useEffect } from 'react';
 
 export default function PropFirmDashboard() {
   const { user, enterDemoMode } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Prop Firm Dashboard - Trading Journal for Funded Traders | FreeTradeJournal';
-    
-    const metaDescription = document.querySelector('meta[name="description"]') || document.createElement('meta');
-    metaDescription.setAttribute('name', 'description');
-    metaDescription.setAttribute('content', 'Professional prop firm dashboard for FTMO, Apex, TopStep traders. Track evaluation progress, manage drawdown limits, monitor daily loss limits. Built for funded and evaluation accounts. 100% free.');
-    if (!document.querySelector('meta[name="description"]')) {
-      document.head.appendChild(metaDescription as Element);
-    }
-
-    const metaKeywords = document.querySelector('meta[name="keywords"]') || document.createElement('meta');
-    metaKeywords.setAttribute('name', 'keywords');
-    metaKeywords.setAttribute('content', 'prop firm dashboard, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, prop firm tracker, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, FTMO tracker, MFF journal, E8 funding tracker, prop firm analytics, challenge tracker, verification tracker, funded trader dashboard');
-    if (!document.querySelector('meta[name="keywords"]')) {
-      document.head.appendChild(metaKeywords as Element);
-    }
-  }, []);
 
   if (user) {
     navigate('/dashboard');

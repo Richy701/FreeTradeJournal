@@ -1,7 +1,6 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useAccounts } from '@/contexts/account-context'
-import { PageSEO } from '@/components/seo/page-seo'
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
@@ -396,12 +395,6 @@ export default function Dashboard() {
 
   return (
     <>
-      <PageSEO 
-        title="Trading Dashboard" 
-        description="Professional trading dashboard with performance analytics, P&L tracking, and equity curves for forex and futures traders."
-        canonical="/dashboard"
-        keywords="trading dashboard, performance analytics, P&L tracking, trading statistics, equity curve"
-      />
       <div className="min-h-screen bg-background">
       <SiteHeader />
       {/* Mobile-optimized Header Section */}
@@ -752,7 +745,7 @@ export default function Dashboard() {
                 const worstTrade = Math.min(...pnls);
 
                 return (
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
                       <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>

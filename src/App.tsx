@@ -94,7 +94,6 @@ function App() {
               </Routes>
             </Suspense>
             </Router>
-            <Analytics />
             </SettingsProvider>
           </AccountProvider>
         </AuthProvider>

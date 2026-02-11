@@ -9,7 +9,7 @@ interface StructuredDataProps {
 export function StructuredData({ type = 'WebPage', title, description }: StructuredDataProps) {
   const location = useLocation();
   const currentPath = location.pathname;
-  const baseUrl = 'https://freetradejournal.com';
+  const baseUrl = 'https://www.freetradejournal.com';
   
   const getStructuredData = () => {
     const baseData = {

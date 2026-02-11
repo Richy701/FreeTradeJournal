@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { PageSEO } from '@/components/seo/page-seo';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
@@ -10,6 +9,8 @@ import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -921,12 +922,6 @@ export default function TradeLog() {
 
   return (
     <>
-      <PageSEO 
-        title="Trade Log" 
-        description="Comprehensive trade logging with detailed performance metrics, profit/loss tracking, and trade analysis for forex and futures trading."
-        canonical="/trades"
-        keywords="trade log, trading journal, trade tracking, P&L analysis, forex trades, futures trading"
-      />
       <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Enhanced Header Section */}
@@ -1461,11 +1456,9 @@ export default function TradeLog() {
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded border-gray-300"
+                                <Checkbox
                                   checked={field.value}
-                                  onChange={(e) => field.onChange(e.target.checked)}
+                                  onCheckedChange={field.onChange}
                                 />
                               </FormControl>
                               <FormLabel className="text-base font-semibold cursor-pointer">
@@ -1529,8 +1522,8 @@ export default function TradeLog() {
                           <FormItem>
                             <FormLabel className="text-base font-semibold">Notes</FormLabel>
                             <FormControl>
-                              <textarea 
-                                className="w-full min-h-[120px] rounded-md border border-input bg-background px-4 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              <Textarea
+                                className="min-h-[120px] px-4 py-3 text-base"
                                 placeholder="Trade analysis, market conditions, lessons learned..."
                                 {...field}
                               />
