@@ -152,7 +152,7 @@ export const Footer7 = ({
               ))}
             </div>
             {/* Badges */}
-            <div className="flex flex-col gap-4 lg:ml-auto lg:items-end">
+            <div className="flex flex-row gap-3 lg:flex-col lg:gap-4 lg:ml-auto lg:items-end">
               {/* Product Hunt Badge */}
               <a
                 href="https://www.producthunt.com/products/freetradejournal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-freetradejournal"
@@ -163,7 +163,7 @@ export const Footer7 = ({
                 <img
                   src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1012535&theme=neutral&t=1757000479250"
                   alt="FreeTradeJournal - Track, analyse, and improve your trading performance | Product Hunt"
-                  className="w-[250px] h-[54px]"
+                  className="w-[150px] h-[32px] sm:w-[200px] sm:h-[43px] lg:w-[250px] lg:h-[54px]"
                   width="250"
                   height="54"
                 />
@@ -178,7 +178,7 @@ export const Footer7 = ({
                 <img
                   src="https://peerlist.io/api/v1/projects/embed/PRJHEOG6A7OOGQDDMIO6KA9M7ABO7A?showUpvote=false&theme=light"
                   alt="Free Trade journal"
-                  className="w-auto h-[72px]"
+                  className="w-auto h-[44px] sm:h-[56px] lg:h-[72px]"
                 />
               </a>
             </div>

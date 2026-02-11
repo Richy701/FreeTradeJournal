@@ -87,7 +87,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-14">
             <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-all duration-200">
               <CandlestickChart className="h-12 w-12 text-primary mb-4" />
               <h3 className="text-lg font-semibold mb-2">Track Every Trade</h3>
@@ -143,7 +143,7 @@ export default function LandingPage() {
         }
         description="Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across forex pairs, futures contracts, and indices with powerful filtering and export capabilities."
         images={[
-          { src: "/images/landing/trading log new screenshot .png", alt: "Trade Log View" }
+          { src: "/images/landing/trading log new screenshot .webp", alt: "Trade Log View" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -160,7 +160,7 @@ export default function LandingPage() {
         }
         description="Track your daily performance with an intuitive calendar heatmap. Quickly identify profitable and losing days, spot trading patterns, and track your consistency over time with beautiful visualizations."
         images={[
-          { src: "/images/landing/New Calender screenshot .png", alt: "Calendar Heatmap" }
+          { src: "/images/landing/New Calender screenshot .webp", alt: "Calendar Heatmap" }
         ]}
         imageLayout="stack"
         reverseLayout={false}
@@ -177,7 +177,7 @@ export default function LandingPage() {
         }
         description="Document your trading thoughts, strategies, and market observations. Maintain a detailed journal with mood tracking, screenshots, and comprehensive analysis to improve your trading psychology and performance."
         images={[
-          { src: "/images/landing/Trading journal new screenshot.png", alt: "Trading Journal" }
+          { src: "/images/landing/Trading journal new screenshot.webp", alt: "Trading Journal" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -194,7 +194,7 @@ export default function LandingPage() {
         }
         description="Set clear trading goals and implement robust risk management rules. Track your progress, monitor rule violations, and maintain discipline with automated alerts and comprehensive analytics."
         images={[
-          { src: "/images/landing/goals and risk management new screenshot.png", alt: "Goals & Risk Management" }
+          { src: "/images/landing/goals and risk management new screenshot.webp", alt: "Goals & Risk Management" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
