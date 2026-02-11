@@ -1,7 +1,6 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { DemoDataService } from '@/services/demo-service';
-import { DataService } from '@/services/data-service';
 import { useUserStorage } from '@/utils/user-storage';
 import { useCallback } from 'react';
 
@@ -15,9 +14,10 @@ export function useDemoData() {
 
   const getTrades = useCallback(() => {
     let trades = [];
-    
+
     if (isDemo) {
       trades = DemoDataService.getTrades();
+      return trades; // Demo data isn't scoped to accounts
     } else {
       // Get from user-scoped localStorage
       const savedTrades = userStorage.getItem('trades');
@@ -29,23 +29,24 @@ export function useDemoData() {
         }
       }
     }
-    
+
     // Filter trades by active account if account exists
     if (activeAccount) {
-      return trades.filter((trade: any) => 
-        trade.accountId === activeAccount.id || 
+      return trades.filter((trade: any) =>
+        trade.accountId === activeAccount.id ||
         (!trade.accountId && activeAccount.id.includes('default')) // Handle legacy trades without accountId
       );
     }
-    
+
     return trades;
   }, [isDemo, userStorage, activeAccount]);
 
   const getJournalEntries = useCallback(() => {
     let entries = [];
-    
+
     if (isDemo) {
       entries = DemoDataService.getJournalEntries();
+      return entries; // Demo data isn't scoped to accounts
     } else {
       // Get from user-scoped localStorage
       const savedEntries = userStorage.getItem('journalEntries');
@@ -57,23 +58,24 @@ export function useDemoData() {
         }
       }
     }
-    
+
     // Filter journal entries by active account if account exists
     if (activeAccount) {
-      return entries.filter((entry: any) => 
-        entry.accountId === activeAccount.id || 
+      return entries.filter((entry: any) =>
+        entry.accountId === activeAccount.id ||
         (!entry.accountId && activeAccount.id.includes('default'))
       );
     }
-    
+
     return entries;
   }, [isDemo, userStorage, activeAccount]);
 
   const getGoals = useCallback(() => {
     let goals = [];
-    
+
     if (isDemo) {
       goals = DemoDataService.getGoals();
+      return goals; // Demo data isn't scoped to accounts
     } else {
       // Get from user-scoped localStorage
       const savedGoals = userStorage.getItem('goals');
@@ -85,15 +87,15 @@ export function useDemoData() {
         }
       }
     }
-    
+
     // Filter goals by active account if account exists
     if (activeAccount) {
-      return goals.filter((goal: any) => 
-        goal.accountId === activeAccount.id || 
+      return goals.filter((goal: any) =>
+        goal.accountId === activeAccount.id ||
         (!goal.accountId && activeAccount.id.includes('default'))
       );
     }
-    
+
     return goals;
   }, [isDemo, userStorage, activeAccount]);
 
@@ -110,7 +112,5 @@ export function useDemoData() {
     getJournalEntries,
     getGoals,
     getStats,
-    // Also expose the full DataService for components that need it
-    dataService: DataService,
   };
 }

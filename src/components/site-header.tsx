@@ -40,11 +40,10 @@ export function SiteHeader({ className }: { className?: string }) {
       'terms': 'Terms & Conditions',
       'cookie-policy': 'Cookie Policy',
       'documentation': 'Documentation',
-      'blog': 'Blog'
     }
     
     // For public pages (privacy, terms), Home should link to landing page
-    const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation', 'blog'].includes(segments[0])
+    const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation'].includes(segments[0])
     const homeHref = user && !isPublicPage ? '/dashboard' : '/'
     
     if (segments.length === 0) {
@@ -74,7 +73,7 @@ export function SiteHeader({ className }: { className?: string }) {
   const breadcrumbItems = getBreadcrumbItems()
   
   // Determine if we should use landing page theme (for public pages) or dashboard theme
-  const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation', 'blog'].includes(pathname.split('/').filter(Boolean)[0])
+  const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation'].includes(pathname.split('/').filter(Boolean)[0])
 
   return (
     <header className={`hidden md:flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>

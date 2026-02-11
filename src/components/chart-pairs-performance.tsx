@@ -3,7 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartBar } from '@fortawesome/free-solid-svg-icons'
 import { useThemePresets } from '@/contexts/theme-presets'
-import { useUserStorage } from '@/utils/user-storage'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts"
 import { useMemo, useEffect, useState } from "react"
 
@@ -33,7 +33,7 @@ const chartConfig = {
 
 export function ChartPairsPerformance() {
   const { themeColors } = useThemePresets()
-  const userStorage = useUserStorage()
+  const { getTrades } = useDemoData()
   const [refreshKey, setRefreshKey] = useState(0)
 
   // Listen for storage changes to refresh chart when trades are updated
@@ -53,50 +53,34 @@ export function ChartPairsPerformance() {
 
   // Generate trading pairs performance data based on actual trades
   const chartData = useMemo(() => {
-    const storedTrades = userStorage.getItem('trades')
-    
-    if (!storedTrades) {
-      // Show sample trading pairs for demo purposes
+    const trades = getTrades()
+
+    if (!trades || trades.length === 0) {
       return [
-        { pair: "EUR/USD", pnl: 850 },
-        { pair: "GBP/USD", pnl: 320 },
-        { pair: "USD/JPY", pnl: -150 },
-        { pair: "AUD/USD", pnl: 420 },
-        { pair: "USD/CAD", pnl: 180 },
-        { pair: "NZD/USD", pnl: -80 },
-        { pair: "EUR/GBP", pnl: 250 },
-        { pair: "USD/CHF", pnl: -120 },
-      ]
-    }
-    
-    try {
-      const trades = JSON.parse(storedTrades)
-      
-      // Group trades by symbol/pair and calculate total P&L for each
-      const pairPerformance = trades.reduce((acc: any, trade: any) => {
-        const symbol = trade.symbol || 'Unknown'
-        if (!acc[symbol]) {
-          acc[symbol] = { pair: symbol, pnl: 0, tradeCount: 0 }
-        }
-        acc[symbol].pnl += trade.pnl || 0
-        acc[symbol].tradeCount += 1
-        return acc
-      }, {})
-      
-      // Convert to array and sort by absolute P&L value
-      const pairArray = Object.values(pairPerformance)
-        .sort((a: any, b: any) => Math.abs(b.pnl) - Math.abs(a.pnl))
-        .slice(0, 10) // Show top 10 pairs
-      
-      return pairArray.length > 0 ? pairArray : [
         { pair: "No trades yet", pnl: 0 }
       ]
-    } catch {
-      return [
-        { pair: "Error loading", pnl: 0 }
-      ]
     }
-  }, [refreshKey])
+
+    // Group trades by symbol/pair and calculate total P&L for each
+    const pairPerformance = trades.reduce((acc: any, trade: any) => {
+      const symbol = trade.symbol || 'Unknown'
+      if (!acc[symbol]) {
+        acc[symbol] = { pair: symbol, pnl: 0, tradeCount: 0 }
+      }
+      acc[symbol].pnl += trade.pnl || 0
+      acc[symbol].tradeCount += 1
+      return acc
+    }, {})
+
+    // Convert to array and sort by absolute P&L value
+    const pairArray = Object.values(pairPerformance)
+      .sort((a: any, b: any) => Math.abs(b.pnl) - Math.abs(a.pnl))
+      .slice(0, 10) // Show top 10 pairs
+
+    return pairArray.length > 0 ? pairArray : [
+      { pair: "No trades yet", pnl: 0 }
+    ]
+  }, [refreshKey, getTrades])
 
   const totalPnL = chartData.reduce((sum: number, item: any) => sum + item.pnl, 0)
   const profitablePairs = chartData.filter((item: any) => item.pnl > 0).length

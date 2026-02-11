@@ -441,10 +441,11 @@ export default function Dashboard() {
 
               {/* Quick Actions - inline with title on desktop */}
               <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
+              {!isDemo && (
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
-                  <Button 
-                    size="default" 
+                  <Button
+                    size="default"
                     className="gap-2 h-11 touch-manipulation"
                     style={{backgroundColor: themeColors.primary || 'hsl(var(--primary))', color: themeColors.primaryButtonText}}
                   >
@@ -627,6 +628,7 @@ export default function Dashboard() {
                   </div>
                 </DialogContent>
               </Dialog>
+              )}
             </div>
             </div>
           </div>

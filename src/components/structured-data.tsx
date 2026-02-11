@@ -207,30 +207,6 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       };
     }
 
-    // Blog page - Article
-    if (currentPath.startsWith('/blog')) {
-      return {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        "headline": title || "Trading Tips and Strategies",
-        "description": description || "Expert trading tips, journal strategies, and market insights",
-        "author": {
-          "@type": "Organization",
-          "name": "FreeTradeJournal"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "name": "FreeTradeJournal",
-          "logo": {
-            "@type": "ImageObject",
-            "url": `${baseUrl}/favicon-512x512.png`
-          }
-        },
-        "datePublished": new Date().toISOString(),
-        "dateModified": new Date().toISOString()
-      };
-    }
-
     // Default WebPage schema
     return {
       ...baseData,

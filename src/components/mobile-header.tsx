@@ -2,6 +2,7 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useAuth } from '@/contexts/auth-context';
 import { AccountSwitcher } from '@/components/account-switcher';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
 export function MobileHeader({ title }: { title?: string }) {
   const { toggleSidebar, openMobile } = useSidebar();
   const { themeColors } = useThemePresets();
+  const { isDemo } = useAuth();
 
   return (
     <div className="sticky top-0 z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -44,9 +46,11 @@ export function MobileHeader({ title }: { title?: string }) {
       </div>
       
       {/* Account switcher row */}
-      <div className="px-3 pb-2 border-b border-border/30">
-        <AccountSwitcher />
-      </div>
+      {!isDemo && (
+        <div className="px-3 pb-2 border-b border-border/30">
+          <AccountSwitcher />
+        </div>
+      )}
     </div>
   );
 }

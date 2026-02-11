@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useAuth } from '@/contexts/auth-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag, faArrowTrendUp as faTrendingUp, faArrowTrendDown as faTrendingDown, faLink } from '@fortawesome/free-solid-svg-icons';
@@ -86,6 +87,7 @@ const mockEntries: JournalEntry[] = [];
 
 export default function Journal() {
   const { themeColors } = useThemePresets();
+  const { isDemo } = useAuth();
   const userStorage = useUserStorage();
   const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -555,20 +557,21 @@ export default function Journal() {
                     : 'Document your trading thoughts and observations'}
                 </p>
               </div>
+              {!isDemo && (
               <div className="hidden sm:flex gap-3">
                 {trades.length > 0 && (
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       variant="outline"
-                      onClick={() => quickStartEntry('pre-trade')} 
+                      onClick={() => quickStartEntry('pre-trade')}
                       className="gap-2 border-2"
                     >
                       <Clock className="h-4 w-4" />
                       Pre-Trade
                     </Button>
-                    <Button 
+                    <Button
                       variant="outline"
-                      onClick={() => quickStartEntry('post-trade')} 
+                      onClick={() => quickStartEntry('post-trade')}
                       className="gap-2 border-2"
                     >
                       <BarChart3 className="h-4 w-4" />
@@ -576,8 +579,8 @@ export default function Journal() {
                     </Button>
                   </div>
                 )}
-                <Button 
-                  onClick={() => setShowNewEntry(true)} 
+                <Button
+                  onClick={() => setShowNewEntry(true)}
                   className="gap-2 shadow-lg"
                   style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                 >
@@ -585,6 +588,7 @@ export default function Journal() {
                   New Entry
                 </Button>
               </div>
+              )}
             </div>
           </div>
         </div>
@@ -1396,6 +1400,7 @@ export default function Journal() {
       </div>
       
       {/* Mobile Floating Action Button */}
+      {!isDemo && (
       <Button
         onClick={() => setShowNewEntry(true)}
         className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl z-50"
@@ -1403,6 +1408,7 @@ export default function Journal() {
       >
         <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
       </Button>
+      )}
       <Footer7 {...footerConfig} />
     </div>
   );

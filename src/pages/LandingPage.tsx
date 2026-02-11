@@ -117,13 +117,13 @@ export default function LandingPage() {
                 enterDemoMode();
                 navigate('/dashboard');
               }}
-              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-8 py-3 rounded-lg text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 min-w-[200px] focus:ring-2 focus:ring-primary/50"
+              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-8 py-3 rounded-full text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 min-w-[200px] focus:ring-2 focus:ring-primary/50"
             >
               View Live Demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Link to="/signup">
-              <Button variant="outline" className="px-8 py-3 rounded-lg font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10 focus:ring-2 focus:ring-ring/50">
+              <Button variant="outline" className="px-8 py-3 rounded-full font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10 focus:ring-2 focus:ring-ring/50">
                 Sign Up Free
               </Button>
             </Link>

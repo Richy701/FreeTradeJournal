@@ -54,7 +54,14 @@
       "Bash(sed:*)",
       "Bash(for:*)",
       "Bash(do sed -i '' '/{ name: \"\"Community\"\", href: \"\"#\"\" },/d' \"$file\")",
-      "Bash(do)"
+      "Bash(do)",
+      "Bash(do cwebp -q 80 -resize $size 0 \"trading log new screenshot .png\" -o \"trading_log_new_screenshot_-$sizew.webp\")",
+      "Bash(do cwebp -q 80 -resize $size 0 \"New Calender screenshot .png\" -o \"New_Calender_screenshot_-$sizew.webp\")",
+      "Bash(do cwebp -q 80 -resize $size 0 \"Trading journal new screenshot.png\" -o \"Trading_journal_new_screenshot-$sizew.webp\")",
+      "Bash(do cwebp -q 80 -resize $size 0 \"goals and risk management new screenshot.png\" -o \"goals_and_risk_management_new_screenshot-$sizew.webp\")",
+      "Bash(cwebp:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

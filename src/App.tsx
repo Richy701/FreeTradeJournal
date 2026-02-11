@@ -29,8 +29,6 @@ const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('@/pages/TermsAndConditions'));
 const CookiePolicy = lazy(() => import('@/pages/CookiePolicy'));
 const Documentation = lazy(() => import('@/pages/Documentation'));
-const Blog = lazy(() => import('@/pages/Blog'));
-const BlogPost = lazy(() => import('@/pages/BlogPost'));
 const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
 const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
@@ -76,8 +74,6 @@ function App() {
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/documentation" element={<Documentation />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:id" element={<BlogPost />} />
                 
                 {/* SEO Landing Pages */}
                 <Route path="/forex-trading-journal" element={<ForexTradingJournal />} />

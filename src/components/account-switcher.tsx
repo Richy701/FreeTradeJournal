@@ -2,6 +2,7 @@ import * as React from "react"
 import { Building2, CircleDollarSign, Target, Beaker } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAccounts, type TradingAccount } from "@/contexts/account-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Badge } from "@/components/ui/badge"
 import {
   Select,
@@ -38,8 +39,9 @@ interface AccountSwitcherProps {
 
 export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
   const { accounts, activeAccount, setActiveAccount } = useAccounts()
+  const { isDemo } = useAuth()
 
-  if (!activeAccount) {
+  if (isDemo || !activeAccount) {
     return null
   }
 

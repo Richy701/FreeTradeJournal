@@ -125,6 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (isDemo) {
       setUser(null);
       setIsDemo(false);
+      delete document.documentElement.dataset.demo;
       return;
     }
     
@@ -139,11 +140,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(DEMO_USER as any);
     setIsDemo(true);
     setLoading(false);
+    document.documentElement.dataset.demo = 'true';
   };
-  
+
   const exitDemoMode = () => {
     setUser(null);
     setIsDemo(false);
+    delete document.documentElement.dataset.demo;
   };
 
   const resetPassword = async (email: string): Promise<void> => {

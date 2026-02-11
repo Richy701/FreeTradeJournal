@@ -56,6 +56,10 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Dynamic profit/loss and primary color customization
 - Theme persistence across sessions
 
+### Landing Page
+- Polished hero section with animated gradient CTA buttons (pill-shaped design)
+- Instant demo access and sign-up prompts
+
 ### Demo Mode
 - Instant access without signup via "Try Demo"
 - 50+ realistic pre-populated trades across Forex, Futures, and Indices

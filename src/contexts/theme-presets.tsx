@@ -131,6 +131,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   const [currentTheme, setCurrentTheme] = useState('default')
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [pathname, setPathname] = useState(window.location.pathname)
+  const [isDemo, setIsDemo] = useState(!!document.documentElement.dataset.demo)
 
   // Track route changes for SPA navigation
   useEffect(() => {
@@ -157,19 +158,19 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       setCurrentTheme(savedTheme)
     }
     
-    // Check for dark mode
-    const checkDarkMode = () => {
-      const isDark = document.documentElement.classList.contains('dark')
-      setIsDarkMode(isDark)
+    // Check for dark mode and demo mode
+    const checkAttributes = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'))
+      setIsDemo(!!document.documentElement.dataset.demo)
     }
-    
-    checkDarkMode()
-    
-    // Watch for theme mode changes
-    const observer = new MutationObserver(checkDarkMode)
+
+    checkAttributes()
+
+    // Watch for theme mode and demo mode changes
+    const observer = new MutationObserver(checkAttributes)
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class', 'data-demo']
     })
     
     return () => observer.disconnect()
@@ -204,13 +205,13 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
     }
     
-    // On public pages, reset CSS variables to defaults so landing page isn't themed
-    const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/blog', '/documentation']
-    const isPublicPage = publicPaths.some(p =>
-      pathname === p || pathname.startsWith('/blog/')
-    )
+    // On public pages or in demo mode, reset CSS variables to amber/gold defaults
+    const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/documentation']
+    const isPublicPage = publicPaths.some(p => pathname === p)
+    // Read data-demo directly from DOM to avoid MutationObserver timing issues
+    const isInDemo = isDemo || !!document.documentElement.dataset.demo
 
-    if (isPublicPage) {
+    if (isPublicPage || isInDemo) {
       // Reset to CSS-defined defaults (remove inline overrides)
       root.style.removeProperty('--primary')
       root.style.removeProperty('--ring')
@@ -227,7 +228,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     const b = parseInt(colors.primary.slice(5, 7), 16)
     const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
     root.style.setProperty('--primary-foreground', lum > 0.55 ? '0 0% 0%' : '0 0% 100%')
-  }, [currentTheme, pathname])
+  }, [currentTheme, pathname, isDemo])
 
   const setTheme = (theme: string) => {
     if (themePresets[theme]) {

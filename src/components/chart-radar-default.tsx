@@ -3,7 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartLine } from '@fortawesome/free-solid-svg-icons'
 import { useThemePresets } from '@/contexts/theme-presets'
-import { useUserStorage } from '@/utils/user-storage'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
 import { useMemo, useEffect, useState } from "react"
 
@@ -33,7 +33,7 @@ const chartConfig = {
 
 export function ChartRadarDefault() {
   const { themeColors } = useThemePresets()
-  const userStorage = useUserStorage()
+  const { getTrades } = useDemoData()
   const [refreshKey, setRefreshKey] = useState(0)
 
   // Listen for storage changes to refresh chart when trades are updated
@@ -53,45 +53,31 @@ export function ChartRadarDefault() {
 
   // Generate trading pairs performance data based on actual trades
   const { chartData, rawData } = useMemo(() => {
-    const storedTrades = userStorage.getItem('trades')
-    
+    const trades = getTrades()
+
     let rawPairData;
-    if (!storedTrades) {
-      // Show sample trading pairs for demo purposes
-      rawPairData = [
-        { pair: "EUR/USD", pnl: 850, actualPnl: 850 },
-        { pair: "GBP/USD", pnl: 320, actualPnl: 320 },
-        { pair: "USD/JPY", pnl: -150, actualPnl: -150 },
-        { pair: "AUD/USD", pnl: 420, actualPnl: 420 },
-        { pair: "USD/CAD", pnl: 180, actualPnl: 180 },
-        { pair: "NZD/USD", pnl: -80, actualPnl: -80 },
-      ]
+    if (!trades || trades.length === 0) {
+      rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0 }]
     } else {
-      try {
-        const trades = JSON.parse(storedTrades)
-        
-        // Group trades by symbol/pair and calculate total P&L for each
-        const pairPerformance = trades.reduce((acc: any, trade: any) => {
-          const symbol = trade.symbol || 'Unknown'
-          if (!acc[symbol]) {
-            acc[symbol] = { pair: symbol, pnl: 0, actualPnl: 0, tradeCount: 0 }
-          }
-          acc[symbol].pnl += trade.pnl || 0
-          acc[symbol].actualPnl += trade.pnl || 0
-          acc[symbol].tradeCount += 1
-          return acc
-        }, {})
-        
-        // Convert to array and sort by P&L
-        rawPairData = Object.values(pairPerformance)
-          .sort((a: any, b: any) => b.pnl - a.pnl)
-          .slice(0, 8) // Show top 8 pairs
-        
-        if (rawPairData.length === 0) {
-          rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0 }]
+      // Group trades by symbol/pair and calculate total P&L for each
+      const pairPerformance = trades.reduce((acc: any, trade: any) => {
+        const symbol = trade.symbol || 'Unknown'
+        if (!acc[symbol]) {
+          acc[symbol] = { pair: symbol, pnl: 0, actualPnl: 0, tradeCount: 0 }
         }
-      } catch {
-        rawPairData = [{ pair: "Error", pnl: 0, actualPnl: 0 }]
+        acc[symbol].pnl += trade.pnl || 0
+        acc[symbol].actualPnl += trade.pnl || 0
+        acc[symbol].tradeCount += 1
+        return acc
+      }, {})
+
+      // Convert to array and sort by P&L
+      rawPairData = Object.values(pairPerformance)
+        .sort((a: any, b: any) => b.pnl - a.pnl)
+        .slice(0, 8) // Show top 8 pairs
+
+      if (rawPairData.length === 0) {
+        rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0 }]
       }
     }
     
@@ -110,7 +96,7 @@ export function ChartRadarDefault() {
     }))
     
     return { chartData: normalizedData, rawData: rawPairData }
-  }, [refreshKey])
+  }, [refreshKey, getTrades])
 
   const totalPnL = rawData.reduce((sum: number, item: any) => sum + item.actualPnl, 0)
 

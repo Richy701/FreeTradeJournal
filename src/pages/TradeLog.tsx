@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { PageSEO } from '@/components/seo/page-seo';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,6 +100,7 @@ function formatPrice(price: number): string {
 
 export default function TradeLog() {
   const { themeColors } = useThemePresets();
+  const { isDemo } = useAuth();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -941,7 +943,9 @@ export default function TradeLog() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button 
+              {!isDemo && (
+              <>
+              <Button
                 size="sm"
                 onClick={() => {
                   setEditingTrade(null);
@@ -953,8 +957,8 @@ export default function TradeLog() {
                 <Plus className="mr-2 h-4 w-4" />
                 Add Trade
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => document.getElementById('csv-import')?.click()}
                 disabled={csvUploadState.isUploading}
@@ -969,6 +973,8 @@ export default function TradeLog() {
                 className="hidden"
                 onChange={handleCSVImport}
               />
+              </>
+              )}
               
               <Button 
                 variant="outline" 

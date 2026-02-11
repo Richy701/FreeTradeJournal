@@ -838,7 +838,7 @@ export function CalendarHeatmap() {
                           )}
                           
                           {/* Add trade indicator for empty dates */}
-                          {!hasData && day.isCurrentMonth && (
+                          {!isDemo && !hasData && day.isCurrentMonth && (
                             <div className="absolute bottom-1 right-1 opacity-0 hover:opacity-100 transition-opacity">
                               <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
                                 <Plus className="h-2 w-2 text-primary" />
@@ -1037,19 +1037,21 @@ export function CalendarHeatmap() {
           </DialogHeader>
 
           <Tabs defaultValue="journal" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-7 sm:h-9 p-0.5 sm:p-1 mb-4 sm:mb-5">
-              <TabsTrigger 
-                value="journal" 
+            <TabsList className={`grid w-full ${isDemo ? 'grid-cols-1' : 'grid-cols-2'} h-7 sm:h-9 p-0.5 sm:p-1 mb-4 sm:mb-5`}>
+              <TabsTrigger
+                value="journal"
                 className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
               >
                 Journal
               </TabsTrigger>
-              <TabsTrigger 
-                value="trade" 
+              {!isDemo && (
+              <TabsTrigger
+                value="trade"
                 className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
               >
                 Add Trade
               </TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="journal" className="space-y-3 sm:space-y-4 mt-6 sm:mt-8">

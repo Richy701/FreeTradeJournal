@@ -50,11 +50,6 @@ const pageMeta: Record<string, SEOMetaProps> = {
     description: 'Complete guide to using FreeTradeJournal. Learn how to track trades, import CSV data, analyze performance, and improve trading results.',
     keywords: 'trading journal guide, documentation, help, CSV import, trade tracking tutorial'
   },
-  '/blog': {
-    title: 'Trading Blog | FreeTradeJournal - Trading Tips & Strategies',
-    description: 'Expert trading tips, journal strategies, and market insights. Learn how to improve your trading performance with proper journaling.',
-    keywords: 'trading blog, trading tips, journal strategies, forex tips, futures trading'
-  },
   '/privacy': {
     title: 'Privacy Policy | FreeTradeJournal - Your Data Protection',
     description: 'FreeTradeJournal privacy policy. Learn how we protect your trading data and personal information.',
