@@ -35,7 +35,7 @@ const stepVariants = {
     x: 0,
     opacity: 1,
     transition: {
-      x: { duration: 0.35, ease: [0.23, 0.86, 0.39, 0.96] },
+      x: { duration: 0.35, ease: [0.23, 0.86, 0.39, 0.96] as const },
       opacity: { duration: 0.25 },
     },
   },
@@ -43,7 +43,7 @@ const stepVariants = {
     x: direction > 0 ? -80 : 80,
     opacity: 0,
     transition: {
-      x: { duration: 0.35, ease: [0.23, 0.86, 0.39, 0.96] },
+      x: { duration: 0.35, ease: [0.23, 0.86, 0.39, 0.96] as const },
       opacity: { duration: 0.2 },
     },
   }),
@@ -65,7 +65,7 @@ const fadeUpItem = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: [0.23, 0.86, 0.39, 0.96],
+      ease: [0.23, 0.86, 0.39, 0.96] as const,
     },
   },
 };
@@ -475,7 +475,7 @@ export default function OnboardingSimplified() {
                   className="h-full bg-primary rounded-full"
                   initial={false}
                   animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.4, ease: [0.23, 0.86, 0.39, 0.96] }}
+                  transition={{ duration: 0.4, ease: [0.23, 0.86, 0.39, 0.96] as const }}
                 />
               </div>
             </div>
