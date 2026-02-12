@@ -39,7 +39,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker } from '@/components/ui/date-picker';
-import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser';
+import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findColumnIndex, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
@@ -120,7 +120,15 @@ export default function TradeLog() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null });
-  
+
+  const [columnMapping, setColumnMapping] = useState<{
+    show: boolean;
+    headers: string[];
+    file: File | null;
+    csvContent: string;
+    mappings: Record<string, number>;
+  } | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -486,14 +494,40 @@ export default function TradeLog() {
     try {
       const content = await validateCSVFile(file);
       const result = parseCSV(content);
-      
-      // Show preview dialog instead of immediately importing
-      setCsvPreview({ 
-        show: true, 
-        file: file, 
-        parseResult: result 
-      });
-      
+
+      // If auto-detect failed due to missing columns, show column mapping dialog
+      if (!result.success && result.errors.some(e => e.includes('Missing required columns'))) {
+        const headers = parseCSVHeaders(content);
+        const MAPPING_FIELDS: Record<string, string[]> = {
+          symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract'],
+          side: ['Side', 'Type', 'Direction', 'Action'],
+          openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice'],
+          closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice'],
+          quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units'],
+          pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L'],
+          openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
+          closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
+        };
+        const guessedMappings: Record<string, number> = {};
+        for (const [field, possibleNames] of Object.entries(MAPPING_FIELDS)) {
+          guessedMappings[field] = findColumnIndex(headers, possibleNames);
+        }
+        setColumnMapping({
+          show: true,
+          headers,
+          file,
+          csvContent: content,
+          mappings: guessedMappings,
+        });
+      } else {
+        // Show preview dialog (existing behavior)
+        setCsvPreview({
+          show: true,
+          file: file,
+          parseResult: result
+        });
+      }
+
     } catch (error) {
       toast.error('File Import Error', {
         description: error instanceof Error ? error.message : 'Failed to read file',
@@ -573,6 +607,29 @@ export default function TradeLog() {
       const fileInput = document.getElementById('csv-import') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
     }
+  };
+
+  const handleMappingConfirm = () => {
+    if (!columnMapping) return;
+    const { csvContent, mappings, file } = columnMapping;
+
+    // Validate that all required fields are mapped
+    const requiredFields = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
+    const unmapped = requiredFields.filter(f => mappings[f] === undefined || mappings[f] < 0);
+    if (unmapped.length > 0) {
+      toast.error('Missing required mappings', {
+        description: `Please map: ${unmapped.join(', ')}`,
+      });
+      return;
+    }
+
+    const result = parseCSVWithMappings(csvContent, mappings);
+    setColumnMapping(null);
+    setCsvPreview({
+      show: true,
+      file,
+      parseResult: result,
+    });
   };
 
   const handleCSVExport = () => {
@@ -2108,6 +2165,113 @@ export default function TradeLog() {
         </Card>
       </div>
       
+      {/* Column Mapping Dialog */}
+      <Dialog open={!!columnMapping?.show} onOpenChange={(open) => { if (!open) setColumnMapping(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+          <DialogHeader className="pb-4">
+            <div className="flex items-center gap-4">
+              <div
+                className="p-3 rounded-xl shadow-sm"
+                style={{
+                  backgroundColor: `${themeColors.primary}10`,
+                  border: `1px solid ${themeColors.primary}20`
+                }}
+              >
+                <Upload className="h-6 w-6" style={{ color: themeColors.primary }} />
+              </div>
+              <div className="flex-1">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+                  Map Your CSV Columns
+                </DialogTitle>
+                <DialogDescription className="text-base text-muted-foreground mt-1">
+                  We couldn't auto-detect your CSV format. Please map your columns below.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {columnMapping && (
+            <div className="space-y-4 overflow-auto pr-1">
+              <div
+                className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
+                style={{
+                  backgroundColor: `${themeColors.primary}08`,
+                  borderColor: `${themeColors.primary}20`
+                }}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-sm font-medium truncate" title={columnMapping.file?.name}>{columnMapping.file?.name}</span>
+                <span className="text-muted-foreground text-sm">—</span>
+                <span className="text-sm text-muted-foreground">{columnMapping.headers.length} columns detected</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {([
+                  { key: 'symbol', label: 'Symbol', required: true },
+                  { key: 'side', label: 'Side (Buy/Sell)', required: true },
+                  { key: 'openPrice', label: 'Entry / Open Price', required: true },
+                  { key: 'closePrice', label: 'Exit / Close Price', required: true },
+                  { key: 'quantity', label: 'Quantity / Size', required: true },
+                  { key: 'pnl', label: 'P&L', required: true },
+                  { key: 'openTime', label: 'Entry Time', required: false },
+                  { key: 'closeTime', label: 'Exit Time', required: false },
+                ] as const).map(({ key, label, required }) => (
+                  <div key={key} className="space-y-1.5">
+                    <Label className="text-sm font-medium">
+                      {label}{required && <span style={{ color: themeColors.loss }}> *</span>}
+                    </Label>
+                    <Select
+                      value={columnMapping.mappings[key] >= 0 ? String(columnMapping.mappings[key]) : '__none__'}
+                      onValueChange={(val) => {
+                        setColumnMapping(prev => prev ? {
+                          ...prev,
+                          mappings: {
+                            ...prev.mappings,
+                            [key]: val === '__none__' ? -1 : parseInt(val),
+                          }
+                        } : null);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a column..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">-- None / Not Available --</SelectItem>
+                        {columnMapping.headers.map((header, idx) => (
+                          <SelectItem key={idx} value={String(idx)}>
+                            {header}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setColumnMapping(null)}
+                  className="hover:bg-muted"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleMappingConfirm}
+                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                  className="hover:opacity-90 shadow-lg px-6 font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faCheckCircle} className="h-4 w-4" />
+                    Parse with These Mappings
+                  </span>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
