@@ -12,9 +12,14 @@ export const PROP_FIRMS = [
 ] as const;
 
 export const FOREX_INSTRUMENTS = [
-  'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 
-  'AUDUSD', 'USDCAD', 'NZDUSD', 'EURJPY', 
-  'GBPJPY', 'EURGBP'
+  // Majors
+  'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+  // Crosses
+  'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
+  'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
+  'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD',
+  // Minors / Exotics
+  'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR',
 ] as const;
 
 export const FUTURES_INSTRUMENTS = [

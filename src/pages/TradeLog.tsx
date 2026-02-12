@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
+import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
 // Removed unused: TrendingUp, DollarSign, Crosshair
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -182,6 +183,18 @@ export default function TradeLog() {
       return 'indices';
     }
     
+    // Known forex pairs for auto-detection
+    const forexPairs = [
+      'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+      'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
+      'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
+      'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD',
+      'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR',
+    ];
+    if (forexPairs.includes(upperSymbol)) {
+      return 'forex';
+    }
+
     // Default to forex for currency pairs
     return 'forex';
   };
@@ -194,10 +207,12 @@ export default function TradeLog() {
             'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'
           ]},
           { category: 'Cross Pairs', instruments: [
-            'EURJPY', 'GBPJPY', 'EURGBP', 'CHFJPY', 'CADCHF', 'AUDCHF'
+            'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
+            'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
+            'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD'
           ]},
-          { category: 'Minor Pairs', instruments: [
-            'USDSEK', 'USDNOK', 'USDDKK', 'EURAUD', 'EURNZD', 'GBPAUD'
+          { category: 'Exotic Pairs', instruments: [
+            'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR'
           ]}
         ];
       case 'futures':
@@ -1093,44 +1108,18 @@ export default function TradeLog() {
                             return (
                               <FormItem>
                                 <FormLabel className="text-base font-semibold">Instrument *</FormLabel>
-                                <Select onValueChange={(value) => {
-                                  field.onChange(value);
-                                  // Auto-detect and set market type
-                                  const detectedMarket = detectMarketFromSymbol(value);
-                                  form.setValue('market', detectedMarket);
-                                }} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="text-lg">
-                                      <SelectValue placeholder={`Select ${watchedMarket || 'forex'} instrument`} />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {marketInstruments.map((category) => (
-                                      <div key={category.category}>
-                                        <div className="px-2 py-1 text-sm font-semibold text-muted-foreground">
-                                          {category.category}
-                                        </div>
-                                        {category.instruments.map((instrument) => {
-                                          if (typeof instrument === 'string') {
-                                            // Forex pairs - just the symbol
-                                            return (
-                                              <SelectItem key={instrument} value={instrument}>
-                                                {instrument}
-                                              </SelectItem>
-                                            );
-                                          } else {
-                                            // Futures/Indices - symbol with description
-                                            return (
-                                              <SelectItem key={instrument.symbol} value={instrument.symbol}>
-                                                {instrument.symbol} - {instrument.name}
-                                              </SelectItem>
-                                            );
-                                          }
-                                        })}
-                                      </div>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <InstrumentCombobox
+                                    value={field.value}
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                      const detectedMarket = detectMarketFromSymbol(value);
+                                      form.setValue('market', detectedMarket);
+                                    }}
+                                    categories={marketInstruments}
+                                    placeholder={`Select ${watchedMarket || 'forex'} instrument`}
+                                  />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             );
