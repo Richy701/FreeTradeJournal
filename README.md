@@ -15,10 +15,13 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ### Advanced Trade Logging
 - Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
 - CSV import with live preview, validation, and smart column mapping
-- Support for MetaTrader 5, standard CSV, and other broker formats
+- Support for MetaTrader 5, TopStep, standard CSV, and other broker formats
+- TopStep FIFO order pairing with side-aware queues and futures contract multipliers
+- Interactive column mapping UI for unknown/custom CSV formats
+- Duplicate detection on re-import — same CSV won't create duplicate trades
 - Full CRUD operations with pagination and filtering
 - Report generation (monthly, quarterly, yearly, custom)
-- Automatic P&L calculations with market-specific multipliers
+- Automatic P&L calculations with market-specific futures multipliers (MNQ, MES, MGC, CL, etc.)
 - Multi-account support with per-account data isolation
 - Prop firm assignment per trade
 
@@ -52,7 +55,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### 12 Color Themes
 - Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage
-- Dark/Light/System mode
+- Dark/Light/System mode with mode-aware opacity (colors stay visible in both modes)
+- Instant theme switching — no staggered color transitions
 - Dynamic profit/loss and primary color customization
 - Theme persistence across sessions
 
@@ -120,10 +124,11 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 7. **Settings** — Customize themes, currency, timezone, and notifications
 
 ### Data Management
-- **Local-First Storage** - Trade data stored in browser localStorage, scoped per user
-- **User-Scoped Isolation** - Complete data separation between accounts
-- **Backup & Restore** - Export all data as JSON and import from backup
-- **CSV/Excel Import** - Bring in existing trading history from any broker
+- **Local-First Storage** — Trade data stored in browser localStorage, scoped per user
+- **User-Scoped Isolation** — Complete data separation between accounts
+- **Backup & Restore** — Export all data as JSON and import from backup
+- **CSV/Excel Import** — Bring in existing trading history from any broker
+- **Clear All Data** — Full reset of trades, journal entries, goals, and accounts
 
 ## Technology Stack
 
@@ -160,6 +165,10 @@ EURUSD,buy,1.1000,1.1050,0.1,28/08/2024 09:30:00,28/08/2024 15:30:00,50.00
 # Standard
 symbol,side,entryPrice,exitPrice,quantity,date,pnl
 AAPL,long,150.00,155.00,100,2024-01-15,500.00
+
+# TopStep (Orders Export)
+Auto-detected by "PositionDisposition" column. Uses FIFO order pairing with
+side-aware queues and futures contract multipliers for accurate dollar P&L.
 ```
 
 ### Column Mapping
@@ -176,13 +185,28 @@ The importer recognizes these column name variations:
 | **P&L** | PnL, Profit, P&L, Gain, Net P/L |
 | **Date** | Open Time, Entry Time, Date, Time, Open Date |
 
-### Import Preview
+For unrecognized CSV formats, an interactive column mapping dialog lets you manually assign columns to the required fields.
+
+### Futures Contract Multipliers
+
+Automatically applied when importing futures trades:
+
+| Contract | Multiplier | Contract | Multiplier |
+|---|---|---|---|
+| MNQ | $2/pt | NQ | $20/pt |
+| MES | $5/pt | ES | $50/pt |
+| MYM | $0.50/pt | YM | $5/pt |
+| MGC | $10/pt | GC | $100/pt |
+| MCL | $10/pt | CL | $1,000/pt |
+
+### Import Preview & Deduplication
 
 When you select a CSV file you get:
 - File summary with total rows, successful/failed parse counts, and date range
 - Preview table of the first 5 trades
 - Detailed error report for any parsing issues
 - Confirm or cancel before importing
+- Re-importing the same file skips duplicate trades automatically
 
 ## Project Structure
 
