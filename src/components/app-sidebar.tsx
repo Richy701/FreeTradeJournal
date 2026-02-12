@@ -10,8 +10,10 @@ import {
   Settings2,
   Coffee,
   LineChart,
+  Megaphone,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
+import { WhatsNewDialog } from '@/components/whats-new-dialog'
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -63,6 +65,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
+  const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
 
   // Transform Firebase user to NavUser format
   const navUser = user ? {
@@ -111,6 +114,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
+                    size="sm"
+                    onClick={() => setWhatsNewOpen(true)}
+                  >
+                    <Megaphone className="h-4 w-4" />
+                    <span>What's New</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
                     asChild
                     size="sm"
                     isActive={settingsActive}
@@ -152,6 +164,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavUser user={navUser} />
       </SidebarFooter>
+      <WhatsNewDialog open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
     </Sidebar>
   )
 }

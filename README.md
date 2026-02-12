@@ -60,6 +60,13 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Dynamic profit/loss and primary color customization
 - Theme persistence across sessions
 
+### What's New & Release Notes
+- Auto-popup changelog dialog on the dashboard when new updates are available
+- Per-user tracking — each account sees the dialog independently on first login after an update
+- Megaphone icon in the sidebar to revisit the changelog anytime
+- Dedicated `/changelog` release notes page with detailed descriptions for every change
+- Linked from the What's New dialog footer and the site footer under Resources
+
 ### Landing Page
 - Polished hero section with animated gradient CTA buttons (pill-shaped design)
 - Instant demo access and sign-up prompts
@@ -220,7 +227,7 @@ src/
   utils/            # CSV parser, storage, migration utilities
   lib/              # Firebase, analytics, Resend, utility functions
   types/            # TypeScript type definitions
-  constants/        # Trading instrument constants
+  constants/        # Trading instruments, changelog data
   data/             # Demo trade data
 scripts/
   prerender.mjs     # Build-time SEO prerendering script
@@ -232,6 +239,7 @@ All public routes are pre-rendered at build time using Puppeteer for search engi
 
 - Landing page, login, signup
 - Documentation
+- Release notes / changelog
 - Legal pages (privacy policy, terms, cookie policy)
 - SEO landing pages for Forex, Futures, and Prop Firm traders
 

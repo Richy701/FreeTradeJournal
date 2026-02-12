@@ -33,6 +33,7 @@ const Documentation = lazy(() => import('@/pages/Documentation'));
 const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
 const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
+const Changelog = lazy(() => import('@/pages/Changelog'));
 
 function App() {
   useEffect(() => {
@@ -75,6 +76,7 @@ function App() {
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/documentation" element={<Documentation />} />
+                <Route path="/changelog" element={<Changelog />} />
                 
                 {/* SEO Landing Pages */}
                 <Route path="/forex-trading-journal" element={<ForexTradingJournal />} />

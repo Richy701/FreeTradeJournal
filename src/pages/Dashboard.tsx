@@ -19,6 +19,8 @@ import { useDemoData } from '@/hooks/use-demo-data'
 import { DemoCtaCard } from '@/components/demo-cta-card'
 import { useUserStorage } from '@/utils/user-storage'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
+import { WhatsNewDialog } from '@/components/whats-new-dialog'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -60,6 +62,16 @@ export default function Dashboard() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null })
+  const [showWhatsNew, setShowWhatsNew] = useState(false)
+
+  useEffect(() => {
+    const lastSeen = userStorage.getItem('lastSeenChangelog')
+    if (lastSeen !== LATEST_CHANGELOG_VERSION) {
+      setShowWhatsNew(true)
+      userStorage.setItem('lastSeenChangelog', LATEST_CHANGELOG_VERSION)
+    }
+  }, [userStorage])
+
   const [tradeForm, setTradeForm] = useState({
     symbol: "",
     side: "long" as "long" | "short",
@@ -966,6 +978,7 @@ export default function Dashboard() {
       
       </div>
       <Footer7 {...footerConfig} />
+      <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} />
     </>
   )
 }

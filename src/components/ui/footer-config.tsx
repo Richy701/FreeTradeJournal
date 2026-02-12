@@ -30,6 +30,7 @@ export const footerConfig = {
       title: "Resources",
       links: [
         { name: "Documentation", href: "/documentation" },
+        { name: "Release Notes", href: "/changelog" },
       ]
     },
     {
