@@ -22,14 +22,18 @@ import {
   Calendar,
   DollarSign,
   ArrowUpDown,
-  ChevronDown
+  ChevronDown,
+  BookOpen,
+  Plus,
+  Search,
+  Tag,
+  Link2
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpen, faPlus, faSearch, faCalendarAlt, faTag, faArrowTrendUp as faTrendingUp, faArrowTrendDown as faTrendingDown, faLink } from '@fortawesome/free-solid-svg-icons';
+import { toast } from 'sonner';
 import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
@@ -228,15 +232,17 @@ export default function Journal() {
       setSelectedTrade(null);
       setUploadedImages([]);
       setShowNewEntry(false);
+      toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleTradeSelection = (tradeId: string) => {
-    setNewEntry(prev => ({ ...prev, tradeId }));
+    const resolvedId = tradeId === 'none' ? '' : tradeId;
+    setNewEntry(prev => ({ ...prev, tradeId: resolvedId }));
     
-    if (tradeId) {
+    if (resolvedId) {
       const selectedTrade = trades.find(t => t.id === tradeId);
       if (selectedTrade) {
         setSelectedTrade(selectedTrade);
@@ -584,7 +590,7 @@ export default function Journal() {
                   className="gap-2 shadow-lg"
                   style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                 >
-                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   New Entry
                 </Button>
               </div>
@@ -601,28 +607,28 @@ export default function Journal() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
-                icon: faBookOpen,
+                Icon: BookOpen,
                 value: entries.length,
                 label: 'Total Entries',
                 color: themeColors.primary,
                 subtitle: 'All time'
               },
               {
-                icon: faTrendingUp,
+                Icon: TrendingUp,
                 value: entries.filter(e => e.mood === 'bullish').length,
                 label: 'Bullish',
                 color: themeColors.profit,
                 subtitle: `${entries.length > 0 ? Math.round((entries.filter(e => e.mood === 'bullish').length / entries.length) * 100) : 0}% of entries`
               },
               {
-                icon: faTrendingDown,
+                Icon: TrendingDown,
                 value: entries.filter(e => e.mood === 'bearish').length,
                 label: 'Bearish',
                 color: themeColors.loss,
                 subtitle: `${entries.length > 0 ? Math.round((entries.filter(e => e.mood === 'bearish').length / entries.length) * 100) : 0}% of entries`
               },
               {
-                icon: faLink,
+                Icon: Link2,
                 value: entries.filter(e => e.tradeId).length,
                 label: 'Linked Trades',
                 color: themeColors.primary,
@@ -638,7 +644,7 @@ export default function Journal() {
                     className="p-2.5 rounded-lg shadow-sm w-fit"
                     style={{ backgroundColor: `${stat.color}20` }}
                   >
-                    <FontAwesomeIcon icon={stat.icon} className="h-4 w-4" style={{ color: stat.color }} />
+                    <stat.Icon className="h-4 w-4" style={{ color: stat.color }} />
                   </div>
                 </CardHeader>
                 <CardContent className="px-5 pb-5">
@@ -664,7 +670,7 @@ export default function Journal() {
                   className="p-2.5 rounded-lg shadow-sm"
                   style={{ backgroundColor: `${themeColors.primary}20` }}
                 >
-                  <FontAwesomeIcon icon={editingEntry ? faBookOpen : faPlus} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  {editingEntry ? <BookOpen className="h-4 w-4" style={{ color: themeColors.primary }} /> : <Plus className="h-4 w-4" style={{ color: themeColors.primary }} />}
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold">{editingEntry ? 'Edit Entry' : 'New Journal Entry'}</h2>
@@ -675,7 +681,7 @@ export default function Journal() {
                 variant="ghost"
                 size="sm"
                 onClick={cancelEdit}
-                className="h-8 w-8 p-0 rounded-full hover:bg-muted/50"
+                className="h-11 w-11 p-0 rounded-full hover:bg-muted/50"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -688,19 +694,21 @@ export default function Journal() {
                 { value: 'pre-trade', label: 'Pre-Trade', icon: <Clock className="h-3.5 w-3.5" /> },
                 { value: 'post-trade', label: 'Post-Trade', icon: <BarChart3 className="h-3.5 w-3.5" /> }
               ] as const).map((type) => (
-                <button
+                <Button
                   key={type.value}
+                  variant="outline"
+                  size="sm"
                   type="button"
                   onClick={() => setNewEntry({ ...newEntry, entryType: type.value })}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
                   style={newEntry.entryType === type.value
-                    ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, border: `1px solid ${themeColors.primary}30` }
-                    : { backgroundColor: 'transparent', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }
+                    ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, borderColor: `${themeColors.primary}30` }
+                    : {}
                   }
                 >
                   {type.icon}
                   {type.label}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -709,7 +717,7 @@ export default function Journal() {
               <CardContent className="p-5 sm:p-6 space-y-5">
                 {/* Title */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Title</label>
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Title</label>
                   <Input
                     placeholder="What's on your mind about the markets?"
                     value={newEntry.title}
@@ -720,7 +728,7 @@ export default function Journal() {
 
                 {/* Content */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Content</label>
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Content</label>
                   <Textarea
                     placeholder="Share your thoughts, analysis, market observations, lessons learned..."
                     value={newEntry.content}
@@ -731,26 +739,27 @@ export default function Journal() {
 
                 {/* Mood Selector */}
                 <div className="space-y-2">
-                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Market Sentiment</label>
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Market Sentiment</label>
                   <div className="grid grid-cols-3 gap-3">
                     {([
                       { value: 'bullish', label: 'Bullish', icon: <TrendingUp className="h-5 w-5" />, color: themeColors.profit },
                       { value: 'neutral', label: 'Neutral', icon: <Minus className="h-5 w-5" />, color: themeColors.primary },
                       { value: 'bearish', label: 'Bearish', icon: <TrendingDown className="h-5 w-5" />, color: themeColors.loss }
                     ] as const).map((mood) => (
-                      <button
+                      <Button
                         key={mood.value}
+                        variant="outline"
                         type="button"
                         onClick={() => setNewEntry({ ...newEntry, mood: mood.value })}
-                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-200"
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl h-auto border-2 transition-all duration-200"
                         style={newEntry.mood === mood.value
-                          ? { backgroundColor: `${mood.color}15`, border: `2px solid ${mood.color}40`, color: mood.color }
-                          : { backgroundColor: 'transparent', border: '2px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                          ? { backgroundColor: `${mood.color}15`, borderColor: `${mood.color}40`, color: mood.color }
+                          : {}
                         }
                       >
                         {mood.icon}
                         <span className="text-xs font-medium">{mood.label}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -762,7 +771,7 @@ export default function Journal() {
               <CardContent className="p-5 sm:p-6 space-y-5">
                 {/* Trade Link */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                     <BarChart3 className="h-3 w-3" />
                     Link to Trade
                     {isLoadingTrades && <Loader2 className="h-3 w-3 animate-spin" />}
@@ -778,21 +787,25 @@ export default function Journal() {
                       <span className="text-sm text-muted-foreground">No trades found. Upload trades in Trade Log first.</span>
                     </div>
                   ) : (
-                    <select
-                      value={newEntry.tradeId}
-                      onChange={(e) => handleTradeSelection(e.target.value)}
-                      className="w-full h-11 px-3 py-2 rounded-lg bg-background/60 border border-border/30 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                    <Select
+                      value={newEntry.tradeId || 'none'}
+                      onValueChange={(value) => handleTradeSelection(value)}
                     >
-                      <option value="">Choose a trade to analyze...</option>
-                      {trades.map((trade) => {
-                        const formattedTrade = formatTradeOption(trade);
-                        return (
-                          <option key={trade.id} value={trade.id}>
-                            {formattedTrade.label}
-                          </option>
-                        );
-                      })}
-                    </select>
+                      <SelectTrigger className="w-full h-11 bg-background/60 border-border/30 focus:border-primary/50 text-sm">
+                        <SelectValue placeholder="Choose a trade to analyze..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Choose a trade to analyze...</SelectItem>
+                        {trades.map((trade) => {
+                          const formattedTrade = formatTradeOption(trade);
+                          return (
+                            <SelectItem key={trade.id} value={trade.id}>
+                              {formattedTrade.label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   )}
                 </div>
 
@@ -814,7 +827,7 @@ export default function Journal() {
                         {selectedTrade.pnl > 0 ? '+' : ''}${selectedTrade.pnl.toFixed(2)}
                       </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
                         <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Entry</span>
                         <div className="font-semibold text-foreground mt-0.5">{selectedTrade.entryPrice}</div>
@@ -833,8 +846,8 @@ export default function Journal() {
 
                 {/* Tags */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
-                    <FontAwesomeIcon icon={faTag} className="h-3 w-3" />
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
+                    <Tag className="h-3 w-3" />
                     Tags
                   </label>
                   <Input
@@ -851,7 +864,7 @@ export default function Journal() {
             <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
               <CardContent className="p-5 sm:p-6 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                     <Heart className="h-3 w-3" />
                     Emotions
                   </label>
@@ -865,18 +878,20 @@ export default function Journal() {
                   {availableEmotions.map((emotion) => {
                     const isSelected = newEntry.emotions.includes(emotion);
                     return (
-                      <button
+                      <Button
                         key={emotion}
+                        variant="outline"
+                        size="sm"
                         type="button"
                         onClick={() => toggleEmotion(emotion)}
-                        className="px-3 py-1.5 text-xs rounded-full transition-all duration-150"
+                        className="px-3 py-1.5 text-xs h-auto rounded-full transition-all duration-150"
                         style={isSelected
-                          ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, border: `1px solid ${themeColors.primary}40` }
-                          : { backgroundColor: 'transparent', color: 'hsl(var(--muted-foreground))', border: '1px solid hsl(var(--border))' }
+                          ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, borderColor: `${themeColors.primary}40` }
+                          : {}
                         }
                       >
                         {emotion}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -886,7 +901,7 @@ export default function Journal() {
             {/* Screenshots Card */}
             <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
               <CardContent className="p-5 sm:p-6 space-y-3">
-                <label className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
+                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                   <Upload className="h-3 w-3" />
                   Screenshots & Charts
                 </label>
@@ -928,7 +943,7 @@ export default function Journal() {
                 </div>
 
                 {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="relative group">
                         <img
@@ -988,7 +1003,7 @@ export default function Journal() {
           {/* Search and Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search entries..."
                 value={searchTerm}
@@ -1170,7 +1185,7 @@ export default function Journal() {
                   {/* Tags Filter */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-2">
-                      <FontAwesomeIcon icon={faTag} className="h-3 w-3" />
+                      <Tag className="h-3 w-3" />
                       Tags
                     </label>
                     <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-background/50 border-muted-foreground/20 min-h-[40px] max-h-24 overflow-y-auto">
@@ -1233,7 +1248,7 @@ export default function Journal() {
                   className="p-5 rounded-2xl mb-6 shadow-sm"
                   style={{ backgroundColor: `${themeColors.primary}15` }}
                 >
-                  <FontAwesomeIcon icon={faBookOpen} className="h-10 w-10" style={{ color: themeColors.primary }} />
+                  <BookOpen className="h-10 w-10" style={{ color: themeColors.primary }} />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No entries found</h3>
                 <p className="text-muted-foreground mb-8 max-w-md">
@@ -1245,7 +1260,7 @@ export default function Journal() {
                     className="gap-2 shadow-lg"
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
-                    <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Create First Entry
                   </Button>
                 )}
@@ -1305,7 +1320,7 @@ export default function Journal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => startEdit(entry)}
-                          className="h-8 w-8 p-0 hover:bg-muted/50"
+                          className="h-11 w-11 p-0 hover:bg-muted/50"
                         >
                           <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
@@ -1313,7 +1328,7 @@ export default function Journal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteEntry(entry.id)}
-                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                          className="h-11 w-11 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1406,7 +1421,7 @@ export default function Journal() {
         className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl z-50"
         style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
       >
-        <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
+        <Plus className="h-5 w-5" />
       </Button>
       )}
       <Footer7 {...footerConfig} />

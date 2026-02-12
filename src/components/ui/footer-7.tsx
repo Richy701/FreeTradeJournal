@@ -1,8 +1,11 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { FaXTwitter } from "react-icons/fa6";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { FeedbackButton } from './feedback-button';
+
+const isInternalLink = (href: string) => href.startsWith('/') || href.startsWith('#');
 
 interface Footer7Props {
   logo?: {
@@ -93,7 +96,7 @@ export const Footer7 = ({
           <div className="flex w-full flex-col justify-between gap-6 lg:items-start lg:max-w-md">
             {/* Logo */}
             <div className="flex items-center gap-3 lg:justify-start">
-              <a href={logo.url} className="flex items-center gap-3">
+              <Link to={logo.url} className="flex items-center gap-3">
                 {logo.src ? (
                   <img
                     src={logo.src}
@@ -107,7 +110,7 @@ export const Footer7 = ({
                   </div>
                 )}
                 <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{logo.title}</h2>
-              </a>
+              </Link>
             </div>
             <p className="text-base text-muted-foreground leading-relaxed font-medium">
               {description}
@@ -139,12 +142,23 @@ export const Footer7 = ({
                         key={linkIdx}
                         className="font-medium hover:text-foreground transition-all duration-200"
                       >
-                        <a
-                          href={link.href}
-                          className="inline-block hover:translate-x-0.5 transition-transform duration-200"
-                        >
-                          {link.name}
-                        </a>
+                        {isInternalLink(link.href) ? (
+                          <Link
+                            to={link.href}
+                            className="inline-block hover:translate-x-0.5 transition-transform duration-200"
+                          >
+                            {link.name}
+                          </Link>
+                        ) : (
+                          <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block hover:translate-x-0.5 transition-transform duration-200"
+                          >
+                            {link.name}
+                          </a>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -191,9 +205,11 @@ export const Footer7 = ({
           <ul className="order-1 flex flex-col gap-3 md:order-2 md:flex-row md:gap-6">
             {legalLinks.map((link, idx) => (
               <li key={idx} className="hover:text-foreground transition-colors duration-200">
-                <a href={link.href}>
-                  {link.name}
-                </a>
+                {isInternalLink(link.href) ? (
+                  <Link to={link.href}>{link.name}</Link>
+                ) : (
+                  <a href={link.href} target="_blank" rel="noopener noreferrer">{link.name}</a>
+                )}
               </li>
             ))}
             <li className="md:border-l md:border-border/50 md:pl-6">

@@ -131,8 +131,11 @@ export function DataTable({ data }: DataTableProps) {
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <p className="text-lg font-medium mb-2">No trades found</p>
+            <div className="text-center space-y-3">
+              <div className="p-3 rounded-xl bg-muted/30 inline-block">
+                <FontAwesomeIcon icon={faList} className="h-8 w-8 opacity-40" />
+              </div>
+              <p className="text-lg font-medium">No trades found</p>
               <p className="text-sm">Start by adding your first trade to see it here</p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -62,7 +63,7 @@ function App() {
             <CookieConsent />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             }>
               <Routes>

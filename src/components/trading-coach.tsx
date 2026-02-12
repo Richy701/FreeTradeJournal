@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { 
-  faUserTie, 
-  faLightbulb, 
-  faChartLine, 
+import {
+  faUserTie,
+  faLightbulb,
+  faChartLine,
   faExclamationTriangle,
   faTrophy,
   faArrowTrendUp,
@@ -18,7 +18,8 @@ import {
   faFire,
   faSnowflake,
   faGraduationCap,
-  faChartPie
+  faChartPie,
+  faCheck
 } from '@fortawesome/free-solid-svg-icons'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -37,11 +38,30 @@ interface Trade {
   notes?: string
 }
 
+const TIP_SEVERITY_ORDER: Record<string, number> = {
+  critical: 0,
+  warning: 1,
+  action: 2,
+  success: 3,
+  info: 4,
+  tip: 5,
+}
+
 export function TradingCoach() {
   const { themeColors } = useThemePresets()
   const { getTrades } = useDemoData()
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('dismissedCoachTips')
+      return stored ? new Set(JSON.parse(stored)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+  const cardRef = useRef<HTMLDivElement>(null)
 
   // Get trades from demo data or localStorage
   const trades = useMemo(() => {
@@ -58,6 +78,7 @@ export function TradingCoach() {
     const patterns = {
       overtrading: false,
       revengeTrading: false,
+      revengeTradeProbability: 0,
       fomo: false,
       consistentTiming: false,
       positionSizingIssues: false,
@@ -77,20 +98,26 @@ export function TradingCoach() {
     })
     patterns.overtrading = Array.from(tradesPerDay.values()).some(count => count > 10)
 
-    // Revenge trading: Quick entries after losses
+    // Revenge trading: Quick entries after losses with increased size
+    let revengeCount = 0
+    let lossFollowUps = 0
     for (let i = 1; i < trades.length; i++) {
       const currEntry = trades[i].entryTime
       const prevExit = trades[i-1].exitTime
       if (trades[i-1].pnl < 0 && currEntry && prevExit) {
+        lossFollowUps++
         const timeDiff = (currEntry.getTime() - prevExit.getTime()) / (1000 * 60)
         const prevVolume = trades[i-1].volume || 0
         const currVolume = trades[i].volume || 0
         if (timeDiff < 30 && currVolume > prevVolume * 1.5) {
-          patterns.revengeTrading = true
-          break
+          revengeCount++
         }
       }
     }
+    patterns.revengeTrading = revengeCount > 0
+    patterns.revengeTradeProbability = lossFollowUps > 0
+      ? Math.round((revengeCount / lossFollowUps) * 100)
+      : 0
 
     // FOMO detection: Entering at extreme prices
     const recentTrades = trades.slice(-10)
@@ -121,8 +148,8 @@ export function TradingCoach() {
         lossStreak = 0
       }
     }
-    const avgPerformanceAfterLoss = performanceAfterLoss.length > 0 
-      ? performanceAfterLoss.reduce((a, b) => a + b, 0) / performanceAfterLoss.length 
+    const avgPerformanceAfterLoss = performanceAfterLoss.length > 0
+      ? performanceAfterLoss.reduce((a, b) => a + b, 0) / performanceAfterLoss.length
       : 0
     patterns.emotionalTrading = avgPerformanceAfterLoss < 0 && performanceAfterLoss.length > 3
 
@@ -206,16 +233,16 @@ export function TradingCoach() {
   // Calculate advanced metrics
   const metrics = useMemo(() => {
     if (trades.length === 0) return null
-    
+
     const totalPnL = trades.reduce((sum: number, t: Trade) => sum + (t.pnl || 0), 0)
     const winningTrades = trades.filter((t: Trade) => t.pnl > 0)
     const losingTrades = trades.filter((t: Trade) => t.pnl < 0)
     const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0
-    
-    const avgWin = winningTrades.length > 0 
-      ? winningTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / winningTrades.length 
+
+    const avgWin = winningTrades.length > 0
+      ? winningTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / winningTrades.length
       : 0
-    const avgLoss = losingTrades.length > 0 
+    const avgLoss = losingTrades.length > 0
       ? Math.abs(losingTrades.reduce((sum: number, t: any) => sum + t.pnl, 0) / losingTrades.length)
       : 0
     const riskReward = avgLoss > 0 ? avgWin / avgLoss : 0
@@ -224,7 +251,7 @@ export function TradingCoach() {
     const totalWins = winningTrades.reduce((sum: number, t: Trade) => sum + t.pnl, 0)
     const totalLosses = Math.abs(losingTrades.reduce((sum: number, t: Trade) => sum + t.pnl, 0))
     const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins
-    
+
     // Maximum drawdown
     let maxDrawdown = 0
     let peak = 0
@@ -242,7 +269,7 @@ export function TradingCoach() {
     const variance = returns.map((r: number) => Math.pow(r - avgReturn, 2)).reduce((a: number, b: number) => a + b, 0) / returns.length
     const stdDev = Math.sqrt(variance)
     const sharpeRatio = stdDev > 0 ? avgReturn / stdDev : 0
-    
+
     // Find most traded symbol
     const symbolCounts = trades.reduce((acc: any, t: Trade) => {
       const symbol = t.symbol || 'Unknown'
@@ -250,24 +277,24 @@ export function TradingCoach() {
       return acc
     }, {})
     const mostTraded = Object.entries(symbolCounts).sort((a: any, b: any) => b[1] - a[1])[0]
-    
+
     // Calculate recent performance (last 10 trades)
     const recentTrades = trades.slice(-10)
     const recentPnL = recentTrades.reduce((sum: number, t: Trade) => sum + (t.pnl || 0), 0)
-    const recentWinRate = recentTrades.length > 0 
-      ? (recentTrades.filter((t: Trade) => t.pnl > 0).length / recentTrades.length) * 100 
+    const recentWinRate = recentTrades.length > 0
+      ? (recentTrades.filter((t: Trade) => t.pnl > 0).length / recentTrades.length) * 100
       : 0
 
     // Long vs Short performance
     const longTrades = trades.filter((t: Trade) => t.type === 'long')
     const shortTrades = trades.filter((t: Trade) => t.type === 'short')
-    const longWinRate = longTrades.length > 0 
-      ? (longTrades.filter((t: Trade) => t.pnl > 0).length / longTrades.length) * 100 
+    const longWinRate = longTrades.length > 0
+      ? (longTrades.filter((t: Trade) => t.pnl > 0).length / longTrades.length) * 100
       : 0
-    const shortWinRate = shortTrades.length > 0 
-      ? (shortTrades.filter((t: Trade) => t.pnl > 0).length / shortTrades.length) * 100 
+    const shortWinRate = shortTrades.length > 0
+      ? (shortTrades.filter((t: Trade) => t.pnl > 0).length / shortTrades.length) * 100
       : 0
-    
+
     return {
       totalPnL,
       winRate,
@@ -292,10 +319,10 @@ export function TradingCoach() {
   // Calculate winning/losing streak
   function calculateStreak(trades: Trade[]) {
     if (trades.length === 0) return { type: 'none', count: 0 }
-    
+
     let currentStreak = 0
     let streakType = trades[trades.length - 1].pnl > 0 ? 'winning' : 'losing'
-    
+
     for (let i = trades.length - 1; i >= 0; i--) {
       const isWin = trades[i].pnl > 0
       if ((streakType === 'winning' && isWin) || (streakType === 'losing' && !isWin)) {
@@ -304,14 +331,14 @@ export function TradingCoach() {
         break
       }
     }
-    
+
     return { type: streakType, count: currentStreak }
   }
 
   // Generate smarter coaching tips based on advanced analysis
   const coachingTips = useMemo(() => {
-    const tips = []
-    
+    const tips: { icon: any; type: string; title: string; message: string; key: string }[] = []
+
     if (!metrics) {
       // Tips for new traders
       return [
@@ -319,19 +346,22 @@ export function TradingCoach() {
           icon: faLightbulb,
           type: 'tip',
           title: "Welcome to FreeTradeJournal!",
-          message: "Start logging your trades to unlock AI-powered insights about your trading psychology and patterns."
+          message: "Start logging your trades to unlock AI-powered insights about your trading psychology and patterns.",
+          key: "welcome"
         },
         {
           icon: faBrain,
           type: 'info',
           title: "Track Everything",
-          message: "Log entry/exit times, emotions, and notes. The AI coach learns from your patterns to provide personalized guidance."
+          message: "Log entry/exit times, emotions, and notes. The AI coach learns from your patterns to provide personalized guidance.",
+          key: "track"
         },
         {
           icon: faChartLine,
           type: 'tip',
           title: "Set Clear Goals",
-          message: "Define your risk management rules. Professional traders typically risk 1-2% per trade with a minimum 1.5:1 R:R."
+          message: "Define your risk management rules. Professional traders typically risk 1-2% per trade with a minimum 1.5:1 R:R.",
+          key: "goals"
         }
       ]
     }
@@ -342,7 +372,8 @@ export function TradingCoach() {
         icon: faFire,
         type: 'critical',
         title: "Overtrading Detected!",
-        message: "You're taking too many trades per day. Quality over quantity. Set a daily trade limit and stick to it."
+        message: "You're taking too many trades per day. Quality over quantity. Set a daily trade limit and stick to it.",
+        key: "overtrading"
       })
     }
 
@@ -351,7 +382,8 @@ export function TradingCoach() {
         icon: faHeartPulse,
         type: 'critical',
         title: "Revenge Trading Pattern",
-        message: "You're increasing position sizes after losses. Take a 30-minute break after any loss to reset emotionally."
+        message: "You're increasing position sizes after losses. Take a 30-minute break after any loss to reset emotionally.",
+        key: "revenge"
       })
     }
 
@@ -360,7 +392,8 @@ export function TradingCoach() {
         icon: faExclamationTriangle,
         type: 'warning',
         title: "FOMO Trading Detected",
-        message: "You're entering trades at extreme prices. Wait for pullbacks and use limit orders instead of market orders."
+        message: "You're entering trades at extreme prices. Wait for pullbacks and use limit orders instead of market orders.",
+        key: "fomo"
       })
     }
 
@@ -369,7 +402,8 @@ export function TradingCoach() {
         icon: faBalanceScale,
         type: 'warning',
         title: "Inconsistent Position Sizing",
-        message: "Your trade sizes vary too much. Use a fixed percentage risk model (e.g., 1% per trade) for consistency."
+        message: "Your trade sizes vary too much. Use a fixed percentage risk model (e.g., 1% per trade) for consistency.",
+        key: "sizing"
       })
     }
 
@@ -378,7 +412,8 @@ export function TradingCoach() {
         icon: faHeartPulse,
         type: 'critical',
         title: "Emotional Trading Detected",
-        message: "Your performance drops after losses. Consider reducing position size by 50% after 2 consecutive losses."
+        message: "Your performance drops after losses. Consider reducing position size by 50% after 2 consecutive losses.",
+        key: "emotional"
       })
     }
 
@@ -388,7 +423,8 @@ export function TradingCoach() {
         icon: faClock,
         type: 'info',
         title: "Optimal Trading Hours",
-        message: `You perform best at ${metrics.timeAnalysis.bestHour}:00 and worst at ${metrics.timeAnalysis.worstHour}:00. Focus your trading during peak performance hours.`
+        message: `You perform best at ${metrics.timeAnalysis.bestHour}:00 and worst at ${metrics.timeAnalysis.worstHour}:00. Focus your trading during peak performance hours.`,
+        key: "hours"
       })
     }
 
@@ -397,7 +433,8 @@ export function TradingCoach() {
         icon: faClock,
         type: 'success',
         title: `Best Day: ${metrics.timeAnalysis.bestDay}`,
-        message: `Your win rate is highest on ${metrics.timeAnalysis.bestDay}s. Consider increasing focus on this day.`
+        message: `Your win rate is highest on ${metrics.timeAnalysis.bestDay}s. Consider increasing focus on this day.`,
+        key: "bestday"
       })
     }
 
@@ -406,7 +443,8 @@ export function TradingCoach() {
         icon: faSnowflake,
         type: 'success',
         title: "Morning Trader Profile",
-        message: "You perform significantly better in morning sessions. Consider closing your platform after lunch."
+        message: "You perform significantly better in morning sessions. Consider closing your platform after lunch.",
+        key: "morning"
       })
     }
 
@@ -416,14 +454,16 @@ export function TradingCoach() {
         icon: faTrophy,
         type: 'success',
         title: `Excellent Profit Factor: ${metrics.profitFactor.toFixed(2)}`,
-        message: "Your wins significantly outweigh losses. This is institutional-level performance. Keep it up!"
+        message: "Your wins significantly outweigh losses. This is institutional-level performance. Keep it up!",
+        key: "pf-high"
       })
     } else if (metrics.profitFactor < 1.2) {
       tips.push({
         icon: faChartPie,
         type: 'warning',
         title: `Low Profit Factor: ${metrics.profitFactor.toFixed(2)}`,
-        message: "Aim for a profit factor above 1.5. Focus on cutting losses quickly and letting winners run."
+        message: "Aim for a profit factor above 1.5. Focus on cutting losses quickly and letting winners run.",
+        key: "pf-low"
       })
     }
 
@@ -432,7 +472,8 @@ export function TradingCoach() {
         icon: faArrowTrendDown,
         type: 'critical',
         title: "High Drawdown Risk",
-        message: `Your max drawdown is ${metrics.maxDrawdown.toFixed(2)}. This is too high relative to profits. Reduce position sizes.`
+        message: `Your max drawdown is ${metrics.maxDrawdown.toFixed(2)}. This is too high relative to profits. Reduce position sizes.`,
+        key: "drawdown"
       })
     }
 
@@ -441,14 +482,16 @@ export function TradingCoach() {
         icon: faGraduationCap,
         type: 'success',
         title: "Great Risk-Adjusted Returns",
-        message: `Sharpe ratio of ${metrics.sharpeRatio.toFixed(2)} shows excellent consistency. You're managing risk well.`
+        message: `Sharpe ratio of ${metrics.sharpeRatio.toFixed(2)} shows excellent consistency. You're managing risk well.`,
+        key: "sharpe-high"
       })
     } else if (metrics.sharpeRatio < 0.5) {
       tips.push({
         icon: faGraduationCap,
         type: 'warning',
         title: "Improve Consistency",
-        message: "Your returns are too volatile. Focus on consistent small wins rather than home runs."
+        message: "Your returns are too volatile. Focus on consistent small wins rather than home runs.",
+        key: "sharpe-low"
       })
     }
 
@@ -458,7 +501,8 @@ export function TradingCoach() {
         icon: faArrowTrendUp,
         type: 'info',
         title: "Long Bias Detected",
-        message: `You're ${metrics.longWinRate.toFixed(0)}% profitable on longs vs ${metrics.shortWinRate.toFixed(0)}% on shorts. Consider focusing on long setups.`
+        message: `You're ${metrics.longWinRate.toFixed(0)}% profitable on longs vs ${metrics.shortWinRate.toFixed(0)}% on shorts. Consider focusing on long setups.`,
+        key: "longbias"
       })
     }
 
@@ -468,14 +512,16 @@ export function TradingCoach() {
         icon: faExclamationTriangle,
         type: 'critical',
         title: "Unsustainable Strategy",
-        message: `Low win rate (${metrics.winRate.toFixed(1)}%) with poor R:R (${metrics.riskReward.toFixed(2)}). You need either higher win rate OR better R:R to be profitable.`
+        message: `Low win rate (${metrics.winRate.toFixed(1)}%) with poor R:R (${metrics.riskReward.toFixed(2)}). You need either higher win rate OR better R:R to be profitable.`,
+        key: "unsustainable"
       })
     } else if (metrics.winRate > 60 && metrics.riskReward > 2) {
       tips.push({
         icon: faTrophy,
         type: 'success',
         title: "Elite Performance!",
-        message: `${metrics.winRate.toFixed(1)}% win rate with ${metrics.riskReward.toFixed(2)} R:R is exceptional. You're in the top 5% of traders.`
+        message: `${metrics.winRate.toFixed(1)}% win rate with ${metrics.riskReward.toFixed(2)} R:R is exceptional. You're in the top 5% of traders.`,
+        key: "elite"
       })
     }
 
@@ -485,14 +531,16 @@ export function TradingCoach() {
         icon: faFire,
         type: 'warning',
         title: `Hot Streak: ${metrics.streak.count} Wins`,
-        message: "Don't increase position size! Most traders blow up accounts after win streaks due to overconfidence."
+        message: "Don't increase position size! Most traders blow up accounts after win streaks due to overconfidence.",
+        key: "hotstreak"
       })
     } else if (metrics.streak.type === 'losing' && metrics.streak.count >= 4) {
       tips.push({
         icon: faSnowflake,
         type: 'critical',
         title: `Cold Streak: ${metrics.streak.count} Losses`,
-        message: "STOP TRADING TODAY. Review your last 5 trades for common mistakes. Return tomorrow with a fresh mindset."
+        message: "STOP TRADING TODAY. Review your last 5 trades for common mistakes. Return tomorrow with a fresh mindset.",
+        key: "coldstreak"
       })
     }
 
@@ -502,7 +550,8 @@ export function TradingCoach() {
         icon: faGraduationCap,
         type: 'success',
         title: "Rapid Improvement!",
-        message: `Your recent win rate (${metrics.recentWinRate.toFixed(1)}%) shows you're learning fast. Document what's working!`
+        message: `Your recent win rate (${metrics.recentWinRate.toFixed(1)}%) shows you're learning fast. Document what's working!`,
+        key: "improvement"
       })
     }
 
@@ -513,7 +562,8 @@ export function TradingCoach() {
         icon: faHeartPulse,
         type: 'critical',
         title: "Tilt Warning",
-        message: "3 losses in a row often lead to emotional decisions. Take a break, review your process, not the outcome."
+        message: "3 losses in a row often lead to emotional decisions. Take a break, review your process, not the outcome.",
+        key: "tilt"
       })
     }
 
@@ -529,7 +579,8 @@ export function TradingCoach() {
           icon: faChartLine,
           type: 'info',
           title: "High Volatility Trading",
-          message: "You're trading in volatile conditions. Consider reducing position size by 30% to manage risk."
+          message: "You're trading in volatile conditions. Consider reducing position size by 30% to manage risk.",
+          key: "volatility"
         })
       }
     }
@@ -540,7 +591,8 @@ export function TradingCoach() {
         icon: faBrain,
         type: 'action',
         title: "Action Plan",
-        message: "1) Set minimum 2:1 R:R before entry. 2) Use alerts instead of watching charts. 3) Journal the 'why' behind each trade."
+        message: "1) Set minimum 2:1 R:R before entry. 2) Use alerts instead of watching charts. 3) Journal the 'why' behind each trade.",
+        key: "actionplan"
       })
     }
 
@@ -550,44 +602,84 @@ export function TradingCoach() {
         icon: faTrophy,
         type: 'success',
         title: "Proven Profitable Trader",
-        message: "With 100+ trades and positive P&L, you've proven your edge. Now focus on scaling responsibly."
+        message: "With 100+ trades and positive P&L, you've proven your edge. Now focus on scaling responsibly.",
+        key: "proven"
       })
     }
 
-    // Add data-driven prediction
+    // Add data-driven prediction with calculated probability
     if (metrics.patterns.emotionalTrading && metrics.streak.type === 'losing') {
+      const prob = metrics.patterns.revengeTradeProbability
       tips.push({
         icon: faBrain,
         type: 'critical',
         title: "High Risk Alert",
-        message: "AI predicts 73% chance of revenge trade based on your patterns. Close your platform now."
+        message: `Based on your history, ${prob}% of trades after a loss show revenge patterns. Close your platform and take a break.`,
+        key: "revenge-predict"
       })
     }
+
+    // Sort by severity: critical first, then warning, action, success, info
+    tips.sort((a, b) => (TIP_SEVERITY_ORDER[a.type] ?? 5) - (TIP_SEVERITY_ORDER[b.type] ?? 5))
 
     return tips.length > 0 ? tips : [{
       icon: faLightbulb,
       type: 'info',
       title: "Keep Trading",
-      message: "Continue logging trades to unlock more personalized insights."
+      message: "Continue logging trades to unlock more personalized insights.",
+      key: "keepgoing"
     }]
   }, [metrics, trades])
 
-  // Rotate through tips
+  // Filter out dismissed tips
+  const visibleTips = useMemo(() => {
+    const filtered = coachingTips.filter(tip => !dismissedTips.has(tip.key))
+    return filtered.length > 0 ? filtered : coachingTips
+  }, [coachingTips, dismissedTips])
+
+  const dismissCurrentTip = useCallback(() => {
+    const tip = visibleTips[currentTipIndex]
+    if (!tip) return
+    const next = new Set(dismissedTips)
+    next.add(tip.key)
+    setDismissedTips(next)
+    try {
+      localStorage.setItem('dismissedCoachTips', JSON.stringify([...next]))
+    } catch {}
+    // adjust index so we don't jump past the end
+    if (currentTipIndex >= visibleTips.length - 1) {
+      setCurrentTipIndex(0)
+    }
+  }, [visibleTips, currentTipIndex, dismissedTips])
+
+  // Rotate through tips — pauses on hover and on critical tips
   useEffect(() => {
-    if (coachingTips.length <= 1) return
-    
+    if (visibleTips.length <= 1) return
+
+    const currentTip = visibleTips[currentTipIndex]
+    const isCritical = currentTip?.type === 'critical'
+
+    if (isPaused || isCritical) return
+
     const interval = setInterval(() => {
       setIsAnimating(true)
       setTimeout(() => {
-        setCurrentTipIndex((prev) => (prev + 1) % coachingTips.length)
+        setCurrentTipIndex((prev) => (prev + 1) % visibleTips.length)
         setIsAnimating(false)
       }, 150)
-    }, 10000) // Change tip every 10 seconds
-    
-    return () => clearInterval(interval)
-  }, [coachingTips.length])
+    }, 15000)
 
-  const currentTip = coachingTips[currentTipIndex] || coachingTips[0]
+    return () => clearInterval(interval)
+  }, [visibleTips.length, isPaused, currentTipIndex, visibleTips])
+
+  // Keep index in bounds when tips change
+  useEffect(() => {
+    if (currentTipIndex >= visibleTips.length) {
+      setCurrentTipIndex(0)
+    }
+  }, [visibleTips.length, currentTipIndex])
+
+  const currentTip = visibleTips[currentTipIndex] || visibleTips[0]
 
   const getTipColor = (type: string) => {
     switch (type) {
@@ -611,26 +703,33 @@ export function TradingCoach() {
     }
   }
 
-  const nextTip = () => {
+  const goToTip = useCallback((index: number) => {
     setIsAnimating(true)
     setTimeout(() => {
-      setCurrentTipIndex((prev) => (prev + 1) % coachingTips.length)
+      setCurrentTipIndex(index)
       setIsAnimating(false)
     }, 150)
-  }
+  }, [])
 
-  const prevTip = () => {
-    setIsAnimating(true)
-    setTimeout(() => {
-      setCurrentTipIndex((prev) => (prev - 1 + coachingTips.length) % coachingTips.length)
-      setIsAnimating(false)
-    }, 150)
-  }
+  const nextTip = useCallback(() => {
+    goToTip((currentTipIndex + 1) % visibleTips.length)
+  }, [currentTipIndex, visibleTips.length, goToTip])
+
+  const prevTip = useCallback(() => {
+    goToTip((currentTipIndex - 1 + visibleTips.length) % visibleTips.length)
+  }, [currentTipIndex, visibleTips.length, goToTip])
 
   if (!currentTip) return null
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-0 bg-gradient-to-br from-muted/30 to-muted/10">
+    <Card
+      ref={cardRef}
+      className="hover:shadow-lg transition-all duration-200 border-0 bg-gradient-to-br from-muted/30 to-muted/10"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
       <CardHeader className="pb-3 border-b border-border/30">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-lg font-semibold">
@@ -639,35 +738,35 @@ export function TradingCoach() {
             </div>
             <span>AI Trading Coach</span>
             {currentTip.type === 'critical' && (
-              <span 
+              <span
                 className="px-2 py-1 text-xs font-bold rounded animate-pulse"
-                style={{ 
-                  backgroundColor: `${themeColors.loss}20`, 
-                  color: themeColors.loss 
+                style={{
+                  backgroundColor: `${themeColors.loss}20`,
+                  color: themeColors.loss
                 }}
               >
                 URGENT
               </span>
             )}
           </div>
-          {coachingTips.length > 1 && (
+          {visibleTips.length > 1 && (
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={prevTip}
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
                 ←
               </Button>
-              <span className="text-xs text-muted-foreground">
-                {currentTipIndex + 1} / {coachingTips.length}
+              <span className="text-xs text-muted-foreground min-w-[3ch] text-center">
+                {currentTipIndex + 1} / {visibleTips.length}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={nextTip}
-                className="h-7 w-7 p-0"
+                className="h-8 w-8 p-0"
               >
                 →
               </Button>
@@ -682,13 +781,13 @@ export function TradingCoach() {
         )}>
           <div className="text-center space-y-3">
             <div className="flex flex-col items-center gap-3">
-              <div 
+              <div
                 className="p-2 rounded-lg"
                 style={{backgroundColor: `${getTipColor(currentTip.type)}20`}}
               >
-                <FontAwesomeIcon 
-                  icon={getTipIcon(currentTip.type)} 
-                  className="h-5 w-5" 
+                <FontAwesomeIcon
+                  icon={getTipIcon(currentTip.type)}
+                  className="h-5 w-5"
                   style={{color: getTipColor(currentTip.type)}}
                 />
               </div>
@@ -703,36 +802,39 @@ export function TradingCoach() {
             </div>
           </div>
         </div>
-        
-        {/* Progress dots */}
-        {coachingTips.length > 1 && (
-          <div className="flex items-center justify-center gap-1 mt-4">
-            {coachingTips.map((_, index) => (
-              <div
+
+        {/* Progress dots + dismiss */}
+        {visibleTips.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mt-4">
+            {visibleTips.map((_, index) => (
+              <button
                 key={index}
                 className={cn(
-                  "h-1.5 rounded-full transition-all duration-200 cursor-pointer",
-                  index === currentTipIndex 
-                    ? "w-6" 
-                    : "w-1.5 opacity-40 hover:opacity-60"
+                  "rounded-full transition-all duration-200",
+                  index === currentTipIndex
+                    ? "h-2 w-6"
+                    : "h-2 w-2 opacity-40 hover:opacity-70"
                 )}
                 style={{
-                  backgroundColor: index === currentTipIndex 
+                  backgroundColor: index === currentTipIndex
                     ? getTipColor(currentTip.type)
                     : themeColors.primary
                 }}
-                onClick={() => {
-                  setIsAnimating(true)
-                  setTimeout(() => {
-                    setCurrentTipIndex(index)
-                    setIsAnimating(false)
-                  }, 150)
-                }}
+                onClick={() => goToTip(index)}
+                aria-label={`Go to tip ${index + 1}`}
               />
             ))}
+            <button
+              onClick={dismissCurrentTip}
+              className="ml-2 h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              aria-label="Dismiss this tip"
+              title="Got it, dismiss"
+            >
+              <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
+            </button>
           </div>
         )}
-        
+
         {/* Severity indicator for critical alerts */}
         {currentTip.type === 'critical' && (
           <div className="mt-3 pt-3 border-t" style={{ borderColor: `${themeColors.loss}20` }}>

@@ -6,8 +6,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { AccountSwitcher } from "@/components/account-switcher"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { useLocation } from "react-router-dom"
 
 export function SiteHeader({ className }: { className?: string }) {
@@ -104,11 +104,9 @@ export function SiteHeader({ className }: { className?: string }) {
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      {user && hasSidebar && (
-        <div className="ml-auto">
-          <AccountSwitcher onManageAccounts={() => window.location.href = '/settings?tab=accounts'} />
-        </div>
-      )}
+      <div className="ml-auto">
+        <ThemeToggle />
+      </div>
     </header>
   )
 }

@@ -23,6 +23,7 @@ import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/tra
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
 const ChartAreaInteractive = lazy(() => import("@/components/chart-area-interactive").then(m => ({ default: m.ChartAreaInteractive })))
+const ChartRadarDefault = lazy(() => import("@/components/chart-radar-default").then(m => ({ default: m.ChartRadarDefault })))
 import { Link } from "react-router-dom"
 import {
   Dialog,
@@ -661,8 +662,15 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Calendar Section */}
+        {/* Pairs Performance Radar */}
         <div className="animate-in fade-in duration-300 delay-150">
+          <Suspense fallback={<Skeleton className="h-[450px] w-full" />}>
+            <ChartRadarDefault />
+          </Suspense>
+        </div>
+
+        {/* Calendar Section */}
+        <div className="animate-in fade-in duration-300 delay-200">
           <CalendarHeatmap />
         </div>
         

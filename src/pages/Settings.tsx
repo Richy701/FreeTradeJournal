@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,8 +16,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
-import { useEmailNotifications, sendTestEmail } from '@/hooks/use-email-notifications';
+import { DEFAULT_VALUES } from '@/constants/trading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faExclamationTriangle, 
@@ -24,9 +24,8 @@ import {
   faDownload, 
   faTrash, 
   faUpload, 
-  faShield, 
-  faBell, 
-  faChartLine, 
+  faShield,
+  faChartLine,
   faDatabase, 
   faPalette, 
   faSun, 
@@ -49,8 +48,7 @@ import {
   faArrowTrendDown,
   faPercent,
   faMedal,
-  faChartSimple,
-  faChartBar
+  faChartSimple
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
@@ -74,12 +72,8 @@ export default function Settings() {
   const { logout, user } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
-  const { getNotificationSettings, updateNotificationSettings } = useEmailNotifications();
   const userStorage = useUserStorage();
   const navigate = useNavigate();
-  const [saved, setSaved] = useState(false);
-  const [emailNotifications, setEmailNotifications] = useState(getNotificationSettings());
-  const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [accountForm, setAccountForm] = useState({
     name: '',
@@ -96,8 +90,7 @@ export default function Settings() {
 
   const saveSettings = () => {
     // Settings are automatically saved via context
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    toast.success('Settings saved!');
   };
 
   const getTradeStats = () => {
@@ -214,9 +207,8 @@ export default function Settings() {
           userStorage.setItem('settings', JSON.stringify(data.settings));
           // Settings are loaded from context, no need to set them here
         }
-        setSaved(true);
+        toast.success('Data imported successfully!');
         setTimeout(() => {
-          setSaved(false);
           window.location.reload();
         }, 2000);
       } catch (error) {
@@ -294,7 +286,7 @@ export default function Settings() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto" style={{maxWidth: '1200px'}}>
 
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">
               <TabsTrigger value="general" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faPalette} className="h-3.5 w-3.5" />
                 <span>General</span>
@@ -310,10 +302,6 @@ export default function Settings() {
               <TabsTrigger value="risk" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faShield} className="h-3.5 w-3.5" />
                 <span>Risk</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
-                <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
-                <span>Alerts</span>
               </TabsTrigger>
               <TabsTrigger value="data" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
@@ -381,61 +369,6 @@ export default function Settings() {
                           </Select>
                         </div>
 
-                        <div className="space-y-4">
-                          <Label className="flex items-center gap-2 text-base font-bold">
-                            <FontAwesomeIcon icon={faChartSimple} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                            Default Chart Period
-                          </Label>
-                          <Select 
-                            value={settings.displaySettings.defaultChartPeriod} 
-                            onValueChange={(value) => updateSettings({ displaySettings: { ...settings.displaySettings, defaultChartPeriod: value } })}
-                          >
-                            <SelectTrigger className="h-11 bg-background/60 border-border/30">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1W">
-                                <div className="flex items-center gap-2">
-                                  <FontAwesomeIcon icon={faClock} className="h-4 w-4" />
-                                  1 Week
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="1M">
-                                <div className="flex items-center gap-2">
-                                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
-                                  1 Month
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="3M">
-                                <div className="flex items-center gap-2">
-                                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
-                                  3 Months
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="6M">
-                                <div className="flex items-center gap-2">
-                                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
-                                  6 Months
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="1Y">
-                                <div className="flex items-center gap-2">
-                                  <FontAwesomeIcon icon={faChartBar} className="h-4 w-4" />
-                                  1 Year
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="ALL">
-                                <div className="flex items-center gap-2">
-                                  <FontAwesomeIcon icon={faChartSimple} className="h-4 w-4" />
-                                  All Time
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-sm text-muted-foreground">
-                            Default time period for analytics charts and reports
-                          </p>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -502,70 +435,6 @@ export default function Settings() {
                         </p>
                       </div>
 
-                      <div className="space-y-4">
-                        <Label className="flex items-center gap-2 text-sm font-semibold">
-                          <FontAwesomeIcon icon={faClock} className="h-3 w-3" style={{ color: themeColors.profit }} />
-                          Timezone
-                        </Label>
-                        <Select value={settings.timezone} onValueChange={(value) => updateSettings({ timezone: value })}>
-                          <SelectTrigger className="h-11 bg-background/60 border-border/30">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="America/New_York">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faClock} className="h-4 w-4" />
-                                Eastern Time (ET)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="America/Chicago">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faClock} className="h-4 w-4" />
-                                Central Time (CT)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="America/Denver">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faClock} className="h-4 w-4" />
-                                Mountain Time (MT)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="America/Los_Angeles">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faClock} className="h-4 w-4" />
-                                Pacific Time (PT)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Europe/London">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" />
-                                London (GMT)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Europe/Berlin">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" />
-                                Berlin (CET)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Asia/Tokyo">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" />
-                                Tokyo (JST)
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Asia/Hong_Kong">
-                              <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" />
-                                Hong Kong (HKT)
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">
-                          Used for trade timestamps and market hours
-                        </p>
-                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -625,40 +494,6 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
-                {/* Enhanced Display Preferences */}
-                <Card className="bg-muted/30 backdrop-blur-sm border-0">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <FontAwesomeIcon icon={faChartSimple} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      Display Preferences
-                    </CardTitle>
-                    <CardDescription>
-                      Configure how data is displayed throughout the application
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-background/40">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Show P&L as Percentage</Label>
-                        <p className="text-xs text-muted-foreground">Display returns as % instead of dollar amounts</p>
-                      </div>
-                      <Switch
-                        checked={settings.displaySettings.showPnlAsPercentage}
-                        onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, showPnlAsPercentage: checked } })}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-background/40">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-medium">Hide Small Trades</Label>
-                        <p className="text-xs text-muted-foreground">Hide trades under $10 from charts and analytics</p>
-                      </div>
-                      <Switch
-                        checked={settings.displaySettings.hideSmallTrades}
-                        onCheckedChange={(checked) => updateSettings({ displaySettings: { ...settings.displaySettings, hideSmallTrades: checked } })}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
 
@@ -1092,46 +927,6 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label>Default Commission per Trade</Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={settings.defaultCommission}
-                          onChange={(e) => updateSettings({ defaultCommission: parseFloat(e.target.value) || 0 })}
-                          placeholder="0.00"
-                          className="pl-8"
-                        />
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Pre-filled when adding new trades
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Account Size</Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="1000"
-                          value={settings.accountSize}
-                          onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })}
-                          placeholder="10000"
-                          className="pl-8"
-                        />
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Used for position sizing calculations
-                      </p>
-                    </div>
-                  </div>
-
-                  <Separator />
-                  
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h4 className="text-lg font-semibold flex items-center gap-2">
@@ -1514,208 +1309,6 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="notifications">
-              <Card className="bg-muted/30 backdrop-blur-sm border-0">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <FontAwesomeIcon icon={faBell} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                    Notifications & Alerts
-                  </CardTitle>
-                  <CardDescription>
-                    Configure when and how you receive trading alerts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Trade Entry/Exit Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Get notified when you add new trades</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.tradeAlerts}
-                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, tradeAlerts: checked } })}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Daily Performance Reports</Label>
-                        <p className="text-sm text-muted-foreground">Daily summary of your trading activity</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.dailyReports}
-                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, dailyReports: checked } })}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Weekly Performance Reports</Label>
-                        <p className="text-sm text-muted-foreground">Weekly analysis of your trading performance</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.weeklyReports}
-                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, weeklyReports: checked } })}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Risk Management Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Alerts when approaching risk limits</p>
-                      </div>
-                      <Switch
-                        checked={settings.notifications.riskAlerts}
-                        onCheckedChange={(checked) => updateSettings({ notifications: { ...settings.notifications, riskAlerts: checked } })}
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faBell} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      <h3 className="text-lg font-semibold">Email Notifications</h3>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Welcome Emails</Label>
-                        <p className="text-sm text-muted-foreground">Send welcome email to new users</p>
-                      </div>
-                      <Switch
-                        checked={emailNotifications.welcomeEmails}
-                        onCheckedChange={(checked) => {
-                          const updated = { ...emailNotifications, welcomeEmails: checked };
-                          setEmailNotifications(updated);
-                          updateNotificationSettings(updated);
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>All Trade Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Email for every trade closed</p>
-                      </div>
-                      <Switch
-                        checked={emailNotifications.tradeAlerts}
-                        onCheckedChange={(checked) => {
-                          const updated = { ...emailNotifications, tradeAlerts: checked };
-                          setEmailNotifications(updated);
-                          updateNotificationSettings(updated);
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Big Win Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Email alerts for significant winning trades</p>
-                      </div>
-                      <Switch
-                        checked={emailNotifications.bigWinAlerts}
-                        onCheckedChange={(checked) => {
-                          const updated = { ...emailNotifications, bigWinAlerts: checked };
-                          setEmailNotifications(updated);
-                          updateNotificationSettings(updated);
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label>Big Loss Alerts</Label>
-                        <p className="text-sm text-muted-foreground">Email alerts for significant losing trades</p>
-                      </div>
-                      <Switch
-                        checked={emailNotifications.bigLossAlerts}
-                        onCheckedChange={(checked) => {
-                          const updated = { ...emailNotifications, bigLossAlerts: checked };
-                          setEmailNotifications(updated);
-                          updateNotificationSettings(updated);
-                        }}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="winThreshold">Big Win Threshold ($)</Label>
-                        <Input
-                          id="winThreshold"
-                          type="number"
-                          value={emailNotifications.winThreshold}
-                          onChange={(e) => {
-                            const updated = { ...emailNotifications, winThreshold: Number(e.target.value) };
-                            setEmailNotifications(updated);
-                            updateNotificationSettings(updated);
-                          }}
-                          className="max-w-[200px]"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lossThreshold">Big Loss Threshold ($)</Label>
-                        <Input
-                          id="lossThreshold"
-                          type="number"
-                          value={emailNotifications.lossThreshold}
-                          onChange={(e) => {
-                            const updated = { ...emailNotifications, lossThreshold: Number(e.target.value) };
-                            setEmailNotifications(updated);
-                            updateNotificationSettings(updated);
-                          }}
-                          className="max-w-[200px]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={async () => {
-                          if (!user?.email) return;
-                          setIsTestingEmail(true);
-                          const result = await sendTestEmail(user.email);
-                          setIsTestingEmail(false);
-                          if (result.success) {
-                            alert('Test email sent successfully! Check your inbox.');
-                          } else {
-                            alert(`Failed to send test email: ${result.error}`);
-                          }
-                        }}
-                        disabled={!user?.email || isTestingEmail}
-                        className="w-fit"
-                      >
-                        {isTestingEmail ? 'Sending...' : 'Send Test Email'}
-                      </Button>
-                      {!user?.email && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Email address required for email notifications
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="p-6 rounded-xl bg-muted/20 border border-border/50">
-                    <div className="flex items-start gap-3">
-                      <FontAwesomeIcon icon={faBell} className="h-5 w-5 mt-0.5" style={{ color: themeColors.primary }} />
-                      <div>
-                        <div className="font-semibold text-foreground">Browser Notifications</div>
-                        <div className="text-sm text-muted-foreground/85 mt-1 leading-[1.6]">
-                          Enable browser notifications to receive alerts even when FreeTradeJournal is not actively open. 
-                          You can manage these in your browser settings.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="data">
           <div className="space-y-6">
             <Card className="bg-muted/30 backdrop-blur-sm border-0">
@@ -1811,7 +1404,7 @@ export default function Settings() {
                 style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
               >
                 <FontAwesomeIcon icon={faCheck} className="h-4 w-4" />
-                {saved ? 'Settings Saved!' : 'Save All Settings'}
+                Save All Settings
               </Button>
             </div>
           </Tabs>

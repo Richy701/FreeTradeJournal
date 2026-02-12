@@ -848,10 +848,10 @@ export function CalendarHeatmap() {
                           
                           {/* Journal indicator with count */}
                           {hasJournal && (
-                            <div className="absolute top-1 left-1 flex items-center gap-1">
-                              <FontAwesomeIcon icon={faBookOpen} className="h-3 w-3 text-slate-800 dark:text-white drop-shadow-lg" />
+                            <div className="absolute bottom-1 left-1 flex items-center gap-0.5">
+                              <FontAwesomeIcon icon={faBookOpen} className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-800 dark:text-white drop-shadow-lg" />
                               {journalEntries[dateKey].length > 1 && (
-                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center drop-shadow-lg">
+                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[8px] sm:text-[10px] font-bold rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center drop-shadow-lg">
                                   {journalEntries[dateKey].length}
                                 </div>
                               )}

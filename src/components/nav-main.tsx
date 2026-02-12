@@ -1,24 +1,21 @@
 "use client"
 
 import { type LucideIcon } from "lucide-react"
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Link, useLocation } from "react-router-dom"
+import { useThemePresets } from "@/contexts/theme-presets"
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronRightIcon } from "@radix-ui/react-icons"
+
+function isItemActive(url: string, pathname: string): boolean {
+  if (url === "/dashboard") return pathname === "/dashboard"
+  return pathname.startsWith(url)
+}
 
 export function NavMain({
   items,
@@ -27,52 +24,41 @@ export function NavMain({
     title: string
     url: string
     icon: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
   }[]
 }) {
+  const { pathname } = useLocation()
+  const { themeColors } = useThemePresets()
+  const { isMobile, setOpenMobile } = useSidebar()
+
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+        {items.map((item) => {
+          const active = isItemActive(item.url, pathname)
+          return (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={active}
+                style={
+                  active
+                    ? { backgroundColor: `${themeColors.primary}15` }
+                    : undefined
+                }
+              >
+                <Link
+                  to={item.url}
+                  onClick={() => isMobile && setOpenMobile(false)}
+                >
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
-              {item.items?.length ? (
-                <>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuAction className="data-[state=open]:rotate-90">
-                      <ChevronRightIcon />
-                      <span className="sr-only">Toggle</span>
-                    </SidebarMenuAction>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </>
-              ) : null}
             </SidebarMenuItem>
-          </Collapsible>
-        ))}
+          )
+        })}
       </SidebarMenu>
     </SidebarGroup>
   )

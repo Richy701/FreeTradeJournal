@@ -25,13 +25,7 @@ export default function LandingPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary"></div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-primary">Loading FreeTradeJournal...</span>
-          </div>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary"></div>
       </div>
     );
   }

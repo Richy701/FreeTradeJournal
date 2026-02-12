@@ -1,25 +1,21 @@
 import * as React from "react"
+import { Link, useLocation } from "react-router-dom"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChartLine } from '@fortawesome/free-solid-svg-icons'
 import {
   BarChart3,
   TrendingUp,
   Target,
   BookOpen,
   Settings2,
-  Home,
   Coffee,
-  MessageSquare,
+  LineChart,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
 
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { AccountSwitcher } from "@/components/account-switcher"
-import { SidebarThemeToggle } from "@/components/sidebar-theme-toggle"
 import {
   Sidebar,
   SidebarContent,
@@ -30,50 +26,44 @@ import {
   SidebarMenuItem,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
-const navItems = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: BarChart3,
-      isActive: true,
-    },
-    {
-      title: "Trade Log",
-      url: "/trades",
-      icon: TrendingUp,
-    },
-    {
-      title: "Goals & Risk Management",
-      url: "/goals",
-      icon: Target,
-    },
-    {
-      title: "Journal",
-      url: "/journal",
-      icon: BookOpen,
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: Home,
-    },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: Settings2,
-    },
-  ],
+const navMain = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: BarChart3,
+  },
+  {
+    title: "Trade Log",
+    url: "/trades",
+    icon: TrendingUp,
+  },
+  {
+    title: "Goals & Risk Management",
+    url: "/goals",
+    icon: Target,
+  },
+  {
+    title: "Journal",
+    url: "/journal",
+    icon: BookOpen,
+  },
+]
+
+function isItemActive(url: string, pathname: string): boolean {
+  if (url === "/dashboard") return pathname === "/dashboard"
+  return pathname.startsWith(url)
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { themeColors } = useThemePresets()
   const { user } = useAuth()
-  
+  const { pathname } = useLocation()
+  const { isMobile, setOpenMobile } = useSidebar()
+
   // Transform Firebase user to NavUser format
   const navUser = user ? {
     name: user.displayName || user.email?.split('@')[0] || 'User',
@@ -84,40 +74,60 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!navUser) {
     return null
   }
-  
+
+  const settingsActive = isItemActive("/settings", pathname)
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/dashboard">
-                <div 
-                  className="flex aspect-square size-8 items-center justify-center rounded-lg text-white" 
+              <Link to="/dashboard">
+                <div
+                  className="flex aspect-square size-8 items-center justify-center rounded-lg text-white"
                   style={{backgroundColor: themeColors.primary}}
                 >
-                  <FontAwesomeIcon icon={faChartLine} className="size-4" />
+                  <LineChart className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">FreeTradeJournal</span>
                   <span className="truncate text-xs">Forex & Futures Journal</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
         <div className="px-3 pb-2">
           <AccountSwitcher />
         </div>
-        <NavMain items={navItems.navMain} />
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navMain} />
         <div className="mt-auto">
           <SidebarGroup>
+            <SidebarGroupLabel>Support</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarThemeToggle />
+                  <SidebarMenuButton
+                    asChild
+                    size="sm"
+                    isActive={settingsActive}
+                    style={
+                      settingsActive
+                        ? { backgroundColor: `${themeColors.primary}15` }
+                        : undefined
+                    }
+                  >
+                    <Link
+                      to="/settings"
+                      onClick={() => isMobile && setOpenMobile(false)}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton size="sm" asChild>
@@ -128,8 +138,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <FeedbackButton 
-                    variant="ghost" 
+                  <FeedbackButton
+                    variant="ghost"
                     className="w-full justify-start h-8 px-2 text-sm"
                     buttonText="Send Feedback"
                   />
@@ -137,7 +147,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          <NavSecondary items={navItems.navSecondary} />
         </div>
       </SidebarContent>
       <SidebarFooter>

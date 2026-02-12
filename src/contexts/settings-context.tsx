@@ -3,22 +3,9 @@ import { useUserStorage } from '@/utils/user-storage';
 import { DEFAULT_VALUES } from '@/constants/trading';
 
 export interface AppSettings {
-  defaultCommission: number;
   currency: string;
-  timezone: string;
   riskPerTrade: number;
   accountSize: number;
-  notifications: {
-    tradeAlerts: boolean;
-    dailyReports: boolean;
-    weeklyReports: boolean;
-    riskAlerts: boolean;
-  };
-  displaySettings: {
-    showPnlAsPercentage: boolean;
-    hideSmallTrades: boolean;
-    defaultChartPeriod: string;
-  };
 }
 
 interface SettingsContextType {
@@ -30,22 +17,9 @@ interface SettingsContextType {
 }
 
 const defaultSettings: AppSettings = {
-  defaultCommission: 0,
   currency: DEFAULT_VALUES.CURRENCY,
-  timezone: DEFAULT_VALUES.TIMEZONE,
   riskPerTrade: DEFAULT_VALUES.RISK_PER_TRADE,
   accountSize: DEFAULT_VALUES.STARTING_BALANCE,
-  notifications: {
-    tradeAlerts: true,
-    dailyReports: false,
-    weeklyReports: true,
-    riskAlerts: true
-  },
-  displaySettings: {
-    showPnlAsPercentage: false,
-    hideSmallTrades: false,
-    defaultChartPeriod: '1M'
-  }
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -76,14 +50,6 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
         setSettings({
           ...defaultSettings,
           ...parsed,
-          notifications: {
-            ...defaultSettings.notifications,
-            ...(parsed.notifications || {})
-          },
-          displaySettings: {
-            ...defaultSettings.displaySettings,
-            ...(parsed.displaySettings || {})
-          }
         });
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -103,12 +69,6 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     setSettings(prev => ({
       ...prev,
       ...updates,
-      notifications: updates.notifications 
-        ? { ...prev.notifications, ...updates.notifications }
-        : prev.notifications,
-      displaySettings: updates.displaySettings
-        ? { ...prev.displaySettings, ...updates.displaySettings }
-        : prev.displaySettings
     }));
   };
 
@@ -129,7 +89,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const formatCurrency = (amount: number, showSign: boolean = true) => {
     const symbol = getCurrencySymbol();
     const formatted = Math.abs(amount).toFixed(2);
-    
+
     // Handle different currency symbol positions
     if (['USD', 'CAD', 'AUD'].includes(settings.currency)) {
       // Symbol before amount
