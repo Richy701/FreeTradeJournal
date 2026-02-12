@@ -160,7 +160,7 @@ function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achie
 }
 
 export function PerformanceGoals() {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const userStorage = useUserStorage()
   const [goals, setGoals] = useState<Goal[]>([])
   const [riskRules, setRiskRules] = useState<RiskRule[]>([])
@@ -507,17 +507,17 @@ export function PerformanceGoals() {
   return (
     <div className="space-y-6">
       {/* ── Goals Card ── */}
-      <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+      <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: alpha(themeColors.primary, '20') }}>
                 <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{ color: themeColors.primary }} />
               </div>
               Active Goals
             </CardTitle>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-xs font-medium" style={{ borderColor: `${themeColors.profit}40`, color: themeColors.profit }}>
+              <Badge variant="outline" className="text-xs font-medium" style={{ borderColor: alpha(themeColors.profit, '40'), color: themeColors.profit }}>
                 {achievedGoals.length}/{goalProgress.length} Achieved
               </Badge>
               <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
@@ -565,7 +565,7 @@ export function PerformanceGoals() {
                             }}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                              <div className="p-2 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '20') }}>
                                 <FontAwesomeIcon icon={preset.icon} className="h-4 w-4" style={{ color: themeColors.primary }} />
                               </div>
                               <div>
@@ -725,10 +725,10 @@ export function PerformanceGoals() {
                 return (
                   <div
                     key={goal.id}
-                    className="group relative rounded-xl p-4 transition-all duration-200 hover:shadow-md"
+                    className="group relative rounded-xl p-4 transition-shadow duration-200 hover:shadow-md"
                     style={{
-                      backgroundColor: goal.achieved ? `${themeColors.profit}08` : undefined,
-                      border: `1px solid ${goal.achieved ? themeColors.profit + '30' : 'hsl(var(--border) / 0.3)'}`,
+                      backgroundColor: goal.achieved ? alpha(themeColors.profit, '08') : undefined,
+                      border: `1px solid ${goal.achieved ? alpha(themeColors.profit, '30') : 'hsl(var(--border) / 0.3)'}`,
                     }}
                   >
                     <div className="flex items-start gap-4">
@@ -748,7 +748,7 @@ export function PerformanceGoals() {
                           <Badge
                             variant="outline"
                             className="text-[10px] px-1.5 py-0 capitalize"
-                            style={{ borderColor: `${themeColors.primary}40`, color: themeColors.primary }}
+                            style={{ borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary }}
                           >
                             <FontAwesomeIcon icon={getPeriodIcon(goal.period)} className="h-2.5 w-2.5 mr-1" />
                             {goal.period}
@@ -798,11 +798,11 @@ export function PerformanceGoals() {
       </Card>
 
       {/* ── Risk Rules Card ── */}
-      <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+      <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: alpha(themeColors.primary, '20') }}>
                 <FontAwesomeIcon icon={faShieldAlt} className="h-4 w-4" style={{ color: themeColors.primary }} />
               </div>
               Risk Management Rules
@@ -836,10 +836,10 @@ export function PerformanceGoals() {
             riskRules.map(rule => (
               <div
                 key={rule.id}
-                className="group flex items-center justify-between rounded-xl p-3.5 transition-all duration-200"
+                className="group flex items-center justify-between rounded-xl p-3.5 transition-shadow duration-200"
                 style={{
-                  backgroundColor: rule.enabled ? `${themeColors.primary}08` : undefined,
-                  border: `1px solid ${rule.enabled ? themeColors.primary + '20' : 'hsl(var(--border) / 0.3)'}`,
+                  backgroundColor: rule.enabled ? alpha(themeColors.primary, '08') : undefined,
+                  border: `1px solid ${rule.enabled ? alpha(themeColors.primary, '20') : 'hsl(var(--border) / 0.3)'}`,
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -849,7 +849,7 @@ export function PerformanceGoals() {
                   />
                   <div
                     className="p-2 rounded-lg"
-                    style={{ backgroundColor: `${rule.enabled ? themeColors.primary : 'hsl(var(--muted))'}20` }}
+                    style={{ backgroundColor: alpha(rule.enabled ? themeColors.primary : 'hsl(var(--muted))', '20') }}
                   >
                     <FontAwesomeIcon
                       icon={getRuleIcon(rule.type)}
@@ -875,9 +875,9 @@ export function PerformanceGoals() {
                     <Badge
                       className="text-xs font-medium"
                       style={{
-                        backgroundColor: `${themeColors.loss}20`,
+                        backgroundColor: alpha(themeColors.loss, '20'),
                         color: themeColors.loss,
-                        border: `1px solid ${themeColors.loss}30`
+                        border: `1px solid ${alpha(themeColors.loss, '30')}`
                       }}
                     >
                       {rule.violations} violation{rule.violations !== 1 ? 's' : ''}
@@ -965,10 +965,10 @@ export function PerformanceGoals() {
 
       {/* ── Achievements Card ── */}
       {achievedGoals.length > 0 && (
-        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.profit}20` }}>
+              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: alpha(themeColors.profit, '20') }}>
                 <FontAwesomeIcon icon={faTrophy} className="h-4 w-4" style={{ color: themeColors.profit }} />
               </div>
               Achievements
@@ -979,15 +979,15 @@ export function PerformanceGoals() {
               {achievedGoals.map(goal => (
                 <div
                   key={goal.id}
-                  className="relative rounded-xl p-4 text-center transition-all duration-200 hover:shadow-md"
+                  className="relative rounded-xl p-4 text-center transition-shadow duration-200 hover:shadow-md"
                   style={{
-                    backgroundColor: `${themeColors.profit}08`,
-                    border: `1px solid ${themeColors.profit}25`,
+                    backgroundColor: alpha(themeColors.profit, '08'),
+                    border: `1px solid ${alpha(themeColors.profit, '25')}`,
                   }}
                 >
                   <div
                     className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
-                    style={{ backgroundColor: `${themeColors.profit}15` }}
+                    style={{ backgroundColor: alpha(themeColors.profit, '15') }}
                   >
                     <FontAwesomeIcon
                       icon={goal.type === 'profit' ? faDollarSign

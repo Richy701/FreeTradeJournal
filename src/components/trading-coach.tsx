@@ -48,7 +48,7 @@ const TIP_SEVERITY_ORDER: Record<string, number> = {
 }
 
 export function TradingCoach() {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -724,7 +724,7 @@ export function TradingCoach() {
   return (
     <Card
       ref={cardRef}
-      className="hover:shadow-lg transition-all duration-200 border-0 bg-gradient-to-br from-muted/30 to-muted/10"
+      className="hover:shadow-lg transition-shadow duration-200 border-0 bg-gradient-to-br from-muted/30 to-muted/10"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
@@ -733,7 +733,7 @@ export function TradingCoach() {
       <CardHeader className="pb-3 border-b border-border/30">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
               <FontAwesomeIcon icon={faBrain} className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
             <span>AI Trading Coach</span>
@@ -741,7 +741,7 @@ export function TradingCoach() {
               <span
                 className="px-2 py-1 text-xs font-bold rounded animate-pulse"
                 style={{
-                  backgroundColor: `${themeColors.loss}20`,
+                  backgroundColor: alpha(themeColors.loss, '20'),
                   color: themeColors.loss
                 }}
               >
@@ -776,14 +776,14 @@ export function TradingCoach() {
       </CardHeader>
       <CardContent className="pt-4">
         <div className={cn(
-          "transition-all duration-200",
+          "transition-shadow duration-200",
           isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"
         )}>
           <div className="text-center space-y-3">
             <div className="flex flex-col items-center gap-3">
               <div
                 className="p-2 rounded-lg"
-                style={{backgroundColor: `${getTipColor(currentTip.type)}20`}}
+                style={{backgroundColor: alpha(getTipColor(currentTip.type), '20')}}
               >
                 <FontAwesomeIcon
                   icon={getTipIcon(currentTip.type)}
@@ -810,7 +810,7 @@ export function TradingCoach() {
               <button
                 key={index}
                 className={cn(
-                  "rounded-full transition-all duration-200",
+                  "rounded-full transition-shadow duration-200",
                   index === currentTipIndex
                     ? "h-2 w-6"
                     : "h-2 w-2 opacity-40 hover:opacity-70"
@@ -837,7 +837,7 @@ export function TradingCoach() {
 
         {/* Severity indicator for critical alerts */}
         {currentTip.type === 'critical' && (
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: `${themeColors.loss}20` }}>
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: alpha(themeColors.loss, '20') }}>
             <div className="flex items-center gap-2 text-xs" style={{ color: themeColors.loss }}>
               <FontAwesomeIcon icon={faExclamationTriangle} className="h-3 w-3" />
               <span>Immediate action recommended</span>

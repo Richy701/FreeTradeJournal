@@ -67,7 +67,7 @@ const SectionWithMockup: React.FC<SectionWithMockupProps> = ({
                         </p>
                          
                          <div className="flex flex-col sm:flex-row gap-6 mt-8" style={{marginTop: '32px'}}>
-                            <button className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-4 rounded-md font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px] focus:ring-2 focus:ring-primary/50">
+                            <button className="bg-primary hover:bg-primary/80 text-primary-foreground px-8 py-4 rounded-md font-bold text-lg shadow-lg hover:shadow-xl transition-shadow duration-200 min-w-[200px] focus:ring-2 focus:ring-primary/50">
                                 Try Dashboard
                             </button>
                             <button className="border border-gray-600 hover:border-gray-500 text-foreground/85 px-8 py-4 rounded-md font-semibold text-lg transition-opacity duration-200 min-w-[160px] hover:opacity-80 focus:ring-2 focus:ring-gray-500/50">

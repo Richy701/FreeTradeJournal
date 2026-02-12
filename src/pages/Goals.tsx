@@ -15,7 +15,7 @@ import { footerConfig } from "@/components/ui/footer-config"
 import { useMemo } from 'react'
 
 export default function Goals() {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const userStorage = useUserStorage()
 
   // Get trades for statistics
@@ -105,7 +105,7 @@ export default function Goals() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent"
-                style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)` }}>
+                style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
               Goals & Risk Management
             </h1>
             <p className="text-muted-foreground text-base">
@@ -121,7 +121,7 @@ export default function Goals() {
           {statCards.map((stat, index) => (
             <Card
               key={index}
-              className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200"
+              className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200"
             >
               <CardHeader className="pb-2 pt-5 px-5">
                 <div className="flex items-center justify-between">
@@ -134,7 +134,7 @@ export default function Goals() {
                   {stat.trend && (
                     <span
                       className="text-xs px-2 py-1 rounded-full font-medium"
-                      style={{ backgroundColor: `${themeColors.profit}15`, color: themeColors.profit }}
+                      style={{ backgroundColor: `${alpha(themeColors.profit, '15')}`, color: themeColors.profit }}
                     >
                       {stat.trend}{stat.value}
                     </span>

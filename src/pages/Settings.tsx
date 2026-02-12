@@ -68,7 +68,7 @@ const themeCardStyles = `
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
-  const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors } = useThemePresets();
+  const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha } = useThemePresets();
   const { logout, user } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
@@ -223,6 +223,9 @@ export default function Settings() {
   const clearAllData = () => {
     if (confirm('Are you sure you want to delete all data? This action cannot be undone.')) {
       userStorage.removeItem('trades');
+      userStorage.removeItem('journalEntries');
+      userStorage.removeItem('goals');
+      userStorage.removeItem('accounts');
       userStorage.removeItem('settings');
       window.location.reload();
     }
@@ -248,7 +251,7 @@ export default function Settings() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" style={{maxWidth: '1200px', margin: '0 auto'}}>
             <div className="space-y-1">
               <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
-                  style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)` }}>
+                  style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
                 Settings
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -260,9 +263,9 @@ export default function Settings() {
                 variant="outline"
                 className="px-3 py-1.5 text-xs font-semibold"
                 style={{
-                  backgroundColor: `${themeColors.profit}12`,
+                  backgroundColor: `${alpha(themeColors.profit, '12')}`,
                   color: themeColors.profit,
-                  borderColor: `${themeColors.profit}30`
+                  borderColor: `${alpha(themeColors.profit, '30')}`
                 }}>
                 <FontAwesomeIcon icon={faChartLine} className="mr-1.5 h-3 w-3" />
                 {stats.total} Trades
@@ -271,9 +274,9 @@ export default function Settings() {
                 variant="outline"
                 className="px-3 py-1.5 text-xs font-semibold"
                 style={{
-                  backgroundColor: `${themeColors.primary}12`,
+                  backgroundColor: `${alpha(themeColors.primary, '12')}`,
                   color: themeColors.primary,
-                  borderColor: `${themeColors.primary}30`
+                  borderColor: `${alpha(themeColors.primary, '30')}`
                 }}>
                 <FontAwesomeIcon icon={faClock} className="mr-1.5 h-3 w-3" />
                 {stats.thisMonth} This Month
@@ -287,23 +290,23 @@ export default function Settings() {
 
           <Tabs defaultValue="general" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">
-              <TabsTrigger value="general" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+              <TabsTrigger value="general" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faPalette} className="h-3.5 w-3.5" />
                 <span>General</span>
               </TabsTrigger>
-              <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+              <TabsTrigger value="accounts" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faBuilding} className="h-3.5 w-3.5" />
                 <span>Accounts</span>
               </TabsTrigger>
-              <TabsTrigger value="trading" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+              <TabsTrigger value="trading" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
                 <span>Trading</span>
               </TabsTrigger>
-              <TabsTrigger value="risk" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+              <TabsTrigger value="risk" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faShield} className="h-3.5 w-3.5" />
                 <span>Risk</span>
               </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+              <TabsTrigger value="data" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
                 <span>Data</span>
               </TabsTrigger>
@@ -313,7 +316,7 @@ export default function Settings() {
               <div className="space-y-6">
                 {/* Section Label */}
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
                     <FontAwesomeIcon icon={faPalette} className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </div>
                   <div>
@@ -460,7 +463,7 @@ export default function Settings() {
                             onClick={() => setColorTheme(key)}
                             tabIndex={0}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                            className="relative rounded-lg border-2 p-3 cursor-pointer transition-all duration-150 hover:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="relative rounded-lg border-2 p-3 cursor-pointer transition-shadow duration-150 hover:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             style={{
                               borderColor: isSelected ? preset.colors.primary : 'hsl(var(--border))',
                               backgroundColor: isSelected ? `${preset.colors.primary}08` : 'transparent',
@@ -500,7 +503,7 @@ export default function Settings() {
             <TabsContent value="accounts" className="mt-6">
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
                     <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </div>
                   <div>
@@ -515,9 +518,9 @@ export default function Settings() {
                     <div className="grid gap-4">
                       {accounts.map((account, index) => (
                         <div key={account.id}
-                             className="rounded-xl bg-background/40 hover:bg-background/60 transition-all duration-200 hover:shadow-md"
+                             className="rounded-xl bg-background/40 hover:bg-background/60 transition-shadow duration-200 hover:shadow-md"
                              style={{
-                               border: activeAccount?.id === account.id ? `1px solid ${themeColors.primary}30` : '1px solid transparent'
+                               border: activeAccount?.id === account.id ? `1px solid ${alpha(themeColors.primary, '30')}` : '1px solid transparent'
                              }}>
                           <div className="p-5">
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -526,7 +529,7 @@ export default function Settings() {
                                 <div className="flex items-center gap-3 mb-3">
                                   {/* Account Icon */}
                                   <div className="p-2 rounded-lg"
-                                       style={{ backgroundColor: `${account.type === 'live' ? themeColors.profit : themeColors.primary}20` }}>
+                                       style={{ backgroundColor: `${alpha(account.type === 'live' ? themeColors.profit : themeColors.primary, '20')}` }}>
                                     <FontAwesomeIcon
                                       icon={account.type === 'live' ? faCoins : account.type === 'demo' ? faChartLine : faTrophy}
                                       className="h-4 w-4"
@@ -544,9 +547,9 @@ export default function Settings() {
                                         {account.isDefault && (
                                           <Badge className="text-xs font-semibold" 
                                                  style={{ 
-                                                   backgroundColor: `${themeColors.profit}15`,
+                                                   backgroundColor: `${alpha(themeColors.profit, '15')}`,
                                                    color: themeColors.profit,
-                                                   borderColor: `${themeColors.profit}30`
+                                                   borderColor: `${alpha(themeColors.profit, '30')}`
                                                  }}>
                                             <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-1" />
                                             Default
@@ -555,9 +558,9 @@ export default function Settings() {
                                         {activeAccount?.id === account.id && (
                                           <Badge className="text-xs font-semibold" 
                                                  style={{ 
-                                                   backgroundColor: `${themeColors.primary}15`,
+                                                   backgroundColor: `${alpha(themeColors.primary, '15')}`,
                                                    color: themeColors.primary,
-                                                   borderColor: `${themeColors.primary}30`
+                                                   borderColor: `${alpha(themeColors.primary, '30')}`
                                                  }}>
                                             <FontAwesomeIcon icon={faFire} className="h-3 w-3 mr-1" />
                                             Active
@@ -593,7 +596,7 @@ export default function Settings() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setEditForm(account)}
-                                    className="h-10 w-10 p-0 rounded-lg hover:bg-background/80 transition-all"
+                                    className="h-10 w-10 p-0 rounded-lg hover:bg-background/80 transition-shadow"
                                   >
                                     <FontAwesomeIcon icon={faPencil} className="h-4 w-4" />
                                   </Button>
@@ -607,10 +610,10 @@ export default function Settings() {
                                   size="sm"
                                   onClick={() => updateAccount(account.id, { isDefault: true })}
                                   disabled={account.isDefault}
-                                  className="min-w-[120px] font-semibold hover:shadow-md transition-all"
-                                  style={account.isDefault ? {} : { 
-                                    borderColor: `${themeColors.primary}30`,
-                                    color: themeColors.primary 
+                                  className="min-w-[120px] font-semibold hover:shadow-md transition-shadow"
+                                  style={account.isDefault ? {} : {
+                                    borderColor: `${alpha(themeColors.primary, '30')}`,
+                                    color: themeColors.primary
                                   }}
                                 >
                                   <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-2" />
@@ -621,7 +624,7 @@ export default function Settings() {
                                   size="sm"
                                   onClick={() => deleteAccount(account.id)}
                                   disabled={accounts.length <= 1}
-                                  className="min-w-[100px] font-semibold hover:shadow-md transition-all hover:border-destructive hover:text-destructive"
+                                  className="min-w-[100px] font-semibold hover:shadow-md transition-shadow hover:border-destructive hover:text-destructive"
                                 >
                                   <FontAwesomeIcon icon={faTrash} className="h-3 w-3 mr-2" />
                                   Delete
@@ -636,9 +639,9 @@ export default function Settings() {
                     {/* Edit Account Form */}
                     {editForm && (
                       <div className="rounded-xl bg-background/60 p-6"
-                           style={{ border: `1px solid ${themeColors.primary}20` }}>
+                           style={{ border: `1px solid ${alpha(themeColors.primary, '20')}` }}>
                           <div className="flex items-center gap-3 mb-5">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
                               <FontAwesomeIcon icon={faPencil} className="h-4 w-4" style={{ color: themeColors.primary }} />
                             </div>
                             <h4 className="text-base font-semibold">Edit Account</h4>
@@ -744,8 +747,8 @@ export default function Settings() {
                                 }
                               }}
                               disabled={!editForm.name || !editForm.broker}
-                              className="font-semibold hover:shadow-md transition-all"
-                              style={{ 
+                              className="font-semibold hover:shadow-md transition-shadow"
+                              style={{
                                 backgroundColor: themeColors.primary,
                                 borderColor: themeColors.primary
                               }}
@@ -763,9 +766,9 @@ export default function Settings() {
                     {/* Add Account Form */}
                     {showAddAccount && (
                       <div className="rounded-xl bg-background/60 p-6"
-                           style={{ border: `1px solid ${themeColors.profit}20` }}>
+                           style={{ border: `1px solid ${alpha(themeColors.profit, '20')}` }}>
                           <div className="flex items-center gap-3 mb-5">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${themeColors.profit}20` }}>
+                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${alpha(themeColors.profit, '20')}` }}>
                               <FontAwesomeIcon icon={faBuilding} className="h-4 w-4" style={{ color: themeColors.profit }} />
                             </div>
                             <h4 className="text-base font-semibold">Add New Account</h4>
@@ -879,8 +882,8 @@ export default function Settings() {
                                 }
                               }}
                               disabled={!accountForm.name || !accountForm.broker}
-                              className="font-semibold hover:shadow-md transition-all"
-                              style={{ 
+                              className="font-semibold hover:shadow-md transition-shadow"
+                              style={{
                                 backgroundColor: themeColors.profit,
                                 borderColor: themeColors.profit
                               }}
@@ -900,9 +903,9 @@ export default function Settings() {
                       <Button
                         onClick={() => setShowAddAccount(true)}
                         variant="outline"
-                        className="w-full h-11 font-medium transition-all hover:shadow-md"
+                        className="w-full h-11 font-medium transition-shadow hover:shadow-md"
                         style={{
-                          borderColor: `${themeColors.primary}30`,
+                          borderColor: `${alpha(themeColors.primary, '30')}`,
                           color: themeColors.primary
                         }}
                       >
@@ -1102,7 +1105,7 @@ export default function Settings() {
 
             <TabsContent value="risk" className="mt-6 space-y-6">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.loss}20` }}>
+                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.loss, '20')}` }}>
                   <FontAwesomeIcon icon={faShield} className="h-4 w-4" style={{ color: themeColors.loss }} />
                 </div>
                 <div>
@@ -1198,7 +1201,7 @@ export default function Settings() {
                   <CardContent className="space-y-4">
                     <div className="space-y-4">
                       <div className="p-4 rounded-lg bg-background/40"
-                           style={{ border: `1px solid ${themeColors.profit}20` }}>
+                           style={{ border: `1px solid ${alpha(themeColors.profit, '20')}` }}>
                         <div className="text-sm text-muted-foreground mb-1">Max Risk per Trade</div>
                         <div className="text-xl font-bold" style={{ color: themeColors.profit }}>
                           {formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false)}
@@ -1206,7 +1209,7 @@ export default function Settings() {
                       </div>
                       
                       <div className="p-4 rounded-lg bg-background/40"
-                           style={{ border: `1px solid ${themeColors.primary}20` }}>
+                           style={{ border: `1px solid ${alpha(themeColors.primary, '20')}` }}>
                         <div className="text-sm text-muted-foreground mb-1">Account Balance</div>
                         <div className="text-xl font-bold" style={{ color: themeColors.primary }}>
                           {formatCurrency(settings.accountSize, false)}
@@ -1214,7 +1217,7 @@ export default function Settings() {
                       </div>
 
                       <div className="p-4 rounded-lg bg-background/40"
-                           style={{ border: `1px solid ${themeColors.loss}20` }}>
+                           style={{ border: `1px solid ${alpha(themeColors.loss, '20')}` }}>
                         <div className="text-sm text-muted-foreground mb-1">Risk Ratio</div>
                         <div className="text-lg font-bold" style={{ color: themeColors.loss }}>
                           1:{Math.round(100 / settings.riskPerTrade)}
@@ -1240,7 +1243,7 @@ export default function Settings() {
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     <div className="p-4 rounded-lg bg-background/40 transition-all"
-                         style={{ border: `1px solid ${themeColors.profit}20` }}>
+                         style={{ border: `1px solid ${alpha(themeColors.profit, '20')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.profit }}></div>
                         <div className="font-bold" style={{ color: themeColors.profit }}>Conservative</div>
@@ -1250,7 +1253,7 @@ export default function Settings() {
                     </div>
                     
                     <div className="p-4 rounded-lg bg-background/40 transition-all"
-                         style={{ border: `1px solid ${themeColors.primary}20` }}>
+                         style={{ border: `1px solid ${alpha(themeColors.primary, '20')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
                         <div className="font-bold" style={{ color: themeColors.primary }}>Moderate</div>
@@ -1260,7 +1263,7 @@ export default function Settings() {
                     </div>
                     
                     <div className="p-4 rounded-lg bg-background/40 transition-all"
-                         style={{ border: `1px solid ${themeColors.loss}25` }}>
+                         style={{ border: `1px solid ${alpha(themeColors.loss, '25')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.loss }}></div>
                         <div className="font-bold" style={{ color: themeColors.loss }}>Aggressive</div>
@@ -1270,7 +1273,7 @@ export default function Settings() {
                     </div>
                     
                     <div className="p-4 rounded-lg bg-background/40 transition-all"
-                         style={{ border: `1px solid ${themeColors.loss}30` }}>
+                         style={{ border: `1px solid ${alpha(themeColors.loss, '30')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: themeColors.loss }}></div>
                         <div className="font-bold" style={{ color: themeColors.loss }}>Dangerous</div>
@@ -1281,7 +1284,7 @@ export default function Settings() {
                   </div>
                   
                   <div className="p-4 rounded-lg bg-background/40"
-                       style={{ border: `1px solid ${themeColors.primary}20` }}>
+                       style={{ border: `1px solid ${alpha(themeColors.primary, '20')}` }}>
                     <div className="flex items-center gap-2 mb-3">
                       <FontAwesomeIcon icon={faMedal} className="h-4 w-4" style={{ color: themeColors.primary }} />
                       <span className="font-bold" style={{ color: themeColors.primary }}>Pro Tips</span>

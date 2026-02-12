@@ -101,7 +101,7 @@ function formatPrice(price: number): string {
 }
 
 export default function TradeLog() {
-  const { themeColors } = useThemePresets();
+  const { themeColors, alpha } = useThemePresets();
   const { isDemo } = useAuth();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
@@ -577,16 +577,30 @@ export default function TradeLog() {
           };
         });
         
-        // Merge with existing trades
-        const updatedTrades = [...trades, ...importedTrades];
+        // Deduplicate: fingerprint on key fields to skip already-imported trades
+        const tradeFingerprint = (t: Trade) =>
+          `${t.symbol}|${t.side}|${t.entryPrice}|${t.exitPrice}|${t.lotSize}|${t.pnl}|${new Date(t.entryTime).getTime()}|${new Date(t.exitTime).getTime()}`;
+
+        const existingFingerprints = new Set(trades.map(tradeFingerprint));
+        const newTrades = importedTrades.filter(t => !existingFingerprints.has(tradeFingerprint(t)));
+        const skippedCount = importedTrades.length - newTrades.length;
+
+        const updatedTrades = [...trades, ...newTrades];
         saveTrades(updatedTrades);
-        
+
+        const description = skippedCount > 0
+          ? `${skippedCount} duplicate trade${skippedCount > 1 ? 's' : ''} skipped`
+          : result.errors.length > 0
+            ? `${result.summary.failed} rows had errors and were skipped`
+            : 'P&L shown is gross (before broker commissions/fees)';
+
         toast.success(
-          `Successfully imported ${importedTrades.length} trades from ${file.name}`,
+          newTrades.length > 0
+            ? `Imported ${newTrades.length} new trade${newTrades.length > 1 ? 's' : ''} from ${file.name}`
+            : `No new trades to import from ${file.name}`,
           {
-            description: result.errors.length > 0 
-              ? `${result.summary.failed} rows had errors and were skipped`
-              : undefined
+            description,
+            duration: 6000
           }
         );
         
@@ -725,7 +739,7 @@ export default function TradeLog() {
         totalPnL,
         totalCommission,
         totalSwap,
-        netPnL: totalPnL - totalCommission - totalSwap,
+        netPnL: totalPnL,
         averagePnL: filteredTrades.length > 0 ? totalPnL / filteredTrades.length : 0,
         largestWin: wins.length > 0 ? Math.max(...wins.map(t => t.pnl)) : 0,
         largestLoss: losses.length > 0 ? Math.min(...losses.map(t => t.pnl)) : 0,
@@ -1002,7 +1016,7 @@ export default function TradeLog() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold bg-clip-text text-transparent" 
-                  style={{backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)`}}>
+                  style={{backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})`}}>
                 Trade Log
               </h1>
               <p className="text-muted-foreground text-lg">
@@ -1587,7 +1601,7 @@ export default function TradeLog() {
                           type="submit" 
                           className="px-8"
                           style={{
-                            background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}CC)`,
+                            background: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'CC')})`,
                             color: themeColors.primaryButtonText
                           }}
                         >
@@ -1606,7 +1620,7 @@ export default function TradeLog() {
           {/* Primary Stats Row */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in slide-in-from-bottom-2 duration-500">
             {/* Total P&L Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -1627,7 +1641,7 @@ export default function TradeLog() {
                     </div>
                   </div>
                   <div className="p-2.5 rounded-lg shadow-sm"
-                       style={{ backgroundColor: `${quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}20` }}>
+                       style={{ backgroundColor: `${alpha(quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, '20')}` }}>
                     <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4"
                                    style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }} />
                   </div>
@@ -1636,7 +1650,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Win Rate Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -1653,7 +1667,7 @@ export default function TradeLog() {
                       <span>{trades.filter(t => t.pnl < 0).length}L</span>
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
                     <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </div>
                 </div>
@@ -1661,7 +1675,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Best Trade Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -1677,7 +1691,7 @@ export default function TradeLog() {
                       </span>
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.profit}20` }}>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.profit, '20')}` }}>
                     <FontAwesomeIcon icon={faTrophy} className="h-4 w-4" style={{ color: themeColors.profit }} />
                   </div>
                 </div>
@@ -1685,7 +1699,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Average R:R Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -1707,7 +1721,7 @@ export default function TradeLog() {
                       </span>
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
                     <FontAwesomeIcon icon={faBalanceScale} className="h-4 w-4" style={{ color: themeColors.primary }} />
                   </div>
                 </div>
@@ -1718,7 +1732,7 @@ export default function TradeLog() {
           {/* Secondary Stats Row */}
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 animate-in slide-in-from-bottom-2 duration-500 delay-100">
             {/* Total Trades */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
@@ -1729,7 +1743,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Average Win */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faArrowTrendUp} className="h-4 w-4 mx-auto" style={{ color: themeColors.profit }} />
@@ -1747,7 +1761,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Average Loss */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faArrowTrendDown} className="h-4 w-4 mx-auto" style={{ color: themeColors.loss }} />
@@ -1765,7 +1779,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Profit Factor */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faFire} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
@@ -1784,7 +1798,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Current Streak */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   {(() => {
@@ -1820,7 +1834,7 @@ export default function TradeLog() {
             </Card>
 
             {/* This Month */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-all duration-200">
+            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
               <CardContent className="p-4 text-center">
                 <div className="space-y-1">
                   <FontAwesomeIcon icon={faCalendar} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
@@ -1859,11 +1873,11 @@ export default function TradeLog() {
         </div>
 
         {/* Trades Table */}
-        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200">
+        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
                   <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.primary }} />
                 </div>
                 <div>
@@ -1876,7 +1890,7 @@ export default function TradeLog() {
               <Badge
                 variant="outline"
                 className="text-xs font-medium"
-                style={{ borderColor: `${themeColors.primary}40`, color: themeColors.primary }}
+                style={{ borderColor: `${alpha(themeColors.primary, '40')}`, color: themeColors.primary }}
               >
                 {trades.length} {trades.length === 1 ? 'Trade' : 'Trades'}
               </Badge>
@@ -1934,7 +1948,7 @@ export default function TradeLog() {
                   </TableHeader>
                   <TableBody>
                     {paginatedTrades.map((trade) => (
-                      <TableRow key={trade.id} className="hover:bg-muted/30 transition-colors duration-200 border-b border-border/20" style={{ borderLeft: `3px solid ${trade.pnl >= 0 ? themeColors.profit : themeColors.loss}40` }}>
+                      <TableRow key={trade.id} className="hover:bg-muted/30 transition-colors duration-200 border-b border-border/20" style={{ borderLeft: `3px solid ${alpha(trade.pnl >= 0 ? themeColors.profit : themeColors.loss, '40')}` }}>
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
@@ -1942,9 +1956,9 @@ export default function TradeLog() {
                             variant="outline" 
                             className="text-xs font-medium px-2 py-0.5"
                             style={{
-                              backgroundColor: `${themeColors.primary}15`,
+                              backgroundColor: `${alpha(themeColors.primary, '15')}`,
                               color: themeColors.primary,
-                              borderColor: `${themeColors.primary}30`
+                              borderColor: `${alpha(themeColors.primary, '30')}`
                             }}
                           >
                             {detectMarketFromSymbol(trade.symbol).toUpperCase()}
@@ -1954,9 +1968,9 @@ export default function TradeLog() {
                           <Badge 
                             className="font-medium text-xs px-2 py-0.5"
                             style={{
-                              backgroundColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}15`,
+                              backgroundColor: `${alpha(trade.side === 'long' ? themeColors.profit : themeColors.loss, '15')}`,
                               color: trade.side === 'long' ? themeColors.profit : themeColors.loss,
-                              borderColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}30`
+                              borderColor: `${alpha(trade.side === 'long' ? themeColors.profit : themeColors.loss, '30')}`
                             }}
                             variant="outline"
                           >
@@ -1990,7 +2004,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(trade)}
-                              className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-all duration-200 hover:shadow-md"
+                              className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-shadow duration-200 hover:shadow-md"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -1998,7 +2012,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(trade.id)}
-                              className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-all duration-200 hover:shadow-md"
+                              className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-shadow duration-200 hover:shadow-md"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -2013,7 +2027,7 @@ export default function TradeLog() {
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3 px-4 pb-4">
                 {paginatedTrades.map((trade) => (
-                  <div key={trade.id} className="rounded-xl overflow-hidden transition-all duration-200 hover:shadow-md" style={{ border: `1px solid ${trade.pnl >= 0 ? themeColors.profit : themeColors.loss}20`, borderLeft: `3px solid ${trade.pnl >= 0 ? themeColors.profit : themeColors.loss}60` }}>
+                  <div key={trade.id} className="rounded-xl overflow-hidden transition-shadow duration-200 hover:shadow-md" style={{ border: `1px solid ${alpha(trade.pnl >= 0 ? themeColors.profit : themeColors.loss, '20')}`, borderLeft: `3px solid ${alpha(trade.pnl >= 0 ? themeColors.profit : themeColors.loss, '60')}` }}>
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -2022,9 +2036,9 @@ export default function TradeLog() {
                             <Badge 
                               className="font-medium text-xs px-2 py-0.5"
                               style={{
-                                backgroundColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}15`,
+                                backgroundColor: `${alpha(trade.side === 'long' ? themeColors.profit : themeColors.loss, '15')}`,
                                 color: trade.side === 'long' ? themeColors.profit : themeColors.loss,
-                                borderColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}30`
+                                borderColor: `${alpha(trade.side === 'long' ? themeColors.profit : themeColors.loss, '30')}`
                               }} 
                             >
                               {trade.side.toUpperCase()}
@@ -2173,8 +2187,8 @@ export default function TradeLog() {
               <div
                 className="p-3 rounded-xl shadow-sm"
                 style={{
-                  backgroundColor: `${themeColors.primary}10`,
-                  border: `1px solid ${themeColors.primary}20`
+                  backgroundColor: `${alpha(themeColors.primary, '10')}`,
+                  border: `1px solid ${alpha(themeColors.primary, '20')}`
                 }}
               >
                 <Upload className="h-6 w-6" style={{ color: themeColors.primary }} />
@@ -2195,8 +2209,8 @@ export default function TradeLog() {
               <div
                 className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
                 style={{
-                  backgroundColor: `${themeColors.primary}08`,
-                  borderColor: `${themeColors.primary}20`
+                  backgroundColor: `${alpha(themeColors.primary, '08')}`,
+                  borderColor: `${alpha(themeColors.primary, '20')}`
                 }}
               >
                 <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -2280,8 +2294,8 @@ export default function TradeLog() {
               <div
                 className="p-3 rounded-xl shadow-sm"
                 style={{
-                  backgroundColor: `${themeColors.primary}10`,
-                  border: `1px solid ${themeColors.primary}20`
+                  backgroundColor: `${alpha(themeColors.primary, '10')}`,
+                  border: `1px solid ${alpha(themeColors.primary, '20')}`
                 }}
               >
                 <FileText className="h-6 w-6" style={{ color: themeColors.primary }} />
@@ -2303,8 +2317,8 @@ export default function TradeLog() {
               <div
                 className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
                 style={{
-                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}08` : `${themeColors.profit}08`,
-                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}20` : `${themeColors.profit}20`
+                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '08')}` : `${alpha(themeColors.profit, '08')}`,
+                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '20')}` : `${alpha(themeColors.profit, '20')}`
                 }}
               >
                 <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -2377,7 +2391,7 @@ export default function TradeLog() {
                 <div className="bg-card rounded-xl border overflow-hidden">
                   <div
                     className="px-6 py-3 border-b"
-                    style={{ backgroundColor: `${themeColors.primary}10` }}
+                    style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
                   >
                     <div className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -2411,14 +2425,14 @@ export default function TradeLog() {
                                 className="text-xs px-2.5 py-1 border"
                                 style={{
                                   backgroundColor: trade.side === 'long'
-                                    ? `${themeColors.profit}15`
-                                    : `${themeColors.loss}15`,
+                                    ? `${alpha(themeColors.profit, '15')}`
+                                    : `${alpha(themeColors.loss, '15')}`,
                                   color: trade.side === 'long'
                                     ? themeColors.profit
                                     : themeColors.loss,
                                   borderColor: trade.side === 'long'
-                                    ? `${themeColors.profit}30`
-                                    : `${themeColors.loss}30`
+                                    ? `${alpha(themeColors.profit, '30')}`
+                                    : `${alpha(themeColors.loss, '30')}`
                                 }}
                               >
                                 {trade.side.toUpperCase()}
@@ -2455,7 +2469,7 @@ export default function TradeLog() {
                   {csvPreview.parseResult.trades.length > 5 && (
                     <div
                       className="px-6 py-2.5 border-t text-center"
-                      style={{ backgroundColor: `${themeColors.primary}05` }}
+                      style={{ backgroundColor: `${alpha(themeColors.primary, '05')}` }}
                     >
                       <p className="text-xs text-muted-foreground">
                         + {csvPreview.parseResult.trades.length - 5} more trades will be imported
@@ -2470,15 +2484,15 @@ export default function TradeLog() {
                 <div
                   className="rounded-xl border overflow-hidden"
                   style={{
-                    backgroundColor: `${themeColors.loss}08`,
-                    borderColor: `${themeColors.loss}30`
+                    backgroundColor: `${alpha(themeColors.loss, '08')}`,
+                    borderColor: `${alpha(themeColors.loss, '30')}`
                   }}
                 >
                   <div
                     className="px-6 py-3 border-b"
                     style={{
-                      backgroundColor: `${themeColors.loss}15`,
-                      borderColor: `${themeColors.loss}30`
+                      backgroundColor: `${alpha(themeColors.loss, '15')}`,
+                      borderColor: `${alpha(themeColors.loss, '30')}`
                     }}
                   >
                     <div className="flex items-center gap-2">

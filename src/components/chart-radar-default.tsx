@@ -55,7 +55,7 @@ function generatePairColors(primary: string, profit: string, loss: string): stri
 }
 
 export function ChartRadarDefault() {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const pairColors = useMemo(
     () => generatePairColors(themeColors.primary, themeColors.profit, themeColors.loss),
     [themeColors.primary, themeColors.profit, themeColors.loss]
@@ -156,7 +156,7 @@ export function ChartRadarDefault() {
       <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
         <CardHeader className="pb-3 border-b border-border/30">
           <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
               <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
             Pairs Performance
@@ -214,7 +214,7 @@ export function ChartRadarDefault() {
       <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
         <CardHeader className="pb-3 border-b border-border/30">
           <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
               <PieChartIcon className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
             Trade Distribution

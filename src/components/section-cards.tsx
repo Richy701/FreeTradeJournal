@@ -46,7 +46,7 @@ interface Trade {
 
 export function SectionCards() {
   // Get theme colors and demo data
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { formatCurrency: formatCurrencyFromSettings } = useSettings()
   const { getTrades } = useDemoData()
   
@@ -109,7 +109,7 @@ export function SectionCards() {
   return (
     <TooltipProvider>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 overflow-visible">
-        <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
+        <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total P&L</CardTitle>
@@ -118,11 +118,11 @@ export function SectionCards() {
                   <FontAwesomeIcon icon={faQuestionCircle} className="h-3 w-3 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="p-2 border-0 bg-background/95 backdrop-blur">
-                  <p className="text-xs">Total profit/loss after commissions</p>
+                  <p className="text-xs">Total profit/loss (gross, before broker fees)</p>
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: `${metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}20`}}>
+            <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss, '20')}}>
               <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4" style={{color: metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}} />
             </div>
           </CardHeader>
@@ -145,7 +145,7 @@ export function SectionCards() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible hover:z-[10001] border-0">
+      <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible hover:z-[10001] border-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</CardTitle>
@@ -158,7 +158,7 @@ export function SectionCards() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: `${themeColors.profit}20`}}>
+          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(themeColors.profit, '20')}}>
             <FontAwesomeIcon icon={faPercentage} className="h-4 w-4" style={{color: themeColors.profit}} />
           </div>
         </CardHeader>
@@ -210,7 +210,7 @@ export function SectionCards() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
+      <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Trades</CardTitle>
@@ -223,7 +223,7 @@ export function SectionCards() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: `${themeColors.profit}20`}}>
+          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(themeColors.profit, '20')}}>
             <FontAwesomeIcon icon={faChartBar} className="h-4 w-4" style={{color: themeColors.profit}} />
           </div>
         </CardHeader>
@@ -244,7 +244,7 @@ export function SectionCards() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-lg transition-all duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
+      <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Profit Factor</CardTitle>
@@ -257,7 +257,7 @@ export function SectionCards() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: `${themeColors.profit}20`}}>
+          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(themeColors.profit, '20')}}>
             <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{color: themeColors.profit}} />
           </div>
         </CardHeader>

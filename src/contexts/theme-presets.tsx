@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect } from 'react'
 
 interface ThemePreset {
   name: string
@@ -120,9 +120,10 @@ const themePresets: Record<string, ThemePreset> = {
 
 interface ThemeContextType {
   currentTheme: string
-  themeColors: ThemePreset['colors']
+  themeColors: ThemePreset['colors'] & { primaryButtonText: string }
   setTheme: (theme: string) => void
   availableThemes: Record<string, ThemePreset>
+  alpha: (color: string, hexOpacity: string) => string
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -176,8 +177,8 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     return () => observer.disconnect()
   }, [])
 
-  // Update CSS variables when theme changes
-  useEffect(() => {
+  // Update CSS variables when theme changes — useLayoutEffect to sync with inline styles
+  useLayoutEffect(() => {
     const colors = themePresets[currentTheme].colors
     const root = document.documentElement
     
@@ -338,12 +339,22 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     primaryButtonText: getContrastText(adjustedColors.primary),
   }
 
+  const alpha = (color: string, hexOpacity: string): string => {
+    if (isDarkMode) return color + hexOpacity;
+    const val = parseInt(hexOpacity, 16);
+    // Only boost low opacity values; high values (>50%) are intentionally strong
+    if (val >= 0x80) return color + hexOpacity;
+    const boosted = Math.min(0x80, Math.round(val * 2));
+    return color + boosted.toString(16).padStart(2, '0');
+  };
+
   return (
-    <ThemeContext.Provider value={{ 
-      currentTheme, 
-      themeColors, 
-      setTheme, 
-      availableThemes: themePresets 
+    <ThemeContext.Provider value={{
+      currentTheme,
+      themeColors,
+      setTheme,
+      availableThemes: themePresets,
+      alpha,
     }}>
       {children}
     </ThemeContext.Provider>

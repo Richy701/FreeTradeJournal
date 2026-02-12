@@ -39,7 +39,7 @@ interface DataTableProps {
 
 export function DataTable({ data }: DataTableProps) {
   // Get theme colors and demo data
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { formatCurrency } = useSettings()
   const { getTrades } = useDemoData()
   
@@ -67,7 +67,7 @@ export function DataTable({ data }: DataTableProps) {
     <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-0">
       <CardHeader className="pb-3 border-b border-border/30">
         <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+          <div className="p-2 rounded-lg" style={{backgroundColor: `${alpha(themeColors.primary, '20')}`}}>
             <FontAwesomeIcon icon={faList} className="h-4 w-4" style={{color: themeColors.primary}} />
           </div>
           Recent Trades
@@ -102,7 +102,7 @@ export function DataTable({ data }: DataTableProps) {
                         variant="outline"
                         className="font-medium"
                         style={{
-                          backgroundColor: `${trade.side === 'long' ? themeColors.profit : themeColors.loss}10`,
+                          backgroundColor: `${alpha(trade.side === 'long' ? themeColors.profit : themeColors.loss, '10')}`,
                           borderColor: trade.side === 'long' ? themeColors.profit : themeColors.loss,
                           color: trade.side === 'long' ? themeColors.profit : themeColors.loss
                         }}

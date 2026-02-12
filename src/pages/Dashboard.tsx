@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/select"
 
 export default function Dashboard() {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { user, isDemo } = useAuth()
   const { activeAccount } = useAccounts()
   const { getTrades } = useDemoData()
@@ -690,8 +690,8 @@ export default function Dashboard() {
               <div
                 className="p-3 rounded-xl shadow-sm"
                 style={{
-                  backgroundColor: `${themeColors.primary}10`,
-                  border: `1px solid ${themeColors.primary}20`
+                  backgroundColor: `${alpha(themeColors.primary, '10')}`,
+                  border: `1px solid ${alpha(themeColors.primary, '20')}`
                 }}
               >
                 <FileText className="h-6 w-6" style={{ color: themeColors.primary }} />
@@ -713,8 +713,8 @@ export default function Dashboard() {
               <div
                 className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
                 style={{
-                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}08` : `${themeColors.profit}08`,
-                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${themeColors.loss}20` : `${themeColors.profit}20`
+                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '08')}` : `${alpha(themeColors.profit, '08')}`,
+                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '20')}` : `${alpha(themeColors.profit, '20')}`
                 }}
               >
                 <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -787,7 +787,7 @@ export default function Dashboard() {
                 <div className="bg-card rounded-xl border overflow-hidden">
                   <div
                     className="px-6 py-3 border-b"
-                    style={{ backgroundColor: `${themeColors.primary}10` }}
+                    style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
                   >
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -820,14 +820,14 @@ export default function Dashboard() {
                                 className="text-xs px-2.5 py-1 border"
                                 style={{
                                   backgroundColor: trade.side === 'long'
-                                    ? `${themeColors.profit}15`
-                                    : `${themeColors.loss}15`,
+                                    ? `${alpha(themeColors.profit, '15')}`
+                                    : `${alpha(themeColors.loss, '15')}`,
                                   color: trade.side === 'long'
                                     ? themeColors.profit
                                     : themeColors.loss,
                                   borderColor: trade.side === 'long'
-                                    ? `${themeColors.profit}30`
-                                    : `${themeColors.loss}30`
+                                    ? `${alpha(themeColors.profit, '30')}`
+                                    : `${alpha(themeColors.loss, '30')}`
                                 }}
                               >
                                 {trade.side.toUpperCase()}
@@ -861,7 +861,7 @@ export default function Dashboard() {
                   {csvPreview.parseResult.trades.length > 5 && (
                     <div
                       className="px-6 py-2.5 border-t text-center"
-                      style={{ backgroundColor: `${themeColors.primary}05` }}
+                      style={{ backgroundColor: `${alpha(themeColors.primary, '05')}` }}
                     >
                       <p className="text-xs text-muted-foreground">
                         + {csvPreview.parseResult.trades.length - 5} more trades will be imported
@@ -876,15 +876,15 @@ export default function Dashboard() {
                 <div
                   className="rounded-xl border overflow-hidden"
                   style={{
-                    backgroundColor: `${themeColors.loss}08`,
-                    borderColor: `${themeColors.loss}30`
+                    backgroundColor: `${alpha(themeColors.loss, '08')}`,
+                    borderColor: `${alpha(themeColors.loss, '30')}`
                   }}
                 >
                   <div
                     className="px-6 py-3 border-b"
                     style={{
-                      backgroundColor: `${themeColors.loss}15`,
-                      borderColor: `${themeColors.loss}30`
+                      backgroundColor: `${alpha(themeColors.loss, '15')}`,
+                      borderColor: `${alpha(themeColors.loss, '30')}`
                     }}
                   >
                     <div className="flex items-center gap-2">

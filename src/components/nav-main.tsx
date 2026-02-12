@@ -27,7 +27,7 @@ export function NavMain({
   }[]
 }) {
   const { pathname } = useLocation()
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { isMobile, setOpenMobile } = useSidebar()
 
   return (
@@ -44,7 +44,7 @@ export function NavMain({
                 isActive={active}
                 style={
                   active
-                    ? { backgroundColor: `${themeColors.primary}15` }
+                    ? { backgroundColor: alpha(themeColors.primary, '15') }
                     : undefined
                 }
               >

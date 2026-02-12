@@ -32,7 +32,7 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function ChartPairsPerformance() {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -90,7 +90,7 @@ export function ChartPairsPerformance() {
     <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
       <CardHeader className="pb-3 border-b border-border/30">
         <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+          <div className="p-2 rounded-lg" style={{backgroundColor: `${alpha(themeColors.primary, '20')}`}}>
             <FontAwesomeIcon icon={faChartBar} className="h-4 w-4" style={{color: themeColors.primary}} />
           </div>
           Trading Pairs Performance

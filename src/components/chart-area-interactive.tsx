@@ -54,7 +54,7 @@ const chartConfig = {
 export function ChartAreaInteractive() {
   const [view, setView] = useState<ChartView>('equity')
   // Get theme colors and demo data
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
 
   // Get trades from demo data or localStorage and generate equity curve data
@@ -108,7 +108,7 @@ export function ChartAreaInteractive() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+              <div className="p-2 rounded-lg" style={{backgroundColor: `${alpha(themeColors.primary, '20')}`}}>
                 {view === 'equity' ? (
                   <FontAwesomeIcon icon={faChartArea} className="h-4 w-4" style={{color: themeColors.primary}} />
                 ) : (

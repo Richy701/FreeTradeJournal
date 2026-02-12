@@ -59,7 +59,7 @@ function isItemActive(url: string, pathname: string): boolean {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { user } = useAuth()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
@@ -116,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     isActive={settingsActive}
                     style={
                       settingsActive
-                        ? { backgroundColor: `${themeColors.primary}15` }
+                        ? { backgroundColor: `${alpha(themeColors.primary, '15')}` }
                         : undefined
                     }
                   >

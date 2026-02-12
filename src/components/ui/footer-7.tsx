@@ -123,7 +123,7 @@ export const Footer7 = ({
                     aria-label={social.label}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-xl bg-foreground/[0.05] border border-foreground/[0.08] flex items-center justify-center hover:bg-primary/10 hover:border-primary/20 hover:text-primary transition-all duration-200"
+                    className="w-10 h-10 rounded-xl bg-foreground/[0.05] border border-foreground/[0.08] flex items-center justify-center hover:bg-primary/10 hover:border-primary/20 hover:text-primary transition-shadow duration-200"
                   >
                     <div className="text-lg">{social.icon}</div>
                   </a>
@@ -140,7 +140,7 @@ export const Footer7 = ({
                     {section.links.map((link, linkIdx) => (
                       <li
                         key={linkIdx}
-                        className="font-medium hover:text-foreground transition-all duration-200"
+                        className="font-medium hover:text-foreground transition-shadow duration-200"
                       >
                         {isInternalLink(link.href) ? (
                           <Link

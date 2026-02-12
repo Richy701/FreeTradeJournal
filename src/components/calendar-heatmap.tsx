@@ -83,7 +83,7 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function CalendarHeatmap() {
   // Get theme colors
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { activeAccount } = useAccounts()
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
   const userStorage = useUserStorage()
@@ -592,7 +592,7 @@ export function CalendarHeatmap() {
         <div className="space-y-4">
           {/* Title and icon - Mobile friendly v2 */}
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{backgroundColor: `${themeColors.primary}20`}}>
+            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
               <FontAwesomeIcon icon={faCalendarDays} className="h-4 w-4" style={{color: themeColors.primary}} />
             </div>
             <CardTitle className="text-lg sm:text-xl font-semibold">
@@ -951,7 +951,7 @@ export function CalendarHeatmap() {
                 <Badge variant="outline" className="text-xs" style={{
                   color: themeColors.profit,
                   borderColor: themeColors.profit,
-                  backgroundColor: `${themeColors.profit}15`
+                  backgroundColor: alpha(themeColors.profit, '15')
                 }}>
                   {monthlyStats.profitDays}
                 </Badge>
@@ -962,7 +962,7 @@ export function CalendarHeatmap() {
                 <Badge variant="outline" className="text-xs" style={{
                   color: themeColors.loss,
                   borderColor: themeColors.loss,
-                  backgroundColor: `${themeColors.loss}15`
+                  backgroundColor: alpha(themeColors.loss, '15')
                 }}>
                   {monthlyStats.lossDays}
                 </Badge>

@@ -90,7 +90,7 @@ interface JournalEntry {
 const mockEntries: JournalEntry[] = [];
 
 export default function Journal() {
-  const { themeColors } = useThemePresets();
+  const { themeColors, alpha } = useThemePresets();
   const { isDemo } = useAuth();
   const userStorage = useUserStorage();
   const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
@@ -517,15 +517,15 @@ export default function Journal() {
     switch (mood) {
       case 'bullish': 
         return {
-          backgroundColor: `${themeColors.profit}15`,
+          backgroundColor: `${alpha(themeColors.profit, '15')}`,
           color: themeColors.profit,
-          borderColor: `${themeColors.profit}30`
+          borderColor: `${alpha(themeColors.profit, '30')}`
         };
       case 'bearish': 
         return {
-          backgroundColor: `${themeColors.loss}15`,
+          backgroundColor: `${alpha(themeColors.loss, '15')}`,
           color: themeColors.loss,
-          borderColor: `${themeColors.loss}30`
+          borderColor: `${alpha(themeColors.loss, '30')}`
         };
       default: 
         return {
@@ -554,7 +554,7 @@ export default function Journal() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
-                    style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.primary}DD)` }}>
+                    style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
                   Trading Journal
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -637,12 +637,12 @@ export default function Journal() {
             ].map((stat, index) => (
               <Card
                 key={index}
-                className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200"
+                className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200"
               >
                 <CardHeader className="pb-2 pt-5 px-5">
                   <div
                     className="p-2.5 rounded-lg shadow-sm w-fit"
-                    style={{ backgroundColor: `${stat.color}20` }}
+                    style={{ backgroundColor: `${alpha(stat.color, '20')}` }}
                   >
                     <stat.Icon className="h-4 w-4" style={{ color: stat.color }} />
                   </div>
@@ -668,7 +668,7 @@ export default function Journal() {
               <div className="flex items-center gap-3">
                 <div
                   className="p-2.5 rounded-lg shadow-sm"
-                  style={{ backgroundColor: `${themeColors.primary}20` }}
+                  style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}
                 >
                   {editingEntry ? <BookOpen className="h-4 w-4" style={{ color: themeColors.primary }} /> : <Plus className="h-4 w-4" style={{ color: themeColors.primary }} />}
                 </div>
@@ -700,9 +700,9 @@ export default function Journal() {
                   size="sm"
                   type="button"
                   onClick={() => setNewEntry({ ...newEntry, entryType: type.value })}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-shadow duration-200"
                   style={newEntry.entryType === type.value
-                    ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, borderColor: `${themeColors.primary}30` }
+                    ? { backgroundColor: `${alpha(themeColors.primary, '15')}`, color: themeColors.primary, borderColor: `${alpha(themeColors.primary, '30')}` }
                     : {}
                   }
                 >
@@ -751,9 +751,9 @@ export default function Journal() {
                         variant="outline"
                         type="button"
                         onClick={() => setNewEntry({ ...newEntry, mood: mood.value })}
-                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl h-auto border-2 transition-all duration-200"
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl h-auto border-2 transition-shadow duration-200"
                         style={newEntry.mood === mood.value
-                          ? { backgroundColor: `${mood.color}15`, borderColor: `${mood.color}40`, color: mood.color }
+                          ? { backgroundColor: `${alpha(mood.color, '15')}`, borderColor: `${alpha(mood.color, '40')}`, color: mood.color }
                           : {}
                         }
                       >
@@ -814,8 +814,8 @@ export default function Journal() {
                   <div
                     className="p-4 rounded-xl"
                     style={{
-                      backgroundColor: `${selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss}08`,
-                      border: `1px solid ${selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss}25`
+                      backgroundColor: `${alpha(selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '08')}`,
+                      border: `1px solid ${alpha(selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '25')}`
                     }}
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -886,7 +886,7 @@ export default function Journal() {
                         onClick={() => toggleEmotion(emotion)}
                         className="px-3 py-1.5 text-xs h-auto rounded-full transition-all duration-150"
                         style={isSelected
-                          ? { backgroundColor: `${themeColors.primary}15`, color: themeColors.primary, borderColor: `${themeColors.primary}40` }
+                          ? { backgroundColor: `${alpha(themeColors.primary, '15')}`, color: themeColors.primary, borderColor: `${alpha(themeColors.primary, '40')}` }
                           : {}
                         }
                       >
@@ -907,9 +907,9 @@ export default function Journal() {
                 </label>
 
                 <div
-                  className="border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200"
+                  className="border-2 border-dashed rounded-xl p-8 text-center transition-shadow duration-200"
                   style={isDragOver
-                    ? { borderColor: `${themeColors.primary}50`, backgroundColor: `${themeColors.primary}05` }
+                    ? { borderColor: `${alpha(themeColors.primary, '50')}`, backgroundColor: `${alpha(themeColors.primary, '05')}` }
                     : { borderColor: 'hsl(var(--border))', backgroundColor: 'transparent' }
                   }
                   onDragOver={handleDragOver}
@@ -919,7 +919,7 @@ export default function Journal() {
                   <div className="space-y-2">
                     <div
                       className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${themeColors.primary}10` }}
+                      style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
                     >
                       <Upload className="h-5 w-5" style={{ color: themeColors.primary }} />
                     </div>
@@ -1246,7 +1246,7 @@ export default function Journal() {
               <CardContent className="flex flex-col items-center justify-center py-20 text-center">
                 <div
                   className="p-5 rounded-2xl mb-6 shadow-sm"
-                  style={{ backgroundColor: `${themeColors.primary}15` }}
+                  style={{ backgroundColor: `${alpha(themeColors.primary, '15')}` }}
                 >
                   <BookOpen className="h-10 w-10" style={{ color: themeColors.primary }} />
                 </div>
@@ -1273,7 +1273,7 @@ export default function Journal() {
               return (
                 <Card
                   key={entry.id}
-                  className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                  className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200 overflow-hidden"
                 >
                   <CardHeader className="pb-2 pt-5 px-5">
                     <div className="flex items-start justify-between gap-3">
@@ -1299,8 +1299,8 @@ export default function Journal() {
                               className="text-[10px] font-semibold border px-2 py-0"
                               style={{
                                 color: linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss,
-                                backgroundColor: linkedTrade.pnl > 0 ? `${themeColors.profit}12` : `${themeColors.loss}12`,
-                                borderColor: linkedTrade.pnl > 0 ? `${themeColors.profit}30` : `${themeColors.loss}30`
+                                backgroundColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '12')}` : `${alpha(themeColors.loss, '12')}`,
+                                borderColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '30')}` : `${alpha(themeColors.loss, '30')}`
                               }}
                             >
                               {linkedTrade.symbol} {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
@@ -1387,8 +1387,8 @@ export default function Journal() {
                             variant="outline"
                             className="text-[10px] border"
                             style={{
-                              backgroundColor: `${themeColors.primary}08`,
-                              borderColor: `${themeColors.primary}25`,
+                              backgroundColor: `${alpha(themeColors.primary, '08')}`,
+                              borderColor: `${alpha(themeColors.primary, '25')}`,
                               color: themeColors.primary
                             }}
                           >
