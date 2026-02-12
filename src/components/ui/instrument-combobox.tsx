@@ -76,14 +76,21 @@ export function InstrumentCombobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] max-w-[calc(100vw-2rem)] p-0" align="start">
+      <PopoverContent
+        className="z-[200] w-[--radix-popover-trigger-width] max-w-[calc(100vw-2rem)] p-0"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <Command shouldFilter={true}>
           <CommandInput
             placeholder="Search or type custom symbol..."
             value={search}
             onValueChange={setSearch}
           />
-          <CommandList>
+          <CommandList
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             <CommandEmpty>
               {searchUpper.length > 0
                 ? "No matching instruments. Press enter or click below to use custom symbol."
