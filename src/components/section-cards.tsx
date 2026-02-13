@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
+import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
@@ -47,7 +48,8 @@ interface Trade {
 export function SectionCards() {
   // Get theme colors and demo data
   const { themeColors, alpha } = useThemePresets()
-  const { formatCurrency: formatCurrencyFromSettings } = useSettings()
+  const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
+  const { activeAccount } = useAccounts()
   const { getTrades } = useDemoData()
   
   // Get trades from demo data or localStorage
@@ -138,7 +140,7 @@ export function SectionCards() {
                 style={{color: metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}} 
               />
               <p className="text-xs text-muted-foreground font-medium">
-                {formatPercentage(Math.abs((metrics.totalPnL / 10000) * 100))} from initial
+                {formatPercentage(Math.abs((metrics.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100))} of account
               </p>
             </div>
           </div>
@@ -165,7 +167,7 @@ export function SectionCards() {
         <CardContent className="pt-0">
           <div className="flex items-center gap-3">
             <div className="flex-1 space-y-2">
-              <div className="text-3xl font-bold tracking-tight text-foreground" style={{letterSpacing: '-0.02em'}}>{formatPercentage(metrics.winRate)}</div>
+              <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: metrics.winRate >= 50 ? themeColors.profit : themeColors.loss}}>{formatPercentage(metrics.winRate)}</div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
                 <span>{trades.filter((t: Trade) => t.pnl > 0).length}W</span>
                 <span>/</span>
@@ -229,7 +231,7 @@ export function SectionCards() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-2">
-            <div className="text-3xl font-bold tracking-tight text-foreground" style={{letterSpacing: '-0.02em'}}>{metrics.totalTrades.toLocaleString()}</div>
+            <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: themeColors.primary}}>{metrics.totalTrades.toLocaleString()}</div>
             <div className="flex items-center gap-2">
               <div className="flex -space-x-1">
                 {[...Array(Math.min(3, metrics.totalTrades))].map((_, i) => (
@@ -264,7 +266,7 @@ export function SectionCards() {
         <CardContent className="pt-0">
           <div className="flex items-center gap-3">
             <div className="flex-1 space-y-2">
-              <div className="text-3xl font-bold tracking-tight text-foreground" style={{letterSpacing: '-0.02em'}}>
+              <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: metrics.profitFactor >= 1 ? themeColors.profit : themeColors.loss}}>
                 {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
               </div>
               <p className="text-xs text-muted-foreground font-medium">

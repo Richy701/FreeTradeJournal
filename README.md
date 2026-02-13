@@ -5,8 +5,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ## Key Features
 
 ### Interactive Dashboard
-- Real-time P&L tracking with interactive equity curve
-- Key performance metrics (win rate, profit factor, expectancy ratio)
+- Real-time P&L tracking with interactive equity curve (gradient fill, clean design)
+- Color-coded performance metrics — win rate, profit factor, total trades, and P&L percentage based on your actual account balance
 - Daily P&L calendar heatmap
 - AI-powered Trading Coach with psychological pattern detection
 - Recent trades overview with quick insights
@@ -55,8 +55,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### 12 Color Themes
 - Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage
-- Dark/Light/System mode with mode-aware opacity (colors stay visible in both modes)
-- Instant theme switching — no staggered color transitions
+- Dark/Light/System mode with polished light mode — visible decorative shapes, badges, and overlays
+- Instant theme switching via useLayoutEffect — no staggered color transitions or delayed button fades
 - Dynamic profit/loss and primary color customization
 - Theme persistence across sessions
 
@@ -68,7 +68,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Linked from the What's New dialog footer and the site footer under Resources
 
 ### Landing Page
-- Polished hero section with animated gradient CTA buttons (pill-shaped design)
+- Polished hero section with animated gradient CTA buttons and consistent branding
+- Mobile-optimized button sizing, centered layouts, and responsive badge alignment
 - Instant demo access and sign-up prompts
 
 ### Demo Mode

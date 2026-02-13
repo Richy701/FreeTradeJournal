@@ -253,13 +253,14 @@ export default function Signup() {
                 )}
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="terms" 
+              <div className="flex items-start gap-2 justify-center">
+                <Checkbox
+                  id="terms"
+                  className="mt-0.5 size-4 min-h-4 min-w-4"
                   checked={agreedToTerms}
                   onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
                 />
-                <Label htmlFor="terms" className="text-sm">
+                <Label htmlFor="terms" className="text-sm leading-snug">
                   I agree to the{' '}
                   <a href="#" className="text-primary hover:underline">Terms of Service</a>
                   {' '}and{' '}
@@ -267,9 +268,9 @@ export default function Signup() {
                 </Label>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11" 
+              <Button
+                type="submit"
+                className="w-full h-11 !mt-6"
                 disabled={loading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
               >
                 {loading ? 'Creating account...' : 'Create account'}

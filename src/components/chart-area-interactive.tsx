@@ -162,7 +162,12 @@ export function ChartAreaInteractive() {
                     bottom: 20,
                   }}
                 >
-                  <CartesianGrid vertical={false} />
+                  <defs>
+                    <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={themeColors.profit} stopOpacity={0.4} />
+                      <stop offset="100%" stopColor={themeColors.profit} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <XAxis
                     dataKey="date"
                     tickLine={false}
@@ -183,10 +188,9 @@ export function ChartAreaInteractive() {
                   <Area
                     dataKey="cumulative"
                     type="natural"
-                    fill={themeColors.profit}
-                    fillOpacity={0.4}
+                    fill="url(#equityGradient)"
                     stroke={themeColors.profit}
-                    stackId="a"
+                    strokeWidth={2}
                   />
                 </AreaChart>
               </ChartContainer>
@@ -203,7 +207,6 @@ export function ChartAreaInteractive() {
                   }}
                   barCategoryGap="20%"
                 >
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" strokeOpacity={0.3} />
                   <XAxis
                     dataKey="date"
                     tickLine={false}

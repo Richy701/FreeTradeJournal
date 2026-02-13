@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useSettings } from '@/contexts/settings-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
@@ -102,6 +103,7 @@ function formatPrice(price: number): string {
 
 export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
+  const { settings } = useSettings();
   const { isDemo } = useAuth();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
@@ -1636,7 +1638,7 @@ export default function TradeLog() {
                         style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                       />
                       <span className="text-muted-foreground font-medium">
-                        {((quickStats.totalPnL / 10000) * 100).toFixed(1)}% from initial
+                        {((quickStats.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100).toFixed(1)}% of account
                       </span>
                     </div>
                   </div>

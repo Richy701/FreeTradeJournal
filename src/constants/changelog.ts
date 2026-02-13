@@ -15,6 +15,48 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.4.0',
+    date: '2026-02-13',
+    summary: 'Mobile UI polish, accurate account metrics, themed dashboard cards, and improved light mode.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'P&L percentage now uses your actual account balance',
+        description: 'The "% of account" metric on the dashboard and trade log was hardcoded to a $10k balance. It now reads from your active account\'s balance set in Settings, so the percentage reflects your real account size.',
+      },
+      {
+        type: 'improved',
+        text: 'Dashboard metric cards are now color-coded',
+        description: 'Win Rate, Total Trades, and Profit Factor cards now use themed colors (green/red based on performance) instead of plain white text, matching the Total P&L card style.',
+      },
+      {
+        type: 'improved',
+        text: 'Equity curve has a gradient fill and cleaner look',
+        description: 'The equity curve chart now uses a smooth gradient fill that fades from top to bottom, and grid lines have been removed from both the equity and P&L views for a cleaner appearance.',
+      },
+      {
+        type: 'improved',
+        text: 'Light mode overhaul for landing page',
+        description: 'Decorative hero shapes, badges, social icons, and overlays are now properly visible in light mode with stronger opacities and amber-tinted accents instead of faint near-invisible elements.',
+      },
+      {
+        type: 'fixed',
+        text: 'Theme switching is now fully instant',
+        description: 'Switched the theme provider to useLayoutEffect and changed all buttons from transition-all to scoped transitions, eliminating the delayed color fade on theme toggle.',
+      },
+      {
+        type: 'fixed',
+        text: 'Mobile button sizing and layout consistency',
+        description: 'Hero CTA buttons no longer stretch full-width on mobile. The signup terms checkbox no longer gets squashed, and the header/footer now use the same logo icon for consistent branding.',
+      },
+      {
+        type: 'fixed',
+        text: 'Peerlist badge now matches Product Hunt badge size',
+        description: 'The Peerlist badge in the footer was larger than the Product Hunt badge on mobile. Both badges now use matching heights across all breakpoints.',
+      },
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-02-12',
     summary: 'Major prop firm support update with TopStep integration, smarter CSV imports, and polished theming.',
@@ -102,4 +144,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = changelog[0].version
+export const LATEST_CHANGELOG_VERSION = '1.4.0'

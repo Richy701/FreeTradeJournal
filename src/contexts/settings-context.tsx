@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useCallback, useState, useRef, type ReactNode } from 'react';
 import { useUserStorage } from '@/utils/user-storage';
 import { DEFAULT_VALUES } from '@/constants/trading';
 
@@ -38,12 +38,15 @@ interface SettingsProviderProps {
 
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const userStorage = useUserStorage();
+  const storageRef = useRef(userStorage);
+  storageRef.current = userStorage;
+
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
 
   // Load settings from localStorage on mount
   useEffect(() => {
-    const savedSettings = userStorage.getItem('settings');
+    const savedSettings = storageRef.current.getItem('settings');
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
@@ -61,16 +64,18 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   // Save settings to localStorage whenever they change
   useEffect(() => {
     if (!loading) {
-      userStorage.setItem('settings', JSON.stringify(settings));
+      storageRef.current.setItem('settings', JSON.stringify(settings));
     }
   }, [settings, loading]);
 
-  const updateSettings = (updates: Partial<AppSettings>) => {
-    setSettings(prev => ({
-      ...prev,
-      ...updates,
-    }));
-  };
+  const updateSettings = useCallback((updates: Partial<AppSettings>) => {
+    setSettings(prev => {
+      const next = { ...prev, ...updates };
+      // Save immediately to ensure persistence
+      storageRef.current.setItem('settings', JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const getCurrencySymbol = () => {
     switch (settings.currency) {

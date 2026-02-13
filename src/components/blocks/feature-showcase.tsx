@@ -251,7 +251,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                 >
                     {/* Text Content */}
                     <motion.div
-                        className={`flex flex-col items-start gap-6 w-full ${textOrderClass}`}
+                        className={`flex flex-col items-center lg:items-start text-center lg:text-left gap-6 w-full ${textOrderClass}`}
                         variants={itemVariants}
                     >
                         <div className="space-y-4 w-full">
@@ -264,19 +264,19 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             {description}
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                        <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-center lg:justify-start">
                             <button
                                 onClick={() => {
                                     enterDemoMode();
                                     navigate('/dashboard');
                                 }}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300"
                             >
                                 Try It Now
                             </button>
                             <button
                                 onClick={() => navigate('/signup')}
-                                className="border-2 border-border hover:border-primary/50 text-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+                                className="border-2 border-border hover:border-primary/50 text-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300"
                             >
                                 Sign Up Free
                             </button>

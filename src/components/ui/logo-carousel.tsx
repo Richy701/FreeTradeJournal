@@ -74,7 +74,7 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                   className={cn(
                     "h-16 w-auto max-w-[180px] opacity-50 hover:opacity-80 transition-opacity duration-300 object-contain logo-lazy",
                     logo.name === "FundingPips" && "dark:brightness-0 dark:invert",
-                    logo.name === "The5ers" && "brightness-0 dark:brightness-100",
+                    logo.name === "The5ers" && "dark:brightness-0 dark:invert brightness-0",
                     logo.name === "FTMO" && "dark:brightness-0 dark:invert"
                   )}
                   onError={(e) => {

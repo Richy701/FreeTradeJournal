@@ -10,12 +10,13 @@ import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
 import {
-  TrendingUp,
   ArrowRight,
   CandlestickChart,
   LineChart,
   ShieldCheck,
 } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 export default function LandingPage() {
   const { user, loading, enterDemoMode } = useAuth();
@@ -40,10 +41,12 @@ export default function LandingPage() {
       {/* Navigation overlay */}
       <header className="absolute top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
-            <TrendingUp className="h-7 w-7 sm:h-9 sm:w-9 text-primary" />
-            <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground truncate">FreeTradeJournal</span>
-          </div>
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-sm ring-1 ring-primary/10">
+              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
+          </Link>
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md focus:ring-2 focus:ring-ring/50">
               Sign In
@@ -111,13 +114,13 @@ export default function LandingPage() {
                 enterDemoMode();
                 navigate('/dashboard');
               }}
-              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-8 py-3 rounded-full text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 min-w-[200px] focus:ring-2 focus:ring-primary/50"
+              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-8 py-3 rounded-full text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 min-w-[200px] focus:ring-2 focus:ring-primary/50"
             >
               View Live Demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Link to="/signup">
-              <Button variant="outline" className="px-8 py-3 rounded-full font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10 focus:ring-2 focus:ring-ring/50">
+              <Button variant="outline" className="px-8 py-3 rounded-full font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10 focus:ring-2 focus:ring-ring/50">
                 Sign Up Free
               </Button>
             </Link>
