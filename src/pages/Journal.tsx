@@ -27,7 +27,8 @@ import {
   Plus,
   Search,
   Tag,
-  Link2
+  Link2,
+  PenLine
 } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -120,6 +121,8 @@ export default function Journal() {
   const [selectedEntryType, setSelectedEntryType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'title'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   
   const [newEntry, setNewEntry] = useState({
     title: '',
@@ -544,6 +547,23 @@ export default function Journal() {
     }
   };
 
+  const getMoodColor = (mood: string) => {
+    switch (mood) {
+      case 'bullish': return themeColors.profit;
+      case 'bearish': return themeColors.loss;
+      default: return themeColors.primary;
+    }
+  };
+
+  const toggleExpanded = (id: string) => {
+    setExpandedEntries(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
@@ -551,8 +571,8 @@ export default function Journal() {
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
         <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1 min-w-0">
                 <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
                     style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
                   Trading Journal
@@ -564,7 +584,7 @@ export default function Journal() {
                 </p>
               </div>
               {!isDemo && (
-              <div className="hidden sm:flex gap-3">
+              <div className="hidden sm:flex gap-3 shrink-0">
                 {trades.length > 0 && (
                   <div className="flex gap-2">
                     <Button
@@ -1273,46 +1293,50 @@ export default function Journal() {
               return (
                 <Card
                   key={entry.id}
-                  className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+                  className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200 overflow-hidden"
                 >
                   <CardHeader className="pb-2 pt-5 px-5">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base sm:text-lg font-semibold leading-tight text-foreground break-words">
-                          {entry.title}
-                        </CardTitle>
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <span className="text-xs text-muted-foreground">
-                            {format(entry.date, 'MMM dd, yyyy')}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-1 font-medium border text-[10px] px-2 py-0"
-                            style={getMoodStyle(entry.mood)}
-                          >
-                            {getMoodIcon(entry.mood)}
-                            {entry.mood}
-                          </Badge>
-                          {linkedTrade && (
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="p-2 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: `${alpha(getMoodColor(entry.mood), '15')}` }}>
+                          <PenLine className="h-4 w-4" style={{ color: getMoodColor(entry.mood) }} />
+                        </div>
+                        <div className="min-w-0">
+                          <CardTitle className="text-base sm:text-lg font-semibold leading-tight text-foreground break-words">
+                            {entry.title}
+                          </CardTitle>
+                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                            <span className="text-xs text-muted-foreground">
+                              {format(entry.date, 'MMM dd, yyyy')}
+                            </span>
                             <Badge
                               variant="outline"
-                              className="text-[10px] font-semibold border px-2 py-0"
-                              style={{
-                                color: linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss,
-                                backgroundColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '12')}` : `${alpha(themeColors.loss, '12')}`,
-                                borderColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '30')}` : `${alpha(themeColors.loss, '30')}`
-                              }}
+                              className="flex items-center gap-1 font-medium border text-[10px] px-2 py-0"
+                              style={getMoodStyle(entry.mood)}
                             >
-                              {linkedTrade.symbol} {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
+                              {entry.mood}
                             </Badge>
-                          )}
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] font-medium hidden sm:inline-flex px-2 py-0"
-                          >
-                            {entry.entryType === 'general' ? 'General' :
-                             entry.entryType === 'pre-trade' ? 'Pre-Trade' : 'Post-Trade'}
-                          </Badge>
+                            {linkedTrade && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-semibold border px-2 py-0"
+                                style={{
+                                  color: linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss,
+                                  backgroundColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '12')}` : `${alpha(themeColors.loss, '12')}`,
+                                  borderColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '30')}` : `${alpha(themeColors.loss, '30')}`
+                                }}
+                              >
+                                {linkedTrade.symbol} {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
+                              </Badge>
+                            )}
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-medium hidden sm:inline-flex px-2 py-0"
+                            >
+                              {entry.entryType === 'general' ? 'General' :
+                               entry.entryType === 'pre-trade' ? 'Pre-Trade' : 'Post-Trade'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-0.5 shrink-0">
@@ -1320,7 +1344,7 @@ export default function Journal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => startEdit(entry)}
-                          className="h-11 w-11 p-0 hover:bg-muted/50"
+                          className="h-9 w-9 p-0 hover:bg-muted/50"
                         >
                           <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
@@ -1328,7 +1352,7 @@ export default function Journal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteEntry(entry.id)}
-                          className="h-11 w-11 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                          className="h-9 w-9 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1336,25 +1360,44 @@ export default function Journal() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-5 pb-5 pt-2 space-y-3">
-                    <p className="text-sm leading-relaxed text-foreground/90">{entry.content}</p>
+                    <div>
+                      <p className={`text-sm leading-relaxed text-foreground/90 ${!expandedEntries.has(entry.id) ? 'line-clamp-3' : ''}`}>
+                        {entry.content}
+                      </p>
+                      {entry.content.length > 200 && (
+                        <button
+                          onClick={() => toggleExpanded(entry.id)}
+                          className="text-xs font-medium mt-1 hover:underline"
+                          style={{ color: themeColors.primary }}
+                        >
+                          {expandedEntries.has(entry.id) ? 'Show less' : 'Read more'}
+                        </button>
+                      )}
+                    </div>
 
                     {linkedTrade && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 rounded-lg bg-muted/30 text-xs">
-                        <div>
-                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Side</span>
-                          <span className="font-semibold text-foreground">{linkedTrade.side.toUpperCase()}</span>
+                      <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${alpha(linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '20')}`, backgroundColor: `${alpha(linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '05')}` }}>
+                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                          <Link2 className="h-3 w-3" />
+                          Linked Trade
                         </div>
-                        <div>
-                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Entry</span>
-                          <span className="font-semibold text-foreground">{linkedTrade.entryPrice}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Exit</span>
-                          <span className="font-semibold text-foreground">{linkedTrade.exitPrice}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">R:R</span>
-                          <span className="font-semibold text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Side</span>
+                            <span className="font-semibold text-foreground">{linkedTrade.side.toUpperCase()}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Entry</span>
+                            <span className="font-semibold text-foreground">{linkedTrade.entryPrice}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Exit</span>
+                            <span className="font-semibold text-foreground">{linkedTrade.exitPrice}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">R:R</span>
+                            <span className="font-semibold text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1362,15 +1405,14 @@ export default function Journal() {
                     {entry.screenshots && entry.screenshots.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {entry.screenshots.map((screenshot, index) => (
-                          <div key={index} className="group relative">
+                          <div key={index} className="group relative cursor-pointer" onClick={() => setEnlargedImage(screenshot)}>
                             <img
                               src={screenshot}
                               alt={`Chart ${index + 1}`}
-                              className="w-full h-32 sm:h-48 object-cover rounded-lg border border-border/20 hover:border-primary/30 transition-colors cursor-pointer"
-                              onClick={() => window.open(screenshot, '_blank')}
+                              className="w-full h-40 sm:h-56 object-cover rounded-lg border border-border/20 shadow-sm hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
                             />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 text-white px-2 py-1 rounded text-xs">
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-3 py-1.5 rounded-md text-xs font-medium">
                                 Click to enlarge
                               </div>
                             </div>
@@ -1380,7 +1422,7 @@ export default function Journal() {
                     )}
 
                     {((entry.emotions && entry.emotions.length > 0) || entry.tags.length > 0) && (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                      <div className="flex flex-wrap items-center gap-1.5 bg-muted/20 rounded-lg px-3 py-2.5">
                         {entry.emotions && entry.emotions.map((emotion) => (
                           <Badge
                             key={emotion}
@@ -1425,6 +1467,21 @@ export default function Journal() {
       </Button>
       )}
       <Footer7 {...footerConfig} />
+
+      {/* Image Lightbox */}
+      {enlargedImage && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <img
+            src={enlargedImage}
+            alt="Enlarged screenshot"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
