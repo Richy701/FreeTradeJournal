@@ -114,7 +114,7 @@ export default function Login() {
           <p className="text-muted-foreground/85">Sign in to your FreeTradeJournal account</p>
         </div>
 
-        <Card className={`border-border/50 shadow-lg transition-all duration-300 ${formAnimation}`}>
+        <Card className={`shadow-lg transition-all duration-300 ${formAnimation}`}>
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">Sign in</CardTitle>
             <CardDescription className="text-center">

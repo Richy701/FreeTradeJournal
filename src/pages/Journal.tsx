@@ -657,7 +657,7 @@ export default function Journal() {
             ].map((stat, index) => (
               <Card
                 key={index}
-                className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200"
+                className=""
               >
                 <CardHeader className="pb-2 pt-5 px-5">
                   <div
@@ -733,7 +733,7 @@ export default function Journal() {
             </div>
 
             {/* Main Content Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="">
               <CardContent className="p-5 sm:p-6 space-y-5">
                 {/* Title */}
                 <div className="space-y-1.5">
@@ -787,7 +787,7 @@ export default function Journal() {
             </Card>
 
             {/* Trade Link & Tags Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="">
               <CardContent className="p-5 sm:p-6 space-y-5">
                 {/* Trade Link */}
                 <div className="space-y-1.5">
@@ -881,7 +881,7 @@ export default function Journal() {
             </Card>
 
             {/* Emotions Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="">
               <CardContent className="p-5 sm:p-6 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
@@ -919,7 +919,7 @@ export default function Journal() {
             </Card>
 
             {/* Screenshots Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="">
               <CardContent className="p-5 sm:p-6 space-y-3">
                 <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                   <Upload className="h-3 w-3" />
@@ -1102,7 +1102,7 @@ export default function Journal() {
           
           {/* Filter Panel */}
           {showFilters && (
-            <Card className="bg-muted/20 backdrop-blur-sm border-0">
+            <Card className="">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Date Range Filter */}
@@ -1262,7 +1262,7 @@ export default function Journal() {
 
         <div className="grid gap-6">
           {filteredAndSortedEntries.length === 0 ? (
-            <Card className="bg-muted/20 backdrop-blur-sm border-0">
+            <Card className="">
               <CardContent className="flex flex-col items-center justify-center py-20 text-center">
                 <div
                   className="p-5 rounded-2xl mb-6 shadow-sm"
@@ -1293,7 +1293,7 @@ export default function Journal() {
               return (
                 <Card
                   key={entry.id}
-                  className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                  className="overflow-hidden"
                 >
                   <CardHeader className="pb-2 pt-5 px-5">
                     <div className="flex items-start justify-between gap-3">

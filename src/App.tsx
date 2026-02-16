@@ -34,6 +34,7 @@ const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
 const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
 const Changelog = lazy(() => import('@/pages/Changelog'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
   useEffect(() => {
@@ -94,6 +95,9 @@ function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>
+
+                {/* 404 catch-all */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
             </Router>

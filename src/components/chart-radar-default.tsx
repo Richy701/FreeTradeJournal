@@ -1,12 +1,9 @@
 "use client"
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChartLine } from '@fortawesome/free-solid-svg-icons'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, Pie, PieChart, Sector, Label } from "recharts"
 import { useMemo, useEffect, useState } from "react"
-import { PieChartIcon } from "lucide-react"
 
 import {
   Card,
@@ -41,21 +38,23 @@ function hexToHSL(hex: string): [number, number, number] {
 }
 
 function generatePairColors(primary: string, profit: string, loss: string): string[] {
-  const [h, s] = hexToHSL(primary)
+  const [h] = hexToHSL(primary)
+  const sat = 65
+  const lit = 45
   return [
-    `hsl(${h}, ${s}%, 50%)`,
-    `hsl(${(h + 45) % 360}, ${s}%, 50%)`,
-    `hsl(${(h + 90) % 360}, ${s}%, 50%)`,
-    `hsl(${(h + 135) % 360}, ${s}%, 50%)`,
-    `hsl(${(h + 180) % 360}, ${s}%, 50%)`,
-    `hsl(${(h + 225) % 360}, ${s}%, 50%)`,
+    `hsl(${h}, ${sat}%, ${lit}%)`,
+    `hsl(${(h + 45) % 360}, ${sat}%, ${lit}%)`,
+    `hsl(${(h + 90) % 360}, ${sat}%, ${lit}%)`,
+    `hsl(${(h + 135) % 360}, ${sat}%, ${lit}%)`,
+    `hsl(${(h + 180) % 360}, ${sat}%, ${lit}%)`,
+    `hsl(${(h + 225) % 360}, ${sat}%, ${lit}%)`,
     profit,
     loss,
   ]
 }
 
 export function ChartRadarDefault() {
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const pairColors = useMemo(
     () => generatePairColors(themeColors.primary, themeColors.profit, themeColors.loss),
     [themeColors.primary, themeColors.profit, themeColors.loss]
@@ -153,14 +152,9 @@ export function ChartRadarDefault() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
       {/* Radar Chart */}
-      <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
-        <CardHeader className="pb-3 border-b border-border/30">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
-              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{color: themeColors.primary}} />
-            </div>
-            Pairs Performance
-          </CardTitle>
+      <Card className="h-[450px] flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Pairs Performance</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">
             P&L breakdown by currency pairs and instruments
           </CardDescription>
@@ -200,7 +194,7 @@ export function ChartRadarDefault() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="border-t border-border/30 bg-muted/20 py-3">
+        <CardFooter className="border-t border-border/50 py-3">
           <div className="flex w-full items-center justify-between text-sm">
             <span className="text-muted-foreground">{chartData.length} pairs tracked</span>
             <span className="font-semibold" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
@@ -211,14 +205,9 @@ export function ChartRadarDefault() {
       </Card>
 
       {/* Pie Chart */}
-      <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
-        <CardHeader className="pb-3 border-b border-border/30">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
-              <PieChartIcon className="h-4 w-4" style={{color: themeColors.primary}} />
-            </div>
-            Trade Distribution
-          </CardTitle>
+      <Card className="h-[450px] flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold">Trade Distribution</CardTitle>
           <CardDescription className="text-muted-foreground font-medium">
             Trade count distribution across pairs
           </CardDescription>
@@ -283,7 +272,7 @@ export function ChartRadarDefault() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="border-t border-border/30 bg-muted/20 py-3">
+        <CardFooter className="border-t border-border/50 py-3">
           <div className="flex w-full items-center justify-between text-sm">
             <span className="text-muted-foreground">{chartData.length} pairs traded</span>
             <span className="font-semibold">{totalTrades} trades</span>

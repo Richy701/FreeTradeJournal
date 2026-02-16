@@ -20,51 +20,64 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       "description": description || "Free professional trading journal for forex, futures and stock traders"
     };
 
-    // Homepage - SoftwareApplication
+    // Homepage - SoftwareApplication + Organization in @graph
     if (currentPath === '/') {
       return {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "FreeTradeJournal",
-        "applicationCategory": "FinanceApplication",
-        "operatingSystem": "Web",
-        "description": "Free professional trading journal for forex, futures and stock traders. Track trades, analyze performance metrics, manage risk, and improve your trading with advanced analytics.",
-        "url": baseUrl,
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.8",
-          "ratingCount": "350"
-        },
-        "featureList": [
-          "Free trading journal and trade tracker",
-          "Performance analytics dashboard with equity curve",
-          "Risk management tools and position sizing calculator",
-          "Calendar heatmap visualization for daily P&L",
-          "CSV/Excel import for MetaTrader and broker data",
-          "Multi-account support with user-scoped data",
-          "Trading psychology journal with mood tracking",
-          "AI-powered trading insights and pattern detection",
-          "Export trades to CSV/Excel for tax reporting",
-          "Goal setting and progress tracking",
-          "Prop firm dashboard support",
-          "Real-time P&L calculations",
-          "Win rate and performance metrics",
-          "Trade filtering and search functionality"
-        ],
-        "screenshot": "https://freetradejournal.com/images/landing/Trading_dashboard_New_screenshot-1200w.webp",
-        "softwareVersion": "2.0.0",
-        "author": {
-          "@type": "Organization",
-          "name": "FreeTradeJournal",
-          "url": baseUrl
-        },
-        "sameAs": [
-          "https://t.me/+UI6uTKgfswUwNzhk"
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "name": "FreeTradeJournal",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web",
+            "description": "Free professional trading journal for forex, futures and stock traders. Track trades, analyze performance metrics, manage risk, and improve your trading with advanced analytics.",
+            "url": baseUrl,
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "ratingCount": "350"
+            },
+            "featureList": [
+              "Free trading journal and trade tracker",
+              "Performance analytics dashboard with equity curve",
+              "Risk management tools and position sizing calculator",
+              "Calendar heatmap visualization for daily P&L",
+              "CSV/Excel import for MetaTrader and broker data",
+              "Multi-account support with user-scoped data",
+              "Trading psychology journal with mood tracking",
+              "AI-powered trading insights and pattern detection",
+              "Export trades to CSV/Excel for tax reporting",
+              "Goal setting and progress tracking",
+              "Prop firm dashboard support",
+              "Real-time P&L calculations",
+              "Win rate and performance metrics",
+              "Trade filtering and search functionality"
+            ],
+            "screenshot": `${baseUrl}/images/landing/Trading%20dashboard%20New%20screenshot.webp`,
+            "softwareVersion": "2.0.0",
+            "author": {
+              "@type": "Organization",
+              "name": "FreeTradeJournal",
+              "url": baseUrl
+            },
+            "sameAs": [
+              "https://t.me/+UI6uTKgfswUwNzhk"
+            ]
+          },
+          {
+            "@type": "Organization",
+            "name": "FreeTradeJournal",
+            "url": baseUrl,
+            "logo": `${baseUrl}/favicon-512x512.png`,
+            "sameAs": [
+              "https://t.me/+UI6uTKgfswUwNzhk"
+            ]
+          }
         ]
       };
     }
@@ -119,6 +132,13 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
         "name": "Forex Trading Journal - Professional FX Tracker",
         "description": "Professional forex trading journal for FX traders. Track currency pairs, analyze pip performance, manage risk with position sizing.",
         "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Forex Trading Journal", "item": `${baseUrl}${currentPath}` }
+          ]
+        },
         "mainEntity": {
           "@type": "SoftwareApplication",
           "name": "FreeTradeJournal Forex Module",
@@ -151,6 +171,13 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
         "name": "Futures Trading Tracker - Professional Futures Journal",
         "description": "Track futures contracts, analyze tick performance, manage margin requirements for ES, NQ, CL, GC traders.",
         "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Futures Trading Tracker", "item": `${baseUrl}${currentPath}` }
+          ]
+        },
         "mainEntity": {
           "@type": "SoftwareApplication",
           "name": "FreeTradeJournal Futures Module",
@@ -183,6 +210,13 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
         "name": "Prop Firm Dashboard - Funded Trader Journal",
         "description": "Professional dashboard for FTMO, Apex, TopStep traders. Track evaluations, manage drawdown limits, monitor funded accounts.",
         "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Prop Firm Dashboard", "item": `${baseUrl}${currentPath}` }
+          ]
+        },
         "mainEntity": {
           "@type": "SoftwareApplication",
           "name": "FreeTradeJournal Prop Firm Module",

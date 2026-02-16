@@ -19,24 +19,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, Calendar } from 'lucide-react';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
-// Removed unused: TrendingUp, DollarSign, Crosshair
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faDollarSign, 
-  faBullseye, 
-  faTrophy, 
-  faBalanceScale, 
-  faChartLine, 
-  faArrowTrendUp, 
-  faArrowTrendDown, 
-  faFire, 
-  faStar, 
-  faTimesCircle, 
-  faCalendar, 
-  faCheckCircle, 
-  faExclamationTriangle 
+import {
+  faDollarSign,
+  faBullseye,
+  faTrophy,
+  faBalanceScale,
+  faCheckCircle,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker } from '@/components/ui/date-picker';
@@ -943,10 +935,10 @@ export default function TradeLog() {
   // Enhanced loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen w-full bg-background">
         <SiteHeader />
         {/* Header Skeleton */}
-        <div className="border-b bg-card/80 backdrop-blur-xl">
+        <div className="border-b">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex justify-between items-center">
               <div className="space-y-2">
@@ -966,7 +958,7 @@ export default function TradeLog() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             {[...Array(4)].map((_, i) => (
-              <Card key={i} className="bg-muted/30 backdrop-blur-sm border-0 animate-pulse">
+              <Card key={i} className="animate-pulse">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
@@ -982,16 +974,13 @@ export default function TradeLog() {
           </div>
 
           {/* Table Skeleton */}
-          <Card className="bg-muted/30 backdrop-blur-sm border-0">
+          <Card className="">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-muted animate-pulse rounded-lg"></div>
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <div className="h-5 w-28 bg-muted animate-pulse rounded"></div>
                     <div className="h-3 w-44 bg-muted animate-pulse rounded"></div>
                   </div>
-                </div>
                 <div className="h-6 w-20 bg-muted animate-pulse rounded-full"></div>
               </div>
             </CardHeader>
@@ -1010,19 +999,18 @@ export default function TradeLog() {
 
   return (
     <>
-      <div className="min-h-screen w-full bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen w-full bg-background">
       <SiteHeader />
-      {/* Enhanced Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-20 shadow-sm">
+      {/* Header */}
+      <div className="border-b sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-clip-text text-transparent" 
-                  style={{backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})`}}>
+              <h1 className="text-2xl font-bold text-foreground">
                 Trade Log
               </h1>
-              <p className="text-muted-foreground text-lg">
-                Track, analyze, and improve your trading performance
+              <p className="text-sm text-muted-foreground">
+                {trades.length} trades recorded
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1599,11 +1587,11 @@ export default function TradeLog() {
                         <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="px-8">
                           Cancel
                         </Button>
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           className="px-8"
                           style={{
-                            background: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'CC')})`,
+                            backgroundColor: themeColors.primary,
                             color: themeColors.primaryButtonText
                           }}
                         >
@@ -1617,285 +1605,162 @@ export default function TradeLog() {
 
       {/* Main Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
-        {/* Enhanced Trading Statistics */}
-        <div className="space-y-6 mb-8">
-          {/* Primary Stats Row */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in slide-in-from-bottom-2 duration-500">
-            {/* Total P&L Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+        {/* Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            {/* Total P&L */}
+            <Card>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total P&L</p>
-                    <p className="text-3xl font-black tracking-tight"
-                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                      {quickStats.totalPnL >= 0 ? '+' : '-'}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs">
-                      <FontAwesomeIcon
-                        icon={quickStats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown}
-                        className="h-3 w-3"
-                        style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
-                      />
-                      <span className="text-muted-foreground font-medium">
-                        {((quickStats.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100).toFixed(1)}% of account
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-lg shadow-sm"
-                       style={{ backgroundColor: `${alpha(quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, '20')}` }}>
-                    <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4"
-                                   style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }} />
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" />
+                  Total P&L
+                </p>
+                <p className="text-2xl font-bold tabular-nums"
+                   style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                  {quickStats.totalPnL >= 0 ? '+' : '-'}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {((quickStats.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100).toFixed(1)}% of account
+                </p>
               </CardContent>
             </Card>
 
-            {/* Win Rate Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+            {/* Win Rate */}
+            <Card>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</p>
-                    <div className="flex items-baseline gap-1">
-                      <p className="text-3xl font-black tracking-tight" style={{ color: themeColors.primary }}>
-                        {quickStats.winRate.toFixed(0)}
-                      </p>
-                      <span className="text-lg font-bold text-muted-foreground">%</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                      <span>{trades.filter(t => t.pnl > 0).length}W</span>
-                      <span>/</span>
-                      <span>{trades.filter(t => t.pnl < 0).length}L</span>
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
-                    <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faBullseye} className="h-3 w-3" />
+                  Win Rate
+                </p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {quickStats.winRate.toFixed(0)}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trades.filter(t => t.pnl > 0).length}W / {trades.filter(t => t.pnl < 0).length}L
+                </p>
               </CardContent>
             </Card>
 
-            {/* Best Trade Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+            {/* Best Trade */}
+            <Card>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Best Trade</p>
-                    <div className="flex items-baseline gap-1">
-                      <p className="text-3xl font-black tracking-tight" style={{ color: themeColors.profit }}>
-                        +${trades.length > 0 ? Math.max(0, ...trades.map(t => t.pnl)).toFixed(0) : '0'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground font-medium">
-                        {trades.length > 0 ? (trades.find(t => t.pnl === Math.max(0, ...trades.map(t => t.pnl)))?.symbol || '--') : '--'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.profit, '20')}` }}>
-                    <FontAwesomeIcon icon={faTrophy} className="h-4 w-4" style={{ color: themeColors.profit }} />
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faTrophy} className="h-3 w-3" />
+                  Best Trade
+                </p>
+                <p className="text-2xl font-bold tabular-nums" style={{ color: themeColors.profit }}>
+                  +${trades.length > 0 ? Math.max(0, ...trades.map(t => t.pnl)).toFixed(0) : '0'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trades.length > 0 ? (trades.find(t => t.pnl === Math.max(0, ...trades.map(t => t.pnl)))?.symbol || '--') : '--'}
+                </p>
               </CardContent>
             </Card>
 
-            {/* Average R:R Card */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+            {/* Avg R:R */}
+            <Card>
               <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg R:R</p>
-                    <div className="flex items-baseline gap-1">
-                      <p className="text-3xl font-black tracking-tight" style={{ color: themeColors.primary }}>
-                        {quickStats.avgRR > 0 ? quickStats.avgRR.toFixed(1) : '--'}
-                      </p>
-                      <span className="text-lg font-bold text-muted-foreground">:1</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <FontAwesomeIcon
-                        icon={quickStats.avgRR >= 1.5 ? faCheckCircle : faExclamationTriangle}
-                        className="h-3 w-3"
-                        style={{ color: quickStats.avgRR >= 1.5 ? themeColors.profit : themeColors.loss }}
-                      />
-                      <span className="text-muted-foreground font-medium">
-                        {quickStats.avgRR >= 1.5 ? 'Good ratio' : 'Needs work'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
-                    <FontAwesomeIcon icon={faBalanceScale} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Secondary Stats Row */}
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 animate-in slide-in-from-bottom-2 duration-500 delay-100">
-            {/* Total Trades */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4 text-center">
-                <div className="space-y-1">
-                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
-                  <p className="text-xl font-bold text-foreground">{quickStats.totalTrades}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Total Trades</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Average Win */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4 text-center">
-                <div className="space-y-1">
-                  <FontAwesomeIcon icon={faArrowTrendUp} className="h-4 w-4 mx-auto" style={{ color: themeColors.profit }} />
-                  <p className="text-xl font-bold" style={{ color: themeColors.profit }}>
-                    ${(() => {
-                      const winningTrades = trades.filter(t => t.pnl > 0);
-                      return winningTrades.length > 0
-                        ? (winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length).toFixed(0)
-                        : '0';
-                    })()}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">Avg Win</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Average Loss */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4 text-center">
-                <div className="space-y-1">
-                  <FontAwesomeIcon icon={faArrowTrendDown} className="h-4 w-4 mx-auto" style={{ color: themeColors.loss }} />
-                  <p className="text-xl font-bold" style={{ color: themeColors.loss }}>
-                    ${(() => {
-                      const losingTrades = trades.filter(t => t.pnl < 0);
-                      return losingTrades.length > 0
-                        ? Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length).toFixed(0)
-                        : '0';
-                    })()}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">Avg Loss</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Profit Factor */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4 text-center">
-                <div className="space-y-1">
-                  <FontAwesomeIcon icon={faFire} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
-                  <p className="text-xl font-bold text-foreground">
-                    {(() => {
-                      const totalWins = trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
-                      const totalLosses = Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
-                      if (totalLosses === 0 && totalWins > 0) return '∞';
-                      if (totalLosses === 0) return '--';
-                      return (totalWins / totalLosses).toFixed(1);
-                    })()}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">Profit Factor</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Current Streak */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4 text-center">
-                <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faBalanceScale} className="h-3 w-3" />
+                  Avg R:R
+                </p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '--'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
                   {(() => {
-                    if (trades.length === 0) return <FontAwesomeIcon icon={faStar} className="h-4 w-4 mx-auto text-muted-foreground" />
-                    const lastTrade = trades[trades.length - 1];
-                    let streak = 0;
-                    let isWinning = lastTrade.pnl > 0;
-                    for (let i = trades.length - 1; i >= 0; i--) {
-                      if ((trades[i].pnl > 0) === isWinning) {
-                        streak++;
-                      } else {
-                        break;
-                      }
-                    }
-                    return (
-                      <>
-                        <FontAwesomeIcon
-                          icon={isWinning ? faFire : faTimesCircle}
-                          className="h-4 w-4 mx-auto"
-                          style={{ color: isWinning ? themeColors.profit : themeColors.loss }}
-                        />
-                        <p className="text-xl font-bold" style={{ color: isWinning ? themeColors.profit : themeColors.loss }}>
-                          {streak}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-medium">
-                          {isWinning ? 'Win' : 'Loss'} Streak
-                        </p>
-                      </>
-                    );
+                    const validRRTrades = trades.filter(t => t.riskReward && t.riskReward > 0);
+                    return `${validRRTrades.length} trades with R:R`;
                   })()}
-                </div>
+                </p>
               </CardContent>
             </Card>
+        </div>
 
-            {/* This Month */}
-            <Card className="bg-muted/20 backdrop-blur-sm border-0 hover:shadow-md transition-shadow duration-200">
-              <CardContent className="p-4 text-center">
-                <div className="space-y-1">
-                  <FontAwesomeIcon icon={faCalendar} className="h-4 w-4 mx-auto" style={{ color: themeColors.primary }} />
-                  <p className="text-xl font-bold" style={{
-                    color: (() => {
-                      const now = new Date();
-                      const thisMonth = now.getMonth();
-                      const thisYear = now.getFullYear();
-                      const monthlyPnL = trades
-                        .filter(t => {
-                          const tradeDate = new Date(t.exitTime);
-                          return tradeDate.getMonth() === thisMonth && tradeDate.getFullYear() === thisYear;
-                        })
-                        .reduce((sum, t) => sum + t.pnl, 0);
-                      return monthlyPnL >= 0 ? themeColors.profit : themeColors.loss;
-                    })()
-                  }}>
-                    {(() => {
-                      const now = new Date();
-                      const thisMonth = now.getMonth();
-                      const thisYear = now.getFullYear();
-                      const monthlyPnL = trades
-                        .filter(t => {
-                          const tradeDate = new Date(t.exitTime);
-                          return tradeDate.getMonth() === thisMonth && tradeDate.getFullYear() === thisYear;
-                        })
-                        .reduce((sum, t) => sum + t.pnl, 0);
-                      return `${monthlyPnL >= 0 ? '+' : ''}$${monthlyPnL.toFixed(0)}`;
-                    })()}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">This Month</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Secondary stats strip */}
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground mb-6 px-1">
+          <span>{quickStats.totalTrades} trades</span>
+          <span className="hidden sm:inline text-border">|</span>
+          <span>
+            Avg win{' '}
+            <span className="font-medium" style={{ color: themeColors.profit }}>
+              ${(() => {
+                const w = trades.filter(t => t.pnl > 0);
+                return w.length > 0 ? (w.reduce((s, t) => s + t.pnl, 0) / w.length).toFixed(0) : '0';
+              })()}
+            </span>
+          </span>
+          <span className="hidden sm:inline text-border">|</span>
+          <span>
+            Avg loss{' '}
+            <span className="font-medium" style={{ color: themeColors.loss }}>
+              ${(() => {
+                const l = trades.filter(t => t.pnl < 0);
+                return l.length > 0 ? Math.abs(l.reduce((s, t) => s + t.pnl, 0) / l.length).toFixed(0) : '0';
+              })()}
+            </span>
+          </span>
+          <span className="hidden sm:inline text-border">|</span>
+          <span>
+            PF{' '}
+            <span className="font-medium text-foreground">
+              {(() => {
+                const totalWins = trades.filter(t => t.pnl > 0).reduce((s, t) => s + t.pnl, 0);
+                const totalLosses = Math.abs(trades.filter(t => t.pnl < 0).reduce((s, t) => s + t.pnl, 0));
+                if (totalLosses === 0 && totalWins > 0) return '∞';
+                if (totalLosses === 0) return '--';
+                return (totalWins / totalLosses).toFixed(1);
+              })()}
+            </span>
+          </span>
+          <span className="hidden sm:inline text-border">|</span>
+          <span>
+            Streak{' '}
+            {(() => {
+              if (trades.length === 0) return <span className="font-medium text-foreground">--</span>;
+              const lastTrade = trades[trades.length - 1];
+              let streak = 0;
+              const isWinning = lastTrade.pnl > 0;
+              for (let i = trades.length - 1; i >= 0; i--) {
+                if ((trades[i].pnl > 0) === isWinning) streak++;
+                else break;
+              }
+              return (
+                <span className="font-medium" style={{ color: isWinning ? themeColors.profit : themeColors.loss }}>
+                  {streak}{isWinning ? 'W' : 'L'}
+                </span>
+              );
+            })()}
+          </span>
+          <span className="hidden sm:inline text-border">|</span>
+          <span>
+            This month{' '}
+            {(() => {
+              const now = new Date();
+              const monthlyPnL = trades
+                .filter(t => {
+                  const d = new Date(t.exitTime);
+                  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                })
+                .reduce((s, t) => s + t.pnl, 0);
+              return (
+                <span className="font-medium" style={{ color: monthlyPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                  {monthlyPnL >= 0 ? '+' : ''}${monthlyPnL.toFixed(0)}
+                </span>
+              );
+            })()}
+          </span>
         </div>
 
         {/* Trades Table */}
-        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+        <Card className="">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
-                  <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                </div>
-                <div>
-                  <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
-                  <CardDescription>
-                    View and manage your trading records
-                  </CardDescription>
-                </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
+                <CardDescription>
+                  {trades.length} {trades.length === 1 ? 'trade' : 'trades'} recorded
+                </CardDescription>
               </div>
-              <Badge
-                variant="outline"
-                className="text-xs font-medium"
-                style={{ borderColor: `${alpha(themeColors.primary, '40')}`, color: themeColors.primary }}
-              >
-                {trades.length} {trades.length === 1 ? 'Trade' : 'Trades'}
-              </Badge>
             </div>
           </CardHeader>
           
@@ -1950,7 +1815,7 @@ export default function TradeLog() {
                   </TableHeader>
                   <TableBody>
                     {paginatedTrades.map((trade) => (
-                      <TableRow key={trade.id} className="hover:bg-muted/30 transition-colors duration-200 border-b border-border/20" style={{ borderLeft: `3px solid ${alpha(trade.pnl >= 0 ? themeColors.profit : themeColors.loss, '40')}` }}>
+                      <TableRow key={trade.id} className="hover:bg-muted/30 border-b border-border/20">
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
@@ -2029,7 +1894,7 @@ export default function TradeLog() {
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3 px-4 pb-4">
                 {paginatedTrades.map((trade) => (
-                  <div key={trade.id} className="rounded-xl overflow-hidden transition-shadow duration-200 hover:shadow-md" style={{ border: `1px solid ${alpha(trade.pnl >= 0 ? themeColors.profit : themeColors.loss, '20')}`, borderLeft: `3px solid ${alpha(trade.pnl >= 0 ? themeColors.profit : themeColors.loss, '60')}` }}>
+                  <div key={trade.id} className="rounded-lg border border-border overflow-hidden">
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -2124,7 +1989,7 @@ export default function TradeLog() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 border-t border-border/20 bg-muted/10">
+              <div className="flex items-center justify-between p-4 border-t border-border/30">
                 <div className="text-sm text-muted-foreground">
                   Showing {startIndex + 1} to {Math.min(endIndex, trades.length)} of {trades.length} trades
                 </div>
@@ -2184,26 +2049,11 @@ export default function TradeLog() {
       {/* Column Mapping Dialog */}
       <Dialog open={!!columnMapping?.show} onOpenChange={(open) => { if (!open) setColumnMapping(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-          <DialogHeader className="pb-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="p-3 rounded-xl shadow-sm"
-                style={{
-                  backgroundColor: `${alpha(themeColors.primary, '10')}`,
-                  border: `1px solid ${alpha(themeColors.primary, '20')}`
-                }}
-              >
-                <Upload className="h-6 w-6" style={{ color: themeColors.primary }} />
-              </div>
-              <div className="flex-1">
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                  Map Your CSV Columns
-                </DialogTitle>
-                <DialogDescription className="text-base text-muted-foreground mt-1">
+          <DialogHeader>
+                <DialogTitle>Map Your CSV Columns</DialogTitle>
+                <DialogDescription>
                   We couldn't auto-detect your CSV format. Please map your columns below.
                 </DialogDescription>
-              </div>
-            </div>
           </DialogHeader>
 
           {columnMapping && (
@@ -2291,26 +2141,11 @@ export default function TradeLog() {
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader className="pb-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="p-3 rounded-xl shadow-sm"
-                style={{
-                  backgroundColor: `${alpha(themeColors.primary, '10')}`,
-                  border: `1px solid ${alpha(themeColors.primary, '20')}`
-                }}
-              >
-                <FileText className="h-6 w-6" style={{ color: themeColors.primary }} />
-              </div>
-              <div className="flex-1">
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                  Import Preview
-                </DialogTitle>
-                <DialogDescription className="text-base text-muted-foreground mt-1">
-                  Review and validate your trading data before importing
+          <DialogHeader>
+                <DialogTitle>Import Preview</DialogTitle>
+                <DialogDescription>
+                  Review your trading data before importing.
                 </DialogDescription>
-              </div>
-            </div>
           </DialogHeader>
 
           {csvPreview.parseResult && (

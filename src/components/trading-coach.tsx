@@ -724,18 +724,15 @@ export function TradingCoach() {
   return (
     <Card
       ref={cardRef}
-      className="hover:shadow-lg transition-shadow duration-200 border-0 bg-gradient-to-br from-muted/30 to-muted/10"
+      className=""
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={() => setIsPaused(true)}
       onTouchEnd={() => setIsPaused(false)}
     >
-      <CardHeader className="pb-3 border-b border-border/30">
+      <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-lg font-semibold">
-            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
-              <FontAwesomeIcon icon={faBrain} className="h-4 w-4" style={{color: themeColors.primary}} />
-            </div>
             <span>AI Trading Coach</span>
             {currentTip.type === 'critical' && (
               <span

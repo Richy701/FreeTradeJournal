@@ -8,14 +8,14 @@ import {
   faFire,
   faChartBar
 } from '@fortawesome/free-solid-svg-icons'
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
 import { Footer7 } from "@/components/ui/footer-7"
 import { footerConfig } from "@/components/ui/footer-config"
 import { useMemo } from 'react'
 
 export default function Goals() {
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const userStorage = useUserStorage()
 
   // Get trades for statistics
@@ -97,78 +97,39 @@ export default function Goals() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      {/* Frosted Glass Header */}
-      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+      {/* Header */}
+      <div className="border-b">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent"
-                style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
-              Goals & Risk Management
-            </h1>
-            <p className="text-muted-foreground text-base">
-              {subtitle}
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Goals & Risk Management
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {subtitle}
+          </p>
         </div>
       </div>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Glass Stat Cards */}
+        {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
-            <Card
-              key={index}
-              className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200"
-            >
-              <CardHeader className="pb-2 pt-5 px-5">
-                <div className="flex items-center justify-between">
-                  <div
-                    className="p-2.5 rounded-lg shadow-sm"
-                    style={{ backgroundColor: `${stat.color}20` }}
-                  >
-                    <FontAwesomeIcon icon={stat.icon} className="h-4 w-4" style={{ color: stat.color }} />
-                  </div>
-                  {stat.trend && (
-                    <span
-                      className="text-xs px-2 py-1 rounded-full font-medium"
-                      style={{ backgroundColor: `${alpha(themeColors.profit, '15')}`, color: themeColors.profit }}
-                    >
-                      {stat.trend}{stat.value}
-                    </span>
+            <Card key={index}>
+              <CardContent className="p-5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={stat.icon} className="h-3 w-3" />
+                  {stat.label}
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold" style={{ color: stat.color }}>
+                    {stat.value}
+                  </span>
+                  {stat.total !== undefined && (
+                    <span className="text-sm text-muted-foreground">/ {stat.total}</span>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent className="px-5 pb-5">
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold" style={{ color: stat.color }}>
-                      {stat.value}
-                    </span>
-                    {stat.total !== undefined && (
-                      <span className="text-sm text-muted-foreground">of {stat.total}</span>
-                    )}
-                  </div>
-                  <CardTitle className="text-sm font-medium text-foreground">{stat.label}</CardTitle>
-                  {stat.subtitle && (
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-                  )}
-                </div>
-                {stat.total !== undefined && stat.total > 0 && (
-                  <div className="mt-3">
-                    <div className="w-full bg-muted/50 rounded-full h-1.5">
-                      <div
-                        className="h-1.5 rounded-full transition-all duration-300"
-                        style={{
-                          backgroundColor: stat.color,
-                          width: `${Math.min((stat.value / stat.total) * 100, 100)}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}

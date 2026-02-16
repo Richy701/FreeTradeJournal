@@ -328,7 +328,7 @@ export default function Settings() {
                 {/* Enhanced Theme & Regional Settings */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                   {/* Theme Settings Card */}
-                  <Card className="xl:col-span-2 bg-muted/30 backdrop-blur-sm border-0">
+                  <Card className="xl:col-span-2">
                     <CardHeader className="pb-4">
                       <CardTitle className="flex items-center gap-2 text-base">
                         <FontAwesomeIcon icon={faSun} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -377,7 +377,7 @@ export default function Settings() {
                   </Card>
 
                   {/* Regional Settings Card */}
-                  <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                  <Card className="">
                     <CardHeader className="pb-4">
                       <CardTitle className="flex items-center gap-2 text-base">
                         <FontAwesomeIcon icon={faGlobe} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -443,7 +443,7 @@ export default function Settings() {
                 </div>
 
                 {/* Color Theme Selection */}
-                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                <Card className="">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <FontAwesomeIcon icon={faPalette} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -512,7 +512,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                <Card className="">
                   <CardContent className="space-y-6 pt-6">
                     {/* Enhanced Account List */}
                     <div className="grid gap-4">
@@ -919,7 +919,7 @@ export default function Settings() {
             </TabsContent>
 
             <TabsContent value="trading" className="mt-6">
-              <Card className="bg-muted/30 backdrop-blur-sm border-0">
+              <Card className="">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -1116,7 +1116,7 @@ export default function Settings() {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Risk Parameters Card */}
-                <Card className="lg:col-span-2 bg-muted/30 backdrop-blur-sm border-0">
+                <Card className="lg:col-span-2">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <FontAwesomeIcon icon={faCalculator} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -1191,7 +1191,7 @@ export default function Settings() {
                 </Card>
 
                 {/* Risk Calculator Card */}
-                <Card className="bg-muted/30 backdrop-blur-sm border-0">
+                <Card className="">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.profit }} />
@@ -1232,7 +1232,7 @@ export default function Settings() {
               </div>
 
               {/* Enhanced Risk Guidelines */}
-              <Card className="bg-muted/30 backdrop-blur-sm border-0">
+              <Card className="">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -1314,7 +1314,7 @@ export default function Settings() {
 
             <TabsContent value="data">
           <div className="space-y-6">
-            <Card className="bg-muted/30 backdrop-blur-sm border-0">
+            <Card className="">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <FontAwesomeIcon icon={faDatabase} className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -1353,7 +1353,7 @@ export default function Settings() {
             </Card>
 
             {/* Account section */}
-            <Card className="bg-muted/30 backdrop-blur-sm border-0">
+            <Card className="">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base">Account</CardTitle>
                 <CardDescription>
@@ -1373,7 +1373,7 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            <Card className="bg-muted/30 backdrop-blur-sm border-0" style={{ border: `1px solid hsl(var(--destructive) / 0.3)` }}>
+            <Card className="" style={{ border: `1px solid hsl(var(--destructive) / 0.3)` }}>
               <CardHeader className="pb-4">
                 <CardTitle className="text-destructive flex items-center gap-2 text-base">
                   <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" />

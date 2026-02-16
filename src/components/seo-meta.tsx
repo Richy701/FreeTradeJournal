@@ -70,6 +70,11 @@ const pageMeta: Record<string, SEOMetaProps> = {
     description: 'FreeTradeJournal cookie policy. Learn about the cookies we use to improve your trading journal experience.',
     keywords: 'cookie policy, cookies, tracking, privacy'
   },
+  '/changelog': {
+    title: 'Changelog | FreeTradeJournal - Latest Updates & New Features',
+    description: 'See what\'s new in FreeTradeJournal. Latest updates, new features, bug fixes, and improvements to your free trading journal.',
+    keywords: 'changelog, updates, release notes, new features, trading journal updates'
+  },
   '/forex-trading-journal': {
     title: 'Forex Trading Journal - Free Professional FX Trading Tracker | FreeTradeJournal',
     description: 'Professional forex trading journal for FX traders. Track currency pairs, analyze pip performance, manage risk with position sizing. Features P&L tracking, win rate analysis, and drawdown management. 100% free.',
@@ -112,10 +117,15 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     updateMetaTag('og:image', finalImage, 'property');
     updateMetaTag('og:url', canonicalUrl, 'property');
 
+    // Update Open Graph image alt
+    const imageAlt = 'FreeTradeJournal dashboard showing trading analytics and performance metrics';
+    updateMetaTag('og:image:alt', imageAlt, 'property');
+
     // Update Twitter tags
     updateMetaTag('twitter:title', finalTitle);
     updateMetaTag('twitter:description', finalDescription);
     updateMetaTag('twitter:image', finalImage);
+    updateMetaTag('twitter:image:alt', imageAlt);
 
     // Update canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;

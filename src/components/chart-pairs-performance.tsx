@@ -87,14 +87,9 @@ export function ChartPairsPerformance() {
   const losingPairs = chartData.filter((item: any) => item.pnl < 0).length
 
   return (
-    <Card className="h-[450px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-border/50">
-      <CardHeader className="pb-3 border-b border-border/30">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <div className="p-2 rounded-lg" style={{backgroundColor: `${alpha(themeColors.primary, '20')}`}}>
-            <FontAwesomeIcon icon={faChartBar} className="h-4 w-4" style={{color: themeColors.primary}} />
-          </div>
-          Trading Pairs Performance
-        </CardTitle>
+    <Card className="h-[450px] flex flex-col">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">Trading Pairs Performance</CardTitle>
         <CardDescription className="text-muted-foreground font-medium">
           P&L breakdown by currency pairs and trading instruments
         </CardDescription>
@@ -147,7 +142,7 @@ export function ChartPairsPerformance() {
           </div>
         )}
       </CardContent>
-      <CardFooter className="border-t border-border/30 bg-muted/20">
+      <CardFooter className="border-t border-border/50">
         <div className="flex w-full items-center justify-between text-sm">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-medium leading-none">

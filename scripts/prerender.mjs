@@ -30,6 +30,8 @@ const ROUTES = [
   "/forex-trading-journal",
   "/futures-trading-tracker",
   "/prop-firm-dashboard",
+  "/changelog",
+  "/404",
 ];
 
 // ── Tiny static file server ──────────────────────────────────────────────────

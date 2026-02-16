@@ -61,7 +61,9 @@
       "Bash(do cwebp -q 80 -resize $size 0 \"goals and risk management new screenshot.png\" -o \"goals_and_risk_management_new_screenshot-$sizew.webp\")",
       "Bash(cwebp:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(lsof:*)",
+      "Bash(npm i:*)"
     ],
     "deny": []
   }

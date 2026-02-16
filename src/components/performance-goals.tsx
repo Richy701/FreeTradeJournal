@@ -507,19 +507,17 @@ export function PerformanceGoals() {
   return (
     <div className="space-y-6">
       {/* ── Goals Card ── */}
-      <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+      <Card className="">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: alpha(themeColors.primary, '20') }}>
-                <FontAwesomeIcon icon={faBullseye} className="h-4 w-4" style={{ color: themeColors.primary }} />
-              </div>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <FontAwesomeIcon icon={faBullseye} className="h-4 w-4 text-muted-foreground" />
               Active Goals
             </CardTitle>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-xs font-medium" style={{ borderColor: alpha(themeColors.profit, '40'), color: themeColors.profit }}>
-                {achievedGoals.length}/{goalProgress.length} Achieved
-              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {achievedGoals.length}/{goalProgress.length} achieved
+              </span>
               <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
                 <DialogTrigger asChild>
                   <Button
@@ -564,10 +562,8 @@ export function PerformanceGoals() {
                               addGoal()
                             }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '20') }}>
-                                <FontAwesomeIcon icon={preset.icon} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                              </div>
+                            <div className="flex items-center gap-2.5">
+                              <FontAwesomeIcon icon={preset.icon} className="h-3.5 w-3.5 text-muted-foreground" />
                               <div>
                                 <div className="font-medium text-sm">{preset.label}</div>
                                 <div className="text-xs text-muted-foreground capitalize">
@@ -725,11 +721,7 @@ export function PerformanceGoals() {
                 return (
                   <div
                     key={goal.id}
-                    className="group relative rounded-xl p-4 transition-shadow duration-200 hover:shadow-md"
-                    style={{
-                      backgroundColor: goal.achieved ? alpha(themeColors.profit, '08') : undefined,
-                      border: `1px solid ${goal.achieved ? alpha(themeColors.profit, '30') : 'hsl(var(--border) / 0.3)'}`,
-                    }}
+                    className="group relative rounded-lg border border-border p-4"
                   >
                     <div className="flex items-start gap-4">
                       {/* Circular progress ring */}
@@ -798,13 +790,11 @@ export function PerformanceGoals() {
       </Card>
 
       {/* ── Risk Rules Card ── */}
-      <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+      <Card className="">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: alpha(themeColors.primary, '20') }}>
-                <FontAwesomeIcon icon={faShieldAlt} className="h-4 w-4" style={{ color: themeColors.primary }} />
-              </div>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <FontAwesomeIcon icon={faShieldAlt} className="h-4 w-4 text-muted-foreground" />
               Risk Management Rules
             </CardTitle>
             <Button
@@ -836,27 +826,17 @@ export function PerformanceGoals() {
             riskRules.map(rule => (
               <div
                 key={rule.id}
-                className="group flex items-center justify-between rounded-xl p-3.5 transition-shadow duration-200"
-                style={{
-                  backgroundColor: rule.enabled ? alpha(themeColors.primary, '08') : undefined,
-                  border: `1px solid ${rule.enabled ? alpha(themeColors.primary, '20') : 'hsl(var(--border) / 0.3)'}`,
-                }}
+                className="group flex items-center justify-between rounded-lg border border-border p-3.5"
               >
                 <div className="flex items-center gap-3">
                   <Switch
                     checked={rule.enabled}
                     onCheckedChange={() => toggleRiskRule(rule.id)}
                   />
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: alpha(rule.enabled ? themeColors.primary : 'hsl(var(--muted))', '20') }}
-                  >
-                    <FontAwesomeIcon
-                      icon={getRuleIcon(rule.type)}
-                      className="h-3.5 w-3.5"
-                      style={{ color: rule.enabled ? themeColors.primary : 'hsl(var(--muted-foreground))' }}
-                    />
-                  </div>
+                  <FontAwesomeIcon
+                    icon={getRuleIcon(rule.type)}
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                  />
                   <div>
                     <span className="text-sm font-medium text-foreground">
                       {getRuleLabel(rule.type)}
@@ -965,12 +945,10 @@ export function PerformanceGoals() {
 
       {/* ── Achievements Card ── */}
       {achievedGoals.length > 0 && (
-        <Card className="bg-muted/30 backdrop-blur-sm border-0 hover:shadow-lg transition-shadow duration-200">
+        <Card className="">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: alpha(themeColors.profit, '20') }}>
-                <FontAwesomeIcon icon={faTrophy} className="h-4 w-4" style={{ color: themeColors.profit }} />
-              </div>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <FontAwesomeIcon icon={faTrophy} className="h-4 w-4 text-muted-foreground" />
               Achievements
             </CardTitle>
           </CardHeader>
@@ -979,33 +957,26 @@ export function PerformanceGoals() {
               {achievedGoals.map(goal => (
                 <div
                   key={goal.id}
-                  className="relative rounded-xl p-4 text-center transition-shadow duration-200 hover:shadow-md"
-                  style={{
-                    backgroundColor: alpha(themeColors.profit, '08'),
-                    border: `1px solid ${alpha(themeColors.profit, '25')}`,
-                  }}
+                  className="rounded-lg border border-border p-4"
                 >
-                  <div
-                    className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
-                    style={{ backgroundColor: alpha(themeColors.profit, '15') }}
-                  >
+                  <div className="flex items-center gap-2 mb-1">
                     <FontAwesomeIcon
                       icon={goal.type === 'profit' ? faDollarSign
                         : goal.type === 'winRate' ? faStar
                         : goal.type === 'trades' ? faBolt
                         : faMedal}
-                      className="h-5 w-5"
+                      className="h-3.5 w-3.5"
                       style={{ color: themeColors.profit }}
                     />
+                    <span className="text-sm font-semibold text-foreground">
+                      {getGoalLabel(goal.type)}
+                    </span>
                   </div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {getGoalLabel(goal.type)}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1 capitalize">
+                  <div className="text-xs text-muted-foreground capitalize">
                     {goal.period} · {formatTarget(goal)}
                   </div>
                   {goal.achievedAt && (
-                    <div className="text-[10px] text-muted-foreground mt-2">
+                    <div className="text-[10px] text-muted-foreground mt-1">
                       {new Date(goal.achievedAt).toLocaleDateString()}
                     </div>
                   )}
