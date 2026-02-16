@@ -444,7 +444,7 @@ export function CalendarHeatmap() {
   const roundedPnl = (pnl: number) => Math.round(pnl * 100) / 100
 
   const getPnLColor = (pnl: number, trades: number) => {
-    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-muted/20 transition-colors duration-200 cursor-default'
+    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-muted/20 cursor-default'
 
     const rounded = roundedPnl(pnl)
     if (rounded > 0) {
@@ -587,18 +587,13 @@ export function CalendarHeatmap() {
   }
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200 border-0">
-      <CardHeader className="pb-4 border-b border-border/30">
+    <Card>
+      <CardHeader className="pb-4">
         <div className="space-y-4">
-          {/* Title and icon - Mobile friendly v2 */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{backgroundColor: alpha(themeColors.primary, '20')}}>
-              <FontAwesomeIcon icon={faCalendarDays} className="h-4 w-4" style={{color: themeColors.primary}} />
-            </div>
-            <CardTitle className="text-lg sm:text-xl font-semibold">
-              Trading Calendar
-            </CardTitle>
-          </div>
+          {/* Title - Mobile friendly v2 */}
+          <CardTitle className="text-lg sm:text-xl font-semibold">
+            Trading Calendar
+          </CardTitle>
 
           {/* Navigation */}
           <div className="flex items-center justify-between sm:justify-start gap-3">
@@ -716,6 +711,18 @@ export function CalendarHeatmap() {
             </div>
             <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
               {monthlyStats.totalTrades}
+            </div>
+          </div>
+
+          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
+
+          <div className="text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <FontAwesomeIcon icon={faCalendarDays} className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-xs md:text-sm text-muted-foreground">Trading Days</div>
+            </div>
+            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
+              {monthlyStats.activeDays}
             </div>
           </div>
         </div>
@@ -947,7 +954,7 @@ export function CalendarHeatmap() {
             <div className="flex items-center gap-2 sm:gap-4 text-xs">
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.profit, border: `1px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
-                <span className="font-medium text-muted-foreground group-hover:transition-colors text-xs" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
+                <span className="font-medium text-muted-foreground text-xs" style={{'--hover-color': themeColors.profit} as any}>Profit Days</span>
                 <Badge variant="outline" className="text-xs" style={{
                   color: themeColors.profit,
                   borderColor: themeColors.profit,
@@ -958,7 +965,7 @@ export function CalendarHeatmap() {
               </div>
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.loss, border: `1px solid ${themeColors.loss}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
-                <span className="font-medium text-muted-foreground transition-colors text-xs">Loss Days</span>
+                <span className="font-medium text-muted-foreground text-xs">Loss Days</span>
                 <Badge variant="outline" className="text-xs" style={{
                   color: themeColors.loss,
                   borderColor: themeColors.loss,
@@ -969,11 +976,11 @@ export function CalendarHeatmap() {
               </div>
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: breakevenColor, border: `1px solid ${breakevenColor}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
-                <span className="font-medium text-muted-foreground transition-colors text-xs">Breakeven</span>
+                <span className="font-medium text-muted-foreground text-xs">Breakeven</span>
               </div>
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: 'transparent', border: '1px solid currentColor', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3 text-muted-foreground"></div>
-                <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 transition-colors text-xs">No Trading</span>
+                <span className="font-medium text-muted-foreground group-hover:text-muted-foreground/80 text-xs">No Trading</span>
               </div>
               
               {/* Interactive shortcuts */}

@@ -13,7 +13,7 @@ export default function Layout() {
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="h-svh overflow-auto">
         <DemoBanner />
         <MobileHeader />
         <motion.main

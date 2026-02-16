@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { faChartArea, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
+import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts"
 import {
   Card,
@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import { useMemo, useState } from "react"
-import { BarChart3 } from "lucide-react"
 
 // Define interfaces
 interface Trade {
@@ -54,7 +53,7 @@ const chartConfig = {
 export function ChartAreaInteractive() {
   const [view, setView] = useState<ChartView>('equity')
   // Get theme colors and demo data
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const { getTrades } = useDemoData()
 
   // Get trades from demo data or localStorage and generate equity curve data
@@ -103,18 +102,11 @@ export function ChartAreaInteractive() {
   const lossDays = dailyData.filter(d => d.pnl < 0).length
 
   return (
-    <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-0">
-      <CardHeader className="pb-3 border-b border-border/30">
+    <Card className="h-[400px] flex flex-col">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="p-2 rounded-lg" style={{backgroundColor: `${alpha(themeColors.primary, '20')}`}}>
-                {view === 'equity' ? (
-                  <FontAwesomeIcon icon={faChartArea} className="h-4 w-4" style={{color: themeColors.primary}} />
-                ) : (
-                  <BarChart3 className="h-4 w-4" style={{color: themeColors.primary}} />
-                )}
-              </div>
+            <CardTitle className="text-lg font-semibold">
               {view === 'equity' ? 'Equity Curve' : 'Trade P&L'}
             </CardTitle>
             <CardDescription className="text-muted-foreground font-medium mt-1">
@@ -126,7 +118,7 @@ export function ChartAreaInteractive() {
           <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
             <button
               onClick={() => setView('equity')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium ${
                 view === 'equity'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -136,7 +128,7 @@ export function ChartAreaInteractive() {
             </button>
             <button
               onClick={() => setView('pnl')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-xs font-medium ${
                 view === 'pnl'
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -244,7 +236,7 @@ export function ChartAreaInteractive() {
           </div>
         )}
       </CardContent>
-      <CardFooter className="border-t border-border/30 bg-muted/20">
+      <CardFooter className="border-t border-border/50">
         <div className="flex w-full items-center justify-between text-sm mt-2">
           <div className="flex items-center gap-3 mt-1">
             {view === 'equity' ? (

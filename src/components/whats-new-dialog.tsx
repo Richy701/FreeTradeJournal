@@ -30,40 +30,12 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
         {/* Gradient header */}
-        <div
-          className="px-6 pt-6 pb-5 relative overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, ${alpha(themeColors.primary, '12')}, ${alpha(themeColors.primary, '04')})`,
-          }}
-        >
-          {/* Decorative circles */}
-          <div
-            className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-[0.07]"
-            style={{ backgroundColor: themeColors.primary }}
-          />
-          <div
-            className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full opacity-[0.05]"
-            style={{ backgroundColor: themeColors.primary }}
-          />
-
-          <DialogHeader className="relative z-10">
-            <div className="flex items-center gap-3.5">
-              <div
-                className="p-2.5 rounded-xl shadow-sm border"
-                style={{
-                  backgroundColor: alpha(themeColors.primary, '15'),
-                  borderColor: alpha(themeColors.primary, '25'),
-                }}
-              >
-                <Megaphone className="h-5 w-5" style={{ color: themeColors.primary }} />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-bold tracking-tight">What's New</DialogTitle>
-                <DialogDescription className="text-sm mt-0.5">
-                  The latest updates to FreeTradeJournal
-                </DialogDescription>
-              </div>
-            </div>
+        <div className="px-6 pt-6 pb-5">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold tracking-tight">What's New</DialogTitle>
+            <DialogDescription className="text-sm mt-0.5">
+              The latest updates to FreeTradeJournal
+            </DialogDescription>
           </DialogHeader>
         </div>
 

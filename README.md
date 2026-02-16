@@ -5,11 +5,13 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ## Key Features
 
 ### Interactive Dashboard
-- Real-time P&L tracking with interactive equity curve (gradient fill, clean design)
+- Real-time P&L tracking with full-width equity curve (gradient fill, clean design)
+- Account balance displayed on the Total P&L card — starting balance + total return
 - Color-coded performance metrics — win rate, profit factor, total trades, and P&L percentage based on your actual account balance
-- Daily P&L calendar heatmap
+- Clickable stat cards that link directly to the Trade Log
+- Daily P&L calendar heatmap with Trading Days count
 - AI-powered Trading Coach with psychological pattern detection
-- Recent trades overview with quick insights
+- Actionable empty states with "Add Trade" and "Import CSV" buttons
 - Quick trade entry directly from the dashboard
 
 ### Advanced Trade Logging

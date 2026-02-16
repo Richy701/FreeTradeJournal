@@ -107,61 +107,59 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
-        <div className="mt-auto">
-          <SidebarGroup>
-            <SidebarGroupLabel>Support</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    size="sm"
-                    onClick={() => setWhatsNewOpen(true)}
-                  >
-                    <Megaphone className="h-4 w-4" />
-                    <span>What's New</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    size="sm"
-                    isActive={settingsActive}
-                    style={
-                      settingsActive
-                        ? { backgroundColor: `${alpha(themeColors.primary, '15')}` }
-                        : undefined
-                    }
-                  >
-                    <Link
-                      to="/settings"
-                      onClick={() => isMobile && setOpenMobile(false)}
-                    >
-                      <Settings2 className="h-4 w-4" />
-                      <span>Settings</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton size="sm" asChild>
-                    <a href="https://buymeacoffee.com/richy701" target="_blank" rel="noopener noreferrer">
-                      <Coffee className="h-4 w-4" />
-                      <span>Buy me a coffee</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <FeedbackButton
-                    variant="ghost"
-                    className="w-full justify-start h-8 px-2 text-sm"
-                    buttonText="Send Feedback"
-                  />
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
       </SidebarContent>
       <SidebarFooter>
+        <SidebarGroup className="p-0">
+          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  size="sm"
+                  onClick={() => setWhatsNewOpen(true)}
+                >
+                  <Megaphone className="h-4 w-4" />
+                  <span>What's New</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  size="sm"
+                  isActive={settingsActive}
+                  style={
+                    settingsActive
+                      ? { backgroundColor: `${alpha(themeColors.primary, '15')}` }
+                      : undefined
+                  }
+                >
+                  <Link
+                    to="/settings"
+                    onClick={() => isMobile && setOpenMobile(false)}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <a href="https://buymeacoffee.com/richy701" target="_blank" rel="noopener noreferrer">
+                    <Coffee className="h-4 w-4" />
+                    <span>Buy me a coffee</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <FeedbackButton
+                  variant="ghost"
+                  className="w-full justify-start h-8 px-2 text-sm"
+                  buttonText="Send Feedback"
+                />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         <NavUser user={navUser} />
       </SidebarFooter>
       <WhatsNewDialog open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />

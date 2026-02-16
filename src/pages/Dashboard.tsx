@@ -1,6 +1,7 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useAccounts } from '@/contexts/account-context'
+import { useSettings } from '@/contexts/settings-context'
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
@@ -50,8 +51,16 @@ export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo } = useAuth()
   const { activeAccount } = useAccounts()
+  const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { getTrades } = useDemoData()
   const userStorage = useUserStorage()
+
+  // Compute account balance
+  const accountBalance = useMemo(() => {
+    const tradesData = getTrades()
+    const totalPnL = tradesData.reduce((sum: number, t: any) => sum + (Number(t.pnl) || 0), 0)
+    return (activeAccount?.balance || settings.accountSize || 10000) + totalPnL
+  }, [getTrades, activeAccount, settings.accountSize])
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
   const [csvUploadState, setCsvUploadState] = useState({
@@ -276,10 +285,10 @@ export default function Dashboard() {
   }
 
   // Compute dynamic header stats from trades
-  const headerInsight = useMemo(() => {
+  const headerInsight = useMemo((): React.ReactNode => {
     const tradesData = getTrades()
     if (!tradesData || tradesData.length === 0) {
-      return 'Start logging trades to see your performance insights here'
+      return 'Add your first trade or import a CSV to get started'
     }
 
     const trades = tradesData.map((t: any) => ({
@@ -308,20 +317,24 @@ export default function Dashboard() {
     const thisWeek = trades.filter((t: { exitTime: Date }) => t.exitTime >= weekStart)
     const weekPnl = thisWeek.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
 
+    const pnlColor = totalPnl >= 0 ? themeColors.profit : themeColors.loss
+    const weekPnlColor = weekPnl >= 0 ? themeColors.profit : themeColors.loss
+    const winRateColor = winRate >= 50 ? themeColors.profit : themeColors.loss
+
     // Pick the most interesting insight
     if (streak >= 3 && streakPositive) {
-      return `You're on a ${streak}-trade win streak — keep the momentum going`
+      return <>{trades.length} trades · <span style={{ color: themeColors.profit }}>{streak}-trade win streak</span></>
     }
     if (thisWeek.length > 0) {
       const sign = weekPnl >= 0 ? '+' : ''
-      return `${thisWeek.length} trade${thisWeek.length === 1 ? '' : 's'} this week · ${sign}$${weekPnl.toFixed(2)} P&L`
+      return <>{thisWeek.length} trade{thisWeek.length === 1 ? '' : 's'} this week · <span style={{ color: weekPnlColor }}>{sign}${weekPnl.toFixed(2)}</span> P&L</>
     }
     if (trades.length > 0) {
       const sign = totalPnl >= 0 ? '+' : ''
-      return `${trades.length} trades logged · ${sign}$${totalPnl.toFixed(2)} total P&L · ${winRate}% win rate`
+      return <>{trades.length} trades · <span style={{ color: pnlColor }}>{sign}${totalPnl.toFixed(2)}</span> P&L · <span style={{ color: winRateColor }}>{winRate}%</span> win rate</>
     }
     return 'Track your performance and analyze your trades'
-  }, [getTrades])
+  }, [getTrades, themeColors.profit, themeColors.loss])
 
   // No loading state needed - render content immediately
 
@@ -354,9 +367,9 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-background">
         {/* Header Skeleton - Match exact layout */}
-        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="border-b">
           <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
             <div className="flex flex-col gap-4">
               <div className="space-y-3 sm:space-y-4">
@@ -411,39 +424,28 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background">
       <SiteHeader />
       {/* Mobile-optimized Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
+      <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {/* Greeting + Date */}
-            <div className="space-y-0.5 text-center sm:text-left">
-              <p className="text-lg font-semibold text-foreground opacity-90">
+            <div className="text-center sm:text-left">
+              <p className="text-2xl font-semibold text-foreground opacity-90">
                 {getGreeting()}
               </p>
               <div className="text-sm text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
-                  year: 'numeric',
                   month: 'long',
                   day: 'numeric'
                 })}
               </div>
             </div>
 
-            {/* Title row with action button inline on desktop */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-              <div className="space-y-1.5 text-center sm:text-left">
-                <h1
-                  className="text-4xl font-black bg-clip-text text-transparent leading-tight"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${themeColors.primary || 'hsl(var(--primary))'}, ${themeColors.primary || 'hsl(var(--primary))'}DD, ${themeColors.primary || 'hsl(var(--primary))'}AA)`
-                  }}
-                >
-                  Trading Dashboard
-                </h1>
-                <p className="text-muted-foreground text-sm font-medium max-w-2xl mx-auto sm:mx-0">
-                  {headerInsight}
-                </p>
-              </div>
+            {/* Insight + action button */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <p className="text-muted-foreground text-sm font-medium max-w-2xl text-center sm:text-left">
+                {headerInsight}
+              </p>
 
               {/* Quick Actions - inline with title on desktop */}
               <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
@@ -644,7 +646,7 @@ export default function Dashboard() {
       {/* Mobile-optimized Main Content */}
       <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Top metrics row */}
-        <div className="animate-in fade-in duration-300">
+        <div>
           <Suspense fallback={<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-24 w-full" />
@@ -653,42 +655,39 @@ export default function Dashboard() {
             <SectionCards />
           </Suspense>
         </div>
-        
+
         {/* AI Trading Coach */}
-        <div className="animate-in fade-in duration-300 delay-50">
+        <div>
           <TradingCoach />
         </div>
-        
-        {/* Main content area - Stack on mobile, side-by-side on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 animate-in fade-in duration-300 delay-100">
-          {/* Recent trades - Show first on mobile for quick access */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
-            <DataTable />
-          </div>
-          
-          {/* Equity curve */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-              <ChartAreaInteractive />
-            </Suspense>
-          </div>
+
+        {/* Equity curve — full width hero */}
+        <div>
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <ChartAreaInteractive />
+          </Suspense>
         </div>
-        
+
+        {/* Recent trades — full width below */}
+        <div>
+          <DataTable />
+        </div>
+
         {/* Pairs Performance Radar */}
-        <div className="animate-in fade-in duration-300 delay-150">
+        <div>
           <Suspense fallback={<Skeleton className="h-[450px] w-full" />}>
             <ChartRadarDefault />
           </Suspense>
         </div>
 
         {/* Calendar Section */}
-        <div className="animate-in fade-in duration-300 delay-200">
+        <div>
           <CalendarHeatmap />
         </div>
-        
+
         {/* Demo CTA Card - Only show in demo mode */}
         {isDemo && (
-          <div className="animate-in fade-in duration-300 delay-200 mt-8">
+          <div className="mt-8">
             <DemoCtaCard />
           </div>
         )}
@@ -698,25 +697,12 @@ export default function Dashboard() {
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader className="pb-4">
-            <div className="flex items-center gap-4">
-              <div
-                className="p-3 rounded-xl shadow-sm"
-                style={{
-                  backgroundColor: `${alpha(themeColors.primary, '10')}`,
-                  border: `1px solid ${alpha(themeColors.primary, '20')}`
-                }}
-              >
-                <FileText className="h-6 w-6" style={{ color: themeColors.primary }} />
-              </div>
-              <div className="flex-1">
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                  Import Preview
-                </DialogTitle>
-                <DialogDescription className="text-base text-muted-foreground mt-1">
-                  Review your trading data before importing to Dashboard
-                </DialogDescription>
-              </div>
-            </div>
+            <DialogTitle className="text-2xl font-bold text-foreground">
+              Import Preview
+            </DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground">
+              Review your trading data before importing to Dashboard
+            </DialogDescription>
           </DialogHeader>
 
           {csvPreview.parseResult && (

@@ -15,6 +15,48 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.5.0',
+    date: '2026-02-16',
+    summary: 'Dashboard redesign with better visual hierarchy, clickable stat cards, and improved empty states.',
+    items: [
+      {
+        type: 'new',
+        text: 'Account balance shown on the Total P&L card',
+        description: 'Your current account balance (starting balance + total P&L) is now displayed directly on the Total P&L stat card so you can see your equity at a glance.',
+      },
+      {
+        type: 'new',
+        text: 'Trading Days count in the calendar',
+        description: 'The calendar heatmap stats panel now shows how many days you traded in the selected month alongside Monthly P&L, Win Rate, and other stats.',
+      },
+      {
+        type: 'improved',
+        text: 'Stat cards are now clickable',
+        description: 'All four dashboard metric cards (P&L, Win Rate, Total Trades, Profit Factor) now link to the Trade Log for quick access to details.',
+      },
+      {
+        type: 'improved',
+        text: 'Equity curve is now full-width',
+        description: 'The equity curve chart takes the full width of the dashboard instead of sharing space with the recent trades table, giving you a bigger view of your performance.',
+      },
+      {
+        type: 'improved',
+        text: 'Colored stat card subtitles',
+        description: 'Subtitle text on stat cards now uses profit/loss colors — winners green, losers red, averages colored by performance — instead of plain gray text.',
+      },
+      {
+        type: 'improved',
+        text: 'Better empty state with action buttons',
+        description: 'When you have no trades, the recent trades panel now shows "Add Trade" and "Import CSV" buttons instead of generic placeholder text.',
+      },
+      {
+        type: 'fixed',
+        text: 'Theme colors now switch instantly everywhere',
+        description: 'Removed CSS transitions that were causing stat cards, chart toggles, and calendar elements to fade slowly when switching themes.',
+      },
+    ],
+  },
+  {
     version: '1.4.0',
     date: '2026-02-13',
     summary: 'Mobile UI polish, accurate account metrics, themed dashboard cards, and improved light mode.',
@@ -144,4 +186,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '1.4.0'
+export const LATEST_CHANGELOG_VERSION = '1.5.0'

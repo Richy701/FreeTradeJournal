@@ -1,18 +1,11 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { 
-  faDollarSign, 
-  faPercentage, 
-  faChartBar, 
-  faChartLine,
-  faArrowUp, 
-  faArrowDown, 
-  faQuestionCircle 
-} from '@fortawesome/free-solid-svg-icons'
+import { faArrowTrendUp, faArrowTrendDown } from '@fortawesome/free-solid-svg-icons'
+import { Link } from "react-router-dom"
 import {
   Tooltip,
   TooltipContent,
@@ -24,7 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Label, PolarGrid, PolarRadiusAxis, RadialBar, RadialBarChart, Pie, PieChart, Sector } from "recharts"
+import { Pie, PieChart, Sector, RadialBar, RadialBarChart } from "recharts"
 import { useMemo } from "react"
 
 // Define interfaces for type safety
@@ -47,11 +40,11 @@ interface Trade {
 
 export function SectionCards() {
   // Get theme colors and demo data
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { activeAccount } = useAccounts()
   const { getTrades } = useDemoData()
-  
+
   // Get trades from demo data or localStorage
   const trades = useMemo(() => {
     const tradesData = getTrades()
@@ -78,10 +71,10 @@ export function SectionCards() {
     const totalPnL = trades.reduce((sum: number, trade: Trade) => sum + trade.pnl, 0)
     const winningTrades = trades.filter((trade: Trade) => trade.pnl > 0)
     const losingTrades = trades.filter((trade: Trade) => trade.pnl < 0)
-    
+
     const winRate = (winningTrades.length / trades.length) * 100
-    const avgWin = winningTrades.length > 0 
-      ? winningTrades.reduce((sum: number, trade: Trade) => sum + trade.pnl, 0) / winningTrades.length 
+    const avgWin = winningTrades.length > 0
+      ? winningTrades.reduce((sum: number, trade: Trade) => sum + trade.pnl, 0) / winningTrades.length
       : 0
     const avgLoss = losingTrades.length > 0
       ? Math.abs(losingTrades.reduce((sum: number, trade: Trade) => sum + trade.pnl, 0) / losingTrades.length)
@@ -103,216 +96,224 @@ export function SectionCards() {
 
   // Use formatCurrency from settings context
   const formatCurrency = (amount: number) => formatCurrencyFromSettings(amount, true)
+  const formatCurrencyPlain = (amount: number) => formatCurrencyFromSettings(Math.abs(amount), false)
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`
-  }
+  const formatPercentage = (value: number) => `${value.toFixed(1)}%`
+
+  const accountBalance = (activeAccount?.balance || settings.accountSize || 10000) + metrics.totalPnL
+  const balancePositive = accountBalance >= (activeAccount?.balance || settings.accountSize || 10000)
+
+  const pnlPositive = metrics.totalPnL >= 0
+  const pnlPct = Math.abs((metrics.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100)
+  const winRateGood = metrics.winRate >= 50
+  const winCount = trades.filter((t: Trade) => t.pnl > 0).length
+  const lossCount = trades.filter((t: Trade) => t.pnl < 0).length
+  const pfGood = metrics.profitFactor >= 1
+  const pfLabel = metrics.profitFactor >= 2 ? 'Excellent' :
+                  metrics.profitFactor >= 1.5 ? 'Good' :
+                  metrics.profitFactor >= 1 ? 'Positive' : 'Needs work'
+  const avgPnlPerTrade = metrics.totalTrades > 0 ? metrics.totalPnL / metrics.totalTrades : 0
+  const grossProfit = trades.filter((t: Trade) => t.pnl > 0).reduce((s: number, t: Trade) => s + t.pnl, 0)
+  const grossLoss = Math.abs(trades.filter((t: Trade) => t.pnl < 0).reduce((s: number, t: Trade) => s + t.pnl, 0))
 
   return (
     <TooltipProvider>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 overflow-visible">
-        <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total P&L</CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <FontAwesomeIcon icon={faQuestionCircle} className="h-3 w-3 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="p-2 border-0 bg-background/95 backdrop-blur">
-                  <p className="text-xs">Total profit/loss (gross, before broker fees)</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss, '20')}}>
-              <FontAwesomeIcon icon={faDollarSign} className="h-4 w-4" style={{color: metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}} />
-            </div>
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 overflow-visible">
+
+        {/* Total P&L */}
+        <Link to="/trade-log">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-muted/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                  style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}
+                >
+                  <FontAwesomeIcon icon={pnlPositive ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+                  {pnlPositive ? '+' : '-'}{formatPercentage(pnlPct)}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="p-2 border bg-popover">
+                <p className="text-xs">Percentage of account balance</p>
+              </TooltipContent>
+            </Tooltip>
           </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-2">
-            <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+          <CardContent>
+            <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
               {formatCurrency(metrics.totalPnL)}
             </div>
-            <div className="flex items-center gap-1">
-              <FontAwesomeIcon 
-                icon={metrics.totalPnL >= 0 ? faArrowUp : faArrowDown} 
-                className="h-3 w-3" 
-                style={{color: metrics.totalPnL >= 0 ? themeColors.profit : themeColors.loss}} 
-              />
-              <p className="text-xs text-muted-foreground font-medium">
-                {formatPercentage(Math.abs((metrics.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100))} of account
+            <div className="mt-3 space-y-0.5">
+              <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                Balance: {formatCurrencyPlain(accountBalance)}
               </p>
+              <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        </Link>
 
-      <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible hover:z-[10001] border-0">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Win Rate</CardTitle>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <FontAwesomeIcon icon={faQuestionCircle} className="h-3 w-3 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="p-2 border-0 bg-background/95 backdrop-blur z-[10002]">
-                <p className="text-xs">Percentage of profitable trades</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(themeColors.profit, '20')}}>
-            <FontAwesomeIcon icon={faPercentage} className="h-4 w-4" style={{color: themeColors.profit}} />
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 space-y-2">
-              <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: metrics.winRate >= 50 ? themeColors.profit : themeColors.loss}}>{formatPercentage(metrics.winRate)}</div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                <span>{trades.filter((t: Trade) => t.pnl > 0).length}W</span>
-                <span>/</span>
-                <span>{trades.filter((t: Trade) => t.pnl < 0).length}L</span>
+        {/* Win Rate */}
+        <Link to="/trade-log">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-muted/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
+            <div
+              className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+              style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}
+            >
+              {winCount}W / {lossCount}L
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="text-3xl font-bold tracking-tight" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
+                  {formatPercentage(metrics.winRate)}
+                </div>
+                <div className="mt-3 space-y-0.5">
+                  <p className="text-sm font-medium" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
+                    {Math.abs(metrics.winRate - 50).toFixed(0)}pts {winRateGood ? 'above' : 'below'} 50%
+                  </p>
+                  <p className="text-xs"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(metrics.avgWin)} avg win</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(metrics.avgLoss)} avg loss</span></p>
+                </div>
               </div>
-            </div>
-            <div className="w-16 h-16 relative z-[10000]">
-              <ChartContainer
-                config={{
-                  wins: { label: "Wins", color: themeColors.profit },
-                  losses: { label: "Losses", color: themeColors.loss }
-                }}
-                className="w-full h-full relative z-[10000]"
-              >
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Pie
-                    data={[
-                      { type: "wins", count: trades.filter((t: Trade) => t.pnl > 0).length, fill: themeColors.profit },
-                      { type: "losses", count: trades.filter((t: Trade) => t.pnl < 0).length, fill: themeColors.loss }
-                    ]}
-                    dataKey="count"
-                    nameKey="type"
-                    innerRadius={16}
-                    outerRadius={28}
-                    strokeWidth={2}
-                    activeIndex={0}
-                    activeShape={({
-                      outerRadius = 0,
-                      ...props
-                    }: any) => (
-                      <Sector {...props} outerRadius={outerRadius + 2} />
-                    )}
-                  />
-                </PieChart>
-              </ChartContainer>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Total Trades</CardTitle>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <FontAwesomeIcon icon={faQuestionCircle} className="h-3 w-3 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="p-2 border-0 bg-background/95 backdrop-blur">
-                <p className="text-xs">Total completed trades</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(themeColors.profit, '20')}}>
-            <FontAwesomeIcon icon={faChartBar} className="h-4 w-4" style={{color: themeColors.profit}} />
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-2">
-            <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: themeColors.primary}}>{metrics.totalTrades.toLocaleString()}</div>
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-1">
-                {[...Array(Math.min(3, metrics.totalTrades))].map((_, i) => (
-                  <div key={i} className="w-2 h-2 rounded-full bg-muted-foreground ring-1 ring-background" />
-                ))}
-              </div>
-              <p className="text-xs font-medium" style={{ color: themeColors.primary }}>
-                Positions tracked
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="hover:shadow-lg transition-shadow duration-200 bg-muted/30 backdrop-blur-sm overflow-visible border-0">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Profit Factor</CardTitle>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <FontAwesomeIcon icon={faQuestionCircle} className="h-3 w-3 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="p-2 border-0 bg-background/95 backdrop-blur">
-                <p className="text-xs">Ratio of total profits to losses (&gt;1 is profitable)</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="p-2.5 rounded-lg shadow-sm" style={{backgroundColor: alpha(themeColors.profit, '20')}}>
-            <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{color: themeColors.profit}} />
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 space-y-2">
-              <div className="text-3xl font-bold tracking-tight" style={{letterSpacing: '-0.02em', color: metrics.profitFactor >= 1 ? themeColors.profit : themeColors.loss}}>
-                {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
-              </div>
-              <p className="text-xs text-muted-foreground font-medium">
-                {metrics.profitFactor >= 2 ? 'Excellent' : 
-                 metrics.profitFactor >= 1.5 ? 'Good' :
-                 metrics.profitFactor >= 1 ? 'Positive' : 'Negative'}
-              </p>
-            </div>
-            <div className="w-16 h-16 relative z-[10000]">
-              <ChartContainer
-                config={{
-                  wins: { label: "Wins", color: themeColors.profit },
-                  losses: { label: "Losses", color: themeColors.loss }
-                }}
-                className="w-full h-full relative z-[10000]"
-              >
-                <RadialBarChart
-                  data={[{
-                    wins: trades.filter((t: Trade) => t.pnl > 0).length,
-                    losses: trades.filter((t: Trade) => t.pnl < 0).length
-                  }]}
-                  endAngle={180}
-                  innerRadius={20}
-                  outerRadius={32}
+              <div className="w-16 h-16 relative">
+                <ChartContainer
+                  config={{
+                    wins: { label: "Wins", color: themeColors.profit },
+                    losses: { label: "Losses", color: themeColors.loss }
+                  }}
+                  className="w-full h-full"
                 >
-                  <RadialBar
-                    dataKey="wins"
-                    stackId="a"
-                    cornerRadius={2}
-                    fill={themeColors.profit}
-                    className="stroke-transparent"
-                  />
-                  <RadialBar
-                    dataKey="losses"
-                    fill={themeColors.loss}
-                    stackId="a"
-                    cornerRadius={2}
-                    className="stroke-transparent"
-                  />
-                </RadialBarChart>
-              </ChartContainer>
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={[
+                        { type: "wins", count: winCount, fill: themeColors.profit },
+                        { type: "losses", count: lossCount, fill: themeColors.loss }
+                      ]}
+                      dataKey="count"
+                      nameKey="type"
+                      innerRadius={16}
+                      outerRadius={28}
+                      strokeWidth={2}
+                      activeIndex={0}
+                      activeShape={({
+                        outerRadius = 0,
+                        ...props
+                      }: any) => (
+                        <Sector {...props} outerRadius={outerRadius + 2} />
+                      )}
+                    />
+                  </PieChart>
+                </ChartContainer>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+        </Link>
+
+        {/* Total Trades */}
+        <Link to="/trade-log">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-muted/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Trades</CardTitle>
+            <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              {metrics.totalTrades} total
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
+              {metrics.totalTrades.toLocaleString()}
+            </div>
+            <div className="mt-3 space-y-0.5">
+              <p className="text-sm font-medium">
+                <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
+              </p>
+              <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+            </div>
+          </CardContent>
+        </Card>
+        </Link>
+
+        {/* Profit Factor */}
+        <Link to="/trade-log">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-muted/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                  style={{ color: pfGood ? themeColors.profit : themeColors.loss }}
+                >
+                  <FontAwesomeIcon icon={pfGood ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+                  {pfLabel}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="p-2 border bg-popover">
+                <p className="text-xs">Ratio of gross profits to losses (&gt;1 is profitable)</p>
+              </TooltipContent>
+            </Tooltip>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="text-3xl font-bold tracking-tight" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
+                  {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
+                </div>
+                <div className="mt-3 space-y-0.5">
+                  <p className="text-sm font-medium" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
+                    {pfGood ? `$${metrics.profitFactor.toFixed(2)} earned per $1 lost` : 'Losing more than winning'}
+                  </p>
+                  <p className="text-xs"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
+                </div>
+              </div>
+              <div className="w-16 h-16 relative">
+                <ChartContainer
+                  config={{
+                    wins: { label: "Wins", color: themeColors.profit },
+                    losses: { label: "Losses", color: themeColors.loss }
+                  }}
+                  className="w-full h-full"
+                >
+                  <RadialBarChart
+                    data={[{
+                      wins: trades.filter((t: Trade) => t.pnl > 0).length,
+                      losses: trades.filter((t: Trade) => t.pnl < 0).length
+                    }]}
+                    endAngle={180}
+                    innerRadius={20}
+                    outerRadius={32}
+                  >
+                    <RadialBar
+                      dataKey="wins"
+                      stackId="a"
+                      cornerRadius={2}
+                      fill={themeColors.profit}
+                      className="stroke-transparent"
+                    />
+                    <RadialBar
+                      dataKey="losses"
+                      fill={themeColors.loss}
+                      stackId="a"
+                      cornerRadius={2}
+                      className="stroke-transparent"
+                    />
+                  </RadialBarChart>
+                </ChartContainer>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        </Link>
+
+      </div>
     </TooltipProvider>
   )
 }

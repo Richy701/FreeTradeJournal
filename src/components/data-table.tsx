@@ -4,6 +4,9 @@ import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faList, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
+import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Plus, Upload } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -64,14 +67,9 @@ export function DataTable({ data }: DataTableProps) {
   }
 
   return (
-    <Card className="h-[400px] flex flex-col hover:shadow-lg transition-shadow duration-200 border-0">
-      <CardHeader className="pb-3 border-b border-border/30">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-          <div className="p-2 rounded-lg" style={{backgroundColor: `${alpha(themeColors.primary, '20')}`}}>
-            <FontAwesomeIcon icon={faList} className="h-4 w-4" style={{color: themeColors.primary}} />
-          </div>
-          Recent Trades
-        </CardTitle>
+    <Card className="h-[400px] flex flex-col">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
         <CardDescription className="text-muted-foreground font-medium">
           Your latest trading activity and performance
         </CardDescription>
@@ -92,7 +90,7 @@ export function DataTable({ data }: DataTableProps) {
                 {trades.slice(0, 10).map((trade: Trade, index: number) => (
                   <TableRow 
                     key={trade.id} 
-                    className={`hover:bg-muted/50 transition-colors border-border/30 ${
+                    className={`hover:bg-muted/50 border-border/30 ${
                       index % 2 === 1 ? 'bg-muted/20' : ''
                     }`}
                   >
@@ -132,11 +130,26 @@ export function DataTable({ data }: DataTableProps) {
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <div className="text-center space-y-3">
-              <div className="p-3 rounded-xl bg-muted/30 inline-block">
-                <FontAwesomeIcon icon={faList} className="h-8 w-8 opacity-40" />
-              </div>
+              <FontAwesomeIcon icon={faList} className="h-8 w-8 opacity-40" />
               <p className="text-lg font-medium">No trades found</p>
-              <p className="text-sm">Start by adding your first trade to see it here</p>
+              <p className="text-sm">Add your first trade or import a CSV to get started</p>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <Link to="/trade-log">
+                  <Button size="sm" className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Trade
+                  </Button>
+                </Link>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => document.getElementById('dashboard-csv-import')?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Import CSV
+                </Button>
+              </div>
             </div>
           </div>
         )}

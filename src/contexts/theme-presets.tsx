@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useLayoutEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useMemo, useCallback } from 'react'
 
 interface ThemePreset {
   name: string
@@ -7,6 +7,11 @@ interface ThemePreset {
     loss: string
     primary: string
     primaryButtonText?: string
+  }
+  // Optional: full CSS variable overrides for complete visual themes
+  cssOverrides?: {
+    light: Record<string, string>
+    dark: Record<string, string>
   }
 }
 
@@ -115,6 +120,88 @@ const themePresets: Record<string, ThemePreset> = {
       loss: '#f59e0b',   // amber-500 - warm warning, not harsh
       primary: '#65a30d' // lime-600 - calming sage green
     }
+  },
+
+  // Deep burgundy/wine theme - complete visual redesign
+  wine: {
+    name: 'Wine',
+    colors: {
+      profit: '#10b981', // emerald-500 - clear positive
+      loss: '#ef4444',   // red-500 - familiar loss color
+      primary: '#b31938' // vivid wine red
+    },
+    cssOverrides: {
+      light: {
+        '--background': '350 15% 98.5%',
+        '--foreground': '350 20% 12%',
+        '--card': '0 0% 100%',
+        '--card-foreground': '350 20% 12%',
+        '--popover': '0 0% 100%',
+        '--popover-foreground': '350 20% 12%',
+        '--primary': '348 75% 40%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '348 15% 95.5%',
+        '--secondary-foreground': '348 75% 40%',
+        '--muted': '348 15% 95.5%',
+        '--muted-foreground': '350 8% 46%',
+        '--accent': '355 65% 45%',
+        '--accent-foreground': '0 0% 100%',
+        '--destructive': '348 80% 45%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '350 10% 90%',
+        '--input': '350 10% 90%',
+        '--ring': '348 75% 40%',
+        '--chart-1': '348 75% 40%',
+        '--chart-2': '355 65% 50%',
+        '--chart-3': '340 60% 32%',
+        '--chart-4': '350 60% 62%',
+        '--chart-5': '348 50% 75%',
+        '--sidebar-background': '350 40% 16%',
+        '--sidebar-foreground': '350 15% 98.5%',
+        '--sidebar-primary': '348 75% 50%',
+        '--sidebar-primary-foreground': '0 0% 100%',
+        '--sidebar-accent': '350 35% 22%',
+        '--sidebar-accent-foreground': '350 15% 98.5%',
+        '--sidebar-border': '350 30% 22%',
+        '--sidebar-ring': '348 75% 40%',
+        '--radius': '0.75rem',
+      },
+      dark: {
+        '--background': '355.4 76.5% 3.3%',
+        '--foreground': '351.4 70.3% 96.1%',
+        '--card': '354.3 67.7% 6.1%',
+        '--card-foreground': '351.4 70.3% 96.1%',
+        '--popover': '354.3 67.7% 6.1%',
+        '--popover-foreground': '351.4 70.3% 96.1%',
+        '--primary': '355.5 77.6% 56.3%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '356.5 71.8% 13.9%',
+        '--secondary-foreground': '353.1 100% 93.1%',
+        '--muted': '354.4 61.5% 10.2%',
+        '--muted-foreground': '354.1 37.2% 73.1%',
+        '--accent': '354.0 79.1% 44.9%',
+        '--accent-foreground': '0 0% 100%',
+        '--destructive': '349.2 100% 65.1%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '354.0 53.6% 11.0%',
+        '--input': '353.2 55.8% 18.6%',
+        '--ring': '353.7 100% 59.0%',
+        '--chart-1': '355.5 77.6% 56.3%',
+        '--chart-2': '349.3 100% 78.0%',
+        '--chart-3': '345.0 99.9% 25.1%',
+        '--chart-4': '348.9 100% 85.1%',
+        '--chart-5': '355.8 67.9% 20.8%',
+        '--sidebar-background': '353.3 81.7% 2.2%',
+        '--sidebar-foreground': '351.4 70.3% 96.1%',
+        '--sidebar-primary': '355.5 77.6% 56.3%',
+        '--sidebar-primary-foreground': '0 0% 100%',
+        '--sidebar-accent': '354.3 67.7% 6.1%',
+        '--sidebar-accent-foreground': '0 0% 100%',
+        '--sidebar-border': '354.3 67.7% 6.1%',
+        '--sidebar-ring': '355.5 77.6% 56.3%',
+        '--radius': '0.75rem',
+      }
+    }
   }
 }
 
@@ -177,21 +264,25 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     return () => observer.disconnect()
   }, [])
 
+  // Track which CSS properties we've set via overrides so we can clean them up
+  const appliedOverridesRef = React.useRef<string[]>([])
+
   // Update CSS variables when theme changes — useLayoutEffect to sync with inline styles
   useLayoutEffect(() => {
-    const colors = themePresets[currentTheme].colors
+    const preset = themePresets[currentTheme]
+    const colors = preset.colors
     const root = document.documentElement
-    
+
     // Convert hex to HSL for CSS variables
     const hexToHsl = (hex: string) => {
       const r = parseInt(hex.slice(1, 3), 16) / 255
       const g = parseInt(hex.slice(3, 5), 16) / 255
       const b = parseInt(hex.slice(5, 7), 16) / 255
-      
+
       const max = Math.max(r, g, b)
       const min = Math.min(r, g, b)
       let h = 0, s = 0, l = (max + min) / 2
-      
+
       if (max !== min) {
         const d = max - min
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
@@ -202,10 +293,18 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
         }
         h /= 6
       }
-      
+
       return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
     }
-    
+
+    // Clean up all previously applied CSS overrides
+    const cleanupOverrides = () => {
+      for (const prop of appliedOverridesRef.current) {
+        root.style.removeProperty(prop)
+      }
+      appliedOverridesRef.current = []
+    }
+
     // On public pages or in demo mode, reset CSS variables to amber/gold defaults
     const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/documentation']
     const isPublicPage = publicPaths.some(p => pathname === p)
@@ -214,11 +313,28 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
 
     if (isPublicPage || isInDemo) {
       // Reset to CSS-defined defaults (remove inline overrides)
+      cleanupOverrides()
       root.style.removeProperty('--primary')
       root.style.removeProperty('--ring')
       root.style.removeProperty('--primary-foreground')
       return
     }
+
+    // If theme has full CSS overrides, apply them all
+    if (preset.cssOverrides) {
+      cleanupOverrides()
+      const overrides = isDarkMode ? preset.cssOverrides.dark : preset.cssOverrides.light
+      const appliedProps: string[] = []
+      for (const [prop, value] of Object.entries(overrides)) {
+        root.style.setProperty(prop, value)
+        appliedProps.push(prop)
+      }
+      appliedOverridesRef.current = appliedProps
+      return
+    }
+
+    // Standard theme: clean up any previous full overrides, then set primary/ring
+    cleanupOverrides()
 
     // Update CSS variables for dashboard pages
     root.style.setProperty('--primary', hexToHsl(colors.primary))
@@ -229,14 +345,14 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     const b = parseInt(colors.primary.slice(5, 7), 16)
     const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
     root.style.setProperty('--primary-foreground', lum > 0.55 ? '0 0% 0%' : '0 0% 100%')
-  }, [currentTheme, pathname, isDemo])
+  }, [currentTheme, isDarkMode, pathname, isDemo])
 
-  const setTheme = (theme: string) => {
+  const setTheme = useCallback((theme: string) => {
     if (themePresets[theme]) {
       setCurrentTheme(theme)
       localStorage.setItem('selected-theme', theme)
     }
-  }
+  }, [])
 
   // Adjust colors based on dark/light mode for better visibility
   const getAdjustedColors = () => {
@@ -333,29 +449,33 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     return luminance > 0.55 ? '#000000' : '#ffffff'
   }
 
-  const adjustedColors = getAdjustedColors()
-  const themeColors = {
-    ...adjustedColors,
-    primaryButtonText: getContrastText(adjustedColors.primary),
-  }
+  const themeColors = useMemo(() => {
+    const adjustedColors = getAdjustedColors()
+    return {
+      ...adjustedColors,
+      primaryButtonText: getContrastText(adjustedColors.primary),
+    }
+  }, [currentTheme, isDarkMode])
 
-  const alpha = (color: string, hexOpacity: string): string => {
+  const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;
     const val = parseInt(hexOpacity, 16);
     // Only boost low opacity values; high values (>50%) are intentionally strong
     if (val >= 0x80) return color + hexOpacity;
     const boosted = Math.min(0x80, Math.round(val * 2));
     return color + boosted.toString(16).padStart(2, '0');
-  };
+  }, [isDarkMode]);
+
+  const contextValue = useMemo(() => ({
+    currentTheme,
+    themeColors,
+    setTheme,
+    availableThemes: themePresets,
+    alpha,
+  }), [currentTheme, themeColors, setTheme, alpha])
 
   return (
-    <ThemeContext.Provider value={{
-      currentTheme,
-      themeColors,
-      setTheme,
-      availableThemes: themePresets,
-      alpha,
-    }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   )
