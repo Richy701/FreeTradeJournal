@@ -53,10 +53,11 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Multiple account types: Live, Demo, Prop Firm, Paper
 - Pre-configured prop firm list (FTMO, Apex, TopStep, E8 Markets, Funded FX, FundingPips, Alpha Capital, The5ers)
 - Per-account trade isolation and filtering
-- Account switching from the sidebar
+- Account switcher in the sidebar with type and broker info per account
+- User profile avatar and dropdown in the page header
 
-### 12 Color Themes
-- Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage
+### 14 Color Themes
+- Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage, Clean, Wine
 - Dark/Light/System mode with polished light mode — visible decorative shapes, badges, and overlays
 - Instant theme switching via useLayoutEffect — no staggered color transitions or delayed button fades
 - Dynamic profit/loss and primary color customization

@@ -1,15 +1,23 @@
-import { Menu, X, LineChart } from 'lucide-react';
+import { Menu, X, LineChart, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
 import { AccountSwitcher } from '@/components/account-switcher';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
 
 export function MobileHeader({ title }: { title?: string }) {
   const { toggleSidebar, openMobile } = useSidebar();
   const { themeColors } = useThemePresets();
-  const { isDemo } = useAuth();
+  const { user, isDemo, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="sticky top-0 z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -40,7 +48,37 @@ export function MobileHeader({ title }: { title?: string }) {
           </span>
         </div>
 
-        <div className="flex-shrink-0 w-8" />
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
+                  <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
+                  <AvatarFallback className="rounded-full text-xs">
+                    {(user.displayName || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 rounded-lg">
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  try { await logout(); navigate('/login'); } catch (e) { console.error('Failed to logout:', e); }
+                }}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex-shrink-0 w-8" />
+        )}
       </div>
 
       {/* Account switcher row */}

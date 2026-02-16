@@ -8,7 +8,58 @@ import {
 } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
+import { User, LogOut } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+
+function UserAvatar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  if (!user) return null
+
+  const name = user.displayName || user.email?.split('@')[0] || 'User'
+  const avatar = user.photoURL || ''
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate('/login')
+    } catch (error) {
+      console.error('Failed to logout:', error)
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+          <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
+            <AvatarImage src={avatar} alt={name} />
+            <AvatarFallback className="rounded-full text-xs">{name.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 rounded-lg">
+        <DropdownMenuItem onClick={() => navigate('/profile')}>
+          <User className="h-4 w-4 mr-2" />
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export function SiteHeader({ className }: { className?: string }) {
   const { themeColors } = useThemePresets()
@@ -104,8 +155,11 @@ export function SiteHeader({ className }: { className?: string }) {
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
         <ThemeToggle />
+        {user && (
+          <UserAvatar />
+        )}
       </div>
     </header>
   )

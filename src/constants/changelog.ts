@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.6.0',
+    date: '2026-02-16',
+    summary: 'Modernized sidebar and navigation with user profile moved to the page header and a cleaner account switcher.',
+    items: [
+      {
+        type: 'improved',
+        text: 'User profile moved to the page header',
+        description: 'Your avatar and account dropdown are now in the top-right corner of the page header — visible on every page without opening the sidebar.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner sidebar navigation',
+        description: 'Removed section labels and simplified the sidebar layout. Active nav items now show a themed icon background for clearer visual feedback.',
+      },
+      {
+        type: 'improved',
+        text: 'Modernized account switcher',
+        description: 'The account switcher dropdown has been rebuilt with a cleaner trigger, account type and broker info per item, and a checkmark indicator for the active account.',
+      },
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-02-16',
     summary: 'Dashboard redesign with better visual hierarchy, clickable stat cards, and improved empty states.',
@@ -186,4 +208,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '1.5.0'
+export const LATEST_CHANGELOG_VERSION = '1.6.0'

@@ -1,36 +1,21 @@
 import * as React from "react"
-import { Building2, CircleDollarSign, Target, Beaker } from "lucide-react"
+import { ChevronsUpDown, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAccounts, type TradingAccount } from "@/contexts/account-context"
 import { useAuth } from "@/contexts/auth-context"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-
-const accountTypeIcons = {
-  demo: Beaker,
-  live: CircleDollarSign,
-  'prop-firm': Building2,
-  paper: Target,
-}
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const accountTypeLabels = {
   demo: 'Demo',
   live: 'Live',
   'prop-firm': 'Prop Firm',
   paper: 'Paper',
-}
-
-const accountTypeColors = {
-  demo: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  live: 'bg-green-500/10 text-green-600 border-green-500/20',
-  'prop-firm': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  paper: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
 }
 
 interface AccountSwitcherProps {
@@ -46,42 +31,48 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
   }
 
   return (
-    <Select
-      value={activeAccount.id}
-      onValueChange={(accountId) => {
-        const account = accounts.find(acc => acc.id === accountId)
-        if (account) {
-          setActiveAccount(account)
-        }
-      }}
-    >
-      <SelectTrigger className="w-full h-10 bg-card border-border/60 text-foreground hover:border-border">
-        <SelectValue>
-          <span className="truncate font-medium">{activeAccount.name}</span>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          className="w-full h-9 justify-between px-2.5 text-sm font-medium"
+        >
+          <span className="truncate">{activeAccount.name}</span>
+          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={4}
+        className="w-[--radix-dropdown-menu-trigger-width] min-w-[200px] rounded-lg p-1"
+      >
         {accounts.map((account) => {
-          const Icon = accountTypeIcons[account.type]
+          const isActive = account.id === activeAccount.id
           return (
-            <SelectItem key={account.id} value={account.id}>
-              <div className="flex items-center gap-3 w-full">
-                <div className="flex flex-col flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{account.name}</span>
-                    {account.isDefault && (
-                      <Badge variant="secondary" className="text-xs">Default</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="truncate">{account.broker}</span>
-                  </div>
-                </div>
+            <DropdownMenuItem
+              key={account.id}
+              onClick={() => setActiveAccount(account)}
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer",
+                isActive && "bg-muted"
+              )}
+            >
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className={cn("text-sm truncate", isActive && "font-medium")}>
+                  {account.name}
+                </span>
+                <span className="text-xs text-muted-foreground truncate">
+                  {accountTypeLabels[account.type]}
+                  {account.broker ? ` \u00B7 ${account.broker}` : ''}
+                </span>
               </div>
-            </SelectItem>
+              {isActive && (
+                <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              )}
+            </DropdownMenuItem>
           )
         })}
-      </SelectContent>
-    </Select>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

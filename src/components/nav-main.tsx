@@ -5,7 +5,6 @@ import { Link, useLocation } from "react-router-dom"
 import { useThemePresets } from "@/contexts/theme-presets"
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,8 +31,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="gap-1">
         {items.map((item) => {
           const active = isItemActive(item.url, pathname)
           return (
@@ -42,6 +40,7 @@ export function NavMain({
                 asChild
                 tooltip={item.title}
                 isActive={active}
+                className="relative"
                 style={
                   active
                     ? { backgroundColor: alpha(themeColors.primary, '15') }
@@ -52,7 +51,15 @@ export function NavMain({
                   to={item.url}
                   onClick={() => isMobile && setOpenMobile(false)}
                 >
-                  <item.icon />
+                  <div
+                    className="flex items-center justify-center size-6 rounded-md"
+                    style={{
+                      backgroundColor: active ? alpha(themeColors.primary, '20') : 'transparent',
+                      color: active ? themeColors.primary : undefined,
+                    }}
+                  >
+                    <item.icon className="size-4" />
+                  </div>
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>
