@@ -54,13 +54,15 @@ export default function Dashboard() {
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { getTrades } = useDemoData()
   const userStorage = useUserStorage()
+  const [dataVersion, setDataVersion] = useState(0)
 
   // Compute account balance
   const accountBalance = useMemo(() => {
     const tradesData = getTrades()
     const totalPnL = tradesData.reduce((sum: number, t: any) => sum + (Number(t.pnl) || 0), 0)
     return (activeAccount?.balance || settings.accountSize || 10000) + totalPnL
-  }, [getTrades, activeAccount, settings.accountSize])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getTrades, activeAccount, settings.accountSize, dataVersion])
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
   const [csvUploadState, setCsvUploadState] = useState({
@@ -71,6 +73,11 @@ export default function Dashboard() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null })
+  const [importProgress, setImportProgress] = useState<{
+    active: boolean;
+    phase: string;
+    percent: number;
+  }>({ active: false, phase: '', percent: 0 })
   const [showWhatsNew, setShowWhatsNew] = useState(false)
 
   useEffect(() => {
@@ -173,14 +180,15 @@ export default function Dashboard() {
     try {
       const content = await validateCSVFile(file);
       const result = parseCSV(content);
-      
-      // Show preview dialog instead of immediately importing
-      setCsvPreview({ 
-        show: true, 
-        file: file, 
-        parseResult: result 
+
+      // Close the trade modal and show preview dialog
+      setIsTradeModalOpen(false);
+      setCsvPreview({
+        show: true,
+        file: file,
+        parseResult: result
       });
-      
+
     } catch (error) {
       toast.error('File Import Error', {
         description: error instanceof Error ? error.message : 'Failed to read file',
@@ -196,17 +204,17 @@ export default function Dashboard() {
   // New function to actually perform the import after confirmation
   const handleConfirmImport = async () => {
     if (!csvPreview.parseResult || !csvPreview.file) return;
-    
+
     const { parseResult: result, file } = csvPreview;
-    
-    setCsvUploadState({ isUploading: true });
+
     setCsvPreview({ show: false, file: null, parseResult: null });
+    setImportProgress({ active: true, phase: 'Reading existing trades...', percent: 20 });
 
     try {
       if (result.success) {
         const savedTrades = userStorage.getItem('trades');
-        let existingTrades = [];
-        
+        let existingTrades: any[] = [];
+
         if (savedTrades) {
           try {
             existingTrades = JSON.parse(savedTrades);
@@ -215,54 +223,79 @@ export default function Dashboard() {
           }
         }
 
+        setImportProgress({ active: true, phase: 'Processing trades...', percent: 50 });
+
         // Convert parsed trades to dashboard format with accountId
         const importedTrades = result.trades.map((trade, index) => ({
           id: `dashboard-import-${Date.now()}-${index}`,
           accountId: activeAccount?.id || 'default-main-account',
-          symbol: trade.symbol.toUpperCase(),
+          symbol: trade.symbol,
           side: trade.side,
           entryPrice: parseFloat(trade.entryPrice) || 0,
           exitPrice: parseFloat(trade.exitPrice) || 0,
           lotSize: parseFloat(trade.quantity) || 1,
-          entryTime: new Date(trade.date),
-          exitTime: new Date(trade.date),
+          entryTime: new Date(`${trade.date}T00:00:00`),
+          exitTime: new Date(`${trade.date}T00:00:00`),
           spread: 0,
           commission: 0,
           swap: 0,
           pnl: parseFloat(trade.pnl) || 0,
           pnlPercentage: 0,
+          riskReward: 0,
           notes: `Imported from ${file.name} via Dashboard`,
           strategy: '',
           market: 'forex',
           propFirm: ''
         }));
-        
-        const updatedTrades = [...existingTrades, ...importedTrades];
+
+        setImportProgress({ active: true, phase: 'Checking for duplicates...', percent: 70 });
+
+        // Deduplicate: fingerprint on key fields to skip already-imported trades
+        const tradeFingerprint = (t: any) =>
+          `${t.symbol}|${t.side}|${t.entryPrice}|${t.exitPrice}|${t.lotSize}|${t.pnl}|${new Date(t.entryTime).getTime()}|${new Date(t.exitTime).getTime()}`;
+
+        const existingFingerprints = new Set(existingTrades.map(tradeFingerprint));
+        const newTrades = importedTrades.filter((t: any) => !existingFingerprints.has(tradeFingerprint(t)));
+        const skippedCount = importedTrades.length - newTrades.length;
+
+        setImportProgress({ active: true, phase: 'Saving trades...', percent: 90 });
+
+        const updatedTrades = [...existingTrades, ...newTrades];
         userStorage.setItem('trades', JSON.stringify(updatedTrades));
-        
+
+        // Brief pause so user sees 100%
+        setImportProgress({ active: true, phase: 'Done!', percent: 100 });
+        await new Promise(r => setTimeout(r, 500));
+        setImportProgress({ active: false, phase: '', percent: 0 });
+
+        // Bump version to re-render dashboard with new data
+        setDataVersion(v => v + 1);
+
         toast.success(
-          `Successfully imported ${importedTrades.length} trades from ${file.name}`,
+          newTrades.length > 0
+            ? `Imported ${newTrades.length} new trade${newTrades.length > 1 ? 's' : ''} from ${file.name}`
+            : `No new trades to import from ${file.name}`,
           {
-            description: result.errors.length > 0 
-              ? `${result.summary.failed} rows had errors and were skipped`
-              : undefined,
+            description: skippedCount > 0
+              ? `${skippedCount} duplicate trade${skippedCount > 1 ? 's' : ''} skipped`
+              : result.errors.length > 0
+                ? `${result.summary.failed} rows had errors and were skipped`
+                : undefined,
             duration: 5000
           }
         );
-        
-        // Dialog already closed at start of function
-        
+
       } else {
         toast.error('Failed to import file', {
           description: result.errors.join(', ')
         });
+        setImportProgress({ active: false, phase: '', percent: 0 });
       }
-      
+
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Failed to import file');
-    } finally {
-      setCsvUploadState({ isUploading: false });
+      setImportProgress({ active: false, phase: '', percent: 0 });
     }
   };
 
@@ -334,7 +367,8 @@ export default function Dashboard() {
       return <>{trades.length} trades · <span style={{ color: pnlColor }}>{sign}${totalPnl.toFixed(2)}</span> P&L · <span style={{ color: winRateColor }}>{winRate}%</span> win rate</>
     }
     return 'Track your performance and analyze your trades'
-  }, [getTrades, themeColors.profit, themeColors.loss])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getTrades, themeColors.profit, themeColors.loss, dataVersion])
 
   // No loading state needed - render content immediately
 
@@ -809,7 +843,7 @@ export default function Dashboard() {
                       </TableHeader>
                       <TableBody>
                         {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index} className="hover:bg-muted/50 border-border">
+                          <TableRow key={index} className="hover:bg-black/[0.03] dark:hover:bg-white/[0.06] border-border">
                             <TableCell className="font-semibold text-foreground">
                               {trade.symbol}
                             </TableCell>
@@ -927,6 +961,10 @@ export default function Dashboard() {
                   )}
                 </div>
 
+                <p className="text-xs text-muted-foreground">
+                  Already imported this file before? No worries — duplicate trades are automatically detected and skipped.
+                </p>
+
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
@@ -960,8 +998,25 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Import Progress Overlay */}
+      {importProgress.active && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="w-[90vw] max-w-sm rounded-xl border bg-card p-6 shadow-lg space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }} />
+              <p className="text-sm font-medium">{importProgress.phase}</p>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${importProgress.percent}%`, backgroundColor: themeColors.primary }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-right">{importProgress.percent}%</p>
+          </div>
+        </div>
+      )}
 
-      
       </div>
       <Footer7 {...footerConfig} />
       <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} />

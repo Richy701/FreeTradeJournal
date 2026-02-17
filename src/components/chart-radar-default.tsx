@@ -37,17 +37,30 @@ function hexToHSL(hex: string): [number, number, number] {
   return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)]
 }
 
+// Lightness curve modelled on Tailwind 500-level colors — each hue needs a
+// different lightness to look equally vibrant (yellow needs ~48%, blue ~60%, etc.)
+const LIGHTNESS_STOPS: [number, number][] = [
+  [0, 60], [25, 53], [38, 50], [48, 47], [84, 44], [142, 45],
+  [160, 39], [173, 40], [189, 43], [199, 48], [217, 60],
+  [239, 67], [258, 66], [271, 65], [292, 61], [330, 60], [347, 50], [360, 60],
+]
+
+function vibrantLightness(hue: number): number {
+  const h = ((hue % 360) + 360) % 360
+  for (let i = 0; i < LIGHTNESS_STOPS.length - 1; i++) {
+    if (h >= LIGHTNESS_STOPS[i][0] && h <= LIGHTNESS_STOPS[i + 1][0]) {
+      const t = (h - LIGHTNESS_STOPS[i][0]) / (LIGHTNESS_STOPS[i + 1][0] - LIGHTNESS_STOPS[i][0])
+      return Math.round(LIGHTNESS_STOPS[i][1] + t * (LIGHTNESS_STOPS[i + 1][1] - LIGHTNESS_STOPS[i][1]))
+    }
+  }
+  return 55
+}
+
 function generatePairColors(primary: string, profit: string, loss: string): string[] {
   const [h] = hexToHSL(primary)
-  const sat = 65
-  const lit = 45
+  const hues = [h, (h + 55) % 360, (h + 110) % 360, (h + 165) % 360, (h + 220) % 360, (h + 275) % 360]
   return [
-    `hsl(${h}, ${sat}%, ${lit}%)`,
-    `hsl(${(h + 45) % 360}, ${sat}%, ${lit}%)`,
-    `hsl(${(h + 90) % 360}, ${sat}%, ${lit}%)`,
-    `hsl(${(h + 135) % 360}, ${sat}%, ${lit}%)`,
-    `hsl(${(h + 180) % 360}, ${sat}%, ${lit}%)`,
-    `hsl(${(h + 225) % 360}, ${sat}%, ${lit}%)`,
+    ...hues.map(hue => `hsl(${hue}, 88%, ${vibrantLightness(hue)}%)`),
     profit,
     loss,
   ]
@@ -181,7 +194,7 @@ export function ChartRadarDefault() {
                   <Radar
                     dataKey="score"
                     fill={themeColors.primary}
-                    fillOpacity={0.3}
+                    fillOpacity={0.6}
                     stroke={themeColors.primary}
                     strokeWidth={2}
                   />
@@ -226,8 +239,8 @@ export function ChartRadarDefault() {
                     dataKey="trades"
                     nameKey="pair"
                     innerRadius={60}
-                    strokeWidth={3}
-                    stroke="hsl(var(--background))"
+                    strokeWidth={2}
+                    stroke="hsl(var(--card))"
                     activeIndex={0}
                     activeShape={(props: any) => (
                       <Sector {...props} outerRadius={(props.outerRadius || 0) + 8} />

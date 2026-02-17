@@ -13,6 +13,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - AI-powered Trading Coach with psychological pattern detection
 - Actionable empty states with "Add Trade" and "Import CSV" buttons
 - Quick trade entry directly from the dashboard
+- CSV import with progress overlay and in-place data refresh (no page reload)
 
 ### Advanced Trade Logging
 - Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
@@ -20,7 +21,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Support for MetaTrader 5, TopStep, standard CSV, and other broker formats
 - TopStep FIFO order pairing with side-aware queues and futures contract multipliers
 - Interactive column mapping UI for unknown/custom CSV formats
-- Duplicate detection on re-import — same CSV won't create duplicate trades
+- Duplicate detection on re-import — same CSV won't create duplicate trades, even across Dashboard and Trade Log imports
 - Full CRUD operations with pagination and filtering
 - Report generation (monthly, quarterly, yearly, custom)
 - Automatic P&L calculations with market-specific futures multipliers (MNQ, MES, MGC, CL, etc.)
@@ -52,7 +53,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ### Multi-Account & Prop Firm Support
 - Multiple account types: Live, Demo, Prop Firm, Paper
 - Pre-configured prop firm list (FTMO, Apex, TopStep, E8 Markets, Funded FX, FundingPips, Alpha Capital, The5ers)
-- Per-account trade isolation and filtering
+- Per-account trade isolation and filtering — saving on one account never overwrites another account's data
 - Account switcher in the sidebar with type and broker info per account
 - User profile avatar and dropdown in the page header
 

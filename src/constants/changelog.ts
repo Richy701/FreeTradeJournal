@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.7.0',
+    date: '2026-02-17',
+    summary: 'CSV import deduplication fixes, multi-account data safety, currency sync, and Dashboard import UX improvements.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'CSV re-import no longer creates duplicate trades',
+        description: 'Importing the same CSV file again now correctly detects and skips trades you\'ve already imported. Previously, duplicates could appear when switching between accounts or importing from different pages.',
+      },
+      {
+        type: 'fixed',
+        text: 'Multi-account trade data is no longer lost on save',
+        description: 'Adding, editing, or deleting trades on one account no longer silently wipes trades from other accounts. All save operations now preserve data across accounts.',
+      },
+      {
+        type: 'fixed',
+        text: 'Currency setting stays in sync across the app',
+        description: 'Changing currency in Regional Settings now updates the active account, and editing an account\'s currency updates the global setting. Both stay in sync.',
+      },
+      {
+        type: 'improved',
+        text: 'Dashboard CSV import with progress indicator',
+        description: 'Importing a CSV from the Dashboard now shows a progress overlay with phase labels and a progress bar. The Add Trade form closes automatically when you pick a file, and the dashboard updates in-place without a page reload.',
+      },
+      {
+        type: 'improved',
+        text: 'Duplicate trade notification on import',
+        description: 'A message in the import preview dialog lets you know that duplicate trades are automatically detected and skipped, so you can safely re-import updated broker exports.',
+      },
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-02-16',
     summary: 'Modernized sidebar and navigation with user profile moved to the page header and a cleaner account switcher.',

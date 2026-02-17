@@ -83,7 +83,7 @@ export default function BentoFeatures() {
 
           {/* Feature 2 - Medium Card */}
           <motion.div variants={itemVariants} className="md:col-span-2">
-            <Card className="p-6 h-full min-h-[200px] hover:bg-muted/50 transition-colors group">
+            <Card className="p-6 h-full min-h-[200px] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors group">
               <div className="p-3 rounded-xl bg-green-500/10 mb-6 w-fit group-hover:scale-110 transition-transform">
                 <BarChart3 className="h-8 w-8 text-green-500" />
               </div>
@@ -96,7 +96,7 @@ export default function BentoFeatures() {
 
           {/* Feature 3 - Small Card */}
           <motion.div variants={itemVariants} className="md:col-span-2">
-            <Card className="p-6 h-full min-h-[140px] hover:bg-muted/50 transition-colors group">
+            <Card className="p-6 h-full min-h-[140px] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors group">
               <div className="p-3 rounded-xl bg-blue-500/10 mb-4 w-fit group-hover:scale-110 transition-transform">
                 <Target className="h-6 w-6 text-blue-500" />
               </div>
@@ -132,7 +132,7 @@ export default function BentoFeatures() {
 
           {/* Feature 5 - Square Card */}
           <motion.div variants={itemVariants} className="md:col-span-2">
-            <Card className="p-6 h-full min-h-[200px] hover:bg-muted/50 transition-colors group">
+            <Card className="p-6 h-full min-h-[200px] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors group">
               <div className="p-3 rounded-xl bg-purple-500/10 mb-6 w-fit group-hover:scale-110 transition-transform">
                 <Camera className="h-8 w-8 text-purple-500" />
               </div>
@@ -145,7 +145,7 @@ export default function BentoFeatures() {
 
           {/* Feature 6 - Small Card */}
           <motion.div variants={itemVariants} className="md:col-span-2">
-            <Card className="p-6 h-full min-h-[140px] hover:bg-muted/50 transition-colors group">
+            <Card className="p-6 h-full min-h-[140px] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors group">
               <div className="p-3 rounded-xl bg-orange-500/10 mb-4 w-fit group-hover:scale-110 transition-transform">
                 <FileText className="h-6 w-6 text-orange-500" />
               </div>

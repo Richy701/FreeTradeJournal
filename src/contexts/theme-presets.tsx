@@ -132,37 +132,37 @@ const themePresets: Record<string, ThemePreset> = {
     },
     cssOverrides: {
       light: {
-        '--background': '0 0% 100%',
+        '--background': '220 14% 96%',
         '--foreground': '0 0% 10%',
         '--card': '0 0% 100%',
         '--card-foreground': '0 0% 10%',
-        '--popover': '240 5% 96.5%',
+        '--popover': '0 0% 100%',
         '--popover-foreground': '0 0% 10%',
         '--primary': '213 100% 50%',
         '--primary-foreground': '0 0% 100%',
-        '--secondary': '0 0% 100%',
+        '--secondary': '220 12% 93%',
         '--secondary-foreground': '0 0% 10%',
-        '--muted': '240 6% 90%',
-        '--muted-foreground': '0 0% 42%',
+        '--muted': '220 12% 93%',
+        '--muted-foreground': '0 0% 36%',
         '--accent': '213 100% 50%',
         '--accent-foreground': '0 0% 10%',
         '--destructive': '6 74% 57%',
         '--destructive-foreground': '0 0% 100%',
-        '--border': '0 0% 93%',
-        '--input': '0 0% 93%',
+        '--border': '220 10% 86%',
+        '--input': '220 10% 86%',
         '--ring': '228 100% 62%',
         '--chart-1': '213 100% 50%',
         '--chart-2': '145 63% 49%',
         '--chart-3': '6 74% 57%',
-        '--chart-4': '240 5% 96.5%',
-        '--chart-5': '240 6% 82%',
-        '--sidebar-background': '0 0% 98%',
+        '--chart-4': '220 12% 93%',
+        '--chart-5': '220 10% 80%',
+        '--sidebar-background': '220 14% 95%',
         '--sidebar-foreground': '0 0% 10%',
         '--sidebar-primary': '213 100% 50%',
         '--sidebar-primary-foreground': '0 0% 100%',
-        '--sidebar-accent': '0 0% 91%',
+        '--sidebar-accent': '220 12% 91%',
         '--sidebar-accent-foreground': '0 0% 10%',
-        '--sidebar-border': '240 6% 82%',
+        '--sidebar-border': '220 10% 82%',
         '--sidebar-ring': '213 100% 50%',
         '--radius': '0.85rem',
       },
@@ -214,7 +214,7 @@ const themePresets: Record<string, ThemePreset> = {
     },
     cssOverrides: {
       light: {
-        '--background': '350 15% 98.5%',
+        '--background': '350 15% 96%',
         '--foreground': '350 20% 12%',
         '--card': '0 0% 100%',
         '--card-foreground': '350 20% 12%',
@@ -222,16 +222,16 @@ const themePresets: Record<string, ThemePreset> = {
         '--popover-foreground': '350 20% 12%',
         '--primary': '348 75% 40%',
         '--primary-foreground': '0 0% 100%',
-        '--secondary': '348 15% 95.5%',
+        '--secondary': '348 12% 93%',
         '--secondary-foreground': '348 75% 40%',
-        '--muted': '348 15% 95.5%',
-        '--muted-foreground': '350 8% 46%',
+        '--muted': '348 12% 93%',
+        '--muted-foreground': '350 12% 38%',
         '--accent': '355 65% 45%',
         '--accent-foreground': '0 0% 100%',
         '--destructive': '348 80% 45%',
         '--destructive-foreground': '0 0% 100%',
-        '--border': '350 10% 90%',
-        '--input': '350 10% 90%',
+        '--border': '350 10% 86%',
+        '--input': '350 10% 86%',
         '--ring': '348 75% 40%',
         '--chart-1': '348 75% 40%',
         '--chart-2': '355 65% 50%',
@@ -542,9 +542,11 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;
     const val = parseInt(hexOpacity, 16);
-    // Only boost low opacity values; high values (>50%) are intentionally strong
+    // High values (>50%) are intentionally strong — pass through
     if (val >= 0x80) return color + hexOpacity;
-    const boosted = Math.min(0x80, Math.round(val * 2));
+    // Light mode needs a stronger boost: white backgrounds wash out low alpha.
+    // 2.5x multiplier + 10% floor so nothing is invisible.
+    const boosted = Math.min(0x80, Math.max(0x25, Math.round(val * 2.5)));
     return color + boosted.toString(16).padStart(2, '0');
   }, [isDarkMode]);
 

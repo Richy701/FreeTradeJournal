@@ -90,7 +90,7 @@ export function DataTable({ data }: DataTableProps) {
                 {trades.slice(0, 10).map((trade: Trade, index: number) => (
                   <TableRow 
                     key={trade.id} 
-                    className={`hover:bg-muted/50 border-border/30 ${
+                    className={`hover:bg-black/[0.03] dark:hover:bg-white/[0.06] border-border/30 ${
                       index % 2 === 1 ? 'bg-muted/20' : ''
                     }`}
                   >

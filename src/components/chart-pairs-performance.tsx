@@ -129,7 +129,7 @@ export function ChartPairsPerformance() {
                     <Cell 
                       key={`cell-${index}`} 
                       fill={entry.pnl >= 0 ? themeColors.profit : themeColors.loss}
-                      opacity={0.8}
+                      opacity={1}
                     />
                   ))}
                 </Bar>

@@ -161,7 +161,7 @@ export default function WhyChooseSection() {
             {/* Additional Stats Grid */}
             <div className="grid grid-cols-2 gap-4">
               {stats.slice(1).map((stat, index) => (
-                <Card key={index} className="p-6 bg-card hover:bg-muted/50 transition-colors group">
+                <Card key={index} className="p-6 bg-card hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors group">
                   <div className="text-center">
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-xl mb-3 group-hover:scale-110 transition-transform">
                       <stat.icon className="w-6 h-6 text-primary" />

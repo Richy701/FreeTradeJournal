@@ -390,7 +390,12 @@ export default function Settings() {
                           <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" style={{ color: themeColors.profit }} />
                           Currency
                         </Label>
-                        <Select value={settings.currency} onValueChange={(value) => updateSettings({ currency: value })}>
+                        <Select value={activeAccount?.currency || settings.currency} onValueChange={(value) => {
+                          updateSettings({ currency: value });
+                          if (activeAccount) {
+                            updateAccount(activeAccount.id, { ...activeAccount, currency: value });
+                          }
+                        }}>
                           <SelectTrigger className="h-11 bg-background/60 border-border/30">
                             <SelectValue />
                           </SelectTrigger>
@@ -743,6 +748,9 @@ export default function Settings() {
                               onClick={() => {
                                 if (editForm.name && editForm.broker) {
                                   updateAccount(editForm.id, editForm);
+                                  if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) {
+                                    updateSettings({ currency: editForm.currency });
+                                  }
                                   setEditForm(null);
                                 }
                               }}

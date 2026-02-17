@@ -81,7 +81,7 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
                   return (
                     <div
                       key={i}
-                      className="flex items-start gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-muted/50"
+                      className="flex items-start gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
                     >
                       <div
                         className="mt-0.5 shrink-0 h-5 w-5 rounded-md flex items-center justify-center"

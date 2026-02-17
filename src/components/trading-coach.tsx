@@ -823,7 +823,7 @@ export function TradingCoach() {
             ))}
             <button
               onClick={dismissCurrentTip}
-              className="ml-2 h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              className="ml-2 h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
               aria-label="Dismiss this tip"
               title="Got it, dismiss"
             >

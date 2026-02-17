@@ -701,7 +701,7 @@ export default function Journal() {
                 variant="ghost"
                 size="sm"
                 onClick={cancelEdit}
-                className="h-11 w-11 p-0 rounded-full hover:bg-muted/50"
+                className="h-11 w-11 p-0 rounded-full hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -1344,7 +1344,7 @@ export default function Journal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => startEdit(entry)}
-                          className="h-9 w-9 p-0 hover:bg-muted/50"
+                          className="h-9 w-9 p-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
                         >
                           <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>

@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useCallback, useState, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useCallback, useState, useRef, useMemo, type ReactNode } from 'react';
 import { useUserStorage } from '@/utils/user-storage';
+import { useAccounts } from '@/contexts/account-context';
 import { DEFAULT_VALUES } from '@/constants/trading';
 
 export interface AppSettings {
@@ -40,9 +41,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const userStorage = useUserStorage();
   const storageRef = useRef(userStorage);
   storageRef.current = userStorage;
+  const { activeAccount } = useAccounts();
 
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
+
+  // Active account currency takes priority over global setting
+  const effectiveCurrency = activeAccount?.currency || settings.currency;
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -77,8 +82,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     });
   }, []);
 
-  const getCurrencySymbol = () => {
-    switch (settings.currency) {
+  const getCurrencySymbol = useCallback(() => {
+    switch (effectiveCurrency) {
       case 'USD': return '$';
       case 'EUR': return '€';
       case 'GBP': return '£';
@@ -89,18 +94,18 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       case 'CNY': return '¥';
       default: return '$';
     }
-  };
+  }, [effectiveCurrency]);
 
-  const formatCurrency = (amount: number, showSign: boolean = true) => {
+  const formatCurrency = useCallback((amount: number, showSign: boolean = true) => {
     const symbol = getCurrencySymbol();
     const formatted = Math.abs(amount).toFixed(2);
 
     // Handle different currency symbol positions
-    if (['USD', 'CAD', 'AUD'].includes(settings.currency)) {
+    if (['USD', 'CAD', 'AUD'].includes(effectiveCurrency)) {
       // Symbol before amount
       const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
       return `${sign}${symbol}${formatted}`;
-    } else if (settings.currency === 'EUR') {
+    } else if (effectiveCurrency === 'EUR') {
       // Symbol after amount for EUR
       const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
       return `${sign}${formatted}${symbol}`;
@@ -109,15 +114,15 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
       return `${sign}${symbol}${formatted}`;
     }
-  };
+  }, [effectiveCurrency, getCurrencySymbol]);
 
-  const value: SettingsContextType = {
+  const value: SettingsContextType = useMemo(() => ({
     settings,
     updateSettings,
     formatCurrency,
     getCurrencySymbol,
     loading
-  };
+  }), [settings, updateSettings, formatCurrency, getCurrencySymbol, loading]);
 
   return (
     <SettingsContext.Provider value={value}>

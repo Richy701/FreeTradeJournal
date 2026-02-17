@@ -156,8 +156,8 @@ export function ChartAreaInteractive() {
                 >
                   <defs>
                     <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={themeColors.profit} stopOpacity={0.4} />
-                      <stop offset="100%" stopColor={themeColors.profit} stopOpacity={0.02} />
+                      <stop offset="0%" stopColor={themeColors.profit} stopOpacity={0.6} />
+                      <stop offset="100%" stopColor={themeColors.profit} stopOpacity={0.05} />
                     </linearGradient>
                   </defs>
                   <XAxis
@@ -222,7 +222,7 @@ export function ChartAreaInteractive() {
                       <Cell
                         key={`cell-${index}`}
                         fill={entry.pnl >= 0 ? themeColors.profit : themeColors.loss}
-                        fillOpacity={0.7}
+                        fillOpacity={1}
                       />
                     ))}
                   </Bar>

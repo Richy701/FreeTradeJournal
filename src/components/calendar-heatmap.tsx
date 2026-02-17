@@ -304,13 +304,11 @@ export function CalendarHeatmap() {
   const handleSaveTrade = () => {
     if (!selectedDateForTrade || !tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
     
-    let trades = getTrades()
-    
     const entryPrice = parseFloat(tradeForm.entryPrice)
     const exitPrice = parseFloat(tradeForm.exitPrice)
     const lotSize = parseFloat(tradeForm.lotSize) || 1
     const pnl = parseFloat(tradeForm.pnl) || ((exitPrice - entryPrice) * lotSize * (tradeForm.side === 'long' ? 1 : -1))
-    
+
     const newTrade = {
       id: Date.now().toString(),
       symbol: tradeForm.symbol.toUpperCase(),
@@ -331,9 +329,15 @@ export function CalendarHeatmap() {
       propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm,
       accountId: activeAccount?.id || 'default-main-account'
     }
-    
-    trades.unshift(newTrade)
-    userStorage.setItem('trades', JSON.stringify(trades))
+
+    // Read ALL trades from localStorage to avoid overwriting other accounts
+    let allTrades: any[] = []
+    try {
+      const saved = userStorage.getItem('trades')
+      if (saved) allTrades = JSON.parse(saved)
+    } catch { /* empty */ }
+    allTrades.unshift(newTrade)
+    userStorage.setItem('trades', JSON.stringify(allTrades))
     
     // Reset form
     setTradeForm({
@@ -444,7 +448,7 @@ export function CalendarHeatmap() {
   const roundedPnl = (pnl: number) => Math.round(pnl * 100) / 100
 
   const getPnLColor = (pnl: number, trades: number) => {
-    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-muted/20 cursor-default'
+    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] cursor-default'
 
     const rounded = roundedPnl(pnl)
     if (rounded > 0) {
@@ -600,7 +604,7 @@ export function CalendarHeatmap() {
             <div className="flex items-center gap-1 rounded-full bg-muted/30 p-1">
               <button
                 onClick={goToPreviousMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors touch-manipulation"
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Previous month (←)"
               >
                 <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3 text-muted-foreground" />
@@ -632,7 +636,7 @@ export function CalendarHeatmap() {
 
               <button
                 onClick={goToNextMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors touch-manipulation"
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Next month (→)"
               >
                 <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3 text-muted-foreground" />

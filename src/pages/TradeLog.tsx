@@ -286,8 +286,24 @@ export default function TradeLog() {
 
   const saveTrades = (updatedTrades: Trade[]) => {
     setTrades(updatedTrades);
-    userStorage.setItem('trades', JSON.stringify(updatedTrades));
     calculateQuickStats(updatedTrades);
+
+    // Merge with other accounts' trades to avoid overwriting them
+    const currentAccountId = activeAccount?.id || 'default-main-account';
+    try {
+      const allSaved = userStorage.getItem('trades');
+      if (allSaved) {
+        const allTrades = JSON.parse(allSaved) as any[];
+        const otherAccountTrades = allTrades.filter((t: any) =>
+          t.accountId && t.accountId !== currentAccountId
+        );
+        userStorage.setItem('trades', JSON.stringify([...otherAccountTrades, ...updatedTrades]));
+      } else {
+        userStorage.setItem('trades', JSON.stringify(updatedTrades));
+      }
+    } catch {
+      userStorage.setItem('trades', JSON.stringify(updatedTrades));
+    }
   };
 
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
@@ -1815,7 +1831,7 @@ export default function TradeLog() {
                   </TableHeader>
                   <TableBody>
                     {paginatedTrades.map((trade) => (
-                      <TableRow key={trade.id} className="hover:bg-muted/30 border-b border-border/20">
+                      <TableRow key={trade.id} className="hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-b border-border/20">
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
@@ -2253,7 +2269,7 @@ export default function TradeLog() {
                       </TableHeader>
                       <TableBody>
                         {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index} className="hover:bg-muted/50 border-border">
+                          <TableRow key={index} className="hover:bg-black/[0.03] dark:hover:bg-white/[0.06] border-border">
                             <TableCell className="font-semibold text-foreground">
                               {trade.symbol}
                             </TableCell>
@@ -2373,6 +2389,10 @@ export default function TradeLog() {
                     </span>
                   )}
                 </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Already imported this file before? No worries — duplicate trades are automatically detected and skipped.
+                </p>
 
                 <div className="flex gap-3">
                   <Button

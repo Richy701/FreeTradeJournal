@@ -550,7 +550,7 @@ export function PerformanceGoals() {
                           <Button
                             key={index}
                             variant="outline"
-                            className="h-auto p-3 justify-start text-left hover:bg-muted/50"
+                            className="h-auto p-3 justify-start text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
                             onClick={() => {
                               setNewGoal({
                                 ...preset,
