@@ -63,7 +63,12 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "Bash(lsof:*)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "Bash(git status:*)",
+      "WebFetch(domain:www.remotion.dev)",
+      "Bash(git -C /Users/richy/FreeTradeJournal status --short)",
+      "Bash(git -C /Users/richy/FreeTradeJournal diff --stat)",
+      "Bash(git -C /Users/richy/FreeTradeJournal log --oneline -5)"
     ],
     "deny": []
   }

@@ -1,9 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { Activity, CalendarDays, Globe, HardDrive } from 'lucide-react'
-import { ResponsiveImage } from '@/components/ui/responsive-image'
+
+const ShowcasePlayer = lazy(() => import('@/components/remotion/ShowcasePlayer'))
 
 export function FreeTradeJournalFeatures() {
     return (
-        <section className="py-24">
+        <section className="py-14 sm:py-16">
             <div className="mx-auto max-w-7xl space-y-16 px-6">
                 <div className="relative z-10 grid items-center gap-6 md:grid-cols-2 md:gap-16">
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">Professional trading journal & analytics</h2>
@@ -11,13 +13,18 @@ export function FreeTradeJournalFeatures() {
                 </div>
                 <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
                     <div className="relative">
-                        <img 
-                          src="/images/landing/Trading dashboard New screenshot.png" 
+                        <img
+                          src="/images/landing/Trading dashboard New screenshot.png"
                           alt="FreeTradeJournal Dashboard"
                           className="z-10 w-full aspect-video rounded-2xl object-cover"
                           loading="lazy"
                           decoding="async"
                         />
+                        <div className="absolute inset-0 z-20 rounded-2xl overflow-hidden">
+                            <Suspense fallback={null}>
+                                <ShowcasePlayer />
+                            </Suspense>
+                        </div>
                     </div>
                 </div>
                 <div className="relative mx-auto grid grid-cols-2 gap-6 lg:gap-8 lg:grid-cols-4">

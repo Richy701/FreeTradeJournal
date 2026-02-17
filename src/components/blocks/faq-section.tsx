@@ -72,7 +72,7 @@ export function FAQSection() {
   }, []);
 
   return (
-    <section className="py-24 px-6">
+    <section className="py-14 sm:py-16 px-6">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">

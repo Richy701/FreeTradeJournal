@@ -56,7 +56,8 @@ export default defineConfig({
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           'vendor-animation': ['framer-motion'],
           'vendor-icons': ['lucide-react', 'react-icons', '@radix-ui/react-icons'],
-          'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority']
+          'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          'vendor-remotion': ['remotion', '@remotion/player']
         },
         assetFileNames: (assetInfo) => {
           if (!assetInfo.name) return `assets/[name]-[hash][extname]`

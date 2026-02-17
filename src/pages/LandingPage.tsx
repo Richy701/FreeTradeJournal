@@ -1,5 +1,4 @@
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import FeatureShowcase from '@/components/blocks/feature-showcase';
@@ -9,18 +8,11 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
-import {
-  ArrowRight,
-  CandlestickChart,
-  LineChart,
-  ShieldCheck,
-} from 'lucide-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 export default function LandingPage() {
-  const { user, loading, enterDemoMode } = useAuth();
-  const navigate = useNavigate();
+  const { user, loading } = useAuth();
   
   // If loading, show nothing or a spinner
   if (loading) {
@@ -72,63 +64,6 @@ export default function LandingPage() {
       {/* Features Section with Dashboard Preview */}
       <Features6 />
         
-      {/* Why FreeTradeJournal */}
-      <div className="bg-background">
-        <section className="py-24 px-6 max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
-              Everything you need to <span className="text-primary">trade smarter</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Built for forex, futures, and stock traders who want professional analytics without the price tag.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-14">
-            <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-shadow duration-200">
-              <CandlestickChart className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Track Every Trade</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Log entries, exits, lot sizes, commissions, and swap costs. Filter by instrument, strategy, or account across all your markets.
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-shadow duration-200">
-              <LineChart className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Spot Patterns Fast</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Calendar heatmaps, equity curves, win rate breakdowns, and profit factor analysis help you see what's working and what isn't.
-              </p>
-            </div>
-            <div className="flex flex-col items-center text-center p-6 rounded-xl border border-transparent hover:bg-muted/80 hover:shadow-md transition-shadow duration-200">
-              <ShieldCheck className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Stay Disciplined</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Set goals, manage risk with built-in calculators, and journal your mindset. Works with prop firms like FTMO, Apex, and TopStep.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              onClick={() => {
-                enterDemoMode();
-                navigate('/dashboard');
-              }}
-              className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-8 py-3 rounded-full text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 min-w-[200px] focus:ring-2 focus:ring-primary/50"
-            >
-              View Live Demo
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Link to="/signup">
-              <Button variant="outline" className="px-8 py-3 rounded-full font-semibold text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10 focus:ring-2 focus:ring-ring/50">
-                Sign Up Free
-              </Button>
-            </Link>
-          </div>
-        </section>
-
-
-
       {/* Trade Log Section */}
       <FeatureShowcase
         title={
@@ -251,7 +186,6 @@ export default function LandingPage() {
           { name: "Terms and Conditions", href: "/terms" },
         ]}
       />
-      </div>
     </div>
   );
 }
