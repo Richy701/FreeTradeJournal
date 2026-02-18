@@ -121,7 +121,7 @@ export default function Signup() {
               <FontAwesomeIcon icon={faChartLine} className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">Create your account</h1>
           <p className="text-muted-foreground/85">Start your trading journal journey</p>
         </div>
 
@@ -146,10 +146,11 @@ export default function Signup() {
                   <Input
                     id="firstName"
                     name="firstName"
-                    placeholder="John"
+                    placeholder="John…"
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    autoComplete="given-name"
                     className="h-11"
                   />
                 </div>
@@ -158,10 +159,11 @@ export default function Signup() {
                   <Input
                     id="lastName"
                     name="lastName"
-                    placeholder="Doe"
+                    placeholder="Doe…"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    autoComplete="family-name"
                     className="h-11"
                   />
                 </div>
@@ -173,10 +175,12 @@ export default function Signup() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="you@example.com…"
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  autoComplete="email"
+                  spellCheck={false}
                   className="h-11"
                 />
               </div>
@@ -188,16 +192,18 @@ export default function Signup() {
                     id="password"
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a strong password"
+                    placeholder="Create a strong password…"
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                     className="h-11 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="h-4 w-4" />
                   </button>
@@ -226,16 +232,18 @@ export default function Signup() {
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm your password"
+                    placeholder="Confirm your password…"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                     className="h-11 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                   >
                     <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} className="h-4 w-4" />
                   </button>
@@ -262,9 +270,9 @@ export default function Signup() {
                 />
                 <Label htmlFor="terms" className="text-sm leading-snug">
                   I agree to the{' '}
-                  <a href="#" className="text-primary hover:underline">Terms of Service</a>
+                  <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
                   {' '}and{' '}
-                  <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                  <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                 </Label>
               </div>
 

@@ -74,7 +74,19 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ### Landing Page
 - Polished hero section with animated gradient CTA buttons and consistent branding
 - Mobile-optimized button sizing, centered layouts, and responsive badge alignment
+- Sign In link visible on all screen sizes — no hidden-on-mobile nav
 - Instant demo access and sign-up prompts
+
+### Accessibility & UX
+- Keyboard-navigable — focus-visible ring styles on all interactive elements
+- `prefers-reduced-motion` respected across hero animations, onboarding transitions, and logo carousel
+- Proper `<label>` / `htmlFor` / `id` associations on all form fields (Dashboard trade modal, Journal entries, file uploads)
+- Semantic heading hierarchy (`<h1>`) on every page for screen readers and SEO
+- Consistent `font-display` (Sora) typography across landing page and app
+- SiteHeader with breadcrumbs visible on mobile (condensed current page name)
+- FAQ accordion items have `id` attributes for deep linking
+- Mobile touch targets scoped to action buttons only — inline links and tabs unaffected
+- SPA navigation (`<Link>`) for all internal routes including auth page legal links
 
 ### Demo Mode
 - Instant access without signup via "Try Demo"

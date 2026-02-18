@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface FeatureShowcaseProps {
     title: string | React.ReactNode;
@@ -27,7 +27,6 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     imageLayout = 'stack',
 }) => {
     const { enterDemoMode } = useAuth();
-    const navigate = useNavigate();
 
     const containerVariants = {
         hidden: {},
@@ -255,7 +254,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         variants={itemVariants}
                     >
                         <div className="space-y-4 w-full">
-                            <h2 className="text-foreground text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+                            <h2 className="font-display text-foreground text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
                                 {title}
                             </h2>
                         </div>
@@ -265,21 +264,19 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         </p>
                         
                         <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-center lg:justify-start">
-                            <button
-                                onClick={() => {
-                                    enterDemoMode();
-                                    navigate('/dashboard');
-                                }}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300"
+                            <Link
+                                to="/dashboard"
+                                onClick={() => enterDemoMode()}
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Try It Now
-                            </button>
-                            <button
-                                onClick={() => navigate('/signup')}
-                                className="border-2 border-border hover:border-primary/50 text-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300"
+                            </Link>
+                            <Link
+                                to="/signup"
+                                className="border-2 border-border hover:border-primary/50 text-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Sign Up Free
-                            </button>
+                            </Link>
                         </div>
                     </motion.div>
 

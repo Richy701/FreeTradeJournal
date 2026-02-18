@@ -54,18 +54,6 @@ import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 
-// Custom CSS to force override orange borders with white
-const themeCardStyles = `
-  div[tabindex]:focus {
-    outline: 2px solid white !important;
-    outline-offset: -2px !important;
-  }
-  div[tabindex]:focus-visible {
-    outline: 2px solid white !important;
-    outline-offset: -2px !important;
-  }
-`;
-
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha } = useThemePresets();
@@ -242,7 +230,6 @@ export default function Settings() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: themeCardStyles }} />
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Frosted Glass Header */}
@@ -250,7 +237,7 @@ export default function Settings() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" style={{maxWidth: '1200px', margin: '0 auto'}}>
             <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
+              <h1 className="font-display text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
                   style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
                 Settings
               </h1>
@@ -467,6 +454,7 @@ export default function Settings() {
                             key={key}
                             onClick={() => setColorTheme(key)}
                             tabIndex={0}
+                            role="button"
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
                             className="relative rounded-lg border-2 p-3 cursor-pointer transition-shadow duration-150 hover:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             style={{
@@ -602,6 +590,7 @@ export default function Settings() {
                                     size="sm"
                                     onClick={() => setEditForm(account)}
                                     className="h-10 w-10 p-0 rounded-lg hover:bg-background/80 transition-shadow"
+                                    aria-label="Edit account"
                                   >
                                     <FontAwesomeIcon icon={faPencil} className="h-4 w-4" />
                                   </Button>
@@ -627,7 +616,7 @@ export default function Settings() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => deleteAccount(account.id)}
+                                  onClick={() => { if (!window.confirm('Are you sure you want to delete this account? This cannot be undone.')) return; deleteAccount(account.id); }}
                                   disabled={accounts.length <= 1}
                                   className="min-w-[100px] font-semibold hover:shadow-md transition-shadow hover:border-destructive hover:text-destructive"
                                 >
@@ -655,7 +644,7 @@ export default function Settings() {
                           <div className="space-y-2">
                             <Label>Account Name</Label>
                             <Input
-                              placeholder="e.g., Main Live Account"
+                              placeholder="e.g., Main Live Account…"
                               value={editForm.name}
                               onChange={(e) => setEditForm(prev => prev ? { ...prev, name: e.target.value } : null)}
                             />
@@ -727,7 +716,7 @@ export default function Settings() {
                             <Label>Balance (Optional)</Label>
                             <Input
                               type="number"
-                              placeholder="10000"
+                              placeholder="10000…"
                               value={editForm.balance || ''}
                               onChange={(e) => setEditForm(prev => prev ? { ...prev, balance: e.target.value ? parseFloat(e.target.value) : undefined } : null)}
                             />
@@ -785,7 +774,7 @@ export default function Settings() {
                           <div className="space-y-2">
                             <Label>Account Name</Label>
                             <Input
-                              placeholder="e.g., Main Live Account"
+                              placeholder="e.g., Main Live Account…"
                               value={accountForm.name}
                               onChange={(e) => setAccountForm(prev => ({ ...prev, name: e.target.value }))}
                             />
@@ -857,7 +846,7 @@ export default function Settings() {
                             <Label>Initial Balance (Optional)</Label>
                             <Input
                               type="number"
-                              placeholder="10000"
+                              placeholder="10000…"
                               value={accountForm.balance}
                               onChange={(e) => setAccountForm(prev => ({ ...prev, balance: e.target.value }))}
                             />
@@ -992,7 +981,7 @@ export default function Settings() {
                         {/* Win rate progress bar */}
                         <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className="h-full transition-all duration-500 rounded-full"
+                            className="h-full transition-[width] duration-500 rounded-full"
                             style={{ 
                               width: `${stats.winRate}%`,
                               backgroundColor: stats.winRate >= 50 ? themeColors.profit : themeColors.loss
@@ -1148,7 +1137,7 @@ export default function Settings() {
                               max="10"
                               value={settings.riskPerTrade}
                               onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })}
-                              className="h-12 pr-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-all"
+                              className="h-12 pr-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-[border-color]"
                             />
                             <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-muted-foreground">%</span>
                           </div>
@@ -1160,7 +1149,7 @@ export default function Settings() {
                             </div>
                             <div className="h-2 bg-muted rounded-full overflow-hidden">
                               <div 
-                                className="h-full transition-all duration-500 rounded-full" 
+                                className="h-full transition-[width] duration-500 rounded-full" 
                                 style={{ 
                                   width: `${Math.min((settings.riskPerTrade / 5) * 100, 100)}%`,
                                   backgroundColor: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss
@@ -1187,8 +1176,8 @@ export default function Settings() {
                             step="1000"
                             value={settings.accountSize}
                             onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })}
-                            placeholder="10000"
-                            className="h-12 pl-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-all"
+                            placeholder="10000…"
+                            className="h-12 pl-12 text-lg font-semibold bg-background/50 border-border/60 hover:border-primary/50 transition-[border-color]"
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-muted-foreground">{getCurrencySymbol()}</span>
                         </div>
@@ -1250,7 +1239,7 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                    <div className="p-4 rounded-lg bg-background/40"
                          style={{ border: `1px solid ${alpha(themeColors.profit, '20')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.profit }}></div>
@@ -1260,7 +1249,7 @@ export default function Settings() {
                       <div className="text-sm text-muted-foreground">Perfect for beginners and steady growth</div>
                     </div>
                     
-                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                    <div className="p-4 rounded-lg bg-background/40"
                          style={{ border: `1px solid ${alpha(themeColors.primary, '20')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.primary }}></div>
@@ -1270,7 +1259,7 @@ export default function Settings() {
                       <div className="text-sm text-muted-foreground">For experienced traders</div>
                     </div>
                     
-                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                    <div className="p-4 rounded-lg bg-background/40"
                          style={{ border: `1px solid ${alpha(themeColors.loss, '25')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColors.loss }}></div>
@@ -1280,7 +1269,7 @@ export default function Settings() {
                       <div className="text-sm text-muted-foreground">High risk, proven systems only</div>
                     </div>
                     
-                    <div className="p-4 rounded-lg bg-background/40 transition-all"
+                    <div className="p-4 rounded-lg bg-background/40"
                          style={{ border: `1px solid ${alpha(themeColors.loss, '30')}` }}>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: themeColors.loss }}></div>

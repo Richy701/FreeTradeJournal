@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 export function FAQSection() {
   const faqs = [
@@ -74,34 +75,48 @@ export function FAQSection() {
   return (
     <section className="py-14 sm:py-16 px-6">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
+        <motion.div
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          viewport={{ once: true }}
+        >
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
             Frequently Asked <span className="text-primary">Questions</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to know about FreeTradeJournal and how it can transform your trading journey
           </p>
-        </div>
-        
+        </motion.div>
+
         <div className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
-              <AccordionItem 
-                key={index} 
-                value={`item-${index}`}
-                className="border-b border-border py-2"
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.08, ease: "easeOut" }}
+                viewport={{ once: true, margin: "-40px" }}
               >
-                <AccordionTrigger className="text-left hover:no-underline hover:text-primary transition-colors duration-200 py-4">
-                  <span className="text-base md:text-lg font-medium pr-4">{faq.question}</span>
-                </AccordionTrigger>
-                <AccordionContent className="text-sm md:text-base leading-relaxed text-muted-foreground pb-4 pr-4">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
+                <AccordionItem
+                  value={`item-${index}`}
+                  id={`faq-${index}`}
+                  className="border-b border-border py-2"
+                >
+                  <AccordionTrigger className="text-left hover:no-underline hover:text-primary transition-colors duration-200 py-4">
+                    <span className="text-base md:text-lg font-medium pr-4">{faq.question}</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm md:text-base leading-relaxed text-muted-foreground pb-4 pr-4">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
             ))}
           </Accordion>
         </div>
-        
+
       </div>
     </section>
   );

@@ -21,29 +21,59 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-/* Remove ALL outlines from focusable elements */
-[tabindex] {
-  outline: none !important;
-}
-
-[tabindex]:focus {
-  outline: none !important;
-}
-
-[tabindex]:focus-visible {
-  outline: none !important;
-}
-
-[tabindex]:active {
-  outline: none !important;
-}
-
 /* Remove the orange tap highlight on mobile/webkit browsers */
 [tabindex] {
-  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 
+
+/* Display font for headings */
+.font-display {
+  font-family: 'Sora', system-ui, -apple-system, sans-serif;
+}
+
+/* Noise texture overlay for premium feel */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+.dark .noise-overlay::before {
+  opacity: 0.04;
+}
+
+
+/* Candlestick SVG decoration */
+.candlestick-decoration {
+  position: relative;
+}
+
+.candlestick-decoration::before {
+  content: '';
+  position: absolute;
+  right: 5%;
+  top: 10%;
+  width: 200px;
+  height: 300px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3C!-- Bullish candle --%3E%3Cline x1='30' y1='40' x2='30' y2='220' stroke='%2322c55e' stroke-width='2'/%3E%3Crect x='20' y='80' width='20' height='100' fill='%2322c55e' rx='2'/%3E%3C!-- Bearish candle --%3E%3Cline x1='70' y1='60' x2='70' y2='240' stroke='%23ef4444' stroke-width='2'/%3E%3Crect x='60' y='90' width='20' height='110' fill='%23ef4444' rx='2'/%3E%3C!-- Bullish candle --%3E%3Cline x1='110' y1='30' x2='110' y2='200' stroke='%2322c55e' stroke-width='2'/%3E%3Crect x='100' y='60' width='20' height='90' fill='%2322c55e' rx='2'/%3E%3C!-- Doji --%3E%3Cline x1='150' y1='50' x2='150' y2='230' stroke='%23a3a3a3' stroke-width='2'/%3E%3Crect x='140' y='130' width='20' height='8' fill='%23a3a3a3' rx='2'/%3E%3C!-- Trend line --%3E%3Cline x1='10' y1='250' x2='180' y2='70' stroke='%23f59e0b' stroke-width='1.5' stroke-dasharray='6 4' opacity='0.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.dark .candlestick-decoration::before {
+  opacity: 0.06;
+}
 
 @layer base {
   :root {
@@ -242,19 +272,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
   /* Mobile-specific optimizations */
   @media (max-width: 768px) {
-    /* Improve touch targets */
-    button, a, [role="button"] {
+    /* Improve touch targets for action buttons only */
+    button:not([role="tab"]):not(.inline-link),
+    [role="button"]:not([role="tab"]) {
       min-height: 44px;
-    }
-    
-    /* Override any margin-top on buttons in flex containers */
-    .flex button {
-      margin-top: 0 !important;
-    }
-
-    /* Allow tabs to be smaller than 44px min-height */
-    [role="tab"] {
-      min-height: auto !important;
     }
 
     /* Force consistent input and select heights */
@@ -268,7 +289,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     /* Better mobile scrolling */
     * {
       -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
     }
 
     /* Smooth scrolling on iOS */
@@ -329,15 +349,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     .safe-right {
       padding-right: max(1rem, env(safe-area-inset-right));
     }
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
 

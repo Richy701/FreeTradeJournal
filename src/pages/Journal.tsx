@@ -573,7 +573,7 @@ export default function Journal() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1 min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
+                <h1 className="font-display text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
                     style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
                   Trading Journal
                 </h1>
@@ -702,6 +702,7 @@ export default function Journal() {
                 size="sm"
                 onClick={cancelEdit}
                 className="h-11 w-11 p-0 rounded-full hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
+                aria-label="Close"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -737,8 +738,9 @@ export default function Journal() {
               <CardContent className="p-5 sm:p-6 space-y-5">
                 {/* Title */}
                 <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Title</label>
+                  <label htmlFor="journal-title" className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Title</label>
                   <Input
+                    id="journal-title"
                     placeholder="What's on your mind about the markets?"
                     value={newEntry.title}
                     onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
@@ -748,8 +750,9 @@ export default function Journal() {
 
                 {/* Content */}
                 <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Content</label>
+                  <label htmlFor="journal-content" className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Content</label>
                   <Textarea
+                    id="journal-content"
                     placeholder="Share your thoughts, analysis, market observations, lessons learned..."
                     value={newEntry.content}
                     onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
@@ -904,7 +907,7 @@ export default function Journal() {
                         size="sm"
                         type="button"
                         onClick={() => toggleEmotion(emotion)}
-                        className="px-3 py-1.5 text-xs h-auto rounded-full transition-all duration-150"
+                        className="px-3 py-1.5 text-xs h-auto rounded-full transition-colors duration-150"
                         style={isSelected
                           ? { backgroundColor: `${alpha(themeColors.primary, '15')}`, color: themeColors.primary, borderColor: `${alpha(themeColors.primary, '40')}` }
                           : {}
@@ -952,6 +955,7 @@ export default function Journal() {
                           accept="image/*"
                           onChange={handleFileUpload}
                           className="hidden"
+                          aria-label="Upload chart screenshots"
                         />
                         <span className="text-sm cursor-pointer hover:underline" style={{ color: themeColors.primary }}>
                           or browse files
@@ -976,6 +980,7 @@ export default function Journal() {
                           onClick={() => removeImage(index)}
                           className="absolute -top-2 -right-2 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                           style={{ backgroundColor: themeColors.loss }}
+                          aria-label="Remove image"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1345,6 +1350,7 @@ export default function Journal() {
                           size="sm"
                           onClick={() => startEdit(entry)}
                           className="h-9 w-9 p-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
+                          aria-label="Edit entry"
                         >
                           <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
@@ -1353,6 +1359,7 @@ export default function Journal() {
                           size="sm"
                           onClick={() => deleteEntry(entry.id)}
                           className="h-9 w-9 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                          aria-label="Delete entry"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1405,18 +1412,18 @@ export default function Journal() {
                     {entry.screenshots && entry.screenshots.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {entry.screenshots.map((screenshot, index) => (
-                          <div key={index} className="group relative cursor-pointer" onClick={() => setEnlargedImage(screenshot)}>
+                          <button key={index} type="button" className="group relative cursor-pointer text-left" onClick={() => setEnlargedImage(screenshot)}>
                             <img
                               src={screenshot}
                               alt={`Chart ${index + 1}`}
-                              className="w-full h-40 sm:h-56 object-cover rounded-lg border border-border/20 shadow-sm hover:border-primary/30 hover:scale-[1.01] transition-all duration-200"
+                              className="w-full h-40 sm:h-56 object-cover rounded-lg border border-border/20 shadow-sm hover:border-primary/30 hover:scale-[1.01] transition-[transform,border-color] duration-200"
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center pointer-events-none">
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-3 py-1.5 rounded-md text-xs font-medium">
                                 Click to enlarge
                               </div>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -1462,6 +1469,7 @@ export default function Journal() {
         onClick={() => setShowNewEntry(true)}
         className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl z-50"
         style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+        aria-label="New entry"
       >
         <Plus className="h-5 w-5" />
       </Button>

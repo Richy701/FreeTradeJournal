@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, ArrowRight, Check, Rocket, SkipForward, ChevronLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 
 interface SimplifiedOnboardingData {
@@ -81,6 +81,7 @@ export default function OnboardingSimplified() {
     currentBalance: DEFAULT_VALUES.STARTING_BALANCE.toString()
   });
   const [loading, setLoading] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
   const { user } = useAuth();
   const { addAccount } = useAccounts();
   const userStorage = useUserStorage();
@@ -151,6 +152,17 @@ export default function OnboardingSimplified() {
     }
   };
 
+  const activeStepVariants = shouldReduceMotion ? {
+    enter: { opacity: 1, x: 0 },
+    center: { opacity: 1, x: 0 },
+    exit: { opacity: 1, x: 0 },
+  } : stepVariants;
+
+  const activeFadeUpItem = shouldReduceMotion ? {
+    hidden: { opacity: 1, y: 0 },
+    visible: { opacity: 1, y: 0 },
+  } : fadeUpItem;
+
   const progressPercent = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   const renderStep = () => {
@@ -160,7 +172,7 @@ export default function OnboardingSimplified() {
           <motion.div
             key="step-1"
             custom={direction}
-            variants={stepVariants}
+            variants={activeStepVariants}
             initial="enter"
             animate="center"
             exit="exit"
@@ -172,19 +184,19 @@ export default function OnboardingSimplified() {
               animate="visible"
             >
               <div className="text-center space-y-4">
-                <motion.h2 variants={fadeUpItem} className="text-3xl font-bold">
+                <motion.h2 variants={activeFadeUpItem} className="text-3xl font-bold">
                   Welcome,{' '}
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-foreground/90 to-primary/70">
                     {user?.displayName?.split(' ')[0] || 'Trader'}
                   </span>
                   !
                 </motion.h2>
-                <motion.p variants={fadeUpItem} className="text-muted-foreground max-w-md mx-auto">
+                <motion.p variants={activeFadeUpItem} className="text-muted-foreground max-w-md mx-auto">
                   Let's quickly set up your account. This will only take a minute.
                 </motion.p>
               </div>
 
-              <motion.div variants={fadeUpItem} className="space-y-4">
+              <motion.div variants={activeFadeUpItem} className="space-y-4">
                 <Button
                   onClick={() => goToStep(2)}
                   size="lg"
@@ -218,7 +230,7 @@ export default function OnboardingSimplified() {
           <motion.div
             key="step-2"
             custom={direction}
-            variants={stepVariants}
+            variants={activeStepVariants}
             initial="enter"
             animate="center"
             exit="exit"
@@ -229,10 +241,11 @@ export default function OnboardingSimplified() {
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={fadeUpItem} className="flex items-center gap-3">
+              <motion.div variants={activeFadeUpItem} className="flex items-center gap-3">
                 <button
                   onClick={() => goToStep(1)}
                   className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  aria-label="Go back"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
@@ -244,7 +257,7 @@ export default function OnboardingSimplified() {
                 </div>
               </motion.div>
 
-              <motion.div variants={fadeUpItem} className="space-y-4">
+              <motion.div variants={activeFadeUpItem} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="accountName">Account Name</Label>
                   <Input
@@ -304,7 +317,7 @@ export default function OnboardingSimplified() {
                     className="h-11"
                     value={data.broker}
                     onChange={(e) => setData({ ...data, broker: e.target.value })}
-                    placeholder="e.g., FTMO, Apex, TopStep"
+                    placeholder="e.g., FTMO, Apex, TopStep…"
                   />
                 </div>
 
@@ -321,7 +334,7 @@ export default function OnboardingSimplified() {
                 </div>
               </motion.div>
 
-              <motion.div variants={fadeUpItem} className="flex gap-3">
+              <motion.div variants={activeFadeUpItem} className="flex gap-3">
                 <Button
                   onClick={handleSkipOnboarding}
                   variant="outline"
@@ -347,7 +360,7 @@ export default function OnboardingSimplified() {
           <motion.div
             key="step-3"
             custom={direction}
-            variants={stepVariants}
+            variants={activeStepVariants}
             initial="enter"
             animate="center"
             exit="exit"
@@ -367,16 +380,16 @@ export default function OnboardingSimplified() {
                 >
                   <Check className="h-8 w-8 text-green-500" />
                 </motion.div>
-                <motion.h2 variants={fadeUpItem} className="text-3xl font-bold">
+                <motion.h2 variants={activeFadeUpItem} className="text-3xl font-bold">
                   You're All Set!
                 </motion.h2>
-                <motion.p variants={fadeUpItem} className="text-muted-foreground max-w-md mx-auto">
+                <motion.p variants={activeFadeUpItem} className="text-muted-foreground max-w-md mx-auto">
                   Your account is ready. Start tracking your trades and improve your performance!
                 </motion.p>
               </div>
 
               <motion.div
-                variants={fadeUpItem}
+                variants={activeFadeUpItem}
                 className="bg-muted/30 backdrop-blur-sm rounded-lg p-4 space-y-2 border border-border/50"
               >
                 <h3 className="font-semibold">Quick Summary:</h3>
@@ -402,7 +415,7 @@ export default function OnboardingSimplified() {
                 </div>
               </motion.div>
 
-              <motion.div variants={fadeUpItem} className="space-y-3">
+              <motion.div variants={activeFadeUpItem} className="space-y-3">
                 <Button
                   onClick={handleComplete}
                   size="lg"
@@ -430,7 +443,7 @@ export default function OnboardingSimplified() {
                 </Button>
               </motion.div>
 
-              <motion.p variants={fadeUpItem} className="text-xs text-center text-muted-foreground">
+              <motion.p variants={activeFadeUpItem} className="text-xs text-center text-muted-foreground">
                 You can import trades and customize settings from the dashboard
               </motion.p>
             </motion.div>

@@ -19,7 +19,6 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Wait for critical resources to load before loading logos
     const loadLogos = () => {
       const lazyImages = carouselRef.current?.querySelectorAll('.logo-lazy[data-src]');
       lazyImages?.forEach((img) => {
@@ -35,18 +34,24 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
       });
     };
 
-    // Defer logo loading until after initial render and critical resources
-    const timer = setTimeout(() => {
-      if (document.readyState === 'complete') {
-        loadLogos();
-      } else {
-        window.addEventListener('load', loadLogos, { once: true });
-      }
-    }, 1000);
+    const el = carouselRef.current;
+    if (!el) return;
+
+    // Use IntersectionObserver to load logos when scrolled into view
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadLogos();
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(el);
 
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener('load', loadLogos);
+      observer.disconnect();
     };
   }, []);
 
@@ -54,9 +59,9 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
     <div ref={carouselRef} className={cn("relative w-full overflow-hidden", className)}>
       <div className="absolute left-0 top-0 z-10 h-full w-32 bg-gradient-to-r from-background to-transparent" />
       <div className="absolute right-0 top-0 z-10 h-full w-32 bg-gradient-to-l from-background to-transparent" />
-      
+
       <div className="relative flex overflow-hidden py-8">
-        <div className="flex items-center gap-12 whitespace-nowrap animate-marquee will-change-transform">
+        <div className="flex items-center gap-12 whitespace-nowrap animate-marquee will-change-transform motion-reduce:[animation-play-state:paused]">
           {[...logos, ...logos].map((logo, idx) => (
             <div
               key={idx}

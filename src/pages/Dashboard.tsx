@@ -463,9 +463,9 @@ export default function Dashboard() {
           <div className="flex flex-col gap-2">
             {/* Greeting + Date */}
             <div className="text-center sm:text-left">
-              <p className="text-2xl font-semibold text-foreground opacity-90">
+              <h1 className="font-display text-2xl font-semibold text-foreground opacity-90">
                 {getGreeting()}
-              </p>
+              </h1>
               <div className="text-sm text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
@@ -505,11 +505,11 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Market</Label>
+                        <Label htmlFor="trade-market">Market</Label>
                         <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
                           setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
                         }}>
-                          <SelectTrigger>
+                          <SelectTrigger id="trade-market">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -521,9 +521,9 @@ export default function Dashboard() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>Side</Label>
+                        <Label htmlFor="trade-side">Side</Label>
                         <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
-                          <SelectTrigger>
+                          <SelectTrigger id="trade-side">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -536,9 +536,9 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Symbol</Label>
+                        <Label htmlFor="trade-symbol">Symbol</Label>
                         <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
-                          <SelectTrigger>
+                          <SelectTrigger id="trade-symbol">
                             <SelectValue placeholder="Select instrument" />
                           </SelectTrigger>
                           <SelectContent>
@@ -552,9 +552,9 @@ export default function Dashboard() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>Prop Firm</Label>
+                        <Label htmlFor="trade-prop-firm">Prop Firm</Label>
                         <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
-                          <SelectTrigger>
+                          <SelectTrigger id="trade-prop-firm">
                             <SelectValue placeholder="Optional" />
                           </SelectTrigger>
                           <SelectContent>
@@ -576,7 +576,7 @@ export default function Dashboard() {
                           id="entry-price"
                           type="number"
                           step="0.00001"
-                          placeholder="1.08450"
+                          placeholder="1.08450…"
                           value={tradeForm.entryPrice}
                           onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
                         />
@@ -588,7 +588,7 @@ export default function Dashboard() {
                           id="exit-price"
                           type="number"
                           step="0.00001"
-                          placeholder="1.08650"
+                          placeholder="1.08650…"
                           value={tradeForm.exitPrice}
                           onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
                         />
@@ -602,7 +602,7 @@ export default function Dashboard() {
                           id="lot-size"
                           type="number"
                           step="0.01"
-                          placeholder="1.00"
+                          placeholder="1.00…"
                           value={tradeForm.lotSize}
                           onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
                         />
@@ -612,7 +612,7 @@ export default function Dashboard() {
                         <Label htmlFor="trade-strategy">Strategy</Label>
                         <Input
                           id="trade-strategy"
-                          placeholder="Breakout, Support/Resistance, etc."
+                          placeholder="Breakout, Support/Resistance, etc.…"
                           value={tradeForm.strategy}
                           onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
                         />
@@ -623,7 +623,7 @@ export default function Dashboard() {
                       <Label htmlFor="trade-notes">Notes</Label>
                       <Textarea
                         id="trade-notes"
-                        placeholder="Trade reasoning, market conditions, etc."
+                        placeholder="Trade reasoning, market conditions, etc.…"
                         value={tradeForm.notes}
                         onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
                         className="min-h-[80px]"
@@ -652,6 +652,7 @@ export default function Dashboard() {
                           type="file"
                           accept=".csv,.xlsx,.xls"
                           className="hidden"
+                          aria-label="Import CSV file"
                           onChange={handleCSVImport}
                         />
                       </div>
@@ -1008,7 +1009,7 @@ export default function Dashboard() {
             </div>
             <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
+                className="h-full rounded-full transition-[width] duration-500 ease-out"
                 style={{ width: `${importProgress.percent}%`, backgroundColor: themeColors.primary }}
               />
             </div>

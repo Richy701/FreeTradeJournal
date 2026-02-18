@@ -40,7 +40,7 @@ function UserAvatar() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="User menu">
           <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
             <AvatarImage src={avatar} alt={name} />
             <AvatarFallback className="rounded-full text-xs">{name.charAt(0).toUpperCase()}</AvatarFallback>
@@ -127,16 +127,16 @@ export function SiteHeader({ className }: { className?: string }) {
   const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation'].includes(pathname.split('/').filter(Boolean)[0])
 
   return (
-    <header className={`hidden md:flex h-16 shrink-0 items-center gap-2 px-4 ${className || ''}`}>
+    <header className={`flex h-12 md:h-16 shrink-0 items-center gap-2 px-3 md:px-4 ${className || ''}`}>
       {hasSidebar && <SidebarTrigger />}
-      <Separator orientation="vertical" className="mr-2 h-4" />
-      <Breadcrumb>
+      <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
+      <Breadcrumb className="hidden md:block">
         <BreadcrumbList>
           {breadcrumbItems.map((item, index) => (
             <React.Fragment key={`${item.href}-${index}`}>
               <BreadcrumbItem>
                 {item.isActive ? (
-                  <BreadcrumbPage 
+                  <BreadcrumbPage
                     className={isPublicPage ? "text-primary" : ""}
                     style={!isPublicPage ? {color: themeColors.primary} : {}}
                   >
@@ -155,6 +155,12 @@ export function SiteHeader({ className }: { className?: string }) {
           ))}
         </BreadcrumbList>
       </Breadcrumb>
+      {/* Mobile: show current page name only */}
+      <span className="md:hidden text-sm font-medium text-foreground truncate"
+        style={{color: !isPublicPage ? themeColors.primary : undefined}}
+      >
+        {breadcrumbItems[breadcrumbItems.length - 1]?.label}
+      </span>
       <div className="ml-auto flex items-center gap-1">
         <ThemeToggle />
         {user && (

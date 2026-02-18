@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DotFilledIcon } from "@radix-ui/react-icons";
@@ -23,14 +23,15 @@ function ElegantShape({
     rotate?: number;
     gradient?: string;
 }) {
+    const shouldReduceMotion = useReducedMotion();
     return (
         <motion.div
-            initial={{
+            initial={shouldReduceMotion ? { opacity: 1, y: 0, rotate } : {
                 opacity: 0,
                 y: -150,
                 rotate: rotate - 15,
             }}
-            animate={{
+            animate={shouldReduceMotion ? { opacity: 1, y: 0, rotate } : {
                 opacity: 1,
                 y: 0,
                 rotate: rotate,
@@ -44,10 +45,10 @@ function ElegantShape({
             className={cn("absolute", className)}
         >
             <motion.div
-                animate={{
+                animate={shouldReduceMotion ? {} : {
                     y: [0, 15, 0],
                 }}
-                transition={{
+                transition={shouldReduceMotion ? {} : {
                     duration: 12,
                     repeat: Number.POSITIVE_INFINITY,
                     ease: [0.4, 0, 0.6, 1],
@@ -101,7 +102,7 @@ function HeroGeometric({
     };
 
     return (
-        <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-background">
+        <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-background noise-overlay">
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-yellow-600/[0.08] dark:from-amber-500/[0.05] dark:to-yellow-600/[0.05] blur-3xl" />
 
             <div className="absolute inset-0 overflow-hidden">
@@ -172,7 +173,7 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 md:mb-10 tracking-tight leading-[1.1] sm:leading-tight">
+                        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 md:mb-10 tracking-tight leading-[1.1] sm:leading-tight">
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80 block">
                                 {title1}
                             </span>
@@ -210,7 +211,7 @@ function HeroGeometric({
                                 enterDemoMode();
                                 navigate('/dashboard');
                             }}
-                            className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]"
+                            className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]"
                         >
                             View Live Demo
                         </Button>

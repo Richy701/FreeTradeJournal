@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import { faEye, faEyeSlash, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faSpinner, faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Login() {
@@ -111,11 +111,16 @@ export default function Login() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo/Brand */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <FontAwesomeIcon icon={faChartLine} className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h1 className="font-display text-3xl font-bold tracking-tight">Welcome back</h1>
           <p className="text-muted-foreground/85">Sign in to your FreeTradeJournal account</p>
         </div>
 
-        <Card className={`shadow-lg transition-all duration-300 ${formAnimation}`}>
+        <Card className={`border-border/50 shadow-lg transition-shadow duration-300 ${formAnimation}`}>
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl text-center">Sign in</CardTitle>
             <CardDescription className="text-center">
@@ -143,10 +148,12 @@ export default function Login() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="you@example.com…"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  spellCheck={false}
+                  autoComplete="email"
                   className="h-11"
                 />
               </div>
@@ -157,16 +164,18 @@ export default function Login() {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder="Enter your password…"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                     className="h-11 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="h-4 w-4" />
                   </button>
@@ -241,13 +250,13 @@ export default function Login() {
 
         <p className="text-center text-xs text-muted-foreground">
           By signing in, you agree to our{' '}
-          <a href="#" className="underline hover:text-foreground">
+          <Link to="/terms" className="underline hover:text-foreground">
             Terms of Service
-          </a>{' '}
+          </Link>{' '}
           and{' '}
-          <a href="#" className="underline hover:text-foreground">
+          <Link to="/privacy" className="underline hover:text-foreground">
             Privacy Policy
-          </a>
+          </Link>
         </p>
       </div>
     </div>

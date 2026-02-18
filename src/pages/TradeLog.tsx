@@ -489,6 +489,7 @@ export default function TradeLog() {
   };
 
   const handleDelete = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this trade?')) return;
     const updatedTrades = trades.filter((t) => t.id !== id);
     saveTrades(updatedTrades);
   };
@@ -1022,7 +1023,7 @@ export default function TradeLog() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="font-display text-2xl font-bold text-foreground">
                 Trade Log
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -1333,7 +1334,7 @@ export default function TradeLog() {
                                 <Input 
                                   type="number" 
                                   step="0.01" 
-                                  placeholder="1.0" 
+                                  placeholder="1.0…" 
                                   className="text-lg font-semibold"
                                   {...field} 
                                   onChange={e => field.onChange(parseFloat(e.target.value))} 
@@ -1357,7 +1358,7 @@ export default function TradeLog() {
                                 <Input 
                                   type="number" 
                                   step="0.0001" 
-                                  placeholder="0.0002" 
+                                  placeholder="0.0002…" 
                                   className="text-lg font-semibold"
                                   {...field} 
                                   onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
@@ -1377,7 +1378,7 @@ export default function TradeLog() {
                                 <Input 
                                   type="number" 
                                   step="0.01" 
-                                  placeholder="7.00" 
+                                  placeholder="7.00…" 
                                   className="text-lg font-semibold"
                                   {...field} 
                                   onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
@@ -1397,7 +1398,7 @@ export default function TradeLog() {
                                 <Input 
                                   type="number" 
                                   step="0.01" 
-                                  placeholder="-2.50" 
+                                  placeholder="-2.50…" 
                                   className="text-lg font-semibold"
                                   {...field} 
                                   onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
@@ -1571,7 +1572,7 @@ export default function TradeLog() {
                             <FormLabel className="text-base font-semibold">Strategy</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="e.g., Trend Following, Mean Reversion, Breakout" 
+                                placeholder="e.g., Trend Following, Mean Reversion, Breakout…" 
                                 className="text-lg"
                                 {...field} 
                               />
@@ -1888,6 +1889,7 @@ export default function TradeLog() {
                               size="icon"
                               onClick={() => handleEdit(trade)}
                               className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-shadow duration-200 hover:shadow-md"
+                              aria-label="Edit trade"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -1896,6 +1898,7 @@ export default function TradeLog() {
                               size="icon"
                               onClick={() => handleDelete(trade.id)}
                               className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-shadow duration-200 hover:shadow-md"
+                              aria-label="Delete trade"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
