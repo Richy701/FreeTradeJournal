@@ -15,6 +15,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.8.0',
+    date: '2026-02-18',
+    summary: 'Accessibility audit and UI/UX polish — keyboard navigation, reduced motion support, mobile header, and consistent typography.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Keyboard focus indicators restored across the app',
+        description: 'A global CSS rule was suppressing all focus outlines, making the app unusable for keyboard-only users. Focus-visible ring styles now work on all interactive elements.',
+      },
+      {
+        type: 'fixed',
+        text: 'Mobile long-press and copy/share restored',
+        description: 'A global -webkit-touch-callout: none rule was blocking text selection, image saving, and share menus on mobile. Removed so standard mobile interactions work again.',
+      },
+      {
+        type: 'fixed',
+        text: 'Form labels properly linked to inputs',
+        description: 'Added htmlFor/id associations to the Dashboard trade modal (Market, Side, Symbol, Prop Firm), Journal entry form (Title, Content), and file upload input for screen reader accessibility.',
+      },
+      {
+        type: 'improved',
+        text: 'Site header now visible on mobile',
+        description: 'The breadcrumb header was hidden on screens below 768px. It now shows a condensed current page name with theme toggle and user avatar on all screen sizes.',
+      },
+      {
+        type: 'improved',
+        text: 'Consistent typography with Sora display font',
+        description: 'Page headings on Dashboard, Trade Log, Journal, Profile, Settings, Login, and Signup now use the same Sora display font as the landing page for a cohesive feel.',
+      },
+      {
+        type: 'improved',
+        text: 'Reduced motion support for animations',
+        description: 'The hero shimmer button, onboarding step transitions, and logo carousel now respect the prefers-reduced-motion OS setting. Users who prefer reduced motion see instant transitions.',
+      },
+      {
+        type: 'improved',
+        text: 'Login page matches Signup branding',
+        description: 'Added the chart icon logo to the Login page header and matched the card border styling, so both auth pages feel like the same app.',
+      },
+      {
+        type: 'fixed',
+        text: 'Sign In link visible on mobile landing page',
+        description: 'The Sign In link was hidden inside a desktop-only nav. It now appears alongside the theme toggle on all screen sizes.',
+      },
+    ],
+  },
+  {
     version: '1.7.0',
     date: '2026-02-17',
     summary: 'CSV import deduplication fixes, multi-account data safety, currency sync, and Dashboard import UX improvements.',
@@ -240,4 +287,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '1.6.0'
+export const LATEST_CHANGELOG_VERSION = '1.8.0'
