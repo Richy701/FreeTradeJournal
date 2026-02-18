@@ -48,7 +48,7 @@ export function DemoCtaCard() {
           <Link to="/signup" className="block">
             <Button
               variant="ghost"
-              className="w-full !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black hover:shadow-lg hover:scale-[1.01] transition-all duration-300"
+              className="w-full !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black hover:shadow-lg hover:scale-[1.01] transition-[transform,box-shadow] duration-300"
               size="lg"
               onClick={() => exitDemoMode()}
             >

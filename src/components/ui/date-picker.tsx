@@ -27,7 +27,7 @@ interface DatePickerProps {
 export function DatePicker({
   date,
   onDateChange,
-  placeholder = "Pick a date",
+  placeholder = "Pick a date…",
   disabled = false,
   className,
 }: DatePickerProps) {
@@ -70,7 +70,7 @@ interface DateTimePickerProps {
 export function DateTimePicker({
   date,
   onDateChange,
-  placeholder = "Pick a date and time",
+  placeholder = "Pick a date and time…",
   disabled = false,
   className,
 }: DateTimePickerProps) {

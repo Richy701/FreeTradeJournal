@@ -6,13 +6,17 @@ interface OptimizedImageProps {
   alt: string;
   className?: string;
   priority?: boolean;
+  width?: number;
+  height?: number;
 }
 
 export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   src,
   alt,
   className,
-  priority = false
+  priority = false,
+  width,
+  height
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -38,6 +42,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         <img
           src={src}
           alt={alt}
+          width={width}
+          height={height}
           className={cn(
             "w-full h-full object-cover transition-opacity duration-300",
             isLoading ? "opacity-0" : "opacity-100",

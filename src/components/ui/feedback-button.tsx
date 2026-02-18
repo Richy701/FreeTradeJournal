@@ -51,7 +51,7 @@ export function FeedbackButton({
             "bg-primary hover:bg-primary/90",
             "text-primary-foreground rounded-full",
             "shadow-lg hover:shadow-xl hover:scale-110",
-            "transition-all duration-300 group",
+            "transition-[transform,opacity] duration-300 group",
             className
           )}
           aria-label="Send feedback"

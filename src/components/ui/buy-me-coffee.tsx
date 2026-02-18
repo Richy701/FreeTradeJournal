@@ -1,5 +1,5 @@
 import { Coffee } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 
 interface BuyMeCoffeeProps {
   username?: string;
@@ -14,20 +14,17 @@ export function BuyMeCoffee({
   size = 'default',
   className = ''
 }: BuyMeCoffeeProps) {
-  const handleClick = () => {
-    window.open(`https://www.buymeacoffee.com/${username}`, '_blank', 'noopener,noreferrer');
-  };
-
   return (
-    <Button
-      variant={variant}
-      size={size}
-      onClick={handleClick}
-      className={`gap-2 ${className}`}
+    <a
+      href={`https://www.buymeacoffee.com/${username}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`gap-2 ${buttonVariants({ variant, size })} ${className}`}
+      aria-label="Buy me a coffee"
     >
       <Coffee className="h-4 w-4" />
       <span className="hidden sm:inline">Buy me a coffee</span>
       <span className="sm:hidden">Support</span>
-    </Button>
+    </a>
   );
 }

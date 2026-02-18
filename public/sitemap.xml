@@ -4,7 +4,7 @@
   <!-- Main Pages -->
   <url>
     <loc>https://www.freetradejournal.com/</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -17,14 +17,14 @@
   <!-- Authentication Pages -->
   <url>
     <loc>https://www.freetradejournal.com/signup</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://www.freetradejournal.com/login</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -32,14 +32,14 @@
   <!-- Dashboard Pages -->
   <url>
     <loc>https://www.freetradejournal.com/dashboard</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://www.freetradejournal.com/trades</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -51,7 +51,7 @@
 
   <url>
     <loc>https://www.freetradejournal.com/journal</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
@@ -63,7 +63,7 @@
 
   <url>
     <loc>https://www.freetradejournal.com/goals</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
@@ -76,21 +76,21 @@
   <!-- Additional landing pages for SEO -->
   <url>
     <loc>https://www.freetradejournal.com/forex-trading-journal</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.freetradejournal.com/futures-trading-tracker</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.freetradejournal.com/prop-firm-dashboard</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -98,29 +98,36 @@
   <!-- Information Pages -->
   <url>
     <loc>https://www.freetradejournal.com/documentation</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.freetradejournal.com/changelog</loc>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
 
   <!-- Legal Pages -->
   <url>
     <loc>https://www.freetradejournal.com/privacy</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
     <loc>https://www.freetradejournal.com/terms</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
     <loc>https://www.freetradejournal.com/cookie-policy</loc>
-    <lastmod>2026-02-11T00:00:00+00:00</lastmod>
+    <lastmod>2026-02-18T00:00:00+00:00</lastmod>
     <changefreq>quarterly</changefreq>
     <priority>0.5</priority>
   </url>

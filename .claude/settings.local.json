@@ -68,7 +68,11 @@
       "WebFetch(domain:www.remotion.dev)",
       "Bash(git -C /Users/richy/FreeTradeJournal status --short)",
       "Bash(git -C /Users/richy/FreeTradeJournal diff --stat)",
-      "Bash(git -C /Users/richy/FreeTradeJournal log --oneline -5)"
+      "Bash(git -C /Users/richy/FreeTradeJournal log --oneline -5)",
+      "Bash(git -C /Users/richy/FreeTradeJournal push)",
+      "Bash(kill:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }

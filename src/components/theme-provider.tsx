@@ -41,10 +41,12 @@ export function ThemeProvider({
         : 'light';
 
       root.classList.add(systemTheme);
+      document.documentElement.style.colorScheme = systemTheme;
       return;
     }
 
     root.classList.add(theme);
+    document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
   }, [theme]);
 
   const value = {

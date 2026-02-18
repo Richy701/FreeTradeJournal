@@ -32,7 +32,7 @@ const SegmentedControl = React.forwardRef<
         type="button"
         onClick={() => onCheckedChange(false)}
         className={cn(
-          "flex-1 rounded-sm px-2 py-1 font-medium transition-shadow duration-200",
+          "flex-1 rounded-sm px-2 py-1 font-medium transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           !checked 
             ? "bg-background text-foreground shadow-sm" 
             : "text-muted-foreground hover:text-foreground"
@@ -44,7 +44,7 @@ const SegmentedControl = React.forwardRef<
         type="button"
         onClick={() => onCheckedChange(true)}
         className={cn(
-          "flex-1 rounded-sm px-2 py-1 font-medium transition-shadow duration-200",
+          "flex-1 rounded-sm px-2 py-1 font-medium transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           checked 
             ? "bg-background text-foreground shadow-sm" 
             : "text-muted-foreground hover:text-foreground"

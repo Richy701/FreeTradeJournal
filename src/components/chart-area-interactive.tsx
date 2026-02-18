@@ -123,6 +123,7 @@ export function ChartAreaInteractive() {
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              aria-pressed={view === 'equity'}
             >
               Equity
             </button>
@@ -133,6 +134,7 @@ export function ChartAreaInteractive() {
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              aria-pressed={view === 'pnl'}
             >
               P&L
             </button>

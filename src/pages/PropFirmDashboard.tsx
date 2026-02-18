@@ -117,7 +117,7 @@ export default function PropFirmDashboard() {
                   enterDemoMode();
                   navigate('/dashboard');
                 }}
-                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
+                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-[transform,box-shadow]"
               >
                 Try Live Demo
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -168,7 +168,7 @@ export default function PropFirmDashboard() {
                     </div>
                     <div className="w-full bg-secondary rounded-full h-3">
                       <div 
-                        className="bg-primary rounded-full h-3 transition-all"
+                        className="bg-primary rounded-full h-3 transition-[width]"
                         style={{ width: `${metric.progress}%` }}
                       ></div>
                     </div>

@@ -121,7 +121,7 @@ export function SectionCards() {
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 overflow-visible">
 
         {/* Total P&L */}
-        <Link to="/trade-log">
+        <Link to="/trades">
         <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
@@ -155,7 +155,7 @@ export function SectionCards() {
         </Link>
 
         {/* Win Rate */}
-        <Link to="/trade-log">
+        <Link to="/trades">
         <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
@@ -219,7 +219,7 @@ export function SectionCards() {
         </Link>
 
         {/* Total Trades */}
-        <Link to="/trade-log">
+        <Link to="/trades">
         <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Trades</CardTitle>
@@ -242,7 +242,7 @@ export function SectionCards() {
         </Link>
 
         {/* Profit Factor */}
-        <Link to="/trade-log">
+        <Link to="/trades">
         <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>

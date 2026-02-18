@@ -12,6 +12,7 @@ export function FeedbackLink({ children, className = '' }: FeedbackLinkProps) {
   return (
     <>
       <button
+        type="button"
         onClick={(e) => {
           e.preventDefault();
           setShowFeedback(true);

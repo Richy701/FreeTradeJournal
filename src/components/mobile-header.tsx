@@ -51,7 +51,7 @@ export function MobileHeader({ title }: { title?: string }) {
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="User menu">
                 <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
                   <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
                   <AvatarFallback className="rounded-full text-xs">

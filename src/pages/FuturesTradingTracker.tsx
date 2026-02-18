@@ -122,7 +122,7 @@ export default function FuturesTradingTracker() {
                   enterDemoMode();
                   navigate('/dashboard');
                 }}
-                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
+                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-[transform,box-shadow]"
               >
                 Try Live Demo
                 <ArrowRight className="ml-2 h-5 w-5" />

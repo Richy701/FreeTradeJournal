@@ -40,7 +40,7 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5 overscroll-contain">
           {changelog.map((release, releaseIndex) => (
             <div key={release.version}>
               {/* Version header */}

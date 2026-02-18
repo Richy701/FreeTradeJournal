@@ -91,7 +91,7 @@ export default function ModernCTA() {
             <Link to="/dashboard">
               <Button 
                 size="lg" 
-                className="text-lg px-10 py-4 h-auto bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 group"
+                className="text-lg px-10 py-4 h-auto bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-[transform,box-shadow,opacity] duration-300 group"
               >
                 Start Free Now
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -108,19 +108,19 @@ export default function ModernCTA() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">No Setup Required</h3>
             <p className="text-muted-foreground">Start logging trades immediately with our intuitive interface</p>
           </Card>
           
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">100% Free Forever</h3>
             <p className="text-muted-foreground">All core features available at no cost, no premium tiers or hidden fees</p>
           </Card>
           
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-lg">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">Bank-Level Security</h3>
             <p className="text-muted-foreground">Your trading data is encrypted and stored securely</p>

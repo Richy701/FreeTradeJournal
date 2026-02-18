@@ -753,6 +753,7 @@ export function TradingCoach() {
                 size="sm"
                 onClick={prevTip}
                 className="h-8 w-8 p-0"
+                aria-label="Previous tip"
               >
                 ←
               </Button>
@@ -764,6 +765,7 @@ export function TradingCoach() {
                 size="sm"
                 onClick={nextTip}
                 className="h-8 w-8 p-0"
+                aria-label="Next tip"
               >
                 →
               </Button>

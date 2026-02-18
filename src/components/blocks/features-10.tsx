@@ -131,7 +131,7 @@ const FeatureCard = ({ children, className }: FeatureCardProps) => (
         transition={{ duration: 0.3 }}
         className="h-full"
     >
-        <Card className={cn('group relative rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 h-full border-2 hover:border-primary/30', className)}>
+        <Card className={cn('group relative rounded-lg shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 h-full border-2 hover:border-primary/30', className)}>
             <CardDecorator />
             {children}
         </Card>

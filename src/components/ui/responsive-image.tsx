@@ -5,9 +5,11 @@ interface ResponsiveImageProps {
   alt: string
   className?: string
   priority?: boolean
+  width?: number
+  height?: number
 }
 
-export function ResponsiveImage({ src, alt, className = '', priority = false }: ResponsiveImageProps) {
+export function ResponsiveImage({ src, alt, className = '', priority = false, width, height }: ResponsiveImageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(priority)
   const imgRef = useRef<HTMLDivElement>(null)
@@ -42,6 +44,8 @@ export function ResponsiveImage({ src, alt, className = '', priority = false }: 
         <img
           src={src}
           alt={alt}
+          width={width}
+          height={height}
           className={`w-full aspect-video object-contain rounded-2xl transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}

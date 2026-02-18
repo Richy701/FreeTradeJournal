@@ -606,6 +606,7 @@ export function CalendarHeatmap() {
                 onClick={goToPreviousMonth}
                 className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Previous month (←)"
+                aria-label="Previous month"
               >
                 <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3 text-muted-foreground" />
               </button>
@@ -638,6 +639,7 @@ export function CalendarHeatmap() {
                 onClick={goToNextMonth}
                 className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Next month (→)"
+                aria-label="Next month"
               >
                 <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3 text-muted-foreground" />
               </button>
@@ -645,7 +647,7 @@ export function CalendarHeatmap() {
 
             <button
               onClick={goToToday}
-              className="h-8 px-4 rounded-full text-xs font-semibold transition-all hover:opacity-90 touch-manipulation"
+              className="h-8 px-4 rounded-full text-xs font-semibold transition-opacity hover:opacity-90 touch-manipulation"
               style={{
                 backgroundColor: themeColors.primary,
                 color: isLightColor(themeColors.primary) ? '#000' : '#fff'
@@ -745,7 +747,7 @@ export function CalendarHeatmap() {
           
           {/* Enhanced Calendar grid with better spacing and animations */}
           <div className={cn(
-            "space-y-1 sm:space-y-3 transition-all duration-300",
+            "space-y-1 sm:space-y-3 transition-[opacity,transform] duration-300",
             isAnimating ? "opacity-50 scale-95" : "opacity-100 scale-100"
           )}>
             {weeks.map((week, weekIndex) => (
@@ -766,6 +768,8 @@ export function CalendarHeatmap() {
                     <Popover key={day.date.toISOString()} open={isPopoverOpen && selectedDay?.date.toISOString() === day.date.toISOString()}>
                       <PopoverTrigger asChild>
                         <div
+                          role="button"
+                          tabIndex={day.isCurrentMonth ? 0 : -1}
                           className={cn(
                             "h-[72px] sm:h-24 rounded-lg sm:rounded-xl relative overflow-hidden",
                             getPnLColor(day.pnl, day.trades),
@@ -792,6 +796,12 @@ export function CalendarHeatmap() {
                           }}
                           onClick={() => {
                             if (day.isCurrentMonth) {
+                              handleDateClick(day.date)
+                            }
+                          }}
+                          onKeyDown={(e: React.KeyboardEvent) => {
+                            if ((e.key === 'Enter' || e.key === ' ') && day.isCurrentMonth) {
+                              e.preventDefault()
                               handleDateClick(day.date)
                             }
                           }}

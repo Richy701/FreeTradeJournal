@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cookie, X, Shield, ChartBar, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const CookieConsent = () => {
@@ -68,6 +69,7 @@ export const CookieConsent = () => {
                         size="sm"
                         onClick={() => setShowBanner(false)}
                         className="h-6 w-6 p-0 -mt-1 -mr-1"
+                        aria-label="Close cookie banner"
                       >
                         <X className="w-3.5 h-3.5" />
                       </Button>
@@ -121,9 +123,9 @@ export const CookieConsent = () => {
 
                     <p className="text-[10px] text-muted-foreground mt-2.5">
                       By using our site, you agree to our{' '}
-                      <a href="/privacy" className="text-primary hover:underline">
+                      <Link to="/privacy" className="text-primary hover:underline">
                         Privacy Policy
-                      </a>
+                      </Link>
                     </p>
                   </div>
                 </div>

@@ -145,7 +145,7 @@ function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achie
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-500"
+          className="transition-[stroke-dashoffset] duration-500"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
@@ -766,6 +766,7 @@ export function PerformanceGoals() {
                             className="h-7 w-7 p-0"
                             onClick={() => resetGoalProgress(goal.id)}
                             title="Reset progress"
+                            aria-label="Reset goal"
                           >
                             <FontAwesomeIcon icon={faRotateRight} className="h-3 w-3" />
                           </Button>
@@ -774,8 +775,9 @@ export function PerformanceGoals() {
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0 hover:text-destructive"
-                          onClick={() => deleteGoal(goal.id)}
+                          onClick={() => { if (!window.confirm('Are you sure you want to delete this goal?')) return; deleteGoal(goal.id); }}
                           title="Delete goal"
+                          aria-label="Delete goal"
                         >
                           <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
                         </Button>
@@ -871,6 +873,7 @@ export function PerformanceGoals() {
                       setEditingRule(rule)
                       setShowRuleDialog(true)
                     }}
+                    aria-label="Edit rule"
                   >
                     <FontAwesomeIcon icon={faPen} className="h-3 w-3" />
                   </Button>

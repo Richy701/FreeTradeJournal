@@ -4,6 +4,7 @@ import { FaXTwitter } from "react-icons/fa6";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { FeedbackButton } from './feedback-button';
+import { motion } from "framer-motion";
 
 const isInternalLink = (href: string) => href.startsWith('/') || href.startsWith('#');
 
@@ -93,7 +94,13 @@ export const Footer7 = ({
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex w-full flex-col justify-between gap-8 lg:flex-row lg:items-start lg:text-left">
-          <div className="flex w-full flex-col justify-between gap-6 lg:items-start lg:max-w-md">
+          <motion.div
+            className="flex w-full flex-col justify-between gap-6 lg:items-start lg:max-w-md"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            viewport={{ once: true }}
+          >
             {/* Logo */}
             <div className="flex items-center gap-3 lg:justify-start">
               <Link to={logo.url} className="flex items-center gap-3">
@@ -103,13 +110,15 @@ export const Footer7 = ({
                     alt={logo.alt}
                     title={logo.title}
                     className="h-10"
+                    width={40}
+                    height={40}
                   />
                 ) : (
                   <div className="h-10 w-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-sm ring-1 ring-primary/10">
                     <FontAwesomeIcon icon={faChartLine} className="h-6 w-6 text-primary" />
                   </div>
                 )}
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{logo.title}</h2>
+                <h2 className="font-display text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{logo.title}</h2>
               </Link>
             </div>
             <p className="text-base text-muted-foreground leading-relaxed font-medium">
@@ -130,11 +139,17 @@ export const Footer7 = ({
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full lg:max-w-3xl">
             <div className="grid w-full gap-8 md:grid-cols-3 lg:gap-16">
               {sections.map((section, sectionIdx) => (
-                <div key={sectionIdx}>
+                <motion.div
+                  key={sectionIdx}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 + sectionIdx * 0.1, ease: "easeOut" }}
+                  viewport={{ once: true }}
+                >
                   <h3 className="mb-6 font-semibold text-sm uppercase tracking-wider text-foreground">{section.title}</h3>
                   <ul className="space-y-3 text-sm text-muted-foreground">
                     {section.links.map((link, linkIdx) => (
@@ -162,7 +177,7 @@ export const Footer7 = ({
                       </li>
                     ))}
                   </ul>
-                </div>
+                </motion.div>
               ))}
             </div>
             {/* Badges */}
@@ -193,6 +208,8 @@ export const Footer7 = ({
                   src="https://peerlist.io/api/v1/projects/embed/PRJHEOG6A7OOGQDDMIO6KA9M7ABO7A?showUpvote=false&theme=light"
                   alt="Free Trade journal"
                   className="w-auto h-[32px] sm:h-[43px] lg:h-[54px]"
+                  width={250}
+                  height={54}
                 />
               </a>
             </div>
@@ -200,7 +217,13 @@ export const Footer7 = ({
         </div>
         {/* Gradient bottom divider */}
         <div className="mt-10 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        <div className="pt-8 flex flex-col justify-between gap-4 text-sm font-medium text-muted-foreground/70 md:flex-row md:items-center md:text-left">
+        <motion.div
+          className="pt-8 flex flex-col justify-between gap-4 text-sm font-medium text-muted-foreground/70 md:flex-row md:items-center md:text-left"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          viewport={{ once: true }}
+        >
           <p className="order-2 lg:order-1">{copyright}</p>
           <ul className="order-1 flex flex-col gap-3 md:order-2 md:flex-row md:gap-6">
             {legalLinks.map((link, idx) => (
@@ -220,7 +243,7 @@ export const Footer7 = ({
               />
             </li>
           </ul>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

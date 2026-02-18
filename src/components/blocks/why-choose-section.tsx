@@ -106,7 +106,7 @@ export default function WhyChooseSection() {
           >
             {benefits.map((benefit, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <Card className={`p-6 bg-gradient-to-br ${benefit.gradient} border-0 hover:shadow-lg transition-all duration-300 group`}>
+                <Card className={`p-6 bg-gradient-to-br ${benefit.gradient} border-0 hover:shadow-lg transition-[transform,box-shadow] duration-300 group`}>
                   <div className="flex items-start gap-4">
                     <div className={`p-3 rounded-xl ${benefit.iconBg} group-hover:scale-110 transition-transform duration-300`}>
                       <benefit.icon className={`h-6 w-6 ${benefit.iconColor}`} />
