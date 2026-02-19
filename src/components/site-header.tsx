@@ -128,7 +128,7 @@ export function SiteHeader({ className }: { className?: string }) {
 
   return (
     <header className={`flex h-12 md:h-16 shrink-0 items-center gap-2 px-3 md:px-4 ${className || ''}`}>
-      {hasSidebar && <SidebarTrigger />}
+      {hasSidebar && <SidebarTrigger className="hidden md:flex" />}
       <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
       <Breadcrumb className="hidden md:block">
         <BreadcrumbList>
@@ -162,9 +162,13 @@ export function SiteHeader({ className }: { className?: string }) {
         {breadcrumbItems[breadcrumbItems.length - 1]?.label}
       </span>
       <div className="ml-auto flex items-center gap-1">
-        <ThemeToggle />
+        <div className="hidden md:flex">
+          <ThemeToggle />
+        </div>
         {user && (
-          <UserAvatar />
+          <div className="hidden md:flex">
+            <UserAvatar />
+          </div>
         )}
       </div>
     </header>

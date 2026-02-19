@@ -272,11 +272,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
   /* Mobile-specific optimizations */
   @media (max-width: 768px) {
-    /* Improve touch targets for action buttons only */
-    button:not([role="tab"]):not(.inline-link),
-    [role="button"]:not([role="tab"]) {
-      min-height: 44px;
-    }
 
     /* Force consistent input and select heights */
     .dialog-form-field input,

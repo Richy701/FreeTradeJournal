@@ -75,7 +75,7 @@ export function FeedbackButton({
         className={cn("gap-2 group", className)}
       >
         <MessageSquare className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-        <span className="hidden sm:inline">{buttonText || 'Feedback'}</span>
+        <span>{buttonText || 'Feedback'}</span>
       </Button>
       <FeedbackDialog 
         open={open} 

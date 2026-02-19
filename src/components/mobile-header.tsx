@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
-import { AccountSwitcher } from '@/components/account-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -12,11 +11,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import { AccountSwitcher } from '@/components/account-switcher';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function MobileHeader({ title }: { title?: string }) {
   const { toggleSidebar, openMobile } = useSidebar();
   const { themeColors } = useThemePresets();
-  const { user, isDemo, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -26,7 +27,7 @@ export function MobileHeader({ title }: { title?: string }) {
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="md:hidden h-8 w-8"
+          className="md:hidden h-10 w-10"
           aria-label="Toggle menu"
         >
           {openMobile ? (
@@ -48,10 +49,12 @@ export function MobileHeader({ title }: { title?: string }) {
           </span>
         </div>
 
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="User menu">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="User menu">
                 <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
                   <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
                   <AvatarFallback className="rounded-full text-xs">
@@ -79,14 +82,12 @@ export function MobileHeader({ title }: { title?: string }) {
         ) : (
           <div className="flex-shrink-0 w-8" />
         )}
+        </div>
       </div>
 
-      {/* Account switcher row */}
-      {!isDemo && (
-        <div className="px-3 pb-2 border-b border-border/30">
-          <AccountSwitcher />
-        </div>
-      )}
+      <div className="px-3 pb-2 border-b border-border/30 overflow-hidden min-w-0">
+        <AccountSwitcher />
+      </div>
     </div>
   );
 }

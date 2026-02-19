@@ -57,8 +57,8 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
 
   return (
     <div ref={carouselRef} className={cn("relative w-full overflow-hidden", className)}>
-      <div className="absolute left-0 top-0 z-10 h-full w-32 bg-gradient-to-r from-background to-transparent" />
-      <div className="absolute right-0 top-0 z-10 h-full w-32 bg-gradient-to-l from-background to-transparent" />
+      <div className="absolute left-0 top-0 z-10 h-full w-12 sm:w-32 bg-gradient-to-r from-background to-transparent" />
+      <div className="absolute right-0 top-0 z-10 h-full w-12 sm:w-32 bg-gradient-to-l from-background to-transparent" />
 
       <div className="relative flex overflow-hidden py-8">
         <div className="flex items-center gap-12 whitespace-nowrap animate-marquee will-change-transform motion-reduce:[animation-play-state:paused]">

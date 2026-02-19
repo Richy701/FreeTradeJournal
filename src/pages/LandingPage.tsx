@@ -44,7 +44,7 @@ export default function LandingPage() {
               Sign In
             </Link>
             <ThemeToggle />
-            <BuyMeCoffee username="richy701" variant="outline" size="sm" />
+            <BuyMeCoffee username="richy701" variant="outline" size="sm" className="hidden sm:flex" />
           </div>
         </div>
       </header>

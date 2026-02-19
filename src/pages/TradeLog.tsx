@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -125,6 +126,7 @@ export default function TradeLog() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
+  const isMobile = useIsMobile();
   const itemsPerPage = 10;
 
   // Calculate pagination
@@ -1021,8 +1023,8 @@ export default function TradeLog() {
       {/* Header */}
       <div className="border-b sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="space-y-2">
+          <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
+            <div className="space-y-1 text-center sm:text-left">
               <h1 className="font-display text-2xl font-bold text-foreground">
                 Trade Log
               </h1>
@@ -1030,7 +1032,7 @@ export default function TradeLog() {
                 {trades.length} trades recorded
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
               {!isDemo && (
               <>
               <Button
@@ -1063,9 +1065,9 @@ export default function TradeLog() {
               />
               </>
               )}
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 size="sm"
                 disabled={trades.length === 0}
                 onClick={handleCSVExport}
@@ -1073,9 +1075,9 @@ export default function TradeLog() {
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setIsReportDialogOpen(true)}
               >
@@ -2008,11 +2010,11 @@ export default function TradeLog() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 border-t border-border/30">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/30">
+                <div className="text-sm text-muted-foreground text-center sm:text-left">
                   Showing {startIndex + 1} to {Math.min(endIndex, trades.length)} of {trades.length} trades
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -2024,16 +2026,17 @@ export default function TradeLog() {
                   </Button>
                   
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    {Array.from({ length: Math.min(isMobile ? 3 : 5, totalPages) }, (_, i) => {
+                      const maxVisible = isMobile ? 3 : 5;
                       let pageNumber;
-                      if (totalPages <= 5) {
+                      if (totalPages <= maxVisible) {
                         pageNumber = i + 1;
-                      } else if (currentPage <= 3) {
+                      } else if (currentPage <= Math.ceil(maxVisible / 2)) {
                         pageNumber = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNumber = totalPages - 4 + i;
+                      } else if (currentPage >= totalPages - Math.floor(maxVisible / 2)) {
+                        pageNumber = totalPages - maxVisible + 1 + i;
                       } else {
-                        pageNumber = currentPage - 2 + i;
+                        pageNumber = currentPage - Math.floor(maxVisible / 2) + i;
                       }
                       
                       return (
