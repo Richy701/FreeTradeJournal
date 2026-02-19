@@ -15,6 +15,43 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.9.0',
+    date: '2026-02-19',
+    summary: 'Trade Insights page redesign — new trader profile radar, summary pill badges, colored actionable ideas, and chart alignment fixes.',
+    items: [
+      {
+        type: 'new',
+        text: 'Trader Profile radar chart',
+        description: 'Replaced the hourly P&L radar with a multi-dimensional trader profile showing Win Rate, Risk/Reward, Consistency, Volume, Best Day, and Direction scores with a legend.',
+      },
+      {
+        type: 'improved',
+        text: 'Summary stats redesigned as pill badges with natural language',
+        description: 'Replaced the 4-card stat grid with compact colored pill badges and a supporting summary sentence for a less generic, more human layout.',
+      },
+      {
+        type: 'improved',
+        text: 'Actionable Ideas now color-coded by sentiment',
+        description: 'Ideas are tinted green (positive), amber (opportunity), or blue (neutral) so you can quickly scan what matters.',
+      },
+      {
+        type: 'improved',
+        text: 'Page header shows total P&L and win rate inline',
+        description: 'The Trade Insights header now surfaces key stats directly so you see performance at a glance without scrolling.',
+      },
+      {
+        type: 'fixed',
+        text: 'Chart card alignment across rows',
+        description: 'Cards in two-column grids now stretch to equal height instead of mismatching due to different content sizes.',
+      },
+      {
+        type: 'fixed',
+        text: 'Symbol Performance Y-axis labels no longer truncated',
+        description: 'Fixed negative left margin that was clipping ticker symbols on the horizontal bar chart.',
+      },
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-02-18',
     summary: 'Accessibility audit and UI/UX polish — keyboard navigation, reduced motion support, mobile header, and consistent typography.',

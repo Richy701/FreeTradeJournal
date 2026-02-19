@@ -91,6 +91,7 @@ export function SiteHeader({ className }: { className?: string }) {
       'terms': 'Terms & Conditions',
       'cookie-policy': 'Cookie Policy',
       'documentation': 'Documentation',
+      'ideas': 'Trade Insights',
     }
     
     // For public pages (privacy, terms), Home should link to landing page

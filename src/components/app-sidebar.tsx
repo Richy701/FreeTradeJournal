@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Target,
   BookOpen,
+  Lightbulb,
   Settings2,
   Coffee,
   LineChart,
@@ -48,6 +49,11 @@ const navMain = [
     title: "Journal",
     url: "/journal",
     icon: BookOpen,
+  },
+  {
+    title: "Trade Insights",
+    url: "/ideas",
+    icon: Lightbulb,
   },
 ]
 
