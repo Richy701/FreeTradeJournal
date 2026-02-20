@@ -9,7 +9,7 @@ import {
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLocation, useNavigate } from "react-router-dom"
-import { User, LogOut } from "lucide-react"
+import { User, LogOut, UserPlus, Eye } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 function UserAvatar() {
-  const { user, logout } = useAuth()
+  const { user, isDemo, exitDemoMode, logout } = useAuth()
   const navigate = useNavigate()
 
   if (!user) return null
@@ -35,6 +35,32 @@ function UserAvatar() {
     } catch (error) {
       console.error('Failed to logout:', error)
     }
+  }
+
+  if (isDemo) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="Demo menu">
+            <Avatar className="h-7 w-7 rounded-full ring-1 ring-amber-500/50">
+              <AvatarFallback className="rounded-full text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <Eye className="h-3.5 w-3.5" />
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 rounded-lg">
+          <DropdownMenuItem onClick={() => { exitDemoMode(); navigate('/signup'); }}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Sign Up Free
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { exitDemoMode(); navigate('/'); }}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Exit Demo
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
   }
 
   return (

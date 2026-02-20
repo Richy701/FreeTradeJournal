@@ -34,6 +34,7 @@ import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserStorage } from '@/utils/user-storage';
+import { useDemoData } from '@/hooks/use-demo-data';
 import { toast } from 'sonner';
 import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
@@ -94,6 +95,7 @@ export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
   const { isDemo } = useAuth();
   const userStorage = useUserStorage();
+  const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
   const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
@@ -134,9 +136,18 @@ export default function Journal() {
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade'
   });
 
-  // Load entries from localStorage
+  // Load entries from localStorage or demo data
   useEffect(() => {
     const loadEntries = () => {
+      if (isDemo) {
+        const demoEntries = getDemoEntries().map((entry: any) => ({
+          ...entry,
+          date: new Date(entry.date),
+        }));
+        setEntries(demoEntries);
+        return;
+      }
+
       try {
         const savedEntries = userStorage.getItem('journalEntries');
         if (savedEntries) {
@@ -152,13 +163,24 @@ export default function Journal() {
     };
 
     loadEntries();
-  }, []);
+  }, [isDemo]);
 
-  // Load trades from localStorage with loading state
+  // Load trades from localStorage or demo data with loading state
   useEffect(() => {
     const loadTrades = async () => {
       setIsLoadingTrades(true);
       try {
+        if (isDemo) {
+          const demoTrades = getDemoTrades().map((trade: any) => ({
+            ...trade,
+            entryTime: new Date(trade.entryTime),
+            exitTime: new Date(trade.exitTime),
+          }));
+          setTrades(demoTrades);
+          setIsLoadingTrades(false);
+          return;
+        }
+
         const storedTrades = userStorage.getItem('trades');
         if (storedTrades) {
           const parsedTrades = JSON.parse(storedTrades).map((trade: any) => ({
@@ -180,6 +202,11 @@ export default function Journal() {
 
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;
+
+    if (isDemo) {
+      toast.info('Sign up to save journal entries!');
+      return;
+    }
 
     setIsSubmitting(true);
     
@@ -356,6 +383,10 @@ export default function Journal() {
 
   // Edit and delete functions
   const startEdit = (entry: JournalEntry) => {
+    if (isDemo) {
+      toast.info('Sign up to edit journal entries!');
+      return;
+    }
     setEditingEntry(entry);
     setNewEntry({
       title: entry.title,
@@ -373,6 +404,10 @@ export default function Journal() {
   };
 
   const deleteEntry = (entryId: string) => {
+    if (isDemo) {
+      toast.info('Sign up to delete journal entries!');
+      return;
+    }
     if (confirm('Are you sure you want to delete this journal entry?')) {
       const updatedEntries = entries.filter(entry => entry.id !== entryId);
       setEntries(updatedEntries);

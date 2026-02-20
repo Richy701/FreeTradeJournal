@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react"
+import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp, UserPlus } from "lucide-react"
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -49,7 +49,7 @@ import {
 
 export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
-  const { user, isDemo } = useAuth()
+  const { user, isDemo, exitDemoMode } = useAuth()
   const { activeAccount } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { getTrades } = useDemoData()
@@ -483,7 +483,18 @@ export default function Dashboard() {
 
               {/* Quick Actions - inline with title on desktop */}
               <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
-              {!isDemo && (
+              {isDemo ? (
+                <Link to="/signup" onClick={() => exitDemoMode()}>
+                  <Button
+                    size="default"
+                    className="gap-2 h-11 touch-manipulation !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Sign Up to Add Trades</span>
+                    <span className="sm:hidden">Sign Up</span>
+                  </Button>
+                </Link>
+              ) : (
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
                   <Button

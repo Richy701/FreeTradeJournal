@@ -37,6 +37,7 @@ import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findC
 import { SiteHeader } from '@/components/site-header';
 import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
+import { useDemoData } from '@/hooks/use-demo-data';
 
 interface Trade {
   id: string
@@ -100,6 +101,7 @@ export default function TradeLog() {
   const { isDemo } = useAuth();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
+  const { getTrades: getDemoTrades } = useDemoData();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -426,6 +428,11 @@ export default function TradeLog() {
   };
 
   const onSubmit = (data: TradeFormData) => {
+    if (isDemo) {
+      toast.info('Sign up to save your real trades!');
+      return;
+    }
+
     let pnl: number;
     let pnlPercentage: number;
     let riskReward: number = 0;
@@ -479,6 +486,10 @@ export default function TradeLog() {
   };
 
   const handleEdit = (trade: Trade) => {
+    if (isDemo) {
+      toast.info('Sign up to edit trades!');
+      return;
+    }
     setEditingTrade(trade);
     form.reset({
       ...trade,
@@ -491,6 +502,10 @@ export default function TradeLog() {
   };
 
   const handleDelete = (id: string) => {
+    if (isDemo) {
+      toast.info('Sign up to delete trades!');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this trade?')) return;
     const updatedTrades = trades.filter((t) => t.id !== id);
     saveTrades(updatedTrades);
@@ -844,6 +859,19 @@ export default function TradeLog() {
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => {
+      // Demo mode: load demo trades directly
+      if (isDemo) {
+        const demoTrades = getDemoTrades().map((trade: any) => ({
+          ...trade,
+          entryTime: new Date(trade.entryTime),
+          exitTime: new Date(trade.exitTime),
+        }));
+        setTrades(demoTrades);
+        calculateQuickStats(demoTrades);
+        setIsLoading(false);
+        return;
+      }
+
       const savedTrades = userStorage.getItem('trades');
       if (savedTrades) {
         try {

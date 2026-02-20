@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react"
+import { toast } from "sonner"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
@@ -256,7 +257,12 @@ export function CalendarHeatmap() {
 
   const handleSaveJournal = () => {
     if (!selectedDateForTrade || !journalNote.trim()) return
-    
+
+    if (isDemo) {
+      toast.info('Sign up to save journal entries!');
+      return;
+    }
+
     let entries = getJournalEntries()
     
     // Always create a new journal entry (no longer replace existing ones)
@@ -303,7 +309,12 @@ export function CalendarHeatmap() {
 
   const handleSaveTrade = () => {
     if (!selectedDateForTrade || !tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
-    
+
+    if (isDemo) {
+      toast.info('Sign up to save your real trades!');
+      return;
+    }
+
     const entryPrice = parseFloat(tradeForm.entryPrice)
     const exitPrice = parseFloat(tradeForm.exitPrice)
     const lotSize = parseFloat(tradeForm.lotSize) || 1
@@ -869,10 +880,10 @@ export function CalendarHeatmap() {
                           
                           {/* Journal indicator with count */}
                           {hasJournal && (
-                            <div className="absolute bottom-1 left-1 flex items-center gap-0.5">
-                              <FontAwesomeIcon icon={faBookOpen} className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-800 dark:text-white drop-shadow-lg" />
+                            <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:left-1 sm:right-auto flex items-center gap-0.5">
+                              <FontAwesomeIcon icon={faBookOpen} className="h-2 w-2 sm:h-3 sm:w-3 text-slate-800 dark:text-white drop-shadow-lg" />
                               {journalEntries[dateKey].length > 1 && (
-                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[8px] sm:text-[10px] font-bold rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center drop-shadow-lg">
+                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[7px] sm:text-[10px] font-bold rounded-full w-2.5 h-2.5 sm:w-4 sm:h-4 flex items-center justify-center drop-shadow-lg">
                                   {journalEntries[dateKey].length}
                                 </div>
                               )}
@@ -1053,26 +1064,24 @@ export function CalendarHeatmap() {
               })}
             </DialogTitle>
             <DialogDescription className="text-sm">
-              Add trades or journal notes for this trading day
+              {isDemo ? 'View demo journal entries for this trading day' : 'Add trades or journal notes for this trading day'}
             </DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="journal" className="w-full">
-            <TabsList className={`grid w-full ${isDemo ? 'grid-cols-1' : 'grid-cols-2'} h-7 sm:h-9 p-0.5 sm:p-1 mb-4 sm:mb-5`}>
+            <TabsList className="grid w-full grid-cols-2 h-7 sm:h-9 p-0.5 sm:p-1 mb-4 sm:mb-5">
               <TabsTrigger
                 value="journal"
                 className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
               >
                 Journal
               </TabsTrigger>
-              {!isDemo && (
               <TabsTrigger
                 value="trade"
                 className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
               >
                 Add Trade
               </TabsTrigger>
-              )}
             </TabsList>
             
             <TabsContent value="journal" className="space-y-3 sm:space-y-4 mt-6 sm:mt-8">

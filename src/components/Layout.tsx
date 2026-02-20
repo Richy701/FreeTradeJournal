@@ -14,7 +14,10 @@ export default function Layout() {
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
-      <SidebarInset className="h-svh overflow-auto">
+      <SidebarInset
+        className="h-svh overflow-auto"
+        style={{ paddingTop: isDemo ? 'var(--demo-banner-height, 0px)' : undefined }}
+      >
         <DemoBanner />
         <MobileHeader />
         <motion.main
@@ -22,7 +25,7 @@ export default function Layout() {
           initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
           animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? {} : { duration: 0.2, ease: 'easeOut' }}
-          className={`flex-1 w-full ${isDemo ? 'pt-12' : ''}`}
+          className="flex-1 w-full"
         >
           <Outlet />
         </motion.main>

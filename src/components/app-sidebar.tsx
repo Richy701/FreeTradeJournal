@@ -12,6 +12,9 @@ import {
   Coffee,
   LineChart,
   Megaphone,
+  UserPlus,
+  LogOut,
+  Eye,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
@@ -64,7 +67,7 @@ function isItemActive(url: string, pathname: string): boolean {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { themeColors, alpha } = useThemePresets()
-  const { user } = useAuth()
+  const { user, isDemo, exitDemoMode } = useAuth()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
   const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
@@ -95,60 +98,97 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="px-3">
-          <AccountSwitcher />
-        </div>
+        {isDemo ? (
+          <div className="px-3">
+            <div className="flex items-center gap-2 h-9 px-2.5 text-sm font-medium rounded-md border bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400">
+              <Eye className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">Demo Account</span>
+            </div>
+          </div>
+        ) : (
+          <div className="px-3">
+            <AccountSwitcher />
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter className="gap-0">
         <SidebarMenu className="gap-0.5 px-1">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="sm"
-              onClick={() => setWhatsNewOpen(true)}
-            >
-              <Megaphone className="h-4 w-4" />
-              <span>What's New</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              size="sm"
-              className="relative"
-              isActive={settingsActive}
-              style={
-                settingsActive
-                  ? { backgroundColor: `${alpha(themeColors.primary, '15')}` }
-                  : undefined
-              }
-            >
-              <Link
-                to="/settings"
-                onClick={() => isMobile && setOpenMobile(false)}
-              >
-                <Settings2 className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm" asChild>
-              <a href="https://buymeacoffee.com/richy701" target="_blank" rel="noopener noreferrer">
-                <Coffee className="h-4 w-4" />
-                <span>Buy me a coffee</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <FeedbackButton
-              variant="ghost"
-              className="w-full justify-start h-8 px-2 text-sm"
-              buttonText="Send Feedback"
-            />
-          </SidebarMenuItem>
+          {isDemo ? (
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <Link
+                    to="/signup"
+                    onClick={() => { exitDemoMode(); isMobile && setOpenMobile(false); }}
+                    className="!bg-gradient-to-r from-amber-500/20 to-yellow-500/20 font-medium"
+                  >
+                    <UserPlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <span>Sign Up Free</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  size="sm"
+                  onClick={() => { exitDemoMode(); isMobile && setOpenMobile(false); }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Exit Demo</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          ) : (
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  size="sm"
+                  onClick={() => setWhatsNewOpen(true)}
+                >
+                  <Megaphone className="h-4 w-4" />
+                  <span>What's New</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  size="sm"
+                  className="relative"
+                  isActive={settingsActive}
+                  style={
+                    settingsActive
+                      ? { backgroundColor: `${alpha(themeColors.primary, '15')}` }
+                      : undefined
+                  }
+                >
+                  <Link
+                    to="/settings"
+                    onClick={() => isMobile && setOpenMobile(false)}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <a href="https://buymeacoffee.com/richy701" target="_blank" rel="noopener noreferrer">
+                    <Coffee className="h-4 w-4" />
+                    <span>Buy me a coffee</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <FeedbackButton
+                  variant="ghost"
+                  className="w-full justify-start h-8 px-2 text-sm"
+                  buttonText="Send Feedback"
+                />
+              </SidebarMenuItem>
+            </>
+          )}
         </SidebarMenu>
       </SidebarFooter>
       <WhatsNewDialog open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />

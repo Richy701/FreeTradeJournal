@@ -1,4 +1,4 @@
-import { Menu, X, LineChart, User, LogOut } from 'lucide-react';
+import { Menu, X, LineChart, User, LogOut, UserPlus, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -10,14 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AccountSwitcher } from '@/components/account-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export function MobileHeader({ title }: { title?: string }) {
   const { toggleSidebar, openMobile } = useSidebar();
   const { themeColors } = useThemePresets();
-  const { user, logout } = useAuth();
+  const { user, isDemo, exitDemoMode, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -47,11 +47,42 @@ export function MobileHeader({ title }: { title?: string }) {
           <span className="font-semibold text-sm truncate">
             {title || 'FreeTradeJournal'}
           </span>
+          {isDemo && (
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">
+              Demo
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
           <ThemeToggle />
-        {user ? (
+        {isDemo ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="Demo menu">
+                <Avatar className="h-7 w-7 rounded-full ring-1 ring-amber-500/50">
+                  <AvatarFallback className="rounded-full text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    <Eye className="h-3.5 w-3.5" />
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 rounded-lg">
+              <DropdownMenuItem asChild>
+                <Link to="/signup" onClick={() => exitDemoMode()} className="flex items-center">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Sign Up Free
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { exitDemoMode(); navigate('/'); }}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Exit Demo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="User menu">
@@ -85,9 +116,11 @@ export function MobileHeader({ title }: { title?: string }) {
         </div>
       </div>
 
-      <div className="px-3 pb-2 border-b border-border/30 overflow-hidden min-w-0">
-        <AccountSwitcher />
-      </div>
+      {!isDemo && (
+        <div className="px-3 pb-2 border-b border-border/30 overflow-hidden min-w-0">
+          <AccountSwitcher />
+        </div>
+      )}
     </div>
   );
 }

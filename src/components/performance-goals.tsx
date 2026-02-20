@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useAuth } from '@/contexts/auth-context'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -159,8 +161,47 @@ function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achie
   )
 }
 
+const DEMO_PERF_GOALS: Goal[] = [
+  {
+    id: 'demo-1',
+    type: 'profit',
+    period: 'monthly',
+    target: 8000,
+    current: 2435,
+    achieved: false,
+    createdAt: new Date(Date.now() - 10 * 86400000),
+  },
+  {
+    id: 'demo-2',
+    type: 'winRate',
+    period: 'monthly',
+    target: 65,
+    current: 57.1,
+    achieved: false,
+    createdAt: new Date(Date.now() - 10 * 86400000),
+  },
+  {
+    id: 'demo-3',
+    type: 'maxLoss',
+    period: 'daily',
+    target: 500,
+    current: 330,
+    achieved: true,
+    createdAt: new Date(Date.now() - 10 * 86400000),
+    achievedAt: new Date(Date.now() - 2 * 86400000),
+  },
+]
+
+const DEMO_RISK_RULES: RiskRule[] = [
+  { id: 'demo-r1', type: 'maxLossPerDay', value: 500, enabled: true, violations: 0 },
+  { id: 'demo-r2', type: 'maxRiskPerTrade', value: 2, enabled: true, violations: 0 },
+  { id: 'demo-r3', type: 'maxOpenTrades', value: 3, enabled: false, violations: 0 },
+]
+
 export function PerformanceGoals() {
   const { themeColors, alpha } = useThemePresets()
+  const { isDemo } = useAuth()
+  const { getTrades: getDemoTrades } = useDemoData()
   const userStorage = useUserStorage()
   const [goals, setGoals] = useState<Goal[]>([])
   const [riskRules, setRiskRules] = useState<RiskRule[]>([])
@@ -207,8 +248,14 @@ export function PerformanceGoals() {
     }
   }
 
-  // Load goals and risk rules from localStorage
+  // Load goals and risk rules from localStorage or demo data
   useEffect(() => {
+    if (isDemo) {
+      setGoals(DEMO_PERF_GOALS)
+      setRiskRules(DEMO_RISK_RULES)
+      return
+    }
+
     const storedGoals = userStorage.getItem('tradingGoals')
     const storedRules = userStorage.getItem('riskRules')
 
@@ -268,10 +315,17 @@ export function PerformanceGoals() {
       setRiskRules(defaultRules)
       userStorage.setItem('riskRules', JSON.stringify(defaultRules))
     }
-  }, [])
+  }, [isDemo])
 
   // Get trades and calculate current progress
   const trades = useMemo(() => {
+    if (isDemo) {
+      return getDemoTrades().map((trade: any) => ({
+        ...trade,
+        exitTime: trade.exitTime ? new Date(trade.exitTime) : new Date()
+      }))
+    }
+
     const storedTrades = userStorage.getItem('trades')
     if (!storedTrades) return []
 
@@ -414,6 +468,7 @@ export function PerformanceGoals() {
   }
 
   const addGoal = () => {
+    if (isDemo) { toast.info('Sign up to create goals!'); return }
     const goal: Goal = {
       id: Date.now().toString(),
       type: newGoal.type as Goal['type'],
@@ -433,12 +488,14 @@ export function PerformanceGoals() {
   }
 
   const deleteGoal = (id: string) => {
+    if (isDemo) { toast.info('Sign up to manage goals!'); return }
     const updatedGoals = goals.filter(g => g.id !== id)
     setGoals(updatedGoals)
     userStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
   }
 
   const toggleRiskRule = (id: string) => {
+    if (isDemo) { toast.info('Sign up to manage risk rules!'); return }
     const updatedRules = riskRules.map(r =>
       r.id === id ? { ...r, enabled: !r.enabled } : r
     )
@@ -447,6 +504,7 @@ export function PerformanceGoals() {
   }
 
   const updateRiskRule = (rule: RiskRule) => {
+    if (isDemo) { toast.info('Sign up to manage risk rules!'); return }
     let updatedRules: RiskRule[]
     const existingRule = riskRules.find(r => r.id === rule.id)
 
@@ -477,6 +535,7 @@ export function PerformanceGoals() {
   }
 
   const resetGoalProgress = (id: string) => {
+    if (isDemo) { toast.info('Sign up to manage goals!'); return }
     const updatedGoals = goals.map(g =>
       g.id === id ? { ...g, achieved: false, achievedAt: undefined } : g
     )

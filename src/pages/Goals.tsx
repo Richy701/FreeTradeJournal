@@ -1,6 +1,8 @@
 import { PerformanceGoals } from "@/components/performance-goals"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useAuth } from '@/contexts/auth-context'
 import { useUserStorage } from '@/utils/user-storage'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faTrophy,
@@ -16,10 +18,16 @@ import { useMemo } from 'react'
 
 export default function Goals() {
   const { themeColors } = useThemePresets()
+  const { isDemo } = useAuth()
   const userStorage = useUserStorage()
+  const { getTrades: getDemoTrades } = useDemoData()
 
   // Get trades for statistics
   const trades = useMemo(() => {
+    if (isDemo) {
+      return getDemoTrades()
+    }
+
     const storedTrades = userStorage.getItem('trades')
     if (!storedTrades) return []
 
@@ -28,10 +36,21 @@ export default function Goals() {
     } catch {
       return []
     }
-  }, [])
+  }, [isDemo])
 
   // Calculate achievement statistics
   const stats = useMemo(() => {
+    if (isDemo) {
+      return {
+        totalGoals: 3,
+        achievedGoals: 1,
+        activeRules: 2,
+        totalRules: 3,
+        violations: 0,
+        trades: trades.length
+      }
+    }
+
     const storedGoals = userStorage.getItem('tradingGoals')
     const goals = storedGoals ? JSON.parse(storedGoals) : []
     const achievedGoals = goals.filter((g: any) => g.achieved).length
@@ -49,7 +68,7 @@ export default function Goals() {
       violations,
       trades: trades.length
     }
-  }, [trades])
+  }, [trades, isDemo])
 
   // Dynamic subtitle
   const subtitle = useMemo(() => {

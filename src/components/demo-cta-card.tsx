@@ -48,11 +48,12 @@ export function DemoCtaCard() {
           <Link to="/signup" className="block">
             <Button
               variant="ghost"
-              className="w-full !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black hover:shadow-lg hover:scale-[1.01] transition-[transform,box-shadow] duration-300"
+              className="w-full !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black hover:shadow-lg hover:scale-[1.01] transition-[transform,box-shadow] duration-300 text-sm sm:text-base"
               size="lg"
               onClick={() => exitDemoMode()}
             >
-              Sign Up Free - No Credit Card Required
+              <span className="sm:hidden">Sign Up Free</span>
+              <span className="hidden sm:inline">Sign Up Free - No Credit Card Required</span>
             </Button>
           </Link>
         </div>
