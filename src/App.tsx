@@ -12,6 +12,7 @@ import { StructuredData } from '@/components/structured-data';
 import { CookieConsent } from '@/components/CookieConsent';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { initGA } from '@/lib/analytics';
 import Layout from '@/components/Layout';
 import LandingPage from '@/pages/LandingPage';
@@ -63,6 +64,7 @@ function App() {
               }}
             />
             <Analytics />
+            <SpeedInsights />
             <CookieConsent />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center" role="status">
