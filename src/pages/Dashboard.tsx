@@ -430,7 +430,7 @@ export default function Dashboard() {
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 sm:space-y-12 animate-in fade-in-0 duration-500">
           {/* Metrics Cards Skeleton */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <MetricCardSkeleton key={i} />
             ))}
@@ -693,7 +693,7 @@ export default function Dashboard() {
       <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Top metrics row */}
         <div>
-          <Suspense fallback={<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <Suspense fallback={<div className="grid grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-24 w-full" />
             ))}
@@ -741,21 +741,21 @@ export default function Dashboard() {
       
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader className="pb-4">
-            <DialogTitle className="text-2xl font-bold text-foreground">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-4 flex-shrink-0">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground">
               Import Preview
             </DialogTitle>
-            <DialogDescription className="text-base text-muted-foreground">
+            <DialogDescription className="text-sm sm:text-base text-muted-foreground">
               Review your trading data before importing to Dashboard
             </DialogDescription>
           </DialogHeader>
 
           {csvPreview.parseResult && (
-            <div className="space-y-4 overflow-auto pr-1">
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0">
               {/* Compact Status Banner */}
               <div
-                className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
+                className="flex flex-wrap items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-2.5 border"
                 style={{
                   backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '08')}` : `${alpha(themeColors.profit, '08')}`,
                   borderColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '20')}` : `${alpha(themeColors.profit, '20')}`
@@ -776,13 +776,13 @@ export default function Dashboard() {
                   </>
                 )}
                 {csvPreview.parseResult.summary.dateRange && (
-                  <>
-                    <span className="text-muted-foreground text-sm ml-auto">·</span>
+                  <span className="hidden sm:flex items-center gap-2 ml-auto">
+                    <span className="text-muted-foreground text-sm">·</span>
                     <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
                       {csvPreview.parseResult.summary.dateRange.earliest} — {csvPreview.parseResult.summary.dateRange.latest}
                     </span>
-                  </>
+                  </span>
                 )}
               </div>
 
@@ -797,7 +797,7 @@ export default function Dashboard() {
                 const worstTrade = Math.min(...pnls);
 
                 return (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
                       <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
@@ -841,7 +841,52 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  {/* Mobile card view */}
+                  <div className="sm:hidden divide-y">
+                    {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
+                      <div key={index} className="px-4 py-3 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{trade.symbol}</span>
+                            <Badge
+                              className="text-[10px] px-1.5 py-0.5 border"
+                              style={{
+                                backgroundColor: trade.side === 'long'
+                                  ? `${alpha(themeColors.profit, '15')}`
+                                  : `${alpha(themeColors.loss, '15')}`,
+                                color: trade.side === 'long'
+                                  ? themeColors.profit
+                                  : themeColors.loss,
+                                borderColor: trade.side === 'long'
+                                  ? `${alpha(themeColors.profit, '30')}`
+                                  : `${alpha(themeColors.loss, '30')}`
+                              }}
+                            >
+                              {trade.side.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <span
+                            className="font-bold text-sm"
+                            style={{
+                              color: parseFloat(trade.pnl) >= 0
+                                ? themeColors.profit
+                                : themeColors.loss
+                            }}
+                          >
+                            {parseFloat(trade.pnl) >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>{parseFloat(trade.entryPrice).toFixed(4)} → {parseFloat(trade.exitPrice).toFixed(4)}</span>
+                          <span>·</span>
+                          <span>{trade.quantity} lots</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop table view */}
+                  <div className="hidden sm:block overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-border">
@@ -958,7 +1003,7 @@ export default function Dashboard() {
               )}
 
               {/* Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div className="flex flex-col items-center gap-3 pt-4 border-t border-border flex-shrink-0">
                 <div className="text-sm text-muted-foreground">
                   {csvPreview.parseResult.trades.length > 0 ? (
                     <span className="flex items-center gap-2">
@@ -973,7 +1018,7 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                <p className="text-xs text-muted-foreground">
+                <p className="hidden sm:block text-xs text-muted-foreground text-center">
                   Already imported this file before? No worries — duplicate trades are automatically detected and skipped.
                 </p>
 
