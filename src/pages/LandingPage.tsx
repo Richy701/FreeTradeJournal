@@ -12,18 +12,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
-  
-  // If loading, show nothing or a spinner
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-muted border-t-primary"></div>
-      </div>
-    );
-  }
-  
+  const { user } = useAuth();
+
   // If user is signed in, redirect to dashboard
+  // Don't block rendering while auth loads — show landing page immediately
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }

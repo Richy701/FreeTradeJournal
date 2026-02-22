@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Delayed background for Remotion overlay — transparent for 3s then solid */
+@keyframes showBg {
+  to { background-color: hsl(var(--background)); }
+}
+
 /* Hide native number input spinners for a cleaner look */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

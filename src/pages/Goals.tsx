@@ -133,7 +133,7 @@ export default function Goals() {
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
             <Card key={index}>
               <CardContent className="p-5">

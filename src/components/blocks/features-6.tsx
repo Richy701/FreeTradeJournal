@@ -1,9 +1,16 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { Activity, CalendarDays, Globe, HardDrive } from 'lucide-react'
 
 const ShowcasePlayer = lazy(() => import('@/components/remotion/ShowcasePlayer'))
 
 export function FreeTradeJournalFeatures() {
+    const [showPlayer, setShowPlayer] = useState(false)
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowPlayer(true), 3000)
+        return () => clearTimeout(timer)
+    }, [])
+
     return (
         <section className="py-14 sm:py-16">
             <div className="mx-auto max-w-7xl space-y-16 px-6">
@@ -12,21 +19,29 @@ export function FreeTradeJournalFeatures() {
                     <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required.</p>
                 </div>
                 <div className="relative rounded-3xl p-3 md:-mx-8 lg:col-span-3">
-                    <div className="relative">
-                        <img
-                          src="/images/landing/Trading dashboard New screenshot.png"
-                          alt="FreeTradeJournal Dashboard"
-                          className="z-10 w-full aspect-video rounded-2xl object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          width={1280}
-                          height={720}
-                        />
-                        <div className="absolute inset-0 z-20 rounded-2xl overflow-hidden">
-                            <Suspense fallback={null}>
+                    <div className="aspect-video rounded-2xl overflow-hidden">
+                        {showPlayer ? (
+                            <Suspense fallback={
+                                <img
+                                  src="/images/landing/Trading dashboard New screenshot.png"
+                                  alt="FreeTradeJournal Dashboard"
+                                  className="w-full h-full object-cover"
+                                  width={1280}
+                                  height={720}
+                                />
+                            }>
                                 <ShowcasePlayer />
                             </Suspense>
-                        </div>
+                        ) : (
+                            <img
+                              src="/images/landing/Trading dashboard New screenshot.png"
+                              alt="FreeTradeJournal Dashboard"
+                              className="w-full aspect-video rounded-2xl object-cover"
+                              decoding="async"
+                              width={1280}
+                              height={720}
+                            />
+                        )}
                     </div>
                 </div>
                 {/* Asymmetric bento grid — hero card + offset smaller cards */}

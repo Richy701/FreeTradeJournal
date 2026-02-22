@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sequence, useCurrentFrame, interpolate } from 'remotion';
+import DashboardScene from './scenes/DashboardScene';
 import TradeTrackingScene from './scenes/TradeTrackingScene';
 import AnalyticsScene from './scenes/AnalyticsScene';
 import JournalScene from './scenes/JournalScene';
@@ -58,13 +59,21 @@ const ProgressDots: React.FC<{ primaryColor: string; mutedColor: string }> = ({
 };
 
 const ShowcaseVideoComposition: React.FC<ShowcaseVideoProps> = (props) => {
-  const { primaryColor = '#f59e0b', mutedColor = '#a1a1aa' } = props;
+  const { backgroundColor = '#030303', primaryColor = '#f59e0b', mutedColor = '#a1a1aa' } = props;
   const totalDuration = DASHBOARD_DURATION + SCENE_COUNT * SCENE_DURATION;
   const s = DASHBOARD_DURATION; // offset for scene starts
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {/* First 90 frames: fully transparent — dashboard image shows through */}
+      {/* Dashboard screenshot — first 3 seconds */}
+      <Sequence from={0} durationInFrames={DASHBOARD_DURATION}>
+        <DashboardScene backgroundColor={backgroundColor} />
+      </Sequence>
+
+      {/* Solid background behind all scenes to prevent bleed-through */}
+      <Sequence from={s} durationInFrames={SCENE_COUNT * SCENE_DURATION}>
+        <div style={{ position: 'absolute', inset: 0, backgroundColor }} />
+      </Sequence>
 
       <Sequence from={s} durationInFrames={SCENE_DURATION}>
         <TradeTrackingScene {...props} />

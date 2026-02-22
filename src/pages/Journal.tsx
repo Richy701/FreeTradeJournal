@@ -659,7 +659,7 @@ export default function Journal() {
 
         {/* Quick Stats */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
             {[
               {
                 Icon: BookOpen,
@@ -1002,7 +1002,7 @@ export default function Journal() {
                 </div>
 
                 {uploadedImages.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 gap-3">
                     {uploadedImages.map((image, index) => (
                       <div key={index} className="relative group">
                         <img

@@ -446,7 +446,7 @@ export default function Settings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 gap-3">
                       {Object.entries(availableThemes).map(([key, preset]) => {
                         const isSelected = currentTheme === key;
                         return (
@@ -939,7 +939,7 @@ export default function Settings() {
                     </div>
                     
                     {/* Main Performance Metrics */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4">
                       {/* Total P&L Card */}
                       <div className="rounded-xl bg-muted/30 p-5">
                         <div className="flex items-start justify-between">

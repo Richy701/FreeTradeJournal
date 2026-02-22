@@ -40,20 +40,29 @@ export function ResponsiveImage({ src, alt, className = '', priority = false, wi
         <div className="w-full aspect-video bg-muted/20 animate-pulse rounded-2xl" />
       )}
 
-      {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
-          className={`w-full aspect-video object-contain rounded-2xl transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => setIsLoaded(true)}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-        />
-      )}
+      {isInView && (() => {
+        // Build srcSet from responsive variants (e.g. foo.webp → foo-640w.webp, foo-1280w.webp)
+        const ext = src.substring(src.lastIndexOf('.'))
+        const base = src.substring(0, src.lastIndexOf('.'))
+        const srcSet = `${base}-640w${ext} 640w, ${base}-1280w${ext} 1280w, ${src} 1920w`
+
+        return (
+          <img
+            src={src}
+            srcSet={srcSet}
+            sizes="(max-width: 640px) 640px, (max-width: 1280px) 1280px, 1920px"
+            alt={alt}
+            width={width}
+            height={height}
+            className={`w-full aspect-video object-contain rounded-2xl transition-opacity duration-300 ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setIsLoaded(true)}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+        )
+      })()}
     </div>
   )
 }

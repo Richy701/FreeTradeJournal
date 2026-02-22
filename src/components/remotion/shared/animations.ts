@@ -67,5 +67,5 @@ export function sceneOpacity(frame: number): number {
 
 export const SCENE_COUNT = 5;
 export const SCENE_DURATION = 90;
-export const DASHBOARD_DURATION = 90; // first 3s shows dashboard image
+export const DASHBOARD_DURATION = 90; // 3s dashboard screenshot scene
 export const TOTAL_DURATION = DASHBOARD_DURATION + SCENE_COUNT * SCENE_DURATION; // 690 frames

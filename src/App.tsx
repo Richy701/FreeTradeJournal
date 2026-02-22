@@ -11,14 +11,14 @@ import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { CookieConsent } from '@/components/CookieConsent';
 import { Toaster } from 'sonner';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/react';
+const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
+const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
 import { initGA } from '@/lib/analytics';
 import Layout from '@/components/Layout';
-import LandingPage from '@/pages/LandingPage';
-import Login from '@/pages/Login';
 
-// Lazy load heavy components
+// Lazy load all page components for smaller initial bundle
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
+const Login = lazy(() => import('@/pages/Login'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const TradeLog = lazy(() => import('@/pages/TradeLog'));
 const Goals = lazy(() => import('@/pages/Goals'));
@@ -63,8 +63,10 @@ function App() {
                 },
               }}
             />
-            <Analytics />
-            <SpeedInsights />
+            <Suspense fallback={null}>
+              <Analytics />
+              <SpeedInsights />
+            </Suspense>
             <CookieConsent />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center" role="status">

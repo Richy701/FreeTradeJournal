@@ -153,8 +153,43 @@ async function prerender() {
   console.log("");
 }
 
-prerender().catch((err) => {
-  console.error("Prerender script failed:", err);
-  // Don't exit with error code — a failed prerender shouldn't break the build
-  process.exit(0);
-});
+// ── Defer CSS ────────────────────────────────────────────────────────────────
+
+import { readdir } from "node:fs/promises";
+
+async function deferCssInAllHtml(dir) {
+  const entries = await readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await deferCssInAllHtml(fullPath);
+    } else if (entry.name.endsWith(".html")) {
+      let html = await readFile(fullPath, "utf-8");
+      const original = html;
+      // Convert render-blocking <link rel="stylesheet"> to async pattern
+      html = html.replace(
+        /<link rel="stylesheet"([^>]*?)>/g,
+        (_match, attrs) =>
+          `<link rel="stylesheet"${attrs} media="print" onload="this.media='all'">`
+          + `<noscript><link rel="stylesheet"${attrs}></noscript>`
+      );
+      if (html !== original) {
+        await writeFile(fullPath, html, "utf-8");
+      }
+    }
+  }
+}
+
+prerender()
+  .then(() => {
+    console.log("  Deferring CSS in prerendered HTML…");
+    return deferCssInAllHtml(DIST);
+  })
+  .then(() => {
+    console.log("  ✅ CSS deferred in all HTML files.\n");
+  })
+  .catch((err) => {
+    console.error("Prerender script failed:", err);
+    // Don't exit with error code — a failed prerender shouldn't break the build
+    process.exit(0);
+  });

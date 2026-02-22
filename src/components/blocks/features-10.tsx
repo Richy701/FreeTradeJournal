@@ -186,20 +186,30 @@ interface DualModeImageProps {
 
 const DualModeImage = ({ darkSrc, lightSrc, alt, width, height, className }: DualModeImageProps) => (
     <>
-        <img
-            src={darkSrc}
-            className={cn('hidden dark:block', className)}
-            alt={`${alt} dark`}
-            width={width}
-            height={height}
-        />
-        <img
-            src={lightSrc}
-            className={cn('shadow dark:hidden', className)}
-            alt={`${alt} light`}
-            width={width}
-            height={height}
-        />
+        <picture>
+            <source srcSet={darkSrc.replace('.png', '.webp')} type="image/webp" />
+            <img
+                src={darkSrc}
+                className={cn('hidden dark:block', className)}
+                alt={`${alt} dark`}
+                width={width}
+                height={height}
+                loading="lazy"
+                decoding="async"
+            />
+        </picture>
+        <picture>
+            <source srcSet={lightSrc.replace('.png', '.webp')} type="image/webp" />
+            <img
+                src={lightSrc}
+                className={cn('shadow dark:hidden', className)}
+                alt={`${alt} light`}
+                width={width}
+                height={height}
+                loading="lazy"
+                decoding="async"
+            />
+        </picture>
     </>
 )
 

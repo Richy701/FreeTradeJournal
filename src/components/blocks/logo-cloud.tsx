@@ -20,7 +20,7 @@ export function LogoCloud() {
     },
     { 
       name: "TopStep", 
-      url: "/logos/topstep-logo.jpg",
+      url: "/logos/topstep-logo.webp",
       className: "text-[#F97316] font-black",
       style: "height: 72px; width: auto; max-width: 220px;"
     },

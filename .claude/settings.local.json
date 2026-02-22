@@ -76,7 +76,20 @@
       "Bash(git -C /Users/richy/FreeTradeJournal status)",
       "Bash(git -C /Users/richy/FreeTradeJournal log --oneline -3)",
       "Bash(git -C /Users/richy/FreeTradeJournal log --oneline -1)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(while read f)",
+      "Bash(do python3 -c \"import json; json.load\\(open\\(''''$f''''\\)\\)\")",
+      "Bash(echo:*)",
+      "Bash(do if ! python3 -c \"import json; json.load\\(open\\(''''$f''''\\)\\)\")",
+      "Bash(then echo 'INVALID: $f')",
+      "Bash(fi)",
+      "Bash(git checkout:*)",
+      "Bash(du:*)",
+      "WebFetch(domain:pagespeed.web.dev)",
+      "Bash(base=\"$f%.png\")",
+      "Bash(sips:*)",
+      "Bash(git -C /Users/richy/FreeTradeJournal diff --cached --stat)",
+      "Bash(git -C /Users/richy/FreeTradeJournal status -s)"
     ],
     "deny": []
   }

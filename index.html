@@ -2,6 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Critical CSS inlined to prevent render-blocking -->
+    <style>
+      :root{--background:220 14% 96%;--foreground:222.2 84% 4.9%;--primary:43 96% 56%;--primary-foreground:26 83% 8%}
+      .dark{--background:0 0% 1.2%;--foreground:210 40% 98%;--primary:43 96% 56%;--primary-foreground:26 83% 8%}
+      *,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid}
+      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:system-ui,-apple-system,sans-serif}
+      body{margin:0;line-height:inherit;background-color:hsl(var(--background));color:hsl(var(--foreground))}
+      .min-h-screen{min-height:100vh}.flex{display:flex}.items-center{align-items:center}.justify-center{justify-content:center}
+      @keyframes spin{to{transform:rotate(360deg)}}.animate-spin{animation:spin 1s linear infinite}
+      .h-8{height:2rem}.w-8{width:2rem}.text-primary{color:hsl(var(--primary))}
+    </style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=12" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=12" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png?v=12" />
@@ -62,7 +73,7 @@
     <!-- Preload critical resources for better performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" />
     <link rel="preconnect" href="https://freetradejournal.firebaseapp.com" />
     <link rel="preconnect" href="https://www.googletagmanager.com" />
     

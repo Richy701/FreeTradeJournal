@@ -67,8 +67,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    // Initialize auth for all pages
-    initAuth();
+    // Defer auth init so it doesn't block initial render / LCP
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => initAuth());
+    } else {
+      setTimeout(() => initAuth(), 0);
+    }
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string): Promise<User> => {

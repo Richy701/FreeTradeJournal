@@ -9,7 +9,7 @@ interface SceneContainerProps {
 
 const SceneContainer: React.FC<SceneContainerProps> = ({
   children,
-  backgroundColor = '#0a0a0a',
+  backgroundColor = '#030303',
 }) => {
   const frame = useCurrentFrame();
 

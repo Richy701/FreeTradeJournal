@@ -809,10 +809,10 @@ export function TradingCoach() {
               <button
                 key={index}
                 className={cn(
-                  "indicator-dot rounded-full transition-shadow duration-200 box-content p-2",
+                  "indicator-dot rounded-full transition-shadow duration-200 box-content p-1",
                   index === currentTipIndex
-                    ? "h-2 w-6"
-                    : "h-2 w-2 opacity-40 hover:opacity-70"
+                    ? "h-1.5 w-4"
+                    : "h-1.5 w-1.5 opacity-40 hover:opacity-70"
                 )}
                 style={{
                   backgroundColor: index === currentTipIndex
@@ -825,7 +825,7 @@ export function TradingCoach() {
             ))}
             <button
               onClick={dismissCurrentTip}
-              className="indicator-dot ml-2 h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
+              className="indicator-dot ml-1.5 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
               aria-label="Dismiss this tip"
               title="Got it, dismiss"
             >

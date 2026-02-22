@@ -388,7 +388,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
 
     // On public pages or in demo mode, reset CSS variables to amber/gold defaults
-    const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/documentation']
+    const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/documentation', '/login', '/signup', '/onboarding']
     const isPublicPage = publicPaths.some(p => pathname === p)
     const isInDemo = isDemo || !!document.documentElement.dataset.demo
 

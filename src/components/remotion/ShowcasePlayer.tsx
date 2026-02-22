@@ -30,19 +30,12 @@ const ShowcasePlayer: React.FC = () => {
   const playerRef = useRef<PlayerRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const [themeColors, setThemeColors] = useState<Omit<ShowcaseVideoProps, 'isMobile'>>(
-    () => {
-      if (typeof window === 'undefined') {
-        return {
-          backgroundColor: '#0a0a0a',
-          foregroundColor: '#fafaf9',
-          primaryColor: '#f59e0b',
-          mutedColor: '#a1a1aa',
-        };
-      }
-      return getThemeColors();
-    }
-  );
+  const [themeColors, setThemeColors] = useState<Omit<ShowcaseVideoProps, 'isMobile'>>({
+    backgroundColor: '#030303',
+    foregroundColor: '#e1e7ef',
+    primaryColor: '#f59e0b',
+    mutedColor: '#a1a1aa',
+  });
 
   const updateColors = useCallback(() => {
     setThemeColors(getThemeColors());
@@ -102,6 +95,7 @@ const ShowcasePlayer: React.FC = () => {
     <div
       ref={containerRef}
       className="w-full h-full"
+      style={{ backgroundColor: themeColors.backgroundColor }}
     >
       <Player
         ref={playerRef}
