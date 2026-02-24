@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Edit, Mail, Calendar, Shield } from 'lucide-react';
@@ -106,8 +106,7 @@ export default function Profile() {
               {/* Profile Picture and Name */}
               <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
-                  <AvatarFallback className="text-xl font-semibold">
+                  <AvatarFallback className="text-xl font-semibold text-white" style={{ backgroundColor: themeColors.primary }}>
                     {getInitials(user.displayName || user.email || 'U')}
                   </AvatarFallback>
                 </Avatar>

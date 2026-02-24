@@ -10,7 +10,7 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbS
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLocation, useNavigate } from "react-router-dom"
 import { User, LogOut, UserPlus, Eye, ArrowLeft } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +21,12 @@ import { Button } from "@/components/ui/button"
 
 function UserAvatar() {
   const { user, isDemo, exitDemoMode, logout } = useAuth()
+  const { themeColors } = useThemePresets()
   const navigate = useNavigate()
 
   if (!user) return null
 
   const name = user.displayName || user.email?.split('@')[0] || 'User'
-  const avatar = user.photoURL || ''
 
   const handleLogout = async () => {
     try {
@@ -68,8 +68,7 @@ function UserAvatar() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="User menu">
           <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
-            <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback className="rounded-full text-xs">{name.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarFallback className="rounded-full text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary }}>{name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

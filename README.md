@@ -14,6 +14,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Actionable empty states with "Add Trade" and "Import CSV" buttons
 - Quick trade entry directly from the dashboard
 - CSV import with progress overlay and in-place data refresh (no page reload)
+- Remotion-powered animated dashboard intro scene
 
 ### Advanced Trade Logging
 - Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
@@ -54,13 +55,18 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Multiple account types: Live, Demo, Prop Firm, Paper
 - Pre-configured prop firm list (FTMO, Apex, TopStep, E8 Markets, Funded FX, FundingPips, Alpha Capital, The5ers)
 - Per-account trade isolation and filtering — saving on one account never overwrites another account's data
+- Account deletion automatically cleans up orphaned trades — no stale data blocking CSV re-imports
+- Inline account editing in Settings — edit form replaces the card in-place for better UX
 - Account switcher in the sidebar with type and broker info per account
-- User profile avatar and dropdown in the page header
+- Theme-colored initial avatars in the header and sidebar (adapts to active color theme)
 
 ### 14 Color Themes
 - Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage, Clean, Wine
 - Dark/Light/System mode with polished light mode — visible decorative shapes, badges, and overlays
 - Instant theme switching via useLayoutEffect — no staggered color transitions or delayed button fades
+- Frosted glass sidebar with backdrop blur and subtle transparency
+- Consistent 0.85rem border radius across all themes for a premium rounded feel
+- Improved Mono theme with grayscale contrast — distinct profit/loss values in both light and dark modes
 - Dynamic profit/loss and primary color customization
 - Theme persistence across sessions
 
@@ -70,6 +76,14 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Megaphone icon in the sidebar to revisit the changelog anytime
 - Dedicated `/changelog` release notes page with detailed descriptions for every change
 - Linked from the What's New dialog footer and the site footer under Resources
+
+### PWA & Mobile
+- Installable as a Progressive Web App on iOS and Android with custom install prompt
+- Automatic update notifications when a new version is deployed
+- Safe area insets for notched devices (Dynamic Island, iPhone notch)
+- Mobile-optimized button sizing, touch targets, and responsive layouts
+- iOS-friendly 16px font sizing to prevent unwanted zoom
+- Responsive chart footer and sparkline sizing on small screens
 
 ### Landing Page
 - Polished hero section with animated gradient CTA buttons and consistent branding
@@ -139,7 +153,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 
 ## How to Use
 
-1. **Sign Up / Login** — Create an account with email or sign in with Google
+1. **Sign Up / Login** — Create an account with email, sign in with Google, or use Apple Sign-In
 2. **Setup** — Name your first trading account, pick a type (Live, Demo, Prop Firm), and set your starting balance
 3. **Dashboard** — View your trading performance at a glance
 4. **Add Trades** — Manual entry or CSV import from your broker
@@ -160,7 +174,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 |---|---|
 | **Framework** | React 19 + TypeScript |
 | **Build Tool** | Vite 7 |
-| **Authentication** | Firebase Auth (Google OAuth + Email/Password) |
+| **Authentication** | Firebase Auth (Google OAuth + Apple Sign-In + Email/Password) |
 | **UI Components** | shadcn/ui (Radix UI + Tailwind CSS) |
 | **Charts** | Recharts |
 | **Animations** | Framer Motion |
@@ -171,6 +185,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 | **Email** | Resend |
 | **Icons** | Lucide React + FontAwesome |
 | **Analytics** | Vercel Analytics + Google Analytics |
+| **Video** | Remotion |
 | **SEO** | Build-time prerendering with Puppeteer |
 | **Virtualization** | react-window |
 | **Spreadsheets** | SheetJS (xlsx) |

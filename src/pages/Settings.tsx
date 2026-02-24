@@ -508,199 +508,80 @@ export default function Settings() {
                     {/* Enhanced Account List */}
                     <div className="grid gap-4">
                       {accounts.map((account, index) => (
-                        <div key={account.id}
-                             className="rounded-xl bg-background/40 hover:bg-background/60 transition-shadow duration-200 hover:shadow-md"
-                             style={{
-                               border: activeAccount?.id === account.id ? `1px solid ${alpha(themeColors.primary, '30')}` : '1px solid transparent'
-                             }}>
-                          <div className="p-5">
-                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                              {/* Account Info Section */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-3">
-                                  {/* Account Icon */}
-                                  <div className="p-2 rounded-lg"
-                                       style={{ backgroundColor: `${alpha(account.type === 'live' ? themeColors.profit : themeColors.primary, '20')}` }}>
-                                    <FontAwesomeIcon
-                                      icon={account.type === 'live' ? faCoins : account.type === 'demo' ? faChartLine : faTrophy}
-                                      className="h-4 w-4"
-                                      style={{ color: account.type === 'live' ? themeColors.profit : themeColors.primary }}
-                                    />
-                                  </div>
-                                  
-                                  {/* Account Name & Badges */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-bold text-lg truncate">
-                                        {account.name}
-                                      </h4>
-                                      <div className="flex gap-2 flex-wrap">
-                                        {account.isDefault && (
-                                          <Badge className="text-xs font-semibold" 
-                                                 style={{ 
-                                                   backgroundColor: `${alpha(themeColors.profit, '15')}`,
-                                                   color: themeColors.profit,
-                                                   borderColor: `${alpha(themeColors.profit, '30')}`
-                                                 }}>
-                                            <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-1" />
-                                            Default
-                                          </Badge>
-                                        )}
-                                        {activeAccount?.id === account.id && (
-                                          <Badge className="text-xs font-semibold" 
-                                                 style={{ 
-                                                   backgroundColor: `${alpha(themeColors.primary, '15')}`,
-                                                   color: themeColors.primary,
-                                                   borderColor: `${alpha(themeColors.primary, '30')}`
-                                                 }}>
-                                            <FontAwesomeIcon icon={faFire} className="h-3 w-3 mr-1" />
-                                            Active
-                                          </Badge>
-                                        )}
-                                        <Badge variant="outline" className="text-xs font-medium capitalize">
-                                          {account.type.replace('-', ' ')}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                      <div className="flex items-center gap-1.5">
-                                        <FontAwesomeIcon icon={faBuilding} className="h-3 w-3" />
-                                        <span className="font-medium">{account.broker}</span>
-                                      </div>
-                                      <div className="flex items-center gap-1.5">
-                                        <FontAwesomeIcon icon={faCoins} className="h-3 w-3" />
-                                        <span className="font-medium">{account.currency}</span>
-                                      </div>
-                                      {account.balance && (
-                                        <div className="flex items-center gap-1.5">
-                                          <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" />
-                                          <span className="font-semibold" style={{ color: themeColors.profit }}>
-                                            {formatCurrency(account.balance, false)}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Edit Button */}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setEditForm(account)}
-                                    className="h-10 w-10 p-0 rounded-lg hover:bg-background/80 transition-shadow"
-                                    aria-label="Edit account"
-                                  >
-                                    <FontAwesomeIcon icon={faPencil} className="h-4 w-4" />
-                                  </Button>
+                        <div key={account.id}>
+                          {editForm?.id === account.id ? (
+                            /* Inline Edit Form - replaces the card */
+                            <div className="rounded-xl bg-background/60 p-5"
+                                 style={{ border: `1px solid ${alpha(themeColors.primary, '30')}` }}>
+                              <div className="flex items-center gap-3 mb-5">
+                                <div className="p-2 rounded-lg" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
+                                  <FontAwesomeIcon icon={faPencil} className="h-4 w-4" style={{ color: themeColors.primary }} />
                                 </div>
+                                <h4 className="text-base font-semibold">Edit Account</h4>
                               </div>
-                              
-                              {/* Action Buttons */}
-                              <div className="flex flex-col sm:flex-row gap-3">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => updateAccount(account.id, { isDefault: true })}
-                                  disabled={account.isDefault}
-                                  className="min-w-[120px] font-semibold hover:shadow-md transition-shadow"
-                                  style={account.isDefault ? {} : {
-                                    borderColor: `${alpha(themeColors.primary, '30')}`,
-                                    color: themeColors.primary
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-2" />
-                                  {account.isDefault ? 'Default' : 'Set Default'}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => { if (!window.confirm('Are you sure you want to delete this account? This cannot be undone.')) return; deleteAccount(account.id); }}
-                                  disabled={accounts.length <= 1}
-                                  className="min-w-[100px] font-semibold hover:shadow-md transition-shadow hover:border-destructive hover:text-destructive"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} className="h-3 w-3 mr-2" />
-                                  Delete
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Edit Account Form */}
-                    {editForm && (
-                      <div className="rounded-xl bg-background/60 p-6"
-                           style={{ border: `1px solid ${alpha(themeColors.primary, '20')}` }}>
-                          <div className="flex items-center gap-3 mb-5">
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
-                              <FontAwesomeIcon icon={faPencil} className="h-4 w-4" style={{ color: themeColors.primary }} />
-                            </div>
-                            <h4 className="text-base font-semibold">Edit Account</h4>
-                          </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Account Name</Label>
-                            <Input
-                              placeholder="e.g., Main Live Account…"
-                              value={editForm.name}
-                              onChange={(e) => setEditForm(prev => prev ? { ...prev, name: e.target.value } : null)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Account Type</Label>
-                            <Select value={editForm.type} onValueChange={(value: TradingAccount['type']) => setEditForm(prev => prev ? { ...prev, type: value } : null)}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="demo">Demo Account</SelectItem>
-                                <SelectItem value="live">Live Account</SelectItem>
-                                <SelectItem value="prop-firm">Prop Firm</SelectItem>
-                                <SelectItem value="paper">Paper Trading</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Broker</Label>
-                            <Select value={editForm.broker} onValueChange={(value) => setEditForm(prev => prev ? { ...prev, broker: value } : null)}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select broker..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="OANDA">OANDA</SelectItem>
-                                <SelectItem value="IC Markets">IC Markets</SelectItem>
-                                <SelectItem value="MetaTrader 4">MetaTrader 4</SelectItem>
-                                <SelectItem value="MetaTrader 5">MetaTrader 5</SelectItem>
-                                <SelectItem value="Pepperstone">Pepperstone</SelectItem>
-                                <SelectItem value="IG">IG</SelectItem>
-                                <SelectItem value="Interactive Brokers">Interactive Brokers</SelectItem>
-                                <SelectItem value="FTMO">FTMO</SelectItem>
-                                <SelectItem value="The5ers">The5ers</SelectItem>
-                                <SelectItem value="Apex Trader Funding">Apex Trader Funding</SelectItem>
-                                <SelectItem value="E8 Markets">E8 Markets</SelectItem>
-                                <SelectItem value="Topfutures Funded">Topfutures Funded</SelectItem>
-                                <SelectItem value="FundedNext">FundedNext</SelectItem>
-                                <SelectItem value="Lux Trading Firm">Lux Trading Firm</SelectItem>
-                                <SelectItem value="NinjaTrader">NinjaTrader</SelectItem>
-                                <SelectItem value="TradingView">TradingView</SelectItem>
-                                <SelectItem value="Tradovate">Tradovate</SelectItem>
-                                <SelectItem value="AMP Futures">AMP Futures</SelectItem>
-                                <SelectItem value="Discount Trading">Discount Trading</SelectItem>
-                                <SelectItem value="Schwab">Schwab</SelectItem>
-                                <SelectItem value="E*TRADE">E*TRADE</SelectItem>
-                                <SelectItem value="TopstepTrader">TopstepTrader</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Currency</Label>
-                            <Select value={editForm.currency} onValueChange={(value) => setEditForm(prev => prev ? { ...prev, currency: value } : null)}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Account Name</Label>
+                                  <Input
+                                    placeholder="e.g., Main Live Account…"
+                                    value={editForm.name}
+                                    onChange={(e) => setEditForm(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Account Type</Label>
+                                  <Select value={editForm.type} onValueChange={(value: TradingAccount['type']) => setEditForm(prev => prev ? { ...prev, type: value } : null)}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="demo">Demo Account</SelectItem>
+                                      <SelectItem value="live">Live Account</SelectItem>
+                                      <SelectItem value="prop-firm">Prop Firm</SelectItem>
+                                      <SelectItem value="paper">Paper Trading</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Broker</Label>
+                                  <Select value={editForm.broker} onValueChange={(value) => setEditForm(prev => prev ? { ...prev, broker: value } : null)}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select broker..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="OANDA">OANDA</SelectItem>
+                                      <SelectItem value="IC Markets">IC Markets</SelectItem>
+                                      <SelectItem value="MetaTrader 4">MetaTrader 4</SelectItem>
+                                      <SelectItem value="MetaTrader 5">MetaTrader 5</SelectItem>
+                                      <SelectItem value="Pepperstone">Pepperstone</SelectItem>
+                                      <SelectItem value="IG">IG</SelectItem>
+                                      <SelectItem value="Interactive Brokers">Interactive Brokers</SelectItem>
+                                      <SelectItem value="FTMO">FTMO</SelectItem>
+                                      <SelectItem value="The5ers">The5ers</SelectItem>
+                                      <SelectItem value="Apex Trader Funding">Apex Trader Funding</SelectItem>
+                                      <SelectItem value="E8 Markets">E8 Markets</SelectItem>
+                                      <SelectItem value="Topfutures Funded">Topfutures Funded</SelectItem>
+                                      <SelectItem value="FundedNext">FundedNext</SelectItem>
+                                      <SelectItem value="Lux Trading Firm">Lux Trading Firm</SelectItem>
+                                      <SelectItem value="NinjaTrader">NinjaTrader</SelectItem>
+                                      <SelectItem value="TradingView">TradingView</SelectItem>
+                                      <SelectItem value="Tradovate">Tradovate</SelectItem>
+                                      <SelectItem value="AMP Futures">AMP Futures</SelectItem>
+                                      <SelectItem value="Discount Trading">Discount Trading</SelectItem>
+                                      <SelectItem value="Schwab">Schwab</SelectItem>
+                                      <SelectItem value="E*TRADE">E*TRADE</SelectItem>
+                                      <SelectItem value="TopstepTrader">TopstepTrader</SelectItem>
+                                      <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Currency</Label>
+                                  <Select value={editForm.currency} onValueChange={(value) => setEditForm(prev => prev ? { ...prev, currency: value } : null)}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
                                 <SelectItem value="USD">USD - US Dollar</SelectItem>
                                 <SelectItem value="EUR">EUR - Euro</SelectItem>
                                 <SelectItem value="GBP">GBP - British Pound</SelectItem>
@@ -730,33 +611,146 @@ export default function Settings() {
                             </div>
                           </div>
                         </div>
-                          <div className="flex gap-3 mt-6">
-                            <Button
-                              onClick={() => {
-                                if (editForm.name && editForm.broker) {
-                                  updateAccount(editForm.id, editForm);
-                                  if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) {
-                                    updateSettings({ currency: editForm.currency });
-                                  }
-                                  setEditForm(null);
-                                }
-                              }}
-                              disabled={!editForm.name || !editForm.broker}
-                              className="font-semibold hover:shadow-md transition-shadow"
-                              style={{
-                                backgroundColor: themeColors.primary,
-                                borderColor: themeColors.primary
-                              }}
-                            >
-                              <FontAwesomeIcon icon={faCheck} className="h-4 w-4 mr-2" />
-                              Save Changes
-                            </Button>
-                            <Button variant="outline" onClick={() => setEditForm(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                      </div>
-                    )}
+                              <div className="flex gap-3 mt-6">
+                                <Button
+                                  onClick={() => {
+                                    if (editForm.name && editForm.broker) {
+                                      updateAccount(editForm.id, editForm);
+                                      if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) {
+                                        updateSettings({ currency: editForm.currency });
+                                      }
+                                      setEditForm(null);
+                                    }
+                                  }}
+                                  disabled={!editForm.name || !editForm.broker}
+                                  className="font-semibold hover:shadow-md transition-shadow"
+                                  style={{
+                                    backgroundColor: themeColors.primary,
+                                    borderColor: themeColors.primary
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faCheck} className="h-4 w-4 mr-2" />
+                                  Save Changes
+                                </Button>
+                                <Button variant="outline" onClick={() => setEditForm(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Normal Account Card */
+                            <div className="rounded-xl bg-background/40 hover:bg-background/60 transition-shadow duration-200 hover:shadow-md"
+                                 style={{
+                                   border: activeAccount?.id === account.id ? `1px solid ${alpha(themeColors.primary, '30')}` : '1px solid transparent'
+                                 }}>
+                              <div className="p-5">
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start gap-3 mb-3">
+                                      <div className="p-2 rounded-lg mt-0.5"
+                                           style={{ backgroundColor: `${alpha(account.type === 'live' ? themeColors.profit : themeColors.primary, '20')}` }}>
+                                        <FontAwesomeIcon
+                                          icon={account.type === 'live' ? faCoins : account.type === 'demo' ? faChartLine : faTrophy}
+                                          className="h-4 w-4"
+                                          style={{ color: account.type === 'live' ? themeColors.profit : themeColors.primary }}
+                                        />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                          <h4 className="font-bold text-lg truncate">
+                                            {account.name}
+                                          </h4>
+                                          <div className="flex gap-2 flex-wrap">
+                                            {account.isDefault && (
+                                              <Badge className="text-xs font-semibold"
+                                                     style={{
+                                                       backgroundColor: `${alpha(themeColors.profit, '15')}`,
+                                                       color: themeColors.profit,
+                                                       borderColor: `${alpha(themeColors.profit, '30')}`
+                                                     }}>
+                                                <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-1" />
+                                                Default
+                                              </Badge>
+                                            )}
+                                            {activeAccount?.id === account.id && (
+                                              <Badge className="text-xs font-semibold"
+                                                     style={{
+                                                       backgroundColor: `${alpha(themeColors.primary, '15')}`,
+                                                       color: themeColors.primary,
+                                                       borderColor: `${alpha(themeColors.primary, '30')}`
+                                                     }}>
+                                                <FontAwesomeIcon icon={faFire} className="h-3 w-3 mr-1" />
+                                                Active
+                                              </Badge>
+                                            )}
+                                            <Badge variant="outline" className="text-xs font-medium capitalize">
+                                              {account.type.replace('-', ' ')}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 sm:gap-4 text-sm text-muted-foreground flex-wrap">
+                                          <div className="flex items-center gap-1.5">
+                                            <FontAwesomeIcon icon={faBuilding} className="h-3 w-3" />
+                                            <span className="font-medium">{account.broker}</span>
+                                          </div>
+                                          <div className="flex items-center gap-1.5">
+                                            <FontAwesomeIcon icon={faCoins} className="h-3 w-3" />
+                                            <span className="font-medium">{account.currency}</span>
+                                          </div>
+                                          {account.balance && (
+                                            <div className="flex items-center gap-1.5">
+                                              <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" />
+                                              <span className="font-semibold" style={{ color: themeColors.profit }}>
+                                                {formatCurrency(account.balance, false)}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setEditForm(account)}
+                                        className="h-10 w-10 p-0 rounded-lg hover:bg-background/80 transition-shadow"
+                                        aria-label="Edit account"
+                                      >
+                                        <FontAwesomeIcon icon={faPencil} className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col sm:flex-row gap-3">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => updateAccount(account.id, { isDefault: true })}
+                                      disabled={account.isDefault}
+                                      className="min-w-[120px] font-semibold hover:shadow-md transition-shadow"
+                                      style={account.isDefault ? {} : {
+                                        borderColor: `${alpha(themeColors.primary, '30')}`,
+                                        color: themeColors.primary
+                                      }}
+                                    >
+                                      <FontAwesomeIcon icon={faMedal} className="h-3 w-3 mr-2" />
+                                      {account.isDefault ? 'Default' : 'Set Default'}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => { if (!window.confirm('Are you sure you want to delete this account? This cannot be undone.')) return; deleteAccount(account.id); }}
+                                      disabled={accounts.length <= 1}
+                                      className="min-w-[100px] font-semibold hover:shadow-md transition-shadow hover:border-destructive hover:text-destructive"
+                                    >
+                                      <FontAwesomeIcon icon={faTrash} className="h-3 w-3 mr-2" />
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
 
                     {/* Add Account Form */}
                     {showAddAccount && (

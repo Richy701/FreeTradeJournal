@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,8 +82,7 @@ export function MobileHeader({ title }: { title?: string }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="User menu">
                 <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
-                  <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
-                  <AvatarFallback className="rounded-full text-xs">
+                  <AvatarFallback className="rounded-full text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary }}>
                     {(user.displayName || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

@@ -17,7 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Pie, PieChart, Sector, RadialBar, RadialBarChart } from "recharts"
+import { Pie, PieChart, Sector, RadialBar, RadialBarChart, Line, LineChart, PolarGrid, PolarRadiusAxis, Label } from "recharts"
 import { useMemo } from "react"
 
 // Define interfaces for type safety
@@ -116,6 +116,17 @@ export function SectionCards() {
   const grossProfit = trades.filter((t: Trade) => t.pnl > 0).reduce((s: number, t: Trade) => s + t.pnl, 0)
   const grossLoss = Math.abs(trades.filter((t: Trade) => t.pnl < 0).reduce((s: number, t: Trade) => s + t.pnl, 0))
 
+  // Mini cumulative P&L sparkline (last 10 trades)
+  const pnlSparkline = useMemo(() => {
+    const sorted = [...trades].sort((a: Trade, b: Trade) => a.exitTime.getTime() - b.exitTime.getTime())
+    const recent = sorted.slice(-10)
+    let cum = 0
+    return recent.map((t: Trade) => {
+      cum += t.pnl
+      return { pnl: cum }
+    })
+  }, [trades])
+
   return (
     <TooltipProvider>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 overflow-visible">
@@ -141,14 +152,28 @@ export function SectionCards() {
             </Tooltip>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
-              {formatCurrency(metrics.totalPnL)}
-            </div>
-            <div className="mt-3 space-y-0.5">
-              <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                Balance: {formatCurrencyPlain(accountBalance)}
-              </p>
-              <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
+                  {formatCurrency(metrics.totalPnL)}
+                </div>
+                <div className="mt-3 space-y-0.5">
+                  <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                    Balance: {formatCurrencyPlain(accountBalance)}
+                  </p>
+                  <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                </div>
+              </div>
+              <div className="w-16 h-16 relative">
+                <ChartContainer
+                  config={{ pnl: { label: "P&L", color: pnlPositive ? themeColors.profit : themeColors.loss } }}
+                  className="w-full h-full"
+                >
+                  <LineChart data={pnlSparkline} margin={{ top: 4, right: 2, bottom: 4, left: 2 }}>
+                    <Line dataKey="pnl" type="monotone" stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={2.5} dot={false} />
+                  </LineChart>
+                </ChartContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -228,14 +253,56 @@ export function SectionCards() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
-              {metrics.totalTrades.toLocaleString()}
-            </div>
-            <div className="mt-3 space-y-0.5">
-              <p className="text-sm font-medium">
-                <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
-              </p>
-              <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
+                  {metrics.totalTrades.toLocaleString()}
+                </div>
+                <div className="mt-3 space-y-0.5">
+                  <p className="text-sm font-medium">
+                    <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
+                  </p>
+                  <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                </div>
+              </div>
+              <div className="w-20 h-20 relative">
+                <ChartContainer
+                  config={{ trades: { label: "Trades", color: themeColors.primary } }}
+                  className="w-full h-full"
+                >
+                  <RadialBarChart
+                    data={[{ trades: metrics.totalTrades, fill: themeColors.primary }]}
+                    startAngle={0}
+                    endAngle={Math.min(350, (metrics.winRate / 100) * 360)}
+                    innerRadius={24}
+                    outerRadius={38}
+                  >
+                    <PolarGrid
+                      gridType="circle"
+                      radialLines={false}
+                      stroke="none"
+                      className="first:fill-muted last:fill-background"
+                      polarRadius={[28, 21]}
+                    />
+                    <RadialBar dataKey="trades" background cornerRadius={4} />
+                    <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            return (
+                              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                                <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground font-bold" style={{ fontSize: '10px' }}>
+                                  {formatPercentage(metrics.winRate)}
+                                </tspan>
+                              </text>
+                            )
+                          }
+                        }}
+                      />
+                    </PolarRadiusAxis>
+                  </RadialBarChart>
+                </ChartContainer>
+              </div>
             </div>
           </CardContent>
         </Card>

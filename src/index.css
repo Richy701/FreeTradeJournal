@@ -102,7 +102,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --border: 214 20% 86%;
     --input: 214 20% 86%;
     --ring: 43 96% 56%; /* Amber/gold ring */
-    --radius: 0.5rem;
+    --radius: 0.85rem;
     --sidebar-background: 220 14% 95%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;

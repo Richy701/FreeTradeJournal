@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
+import { useAuth } from '@/contexts/auth-context';
+import { UserStorage } from '@/utils/user-storage';
 
 export interface TradingAccount {
   id: string;
@@ -37,6 +39,7 @@ interface AccountProviderProps {
 }
 
 export function AccountProvider({ children }: AccountProviderProps) {
+  const { user } = useAuth();
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [activeAccount, setActiveAccountState] = useState<TradingAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -154,8 +157,21 @@ export function AccountProvider({ children }: AccountProviderProps) {
       throw new Error('Cannot delete the last account');
     }
 
+    // Clean up orphaned trades for the deleted account
+    const userId = user?.uid || null;
+    const savedTrades = UserStorage.getItem(userId, 'trades');
+    if (savedTrades) {
+      try {
+        const allTrades = JSON.parse(savedTrades);
+        const filteredTrades = allTrades.filter((t: any) => t.accountId !== id);
+        UserStorage.setItem(userId, 'trades', JSON.stringify(filteredTrades));
+      } catch {
+        // If parsing fails, leave trades as-is
+      }
+    }
+
     setAccounts(prev => prev.filter(acc => acc.id !== id));
-    
+
     // If deleting active account, switch to another one
     if (activeAccount?.id === id) {
       const remainingAccounts = accounts.filter(acc => acc.id !== id);

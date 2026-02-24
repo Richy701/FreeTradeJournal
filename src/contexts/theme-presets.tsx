@@ -105,11 +105,11 @@ const themePresets: Record<string, ThemePreset> = {
   },
 
   energy: {
-    name: 'Mono Black & White',
+    name: 'Mono',
     colors: {
-      profit: '#ffffff', // pure white for profits
-      loss: '#000000',   // pure black for losses
-      primary: '#6b7280' // gray-500 - neutral gray primary
+      profit: '#1a1a1a', // near-black for profits (light mode)
+      loss: '#9ca3af',   // medium gray for losses (light mode)
+      primary: '#374151' // gray-700 - dark charcoal primary
     }
   },
 
@@ -246,7 +246,7 @@ const themePresets: Record<string, ThemePreset> = {
         '--sidebar-accent-foreground': '350 15% 98.5%',
         '--sidebar-border': '350 30% 22%',
         '--sidebar-ring': '348 75% 40%',
-        '--radius': '0.75rem',
+        '--radius': '0.85rem',
       },
       dark: {
         '--background': '355.4 76.5% 3.3%',
@@ -281,7 +281,7 @@ const themePresets: Record<string, ThemePreset> = {
         '--sidebar-accent-foreground': '0 0% 100%',
         '--sidebar-border': '354.3 67.7% 6.1%',
         '--sidebar-ring': '355.5 77.6% 56.3%',
-        '--radius': '0.75rem',
+        '--radius': '0.85rem',
       }
     }
   }
@@ -453,12 +453,12 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       }
       
       if (currentTheme === 'energy') {
-        // Mono Black & White theme adjustments for dark mode
+        // Mono theme - flip for dark mode visibility
         return {
           ...baseColors,
-          profit: '#f8fafc', // white profits visible in dark mode
-          loss: '#ffffff',   // white losses visible in dark mode 
-          primary: '#9ca3af' // lighter gray primary for dark mode
+          profit: '#f1f5f9', // slate-100 - bright for dark backgrounds
+          loss: '#6b7280',   // gray-500 - muted but visible
+          primary: '#d1d5db' // gray-300 - light charcoal primary
         }
       }
       

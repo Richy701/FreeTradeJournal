@@ -275,7 +275,7 @@ export function ChartAreaInteractive() {
               </div>
             </>
           )}
-          <div className="h-4 w-px bg-border shrink-0 ml-auto"></div>
+          <div className="h-4 w-px bg-border shrink-0"></div>
           <div className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap shrink-0">
             {chartData.length} trades
           </div>

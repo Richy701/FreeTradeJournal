@@ -9,7 +9,6 @@ import {
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
 } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -26,6 +25,7 @@ import {
 import { CaretSortIcon } from "@radix-ui/react-icons"
 import { useAuth } from "@/contexts/auth-context"
 import { useNavigate } from "react-router-dom"
+import { useThemePresets } from "@/contexts/theme-presets"
 
 export function NavUser({
   user,
@@ -39,6 +39,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const { themeColors } = useThemePresets()
 
   const handleLogout = async () => {
     try {
@@ -59,8 +60,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-7 w-7 rounded-full">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-full text-xs">{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="rounded-full text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary }}>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium text-xs">{user.name}</span>
