@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGoogle, faApple } from '@fortawesome/free-brands-svg-icons';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import {
   faEye, faEyeSlash, faSpinner, faChartLine,
   faBrain, faShieldAlt, faChartPie, faBookOpen, faArrowRight
@@ -21,13 +21,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [formAnimation, setFormAnimation] = useState('');
 
-  const { signIn, signInWithGoogle, signInWithApple, resetPassword } = useAuth();
+  const { signIn, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -91,19 +90,6 @@ export default function Login() {
     }
   };
 
-  const handleAppleSignIn = async () => {
-    setError('');
-    setAppleLoading(true);
-
-    try {
-      const user = await signInWithApple();
-      navigate(getRedirectPath(user.uid), { replace: true });
-    } catch (error: any) {
-      setError(error.message || 'Failed to sign in with Apple');
-    } finally {
-      setAppleLoading(false);
-    }
-  };
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -267,7 +253,7 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full h-11 !mt-6 relative bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-600 hover:via-yellow-500 hover:to-amber-600 text-black font-semibold"
-              disabled={loading || googleLoading || appleLoading}
+              disabled={loading || googleLoading}
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -296,7 +282,7 @@ export default function Login() {
             <Button
               variant="outline"
               onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading || appleLoading}
+              disabled={loading || googleLoading}
               className="w-full h-11 relative"
             >
               {googleLoading ? (
@@ -312,24 +298,6 @@ export default function Login() {
               )}
             </Button>
 
-            <Button
-              variant="outline"
-              onClick={handleAppleSignIn}
-              disabled={loading || googleLoading || appleLoading}
-              className="w-full h-11 relative"
-            >
-              {appleLoading ? (
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
-                  Connecting...
-                </div>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faApple} className="mr-2 h-5 w-5" />
-                  Continue with Apple
-                </>
-              )}
-            </Button>
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">

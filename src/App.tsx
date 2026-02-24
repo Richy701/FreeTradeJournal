@@ -10,6 +10,8 @@ import { ProtectedRoute } from '@/components/protected-route';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { CookieConsent } from '@/components/CookieConsent';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
 import { Toaster } from 'sonner';
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
@@ -68,6 +70,8 @@ function App() {
               <SpeedInsights />
             </Suspense>
             <CookieConsent />
+            <PWAInstallPrompt />
+            <PWAUpdateNotification />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center" role="status">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

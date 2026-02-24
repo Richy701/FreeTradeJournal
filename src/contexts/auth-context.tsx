@@ -11,7 +11,6 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<User>;
   signIn: (email: string, password: string) => Promise<User>;
   signInWithGoogle: () => Promise<User>;
-  signInWithApple: () => Promise<User>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   enterDemoMode: () => void;
@@ -113,18 +112,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return userCredential.user;
   };
 
-  const signInWithApple = async (): Promise<User> => {
-    const authInstance = auth || await initAuth();
-    if (!authInstance) throw new Error('Auth not initialized');
-
-    const { OAuthProvider, signInWithPopup } = await import('firebase/auth');
-    const provider = new OAuthProvider('apple.com');
-    provider.addScope('email');
-    provider.addScope('name');
-    const userCredential = await signInWithPopup(authInstance, provider);
-    return userCredential.user;
-  };
-
   const logout = async (): Promise<void> => {
     if (isDemo) {
       setUser(null);
@@ -168,7 +155,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signUp,
     signIn,
     signInWithGoogle,
-    signInWithApple,
     logout,
     resetPassword,
     enterDemoMode,

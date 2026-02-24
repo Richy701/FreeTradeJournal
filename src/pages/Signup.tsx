@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGoogle, faApple } from '@fortawesome/free-brands-svg-icons';
+import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import {
   faEye, faEyeSlash, faCheck, faChartLine, faSpinner,
   faBrain, faShieldAlt, faChartPie, faBookOpen, faArrowRight
@@ -27,12 +27,11 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [formAnimation, setFormAnimation] = useState('');
 
-  const { signUp, signInWithGoogle, signInWithApple } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const passwordRequirements = [
@@ -120,19 +119,6 @@ export default function Signup() {
     }
   };
 
-  const handleAppleSignUp = async () => {
-    setError('');
-    setAppleLoading(true);
-
-    try {
-      await signInWithApple();
-      navigate('/onboarding');
-    } catch (error: any) {
-      setError(error.message || 'Failed to sign up with Apple');
-    } finally {
-      setAppleLoading(false);
-    }
-  };
 
   const features = [
     { icon: faChartPie, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
@@ -355,7 +341,7 @@ export default function Signup() {
             <Button
               type="submit"
               className="w-full h-11 !mt-6 relative bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-600 hover:via-yellow-500 hover:to-amber-600 text-black font-semibold"
-              disabled={loading || googleLoading || appleLoading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
+              disabled={loading || googleLoading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -384,7 +370,7 @@ export default function Signup() {
             <Button
               variant="outline"
               onClick={handleGoogleSignUp}
-              disabled={loading || googleLoading || appleLoading}
+              disabled={loading || googleLoading}
               className="w-full h-11 relative"
             >
               {googleLoading ? (
@@ -400,24 +386,6 @@ export default function Signup() {
               )}
             </Button>
 
-            <Button
-              variant="outline"
-              onClick={handleAppleSignUp}
-              disabled={loading || googleLoading || appleLoading}
-              className="w-full h-11 relative"
-            >
-              {appleLoading ? (
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
-                  Connecting...
-                </div>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faApple} className="mr-2 h-5 w-5" />
-                  Continue with Apple
-                </>
-              )}
-            </Button>
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
