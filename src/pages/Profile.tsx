@@ -9,13 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Edit, Mail, Calendar, Shield } from 'lucide-react';
+import { useThemePresets } from '@/contexts/theme-presets';
 import { format } from 'date-fns';
 import { SiteHeader } from '@/components/site-header';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { AppFooter } from '@/components/app-footer';
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const { themeColors } = useThemePresets();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -76,7 +77,7 @@ export default function Profile() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">Profile</h1>
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Profile</h1>
               <p className="text-muted-foreground">Manage your account information</p>
             </div>
           </div>
@@ -252,7 +253,7 @@ export default function Profile() {
           </Card>
         </div>
       </div>
-      <Footer7 {...footerConfig} />
+      <AppFooter />
     </div>
   );
 }

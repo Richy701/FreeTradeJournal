@@ -1,6 +1,5 @@
 import { SiteHeader } from '@/components/site-header'
-import { Footer7 } from '@/components/ui/footer-7'
-import { footerConfig } from '@/components/ui/footer-config'
+import { AppFooter } from '@/components/app-footer'
 import { Badge } from '@/components/ui/badge'
 import { changelog, type ChangelogItemType } from '@/constants/changelog'
 import { Plus, Zap, Bug } from 'lucide-react'
@@ -18,7 +17,7 @@ export default function Changelog() {
 
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
         <header>
-          <h1 className="text-3xl font-bold tracking-tight">Release Notes</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">Release Notes</h1>
           <p className="mt-2 text-muted-foreground">
             Everything new, improved, and fixed in FreeTradeJournal.
           </p>
@@ -96,7 +95,7 @@ export default function Changelog() {
         </div>
       </div>
 
-      <Footer7 {...footerConfig} />
+      <AppFooter />
     </div>
   )
 }

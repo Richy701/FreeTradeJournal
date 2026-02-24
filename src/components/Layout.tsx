@@ -15,7 +15,7 @@ export default function Layout() {
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset
-        className="h-svh overflow-auto"
+        className="h-dvh overflow-auto"
         style={{ paddingTop: isDemo ? 'var(--demo-banner-height, 0px)' : undefined }}
       >
         <DemoBanner />

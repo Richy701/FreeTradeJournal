@@ -12,8 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
-import { Footer7 } from "@/components/ui/footer-7"
-import { footerConfig } from "@/components/ui/footer-config"
+import { AppFooter } from "@/components/app-footer"
 import { useMemo } from 'react'
 
 export default function Goals() {
@@ -121,8 +120,8 @@ export default function Goals() {
 
       {/* Header */}
       <div className="border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-bold text-foreground">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 text-center sm:text-left">
+          <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
             Goals & Risk Management
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -157,7 +156,7 @@ export default function Goals() {
         {/* Performance Goals Section */}
         <PerformanceGoals />
       </div>
-      <Footer7 {...footerConfig} />
+      <AppFooter />
     </div>
   )
 }

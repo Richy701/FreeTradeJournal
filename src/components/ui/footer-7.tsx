@@ -1,8 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FaXTwitter } from "react-icons/fa6";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { FeedbackButton } from './feedback-button';
 import { motion } from "framer-motion";
 
@@ -114,9 +112,7 @@ export const Footer7 = ({
                     height={40}
                   />
                 ) : (
-                  <div className="h-10 w-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-sm ring-1 ring-primary/10">
-                    <FontAwesomeIcon icon={faChartLine} className="h-6 w-6 text-primary" />
-                  </div>
+                  <img src="/favicon.svg" alt="FTJ" className="h-10 w-10 rounded-xl flex-shrink-0" />
                 )}
                 <h2 className="font-display text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{logo.title}</h2>
               </Link>

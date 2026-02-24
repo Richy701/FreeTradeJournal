@@ -37,8 +37,7 @@ import { useUserStorage } from '@/utils/user-storage';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { toast } from 'sonner';
 import { SiteHeader } from '@/components/site-header';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { AppFooter } from '@/components/app-footer';
 import {
   Popover,
   PopoverContent,
@@ -607,9 +606,8 @@ export default function Journal() {
         <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1 min-w-0">
-                <h1 className="font-display text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
-                    style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
+              <div className="space-y-1 min-w-0 text-center sm:text-left">
+                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
                   Trading Journal
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -1509,7 +1507,7 @@ export default function Journal() {
         <Plus className="h-5 w-5" />
       </Button>
       )}
-      <Footer7 {...footerConfig} />
+      <AppFooter />
 
       {/* Image Lightbox */}
       {enlargedImage && (

@@ -56,8 +56,7 @@ import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, end
 import { DateTimePicker } from '@/components/ui/date-picker';
 import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findColumnIndex, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
 
 interface Trade {
@@ -1102,8 +1101,8 @@ export default function TradeLog() {
       <div className="border-b sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
-            <div className="space-y-1 text-center sm:text-left">
-              <h1 className="font-display text-2xl font-bold text-foreground">
+            <div className="space-y-1">
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
                 Trade Log
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -2692,7 +2691,7 @@ export default function TradeLog() {
 
       
       </div>
-      <Footer7 {...footerConfig} />
+      <AppFooter />
     </>
   );
 }

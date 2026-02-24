@@ -9,7 +9,7 @@ import {
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLocation, useNavigate } from "react-router-dom"
-import { User, LogOut, UserPlus, Eye } from "lucide-react"
+import { User, LogOut, UserPlus, Eye, ArrowLeft } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -154,8 +154,8 @@ export function SiteHeader({ className }: { className?: string }) {
   const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation'].includes(pathname.split('/').filter(Boolean)[0])
 
   return (
-    <header className={`flex h-12 md:h-16 shrink-0 items-center gap-2 px-3 md:px-4 ${className || ''}`}>
-      {hasSidebar && <SidebarTrigger className="hidden md:flex" />}
+    <header className={`${hasSidebar ? 'hidden md:flex' : 'flex'} h-12 md:h-16 shrink-0 items-center gap-2 px-3 md:px-4 ${className || ''}`}>
+      {hasSidebar && <SidebarTrigger />}
       <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
       <Breadcrumb className="hidden md:block">
         <BreadcrumbList>
@@ -182,21 +182,17 @@ export function SiteHeader({ className }: { className?: string }) {
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      {/* Mobile: show current page name only */}
-      <span className="md:hidden text-sm font-medium text-foreground truncate"
-        style={{color: !isPublicPage ? themeColors.primary : undefined}}
-      >
-        {breadcrumbItems[breadcrumbItems.length - 1]?.label}
-      </span>
+      {/* Mobile: back arrow for standalone pages (page title comes from page's own <h1>) */}
+      {!hasSidebar && (
+        <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" asChild>
+          <a href={breadcrumbItems[0]?.href || '/'} aria-label="Go back">
+            <ArrowLeft className="h-4 w-4" />
+          </a>
+        </Button>
+      )}
       <div className="ml-auto flex items-center gap-1">
-        <div className="hidden md:flex">
-          <ThemeToggle />
-        </div>
-        {user && (
-          <div className="hidden md:flex">
-            <UserAvatar />
-          </div>
-        )}
+        <ThemeToggle />
+        {user && <UserAvatar />}
       </div>
     </header>
   )

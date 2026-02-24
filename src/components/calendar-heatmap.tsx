@@ -670,13 +670,13 @@ export function CalendarHeatmap() {
         </div>
 
         {/* Stats panel */}
-        <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-0 p-3 md:p-4 md:px-6">
+        <div className="grid grid-cols-3 md:flex md:items-center gap-2 md:gap-0 p-3 md:p-4 md:px-6">
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
               <DollarSign className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
-              <div className="text-xs md:text-sm text-muted-foreground">Monthly P&L</div>
+              <div className="text-[10px] md:text-sm text-muted-foreground">Monthly P&L</div>
             </div>
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+            <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
               {formatCurrency(monthlyStats.totalPnL)}
             </div>
           </div>
@@ -686,22 +686,10 @@ export function CalendarHeatmap() {
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
               <Target className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
-              <div className="text-xs md:text-sm text-muted-foreground">Win Rate</div>
+              <div className="text-[10px] md:text-sm text-muted-foreground">Win Rate</div>
             </div>
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
+            <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
               {monthlyStats.winRate.toFixed(1)}%
-            </div>
-          </div>
-
-          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
-
-          <div className="text-center md:text-left md:flex-1 hidden md:block">
-            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
-              <div className="text-xs md:text-sm text-muted-foreground">R:R</div>
-            </div>
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
-              {monthlyStats.riskReward === Infinity ? '∞' : monthlyStats.riskReward.toFixed(2)}
             </div>
           </div>
 
@@ -710,36 +698,48 @@ export function CalendarHeatmap() {
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
               <BarChart3 className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
-              <div className="text-xs md:text-sm text-muted-foreground">W/L</div>
+              <div className="text-[10px] md:text-sm text-muted-foreground">W/L</div>
             </div>
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold">
+            <div className="text-base md:text-3xl lg:text-4xl font-bold">
               <span style={{color: themeColors.profit}}>{monthlyStats.totalWinningTrades}</span>
-              <span className="text-muted-foreground mx-1">/</span>
+              <span className="text-muted-foreground mx-0.5 md:mx-1">/</span>
               <span style={{color: themeColors.loss}}>{monthlyStats.totalLosingTrades}</span>
             </div>
           </div>
 
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
 
-          <div className="text-center md:text-left">
+          <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
               <Activity className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
-              <div className="text-xs md:text-sm text-muted-foreground">Trades</div>
+              <div className="text-[10px] md:text-sm text-muted-foreground">Trades</div>
             </div>
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
+            <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
               {monthlyStats.totalTrades}
             </div>
           </div>
 
           <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
 
-          <div className="text-center md:text-left">
+          <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
               <FontAwesomeIcon icon={faCalendarDays} className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
-              <div className="text-xs md:text-sm text-muted-foreground">Trading Days</div>
+              <div className="text-[10px] md:text-sm text-muted-foreground">Trading Days</div>
             </div>
-            <div className="text-xl md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
+            <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
               {monthlyStats.activeDays}
+            </div>
+          </div>
+
+          <Separator orientation="vertical" className="hidden md:block h-12 mx-4" />
+
+          <div className="text-center md:text-left md:flex-1">
+            <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <div className="text-[10px] md:text-sm text-muted-foreground">R:R</div>
+            </div>
+            <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
+              {monthlyStats.riskReward === Infinity ? '∞' : monthlyStats.riskReward.toFixed(2)}
             </div>
           </div>
         </div>

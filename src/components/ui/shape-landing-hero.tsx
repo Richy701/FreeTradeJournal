@@ -199,8 +199,37 @@ function HeroGeometric({
                         </p>
                     </motion.div>
 
+                    {/* Social proof avatars */}
                     <motion.div
                         custom={3}
+                        variants={fadeUpVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="flex items-center justify-center gap-3 mb-8 sm:mb-10"
+                    >
+                        <div className="flex -space-x-2.5">
+                            {[
+                                { initials: 'JM', bg: 'bg-amber-500' },
+                                { initials: 'AR', bg: 'bg-yellow-600' },
+                                { initials: 'KT', bg: 'bg-amber-600' },
+                                { initials: 'DS', bg: 'bg-yellow-500' },
+                                { initials: 'LP', bg: 'bg-amber-400' },
+                            ].map((user, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-background ${user.bg} flex items-center justify-center text-[10px] sm:text-xs font-bold text-black`}
+                                >
+                                    {user.initials}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-xs sm:text-sm text-muted-foreground">
+                            <span className="font-semibold text-foreground">1,200+</span> traders journaling
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        custom={4}
                         variants={fadeUpVariants}
                         initial="hidden"
                         animate="visible"

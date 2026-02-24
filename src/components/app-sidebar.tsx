@@ -10,7 +10,6 @@ import {
   Lightbulb,
   Settings2,
   Coffee,
-  LineChart,
   Megaphone,
   UserPlus,
   LogOut,
@@ -85,12 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/dashboard">
-                <div
-                  className="flex aspect-square size-8 items-center justify-center rounded-lg text-white"
-                  style={{backgroundColor: themeColors.primary}}
-                >
-                  <LineChart className="size-4" />
-                </div>
+                <img src="/favicon.svg" alt="FTJ" className="size-8 rounded-lg flex-shrink-0" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">FreeTradeJournal</span>
                 </div>

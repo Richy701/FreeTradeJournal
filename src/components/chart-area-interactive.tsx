@@ -239,45 +239,44 @@ export function ChartAreaInteractive() {
         )}
       </CardContent>
       <CardFooter className="border-t border-border/50">
-        <div className="flex w-full items-center justify-between text-sm mt-2">
-          <div className="flex items-center gap-3 mt-1">
-            {view === 'equity' ? (
-              <>
-                <div className="flex items-center gap-2 font-medium leading-none">
-                  {isPositive ? 'Trending up' : 'Trending down'}
-                  <FontAwesomeIcon
-                    icon={isPositive ? faArrowUp : faArrowDown}
-                    className="h-3 w-3"
-                    style={{color: isPositive ? themeColors.profit : themeColors.loss}}
-                  />
-                </div>
-                <div className="h-4 w-px bg-border"></div>
-                <div className="flex items-center gap-2 leading-none">
-                  <span className="text-muted-foreground font-medium">Total P&L:</span>
-                  <span className="font-semibold" style={{color: isPositive ? themeColors.profit : themeColors.loss}}>
-                    {isPositive ? '+' : ''}${totalPnL.toFixed(2)}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 leading-none">
-                  <span className="font-semibold" style={{color: themeColors.profit}}>{winDays} green</span>
-                  <span className="text-muted-foreground">/</span>
-                  <span className="font-semibold" style={{color: themeColors.loss}}>{lossDays} red</span>
-                  <span className="text-muted-foreground">days</span>
-                </div>
-                <div className="h-4 w-px bg-border"></div>
-                <div className="flex items-center gap-2 leading-none">
-                  <span className="text-muted-foreground font-medium">Total P&L:</span>
-                  <span className="font-semibold" style={{color: isPositive ? themeColors.profit : themeColors.loss}}>
-                    {isPositive ? '+' : ''}${totalPnL.toFixed(2)}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
+        <div className="flex w-full items-center gap-3 text-sm mt-2">
+          {view === 'equity' ? (
+            <>
+              <div className="flex items-center gap-2 font-medium leading-none whitespace-nowrap">
+                {isPositive ? 'Trending up' : 'Trending down'}
+                <FontAwesomeIcon
+                  icon={isPositive ? faArrowUp : faArrowDown}
+                  className="h-3 w-3"
+                  style={{color: isPositive ? themeColors.profit : themeColors.loss}}
+                />
+              </div>
+              <div className="h-4 w-px bg-border shrink-0"></div>
+              <div className="flex items-center gap-2 leading-none whitespace-nowrap">
+                <span className="text-muted-foreground font-medium">Total P&L:</span>
+                <span className="font-semibold" style={{color: isPositive ? themeColors.profit : themeColors.loss}}>
+                  {isPositive ? '+' : ''}${totalPnL.toFixed(2)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 leading-none whitespace-nowrap">
+                <span className="font-semibold" style={{color: themeColors.profit}}>{winDays} green</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="font-semibold" style={{color: themeColors.loss}}>{lossDays} red</span>
+                <span className="text-muted-foreground">days</span>
+              </div>
+              <div className="h-4 w-px bg-border shrink-0"></div>
+              <div className="flex items-center gap-2 leading-none whitespace-nowrap">
+                <span className="text-muted-foreground font-medium">Total P&L:</span>
+                <span className="font-semibold" style={{color: isPositive ? themeColors.profit : themeColors.loss}}>
+                  {isPositive ? '+' : ''}${totalPnL.toFixed(2)}
+                </span>
+              </div>
+            </>
+          )}
+          <div className="h-4 w-px bg-border shrink-0 ml-auto"></div>
+          <div className="text-xs text-muted-foreground whitespace-nowrap">
             {chartData.length} trades
           </div>
         </div>

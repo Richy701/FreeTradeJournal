@@ -73,7 +73,7 @@ export default function ForexTradingJournal() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-3">
-            <TrendingUp className="h-8 w-8 text-primary" />
+            <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 rounded-lg flex-shrink-0" />
             <span className="text-xl font-bold">FreeTradeJournal</span>
           </Link>
           <div className="flex items-center gap-3">

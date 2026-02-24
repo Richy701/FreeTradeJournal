@@ -8,8 +8,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine } from '@fortawesome/free-solid-svg-icons';
+
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -26,9 +25,7 @@ export default function LandingPage() {
       <header className="absolute top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-sm ring-1 ring-primary/10">
-              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            </div>
+            <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
             <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
           </Link>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">

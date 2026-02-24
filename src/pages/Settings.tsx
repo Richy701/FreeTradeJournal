@@ -51,8 +51,7 @@ import {
   faChartSimple
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { AppFooter } from '@/components/app-footer';
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -235,10 +234,9 @@ export default function Settings() {
       {/* Frosted Glass Header */}
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" style={{maxWidth: '1200px', margin: '0 auto'}}>
-            <div className="space-y-1">
-              <h1 className="font-display text-2xl sm:text-3xl font-bold bg-clip-text text-transparent"
-                  style={{ backgroundImage: `linear-gradient(to right, ${themeColors.primary}, ${alpha(themeColors.primary, 'DD')})` }}>
+          <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center gap-4" style={{maxWidth: '1200px', margin: '0 auto'}}>
+            <div className="space-y-1 text-center sm:text-left">
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
                 Settings
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -1410,7 +1408,7 @@ export default function Settings() {
           </Tabs>
         </div>
       </div>
-      <Footer7 {...footerConfig} />
+      <AppFooter />
     </>
   );
 }

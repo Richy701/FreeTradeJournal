@@ -6,8 +6,7 @@ import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
-import { Footer7 } from "@/components/ui/footer-7"
-import { footerConfig } from "@/components/ui/footer-config"
+import { AppFooter } from "@/components/app-footer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -412,7 +411,7 @@ export default function Dashboard() {
                   <Skeleton className="h-5 sm:h-7 w-72 mx-auto sm:mx-0" />
                   <Skeleton className="h-4 sm:h-5 w-80 mx-auto sm:mx-0" />
                 </div>
-                
+
                 {/* Dashboard Title Skeleton */}
                 <div className="space-y-2 text-center sm:text-left">
                   <Skeleton className="h-7 sm:h-8 md:h-12 lg:h-16 w-64 sm:w-96 mx-auto sm:mx-0" />
@@ -463,7 +462,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-2">
             {/* Greeting + Date */}
             <div className="text-center sm:text-left">
-              <h1 className="font-display text-2xl font-semibold text-foreground opacity-90">
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
                 {getGreeting()}
               </h1>
               <div className="text-sm text-muted-foreground">
@@ -1075,7 +1074,7 @@ export default function Dashboard() {
       )}
 
       </div>
-      <Footer7 {...footerConfig} />
+      <AppFooter />
       <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} />
     </>
   )

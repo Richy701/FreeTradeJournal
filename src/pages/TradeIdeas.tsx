@@ -2,8 +2,7 @@ import { useId, useMemo } from 'react'
 import { Lightbulb, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
-import { Footer7 } from '@/components/ui/footer-7'
-import { footerConfig } from '@/components/ui/footer-config'
+import { AppFooter } from '@/components/app-footer'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
@@ -45,8 +44,8 @@ export default function TradeIdeas() {
       <div className="min-h-screen bg-background">
         <SiteHeader />
         <div className="border-b">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-2xl font-bold">Trade Insights</h1>
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6 text-center sm:text-left">
+            <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
           </div>
         </div>
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
@@ -69,7 +68,7 @@ export default function TradeIdeas() {
             </CardContent>
           </Card>
         </div>
-        <Footer7 {...footerConfig} />
+        <AppFooter />
       </div>
     )
   }
@@ -106,9 +105,9 @@ export default function TradeIdeas() {
       {/* Header */}
       <div className="border-b">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-center sm:text-left">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Trade Insights</h1>
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 {ideas.length} insights from{' '}
                 <span className="font-medium text-foreground">{totalTrades} trades</span>
@@ -559,7 +558,7 @@ export default function TradeIdeas() {
         )}
       </div>
 
-      <Footer7 {...footerConfig} />
+      <AppFooter />
     </div>
   )
 }
