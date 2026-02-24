@@ -23,7 +23,7 @@ export function FreeTradeJournalFeatures() {
                         {showPlayer ? (
                             <Suspense fallback={
                                 <img
-                                  src="/images/landing/Trading dashboard New screenshot.png"
+                                  src="/images/landing/trading-dashboard-screenshot.png"
                                   alt="FreeTradeJournal Dashboard"
                                   className="w-full h-full object-cover"
                                   width={1280}
@@ -34,7 +34,7 @@ export function FreeTradeJournalFeatures() {
                             </Suspense>
                         ) : (
                             <img
-                              src="/images/landing/Trading dashboard New screenshot.png"
+                              src="/images/landing/trading-dashboard-screenshot.png"
                               alt="FreeTradeJournal Dashboard"
                               className="w-full aspect-video rounded-2xl object-cover"
                               decoding="async"

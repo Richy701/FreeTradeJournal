@@ -10,7 +10,7 @@ interface SEOMetaProps {
 
 const pageMeta: Record<string, SEOMetaProps> = {
   '/': {
-    title: 'FreeTradeJournal - Free Trading Journal for Forex, Futures & Stock Traders',
+    title: 'FreeTradeJournal - Free Trading Journal for Forex & Futures',
     description: 'Free professional trading journal. Track trades, analyze performance metrics, manage risk. Features include P&L tracking, calendar heatmaps, and AI insights. 100% free forever.',
     keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker',
     image: 'https://www.freetradejournal.com/og-image.webp'

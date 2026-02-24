@@ -37,11 +37,6 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
               "price": "0",
               "priceCurrency": "USD"
             },
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "4.8",
-              "ratingCount": "350"
-            },
             "featureList": [
               "Free trading journal and trade tracker",
               "Performance analytics dashboard with equity curve",
@@ -58,7 +53,7 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
               "Win rate and performance metrics",
               "Trade filtering and search functionality"
             ],
-            "screenshot": `${baseUrl}/images/landing/Trading%20dashboard%20New%20screenshot.webp`,
+            "screenshot": `${baseUrl}/images/landing/trading-dashboard-screenshot.webp`,
             "softwareVersion": "2.0.0",
             "author": {
               "@type": "Organization",
@@ -77,48 +72,6 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
             "sameAs": [
               "https://t.me/+UI6uTKgfswUwNzhk"
             ]
-          }
-        ]
-      };
-    }
-
-    // Documentation page - FAQPage
-    if (currentPath === '/documentation') {
-      return {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is my trading data secure?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, your trading data is stored locally on your device by default. We use industry-standard encryption for any cloud sync features, and your sensitive financial information never leaves your control without your explicit consent."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What file formats can I import?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "We support CSV files from most major brokers and trading platforms, as well as Excel files (.xlsx, .xls). Common formats include MetaTrader, TradingView, Interactive Brokers, and most prop firm reporting formats."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use this for tax reporting?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "While FreeTradeJournal provides detailed P&L calculations and export capabilities, you should always verify data accuracy and consult with a tax professional for official tax reporting purposes."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does FreeTradeJournal provide trading advice?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No, FreeTradeJournal is purely an analysis and journaling tool. We do not provide investment advice, trading signals, or financial recommendations. All trading decisions remain your responsibility."
-            }
           }
         ]
       };

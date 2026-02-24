@@ -29,7 +29,7 @@ const DashboardScene: React.FC<DashboardSceneProps> = ({
       }}
     >
       <Img
-        src="/images/landing/Trading dashboard New screenshot.png"
+        src="/images/landing/trading-dashboard-screenshot.png"
         style={{
           width: '100%',
           height: '100%',

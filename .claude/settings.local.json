@@ -89,7 +89,9 @@
       "Bash(base=\"$f%.png\")",
       "Bash(sips:*)",
       "Bash(git -C /Users/richy/FreeTradeJournal diff --cached --stat)",
-      "Bash(git -C /Users/richy/FreeTradeJournal status -s)"
+      "Bash(git -C /Users/richy/FreeTradeJournal status -s)",
+      "Bash(git diff:*)",
+      "WebFetch(domain:www.freetradejournal.com)"
     ],
     "deny": []
   }

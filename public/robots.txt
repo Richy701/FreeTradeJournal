@@ -9,7 +9,7 @@ Allow: /trades
 Allow: /journal
 Allow: /goals
 Allow: /documentation
-Allow: /blog
+Allow: /changelog
 Allow: /login
 Allow: /signup
 Allow: /privacy
@@ -24,7 +24,7 @@ Disallow: /node_modules/
 Disallow: /src/
 Disallow: /build/
 Disallow: /dist/
-Disallow: *.json$
+Disallow: /*.json
 Disallow: /settings
 Disallow: /profile
 Disallow: /onboarding

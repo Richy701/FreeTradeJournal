@@ -41,8 +41,8 @@ export default function LandingPage() {
       {/* Hero Section with A/B Testing */}
       <HeroGeometric 
         badge="100% Free Trading Journal - No Credit Card Required"
-        title1="Track Every Trade. Analyze Performance."
-        title2="Improve Your Trading Results"
+        title1="The Free Trading Journal"
+        title2="That Improves Your Results"
       />
 
       {/* Logo Cloud - Prop Firms */}
@@ -62,7 +62,7 @@ export default function LandingPage() {
         }
         description="Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across forex pairs, futures contracts, and indices with powerful filtering and export capabilities."
         images={[
-          { src: "/images/landing/trading log new screenshot .webp", alt: "Trade Log View" }
+          { src: "/images/landing/trading-log-screenshot.webp", alt: "Trade Log View" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -79,7 +79,7 @@ export default function LandingPage() {
         }
         description="Track your daily performance with an intuitive calendar heatmap. Quickly identify profitable and losing days, spot trading patterns, and track your consistency over time with beautiful visualizations."
         images={[
-          { src: "/images/landing/New Calender screenshot .webp", alt: "Calendar Heatmap" }
+          { src: "/images/landing/calendar-heatmap-screenshot.webp", alt: "Calendar Heatmap" }
         ]}
         imageLayout="stack"
         reverseLayout={false}
@@ -96,7 +96,7 @@ export default function LandingPage() {
         }
         description="Document your trading thoughts, strategies, and market observations. Maintain a detailed journal with mood tracking, screenshots, and comprehensive analysis to improve your trading psychology and performance."
         images={[
-          { src: "/images/landing/Trading journal new screenshot.webp", alt: "Trading Journal" }
+          { src: "/images/landing/trading-journal-screenshot.webp", alt: "Trading Journal" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -113,7 +113,7 @@ export default function LandingPage() {
         }
         description="Set clear trading goals and implement robust risk management rules. Track your progress, monitor rule violations, and maintain discipline with automated alerts and comprehensive analytics."
         images={[
-          { src: "/images/landing/goals and risk management new screenshot.webp", alt: "Goals & Risk Management" }
+          { src: "/images/landing/goals-risk-management-screenshot.webp", alt: "Goals & Risk Management" }
         ]}
         imageLayout="stack"
         reverseLayout={false}

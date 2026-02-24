@@ -339,6 +339,27 @@ export default function PropFirmDashboard() {
         </div>
       </section>
 
+      {/* Related Tools */}
+      <section className="py-12 px-6">
+        <div className="container mx-auto max-w-4xl">
+          <h2 className="text-2xl font-bold mb-6 text-center">Explore More Trading Tools</h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Link to="/forex-trading-journal">
+              <Card className="p-5 hover:shadow-lg transition-shadow">
+                <h3 className="font-semibold mb-1">Forex Trading Journal</h3>
+                <p className="text-sm text-muted-foreground">Track every pip across all major, minor, and exotic currency pairs with session analysis.</p>
+              </Card>
+            </Link>
+            <Link to="/futures-trading-tracker">
+              <Card className="p-5 hover:shadow-lg transition-shadow">
+                <h3 className="font-semibold mb-1">Futures Trading Tracker</h3>
+                <p className="text-sm text-muted-foreground">Track ES, NQ, CL, GC and all major futures contracts with tick-level precision.</p>
+              </Card>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-6 bg-primary/5">
         <div className="container mx-auto max-w-4xl text-center">
