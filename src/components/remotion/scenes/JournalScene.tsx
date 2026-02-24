@@ -21,8 +21,8 @@ const JournalScene: React.FC<JournalSceneProps> = ({
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const titleSize = isMobile ? 24 : 32;
-  const subtitleSize = isMobile ? 14 : 16;
+  const titleSize = 32;
+  const subtitleSize = 16;
 
   return (
     <SceneContainer backgroundColor={backgroundColor}>
@@ -33,7 +33,7 @@ const JournalScene: React.FC<JournalSceneProps> = ({
         }}
       >
         <BookOpen
-          size={isMobile ? 48 : 64}
+          size={64}
           color={primaryColor}
           strokeWidth={1.5}
         />

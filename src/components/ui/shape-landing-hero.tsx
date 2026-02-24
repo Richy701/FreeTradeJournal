@@ -162,7 +162,7 @@ function HeroGeometric({
                         className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.08] dark:bg-white/[0.05] border border-foreground/[0.15] dark:border-white/[0.08] mb-8 md:mb-12"
                     >
                         <DotFilledIcon className="h-2 w-2 fill-primary/80" />
-                        <span className="text-sm text-foreground/60 tracking-wide">
+                        <span className="text-xs sm:text-sm text-foreground/60 tracking-wide">
                             {badge}
                         </span>
                     </motion.div>
@@ -227,7 +227,10 @@ function HeroGeometric({
                 </div>
             </div>
 
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/80 pointer-events-none" />
+            <div className="absolute inset-0 pointer-events-none z-[2]">
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/80" />
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-background" />
+            </div>
         </div>
     );
 }

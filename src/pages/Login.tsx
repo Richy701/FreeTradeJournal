@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGoogle } from '@fortawesome/free-brands-svg-icons';
+import { faGoogle, faApple } from '@fortawesome/free-brands-svg-icons';
 import {
   faEye, faEyeSlash, faSpinner, faChartLine,
   faBrain, faShieldAlt, faChartPie, faBookOpen, faArrowRight
@@ -21,12 +21,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [formAnimation, setFormAnimation] = useState('');
 
-  const { signIn, signInWithGoogle, resetPassword } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple, resetPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -90,6 +91,20 @@ export default function Login() {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setError('');
+    setAppleLoading(true);
+
+    try {
+      const user = await signInWithApple();
+      navigate(getRedirectPath(user.uid), { replace: true });
+    } catch (error: any) {
+      setError(error.message || 'Failed to sign in with Apple');
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
   const handleResetPassword = async () => {
     if (!email) {
       setError('Please enter your email address first');
@@ -121,7 +136,7 @@ export default function Login() {
 
         {/* Left Panel - Branding & Features (desktop only) */}
         <div
-          className="hidden lg:flex lg:w-[45%] flex-col justify-between p-10 bg-gradient-to-br from-amber-500 to-yellow-600"
+          className="hidden lg:flex lg:w-[45%] flex-col justify-between p-10 bg-gradient-to-br from-amber-600 to-amber-500"
         >
           {/* Logo & tagline */}
           <div className="space-y-4">
@@ -165,15 +180,16 @@ export default function Login() {
 
         {/* Right Panel - Sign In Form */}
         <div className="flex-1 flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-          {/* Mobile-only logo */}
-          <div className="lg:hidden text-center space-y-2 mb-6">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="p-3 rounded-xl bg-primary/10">
-                <FontAwesomeIcon icon={faChartLine} className="h-8 w-8 text-primary" />
+          {/* Mobile-only branded header */}
+          <div className="lg:hidden -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 px-6 py-6 sm:px-8 sm:py-8 bg-gradient-to-br from-amber-600 to-amber-500 rounded-t-2xl">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
+                <FontAwesomeIcon icon={faChartLine} className="h-5 w-5 text-white" />
               </div>
+              <span className="font-display text-lg font-bold text-white">FreeTradeJournal</span>
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Welcome back</h1>
-            <p className="text-muted-foreground/85">Sign in to your FreeTradeJournal account</p>
+            <h1 className="font-display text-2xl font-bold text-white leading-tight">Welcome back, trader.</h1>
+            <p className="text-white/80 text-sm mt-1">Free forever. No credit card required.</p>
           </div>
 
           {/* Desktop heading */}
@@ -251,7 +267,7 @@ export default function Login() {
             <Button
               type="submit"
               className="w-full h-11 !mt-6 relative bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-600 hover:via-yellow-500 hover:to-amber-600 text-black font-semibold"
-              disabled={loading || googleLoading}
+              disabled={loading || googleLoading || appleLoading}
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -267,7 +283,7 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="space-y-4 mt-4">
+          <div className="space-y-3 mt-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <Separator className="w-full" />
@@ -280,7 +296,7 @@ export default function Login() {
             <Button
               variant="outline"
               onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
+              disabled={loading || googleLoading || appleLoading}
               className="w-full h-11 relative"
             >
               {googleLoading ? (
@@ -292,6 +308,25 @@ export default function Login() {
                 <>
                   <FontAwesomeIcon icon={faGoogle} className="mr-2 h-4 w-4" />
                   Continue with Google
+                </>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleAppleSignIn}
+              disabled={loading || googleLoading || appleLoading}
+              className="w-full h-11 relative"
+            >
+              {appleLoading ? (
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
+                  Connecting...
+                </div>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faApple} className="mr-2 h-5 w-5" />
+                  Continue with Apple
                 </>
               )}
             </Button>

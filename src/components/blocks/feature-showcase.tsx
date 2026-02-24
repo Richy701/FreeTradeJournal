@@ -267,13 +267,13 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             <Link
                                 to="/dashboard"
                                 onClick={() => enterDemoMode()}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Try It Now
                             </Link>
                             <Link
                                 to="/signup"
-                                className="border-2 border-border hover:border-primary/50 text-foreground px-8 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="border-2 border-border hover:border-primary/50 text-foreground px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Sign Up Free
                             </Link>

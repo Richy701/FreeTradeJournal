@@ -112,13 +112,13 @@ export default function ForexTradingJournal() {
                   enterDemoMode();
                   navigate('/dashboard');
                 }}
-                className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-[transform,box-shadow]"
+                className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6 shadow-lg hover:shadow-xl transition-[transform,box-shadow]"
               >
                 Try Live Demo
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Link to="/signup">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6">
                   Start Free Forever
                 </Button>
               </Link>
@@ -245,13 +245,13 @@ export default function ForexTradingJournal() {
                 enterDemoMode();
                 navigate('/dashboard');
               }}
-              className="text-lg px-8 py-6"
+              className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6"
             >
               View Live Demo
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Link to="/signup">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+              <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6">
                 Create Free Account
               </Button>
             </Link>

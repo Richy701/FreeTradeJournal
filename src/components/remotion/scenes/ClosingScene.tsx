@@ -18,8 +18,8 @@ const ClosingScene: React.FC<ClosingSceneProps> = ({
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const titleSize = isMobile ? 28 : 40;
-  const subtitleSize = isMobile ? 14 : 18;
+  const titleSize = 40;
+  const subtitleSize = 18;
 
   return (
     <SceneContainer backgroundColor={backgroundColor}>
