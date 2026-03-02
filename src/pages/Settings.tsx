@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
@@ -55,7 +57,7 @@ import { AppFooter } from '@/components/app-footer';
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
-  const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha } = useThemePresets();
+  const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha, setCustomColors, customColors } = useThemePresets();
   const { logout, user } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
@@ -485,6 +487,72 @@ export default function Settings() {
                         );
                       })}
                     </div>
+
+                    {/* Custom Color Pickers — inline when "custom" theme is selected */}
+                    {currentTheme === 'custom' && (
+                      <>
+                        <Separator className="my-5" />
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <FontAwesomeIcon icon={faPalette} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                            <span className="text-sm font-semibold">Pick your colors</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {([
+                              { key: 'primary' as const, label: 'Accent' },
+                              { key: 'profit' as const, label: 'Profit' },
+                              { key: 'loss' as const, label: 'Loss' },
+                            ]).map(({ key, label }) => (
+                              <div key={key} className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="flex items-center gap-2.5 w-full rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                      <div
+                                        className="h-5 w-5 rounded-md border shadow-sm shrink-0"
+                                        style={{ backgroundColor: customColors[key] }}
+                                      />
+                                      <span className="uppercase tracking-wide text-xs text-muted-foreground flex-1 text-left">
+                                        {customColors[key]}
+                                      </span>
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-3 space-y-3" align="start">
+                                    <HexColorPicker
+                                      color={customColors[key]}
+                                      onChange={(color) => setCustomColors({ [key]: color })}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="h-8 w-8 rounded-md border shadow-sm shrink-0"
+                                        style={{ backgroundColor: customColors[key] }}
+                                      />
+                                      <Input
+                                        value={customColors[key]}
+                                        maxLength={7}
+                                        className="h-8 font-mono text-sm uppercase"
+                                        onChange={(e) => {
+                                          let v = e.target.value
+                                          if (!v.startsWith('#')) v = '#' + v
+                                          if (/^#[0-9a-fA-F]{0,6}$/.test(v)) {
+                                            if (v.length === 7) {
+                                              setCustomColors({ [key]: v.toLowerCase() })
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 

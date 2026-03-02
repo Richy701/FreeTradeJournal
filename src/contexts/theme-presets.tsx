@@ -15,6 +15,12 @@ interface ThemePreset {
   }
 }
 
+const DEFAULT_CUSTOM_COLORS = {
+  profit: '#10b981',
+  loss: '#ef4444',
+  primary: '#8b5cf6',
+}
+
 const themePresets: Record<string, ThemePreset> = {
   default: {
     name: 'Default',
@@ -284,7 +290,19 @@ const themePresets: Record<string, ThemePreset> = {
         '--radius': '0.85rem',
       }
     }
-  }
+  },
+
+  // User-defined custom theme — always last
+  custom: {
+    name: 'Custom',
+    colors: { ...DEFAULT_CUSTOM_COLORS },
+  },
+}
+
+interface CustomColors {
+  primary: string
+  profit: string
+  loss: string
 }
 
 interface ThemeContextType {
@@ -293,6 +311,8 @@ interface ThemeContextType {
   setTheme: (theme: string) => void
   availableThemes: Record<string, ThemePreset>
   alpha: (color: string, hexOpacity: string) => string
+  setCustomColors: (colors: Partial<CustomColors>) => void
+  customColors: CustomColors
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -302,6 +322,28 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [pathname, setPathname] = useState(window.location.pathname)
   const [isDemo, setIsDemo] = useState(!!document.documentElement.dataset.demo)
+
+  // Custom theme colors state — initialise from localStorage or defaults
+  const [customColors, setCustomColorsState] = useState<CustomColors>(() => {
+    try {
+      const saved = localStorage.getItem('custom-theme-colors')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        return { ...DEFAULT_CUSTOM_COLORS, ...parsed }
+      }
+    } catch { /* ignore */ }
+    return { ...DEFAULT_CUSTOM_COLORS }
+  })
+
+  // Keep the mutable custom preset in sync with state
+  useEffect(() => {
+    themePresets.custom.colors = { ...customColors }
+    localStorage.setItem('custom-theme-colors', JSON.stringify(customColors))
+  }, [customColors])
+
+  const setCustomColors = useCallback((partial: Partial<CustomColors>) => {
+    setCustomColorsState(prev => ({ ...prev, ...partial }))
+  }, [])
 
   // Track route changes for SPA navigation
   useEffect(() => {
@@ -426,7 +468,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     const b = parseInt(colors.primary.slice(5, 7), 16)
     const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
     root.style.setProperty('--primary-foreground', lum > 0.55 ? '0 0% 0%' : '0 0% 100%')
-  }, [currentTheme, isDarkMode, pathname, isDemo])
+  }, [currentTheme, isDarkMode, pathname, isDemo, customColors])
 
   const setTheme = useCallback((theme: string) => {
     if (themePresets[theme]) {
@@ -536,7 +578,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       ...adjustedColors,
       primaryButtonText: getContrastText(adjustedColors.primary),
     }
-  }, [currentTheme, isDarkMode])
+  }, [currentTheme, isDarkMode, customColors])
 
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;
@@ -555,7 +597,9 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     setTheme,
     availableThemes: themePresets,
     alpha,
-  }), [currentTheme, themeColors, setTheme, alpha])
+    setCustomColors,
+    customColors,
+  }), [currentTheme, themeColors, setTheme, alpha, setCustomColors, customColors])
 
   return (
     <ThemeContext.Provider value={contextValue}>

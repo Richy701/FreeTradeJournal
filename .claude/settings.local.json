@@ -91,7 +91,12 @@
       "Bash(git -C /Users/richy/FreeTradeJournal diff --cached --stat)",
       "Bash(git -C /Users/richy/FreeTradeJournal status -s)",
       "Bash(git diff:*)",
-      "WebFetch(domain:www.freetradejournal.com)"
+      "WebFetch(domain:www.freetradejournal.com)",
+      "WebFetch(domain:tweakcn.com)",
+      "Bash(yes:*)",
+      "Bash(git stash:*)",
+      "Bash(git -C /Users/richy/FreeTradeJournal add -A)",
+      "Bash(git -C /Users/richy/FreeTradeJournal commit -m \"$\\(cat <<''EOF''\nAdd custom color picker theme with hex input to Settings\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": []
   }
