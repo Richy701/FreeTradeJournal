@@ -149,9 +149,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Link
                       to="/pricing"
                       onClick={() => isMobile && setOpenMobile(false)}
-                      className="!bg-gradient-to-r from-amber-500/20 to-yellow-500/20 font-medium"
+                      className="font-medium"
+                      style={{ backgroundColor: alpha(themeColors.primary, '15') }}
                     >
-                      <Rocket className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <Rocket className="h-4 w-4" style={{ color: themeColors.primary }} />
                       <span>Upgrade to Pro</span>
                     </Link>
                   </SidebarMenuButton>
