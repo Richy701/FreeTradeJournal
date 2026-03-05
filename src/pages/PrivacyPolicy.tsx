@@ -82,6 +82,7 @@ export default function PrivacyPolicy() {
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li><strong>Authentication</strong> is managed by Firebase Authentication with industry-standard encryption</li>
               <li><strong>Pro status and subscription data</strong> is stored in Google Cloud Firestore with security rules ensuring only your authenticated account can access your data</li>
+              <li><strong>DNS and network traffic</strong> is managed by Cloudflare, providing DDoS protection and secure content delivery</li>
               <li><strong>All data in transit</strong> is encrypted using TLS/SSL</li>
               <li><strong>Payment data</strong> is handled by Stripe, a PCI DSS Level 1 certified provider</li>
             </ul>
@@ -95,6 +96,7 @@ export default function PrivacyPolicy() {
               <li><strong>Stripe</strong> — payment processing for Pro subscriptions</li>
               <li><strong>OpenAI</strong> — AI-powered analysis features (Pro only)</li>
               <li><strong>Google Analytics</strong> — anonymous usage analytics</li>
+              <li><strong>Cloudflare</strong> — DNS, CDN, DDoS protection, and email routing</li>
               <li><strong>Vercel</strong> — application hosting</li>
             </ul>
             <p className="mt-2">Each service has its own privacy policy. We encourage you to review them.</p>
@@ -136,7 +138,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Contact Us</h2>
-            <p>Questions about this policy? Reach us at <strong>privacy@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
+            <p>Questions about this policy? Reach us at <strong>support@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
           </section>
 
         </div>

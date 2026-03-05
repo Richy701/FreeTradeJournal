@@ -135,7 +135,7 @@ export default function TermsAndConditions() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Contact</h2>
-            <p>Questions about these terms? Reach us at <strong>legal@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
+            <p>Questions about these terms? Reach us at <strong>support@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
           </section>
 
         </div>

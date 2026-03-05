@@ -56,6 +56,11 @@ export default function CookiePolicy() {
                     <td className="px-4 py-3">Up to 2 years</td>
                   </tr>
                   <tr>
+                    <td className="px-4 py-3 font-medium text-foreground">Security</td>
+                    <td className="px-4 py-3">Cloudflare — bot management, DDoS protection, and secure content delivery</td>
+                    <td className="px-4 py-3">Up to 30 minutes</td>
+                  </tr>
+                  <tr>
                     <td className="px-4 py-3 font-medium text-foreground">Payment</td>
                     <td className="px-4 py-3">Stripe — fraud prevention and payment session management (Pro subscribers)</td>
                     <td className="px-4 py-3">Session</td>
@@ -97,6 +102,7 @@ export default function CookiePolicy() {
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li><strong>Firebase / Google</strong> — authentication and session management</li>
               <li><strong>Google Analytics</strong> — anonymous usage analytics</li>
+              <li><strong>Cloudflare</strong> — bot management, DDoS protection, and secure content delivery</li>
               <li><strong>Stripe</strong> — payment processing and fraud prevention (Pro subscribers only)</li>
             </ul>
             <p className="mt-2">Each service operates under its own privacy and cookie policies.</p>
@@ -128,7 +134,7 @@ export default function CookiePolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Contact Us</h2>
-            <p>Questions about cookies? Reach us at <strong>privacy@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
+            <p>Questions about cookies? Reach us at <strong>support@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
           </section>
 
         </div>
