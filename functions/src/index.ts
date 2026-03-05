@@ -44,7 +44,7 @@ export const createCheckoutSession = functions.https.onCall(
       throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
 
-    const { priceId } = data as { priceId: string };
+    const priceId = ((data as { priceId: string }).priceId || "").trim();
     if (!priceId) {
       throw new functions.https.HttpsError("invalid-argument", "Missing priceId.");
     }

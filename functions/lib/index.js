@@ -77,7 +77,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
-    const { priceId } = data;
+    const priceId = (data.priceId || "").trim();
     if (!priceId) {
         throw new functions.https.HttpsError("invalid-argument", "Missing priceId.");
     }
