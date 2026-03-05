@@ -8,12 +8,14 @@ interface SyncContextType {
   isSyncing: boolean;
   syncStatus: SyncStatus;
   lastSyncTime: number | null;
+  initialSyncDone: boolean;
 }
 
 const SyncContext = createContext<SyncContextType>({
   isSyncing: false,
   syncStatus: 'idle',
   lastSyncTime: null,
+  initialSyncDone: true,
 });
 
 export function useSync() {
@@ -38,10 +40,11 @@ function bumpVersion() {
 
 export function SyncProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { isPro } = useProStatus();
+  const { isPro, isLoading: isProLoading } = useProStatus();
   const engineRef = useRef<SyncEngine | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [initialSyncDone, setInitialSyncDone] = useState(false);
 
   useEffect(() => {
     // Clean up previous engine
@@ -52,9 +55,23 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setSyncStatus('idle');
     }
 
-    // Only enable sync for logged-in Pro users
-    if (!user || !isPro) return;
+    // No user — no sync needed
+    if (!user) {
+      setInitialSyncDone(true);
+      return;
+    }
 
+    // Still determining Pro status — wait
+    if (isProLoading) return;
+
+    // Not Pro — no sync needed
+    if (!isPro) {
+      setInitialSyncDone(true);
+      return;
+    }
+
+    // Pro user — start sync engine
+    setInitialSyncDone(false);
     const engine = new SyncEngine(user.uid);
     engineRef.current = engine;
 
@@ -65,6 +82,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     const unsubStatus = engine.onStatusChange(() => {
       setSyncStatus(engine.status);
       setLastSyncTime(engine.lastSyncTime);
+      if (engine.status === 'synced' || engine.status === 'error') {
+        setInitialSyncDone(true);
+      }
     });
 
     // Listen for remote data changes → bump version so React re-reads
@@ -81,13 +101,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       engine.disable();
       setSyncRef(null);
     };
-  }, [user, isPro]);
+  }, [user, isPro, isProLoading]);
 
   return (
     <SyncContext.Provider value={{
       isSyncing: syncStatus === 'syncing',
       syncStatus,
       lastSyncTime,
+      initialSyncDone,
     }}>
       {children}
     </SyncContext.Provider>

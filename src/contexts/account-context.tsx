@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
 import { useAuth } from '@/contexts/auth-context';
+import { useSync } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
 
 export interface TradingAccount {
@@ -41,12 +42,17 @@ interface AccountProviderProps {
 export function AccountProvider({ children }: AccountProviderProps) {
   const { user } = useAuth();
   const userId = user?.uid || null;
+  const { initialSyncDone } = useSync();
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [activeAccount, setActiveAccountState] = useState<TradingAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load accounts from user-scoped localStorage
+  // Load accounts from user-scoped localStorage (waits for cloud sync if applicable)
   useEffect(() => {
+    // Don't load until cloud sync has finished (prevents creating a
+    // default account that would overwrite real synced data)
+    if (!initialSyncDone) return;
+
     // Migrate legacy unscoped key if it exists
     const legacyAccounts = localStorage.getItem('trading-accounts');
     if (legacyAccounts && userId) {
@@ -102,7 +108,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
 
     migrateTradesToAccountId();
     setLoading(false);
-  }, [userId]);
+  }, [userId, initialSyncDone]);
 
   // Save accounts whenever they change
   useEffect(() => {
