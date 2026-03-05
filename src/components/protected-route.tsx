@@ -43,16 +43,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Skip onboarding check for demo users
   if (!isDemo) {
-    // Wait for cloud sync to finish before checking onboarding
-    // (onboardingCompleted may arrive from Firestore)
-    if (!initialSyncDone) {
+    const userId = user?.uid || null;
+    const hasOnboarding = hasCompletedOnboarding(userId);
+
+    // If onboarding isn't completed locally and sync is still in progress,
+    // wait — the flag may arrive from Firestore (new device scenario)
+    if (!hasOnboarding && !initialSyncDone) {
       return <LoadingSkeleton />;
     }
 
     // If user is authenticated but hasn't completed onboarding, redirect to onboarding
     // Exception: if they're already on the onboarding page, let them through
-    const userId = user?.uid || null;
-    if (!hasCompletedOnboarding(userId) && location.pathname !== '/onboarding') {
+    if (!hasOnboarding && location.pathname !== '/onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
   }

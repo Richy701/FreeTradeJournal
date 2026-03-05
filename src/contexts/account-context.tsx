@@ -49,9 +49,11 @@ export function AccountProvider({ children }: AccountProviderProps) {
 
   // Load accounts from user-scoped localStorage (waits for cloud sync if applicable)
   useEffect(() => {
-    // Don't load until cloud sync has finished (prevents creating a
-    // default account that would overwrite real synced data)
-    if (!initialSyncDone) return;
+    const savedAccounts = UserStorage.getItem(userId, 'accounts');
+
+    // If no local data and sync is still in progress, wait for it
+    // (prevents creating a default account that would overwrite real synced data)
+    if (!savedAccounts && !initialSyncDone) return;
 
     // Migrate legacy unscoped key if it exists
     const legacyAccounts = localStorage.getItem('trading-accounts');
@@ -71,11 +73,12 @@ export function AccountProvider({ children }: AccountProviderProps) {
       localStorage.removeItem('active-account-id');
     }
 
-    const savedAccounts = UserStorage.getItem(userId, 'accounts');
+    // Re-read after legacy migration may have written data
+    const currentAccounts = UserStorage.getItem(userId, 'accounts');
     const savedActiveAccountId = UserStorage.getItem(userId, 'active-account-id');
 
-    if (savedAccounts) {
-      const parsedAccounts = JSON.parse(savedAccounts);
+    if (currentAccounts) {
+      const parsedAccounts = JSON.parse(currentAccounts);
       setAccounts(parsedAccounts);
 
       if (savedActiveAccountId) {
