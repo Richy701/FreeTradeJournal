@@ -19,8 +19,10 @@ export interface AIAssistResponse {
 }
 
 export async function requestAIAssist(request: AIAssistRequest): Promise<AIAssistResponse> {
-  const functions = await getFirebaseFunctions();
-  const { httpsCallable } = await import('firebase/functions');
+  const [functions, { httpsCallable }] = await Promise.all([
+    getFirebaseFunctions(),
+    import('firebase/functions'),
+  ]);
   const aiAssist = httpsCallable<AIAssistRequest, AIAssistResponse>(functions, 'aiAssist');
   const result = await aiAssist(request);
   return result.data;

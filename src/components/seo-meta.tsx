@@ -131,6 +131,7 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     updateMetaTag('twitter:description', finalDescription);
     updateMetaTag('twitter:image', finalImage);
     updateMetaTag('twitter:image:alt', imageAlt);
+    updateMetaTag('twitter:url', canonicalUrl);
 
     // Update canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;

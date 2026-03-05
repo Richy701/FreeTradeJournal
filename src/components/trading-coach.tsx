@@ -138,10 +138,13 @@ export function TradingCoach() {
     patterns.fomo = highEntries.length > 3
 
     // Position sizing issues: High variance in trade sizes
-    const volumes = trades.filter(t => t.lotSize).map(t => t.lotSize || 0)
+    const volumes: number[] = [];
+    for (const t of trades) { if (t.lotSize) volumes.push(t.lotSize); }
     if (volumes.length > 5) {
       const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length
-      const variance = volumes.map(v => Math.pow(v - avgVolume, 2)).reduce((a, b) => a + b, 0) / volumes.length
+      let varianceSum = 0;
+      for (const v of volumes) varianceSum += (v - avgVolume) ** 2;
+      const variance = varianceSum / volumes.length
       const stdDev = Math.sqrt(variance)
       patterns.positionSizingIssues = stdDev / avgVolume > 0.5
     }

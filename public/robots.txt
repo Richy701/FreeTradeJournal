@@ -4,10 +4,10 @@
 # Allow all legitimate crawlers
 User-agent: *
 Allow: /
-Allow: /dashboard
-Allow: /trades
-Allow: /journal
-Allow: /goals
+Allow: /pricing
+Allow: /forex-trading-journal
+Allow: /futures-trading-tracker
+Allow: /prop-firm-dashboard
 Allow: /documentation
 Allow: /changelog
 Allow: /login
@@ -15,8 +15,19 @@ Allow: /signup
 Allow: /privacy
 Allow: /terms
 Allow: /cookie-policy
+Allow: /manifest.json
 
-# Disallow private/development paths
+# Disallow authenticated/private routes
+Disallow: /dashboard
+Disallow: /trades
+Disallow: /journal
+Disallow: /goals
+Disallow: /ideas
+Disallow: /settings
+Disallow: /profile
+Disallow: /onboarding
+
+# Disallow development paths
 Disallow: /api/
 Disallow: /admin/
 Disallow: /.git/
@@ -25,9 +36,6 @@ Disallow: /src/
 Disallow: /build/
 Disallow: /dist/
 Disallow: /*.json
-Disallow: /settings
-Disallow: /profile
-Disallow: /onboarding
 
 # Search engine specific rules
 User-agent: Googlebot

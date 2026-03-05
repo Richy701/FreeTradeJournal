@@ -87,16 +87,19 @@ export function AIGoalCoach() {
     try { rules = rulesRaw ? JSON.parse(rulesRaw) : []; } catch { /* corrupted */ }
 
     // Compute basic stats
-    const wins = trades.filter((t: any) => t.pnl > 0).length;
-    const totalPnl = trades.reduce((s: number, t: any) => s + (t.pnl || 0), 0);
-    const avgRR = trades.filter((t: any) => t.riskReward).length > 0
-      ? trades.filter((t: any) => t.riskReward).reduce((s: number, t: any) => s + t.riskReward, 0) / trades.filter((t: any) => t.riskReward).length
-      : 0;
-    const grossWins = trades.filter((t: any) => t.pnl > 0).reduce((s: number, t: any) => s + t.pnl, 0);
-    const grossLosses = Math.abs(trades.filter((t: any) => t.pnl < 0).reduce((s: number, t: any) => s + t.pnl, 0));
+    let wins = 0, totalPnl = 0, grossWins = 0, grossLosses = 0, rrSum = 0, rrCount = 0;
+    const entryTimes: number[] = [];
+    for (const t of trades as any[]) {
+      const pnl = t.pnl || 0;
+      totalPnl += pnl;
+      if (pnl > 0) { wins++; grossWins += pnl; }
+      else if (pnl < 0) { grossLosses += Math.abs(pnl); }
+      if (t.riskReward) { rrSum += t.riskReward; rrCount++; }
+      const time = new Date(t.entryTime).getTime();
+      if (!isNaN(time)) entryTimes.push(time);
+    }
+    const avgRR = rrCount > 0 ? rrSum / rrCount : 0;
     const profitFactor = grossLosses > 0 ? grossWins / grossLosses : grossWins > 0 ? Infinity : 0;
-
-    const entryTimes = trades.map((t: any) => new Date(t.entryTime).getTime()).filter((n: number) => !isNaN(n));
     const firstTradeDate = entryTimes.length > 0 ? new Date(Math.min(...entryTimes)) : new Date();
     const daysSinceStart = Math.max(1, Math.round((Date.now() - firstTradeDate.getTime()) / (1000 * 60 * 60 * 24)));
 

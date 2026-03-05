@@ -58,6 +58,21 @@
     <priority>0.6</priority>
   </url>
 
+  <!-- Auth Pages -->
+  <url>
+    <loc>https://www.freetradejournal.com/login</loc>
+    <lastmod>2026-03-03T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://www.freetradejournal.com/signup</loc>
+    <lastmod>2026-03-03T00:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- Legal Pages -->
   <url>
     <loc>https://www.freetradejournal.com/privacy</loc>

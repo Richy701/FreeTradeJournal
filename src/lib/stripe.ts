@@ -1,8 +1,10 @@
 import { getFirebaseFunctions } from '@/lib/firebase-lazy';
 
 export async function redirectToCheckout(priceId: string): Promise<void> {
-  const functions = await getFirebaseFunctions();
-  const { httpsCallable } = await import('firebase/functions');
+  const [functions, { httpsCallable }] = await Promise.all([
+    getFirebaseFunctions(),
+    import('firebase/functions'),
+  ]);
 
   const createSession = httpsCallable<{ priceId: string }, { url: string }>(
     functions,
@@ -20,8 +22,10 @@ export async function redirectToCheckout(priceId: string): Promise<void> {
 }
 
 export async function redirectToPortal(): Promise<void> {
-  const functions = await getFirebaseFunctions();
-  const { httpsCallable } = await import('firebase/functions');
+  const [functions, { httpsCallable }] = await Promise.all([
+    getFirebaseFunctions(),
+    import('firebase/functions'),
+  ]);
 
   const createSession = httpsCallable<void, { url: string }>(
     functions,

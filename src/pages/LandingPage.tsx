@@ -188,9 +188,9 @@ export default function LandingPage() {
             title: "Product",
             links: [
               { name: "Features", href: "/#features" },
-              { name: "Dashboard", href: "/dashboard" },
-              { name: "Trade Log", href: "/trades" },
-              { name: "Goals", href: "/goals" }
+              { name: "Pricing", href: "/pricing" },
+              { name: "Documentation", href: "/documentation" },
+              { name: "Changelog", href: "/changelog" }
             ]
           },
           {
@@ -204,8 +204,8 @@ export default function LandingPage() {
           {
             title: "Resources",
             links: [
-              { name: "Documentation", href: "/documentation" },
-              { name: "Changelog", href: "/changelog" },
+              { name: "Sign Up Free", href: "/signup" },
+              { name: "Login", href: "/login" },
             ]
           },
           {

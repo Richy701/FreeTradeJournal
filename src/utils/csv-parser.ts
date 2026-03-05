@@ -636,8 +636,10 @@ export function validateCSVFile(file: File): Promise<string> {
     try {
       if (isExcel) {
         // Handle Excel files
-        const XLSX = await import('xlsx');
-        const arrayBuffer = await file.arrayBuffer();
+        const [XLSX, arrayBuffer] = await Promise.all([
+          import('xlsx'),
+          file.arrayBuffer(),
+        ]);
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];

@@ -43,6 +43,14 @@ const Changelog = lazy(() => import('@/pages/Changelog'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
+const toastOptions = {
+  style: {
+    background: 'hsl(var(--background))',
+    color: 'hsl(var(--foreground))',
+    border: '1px solid hsl(var(--border))',
+  },
+};
+
 function App() {
   useEffect(() => {
     initGA();
@@ -59,16 +67,10 @@ function App() {
               <Router>
             <SEOMeta />
             <StructuredData />
-            <Toaster 
-              richColors 
+            <Toaster
+              richColors
               position="top-right"
-              toastOptions={{
-                style: {
-                  background: 'hsl(var(--background))',
-                  color: 'hsl(var(--foreground))',
-                  border: '1px solid hsl(var(--border))',
-                },
-              }}
+              toastOptions={toastOptions}
             />
             <Suspense fallback={null}>
               <Analytics />

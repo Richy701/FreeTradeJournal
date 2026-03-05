@@ -131,9 +131,9 @@ function PricingCard({
 
       {/* Features */}
       <div className="relative flex-1 space-y-2">
-        <h3 className="text-sm font-medium text-foreground/80">
+        <p className="text-sm font-medium text-foreground/80">
           {description}
-        </h3>
+        </p>
         <ul className="space-y-2">
           {features.map((feature) => (
             <li

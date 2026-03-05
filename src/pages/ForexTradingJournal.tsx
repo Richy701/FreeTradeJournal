@@ -1,12 +1,12 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { Footer7 } from '@/components/ui/footer-7';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
-import { 
-  TrendingUp, 
-  ArrowRight, 
+import {
+  TrendingUp,
+  ArrowRight,
   DollarSign,
   Globe,
   LineChart,
@@ -25,8 +25,7 @@ export default function ForexTradingJournal() {
   const navigate = useNavigate();
 
   if (user) {
-    navigate('/dashboard');
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const forexFeatures = [

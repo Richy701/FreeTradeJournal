@@ -20,11 +20,17 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       "description": description || "Free professional trading journal for forex, futures and stock traders"
     };
 
-    // Homepage - SoftwareApplication + Organization in @graph
+    // Homepage - WebSite + SoftwareApplication + Organization in @graph
     if (currentPath === '/') {
       return {
         "@context": "https://schema.org",
         "@graph": [
+          {
+            "@type": "WebSite",
+            "url": baseUrl,
+            "name": "FreeTradeJournal",
+            "description": "Free professional trading journal and analytics platform"
+          },
           {
             "@type": "SoftwareApplication",
             "name": "FreeTradeJournal",

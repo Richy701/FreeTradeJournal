@@ -28,7 +28,7 @@ export function FAQSection() {
     },
     {
       question: "How much does FreeTradeJournal cost?",
-      answer: "It's completely free. All features — trade logging, analytics, journaling, risk management, cloud sync — are included at no cost. No trials, no paywalls, no credit card required."
+      answer: "The core journal is completely free — trade logging, analytics, journaling, risk management, and CSV import/export at no cost, no credit card required. Pro unlocks AI-powered coaching, trade reviews, strategy tagging, risk alerts, PDF reports, and cloud sync."
     },
     {
       question: "Does it work with prop firms?",

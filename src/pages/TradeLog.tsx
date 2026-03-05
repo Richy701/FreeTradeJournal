@@ -120,6 +120,16 @@ function formatPrice(price: number): string {
   return price.toFixed(2);
 }
 
+const indexSymbolsSet = new Set(['SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK']);
+
+const forexPairsSet = new Set([
+  'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+  'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
+  'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
+  'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD',
+  'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR',
+]);
+
 export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
   const { settings } = useSettings();
@@ -215,20 +225,12 @@ export default function TradeLog() {
     }
     
     // Index ETF symbols
-    const indexSymbols = ['SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK'];
-    if (indexSymbols.includes(upperSymbol)) {
+    if (indexSymbolsSet.has(upperSymbol)) {
       return 'indices';
     }
-    
+
     // Known forex pairs for auto-detection
-    const forexPairs = [
-      'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
-      'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
-      'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
-      'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD',
-      'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR',
-    ];
-    if (forexPairs.includes(upperSymbol)) {
+    if (forexPairsSet.has(upperSymbol)) {
       return 'forex';
     }
 
