@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react'
-import { Activity, CalendarDays, Globe, HardDrive } from 'lucide-react'
+import { Activity, Brain, CalendarDays, Globe } from 'lucide-react'
 
 const ShowcasePlayer = lazy(() => import('@/components/remotion/ShowcasePlayer'))
 
@@ -15,15 +15,15 @@ export function FreeTradeJournalFeatures() {
         <section className="py-14 sm:py-16">
             <div className="mx-auto max-w-7xl space-y-16 px-6">
                 <div className="relative z-10 grid items-center gap-6 md:grid-cols-2 md:gap-16">
-                    <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">Professional trading journal & analytics</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required.</p>
+                    <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">Professional trading journal & <span className="text-primary">analytics</span></h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. <span className="text-primary font-semibold">Free forever</span>, no credit card required.</p>
                 </div>
                 <div className="relative rounded-3xl p-0 md:p-3 md:-mx-8 lg:col-span-3">
                     <div className="aspect-video rounded-2xl overflow-hidden">
                         {showPlayer ? (
                             <Suspense fallback={
                                 <img
-                                  src="/images/landing/trading-dashboard-screenshot.png"
+                                  src="/images/screenshots/trading-dashboard-screenshot.png"
                                   alt="FreeTradeJournal Dashboard"
                                   className="w-full h-full object-cover"
                                   width={1280}
@@ -34,7 +34,7 @@ export function FreeTradeJournalFeatures() {
                             </Suspense>
                         ) : (
                             <img
-                              src="/images/landing/trading-dashboard-screenshot.png"
+                              src="/images/screenshots/trading-dashboard-screenshot.png"
                               alt="FreeTradeJournal Dashboard"
                               className="w-full aspect-video rounded-2xl object-cover"
                               decoding="async"
@@ -69,10 +69,10 @@ export function FreeTradeJournalFeatures() {
                     {/* Far-right card */}
                     <div className="lg:col-span-3 space-y-4 p-6 rounded-xl border border-border/50 hover:bg-muted/60 hover:shadow-md transition-all duration-200 flex flex-col">
                         <div className="flex items-center gap-3">
-                            <HardDrive className="size-5 text-amber-300" />
-                            <h3 className="text-base font-semibold">Local Storage</h3>
+                            <Brain className="size-5 text-amber-300" />
+                            <h3 className="text-base font-semibold">AI Trading Coach</h3>
                         </div>
-                        <p className="text-muted-foreground text-sm leading-relaxed font-medium flex-1">Your data stays on your device with secure local storage. No servers required.</p>
+                        <p className="text-muted-foreground text-sm leading-relaxed font-medium flex-1">Personalised coaching, trade reviews, and risk alerts — powered by AI. Pro feature.</p>
                     </div>
                     {/* Bottom-right card — spans remaining cols */}
                     <div className="col-span-2 lg:col-span-7 space-y-4 p-6 rounded-xl border border-border/50 hover:bg-muted/60 hover:shadow-md transition-all duration-200 flex flex-col">

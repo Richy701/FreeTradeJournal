@@ -1,8 +1,10 @@
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
+import type { Functions } from 'firebase/functions';
 
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
+let functionsInstance: Functions | null = null;
 
 export async function getFirebaseAuth(): Promise<Auth> {
   if (authInstance) return authInstance;
@@ -65,4 +67,33 @@ export async function getFirebaseFirestore(): Promise<Firestore> {
   }
 
   return dbInstance;
+}
+
+export async function getFirebaseFunctions(): Promise<Functions> {
+  if (functionsInstance) return functionsInstance;
+
+  const { initializeApp } = await import('firebase/app');
+  const { getFunctions, connectFunctionsEmulator } = await import('firebase/functions');
+
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  };
+
+  const app = initializeApp(firebaseConfig);
+  functionsInstance = getFunctions(app);
+
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+    try {
+      connectFunctionsEmulator(functionsInstance, 'localhost', 5001);
+    } catch (error) {
+      // Firebase functions emulator already connected or not available
+    }
+  }
+
+  return functionsInstance;
 }

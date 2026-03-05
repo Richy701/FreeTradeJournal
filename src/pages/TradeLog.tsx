@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -21,7 +21,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, FileDown, Calendar, Brain, Tags } from 'lucide-react';
+import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -58,6 +59,10 @@ import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findC
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { AIJournalPrompts } from '@/components/ai-journal-prompts';
+import { AITradeReview } from '@/components/ai-trade-review';
+import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
+import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
 
 interface Trade {
   id: string
@@ -121,11 +126,12 @@ export default function TradeLog() {
   const { isDemo } = useAuth();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
-  const { getTrades: getDemoTrades } = useDemoData();
+  const { getTrades: getDemoTrades, getJournalEntries } = useDemoData();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [reportType, setReportType] = useState<'monthly' | 'quarterly' | 'yearly' | 'custom'>('monthly');
   const [reportStartDate, setReportStartDate] = useState<string>('');
   const [reportEndDate, setReportEndDate] = useState<string>('');
@@ -145,6 +151,11 @@ export default function TradeLog() {
     csvContent: string;
     mappings: Record<string, number>;
   } | null>(null);
+
+  // AI feature state
+  const [journalPromptTrade, setJournalPromptTrade] = useState<Trade | null>(null);
+  const [reviewingTradeId, setReviewingTradeId] = useState<string | null>(null);
+  const [isStrategyTaggerOpen, setIsStrategyTaggerOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -499,6 +510,8 @@ export default function TradeLog() {
       setEditingTrade(null);
     } else {
       saveTrades([...trades, newTrade]);
+      // Show AI journal prompts for new trades
+      setJournalPromptTrade(newTrade);
     }
 
     form.reset();
@@ -1161,11 +1174,38 @@ export default function TradeLog() {
                 <FileText className="mr-2 h-4 w-4" />
                 Report
               </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsPdfDialogOpen(true)}
+                disabled={trades.length === 0}
+              >
+                <FileDown className="mr-2 h-4 w-4" />
+                PDF
+              </Button>
+
+              {!isDemo && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsStrategyTaggerOpen(true)}
+                disabled={trades.length === 0}
+              >
+                <Tags className="mr-2 h-4 w-4" />
+                Auto-Tag
+              </Button>
+              )}
             </div>
           </div>
         </div>
       </div>
-      
+
+      {/* AI Risk Alerts */}
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <AIRiskAlertMonitor />
+      </div>
+
       {/* Report Dialog */}
       <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
         <DialogContent className="w-[90vw] max-w-lg">
@@ -1242,7 +1282,16 @@ export default function TradeLog() {
                   </div>
                 </DialogContent>
       </Dialog>
-              
+
+      {/* PDF Report Dialog */}
+      <PDFReportDialog
+        open={isPdfDialogOpen}
+        onOpenChange={setIsPdfDialogOpen}
+        trades={trades}
+        journalEntries={getJournalEntries()}
+        accountName={activeAccount?.name}
+      />
+
       {/* Add Trade Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
@@ -2042,7 +2091,8 @@ export default function TradeLog() {
                   </TableHeader>
                   <TableBody>
                     {paginatedTrades.map((trade) => (
-                      <TableRow key={trade.id} className="hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-b border-border/20">
+                      <React.Fragment key={trade.id}>
+                      <TableRow className="hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-b border-border/20">
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
@@ -2097,6 +2147,16 @@ export default function TradeLog() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => setReviewingTradeId(reviewingTradeId === trade.id ? null : trade.id)}
+                              className="transition-shadow duration-200 hover:shadow-md"
+                              style={{ color: reviewingTradeId === trade.id ? themeColors.primary : undefined }}
+                              aria-label="AI review"
+                            >
+                              <Brain className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleEdit(trade)}
                               className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-shadow duration-200 hover:shadow-md"
                               aria-label="Edit trade"
@@ -2115,6 +2175,18 @@ export default function TradeLog() {
                           </div>
                         </TableCell>
                       </TableRow>
+                      {reviewingTradeId === trade.id && (
+                        <TableRow>
+                          <TableCell colSpan={11} className="p-0">
+                            <AITradeReview
+                              trade={trade}
+                              surroundingTrades={trades.slice(Math.max(0, trades.indexOf(trade) - 2), trades.indexOf(trade) + 3)}
+                              onClose={() => setReviewingTradeId(null)}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      </React.Fragment>
                     ))}
                   </TableBody>
                 </Table>
@@ -2185,6 +2257,14 @@ export default function TradeLog() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => setReviewingTradeId(reviewingTradeId === trade.id ? null : trade.id)}
+                          style={{ color: reviewingTradeId === trade.id ? themeColors.primary : undefined }}
+                        >
+                          <Brain className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => {
                             setEditingTrade(trade);
                             form.reset({
@@ -2209,6 +2289,13 @@ export default function TradeLog() {
                           Delete
                         </Button>
                       </div>
+                      {reviewingTradeId === trade.id && (
+                        <AITradeReview
+                          trade={trade}
+                          surroundingTrades={trades.slice(Math.max(0, trades.indexOf(trade) - 2), trades.indexOf(trade) + 3)}
+                          onClose={() => setReviewingTradeId(null)}
+                        />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -2691,6 +2778,23 @@ export default function TradeLog() {
 
       
       </div>
+      {/* AI Features */}
+      <AIJournalPrompts
+        trade={journalPromptTrade}
+        onClose={() => setJournalPromptTrade(null)}
+      />
+      <AIStrategyTagger
+        open={isStrategyTaggerOpen}
+        onOpenChange={setIsStrategyTaggerOpen}
+        trades={trades}
+        onTagsApplied={(updates) => {
+          const updatedTrades = trades.map(t => {
+            const update = updates.find(u => u.id === t.id);
+            return update ? { ...t, strategy: update.strategy } : t;
+          });
+          saveTrades(updatedTrades);
+        }}
+      />
       <AppFooter />
     </>
   );

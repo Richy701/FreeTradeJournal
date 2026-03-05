@@ -4,6 +4,8 @@ import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
+import { ProProvider } from '@/contexts/pro-context';
+import { SyncProvider } from '@/contexts/sync-context';
 import { AccountProvider } from '@/contexts/account-context';
 import { SettingsProvider } from '@/contexts/settings-context';
 import { ProtectedRoute } from '@/components/protected-route';
@@ -38,6 +40,7 @@ const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker')
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazy(() => import('@/pages/TradeIdeas'));
 const Changelog = lazy(() => import('@/pages/Changelog'));
+const Pricing = lazy(() => import('@/pages/Pricing'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function App() {
@@ -49,6 +52,8 @@ function App() {
     <ThemeProvider defaultTheme="dark" storageKey="ftj-theme">
       <ThemePresetsProvider>
         <AuthProvider>
+          <ProProvider>
+          <SyncProvider>
           <AccountProvider>
             <SettingsProvider>
               <Router>
@@ -87,6 +92,7 @@ function App() {
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/documentation" element={<Documentation />} />
                 <Route path="/changelog" element={<Changelog />} />
+                <Route path="/pricing" element={<Pricing />} />
                 
                 {/* SEO Landing Pages */}
                 <Route path="/forex-trading-journal" element={<ForexTradingJournal />} />
@@ -113,6 +119,8 @@ function App() {
             </Router>
             </SettingsProvider>
           </AccountProvider>
+          </SyncProvider>
+          </ProProvider>
         </AuthProvider>
       </ThemePresetsProvider>
     </ThemeProvider>

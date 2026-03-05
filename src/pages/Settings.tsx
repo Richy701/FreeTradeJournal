@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -14,29 +14,30 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { DEFAULT_VALUES } from '@/constants/trading';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faExclamationTriangle, 
-  faCheck, 
-  faDownload, 
-  faTrash, 
-  faUpload, 
+import {
+  faExclamationTriangle,
+  faCheck,
+  faDownload,
+  faTrash,
+  faUpload,
   faShield,
   faChartLine,
-  faDatabase, 
-  faPalette, 
-  faSun, 
-  faMoon, 
-  faDesktop, 
-  faDollarSign, 
-  faGlobe, 
-  faClock, 
-  faCoins, 
+  faDatabase,
+  faPalette,
+  faSun,
+  faMoon,
+  faDesktop,
+  faDollarSign,
+  faGlobe,
+  faClock,
+  faCoins,
   faMoneyBill,
   faEuroSign,
   faPoundSign,
@@ -50,10 +51,16 @@ import {
   faArrowTrendDown,
   faPercent,
   faMedal,
-  faChartSimple
+  faChartSimple,
+  faCrown,
+  faCloud
 } from '@fortawesome/free-solid-svg-icons';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
+import { useProStatus } from '@/contexts/pro-context';
+import { useSync } from '@/contexts/sync-context';
+import { ProBadge } from '@/components/pro-badge';
+import { FREE_FEATURES, PRO_FEATURES } from '@/constants/pricing';
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -62,7 +69,23 @@ export default function Settings() {
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
   const userStorage = useUserStorage();
+  const { isPro, subscription } = useProStatus();
+  const { syncStatus, lastSyncTime } = useSync();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'general');
+  const [showProWelcome, setShowProWelcome] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('checkout') === 'success') {
+      setActiveTab('subscription');
+      setShowProWelcome(true);
+      toast.success('Welcome to Pro! Your upgrade is complete.');
+      // Clear the query params so refresh doesn't re-trigger
+      setSearchParams({}, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [accountForm, setAccountForm] = useState({
     name: '',
@@ -275,8 +298,8 @@ export default function Settings() {
 
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto" style={{maxWidth: '1200px'}}>
 
-          <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">
               <TabsTrigger value="general" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faPalette} className="h-3.5 w-3.5" />
                 <span>General</span>
@@ -296,6 +319,10 @@ export default function Settings() {
               <TabsTrigger value="data" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
                 <FontAwesomeIcon icon={faDatabase} className="h-3.5 w-3.5" />
                 <span>Data</span>
+              </TabsTrigger>
+              <TabsTrigger value="subscription" className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-shadow data-[state=active]:bg-background data-[state=active]:shadow-md hover:bg-background/50">
+                <FontAwesomeIcon icon={faCrown} className="h-3.5 w-3.5" />
+                <span>Subscription</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1455,7 +1482,131 @@ export default function Settings() {
             </Card>
           </div>
             </TabsContent>
-            
+
+            <TabsContent value="subscription" className="mt-6">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg shadow-sm" style={{ backgroundColor: `${alpha(themeColors.primary, '20')}` }}>
+                    <FontAwesomeIcon icon={faCrown} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Subscription</h3>
+                    <p className="text-xs text-muted-foreground">Manage your plan and billing</p>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FontAwesomeIcon icon={faCrown} className="h-4 w-4" style={{ color: isPro ? '#f59e0b' : themeColors.primary }} />
+                      Current Plan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {isPro ? (
+                      <>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-lg">Pro</span>
+                              <ProBadge size="md" />
+                            </div>
+                            <p className="text-sm text-muted-foreground capitalize">{subscription?.planType} plan</p>
+                          </div>
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 capitalize">
+                            {subscription?.status || 'Active'}
+                          </Badge>
+                        </div>
+                        {subscription?.currentPeriodEnd && subscription.planType !== 'lifetime' && (
+                          <p className="text-sm text-muted-foreground">
+                            {subscription.status === 'cancelled' ? 'Access until' : 'Renews on'}{' '}
+                            {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                          </p>
+                        )}
+                        {subscription?.stripeCustomerId && (
+                          <Button
+                            variant="outline"
+                            onClick={async () => {
+                              try {
+                                const { redirectToPortal } = await import('@/lib/stripe');
+                                await redirectToPortal();
+                              } catch (error) {
+                                toast.error('Failed to open subscription portal');
+                              }
+                            }}
+                          >
+                            Manage Subscription
+                          </Button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-muted/20 border border-border/50">
+                          <div className="space-y-1">
+                            <span className="font-semibold text-lg">Free</span>
+                            <p className="text-sm text-muted-foreground">You're on the free plan</p>
+                          </div>
+                          <Badge variant="outline">Free</Badge>
+                        </div>
+                        <div className="space-y-2 pt-2">
+                          <p className="text-sm font-medium">Upgrade to Pro to unlock:</p>
+                          <ul className="space-y-1.5">
+                            {PRO_FEATURES.map((f) => (
+                              <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <FontAwesomeIcon icon={faCheck} className="h-3 w-3 text-amber-500" />
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <Button
+                          className="mt-4 font-semibold"
+                          style={{ backgroundColor: '#f59e0b' }}
+                          onClick={() => navigate('/pricing')}
+                        >
+                          <FontAwesomeIcon icon={faCrown} className="h-4 w-4 mr-2" />
+                          Upgrade to Pro
+                        </Button>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Cloud Sync Status — Pro users only */}
+                {isPro && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                        <FontAwesomeIcon icon={faCloud} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                        Cloud Sync
+                      </CardTitle>
+                      <CardDescription>Your trades sync automatically across devices</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/50">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2.5 w-2.5 rounded-full ${
+                            syncStatus === 'synced' ? 'bg-green-500' :
+                            syncStatus === 'syncing' ? 'bg-amber-500 animate-pulse' :
+                            syncStatus === 'error' ? 'bg-red-500' :
+                            'bg-muted-foreground/40'
+                          }`} />
+                          <div>
+                            <p className="text-sm font-medium capitalize">{syncStatus === 'idle' ? 'Not connected' : syncStatus}</p>
+                            {lastSyncTime && (
+                              <p className="text-xs text-muted-foreground">
+                                Last synced {new Date(lastSyncTime).toLocaleTimeString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
             <div className="flex justify-center pt-6">
               <Button
                 onClick={saveSettings}
@@ -1471,6 +1622,37 @@ export default function Settings() {
         </div>
       </div>
       <AppFooter />
+
+      {/* Pro Welcome Dialog */}
+      <Dialog open={showProWelcome} onOpenChange={setShowProWelcome}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-center items-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10">
+              <FontAwesomeIcon icon={faCrown} className="h-8 w-8 text-amber-500" />
+            </div>
+            <DialogTitle className="text-2xl font-bold">Welcome to Pro!</DialogTitle>
+            <DialogDescription className="text-base">
+              Your upgrade is complete. You now have access to all premium features.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 space-y-3">
+            {PRO_FEATURES.map((feature) => (
+              <div key={feature} className="flex items-center gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500/10">
+                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3 text-green-500" />
+                </div>
+                <span className="text-sm">{feature}</span>
+              </div>
+            ))}
+          </div>
+          <Button
+            className="mt-6 w-full"
+            onClick={() => setShowProWelcome(false)}
+          >
+            Get Started
+          </Button>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

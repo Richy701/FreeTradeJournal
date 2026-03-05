@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
 import { useMemo } from 'react'
+import { AIGoalCoach } from '@/components/ai-goal-coach'
 
 export default function Goals() {
   const { themeColors } = useThemePresets()
@@ -51,11 +52,13 @@ export default function Goals() {
     }
 
     const storedGoals = userStorage.getItem('tradingGoals')
-    const goals = storedGoals ? JSON.parse(storedGoals) : []
+    let goals: any[] = []
+    try { goals = storedGoals ? JSON.parse(storedGoals) : []; } catch { /* corrupted */ }
     const achievedGoals = goals.filter((g: any) => g.achieved).length
 
     const storedRules = userStorage.getItem('riskRules')
-    const rules = storedRules ? JSON.parse(storedRules) : []
+    let rules: any[] = []
+    try { rules = storedRules ? JSON.parse(storedRules) : []; } catch { /* corrupted */ }
     const activeRules = rules.filter((r: any) => r.enabled).length
     const violations = rules.reduce((sum: number, r: any) => sum + (r.violations || 0), 0)
 
@@ -155,6 +158,9 @@ export default function Goals() {
 
         {/* Performance Goals Section */}
         <PerformanceGoals />
+
+        {/* AI Goal Coach */}
+        <AIGoalCoach />
       </div>
       <AppFooter />
     </div>

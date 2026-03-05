@@ -56,22 +56,28 @@
   ],
   "screenshots": [
     {
-      "src": "/images/landing/Trading_dashboard_New_screenshot-1200w.webp",
-      "sizes": "1200x800",
-      "type": "image/webp",
+      "src": "/images/screenshots/trading-dashboard-screenshot.png",
+      "sizes": "2560x1440",
+      "type": "image/png",
       "label": "Trading Dashboard"
     },
     {
-      "src": "/images/landing/trading_log_new_screenshot_-1200w.webp",
-      "sizes": "1200x800",
-      "type": "image/webp",
+      "src": "/images/screenshots/trading-log-screenshot.png",
+      "sizes": "2560x1440",
+      "type": "image/png",
       "label": "Trade Log"
     },
     {
-      "src": "/images/landing/New_Calender_screenshot_-1200w.webp",
-      "sizes": "1200x800",
-      "type": "image/webp",
-      "label": "Performance Calendar"
+      "src": "/images/screenshots/calendar-heatmap-screenshot.png",
+      "sizes": "2560x1440",
+      "type": "image/png",
+      "label": "Calendar Heatmap"
+    },
+    {
+      "src": "/images/screenshots/ai-trade-analysis-screenshot.png",
+      "sizes": "2560x1440",
+      "type": "image/png",
+      "label": "AI Trade Analysis"
     }
   ],
   "related_applications": [],

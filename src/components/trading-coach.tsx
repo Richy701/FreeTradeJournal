@@ -23,6 +23,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useProStatus } from '@/contexts/pro-context'
+import { getAICache, setAICache } from '@/utils/ai-cache'
+import { Loader2 } from 'lucide-react'
 
 interface Trade {
   pnl: number
@@ -31,8 +34,8 @@ interface Trade {
   symbol?: string
   exitTime?: Date
   entryTime?: Date
-  volume?: number
-  type?: 'long' | 'short'
+  lotSize?: number
+  side?: 'long' | 'short'
   entryPrice?: number
   exitPrice?: number
   notes?: string
@@ -47,12 +50,18 @@ const TIP_SEVERITY_ORDER: Record<string, number> = {
   tip: 5,
 }
 
+const AI_COACH_CACHE_KEY = 'ftj-ai-coaching-tips'
+const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
+
 export function TradingCoach() {
   const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
+  const { isPro } = useProStatus()
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [aiTips, setAiTips] = useState<any[] | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem('dismissedCoachTips')
@@ -107,8 +116,8 @@ export function TradingCoach() {
       if (trades[i-1].pnl < 0 && currEntry && prevExit) {
         lossFollowUps++
         const timeDiff = (currEntry.getTime() - prevExit.getTime()) / (1000 * 60)
-        const prevVolume = trades[i-1].volume || 0
-        const currVolume = trades[i].volume || 0
+        const prevVolume = trades[i-1].lotSize || 0
+        const currVolume = trades[i].lotSize || 0
         if (timeDiff < 30 && currVolume > prevVolume * 1.5) {
           revengeCount++
         }
@@ -129,7 +138,7 @@ export function TradingCoach() {
     patterns.fomo = highEntries.length > 3
 
     // Position sizing issues: High variance in trade sizes
-    const volumes = trades.filter(t => t.volume).map(t => t.volume || 0)
+    const volumes = trades.filter(t => t.lotSize).map(t => t.lotSize || 0)
     if (volumes.length > 5) {
       const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length
       const variance = volumes.map(v => Math.pow(v - avgVolume, 2)).reduce((a, b) => a + b, 0) / volumes.length
@@ -286,8 +295,8 @@ export function TradingCoach() {
       : 0
 
     // Long vs Short performance
-    const longTrades = trades.filter((t: Trade) => t.type === 'long')
-    const shortTrades = trades.filter((t: Trade) => t.type === 'short')
+    const longTrades = trades.filter((t: Trade) => t.side === 'long')
+    const shortTrades = trades.filter((t: Trade) => t.side === 'short')
     const longWinRate = longTrades.length > 0
       ? (longTrades.filter((t: Trade) => t.pnl > 0).length / longTrades.length) * 100
       : 0
@@ -334,6 +343,109 @@ export function TradingCoach() {
 
     return { type: streakType, count: currentStreak }
   }
+
+  // Stable fingerprint of trade data — changes when trades are added/edited
+  const tradeFingerprint = useMemo(() => {
+    if (trades.length === 0) return ''
+    const totalPnL = trades.reduce((s: number, t: Trade) => s + t.pnl, 0)
+    return `${trades.length}:${totalPnL.toFixed(2)}`
+  }, [trades])
+
+  // Fetch AI coaching tips for Pro users
+  const aiFetchedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!isPro || trades.length < 3 || !metrics) return
+
+    // Check cache first
+    const cached = getAICache<any[]>(AI_COACH_CACHE_KEY, AI_COACH_TTL)
+    if (cached && aiFetchedRef.current === tradeFingerprint) {
+      setAiTips(cached)
+      return
+    }
+
+    // If trade data changed, clear stale cache
+    if (aiFetchedRef.current !== null && aiFetchedRef.current !== tradeFingerprint) {
+      setAiTips(null)
+    }
+
+    // Prevent duplicate fetch (React StrictMode double-invocation)
+    if (aiFetchedRef.current === tradeFingerprint) return
+    aiFetchedRef.current = tradeFingerprint
+
+    const fetchAITips = async () => {
+      setAiLoading(true)
+      try {
+        // Compute stats for the payload
+        const wins = trades.filter((t: Trade) => t.pnl > 0).length
+        const totalPnl = trades.reduce((s: number, t: Trade) => s + t.pnl, 0)
+        const avgPnl = totalPnl / trades.length
+
+        // Find best/worst symbols
+        const symbolPnl: Record<string, number> = {}
+        trades.forEach((t: Trade) => {
+          if (t.symbol) symbolPnl[t.symbol] = (symbolPnl[t.symbol] || 0) + t.pnl
+        })
+        const sorted = Object.entries(symbolPnl).sort((a, b) => b[1] - a[1])
+        const bestSymbol = sorted[0]?.[0]
+        const worstSymbol = sorted[sorted.length - 1]?.[0]
+
+        // Consecutive losses
+        let consLosses = 0
+        for (const t of [...trades].reverse()) {
+          if (t.pnl < 0) consLosses++
+          else break
+        }
+
+        // Avg hold
+        const holdTimes = trades
+          .filter((t: Trade) => t.entryTime && t.exitTime)
+          .map((t: Trade) => (new Date(t.exitTime!).getTime() - new Date(t.entryTime!).getTime()) / 60000)
+        const avgHoldMinutes = holdTimes.length > 0 ? Math.round(holdTimes.reduce((a: number, b: number) => a + b, 0) / holdTimes.length) : 0
+
+        const { requestAIAssist } = await import('@/services/ai-assist')
+        const response = await requestAIAssist({
+          type: 'coaching_tips',
+          payload: {
+            trades: trades.slice(-15).map((t: Trade) => ({
+              symbol: t.symbol,
+              side: t.side || 'long',
+              pnl: t.pnl,
+              holdMinutes: t.entryTime && t.exitTime
+                ? Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000)
+                : null,
+            })),
+            winRate: (wins / trades.length) * 100,
+            avgPnl,
+            totalPnl,
+            consecutiveLosses: consLosses,
+            bestSymbol,
+            worstSymbol,
+            avgHoldMinutes,
+            tradeCount: trades.length,
+          },
+        })
+
+        const parsed = JSON.parse(response.result)
+        if (Array.isArray(parsed)) {
+          const tipsWithKeys = parsed.map((tip: any, i: number) => ({
+            icon: faLightbulb,
+            type: tip.type || 'info',
+            title: tip.title || 'Tip',
+            message: tip.message || '',
+            key: `ai-tip-${i}`,
+          }))
+          setAiTips(tipsWithKeys)
+          setAICache(AI_COACH_CACHE_KEY, tipsWithKeys)
+        }
+      } catch {
+        // Silently fall back to client-side tips
+      } finally {
+        setAiLoading(false)
+      }
+    }
+
+    fetchAITips()
+  }, [isPro, trades.length, tradeFingerprint, metrics])
 
   // Generate smarter coaching tips based on advanced analysis
   const coachingTips = useMemo(() => {
@@ -631,11 +743,14 @@ export function TradingCoach() {
     }]
   }, [metrics, trades])
 
+  // Use AI tips for Pro users, client-side tips for free users
+  const baseTips = isPro && aiTips ? aiTips : coachingTips
+
   // Filter out dismissed tips
   const visibleTips = useMemo(() => {
-    const filtered = coachingTips.filter(tip => !dismissedTips.has(tip.key))
-    return filtered.length > 0 ? filtered : coachingTips
-  }, [coachingTips, dismissedTips])
+    const filtered = baseTips.filter(tip => !dismissedTips.has(tip.key))
+    return filtered.length > 0 ? filtered : baseTips
+  }, [baseTips, dismissedTips])
 
   const dismissCurrentTip = useCallback(() => {
     const tip = visibleTips[currentTipIndex]
@@ -774,6 +889,13 @@ export function TradingCoach() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
+        {aiLoading ? (
+          <div className="flex items-center justify-center gap-2 py-6">
+            <Loader2 className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
+            <span className="text-sm text-muted-foreground">Loading AI coaching...</span>
+          </div>
+        ) : (
+        <>
         <div className={cn(
           "transition-shadow duration-200",
           isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"
@@ -842,6 +964,8 @@ export function TradingCoach() {
               <span>Immediate action recommended</span>
             </div>
           </div>
+        )}
+        </>
         )}
       </CardContent>
     </Card>

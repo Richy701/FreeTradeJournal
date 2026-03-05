@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Users can read their own document (pro status)
+      // Only admin SDK (Cloud Functions) can write user doc
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+
+      // Meta subcollection (AI usage tracking) — read-only for client
+      match /meta/{docId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      // Sync subcollection — Pro users can read/write their own synced data
+      match /sync/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

@@ -96,7 +96,16 @@
       "Bash(yes:*)",
       "Bash(git stash:*)",
       "Bash(git -C /Users/richy/FreeTradeJournal add -A)",
-      "Bash(git -C /Users/richy/FreeTradeJournal commit -m \"$\\(cat <<''EOF''\nAdd custom color picker theme with hex input to Settings\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git -C /Users/richy/FreeTradeJournal commit -m \"$\\(cat <<''EOF''\nAdd custom color picker theme with hex input to Settings\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase functions:list:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(npm run screenshots:*)",
+      "Bash(firebase functions:log:*)",
+      "Bash(gcloud auth application-default login:*)",
+      "Bash(GOOGLE_APPLICATION_CREDENTIALS=./service-account.json node:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

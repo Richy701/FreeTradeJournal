@@ -50,6 +50,20 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Best/worst trading hours and days analysis
 - Personalized coaching tips based on your performance data
 - Consistency scoring and streak detection
+- Pro users get AI-generated coaching tips via OpenAI, with 24-hour caching and auto-refresh when trade data changes
+
+### Pro Features (Powered by Stripe)
+- **AI Goal Coach** — Personalized coaching on your trading goals with actionable insights
+- **AI Trade Review** — In-depth analysis of individual trades with improvement suggestions
+- **AI Journal Prompts** — Context-aware journaling prompts based on your recent trades
+- **AI Risk Alerts** — Automated detection of risk rule violations and position sizing issues
+- **AI Strategy Tagger** — Automatic strategy classification based on trade patterns
+- **AI Market Analysis** — Broader market context and how it relates to your trading
+- **PDF Trading Wrapped** — Spotify Wrapped-style PDF report with gradient backgrounds, donut charts, equity curve with filled area, day-of-week bar charts, streak visualizations, trader personality archetypes, and fun facts
+- **Cloud Sync** — Real-time Firestore sync for logged-in users, keeping data safe across devices
+- Pro status managed via Stripe webhooks → Firebase Cloud Functions → Firestore
+- ProGate component with blur overlay and lock icon for gated features
+- ProBadge indicator in the sidebar for subscribed users
 
 ### Multi-Account & Prop Firm Support
 - Multiple account types: Live, Demo, Prop Firm, Paper
@@ -60,8 +74,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Account switcher in the sidebar with type and broker info per account
 - Theme-colored initial avatars in the header and sidebar (adapts to active color theme)
 
-### 14 Color Themes
+### 14 Color Themes + Custom Color Picker
 - Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage, Clean, Wine
+- Custom color picker with hex input — create your own theme with any primary, profit, and loss colors
 - Dark/Light/System mode with polished light mode — visible decorative shapes, badges, and overlays
 - Instant theme switching via useLayoutEffect — no staggered color transitions or delayed button fades
 - Consistent 0.85rem border radius across all themes for a premium rounded feel
@@ -162,6 +177,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 
 ### Data Management
 - **Local-First Storage** — Trade data stored in browser localStorage, scoped per user
+- **Cloud Sync (Pro)** — Real-time Firestore sync keeps data safe across devices for logged-in Pro users
 - **User-Scoped Isolation** — Complete data separation between accounts
 - **Backup & Restore** — Export all data as JSON and import from backup
 - **CSV/Excel Import** — Bring in existing trading history from any broker
@@ -188,6 +204,10 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 | **SEO** | Build-time prerendering with Puppeteer |
 | **Virtualization** | react-window |
 | **Spreadsheets** | SheetJS (xlsx) |
+| **PDF Generation** | jsPDF + jspdf-autotable |
+| **AI** | OpenAI (via Firebase Cloud Functions) |
+| **Payments** | Stripe |
+| **Cloud Database** | Firestore |
 
 ## CSV Import
 
@@ -254,7 +274,7 @@ src/
   pages/            # Route-level page components
   contexts/         # React context providers (auth, account, settings, theme)
   hooks/            # Custom hooks (demo data, email notifications, mobile)
-  services/         # Data and demo services
+  services/         # Data, demo, AI assist, PDF report, and sync services
   utils/            # CSV parser, storage, migration utilities
   lib/              # Firebase, analytics, Resend, utility functions
   types/            # TypeScript type definitions
@@ -262,6 +282,8 @@ src/
   data/             # Demo trade data
 scripts/
   prerender.mjs     # Build-time SEO prerendering script
+functions/
+  src/index.ts      # Firebase Cloud Functions (AI assist, Stripe webhooks)
 ```
 
 ## SEO

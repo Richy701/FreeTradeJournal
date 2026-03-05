@@ -11,8 +11,8 @@ interface SEOMetaProps {
 const pageMeta: Record<string, SEOMetaProps> = {
   '/': {
     title: 'FreeTradeJournal - Free Trading Journal for Forex & Futures',
-    description: 'Free professional trading journal. Track trades, analyze performance metrics, manage risk. Features include P&L tracking, calendar heatmaps, and AI insights. 100% free forever.',
-    keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker',
+    description: 'Free professional trading journal with AI-powered coaching. Track trades, analyze performance, manage risk. Features include P&L tracking, calendar heatmaps, AI Trade Analysis, AI Trading Coach, risk alerts, and strategy tagging. Free forever.',
+    keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker, AI trading coach, AI trade analysis, AI risk alerts',
     image: 'https://www.freetradejournal.com/og-image.webp'
   },
   '/dashboard': {
@@ -74,6 +74,11 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Changelog | FreeTradeJournal - Latest Updates & New Features',
     description: 'See what\'s new in FreeTradeJournal. Latest updates, new features, bug fixes, and improvements to your free trading journal.',
     keywords: 'changelog, updates, release notes, new features, trading journal updates'
+  },
+  '/pricing': {
+    title: 'Pricing | FreeTradeJournal - Free & Pro Plans for Traders',
+    description: 'FreeTradeJournal pricing plans. Free forever core journal with unlimited trades. Upgrade to Pro for AI Trading Coach, trade analysis, risk alerts, strategy tagger, cloud sync, and priority support.',
+    keywords: 'trading journal pricing, free trading journal, pro trading tools, AI trading coach, trading analytics subscription, trade analysis pricing'
   },
   '/forex-trading-journal': {
     title: 'Forex Trading Journal - Free Professional FX Trading Tracker | FreeTradeJournal',

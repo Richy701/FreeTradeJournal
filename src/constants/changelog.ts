@@ -15,6 +15,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.0.0',
+    date: '2026-03-03',
+    summary: 'AI-powered Pro features — coaching, trade reviews, risk alerts, strategy tagging, goal coaching, journal prompts, and cloud sync.',
+    items: [
+      {
+        type: 'new',
+        text: 'AI Trading Coach',
+        description: 'Personalised GPT-powered coaching tips based on your trading patterns, win rate, streaks, and performance metrics. Updates daily with fresh insights.',
+      },
+      {
+        type: 'new',
+        text: 'AI Trade Analysis',
+        description: 'Comprehensive AI review of your overall trading performance with sections for strengths, patterns, improvements, and an action plan.',
+      },
+      {
+        type: 'new',
+        text: 'AI Trade Review',
+        description: 'Per-trade AI assessment with entry/exit analysis, context from surrounding trades, and specific improvement suggestions.',
+      },
+      {
+        type: 'new',
+        text: 'AI Journal Prompts',
+        description: 'After logging a trade, receive AI-generated reflective questions to deepen self-awareness and improve decision-making.',
+      },
+      {
+        type: 'new',
+        text: 'AI Strategy Tagger',
+        description: 'Auto-classify your trades by strategy pattern — breakout, pullback, reversal, momentum, scalp, and more. Accept or reject each suggestion.',
+      },
+      {
+        type: 'new',
+        text: 'AI Risk Alerts',
+        description: 'Automatic detection of revenge trading, consecutive loss streaks, and daily loss limit breaches with AI-powered advice.',
+      },
+      {
+        type: 'new',
+        text: 'AI Goal Coach',
+        description: 'Get personalised coaching on your trading goals — what\'s working, what to adjust, and how to stay on track.',
+      },
+      {
+        type: 'new',
+        text: 'Cloud Sync for Pro users',
+        description: 'Your trades, journal entries, goals, accounts, and risk rules sync across devices in real-time via Firestore.',
+      },
+    ],
+  },
+  {
     version: '1.9.0',
     date: '2026-02-19',
     summary: 'Trade Insights page redesign — new trader profile radar, summary pill badges, colored actionable ideas, and chart alignment fixes.',
@@ -324,4 +371,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '1.8.0'
+export const LATEST_CHANGELOG_VERSION = '2.0.0'

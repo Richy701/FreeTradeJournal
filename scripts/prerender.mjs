@@ -31,6 +31,7 @@ const ROUTES = [
   "/futures-trading-tracker",
   "/prop-firm-dashboard",
   "/changelog",
+  "/pricing",
   "/404",
 ];
 

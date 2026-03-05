@@ -13,11 +13,14 @@ dist-ssr
 *.local
 
 # Environment variables (SECURITY - NEVER COMMIT)
+.env
 .env.local
 .env.production
 .env.development.local
 .env.test.local
 .env.production.local
+functions/.env
+functions/service-account.json
 
 # Editor directories and files
 .vscode/*

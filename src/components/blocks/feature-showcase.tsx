@@ -178,10 +178,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                     <ResponsiveImage
                                         src={images[0].src}
                                         alt={images[0].alt}
-                                        className={cn(
-                                            "w-full h-auto",
-                                            images[0].className
-                                        )}
+                                        imgClassName="w-full h-auto object-contain"
                                     />
                                 </motion.div>
                             </div>

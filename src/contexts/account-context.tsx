@@ -40,36 +40,51 @@ interface AccountProviderProps {
 
 export function AccountProvider({ children }: AccountProviderProps) {
   const { user } = useAuth();
+  const userId = user?.uid || null;
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [activeAccount, setActiveAccountState] = useState<TradingAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load accounts from localStorage on mount
+  // Load accounts from user-scoped localStorage
   useEffect(() => {
-    const savedAccounts = localStorage.getItem('trading-accounts');
-    const savedActiveAccountId = localStorage.getItem('active-account-id');
-    
+    // Migrate legacy unscoped key if it exists
+    const legacyAccounts = localStorage.getItem('trading-accounts');
+    if (legacyAccounts && userId) {
+      const existing = UserStorage.getItem(userId, 'accounts');
+      if (!existing) {
+        UserStorage.setItem(userId, 'accounts', legacyAccounts);
+      }
+      localStorage.removeItem('trading-accounts');
+    }
+    const legacyActiveId = localStorage.getItem('active-account-id');
+    if (legacyActiveId && userId) {
+      const existing = UserStorage.getItem(userId, 'active-account-id');
+      if (!existing) {
+        UserStorage.setItem(userId, 'active-account-id', legacyActiveId);
+      }
+      localStorage.removeItem('active-account-id');
+    }
+
+    const savedAccounts = UserStorage.getItem(userId, 'accounts');
+    const savedActiveAccountId = UserStorage.getItem(userId, 'active-account-id');
+
     if (savedAccounts) {
       const parsedAccounts = JSON.parse(savedAccounts);
       setAccounts(parsedAccounts);
-      
-      // Set active account
+
       if (savedActiveAccountId) {
         const activeAcc = parsedAccounts.find((acc: TradingAccount) => acc.id === savedActiveAccountId);
         if (activeAcc) {
           setActiveAccountState(activeAcc);
         } else {
-          // Fallback to default account
           const defaultAcc = parsedAccounts.find((acc: TradingAccount) => acc.isDefault);
           setActiveAccountState(defaultAcc || parsedAccounts[0] || null);
         }
       } else {
-        // No saved active account, use default or first
         const defaultAcc = parsedAccounts.find((acc: TradingAccount) => acc.isDefault);
         setActiveAccountState(defaultAcc || parsedAccounts[0] || null);
       }
     } else {
-      // Create default account for first-time users
       const defaultAccount: TradingAccount = {
         id: 'default-' + Date.now(),
         name: 'Main Account',
@@ -81,26 +96,24 @@ export function AccountProvider({ children }: AccountProviderProps) {
       };
       setAccounts([defaultAccount]);
       setActiveAccountState(defaultAccount);
-      localStorage.setItem('trading-accounts', JSON.stringify([defaultAccount]));
-      localStorage.setItem('active-account-id', defaultAccount.id);
+      UserStorage.setItem(userId, 'accounts', JSON.stringify([defaultAccount]));
+      UserStorage.setItem(userId, 'active-account-id', defaultAccount.id);
     }
-    
-    // Run trade migration to add accountId to existing trades
-    migrateTradesToAccountId();
-    
-    setLoading(false);
-  }, []);
 
-  // Save accounts to localStorage whenever accounts change
+    migrateTradesToAccountId();
+    setLoading(false);
+  }, [userId]);
+
+  // Save accounts whenever they change
   useEffect(() => {
     if (accounts.length > 0 && !loading) {
-      localStorage.setItem('trading-accounts', JSON.stringify(accounts));
+      UserStorage.setItem(userId, 'accounts', JSON.stringify(accounts));
     }
-  }, [accounts, loading]);
+  }, [accounts, loading, userId]);
 
   const setActiveAccount = (account: TradingAccount) => {
     setActiveAccountState(account);
-    localStorage.setItem('active-account-id', account.id);
+    UserStorage.setItem(userId, 'active-account-id', account.id);
   };
 
   const addAccount = (accountData: Omit<TradingAccount, 'id' | 'createdAt'>): TradingAccount => {
@@ -110,14 +123,12 @@ export function AccountProvider({ children }: AccountProviderProps) {
       createdAt: new Date().toISOString()
     };
 
-    // If this is the first account or marked as default, make it default
     if (accounts.length === 0 || accountData.isDefault) {
       setAccounts(prev => prev.map(acc => ({ ...acc, isDefault: false })));
     }
 
     setAccounts(prev => [...prev, newAccount]);
-    
-    // Set as active if it's the first account or marked as default
+
     if (accounts.length === 0 || accountData.isDefault) {
       setActiveAccount(newAccount);
     }
@@ -130,24 +141,20 @@ export function AccountProvider({ children }: AccountProviderProps) {
       const updatedAccounts = prev.map(acc => {
         if (acc.id === id) {
           const updated = { ...acc, ...updates };
-          
-          // Update active account if it's the one being updated
           if (activeAccount?.id === id) {
             setActiveAccountState(updated);
           }
-          
           return updated;
         }
         return acc;
       });
-      
-      // If setting as default, remove default from others
+
       if (updates.isDefault) {
-        return updatedAccounts.map(acc => 
+        return updatedAccounts.map(acc =>
           acc.id === id ? acc : { ...acc, isDefault: false }
         );
       }
-      
+
       return updatedAccounts;
     });
   };
@@ -157,8 +164,6 @@ export function AccountProvider({ children }: AccountProviderProps) {
       throw new Error('Cannot delete the last account');
     }
 
-    // Clean up orphaned trades for the deleted account
-    const userId = user?.uid || null;
     const savedTrades = UserStorage.getItem(userId, 'trades');
     if (savedTrades) {
       try {
@@ -172,7 +177,6 @@ export function AccountProvider({ children }: AccountProviderProps) {
 
     setAccounts(prev => prev.filter(acc => acc.id !== id));
 
-    // If deleting active account, switch to another one
     if (activeAccount?.id === id) {
       const remainingAccounts = accounts.filter(acc => acc.id !== id);
       const newActive = remainingAccounts.find(acc => acc.isDefault) || remainingAccounts[0];

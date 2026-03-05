@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
+import { useDemoData } from '@/hooks/use-demo-data'
+import { AIAnalysis } from '@/components/ai-analysis'
 import {
   Bar,
   BarChart,
@@ -37,6 +39,8 @@ export default function TradeIdeas() {
   const { ideas, charts, summary, totalTrades, hasEnoughData } = useTradeIdeas()
   const { themeColors } = useThemePresets()
   const { formatCurrency } = useSettings()
+  const { getTrades } = useDemoData()
+  const trades = useMemo(() => getTrades(), [getTrades])
   const gradientId = useId().replace(/:/g, '')
 
   if (!hasEnoughData) {
@@ -131,6 +135,9 @@ export default function TradeIdeas() {
       </div>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        {/* AI Trade Analysis */}
+        {trades.length >= 3 && <AIAnalysis trades={trades} />}
 
         {/* Summary Stats */}
         {summary && (

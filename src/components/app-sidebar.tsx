@@ -14,9 +14,12 @@ import {
   UserPlus,
   LogOut,
   Eye,
+  Rocket,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
+import { ProBadge } from '@/components/pro-badge'
+import { useProStatus } from '@/contexts/pro-context'
 
 import { NavMain } from "@/components/nav-main"
 import { AccountSwitcher } from "@/components/account-switcher"
@@ -67,6 +70,7 @@ function isItemActive(url: string, pathname: string): boolean {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
+  const { isPro } = useProStatus()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
   const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
@@ -86,7 +90,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Link to="/dashboard">
                 <img src="/favicon.svg" alt="FTJ" className="size-8 rounded-lg flex-shrink-0" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">FreeTradeJournal</span>
+                  <span className="truncate font-semibold flex items-center gap-1.5">
+                    FreeTradeJournal
+                    {isPro && <ProBadge />}
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -136,6 +143,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </>
           ) : (
             <>
+              {!isPro && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton size="sm" asChild>
+                    <Link
+                      to="/pricing"
+                      onClick={() => isMobile && setOpenMobile(false)}
+                      className="!bg-gradient-to-r from-amber-500/20 to-yellow-500/20 font-medium"
+                    >
+                      <Rocket className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <span>Upgrade to Pro</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   size="sm"

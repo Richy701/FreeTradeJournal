@@ -63,6 +63,21 @@ export default function Documentation() {
             <p>Professional-grade metrics including Sharpe ratio, profit factor, and maximum drawdown. AI-powered pattern detection identifies overtrading, revenge trading, and FOMO behaviors.</p>
           </section>
 
+          {/* AI Features */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">AI Features (Pro)</h2>
+            <p className="mb-3">Pro users unlock a suite of AI-powered tools that analyse your trading data and provide personalised feedback:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>AI Trading Coach</strong> — personalised coaching tips based on your trading patterns, streaks, and performance metrics.</li>
+              <li><strong>AI Trade Analysis</strong> — comprehensive review of your overall trading performance with actionable insights.</li>
+              <li><strong>AI Trade Review</strong> — per-trade assessment with entry/exit analysis and improvement suggestions.</li>
+              <li><strong>AI Journal Prompts</strong> — reflective questions generated after each trade to improve self-awareness.</li>
+              <li><strong>AI Strategy Tagger</strong> — auto-classify trades by strategy pattern (breakout, pullback, reversal, etc.).</li>
+              <li><strong>AI Risk Alerts</strong> — automatic detection of revenge trading, loss streaks, and daily loss limit breaches.</li>
+              <li><strong>AI Goal Coach</strong> — coaching on your trading goals and progress with tailored recommendations.</li>
+            </ul>
+          </section>
+
           {/* Filtering & Search */}
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Filtering & Search</h2>

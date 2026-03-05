@@ -2,15 +2,23 @@ import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { DemoDataService } from '@/services/demo-service';
 import { useUserStorage } from '@/utils/user-storage';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
 
 /**
  * Hook to get data based on demo mode status
+ * Re-reads localStorage when remote sync pushes new data
  */
 export function useDemoData() {
   const { isDemo } = useAuth();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
+
+  // Subscribe to sync changes — version bump triggers re-render
+  const [, setVersion] = useState(() => getChangeVersion());
+  useEffect(() => {
+    return onSyncChange(() => setVersion(getChangeVersion()));
+  }, []);
 
   const getTrades = useCallback(() => {
     let trades = [];

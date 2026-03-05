@@ -29,6 +29,9 @@ export default function LandingPage() {
             <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
           </Link>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
+              Pricing
+            </Link>
             <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
               Sign In
             </Link>
@@ -39,8 +42,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section with A/B Testing */}
-      <HeroGeometric 
-        badge="100% Free Trading Journal - No Credit Card Required"
+      <HeroGeometric
         title1="The Free Trading Journal"
         title2="That Improves Your Results"
       />
@@ -51,6 +53,23 @@ export default function LandingPage() {
       {/* Features Section with Dashboard Preview */}
       <Features6 />
         
+      {/* Dashboard Performance Section */}
+      <FeatureShowcase
+        title={
+          <span>
+            Real-Time
+            <br />
+            <span className="text-primary">Performance Dashboard</span>
+          </span>
+        }
+        description="See your recent trades, pairs performance radar, and trade distribution at a glance. Live P&L tracking, win rate calculations, and profit factor analytics update instantly as you log trades."
+        images={[
+          { src: "/images/screenshots/dashboard-trades-performance-screenshot.png", alt: "Dashboard Performance" }
+        ]}
+        imageLayout="stack"
+        reverseLayout={true}
+      />
+
       {/* Trade Log Section */}
       <FeatureShowcase
         title={
@@ -62,12 +81,12 @@ export default function LandingPage() {
         }
         description="Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across forex pairs, futures contracts, and indices with powerful filtering and export capabilities."
         images={[
-          { src: "/images/landing/trading-log-screenshot.webp", alt: "Trade Log View" }
+          { src: "/images/screenshots/trading-log-screenshot.png", alt: "Trade Log View" }
         ]}
         imageLayout="stack"
-        reverseLayout={true}
+        reverseLayout={false}
       />
-      
+
       {/* Calendar Section */}
       <FeatureShowcase
         title={
@@ -79,10 +98,10 @@ export default function LandingPage() {
         }
         description="Track your daily performance with an intuitive calendar heatmap. Quickly identify profitable and losing days, spot trading patterns, and track your consistency over time with beautiful visualizations."
         images={[
-          { src: "/images/landing/calendar-heatmap-screenshot.webp", alt: "Calendar Heatmap" }
+          { src: "/images/screenshots/calendar-heatmap-screenshot.png", alt: "Calendar Heatmap" }
         ]}
         imageLayout="stack"
-        reverseLayout={false}
+        reverseLayout={true}
       />
 
       {/* Trading Journal Section */}
@@ -96,10 +115,10 @@ export default function LandingPage() {
         }
         description="Document your trading thoughts, strategies, and market observations. Maintain a detailed journal with mood tracking, screenshots, and comprehensive analysis to improve your trading psychology and performance."
         images={[
-          { src: "/images/landing/trading-journal-screenshot.webp", alt: "Trading Journal" }
+          { src: "/images/screenshots/trading-journal-screenshot.png", alt: "Trading Journal" }
         ]}
         imageLayout="stack"
-        reverseLayout={true}
+        reverseLayout={false}
       />
 
       {/* Goals & Risk Management Section */}
@@ -113,10 +132,44 @@ export default function LandingPage() {
         }
         description="Set clear trading goals and implement robust risk management rules. Track your progress, monitor rule violations, and maintain discipline with automated alerts and comprehensive analytics."
         images={[
-          { src: "/images/landing/goals-risk-management-screenshot.webp", alt: "Goals & Risk Management" }
+          { src: "/images/screenshots/goals-risk-management-screenshot.png", alt: "Goals & Risk Management" }
+        ]}
+        imageLayout="stack"
+        reverseLayout={true}
+      />
+
+      {/* AI Trade Analysis Section */}
+      <FeatureShowcase
+        title={
+          <span>
+            AI-Powered
+            <br />
+            <span className="text-primary">Trade Analysis</span>
+          </span>
+        }
+        description="Get AI-generated analysis of your trading patterns, strengths, and areas to improve. Identify what's working, spot weaknesses like overtrading or tight stops, and receive an actionable summary — all personalised to your trade history."
+        images={[
+          { src: "/images/screenshots/ai-trade-analysis-screenshot.png", alt: "AI Trade Analysis" }
         ]}
         imageLayout="stack"
         reverseLayout={false}
+      />
+
+      {/* Trade Insights Section */}
+      <FeatureShowcase
+        title={
+          <span>
+            Advanced Trade
+            <br />
+            <span className="text-primary">Insights & Analytics</span>
+          </span>
+        }
+        description="Dive deep into your performance with symbol breakdowns, a multi-dimensional trader profile radar, and long vs short direction analysis. See exactly where your edge is and which instruments drive your profits."
+        images={[
+          { src: "/images/screenshots/trade-insights-screenshot.png", alt: "Trade Insights" }
+        ]}
+        imageLayout="stack"
+        reverseLayout={true}
       />
 
       {/* FAQ Section */}

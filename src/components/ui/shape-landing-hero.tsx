@@ -3,7 +3,7 @@
 import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { DotFilledIcon } from "@radix-ui/react-icons";
+
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -78,11 +78,9 @@ function ElegantShape({
 }
 
 function HeroGeometric({
-    badge = "Design Collective",
     title1 = "Elevate Your Digital Vision",
     title2 = "Crafting Exceptional Websites",
 }: {
-    badge?: string;
     title1?: string;
     title2?: string;
 }) {
@@ -154,19 +152,6 @@ function HeroGeometric({
 
             <div className="relative z-10 container mx-auto px-4 md:px-6">
                 <div className="max-w-3xl mx-auto text-center">
-                    <motion.div
-                        custom={0}
-                        variants={fadeUpVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/[0.08] dark:bg-white/[0.05] border border-foreground/[0.15] dark:border-white/[0.08] mb-8 md:mb-12"
-                    >
-                        <DotFilledIcon className="h-2 w-2 fill-primary/80" />
-                        <span className="text-xs sm:text-sm text-foreground/60 tracking-wide">
-                            {badge}
-                        </span>
-                    </motion.div>
-
                     <motion.div
                         custom={1}
                         variants={fadeUpVariants}
