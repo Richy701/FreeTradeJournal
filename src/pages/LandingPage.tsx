@@ -59,7 +59,7 @@ export default function LandingPage() {
           <span>
             Real-Time
             <br />
-            <span className="text-primary">Performance Dashboard</span>
+            <span className="text-amber-500">Performance Dashboard</span>
           </span>
         }
         description="See your recent trades, pairs performance radar, and trade distribution at a glance. Live P&L tracking, win rate calculations, and profit factor analytics update instantly as you log trades."
@@ -76,7 +76,7 @@ export default function LandingPage() {
           <span>
             Comprehensive Trade
             <br />
-            <span className="text-primary">Logging & Management</span>
+            <span className="text-amber-500">Logging & Management</span>
           </span>
         }
         description="Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across forex pairs, futures contracts, and indices with powerful filtering and export capabilities."
@@ -93,7 +93,7 @@ export default function LandingPage() {
           <span>
             Visual Performance
             <br />
-            <span className="text-primary">Calendar Heatmap</span>
+            <span className="text-amber-500">Calendar Heatmap</span>
           </span>
         }
         description="Track your daily performance with an intuitive calendar heatmap. Quickly identify profitable and losing days, spot trading patterns, and track your consistency over time with beautiful visualizations."
@@ -110,7 +110,7 @@ export default function LandingPage() {
           <span>
             Trading Journal
             <br />
-            <span className="text-primary">& Analysis</span>
+            <span className="text-amber-500">& Analysis</span>
           </span>
         }
         description="Document your trading thoughts, strategies, and market observations. Maintain a detailed journal with mood tracking, screenshots, and comprehensive analysis to improve your trading psychology and performance."
@@ -127,7 +127,7 @@ export default function LandingPage() {
           <span>
             Smart Goals &
             <br />
-            <span className="text-primary">Risk Management</span>
+            <span className="text-amber-500">Risk Management</span>
           </span>
         }
         description="Set clear trading goals and implement robust risk management rules. Track your progress, monitor rule violations, and maintain discipline with automated alerts and comprehensive analytics."
@@ -144,7 +144,7 @@ export default function LandingPage() {
           <span>
             AI-Powered
             <br />
-            <span className="text-primary">Trade Analysis</span>
+            <span className="text-amber-500">Trade Analysis</span>
           </span>
         }
         description="Get AI-generated analysis of your trading patterns, strengths, and areas to improve. Identify what's working, spot weaknesses like overtrading or tight stops, and receive an actionable summary — all personalised to your trade history."
@@ -161,7 +161,7 @@ export default function LandingPage() {
           <span>
             Advanced Trade
             <br />
-            <span className="text-primary">Insights & Analytics</span>
+            <span className="text-amber-500">Insights & Analytics</span>
           </span>
         }
         description="Dive deep into your performance with symbol breakdowns, a multi-dimensional trader profile radar, and long vs short direction analysis. See exactly where your edge is and which instruments drive your profits."

@@ -243,7 +243,7 @@ export default function Login() {
                 type="button"
                 onClick={handleResetPassword}
                 disabled={resetLoading}
-                className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center gap-2"
+                className="text-sm text-amber-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center gap-2"
               >
                 {resetLoading && <FontAwesomeIcon icon={faSpinner} className="h-3 w-3 animate-spin" />}
                 Forgot password?
@@ -302,7 +302,7 @@ export default function Login() {
 
           <p className="text-center text-sm text-muted-foreground mt-6">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-primary hover:underline font-medium">
+            <Link to="/signup" className="text-amber-500 hover:underline font-medium">
               Sign up
             </Link>
           </p>

@@ -131,7 +131,7 @@ const FeatureCard = ({ children, className }: FeatureCardProps) => (
         transition={{ duration: 0.3 }}
         className="h-full"
     >
-        <Card className={cn('group relative rounded-lg shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 h-full border-2 hover:border-primary/30', className)}>
+        <Card className={cn('group relative rounded-lg shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 h-full border-2 hover:border-amber-500/30', className)}>
             <CardDecorator />
             {children}
         </Card>
@@ -140,10 +140,10 @@ const FeatureCard = ({ children, className }: FeatureCardProps) => (
 
 const CardDecorator = () => (
     <>
-        <span className="border-primary absolute -left-px -top-px block size-2 border-l-2 border-t-2"></span>
-        <span className="border-primary absolute -right-px -top-px block size-2 border-r-2 border-t-2"></span>
-        <span className="border-primary absolute -bottom-px -left-px block size-2 border-b-2 border-l-2"></span>
-        <span className="border-primary absolute -bottom-px -right-px block size-2 border-b-2 border-r-2"></span>
+        <span className="border-amber-500 absolute -left-px -top-px block size-2 border-l-2 border-t-2"></span>
+        <span className="border-amber-500 absolute -right-px -top-px block size-2 border-r-2 border-t-2"></span>
+        <span className="border-amber-500 absolute -bottom-px -left-px block size-2 border-b-2 border-l-2"></span>
+        <span className="border-amber-500 absolute -bottom-px -right-px block size-2 border-b-2 border-r-2"></span>
     </>
 )
 
@@ -163,13 +163,13 @@ const CardHeading = ({ icon: Icon, title, description }: CardHeadingProps) => (
             <motion.div
                 whileHover={{ rotate: 15, scale: 1.1 }}
                 transition={{ duration: 0.2 }}
-                className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors"
+                className="p-2 rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors"
             >
-                <Icon className="size-5 text-primary" />
+                <Icon className="size-5 text-amber-500" />
             </motion.div>
             <span className="font-medium text-sm uppercase tracking-wide">{title}</span>
         </motion.div>
-        <h3 className="text-2xl md:text-3xl font-bold leading-tight group-hover:text-primary transition-colors">
+        <h3 className="text-2xl md:text-3xl font-bold leading-tight group-hover:text-amber-500 transition-colors">
             {description}
         </h3>
     </div>

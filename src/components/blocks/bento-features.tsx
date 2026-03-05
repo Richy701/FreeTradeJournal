@@ -44,7 +44,7 @@ export default function BentoFeatures() {
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Everything You Need to
             <br />
-            <span className="text-primary">Track Your Trades</span>
+            <span className="text-amber-500">Track Your Trades</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Simple yet powerful trading journal with essential features to help you improve your performance.
@@ -60,10 +60,10 @@ export default function BentoFeatures() {
         >
           {/* Feature 1 - Hero Card (Large) */}
           <motion.div variants={itemVariants} className="md:col-span-4 md:row-span-2">
-            <Card className="p-8 h-full min-h-[280px] bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:border-primary/40 transition-colors">
+            <Card className="p-8 h-full min-h-[280px] bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/40 transition-colors">
               <div className="flex items-start gap-6 h-full">
-                <div className="p-4 rounded-2xl bg-primary/10">
-                  <TrendingUp className="h-10 w-10 text-primary" />
+                <div className="p-4 rounded-2xl bg-amber-500/10">
+                  <TrendingUp className="h-10 w-10 text-amber-500" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-3xl font-bold mb-4">Comprehensive Trade Logging</h3>

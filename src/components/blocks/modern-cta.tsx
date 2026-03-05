@@ -28,12 +28,12 @@ export default function ModernCTA() {
   ];
 
   return (
-    <section className="relative py-32 px-4 bg-gradient-to-b from-background via-background to-primary/5 overflow-hidden">
+    <section className="relative py-32 px-4 bg-gradient-to-b from-background via-background to-amber-500/5 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl opacity-50" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl opacity-50" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-500/10 rounded-full blur-3xl opacity-50" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-primary/5 to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-amber-500/5 to-transparent rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto max-w-6xl relative z-10">
@@ -44,14 +44,14 @@ export default function ModernCTA() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <Badge variant="outline" className="mb-6 text-sm px-4 py-2 bg-primary/10 border-primary/20">
+            <Badge variant="outline" className="mb-6 text-sm px-4 py-2 bg-amber-500/10 border-amber-500/20">
               <Sparkles className="w-4 h-4 mr-2" />
               Always Free
             </Badge>
-            <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">
+            <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-foreground to-amber-500 bg-clip-text text-transparent">
               Start Your Journey to
               <br />
-              <span className="text-primary">Trading Excellence</span>
+              <span className="text-amber-500">Trading Excellence</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Join thousands of traders who are using FreeTradeJournal for free to track their performance, 
@@ -69,8 +69,8 @@ export default function ModernCTA() {
           >
             {stats.map((stat, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <stat.icon className="w-5 h-5 text-primary" />
+                <div className="p-2 rounded-lg bg-amber-500/10">
+                  <stat.icon className="w-5 h-5 text-amber-500" />
                 </div>
                 <div className="text-left">
                   <div className="text-2xl font-bold text-foreground">{stat.value}</div>
@@ -91,7 +91,7 @@ export default function ModernCTA() {
             <Link to="/dashboard">
               <Button 
                 size="lg" 
-                className="text-lg px-10 py-4 h-auto bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-[transform,box-shadow,opacity] duration-300 group"
+                className="text-lg px-10 py-4 h-auto bg-amber-500 hover:bg-amber-600 shadow-lg hover:shadow-xl transition-[transform,box-shadow,opacity] duration-300 group"
               >
                 Start Free Now
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -108,19 +108,19 @@ export default function ModernCTA() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">No Setup Required</h3>
             <p className="text-muted-foreground">Start logging trades immediately with our intuitive interface</p>
           </Card>
           
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">100% Free Forever</h3>
             <p className="text-muted-foreground">All core features available at no cost, no premium tiers or hidden fees</p>
           </Card>
           
-          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-primary/20 hover:border-primary/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
+          <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">Bank-Level Security</h3>
             <p className="text-muted-foreground">Your trading data is encrypted and stored securely</p>
@@ -133,7 +133,7 @@ export default function ModernCTA() {
           animate="animate"
           className="absolute top-10 right-10 opacity-20"
         >
-          <TrendingUp className="w-16 h-16 text-primary" />
+          <TrendingUp className="w-16 h-16 text-amber-500" />
         </motion.div>
         
         <motion.div 
@@ -142,7 +142,7 @@ export default function ModernCTA() {
           className="absolute bottom-10 left-10 opacity-20"
           style={{ animationDelay: '1.5s' }}
         >
-          <Star className="w-12 h-12 text-primary" />
+          <Star className="w-12 h-12 text-amber-500" />
         </motion.div>
 
         {/* Final Call to Action */}

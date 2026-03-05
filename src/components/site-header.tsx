@@ -120,7 +120,7 @@ export function SiteHeader({ className }: { className?: string }) {
     }
     
     // For public pages (privacy, terms), Home should link to landing page
-    const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation'].includes(segments[0])
+    const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation', 'changelog', 'pricing', 'forex-trading-journal', 'futures-trading-tracker', 'prop-firm-dashboard'].includes(segments[0])
     const homeHref = user && !isPublicPage ? '/dashboard' : '/'
     
     if (segments.length === 0) {
@@ -150,7 +150,7 @@ export function SiteHeader({ className }: { className?: string }) {
   const breadcrumbItems = getBreadcrumbItems()
   
   // Determine if we should use landing page theme (for public pages) or dashboard theme
-  const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation'].includes(pathname.split('/').filter(Boolean)[0])
+  const isPublicPage = ['privacy', 'terms', 'cookie-policy', 'documentation', 'changelog', 'pricing', 'forex-trading-journal', 'futures-trading-tracker', 'prop-firm-dashboard'].includes(pathname.split('/').filter(Boolean)[0])
 
   return (
     <header className={`${hasSidebar ? 'hidden md:flex' : 'flex'} h-12 md:h-16 shrink-0 items-center gap-2 px-3 md:px-4 ${className || ''}`}>
@@ -163,7 +163,7 @@ export function SiteHeader({ className }: { className?: string }) {
               <BreadcrumbItem>
                 {item.isActive ? (
                   <BreadcrumbPage
-                    className={isPublicPage ? "text-primary" : ""}
+                    className={isPublicPage ? "text-amber-500" : ""}
                     style={!isPublicPage ? {color: themeColors.primary} : {}}
                   >
                     {item.label}

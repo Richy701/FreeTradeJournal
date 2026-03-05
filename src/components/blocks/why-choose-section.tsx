@@ -84,7 +84,7 @@ export default function WhyChooseSection() {
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Why Professional Traders
             <br />
-            <span className="bg-gradient-to-r from-primary to-green-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-amber-500 to-green-500 bg-clip-text text-transparent">
               Choose FreeTradeJournal
             </span>
           </h2>
@@ -112,7 +112,7 @@ export default function WhyChooseSection() {
                       <benefit.icon className={`h-6 w-6 ${benefit.iconColor}`} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-amber-500 transition-colors">
                         {benefit.title}
                       </h3>
                       <p className="text-muted-foreground leading-relaxed">
@@ -134,16 +134,16 @@ export default function WhyChooseSection() {
             transition={{ duration: 0.8 }}
           >
             {/* Main Stat Card */}
-            <Card className="p-8 bg-gradient-to-br from-primary/10 via-primary/5 to-green-500/10 border-primary/20 relative overflow-hidden">
+            <Card className="p-8 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-green-500/10 border-amber-500/20 relative overflow-hidden">
               {/* Background decoration */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-green-500/10 rounded-full blur-xl" />
               
               <div className="relative text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-6">
-                  <TrendingUp className="w-8 h-8 text-primary" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/10 rounded-2xl mb-6">
+                  <TrendingUp className="w-8 h-8 text-amber-500" />
                 </div>
-                <div className="text-6xl font-bold text-primary mb-2">92%</div>
+                <div className="text-6xl font-bold text-amber-500 mb-2">92%</div>
                 <h3 className="text-2xl font-bold mb-2">Performance Boost</h3>
                 <p className="text-muted-foreground text-lg">
                   of traders improved their results within 30 days of using FreeTradeJournal 
@@ -163,8 +163,8 @@ export default function WhyChooseSection() {
               {stats.slice(1).map((stat, index) => (
                 <Card key={index} className="p-6 bg-card hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors group">
                   <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-xl mb-3 group-hover:scale-110 transition-transform">
-                      <stat.icon className="w-6 h-6 text-primary" />
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 rounded-xl mb-3 group-hover:scale-110 transition-transform">
+                      <stat.icon className="w-6 h-6 text-amber-500" />
                     </div>
                     <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
                     <div className="text-sm font-medium text-foreground mb-1">{stat.label}</div>

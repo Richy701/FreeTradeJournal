@@ -128,7 +128,7 @@ export const Footer7 = ({
                     aria-label={social.label}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-xl bg-foreground/[0.08] dark:bg-foreground/[0.05] border border-foreground/[0.15] dark:border-foreground/[0.08] flex items-center justify-center hover:bg-primary/10 hover:border-primary/20 hover:text-primary transition-shadow duration-200"
+                    className="w-10 h-10 rounded-xl bg-foreground/[0.08] dark:bg-foreground/[0.05] border border-foreground/[0.15] dark:border-foreground/[0.08] flex items-center justify-center hover:bg-amber-500/10 hover:border-amber-500/20 hover:text-amber-500 transition-shadow duration-200"
                   >
                     <div className="text-lg">{social.icon}</div>
                   </a>

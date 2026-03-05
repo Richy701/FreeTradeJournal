@@ -90,13 +90,13 @@ export default function ForexTradingJournal() {
       <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 rounded-full text-sm font-medium text-amber-500 mb-4">
               <Globe className="h-4 w-4" />
               Professional Forex Trading Journal - 100% Free
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              The Ultimate <span className="text-primary">Forex Trading Journal</span>
+              The Ultimate <span className="text-amber-500">Forex Trading Journal</span>
               <br />for Serious FX Traders
             </h1>
             
@@ -252,7 +252,7 @@ export default function ForexTradingJournal() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-primary/5">
+      <section className="py-20 px-6 bg-amber-500/5">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">Start Your Professional Forex Trading Journal Today</h2>
           <p className="text-lg text-muted-foreground mb-8">

@@ -124,7 +124,7 @@ export default function Documentation() {
           {/* Support */}
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Need Help?</h2>
-            <p>Have a question not covered here? <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Send us feedback</a>.</p>
+            <p>Have a question not covered here? <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">Send us feedback</a>.</p>
           </section>
 
         </div>

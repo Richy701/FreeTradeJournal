@@ -83,7 +83,7 @@ export function FAQSection() {
           viewport={{ once: true }}
         >
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
-            Frequently Asked <span className="text-primary">Questions</span>
+            Frequently Asked <span className="text-amber-500">Questions</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to know about FreeTradeJournal and how it can transform your trading journey
@@ -105,7 +105,7 @@ export function FAQSection() {
                   id={`faq-${index}`}
                   className="border-b border-border py-2"
                 >
-                  <AccordionTrigger className="text-left hover:no-underline hover:text-primary transition-colors duration-200 py-4">
+                  <AccordionTrigger className="text-left hover:no-underline hover:text-amber-500 transition-colors duration-200 py-4">
                     <span className="text-base md:text-lg font-medium pr-4">{faq.question}</span>
                   </AccordionTrigger>
                   <AccordionContent className="text-sm md:text-base leading-relaxed text-muted-foreground pb-4 pr-4">

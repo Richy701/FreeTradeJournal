@@ -164,7 +164,7 @@ function HeroGeometric({
                             </span>
                             <span
                                 className={cn(
-                                    "bg-clip-text text-transparent bg-gradient-to-r from-primary via-foreground/90 to-primary/70 block mt-1 sm:mt-1"
+                                    "bg-clip-text text-transparent bg-gradient-to-r from-amber-500 via-foreground/90 to-amber-500/70 block mt-1 sm:mt-1"
                                 )}
                             >
                                 {title2}
@@ -179,8 +179,8 @@ function HeroGeometric({
                         animate="visible"
                     >
                         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 md:mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-2 sm:px-4">
-                            The complete trading journal platform for serious traders. 
-                            Track, analyze, and optimize your trading performance with professional tools.
+                            Free professional trading journal with AI-powered insights.
+                            Track, analyze, and optimize your performance — upgrade to Pro for coaching, trade reviews, and smart alerts.
                         </p>
                     </motion.div>
 
@@ -209,7 +209,7 @@ function HeroGeometric({
                             ))}
                         </div>
                         <div className="text-xs sm:text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">1,200+</span> traders journaling
+                            <span className="font-semibold text-foreground">500+</span> traders journaling
                         </div>
                     </motion.div>
 

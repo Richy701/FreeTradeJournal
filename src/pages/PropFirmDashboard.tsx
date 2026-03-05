@@ -95,13 +95,13 @@ export default function PropFirmDashboard() {
       <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 rounded-full text-sm font-medium text-amber-500 mb-4">
               <Award className="h-4 w-4" />
               Professional Prop Firm Dashboard - 100% Free
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              The Ultimate <span className="text-primary">Prop Firm Dashboard</span>
+              The Ultimate <span className="text-amber-500">Prop Firm Dashboard</span>
               <br />for Funded Traders
             </h1>
             
@@ -325,10 +325,10 @@ export default function PropFirmDashboard() {
       {/* Testimonial */}
       <section className="py-20 px-6">
         <div className="container mx-auto max-w-4xl">
-          <Card className="p-8 bg-primary/5">
+          <Card className="p-8 bg-amber-500/5">
             <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-primary">Funded Trader Success Story</span>
+              <Users className="h-5 w-5 text-amber-500" />
+              <span className="text-sm font-medium text-amber-500">Funded Trader Success Story</span>
             </div>
             <blockquote className="text-lg italic mb-4">
               "FreeTradeJournal helped me pass 3 FTMO challenges in a row. The drawdown alerts saved my account multiple times. 
@@ -361,7 +361,7 @@ export default function PropFirmDashboard() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-primary/5">
+      <section className="py-20 px-6 bg-amber-500/5">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">Start Your Prop Trading Journey Right</h2>
           <p className="text-lg text-muted-foreground mb-8">

@@ -100,13 +100,13 @@ export default function FuturesTradingTracker() {
       <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 rounded-full text-sm font-medium text-amber-500 mb-4">
               <Zap className="h-4 w-4" />
               Professional Futures Trading Tracker - 100% Free
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Advanced <span className="text-primary">Futures Trading Tracker</span>
+              Advanced <span className="text-amber-500">Futures Trading Tracker</span>
               <br />for Professional Traders
             </h1>
             
@@ -309,12 +309,12 @@ export default function FuturesTradingTracker() {
                 </div>
               </Card>
               
-              <Card className="p-6 bg-primary/5">
+              <Card className="p-6 bg-amber-500/5">
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <TrendingUp className="h-5 w-5 text-amber-500" />
                   <h3 className="font-semibold">Top Performer This Week</h3>
                 </div>
-                <p className="text-2xl font-bold text-primary mb-1">ES (E-mini S&P 500)</p>
+                <p className="text-2xl font-bold text-amber-500 mb-1">ES (E-mini S&P 500)</p>
                 <p className="text-sm text-muted-foreground">+248 ticks • 85% win rate • $3,100 profit</p>
               </Card>
             </div>
@@ -344,7 +344,7 @@ export default function FuturesTradingTracker() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-primary/5">
+      <section className="py-20 px-6 bg-amber-500/5">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">Start Tracking Your Futures Trades Today</h2>
           <p className="text-lg text-muted-foreground mb-8">

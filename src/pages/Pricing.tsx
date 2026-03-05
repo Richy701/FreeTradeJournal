@@ -59,19 +59,6 @@ function FrequencyTab({
   );
 }
 
-// ─── Background Decorations ──────────────────────────────────
-function HighlightedBackground() {
-  return (
-    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff12_1px,transparent_1px),linear-gradient(to_bottom,#ffffff12_1px,transparent_1px)] bg-[size:45px_45px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
-  );
-}
-
-function PopularBackground() {
-  return (
-    <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(245,158,11,0.08),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(245,158,11,0.2),rgba(255,255,255,0))]" />
-  );
-}
-
 // ─── Pricing Card ────────────────────────────────────────────
 interface CardProps {
   name: string;
@@ -103,16 +90,12 @@ function PricingCard({
   return (
     <div
       className={cn(
-        'relative flex flex-col gap-6 overflow-hidden rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md',
-        highlighted
-          ? 'bg-[#0f0f0f] text-white border-white/10'
-          : 'bg-background text-foreground',
-        popular && 'outline outline-2 outline-amber-500/60',
+        'relative flex flex-col gap-6 overflow-hidden rounded-2xl border p-6 shadow-sm transition-all hover:shadow-md',
+        'bg-background text-foreground',
+        popular && 'outline outline-2 outline-amber-500 lg:scale-[1.06] lg:shadow-xl lg:shadow-amber-500/5 lg:z-10',
+        highlighted && 'border-amber-500/30 bg-amber-500/[0.03] dark:bg-amber-500/[0.06]',
       )}
     >
-      {highlighted && <HighlightedBackground />}
-      {popular && <PopularBackground />}
-
       {/* Header */}
       <h2 className="relative flex items-center gap-3 text-xl font-medium">
         {name}
@@ -132,14 +115,14 @@ function PricingCard({
               value={price}
               className="text-4xl font-medium"
             />
-            <p className={cn('-mt-1 text-xs font-medium', highlighted ? 'text-white/50' : 'text-muted-foreground')}>
+            <p className="-mt-1 text-xs font-medium text-muted-foreground">
               {subtitle}
             </p>
           </>
         ) : (
           <>
             <span className="text-4xl font-medium">{price}</span>
-            <p className={cn('-mt-1 text-xs font-medium', highlighted ? 'text-white/50' : 'text-muted-foreground')}>
+            <p className="-mt-1 text-xs font-medium text-muted-foreground">
               {subtitle}
             </p>
           </>
@@ -148,7 +131,7 @@ function PricingCard({
 
       {/* Features */}
       <div className="relative flex-1 space-y-2">
-        <h3 className={cn('text-sm font-medium', highlighted ? 'text-white/70' : 'text-foreground/80')}>
+        <h3 className="text-sm font-medium text-foreground/80">
           {description}
         </h3>
         <ul className="space-y-2">
@@ -157,10 +140,10 @@ function PricingCard({
               key={feature}
               className={cn(
                 'flex items-center gap-2 text-sm font-medium',
-                highlighted ? 'text-white/60' : 'text-foreground/60',
+                'text-foreground/60',
               )}
             >
-              <BadgeCheck strokeWidth={1.5} size={16} className={cn('flex-shrink-0', highlighted ? 'text-amber-400' : '')} />
+              <BadgeCheck strokeWidth={1.5} size={16} className="flex-shrink-0" />
               {feature}
             </li>
           ))}
@@ -172,12 +155,7 @@ function PricingCard({
         {isCurrentPlan ? (
           <Badge
             variant="outline"
-            className={cn(
-              'w-full justify-center py-2.5 text-sm font-medium',
-              highlighted
-                ? 'border-white/20 text-white'
-                : 'border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10',
-            )}
+            className="w-full justify-center py-2.5 text-sm font-medium border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10"
           >
             Current Plan
           </Badge>
@@ -185,10 +163,9 @@ function PricingCard({
           <Button
             className={cn(
               'group w-full h-11 rounded-lg font-semibold gap-0 overflow-hidden',
-              highlighted && 'bg-white text-[#0f0f0f] hover:bg-white/90',
-              popular && !highlighted && 'bg-amber-500 text-white hover:bg-amber-600',
+              popular && 'bg-amber-500 text-white hover:bg-amber-600',
             )}
-            variant={highlighted || popular ? 'default' : 'outline'}
+            variant={popular ? 'default' : 'outline'}
             onClick={onCtaClick}
             disabled={disabled}
           >
@@ -233,7 +210,7 @@ export default function Pricing() {
   const { user } = useAuth();
   const { isPro, subscription, openCheckout } = useProStatus();
   const navigate = useNavigate();
-  const [frequency, setFrequency] = useState<Frequency>('monthly');
+  const [frequency, setFrequency] = useState<Frequency>('yearly');
 
   const handleUpgrade = (priceId: string) => {
     if (!user) {
@@ -245,8 +222,8 @@ export default function Pricing() {
 
   const currentPlan = subscription?.planType || null;
 
-  // Map frequency to the right plan
-  const activePlan = PRICING_PLANS.find((p) => p.interval === frequency);
+  // The active Pro plan based on toggle
+  const activePlan = PRICING_PLANS.find((p) => p.interval === frequency)!;
   const lifetimePlan = PRICING_PLANS.find((p) => p.interval === 'lifetime')!;
 
   return (
@@ -278,7 +255,7 @@ export default function Pricing() {
       <section className="flex flex-col items-center gap-8 py-14 sm:py-20 px-4">
         <div className="space-y-4 text-center">
           <h1 className="font-display text-4xl font-bold md:text-5xl tracking-tight">
-            Trade smarter, <span className="text-primary">not harder</span>
+            Trade smarter, <span className="text-amber-500">not harder</span>
           </h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
             The core journal is free forever. Unlock Pro for advanced analytics, AI insights, and tools that help you find your edge.
@@ -299,9 +276,9 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Cards */}
+      {/* Cards — 3 columns */}
       <section className="px-4 pb-16 sm:pb-24">
-        <div className="grid w-full max-w-6xl mx-auto gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid w-full max-w-5xl mx-auto gap-6 lg:grid-cols-3">
           {/* Free */}
           <PricingCard
             name="Free"
@@ -315,44 +292,21 @@ export default function Pricing() {
             disabled={!!user && !isPro}
           />
 
-          {/* Active frequency plan (Monthly or Yearly) */}
-          {activePlan && (
-            <PricingCard
-              name={`Pro ${activePlan.name}`}
-              price={activePlan.price}
-              subtitle={frequency === 'monthly' ? 'Per month' : 'Per year'}
-              description="For traders who want an edge"
-              features={activePlan.features}
-              cta="Upgrade to Pro"
-              popular={frequency === 'yearly'}
-              isCurrentPlan={isPro && currentPlan === activePlan.interval}
-              onCtaClick={() => handleUpgrade(activePlan.priceId)}
-              disabled={isPro && currentPlan === 'lifetime'}
-            />
-          )}
+          {/* Pro — toggles between monthly/yearly */}
+          <PricingCard
+            name={`Pro ${activePlan.name}`}
+            price={activePlan.price}
+            subtitle={frequency === 'monthly' ? 'Per month' : 'Per year'}
+            description="For traders who want an edge"
+            features={activePlan.features}
+            cta="Upgrade to Pro"
+            popular
+            isCurrentPlan={isPro && currentPlan === activePlan.interval}
+            onCtaClick={() => handleUpgrade(activePlan.priceId)}
+            disabled={isPro && currentPlan === 'lifetime'}
+          />
 
-          {/* Show the other frequency plan too */}
-          {(() => {
-            const otherFreq = frequency === 'monthly' ? 'yearly' : 'monthly';
-            const otherPlan = PRICING_PLANS.find((p) => p.interval === otherFreq);
-            if (!otherPlan) return null;
-            return (
-              <PricingCard
-                name={`Pro ${otherPlan.name}`}
-                price={otherPlan.price}
-                subtitle={otherFreq === 'monthly' ? 'Per month' : 'Per year'}
-                description="For traders who want an edge"
-                features={otherPlan.features}
-                cta="Upgrade to Pro"
-                popular={otherFreq === 'yearly'}
-                isCurrentPlan={isPro && currentPlan === otherPlan.interval}
-                onCtaClick={() => handleUpgrade(otherPlan.priceId)}
-                disabled={isPro && currentPlan === 'lifetime'}
-              />
-            );
-          })()}
-
-          {/* Lifetime (highlighted — always dark) */}
+          {/* Lifetime — solid dark, no grid overlay */}
           <PricingCard
             name="Pro Lifetime"
             price={lifetimePlan.price}
@@ -371,8 +325,8 @@ export default function Pricing() {
       <section className="px-4 pb-16 sm:pb-24">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-medium mb-2">Free vs Pro</h2>
-            <p className="text-muted-foreground text-sm">Everything in Free, plus powerful tools to level up</p>
+            <h2 className="text-2xl font-bold mb-2">Free vs <span className="text-amber-500">Pro</span></h2>
+            <p className="text-foreground/70 text-base">Everything in Free, plus powerful tools to level up</p>
           </div>
 
           <div className="rounded-2xl border bg-background p-6 sm:p-8">
