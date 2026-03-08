@@ -16,7 +16,12 @@ export default function Layout() {
       <AppSidebar />
       <SidebarInset
         className="h-dvh overflow-auto"
-        style={{ paddingTop: isDemo ? 'var(--demo-banner-height, 0px)' : undefined }}
+        style={{
+          paddingTop: isDemo
+            ? 'calc(env(safe-area-inset-top, 0px) + var(--demo-banner-height, 0px))'
+            : 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
         <DemoBanner />
         <MobileHeader />
