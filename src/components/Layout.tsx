@@ -18,9 +18,9 @@ export default function Layout() {
         className="h-dvh overflow-auto"
         style={{
           paddingTop: isDemo
-            ? 'calc(env(safe-area-inset-top, 0px) + var(--demo-banner-height, 0px))'
-            : 'env(safe-area-inset-top, 0px)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            ? 'calc(var(--pwa-safe-top, 0px) + var(--demo-banner-height, 0px))'
+            : 'var(--pwa-safe-top, 0px)',
+          paddingBottom: 'var(--pwa-safe-bottom, 0px)',
         }}
       >
         <DemoBanner />

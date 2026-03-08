@@ -1,11 +1,12 @@
 'use client';
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ResponsiveImage } from "@/components/ui/responsive-image";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface FeatureShowcaseProps {
     title: string | React.ReactNode;
@@ -27,6 +28,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     imageLayout = 'stack',
 }) => {
     const { enterDemoMode } = useAuth();
+    const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
 
     const containerVariants = {
         hidden: {},
@@ -64,11 +66,12 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         {images.map((img, index) => (
                             <motion.div
                                 key={index}
-                                className="relative overflow-hidden rounded-2xl shadow-2xl"
+                                className="relative overflow-hidden rounded-2xl shadow-2xl cursor-pointer"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
                                 viewport={{ once: true }}
+                                onClick={() => setSelectedImage(img)}
                             >
                                 <ResponsiveImage
                                     src={img.src}
@@ -90,23 +93,24 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             <motion.div
                                 key={index}
                                 className={cn(
-                                    "absolute rounded-2xl shadow-2xl overflow-hidden",
+                                    "absolute rounded-2xl shadow-2xl overflow-hidden cursor-pointer",
                                     index === 0 ? "w-[85%] h-[85%] z-20" : "w-[75%] h-[75%] z-10",
                                     index === 0 ? "top-0 left-0" : "bottom-0 right-0"
                                 )}
-                                initial={{ 
-                                    opacity: 0, 
+                                initial={{
+                                    opacity: 0,
                                     x: index === 0 ? -50 : 50,
-                                    y: index === 0 ? -50 : 50 
+                                    y: index === 0 ? -50 : 50
                                 }}
-                                whileInView={{ 
-                                    opacity: 1, 
+                                whileInView={{
+                                    opacity: 1,
                                     x: 0,
-                                    y: 0 
+                                    y: 0
                                 }}
                                 transition={{ duration: 0.8, delay: index * 0.2 }}
                                 viewport={{ once: true }}
                                 whileHover={{ scale: 1.02 }}
+                                onClick={() => setSelectedImage(img)}
                             >
                                 <ResponsiveImage
                                     src={img.src}
@@ -120,7 +124,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         ))}
                     </div>
                 );
-            
+
             case 'carousel':
                 return (
                     <div className="relative overflow-hidden rounded-3xl shadow-2xl">
@@ -128,7 +132,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             {images.map((img, index) => (
                                 <motion.div
                                     key={index}
-                                    className="flex-shrink-0 w-full snap-center"
+                                    className="flex-shrink-0 w-full snap-center cursor-pointer"
+                                    onClick={() => setSelectedImage(img)}
                                     initial={{ opacity: 0 }}
                                     whileInView={{ opacity: 1 }}
                                     transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -170,7 +175,10 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             viewport={{ once: true }}
                         >
                             {/* Main image container */}
-                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/30">
+                            <div
+                                className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/30 cursor-pointer"
+                                onClick={() => setSelectedImage(images[0])}
+                            >
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
                                     transition={{ duration: 0.3 }}
@@ -193,9 +201,10 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             <motion.div
                                 key={index}
                                 className={cn(
-                                    "relative rounded-3xl shadow-2xl overflow-hidden",
+                                    "relative rounded-3xl shadow-2xl overflow-hidden cursor-pointer",
                                     index > 0 && "mt-[-20%]"
                                 )}
+                                onClick={() => setSelectedImage(img)}
                                 initial={{ 
                                     opacity: 0, 
                                     y: 50,
@@ -287,6 +296,17 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                 </motion.div>
             </div>
 
+            {/* Image Lightbox */}
+            <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+                <DialogContent className="max-w-[95vw] w-auto border-none bg-transparent p-0 shadow-none [&>button]:text-white [&>button]:hover:opacity-100 [&>button]:bg-black/50 [&>button]:rounded-full [&>button]:w-8 [&>button]:h-8 [&>button]:flex [&>button]:items-center [&>button]:justify-center">
+                    <DialogTitle className="sr-only">{selectedImage?.alt ?? 'Image preview'}</DialogTitle>
+                    <img
+                        src={selectedImage?.src}
+                        alt={selectedImage?.alt}
+                        className="max-h-[85vh] max-w-[95vw] w-auto object-contain rounded-lg mx-auto"
+                    />
+                </DialogContent>
+            </Dialog>
         </section>
     );
 };

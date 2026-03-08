@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PWA standalone mode: safe area insets for notched iPhones */
+:root {
+  --pwa-safe-top: 0px;
+  --pwa-safe-bottom: 0px;
+}
+@media (display-mode: standalone) {
+  :root {
+    --pwa-safe-top: env(safe-area-inset-top, 0px);
+    --pwa-safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* Delayed background for Remotion overlay — transparent for 3s then solid */
 @keyframes showBg {
   to { background-color: hsl(var(--background)); }
@@ -332,29 +344,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     }
   }
 
-  /* Safe area insets for notched devices (Dynamic Island / notch) */
-  @supports (padding: env(safe-area-inset-top)) {
-    /* Header wraps around notch: background bleeds to edge, content stays safe */
-    .mobile-header {
-      margin-top: calc(-1 * env(safe-area-inset-top));
-      padding-top: env(safe-area-inset-top);
-    }
-
-    .safe-top {
-      padding-top: max(1rem, env(safe-area-inset-top));
-    }
-
-    .safe-bottom {
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    }
-
-    .safe-left {
-      padding-left: max(1rem, env(safe-area-inset-left));
-    }
-
-    .safe-right {
-      padding-right: max(1rem, env(safe-area-inset-right));
-    }
+  /* PWA standalone: header wraps around notch, background bleeds to edge */
+  .mobile-header {
+    margin-top: calc(-1 * var(--pwa-safe-top, 0px));
+    padding-top: var(--pwa-safe-top, 0px);
   }
 }
 

@@ -22,7 +22,7 @@ export default function LandingPage() {
   return (
     <div className="w-full">
       {/* Navigation overlay */}
-      <header className="absolute top-0 left-0 right-0 z-50">
+      <header className="absolute top-0 left-0 right-0 z-50" style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}>
         <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
