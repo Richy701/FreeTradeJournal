@@ -44,8 +44,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const engineRef = useRef<SyncEngine | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  const [initialSyncDone, setInitialSyncDone] = useState(false);
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Start with true for faster initial load - sync will update in background
+  const [initialSyncDone, setInitialSyncDone] = useState(true);
 
   useEffect(() => {
     // Clean up previous engine
@@ -71,36 +71,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Pro user — start sync engine
-    setInitialSyncDone(false);
+    // Pro user — start sync engine (runs in background, doesn't block UI)
     const engine = new SyncEngine(user.uid);
     engineRef.current = engine;
 
     // Wire sync ref so UserStorage.setItem delegates to Firestore
     setSyncRef({ syncKey: (key, data) => engine.syncKey(key, data) });
 
-    // Safety timeout: if sync doesn't complete in 10 seconds, proceed anyway
-    // This prevents infinite loading on persistent network issues or content blockers
-    syncTimeoutRef.current = setTimeout(() => {
-      if (!initialSyncDone) {
-        console.warn('Sync timeout reached (possible content blocker), proceeding with local data');
-        setInitialSyncDone(true);
-      }
-    }, 10000);
-
     // Listen for status changes
     const unsubStatus = engine.onStatusChange(() => {
       setSyncStatus(engine.status);
       setLastSyncTime(engine.lastSyncTime);
-      // Only mark as done when successfully synced, not on error
-      // This prevents showing empty data when sync fails on flaky mobile networks
-      if (engine.status === 'synced') {
-        if (syncTimeoutRef.current) {
-          clearTimeout(syncTimeoutRef.current);
-          syncTimeoutRef.current = null;
-        }
-        setInitialSyncDone(true);
-      }
     });
 
     // Listen for remote data changes → bump version so React re-reads
@@ -112,10 +93,6 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     engine.enable();
 
     return () => {
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current);
-        syncTimeoutRef.current = null;
-      }
       unsubStatus();
       unsubChange();
       engine.disable();
