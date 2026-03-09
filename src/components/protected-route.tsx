@@ -1,8 +1,8 @@
 import { useAuth } from '@/contexts/auth-context';
-import { useSync } from '@/contexts/sync-context';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { hasCompletedOnboarding } from '@/utils/onboarding';
+import { UserStorage } from '@/utils/user-storage';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,7 +28,6 @@ function LoadingSkeleton() {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isDemo } = useAuth();
-  const { initialSyncDone } = useSync();
   const location = useLocation();
 
   if (loading) {
@@ -46,15 +45,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     const userId = user?.uid || null;
     const hasOnboarding = hasCompletedOnboarding(userId);
 
-    // If onboarding isn't completed locally and sync is still in progress,
-    // wait — the flag may arrive from Firestore (new device scenario)
-    if (!hasOnboarding && !initialSyncDone) {
-      return <LoadingSkeleton />;
-    }
+    // Additional check: if user has data (accounts/trades), skip onboarding even if flag is missing
+    const hasData = userId && (
+      UserStorage.getItem(userId, 'accounts') !== null ||
+      UserStorage.getItem(userId, 'trades') !== null
+    );
 
-    // If user is authenticated but hasn't completed onboarding, redirect to onboarding
+    // If user is authenticated but hasn't completed onboarding AND has no data, redirect to onboarding
     // Exception: if they're already on the onboarding page, let them through
-    if (!hasOnboarding && location.pathname !== '/onboarding') {
+    if (!hasOnboarding && !hasData && location.pathname !== '/onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
   }
