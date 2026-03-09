@@ -83,20 +83,9 @@ export default function OnboardingSimplified() {
   const [loading, setLoading] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const { user } = useAuth();
-  const { addAccount, accounts } = useAccounts();
+  const { addAccount } = useAccounts();
   const userStorage = useUserStorage();
   const navigate = useNavigate();
-
-  // Protection: If user already has accounts/trades, skip onboarding
-  // This prevents data loss when sync fails and user is incorrectly sent to onboarding
-  useEffect(() => {
-    const existingAccounts = userStorage.getItem('accounts');
-    const existingTrades = userStorage.getItem('trades');
-    if (existingAccounts || existingTrades || accounts.length > 0) {
-      console.warn('User already has data, skipping onboarding and redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [userStorage, accounts, navigate]);
 
   const goToStep = (step: number) => {
     setDirection(step > currentStep ? 1 : -1);
