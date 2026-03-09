@@ -21,7 +21,10 @@ export function MobileHeader({ title }: { title?: string }) {
   const navigate = useNavigate();
 
   return (
-    <div className="mobile-header sticky top-0 z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <div
+      className="mobile-header sticky top-0 z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+      style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}
+    >
       <div className="flex items-center justify-between px-3 h-14">
         <Button
           variant="ghost"
