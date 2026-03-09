@@ -20,6 +20,9 @@ export class SyncEngine {
   private statusListeners: Set<() => void> = new Set();
   private writingKeys = new Set<string>();
   private writeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private retryCount = 0;
+  private maxRetries = 3;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(uid: string) {
     this.uid = uid;
@@ -51,6 +54,7 @@ export class SyncEngine {
   async enable() {
     try {
       this.setStatus('syncing');
+      this.retryCount = 0; // Reset retry count on fresh enable
       this.db = await getFirebaseFirestore();
       const { doc, getDoc, setDoc, onSnapshot, serverTimestamp } = await import('firebase/firestore');
 
@@ -115,6 +119,16 @@ export class SyncEngine {
     } catch (err) {
       console.error('SyncEngine enable failed:', err);
       this.setStatus('error');
+
+      // Retry with exponential backoff (1s, 2s, 4s)
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        const delay = Math.pow(2, this.retryCount - 1) * 1000;
+        console.log(`Retrying sync in ${delay}ms (attempt ${this.retryCount}/${this.maxRetries})`);
+        this.retryTimer = setTimeout(() => {
+          this.enable();
+        }, delay);
+      }
     }
   }
 
@@ -158,6 +172,12 @@ export class SyncEngine {
     this.writeTimers.forEach(timer => clearTimeout(timer));
     this.writeTimers.clear();
     this.writingKeys.clear();
+    // Clear retry timer
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    this.retryCount = 0;
     this.db = null;
     // Notify status listeners before clearing them
     this.setStatus('idle');

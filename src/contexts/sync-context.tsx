@@ -45,6 +45,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const [initialSyncDone, setInitialSyncDone] = useState(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Clean up previous engine
@@ -78,11 +79,26 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     // Wire sync ref so UserStorage.setItem delegates to Firestore
     setSyncRef({ syncKey: (key, data) => engine.syncKey(key, data) });
 
+    // Safety timeout: if sync doesn't complete in 30 seconds, proceed anyway
+    // This prevents infinite loading on persistent network issues
+    syncTimeoutRef.current = setTimeout(() => {
+      if (!initialSyncDone) {
+        console.warn('Sync timeout reached, proceeding with local data');
+        setInitialSyncDone(true);
+      }
+    }, 30000);
+
     // Listen for status changes
     const unsubStatus = engine.onStatusChange(() => {
       setSyncStatus(engine.status);
       setLastSyncTime(engine.lastSyncTime);
-      if (engine.status === 'synced' || engine.status === 'error') {
+      // Only mark as done when successfully synced, not on error
+      // This prevents showing empty data when sync fails on flaky mobile networks
+      if (engine.status === 'synced') {
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current);
+          syncTimeoutRef.current = null;
+        }
         setInitialSyncDone(true);
       }
     });
@@ -96,6 +112,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     engine.enable();
 
     return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
       unsubStatus();
       unsubChange();
       engine.disable();
