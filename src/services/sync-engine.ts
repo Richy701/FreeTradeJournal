@@ -139,6 +139,14 @@ export class SyncEngine {
   async syncKey(key: string, data: string) {
     if (!this.db || !SYNC_KEYS.includes(key as SyncKey)) return;
 
+    // CRITICAL: Never sync empty arrays - this prevents data loss
+    // Empty arrays from fresh onboarding should NOT overwrite real data in Firestore
+    const isEmpty = data === '[]' || data === '{}' || data === '' || data === 'null';
+    if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
+      console.warn(`[Sync] Blocked empty ${key} from syncing to prevent data loss`);
+      return;
+    }
+
     try {
       this.writingKeys.add(key);
       // Clear any previous timer for this key
