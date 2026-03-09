@@ -7,7 +7,7 @@ import path from "path"
 export default defineConfig({
   plugins: [
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       manifest: false,
       includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png'],
       workbox: {
