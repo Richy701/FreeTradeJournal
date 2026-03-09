@@ -51,9 +51,15 @@ export function AccountProvider({ children }: AccountProviderProps) {
   useEffect(() => {
     const savedAccounts = UserStorage.getItem(userId, 'accounts');
 
+    // DEBUG: Log what we found
+    console.log('[AccountProvider] userId:', userId, 'savedAccounts:', savedAccounts?.substring(0, 50), 'initialSyncDone:', initialSyncDone);
+
     // If no local data and sync is still in progress, wait for it
     // (prevents creating a default account that would overwrite real synced data)
-    if (!savedAccounts && !initialSyncDone) return;
+    if (!savedAccounts && !initialSyncDone) {
+      console.log('[AccountProvider] No local data and sync not done, waiting...');
+      return;
+    }
 
     // Migrate legacy unscoped key if it exists
     const legacyAccounts = localStorage.getItem('trading-accounts');
