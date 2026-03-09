@@ -128,6 +128,9 @@ export class SyncEngine {
         this.retryTimer = setTimeout(() => {
           this.enable();
         }, delay);
+      } else {
+        // Max retries reached, likely a content blocker or persistent network issue
+        console.warn('Sync failed after max retries. If using a content blocker, please whitelist Firebase.');
       }
     }
   }

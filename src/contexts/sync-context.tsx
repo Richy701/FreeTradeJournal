@@ -79,14 +79,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     // Wire sync ref so UserStorage.setItem delegates to Firestore
     setSyncRef({ syncKey: (key, data) => engine.syncKey(key, data) });
 
-    // Safety timeout: if sync doesn't complete in 30 seconds, proceed anyway
-    // This prevents infinite loading on persistent network issues
+    // Safety timeout: if sync doesn't complete in 10 seconds, proceed anyway
+    // This prevents infinite loading on persistent network issues or content blockers
     syncTimeoutRef.current = setTimeout(() => {
       if (!initialSyncDone) {
-        console.warn('Sync timeout reached, proceeding with local data');
+        console.warn('Sync timeout reached (possible content blocker), proceeding with local data');
         setInitialSyncDone(true);
       }
-    }, 30000);
+    }, 10000);
 
     // Listen for status changes
     const unsubStatus = engine.onStatusChange(() => {
