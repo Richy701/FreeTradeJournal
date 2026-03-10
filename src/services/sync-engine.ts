@@ -1,4 +1,4 @@
-import { getFirebaseFirestore } from '@/lib/firebase-lazy';
+import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { UserStorage } from '@/utils/user-storage';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
@@ -135,9 +135,9 @@ export class SyncEngine {
     }
   }
 
-  /** Push a key to Firestore (fire-and-forget) */
+  /** Push a key to Firestore via Cloud Function (bypasses content blockers) */
   async syncKey(key: string, data: string) {
-    if (!this.db || !SYNC_KEYS.includes(key as SyncKey)) return;
+    if (!SYNC_KEYS.includes(key as SyncKey)) return;
 
     // CRITICAL: Never sync empty arrays - this prevents data loss
     // Empty arrays from fresh onboarding should NOT overwrite real data in Firestore
@@ -155,15 +155,17 @@ export class SyncEngine {
 
       this.setStatus('syncing');
 
-      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-      const docRef = doc(this.db, 'users', this.uid, 'sync', key);
-      await setDoc(docRef, {
-        data,
-        updatedAt: serverTimestamp(),
-      });
+      // Use Cloud Function instead of direct Firestore (bypasses content blockers)
+      const auth = await getFirebaseAuth();
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const functions = getFunctions();
+      const syncDataFn = httpsCallable(functions, 'syncData');
+
+      await syncDataFn({ key, value: data });
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');
+      console.log(`[Sync] Synced ${key} via Cloud Function`);
     } catch (err) {
       console.warn(`Sync write failed for ${key}:`, err);
       this.setStatus('error');

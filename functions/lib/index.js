@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = void 0;
+exports.getSyncData = exports.syncData = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -652,5 +652,67 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
             remaining: DAILY_LIMIT - (usedToday + 1),
         },
     };
+});
+// ─── Cloud Sync Proxy (bypasses content blockers) ──────────
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding'];
+/**
+ * Syncs data to Firestore (bypasses content blockers)
+ * Client calls this instead of direct Firestore SDK
+ */
+exports.syncData = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const { key, value } = data;
+    if (!key || !SYNC_KEYS.includes(key)) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
+    }
+    // CRITICAL: Never sync empty arrays - prevents data loss
+    const isEmpty = value === '[]' || value === '{}' || value === '' || value === 'null';
+    if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
+        console.warn(`[syncData] Blocked empty ${key} from syncing for ${context.auth.uid}`);
+        return { success: false, reason: 'empty_data_blocked' };
+    }
+    const uid = context.auth.uid;
+    try {
+        await db.collection('users').doc(uid).collection('sync').doc(key).set({
+            data: value,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`[syncData] Synced ${key} for ${uid}`);
+        return { success: true };
+    }
+    catch (err) {
+        console.error(`[syncData] Error syncing ${key} for ${uid}:`, err.message);
+        throw new functions.https.HttpsError("internal", "Failed to sync data.");
+    }
+});
+/**
+ * Gets all sync data from Firestore (bypasses content blockers)
+ * Client calls this to restore data on new devices
+ */
+exports.getSyncData = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    try {
+        const syncData = {};
+        for (const key of SYNC_KEYS) {
+            const doc = await db.collection('users').doc(uid).collection('sync').doc(key).get();
+            if (doc.exists) {
+                const data = doc.data();
+                if (data?.data) {
+                    syncData[key] = data.data;
+                }
+            }
+        }
+        console.log(`[getSyncData] Retrieved ${Object.keys(syncData).length} keys for ${uid}`);
+        return { data: syncData };
+    }
+    catch (err) {
+        console.error(`[getSyncData] Error for ${uid}:`, err.message);
+        throw new functions.https.HttpsError("internal", "Failed to get sync data.");
+    }
 });
 //# sourceMappingURL=index.js.map

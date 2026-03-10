@@ -777,3 +777,78 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
     },
   };
 });
+
+// ─── Cloud Sync Proxy (bypasses content blockers) ──────────
+
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding'] as const;
+type SyncKey = typeof SYNC_KEYS[number];
+
+/**
+ * Syncs data to Firestore (bypasses content blockers)
+ * Client calls this instead of direct Firestore SDK
+ */
+export const syncData = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+
+  const { key, value } = data as { key: string; value: string };
+
+  if (!key || !SYNC_KEYS.includes(key as SyncKey)) {
+    throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
+  }
+
+  // CRITICAL: Never sync empty arrays - prevents data loss
+  const isEmpty = value === '[]' || value === '{}' || value === '' || value === 'null';
+  if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
+    console.warn(`[syncData] Blocked empty ${key} from syncing for ${context.auth.uid}`);
+    return { success: false, reason: 'empty_data_blocked' };
+  }
+
+  const uid = context.auth.uid;
+
+  try {
+    await db.collection('users').doc(uid).collection('sync').doc(key).set({
+      data: value,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`[syncData] Synced ${key} for ${uid}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error(`[syncData] Error syncing ${key} for ${uid}:`, err.message);
+    throw new functions.https.HttpsError("internal", "Failed to sync data.");
+  }
+});
+
+/**
+ * Gets all sync data from Firestore (bypasses content blockers)
+ * Client calls this to restore data on new devices
+ */
+export const getSyncData = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+
+  const uid = context.auth.uid;
+
+  try {
+    const syncData: Record<string, string> = {};
+
+    for (const key of SYNC_KEYS) {
+      const doc = await db.collection('users').doc(uid).collection('sync').doc(key).get();
+      if (doc.exists) {
+        const data = doc.data();
+        if (data?.data) {
+          syncData[key] = data.data;
+        }
+      }
+    }
+
+    console.log(`[getSyncData] Retrieved ${Object.keys(syncData).length} keys for ${uid}`);
+    return { data: syncData };
+  } catch (err: any) {
+    console.error(`[getSyncData] Error for ${uid}:`, err.message);
+    throw new functions.https.HttpsError("internal", "Failed to get sync data.");
+  }
+});

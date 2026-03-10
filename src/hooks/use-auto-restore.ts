@@ -28,32 +28,31 @@ export function useAutoRestore() {
       return;
     }
 
-    // Pro user with no local data - try to restore from Firestore
+    // Pro user with no local data - try to restore via Cloud Function (bypasses content blockers)
     async function restoreFromFirestore() {
       setIsRestoring(true);
       try {
-        const db = await getFirebaseFirestore();
-        const { doc, getDoc } = await import('firebase/firestore');
+        const { getFirebaseAuth } = await import('@/lib/firebase-lazy');
+        const auth = await getFirebaseAuth();
+        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const functions = getFunctions();
+        const getSyncDataFn = httpsCallable(functions, 'getSyncData');
 
-        const keys = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding'];
+        const result = await getSyncDataFn({}) as { data: { data: Record<string, string> } };
+        const syncData = result.data.data;
+
         let restoredAny = false;
 
-        for (const key of keys) {
-          const docRef = doc(db, 'users', user.uid, 'sync', key);
-          const snapshot = await getDoc(docRef);
-
-          if (snapshot.exists()) {
-            const firestoreData = snapshot.data();
-            if (firestoreData.data) {
-              UserStorage.setItem(user.uid, key, firestoreData.data);
-              restoredAny = true;
-              console.log(`[AutoRestore] Restored ${key} from Firestore`);
-            }
+        for (const [key, value] of Object.entries(syncData)) {
+          if (value) {
+            UserStorage.setItem(user.uid, key, value);
+            restoredAny = true;
+            console.log(`[AutoRestore] Restored ${key} from Firestore`);
           }
         }
 
         if (restoredAny) {
-          console.log('[AutoRestore] ✅ Data restored from Firestore');
+          console.log('[AutoRestore] ✅ Data restored via Cloud Function');
         } else {
           console.log('[AutoRestore] No data found in Firestore (new user)');
         }
