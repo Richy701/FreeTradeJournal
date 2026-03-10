@@ -770,6 +770,24 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
     );
   }
 
+  // Cooldown: Prevent rapid-fire requests (minimum 3 seconds between requests)
+  if (usageData?.lastUsed) {
+    const lastUsedTime = (usageData.lastUsed as any)?._seconds
+      ? (usageData.lastUsed as any)._seconds * 1000
+      : usageData.lastUsed;
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastUsedTime;
+    const COOLDOWN_MS = 3000; // 3 seconds
+
+    if (timeSinceLastRequest < COOLDOWN_MS) {
+      const waitTime = Math.ceil((COOLDOWN_MS - timeSinceLastRequest) / 1000);
+      throw new functions.https.HttpsError(
+        "resource-exhausted",
+        `Please wait ${waitTime} second${waitTime > 1 ? 's' : ''} before making another request.`
+      );
+    }
+  }
+
   const prompt = builder(request.payload);
 
   // 5. Call OpenAI with appropriate model
@@ -833,6 +851,12 @@ export const syncData = functions.https.onCall(async (data, context) => {
 
   if (!key || !SYNC_KEYS.includes(key as SyncKey)) {
     throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
+  }
+
+  // Prevent DOS: Limit sync value size to 1MB
+  const MAX_SYNC_SIZE = 1024 * 1024; // 1MB
+  if (value && value.length > MAX_SYNC_SIZE) {
+    throw new functions.https.HttpsError("invalid-argument", `Sync value too large. Max size: 1MB`);
   }
 
   // CRITICAL: Never sync empty arrays - prevents data loss

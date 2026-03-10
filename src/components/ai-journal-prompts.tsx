@@ -34,6 +34,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [prompts, setPrompts] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!trade || !isPro) return;
@@ -50,6 +51,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
   const fetchPrompts = async () => {
     if (!trade) return;
     setLoading(true);
+    setError(null);
     try {
       const holdMins = (new Date(trade.exitTime).getTime() - new Date(trade.entryTime).getTime()) / 60000;
       const { requestAIAssist } = await import('@/services/ai-assist');
@@ -69,8 +71,11 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
 
       setPrompts(response.result);
       setAICache(`ftj-ai-prompts-${trade.id}`, response.result);
+      setError(null);
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to generate prompts');
+      const errorMsg = err?.message || 'Failed to generate prompts';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -117,6 +122,17 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
           <div className="flex flex-col items-center py-8 gap-2">
             <Loader2 className="h-5 w-5 animate-spin" style={{ color: themeColors.primary }} />
             <p className="text-sm text-muted-foreground">Generating prompts...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <p className="text-sm text-muted-foreground text-center">{error}</p>
+            <Button
+              size="sm"
+              onClick={fetchPrompts}
+              style={{ backgroundColor: themeColors.primary }}
+            >
+              Retry
+            </Button>
           </div>
         ) : prompts ? (
           <div className="space-y-4">

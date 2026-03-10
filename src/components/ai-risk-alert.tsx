@@ -182,8 +182,14 @@ export function AIRiskAlertMonitor() {
       setAlerts(prev =>
         prev.map(a => a.type === alert.type ? { ...a, advice: response.result } : a)
       );
-    } catch {
-      // Silently fail — show the alert without AI advice
+    } catch (err: any) {
+      // Show error message instead of silently failing
+      setAlerts(prev =>
+        prev.map(a => a.type === alert.type
+          ? { ...a, advice: `⚠️ Unable to load AI advice: ${err?.message || 'Please try again later'}` }
+          : a
+        )
+      );
     } finally {
       setLoading(prev => { const n = new Set(prev); n.delete(alert.type); return n; });
     }

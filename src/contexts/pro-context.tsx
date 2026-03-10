@@ -39,7 +39,17 @@ export function ProProvider({ children }: ProProviderProps) {
 
   // Fast initial load from localStorage cache
   const cached = uid ? UserStorage.getItem(uid, PRO_CACHE_KEY) : null;
-  const cachedSub: SubscriptionInfo | null = cached ? JSON.parse(cached) : null;
+  const cachedSub: SubscriptionInfo | null = (() => {
+    if (!cached) return null;
+    try {
+      return JSON.parse(cached);
+    } catch (err) {
+      console.error('[ProProvider] Failed to parse cached subscription:', err);
+      // Clear corrupted cache
+      if (uid) UserStorage.removeItem(uid, PRO_CACHE_KEY);
+      return null;
+    }
+  })();
 
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedSub);
   const [isLoading, setIsLoading] = useState(!cachedSub && !!uid && !isDemo);

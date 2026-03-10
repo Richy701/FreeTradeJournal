@@ -9,7 +9,12 @@ interface ProGateProps {
 }
 
 export function ProGate({ children, featureName }: ProGateProps) {
-  const { isPro } = useProStatus();
+  const { isPro, isLoading } = useProStatus();
+
+  // Hide content entirely while loading to prevent flash of unblurred content
+  if (isLoading) {
+    return null;
+  }
 
   if (isPro) {
     return <>{children}</>;
