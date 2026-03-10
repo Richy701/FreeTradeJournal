@@ -60,7 +60,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - **AI Strategy Tagger** — Automatic strategy classification based on trade patterns
 - **AI Market Analysis** — Broader market context and how it relates to your trading
 - **PDF Trading Wrapped** — Spotify Wrapped-style PDF report with gradient backgrounds, donut charts, equity curve with filled area, day-of-week bar charts, streak visualizations, trader personality archetypes, and fun facts
-- **Cloud Sync** — Real-time Firestore sync for logged-in users, keeping data safe across devices
+- **Cloud Sync** — Real-time Firestore sync via Cloud Functions proxy (bypasses content blockers and ad blockers), keeping data safe across devices with automatic restore on new devices
 - Pro status managed via Stripe webhooks → Firebase Cloud Functions → Firestore
 - ProGate component with blur overlay and lock icon for gated features
 - ProBadge indicator in the sidebar for subscribed users
@@ -90,6 +90,12 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Megaphone icon in the sidebar to revisit the changelog anytime
 - Dedicated `/changelog` release notes page with detailed descriptions for every change
 - Linked from the What's New dialog footer and the site footer under Resources
+
+### Security & Data Protection
+- **XSS Protection** — All AI-generated content sanitized with DOMPurify to prevent cross-site scripting attacks
+- **Content Security Policy** — Strict CSP headers via Vercel configuration
+- **Number Formatting** — Thousand separators (commas) on all currency displays for better readability
+- **Dependency Security** — Regular audits and updates of npm packages
 
 ### PWA & Mobile
 - Installable as a Progressive Web App on iOS and Android with custom install prompt
@@ -177,9 +183,10 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 
 ### Data Management
 - **Local-First Storage** — Trade data stored in browser localStorage, scoped per user
-- **Cloud Sync (Pro)** — Real-time Firestore sync keeps data safe across devices for logged-in Pro users
+- **Cloud Sync (Pro)** — Real-time Firestore sync via Cloud Functions proxy keeps data safe across devices for logged-in Pro users, with automatic restore on new devices
+- **localStorage Protection (Free)** — Storage usage monitor, backup reminders after 30 days, incognito mode detection, and data warning banners
 - **User-Scoped Isolation** — Complete data separation between accounts
-- **Backup & Restore** — Export all data as JSON and import from backup
+- **Complete Backup & Restore** — Export all data (trades, journal entries, goals, risk rules, settings) as JSON and import from backup with item count preview
 - **CSV/Excel Import** — Bring in existing trading history from any broker
 - **Clear All Data** — Full reset of trades, journal entries, goals, and accounts
 
@@ -208,6 +215,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 | **AI** | OpenAI (via Firebase Cloud Functions) |
 | **Payments** | Stripe |
 | **Cloud Database** | Firestore |
+| **Security** | DOMPurify (XSS prevention) |
 
 ## CSV Import
 

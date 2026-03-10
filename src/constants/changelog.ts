@@ -15,6 +15,63 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.1.0',
+    date: '2026-03-10',
+    summary: 'Major security & data protection update — content blocker bypass, XSS protection, localStorage safeguards, auto-restore, and number formatting.',
+    items: [
+      {
+        type: 'new',
+        text: 'Cloud Function Sync Proxy',
+        description: 'Cloud sync now works with ALL content blockers! Sync routes through Cloud Functions instead of direct Firestore, bypassing ad blockers and content filters completely.',
+      },
+      {
+        type: 'new',
+        text: 'Auto-Restore for Pro Users',
+        description: 'Opening the app on a new device automatically restores all your trades, journal entries, and settings from the cloud. No manual steps needed.',
+      },
+      {
+        type: 'new',
+        text: 'Onboarding Protection',
+        description: 'Pro users with existing data never see onboarding again. The app checks Firestore first and auto-creates any missing accounts to match your trades.',
+      },
+      {
+        type: 'new',
+        text: 'Free Tier Data Protection',
+        description: 'New safeguards for free users: storage usage monitor, backup reminders, incognito mode detection, data warning banners, and complete backup/restore.',
+      },
+      {
+        type: 'new',
+        text: 'Thousand Separators',
+        description: 'All currency values now display with commas for better readability (e.g., $10,618.19 instead of $10618.19).',
+      },
+      {
+        type: 'fixed',
+        text: 'CRITICAL: XSS Security Vulnerability',
+        description: 'All AI-generated content is now sanitized with DOMPurify to prevent cross-site scripting attacks. Only safe HTML tags are allowed.',
+      },
+      {
+        type: 'fixed',
+        text: 'Account ID Mismatches',
+        description: 'Fixed data loss bug where new accounts with different IDs orphaned existing trades, making them invisible.',
+      },
+      {
+        type: 'fixed',
+        text: 'Content Blocker Sync Failures',
+        description: 'Replaced real-time Firestore listeners with Cloud Function polling (every 10s) to completely bypass content blockers and ad blockers.',
+      },
+      {
+        type: 'improved',
+        text: 'Complete Backup Export',
+        description: 'Export now includes ALL data: trades, accounts, journal entries, goals, risk rules, and settings. Previously missed accounts, journal, and goals.',
+      },
+      {
+        type: 'improved',
+        text: 'Storage Usage Display',
+        description: 'Settings now shows localStorage usage with a progress bar and warns when approaching storage limits.',
+      },
+    ],
+  },
+  {
     version: '2.0.0',
     date: '2026-03-03',
     summary: 'AI-powered Pro features — coaching, trade reviews, risk alerts, strategy tagging, goal coaching, journal prompts, and cloud sync.',
