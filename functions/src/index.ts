@@ -641,7 +641,7 @@ Rules:
 Return ONLY valid JSON array. No markdown, no explanation. Format:
 [{"id":"tradeId","strategy":"category","confidence":0.85}]`,
     user: `Classify these trades:\n${tradesList}`,
-    maxTokens: 400,
+    maxTokens: 1200, // Increased to handle 30 trades (~80 chars each = ~2400 chars total)
     temperature: 0.3,
   };
 }
