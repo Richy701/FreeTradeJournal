@@ -319,7 +319,7 @@ const RATE_LIMITS = {
   coaching_tips: 15,    // Light - uses GPT-4o-mini
   journal_prompts: 50,  // Light - uses GPT-4o-mini
   risk_alert: 25,       // Light - uses GPT-4o-mini
-  strategy_tagger: 15,  // Light - uses GPT-4o-mini
+  strategy_tagger: 25,  // Light - uses GPT-4o-mini (375 trades/day with batches of 15)
 } as const;
 
 // Model selection per feature type
