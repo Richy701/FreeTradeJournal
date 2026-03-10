@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { hasCompletedOnboarding } from '@/utils/onboarding';
 import { UserStorage } from '@/utils/user-storage';
+import { useAutoRestore } from '@/hooks/use-auto-restore';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -29,8 +30,14 @@ function LoadingSkeleton() {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isDemo } = useAuth();
   const location = useLocation();
+  const { isRestoring, restoreComplete } = useAutoRestore();
 
   if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  // Wait for auto-restore to complete for Pro users
+  if (!isDemo && user && (isRestoring || !restoreComplete)) {
     return <LoadingSkeleton />;
   }
 
