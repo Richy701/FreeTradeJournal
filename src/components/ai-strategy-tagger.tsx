@@ -68,10 +68,13 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
   };
 
   const selectAll = () => {
-    if (selected.size === selectableTrades.length) {
+    const MAX_SELECTION = 100;
+    if (selected.size === Math.min(selectableTrades.length, MAX_SELECTION)) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(selectableTrades.map(t => t.id)));
+      // Only select up to 100 trades
+      const tradesToSelect = selectableTrades.slice(0, MAX_SELECTION);
+      setSelected(new Set(tradesToSelect.map(t => t.id)));
     }
   };
 
@@ -223,9 +226,14 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     {untaggedTrades.length} untagged trade{untaggedTrades.length !== 1 ? 's' : ''}
+                    {selectableTrades.length > 100 && <span className="text-amber-500"> (max 100)</span>}
                   </p>
                   <Button variant="ghost" size="sm" onClick={selectAll}>
-                    {selected.size === selectableTrades.length ? 'Deselect All' : 'Select All'}
+                    {selected.size === Math.min(selectableTrades.length, 100)
+                      ? 'Deselect All'
+                      : selectableTrades.length > 100
+                        ? 'Select First 100'
+                        : 'Select All'}
                   </Button>
                 </div>
 
