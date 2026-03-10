@@ -29,6 +29,7 @@ export function useAutoRestore() {
     }
 
     // Pro user with no local data - try to restore via Cloud Function (bypasses content blockers)
+    const userId = user.uid; // Capture for use in async function
     async function restoreFromFirestore() {
       setIsRestoring(true);
       try {
@@ -45,7 +46,7 @@ export function useAutoRestore() {
 
         for (const [key, value] of Object.entries(syncData)) {
           if (value) {
-            UserStorage.setItem(user.uid, key, value);
+            UserStorage.setItem(userId, key, value);
             restoredAny = true;
             console.log(`[AutoRestore] Restored ${key} from Firestore`);
           }
