@@ -83,6 +83,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
     }
 
     setLoading(true);
+    let rawResponse: any;
     try {
       const { requestAIAssist } = await import('@/services/ai-assist');
       const response = await requestAIAssist({
@@ -102,13 +103,28 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
         },
       });
 
-      const parsed: TagResult[] = JSON.parse(response.result);
+      rawResponse = response.result;
+
+      // Clean the response - remove markdown code blocks if present
+      let cleanedResult = response.result.trim();
+      if (cleanedResult.startsWith('```')) {
+        cleanedResult = cleanedResult.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      }
+
+      const parsed: TagResult[] = JSON.parse(cleanedResult);
       setResults(parsed);
       setAccepted(new Set(parsed.map(r => r.id)));
       setRejected(new Set());
       toast.success(`Tagged ${parsed.length} trades`);
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to tag trades');
+      console.error('Strategy tagger error:', err);
+      console.error('Raw response:', rawResponse);
+
+      if (err instanceof SyntaxError) {
+        toast.error('AI returned invalid format. Please try again.');
+      } else {
+        toast.error(err?.message || 'Failed to tag trades');
+      }
     } finally {
       setLoading(false);
     }
