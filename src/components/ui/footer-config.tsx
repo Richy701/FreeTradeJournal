@@ -62,5 +62,6 @@ export const footerConfig = {
   legalLinks: [
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms and Conditions", href: "/terms" },
+    { name: "Changelog", href: "/changelog" },
   ]
 };

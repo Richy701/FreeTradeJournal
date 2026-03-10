@@ -1,6 +1,7 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FaXTwitter } from "react-icons/fa6";
+import { ArrowUp } from "lucide-react";
 import { FeedbackButton } from './feedback-button';
 import { motion } from "framer-motion";
 
@@ -81,6 +82,24 @@ export const Footer7 = ({
   copyright = "© 2024 Shadcnblocks.com. All rights reserved.",
   legalLinks = defaultLegalLinks,
 }: Footer7Props) => {
+  const location = useLocation();
+
+  const handleHashLink = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // Handle hash links like /#features
+    if (href.startsWith('/#')) {
+      const hash = href.substring(1); // Remove the leading /
+      const element = document.querySelector(hash);
+      if (element) {
+        e.preventDefault();
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <section className="relative py-16 mt-16 overflow-hidden">
       {/* Glass background layer */}
@@ -156,6 +175,7 @@ export const Footer7 = ({
                         {isInternalLink(link.href) ? (
                           <Link
                             to={link.href}
+                            onClick={(e) => handleHashLink(e, link.href)}
                             className="inline-block hover:translate-x-0.5 transition-transform duration-200"
                           >
                             {link.name}
@@ -225,7 +245,12 @@ export const Footer7 = ({
             {legalLinks.map((link, idx) => (
               <li key={idx} className="hover:text-foreground transition-colors duration-200">
                 {isInternalLink(link.href) ? (
-                  <Link to={link.href}>{link.name}</Link>
+                  <Link
+                    to={link.href}
+                    onClick={(e) => handleHashLink(e, link.href)}
+                  >
+                    {link.name}
+                  </Link>
                 ) : (
                   <a href={link.href} target="_blank" rel="noopener noreferrer">{link.name}</a>
                 )}
@@ -237,6 +262,16 @@ export const Footer7 = ({
                 className="h-auto p-0 text-muted-foreground/70 hover:text-foreground text-sm font-medium"
                 buttonText="Feedback"
               />
+            </li>
+            <li className="md:border-l md:border-border/50 md:pl-6">
+              <button
+                onClick={scrollToTop}
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-200"
+                aria-label="Scroll to top"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+                Back to Top
+              </button>
             </li>
           </ul>
         </motion.div>

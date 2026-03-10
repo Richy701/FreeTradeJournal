@@ -11,6 +11,7 @@ import { SettingsProvider } from '@/contexts/settings-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
+import { ScrollToTop } from '@/components/scroll-to-top';
 import { CookieConsent } from '@/components/CookieConsent';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
@@ -65,6 +66,7 @@ function App() {
           <AccountProvider>
             <SettingsProvider>
               <Router>
+            <ScrollToTop />
             <SEOMeta />
             <StructuredData />
             <Toaster
