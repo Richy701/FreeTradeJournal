@@ -6,6 +6,7 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { getAICache, setAICache } from '@/utils/ai-cache';
+import DOMPurify from 'dompurify';
 
 interface Trade {
   id: string;
@@ -25,13 +26,19 @@ interface Alert {
 const THROTTLE_TTL = 24 * 60 * 60 * 1000; // 1 alert per type per day
 
 function renderAlertMarkdown(md: string): string {
-  return md
+  const html = md
     .replace(/## (.*)/g, '<h4 class="text-sm font-semibold mt-3 mb-1 text-foreground">$1</h4>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc text-sm">$1</li>')
     .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal text-sm">$2</li>')
     .replace(/\n\n/g, '<br/>')
     .replace(/\n/g, ' ');
+
+  // Sanitize HTML to prevent XSS attacks from AI-generated content
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['h4', 'strong', 'li', 'br'],
+    ALLOWED_ATTR: ['class']
+  });
 }
 
 export function AIRiskAlertMonitor() {

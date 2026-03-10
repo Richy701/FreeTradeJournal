@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
 import type { AIAnalysisResponse } from '@/services/ai-analysis';
+import DOMPurify from 'dompurify';
 
 interface Trade {
   id: string;
@@ -95,7 +96,7 @@ function parseAnalysis(md: string): ParsedSection[] {
 }
 
 function renderSectionContent(content: string): string {
-  return content
+  const html = content
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-muted text-xs font-mono">$1</code>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
@@ -107,6 +108,12 @@ function renderSectionContent(content: string): string {
     })
     .replace(/\n\n/g, '</p><p class="mt-2">')
     .replace(/\n/g, ' ');
+
+  // Sanitize HTML to prevent XSS attacks from AI-generated content
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['strong', 'code', 'li', 'ul', 'ol', 'p'],
+    ALLOWED_ATTR: ['class']
+  });
 }
 
 const sectionConfig: Record<string, { icon: typeof Brain; color: string }> = {

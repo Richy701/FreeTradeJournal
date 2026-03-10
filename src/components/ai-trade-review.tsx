@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { getAICache, setAICache } from '@/utils/ai-cache';
+import DOMPurify from 'dompurify';
 
 interface Trade {
   id: string;
@@ -30,13 +31,19 @@ interface AITradeReviewProps {
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function renderReviewMarkdown(md: string): string {
-  return md
+  const html = md
     .replace(/## (.*)/g, '<h4 class="text-sm font-semibold mt-4 mb-1.5 text-foreground">$1</h4>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
     .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc text-sm leading-relaxed">$1</li>')
     .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal text-sm leading-relaxed">$2</li>')
     .replace(/\n\n/g, '<br/>')
     .replace(/\n/g, ' ');
+
+  // Sanitize HTML to prevent XSS attacks from AI-generated content
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['h4', 'strong', 'li', 'br'],
+    ALLOWED_ATTR: ['class']
+  });
 }
 
 export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeReviewProps) {

@@ -8,6 +8,7 @@ import { useThemePresets } from '@/contexts/theme-presets';
 import { useUserStorage } from '@/utils/user-storage';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { getAICache, setAICache, clearAICache } from '@/utils/ai-cache';
+import DOMPurify from 'dompurify';
 
 const CACHE_KEY = 'ftj-ai-goal-coach';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
@@ -31,12 +32,18 @@ function parseSections(md: string): ParsedSection[] {
 }
 
 function renderContent(content: string): string {
-  return content
+  const html = content
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc">$1</li>')
     .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal">$2</li>')
     .replace(/\n\n/g, '<br/>')
     .replace(/\n/g, ' ');
+
+  // Sanitize HTML to prevent XSS attacks from AI-generated content
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['strong', 'li', 'br'],
+    ALLOWED_ATTR: ['class']
+  });
 }
 
 const sectionIcons: Record<string, typeof Brain> = {
