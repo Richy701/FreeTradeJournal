@@ -311,7 +311,29 @@ interface AnalysisRequest {
   analysisType: "recent" | "period";
 }
 
-const DAILY_LIMIT = 25;
+// Rate limits per feature type
+const RATE_LIMITS = {
+  ai_analysis: 10,      // Heavy - uses GPT-4o
+  goal_coach: 10,       // Heavy - uses GPT-4o
+  trade_review: 25,     // Heavy - uses GPT-4o
+  coaching_tips: 15,    // Light - uses GPT-4o-mini
+  journal_prompts: 50,  // Light - uses GPT-4o-mini
+  risk_alert: 25,       // Light - uses GPT-4o-mini
+  strategy_tagger: 15,  // Light - uses GPT-4o-mini
+} as const;
+
+// Model selection per feature type
+const FEATURE_MODELS = {
+  ai_analysis: "gpt-4o",
+  goal_coach: "gpt-4o",
+  trade_review: "gpt-4o",
+  coaching_tips: "gpt-4o-mini",
+  journal_prompts: "gpt-4o-mini",
+  risk_alert: "gpt-4o-mini",
+  strategy_tagger: "gpt-4o-mini",
+} as const;
+
+type FeatureType = keyof typeof RATE_LIMITS;
 
 export const analyzeTradesAI = functions.https.onCall(async (data, context) => {
   // 1. Auth check
@@ -333,7 +355,7 @@ export const analyzeTradesAI = functions.https.onCall(async (data, context) => {
     );
   }
 
-  // 3. Rate limit
+  // 3. Rate limit check (don't update yet - will update after successful API call)
   const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
   const usageDoc = await usageRef.get();
   const now = new Date();
@@ -341,14 +363,15 @@ export const analyzeTradesAI = functions.https.onCall(async (data, context) => {
   const usageData = usageDoc.exists ? usageDoc.data() : null;
 
   let usedToday = 0;
-  if (usageData && usageData.date === todayStr) {
-    usedToday = usageData.count || 0;
+  if (usageData && usageData.date === todayStr && usageData.ai_analysis) {
+    usedToday = usageData.ai_analysis || 0;
   }
 
-  if (usedToday >= DAILY_LIMIT) {
+  const limit = RATE_LIMITS.ai_analysis;
+  if (usedToday >= limit) {
     throw new functions.https.HttpsError(
       "resource-exhausted",
-      "Daily AI analysis limit reached. Resets at midnight UTC."
+      `Daily AI Trade Analysis limit reached (${limit}/day). Resets at midnight UTC.`
     );
   }
 
@@ -466,7 +489,7 @@ Give me a thorough analysis of my trading.`;
   let analysis: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -486,16 +509,16 @@ Give me a thorough analysis of my trading.`;
   // 7. Update rate limit
   await usageRef.set({
     date: todayStr,
-    count: usedToday + 1,
+    ai_analysis: usedToday + 1,
     lastUsed: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
 
   return {
     analysis,
     usage: {
       used: usedToday + 1,
-      limit: DAILY_LIMIT,
-      remaining: DAILY_LIMIT - (usedToday + 1),
+      limit,
+      remaining: limit - (usedToday + 1),
     },
   };
 });
@@ -693,26 +716,7 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("permission-denied", "This is a Pro feature.");
   }
 
-  // 3. Rate limit (shared with analyzeTradesAI)
-  const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
-  const usageDoc = await usageRef.get();
-  const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-  const usageData = usageDoc.exists ? usageDoc.data() : null;
-
-  let usedToday = 0;
-  if (usageData && usageData.date === todayStr) {
-    usedToday = usageData.count || 0;
-  }
-
-  if (usedToday >= DAILY_LIMIT) {
-    throw new functions.https.HttpsError(
-      "resource-exhausted",
-      "Daily AI limit reached (25/day). Resets at midnight UTC."
-    );
-  }
-
-  // 4. Route by type
+  // 3. Route by type
   console.log("aiAssist data received:", JSON.stringify(data).slice(0, 500));
   const request = data as AIAssistRequest;
   if (!request.type || !request.payload) {
@@ -734,20 +738,53 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("invalid-argument", `Unknown type: ${request.type}`);
   }
 
+  // 4. Check rate limit for this specific feature
+  const featureType = request.type as FeatureType;
+  const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
+  const usageDoc = await usageRef.get();
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const usageData = usageDoc.exists ? usageDoc.data() : null;
+
+  let usedToday = 0;
+  if (usageData && usageData.date === todayStr && usageData[featureType]) {
+    usedToday = usageData[featureType] || 0;
+  }
+
+  const limit = RATE_LIMITS[featureType];
+  if (usedToday >= limit) {
+    // Format feature name for display
+    const featureNames: Record<FeatureType, string> = {
+      ai_analysis: "AI Trade Analysis",
+      goal_coach: "Goal Coach",
+      trade_review: "Trade Review",
+      coaching_tips: "Coaching Tips",
+      journal_prompts: "Journal Prompts",
+      risk_alert: "Risk Alert",
+      strategy_tagger: "Strategy Tagger",
+    };
+    const displayName = featureNames[featureType] || featureType.replace(/_/g, " ");
+    throw new functions.https.HttpsError(
+      "resource-exhausted",
+      `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`
+    );
+  }
+
   const prompt = builder(request.payload);
 
-  // 5. Call OpenAI
+  // 5. Call OpenAI with appropriate model
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey || apiKey === "your-openai-api-key-here") {
     throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
   }
 
   const openai = new OpenAI({ apiKey });
+  const model = FEATURE_MODELS[featureType];
 
   let result: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       messages: [
         { role: "system", content: prompt.system },
         { role: "user", content: prompt.user },
@@ -764,16 +801,16 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
   // 6. Update rate limit
   await usageRef.set({
     date: todayStr,
-    count: usedToday + 1,
+    [featureType]: usedToday + 1,
     lastUsed: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
 
   return {
     result,
     usage: {
       used: usedToday + 1,
-      limit: DAILY_LIMIT,
-      remaining: DAILY_LIMIT - (usedToday + 1),
+      limit,
+      remaining: limit - (usedToday + 1),
     },
   };
 });
