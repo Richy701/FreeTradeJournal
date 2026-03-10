@@ -622,7 +622,7 @@ Keep it under 150 words. Be direct.`,
 function buildStrategyTaggerPrompt(payload: Record<string, any>) {
   const { trades } = payload;
 
-  const tradesList = (trades || []).slice(0, 50).map((t: any) => {
+  const tradesList = (trades || []).slice(0, 25).map((t: any) => {
     const hold = Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000);
     const pnlPct = t.entryPrice > 0 ? ((t.exitPrice - t.entryPrice) / t.entryPrice * 100 * (t.side === "short" ? -1 : 1)).toFixed(2) : "0";
     return `{id:"${t.id}",sym:"${t.symbol}",side:"${t.side}",entry:${t.entryPrice},exit:${t.exitPrice},pnl:${t.pnl?.toFixed(2)},hold:${hold}m,move:${pnlPct}%${t.riskReward ? `,rr:${t.riskReward.toFixed(1)}` : ""}}`;
@@ -641,7 +641,7 @@ Rules:
 Return ONLY valid JSON array. No markdown, no explanation. Format:
 [{"id":"tradeId","strategy":"category","confidence":0.85}]`,
     user: `Classify these trades:\n${tradesList}`,
-    maxTokens: 2000, // Increased to handle 50 trades with headroom
+    maxTokens: 1000, // Reduced for 25 trades batch size (more reliable)
     temperature: 0.3,
   };
 }

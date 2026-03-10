@@ -82,8 +82,14 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
       return;
     }
 
+    // Limit to 100 trades max
+    if (selectedTrades.length > 100) {
+      toast.error('Maximum 100 trades at once. Please select fewer trades.');
+      return;
+    }
+
     setLoading(true);
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 25; // Reduced to ensure reliable completion
     const allResults: TagResult[] = [];
 
     try {
