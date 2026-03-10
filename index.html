@@ -95,20 +95,24 @@
       }
     </script>
     
-    <!-- Static content for Google OAuth crawler (hidden but crawlable) -->
-    <div id="static-footer" style="position: absolute; left: -9999px; top: -9999px;">
-      <h1>FreeTradeJournal - Free Trading Journal for Forex, Futures & Stocks</h1>
-      <p>
-        FreeTradeJournal is a free professional trading journal and analytics platform.
-        Track every trade, analyze performance metrics, manage risk, and improve your trading
-        with advanced analytics, calendar heatmaps, and AI-powered insights.
-        Perfect for forex traders, futures traders, stock traders, and prop firm traders.
-      </p>
-      <nav>
-        <a href="https://freetradejournal.com/privacy">Privacy Policy</a>
-        <a href="https://freetradejournal.com/terms">Terms of Service</a>
-      </nav>
+    <!-- Static content for Google OAuth crawler (visible at bottom until React loads) -->
+    <div id="static-content" style="position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.02); padding: 8px; text-align: center; font-size: 11px; color: #666; z-index: 9999; font-family: system-ui, -apple-system, sans-serif;">
+      <span style="display: inline-block; margin-right: 15px;">FreeTradeJournal - Free professional trading journal and analytics platform for forex, futures & stock traders</span>
+      <a href="https://www.freetradejournal.com/privacy" style="margin: 0 8px; color: #0066cc; text-decoration: none;">Privacy Policy</a>
+      <span style="color: #ccc;">|</span>
+      <a href="https://www.freetradejournal.com/terms" style="margin: 0 8px; color: #0066cc; text-decoration: none;">Terms of Service</a>
     </div>
+    <script>
+      // Hide the static content once React loads
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          var staticContent = document.getElementById('static-content');
+          if (staticContent && document.getElementById('root').children.length > 0) {
+            staticContent.style.display = 'none';
+          }
+        }, 100);
+      });
+    </script>
 
     <div id="root"></div>
 
