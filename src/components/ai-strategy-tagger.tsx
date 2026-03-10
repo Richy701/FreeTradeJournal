@@ -92,7 +92,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
     }
 
     setLoading(true);
-    const BATCH_SIZE = 25; // Reduced to ensure reliable completion
+    const BATCH_SIZE = 15; // Reduced to fit within response size limit
     const allResults: TagResult[] = [];
 
     try {
