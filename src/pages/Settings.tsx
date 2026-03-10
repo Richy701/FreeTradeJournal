@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -188,20 +188,39 @@ export default function Settings() {
   const stats = getTradeStats();
 
   const exportData = () => {
+    // Export ALL data (not just trades + settings)
     const trades = userStorage.getItem('trades') || '[]';
+    const accounts = userStorage.getItem('accounts') || '[]';
+    const journalEntries = userStorage.getItem('journalEntries') || '[]';
+    const goals = userStorage.getItem('goals') || '[]';
+    const riskRules = userStorage.getItem('riskRules') || '[]';
     const settings = userStorage.getItem('settings') || '{}';
+    const onboarding = userStorage.getItem('onboarding') || '{}';
+    const onboardingCompleted = userStorage.getItem('onboardingCompleted') || 'false';
+
     const data = {
       trades: JSON.parse(trades),
+      accounts: JSON.parse(accounts),
+      journalEntries: JSON.parse(journalEntries),
+      goals: JSON.parse(goals),
+      riskRules: JSON.parse(riskRules),
       settings: JSON.parse(settings),
+      onboarding: JSON.parse(onboarding),
+      onboardingCompleted: onboardingCompleted === 'true',
       exportDate: new Date().toISOString(),
+      version: '2.0', // Mark new export format
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('href', url);
     a.setAttribute('download', `ftj_backup_${new Date().toISOString().split('T')[0]}.json`);
     a.click();
+
+    // Track last backup date
+    userStorage.setItem('lastBackupDate', new Date().toISOString());
+    toast.success('Full backup exported successfully!');
   };
 
   const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,20 +231,47 @@ export default function Settings() {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
+
+        // Import all available data fields
         if (data.trades) {
           userStorage.setItem('trades', JSON.stringify(data.trades));
         }
+        if (data.accounts) {
+          userStorage.setItem('accounts', JSON.stringify(data.accounts));
+        }
+        if (data.journalEntries) {
+          userStorage.setItem('journalEntries', JSON.stringify(data.journalEntries));
+        }
+        if (data.goals) {
+          userStorage.setItem('goals', JSON.stringify(data.goals));
+        }
+        if (data.riskRules) {
+          userStorage.setItem('riskRules', JSON.stringify(data.riskRules));
+        }
         if (data.settings) {
           userStorage.setItem('settings', JSON.stringify(data.settings));
-          // Settings are loaded from context, no need to set them here
         }
-        toast.success('Data imported successfully!');
+        if (data.onboarding) {
+          userStorage.setItem('onboarding', JSON.stringify(data.onboarding));
+        }
+        if (data.onboardingCompleted !== undefined) {
+          userStorage.setItem('onboardingCompleted', String(data.onboardingCompleted));
+        }
+
+        const itemCount = [
+          data.trades?.length || 0,
+          data.accounts?.length || 0,
+          data.journalEntries?.length || 0,
+          data.goals?.length || 0,
+        ].reduce((a, b) => a + b, 0);
+
+        toast.success(`Successfully imported ${itemCount} items!`);
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } catch (error) {
         console.error('Error importing data:', error);
-        alert('Error importing data. Please check the file format.');
+        toast.error('Error importing data. Please check the file format.');
       }
     };
     reader.readAsText(file);
@@ -1430,9 +1476,105 @@ export default function Settings() {
                   />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Export creates a JSON file with all your trades and settings. 
-                  Import will merge the data with your existing records.
+                  Export creates a JSON file with all your data (trades, journal, goals, accounts, settings).
+                  Import will restore all data from a backup file.
                 </p>
+
+                {/* Storage Usage Display */}
+                {(() => {
+                  const calculateStorageSize = () => {
+                    let total = 0;
+                    const keys = ['trades', 'accounts', 'journalEntries', 'goals', 'riskRules', 'settings', 'onboarding'];
+                    keys.forEach(key => {
+                      const data = userStorage.getItem(key);
+                      if (data) total += new Blob([data]).size;
+                    });
+                    return total;
+                  };
+
+                  const sizeBytes = calculateStorageSize();
+                  const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
+                  const estimatedLimit = 10; // ~10MB typical localStorage limit
+                  const percentUsed = (parseFloat(sizeMB) / estimatedLimit) * 100;
+                  const isNearLimit = percentUsed > 80;
+
+                  const lastBackup = userStorage.getItem('lastBackupDate');
+                  const daysSinceBackup = lastBackup
+                    ? Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24))
+                    : null;
+                  const needsBackup = !lastBackup || (daysSinceBackup !== null && daysSinceBackup > 30);
+
+                  return (
+                    <div className="space-y-3 mt-4">
+                      {/* Storage Usage */}
+                      <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Storage Usage</span>
+                          <span className="text-sm" style={{ color: isNearLimit ? themeColors.loss : 'hsl(var(--muted-foreground))' }}>
+                            {sizeMB} MB / ~{estimatedLimit} MB
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(percentUsed, 100)}%`,
+                              backgroundColor: isNearLimit ? themeColors.loss : themeColors.profit
+                            }}
+                          />
+                        </div>
+                        {isNearLimit && (
+                          <p className="text-xs mt-2" style={{ color: themeColors.loss }}>
+                            ⚠️ Storage almost full! Consider exporting and deleting old trades.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Backup Reminder */}
+                      {!isPro && needsBackup && (
+                        <div className="p-3 rounded-lg border" style={{
+                          backgroundColor: 'hsl(var(--amber-500) / 0.1)',
+                          borderColor: 'hsl(var(--amber-500) / 0.3)'
+                        }}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-lg">💾</span>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium mb-1">
+                                {lastBackup ? `Last backup: ${daysSinceBackup} days ago` : 'No backup yet'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Free tier data is stored locally only. Regular backups prevent data loss!
+                              </p>
+                              <Button size="sm" variant="outline" onClick={exportData} className="text-xs h-7">
+                                Backup Now
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Cloud Sync Upsell for Free Users */}
+                      {!isPro && (
+                        <div className="p-3 rounded-lg border border-border/50 bg-muted/20">
+                          <div className="flex items-start gap-2">
+                            <span className="text-lg">☁️</span>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium mb-1">Want automatic cloud backup?</p>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Pro users get automatic cloud sync across all devices. Never lose data again!
+                              </p>
+                              <Link to="/pricing">
+                                <Button size="sm" variant="outline" className="text-xs h-7">
+                                  Upgrade to Pro
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 

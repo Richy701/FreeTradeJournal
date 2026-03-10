@@ -1,7 +1,9 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
+import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useSettings } from '@/contexts/settings-context'
+import { Link } from 'react-router-dom'
 import { DataTable } from "@/components/data-table"
 import { CalendarHeatmap } from "@/components/calendar-heatmap"
 import { TradingCoach } from "@/components/trading-coach"
@@ -18,6 +20,7 @@ import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-pars
 import { useDemoData } from '@/hooks/use-demo-data'
 import { DemoCtaCard } from '@/components/demo-cta-card'
 import { useUserStorage } from '@/utils/user-storage'
+import { isIncognitoMode } from '@/utils/incognito-detection'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
@@ -26,7 +29,6 @@ import { WhatsNewDialog } from '@/components/whats-new-dialog'
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
 const ChartAreaInteractive = lazy(() => import("@/components/chart-area-interactive").then(m => ({ default: m.ChartAreaInteractive })))
 const ChartRadarDefault = lazy(() => import("@/components/chart-radar-default").then(m => ({ default: m.ChartRadarDefault })))
-import { Link } from "react-router-dom"
 import {
   Dialog,
   DialogContent,
@@ -49,11 +51,27 @@ import {
 export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
+  const { isPro } = useProStatus()
   const { activeAccount } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { getTrades } = useDemoData()
   const userStorage = useUserStorage()
   const [dataVersion, setDataVersion] = useState(0)
+  const [showDataWarning, setShowDataWarning] = useState(true)
+
+  // Check for incognito mode (free users only)
+  useEffect(() => {
+    if (!isPro && !isDemo) {
+      isIncognitoMode().then(isIncognito => {
+        if (isIncognito) {
+          toast.warning(
+            '⚠️ Incognito mode detected! Your data will be lost when you close this window. Use normal browsing or upgrade to Pro for cloud sync.',
+            { duration: 10000 }
+          );
+        }
+      });
+    }
+  }, [isPro, isDemo]);
 
   // Compute account balance
   const accountBalance = useMemo(() => {
@@ -456,6 +474,34 @@ export default function Dashboard() {
     <>
       <div className="min-h-screen bg-background">
       <SiteHeader />
+
+      {/* Free User Data Warning Banner */}
+      {!isPro && !isDemo && showDataWarning && (
+        <div className="border-b" style={{ backgroundColor: 'hsl(var(--amber-500) / 0.1)', borderColor: 'hsl(var(--amber-500) / 0.3)' }}>
+          <div className="w-full px-3 py-3 sm:px-6 lg:px-8">
+            <div className="flex items-start gap-3">
+              <span className="text-xl flex-shrink-0">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium mb-1">
+                  Your data is stored locally on this device only
+                </p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Clearing browser data, using incognito mode, or switching devices will erase your trades.
+                  <strong> Export backups regularly in Settings</strong> or <Link to="/pricing" className="underline hover:no-underline">upgrade to Pro for automatic cloud sync</Link>.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDataWarning(false)}
+                className="text-muted-foreground hover:text-foreground flex-shrink-0 text-sm"
+                aria-label="Close warning"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile-optimized Header Section */}
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
