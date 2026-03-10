@@ -359,11 +359,11 @@ export default function Dashboard() {
     }
     if (thisWeek.length > 0) {
       const sign = weekPnl >= 0 ? '+' : ''
-      return <>{thisWeek.length} trade{thisWeek.length === 1 ? '' : 's'} this week · <span style={{ color: weekPnlColor }}>{sign}${weekPnl.toFixed(2)}</span> P&L</>
+      return <>{thisWeek.length} trade{thisWeek.length === 1 ? '' : 's'} this week · <span style={{ color: weekPnlColor }}>{sign}${weekPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> P&L</>
     }
     if (trades.length > 0) {
       const sign = totalPnl >= 0 ? '+' : ''
-      return <>{trades.length} trades · <span style={{ color: pnlColor }}>{sign}${totalPnl.toFixed(2)}</span> P&L · <span style={{ color: winRateColor }}>{winRate}%</span> win rate</>
+      return <>{trades.length} trades · <span style={{ color: pnlColor }}>{sign}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> P&L · <span style={{ color: winRateColor }}>{winRate}%</span> win rate</>
     }
     return 'Track your performance and analyze your trades'
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -800,7 +800,7 @@ export default function Dashboard() {
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
                       <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
-                        {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
+                        {totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">

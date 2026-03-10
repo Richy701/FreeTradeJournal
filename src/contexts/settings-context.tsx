@@ -98,7 +98,10 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
 
   const formatCurrency = useCallback((amount: number, showSign: boolean = true) => {
     const symbol = getCurrencySymbol();
-    const formatted = Math.abs(amount).toFixed(2);
+    const formatted = Math.abs(amount).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
 
     // Handle different currency symbol positions
     if (['USD', 'CAD', 'AUD'].includes(effectiveCurrency)) {
