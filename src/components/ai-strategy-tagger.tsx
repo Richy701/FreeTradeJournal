@@ -83,42 +83,70 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
     }
 
     setLoading(true);
-    let rawResponse: any;
+    const BATCH_SIZE = 50;
+    const allResults: TagResult[] = [];
+
     try {
       const { requestAIAssist } = await import('@/services/ai-assist');
-      const response = await requestAIAssist({
-        type: 'strategy_tagger',
-        payload: {
-          trades: selectedTrades.slice(0, 30).map(t => ({
-            id: t.id,
-            symbol: t.symbol,
-            side: t.side,
-            entryPrice: t.entryPrice,
-            exitPrice: t.exitPrice,
-            pnl: t.pnl,
-            entryTime: new Date(t.entryTime).toISOString(),
-            exitTime: new Date(t.exitTime).toISOString(),
-            riskReward: t.riskReward,
-          })),
-        },
-      });
 
-      rawResponse = response.result;
-
-      // Clean the response - remove markdown code blocks if present
-      let cleanedResult = response.result.trim();
-      if (cleanedResult.startsWith('```')) {
-        cleanedResult = cleanedResult.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      // Split into batches of 50
+      const batches: Trade[][] = [];
+      for (let i = 0; i < selectedTrades.length; i += BATCH_SIZE) {
+        batches.push(selectedTrades.slice(i, i + BATCH_SIZE));
       }
 
-      const parsed: TagResult[] = JSON.parse(cleanedResult);
-      setResults(parsed);
-      setAccepted(new Set(parsed.map(r => r.id)));
+      // Process each batch sequentially
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+
+        if (batches.length > 1) {
+          toast.loading(`Tagging batch ${batchIndex + 1} of ${batches.length}...`, { id: 'batch-progress' });
+        }
+
+        let rawResponse: any;
+        try {
+          const response = await requestAIAssist({
+            type: 'strategy_tagger',
+            payload: {
+              trades: batch.map(t => ({
+                id: t.id,
+                symbol: t.symbol,
+                side: t.side,
+                entryPrice: t.entryPrice,
+                exitPrice: t.exitPrice,
+                pnl: t.pnl,
+                entryTime: new Date(t.entryTime).toISOString(),
+                exitTime: new Date(t.exitTime).toISOString(),
+                riskReward: t.riskReward,
+              })),
+            },
+          });
+
+          rawResponse = response.result;
+
+          // Clean the response - remove markdown code blocks if present
+          let cleanedResult = response.result.trim();
+          if (cleanedResult.startsWith('```')) {
+            cleanedResult = cleanedResult.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+          }
+
+          const parsed: TagResult[] = JSON.parse(cleanedResult);
+          allResults.push(...parsed);
+        } catch (err: any) {
+          console.error(`Batch ${batchIndex + 1} error:`, err);
+          console.error('Raw response:', rawResponse);
+          throw err; // Re-throw to be caught by outer catch
+        }
+      }
+
+      toast.dismiss('batch-progress');
+      setResults(allResults);
+      setAccepted(new Set(allResults.map(r => r.id)));
       setRejected(new Set());
-      toast.success(`Tagged ${parsed.length} trades`);
+      toast.success(`Tagged ${allResults.length} trade${allResults.length !== 1 ? 's' : ''}`);
     } catch (err: any) {
+      toast.dismiss('batch-progress');
       console.error('Strategy tagger error:', err);
-      console.error('Raw response:', rawResponse);
 
       if (err instanceof SyntaxError) {
         toast.error('AI returned invalid format. Please try again.');

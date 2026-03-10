@@ -109,7 +109,10 @@
       "Bash(xxd:*)",
       "Bash(printf:*)",
       "Bash(cat:*)",
-      "Bash(firebase firestore:get:*)"
+      "Bash(firebase firestore:get:*)",
+      "Bash(firebase auth:export:*)",
+      "Bash(firebase --help:*)",
+      "Bash(tee:*)"
     ],
     "deny": []
   }
