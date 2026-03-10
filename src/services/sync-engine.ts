@@ -23,6 +23,7 @@ export class SyncEngine {
   private retryCount = 0;
   private maxRetries = 3;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(uid: string) {
     this.uid = uid;
@@ -50,72 +51,56 @@ export class SyncEngine {
     this.listeners.forEach(cb => cb(key));
   }
 
-  /** Start Firestore listeners and initial migration */
+  /** Start Cloud Function polling (bypasses content blockers) */
   async enable() {
     try {
       this.setStatus('syncing');
-      this.retryCount = 0; // Reset retry count on fresh enable
-      this.db = await getFirebaseFirestore();
-      const { doc, getDoc, setDoc, onSnapshot, serverTimestamp } = await import('firebase/firestore');
+      this.retryCount = 0;
 
-      // Initial migration: push localStorage data to Firestore only if remote is empty
+      // Initial migration: push localStorage data to Firestore via Cloud Function
+      const auth = await getFirebaseAuth();
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const functions = getFunctions();
+      const getSyncDataFn = httpsCallable(functions, 'getSyncData');
+
+      // First, get remote data
+      const result = await getSyncDataFn({}) as { data: { data: Record<string, string> } };
+      const remoteData = result.data.data;
+
+      // For each key, push local data if remote is empty
       for (const key of SYNC_KEYS) {
         const localData = UserStorage.getItem(this.uid, key);
-        if (localData) {
-          const docRef = doc(this.db, 'users', this.uid, 'sync', key);
-          try {
-            const existing = await getDoc(docRef);
-            if (!existing.exists() || !existing.data()?.data) {
-              await setDoc(docRef, {
-                data: localData,
-                updatedAt: serverTimestamp(),
-              });
-            }
-          } catch (err) {
-            console.warn(`Sync migration failed for ${key}:`, err);
+        const remoteValue = remoteData[key];
+
+        if (localData && !remoteValue) {
+          // Local has data but remote doesn't - push to remote
+          await this.syncKey(key, localData);
+        } else if (remoteValue && remoteValue !== localData) {
+          // Remote has different data - pull to local (safety checks apply)
+          const remoteIsEmpty = remoteValue === '[]' || remoteValue === '{}' || remoteValue === '';
+          const localHasData = localData && localData !== '[]' && localData !== '{}' && localData !== '';
+
+          if (remoteIsEmpty && localHasData) {
+            console.warn(`[Sync] Skipping empty remote overwrite for ${key}`);
+            continue;
           }
+
+          // Update local data
+          const scopedKey = `user_${this.uid}_${key}`;
+          localStorage.setItem(scopedKey, remoteValue);
+          this.notifyChange(key);
+          console.log(`[Sync] Pulled ${key} from remote`);
         }
       }
 
-      // Set up snapshot listeners
-      for (const key of SYNC_KEYS) {
-        const docRef = doc(this.db, 'users', this.uid, 'sync', key);
-        const unsub = onSnapshot(docRef, (snap) => {
-          if (!snap.exists()) return;
-          // Skip if we just wrote this key (avoid echo)
-          if (this.writingKeys.has(key)) return;
-
-          const remote = snap.data();
-          if (!remote?.data) return;
-
-          const localData = UserStorage.getItem(this.uid, key);
-          if (localData !== remote.data) {
-            // Safety: never overwrite non-empty local data with empty remote data
-            const remoteIsEmpty = remote.data === '[]' || remote.data === '{}' || remote.data === '';
-            const localHasData = localData && localData !== '[]' && localData !== '{}' && localData !== '';
-            if (remoteIsEmpty && localHasData) {
-              console.warn(`Sync: skipping empty remote overwrite for ${key}`);
-              return;
-            }
-
-            // Write directly to localStorage (bypass UserStorage.setItem to avoid re-triggering sync)
-            const scopedKey = `user_${this.uid}_${key}`;
-            localStorage.setItem(scopedKey, remote.data);
-            this.notifyChange(key);
-          }
-
-          this._lastSyncTime = Date.now();
-          this.setStatus('synced');
-        }, (err) => {
-          console.warn(`Sync listener error for ${key}:`, err);
-          this.setStatus('error');
-        });
-
-        this.unsubscribers.push(unsub);
-      }
+      // Start polling for changes every 10 seconds
+      this.pollTimer = setInterval(() => {
+        this.poll();
+      }, 10000);
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');
+      console.log('[Sync] ✅ Cloud Function polling enabled (content blocker bypass active)');
     } catch (err) {
       console.error('SyncEngine enable failed:', err);
       this.setStatus('error');
@@ -129,9 +114,55 @@ export class SyncEngine {
           this.enable();
         }, delay);
       } else {
-        // Max retries reached, likely a content blocker or persistent network issue
-        console.warn('Sync failed after max retries. If using a content blocker, please whitelist Firebase.');
+        console.warn('Sync failed after max retries. Please check your internet connection.');
       }
+    }
+  }
+
+  /** Poll for remote changes via Cloud Function */
+  private async poll() {
+    if (this._status === 'syncing') return; // Skip if already syncing
+
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const functions = getFunctions();
+      const getSyncDataFn = httpsCallable(functions, 'getSyncData');
+
+      const result = await getSyncDataFn({}) as { data: { data: Record<string, string> } };
+      const remoteData = result.data.data;
+
+      for (const key of SYNC_KEYS) {
+        // Skip keys we're currently writing
+        if (this.writingKeys.has(key)) continue;
+
+        const remoteValue = remoteData[key];
+        if (!remoteValue) continue;
+
+        const localData = UserStorage.getItem(this.uid, key);
+        if (localData !== remoteValue) {
+          // Remote has changed - update local
+          const remoteIsEmpty = remoteValue === '[]' || remoteValue === '{}' || remoteValue === '';
+          const localHasData = localData && localData !== '[]' && localData !== '{}' && localData !== '';
+
+          if (remoteIsEmpty && localHasData) {
+            console.warn(`[Sync] Skipping empty remote overwrite for ${key}`);
+            continue;
+          }
+
+          const scopedKey = `user_${this.uid}_${key}`;
+          localStorage.setItem(scopedKey, remoteValue);
+          this.notifyChange(key);
+          console.log(`[Sync] Pulled ${key} from remote (poll)`);
+        }
+      }
+
+      this._lastSyncTime = Date.now();
+      if (this._status !== 'synced') {
+        this.setStatus('synced');
+      }
+    } catch (err) {
+      console.warn('[Sync] Poll failed:', err);
+      // Don't change status to error on poll failure, just log it
     }
   }
 
@@ -189,6 +220,11 @@ export class SyncEngine {
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
+    }
+    // Clear poll timer
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
     }
     this.retryCount = 0;
     this.db = null;
