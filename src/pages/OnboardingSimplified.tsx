@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
+import { useProStatus } from '@/contexts/pro-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, ArrowRight, Check, Rocket, SkipForward, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SimplifiedOnboardingData {
   accountName: string;
@@ -81,11 +83,119 @@ export default function OnboardingSimplified() {
     currentBalance: DEFAULT_VALUES.STARTING_BALANCE.toString()
   });
   const [loading, setLoading] = useState(false);
+  const [checkingRemoteData, setCheckingRemoteData] = useState(true);
   const shouldReduceMotion = useReducedMotion();
   const { user } = useAuth();
+  const { isPro, isLoading: isProLoading } = useProStatus();
   const { addAccount } = useAccounts();
   const userStorage = useUserStorage();
   const navigate = useNavigate();
+
+  // CRITICAL: Check Firestore for existing data before allowing onboarding
+  // Prevents account ID mismatches that orphan trades
+  useEffect(() => {
+    async function checkForExistingData() {
+      if (!user || isProLoading) return;
+      if (!isPro) {
+        setCheckingRemoteData(false);
+        return;
+      }
+
+      try {
+        // Check if user already has local data
+        const hasLocalAccounts = userStorage.getItem('accounts') !== null;
+        const hasLocalTrades = userStorage.getItem('trades') !== null;
+
+        if (hasLocalAccounts && hasLocalTrades) {
+          // User has local data, no need to check remote
+          setCheckingRemoteData(false);
+          return;
+        }
+
+        // Pro user without local data - check Firestore for existing trades
+        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const functions = getFunctions();
+        const getSyncDataFn = httpsCallable(functions, 'getSyncData');
+
+        const result = await getSyncDataFn({}) as { data: { data: Record<string, string> } };
+        const remoteData = result.data.data;
+
+        const remoteTrades = remoteData['trades'];
+        const remoteAccounts = remoteData['accounts'];
+
+        if (!remoteTrades || remoteTrades === '[]') {
+          // No remote trades - new user, proceed with onboarding
+          setCheckingRemoteData(false);
+          return;
+        }
+
+        // Parse remote data
+        const trades = JSON.parse(remoteTrades);
+        const accounts = remoteAccounts ? JSON.parse(remoteAccounts) : [];
+
+        if (trades.length > 0) {
+          console.log(`[Onboarding] Found ${trades.length} existing trades in Firestore`);
+
+          // Extract unique account IDs from trades
+          const tradeAccountIds = new Set<string>();
+          trades.forEach((trade: any) => {
+            if (trade.accountId) tradeAccountIds.add(trade.accountId);
+          });
+
+          // Create missing accounts
+          const existingAccountIds = new Set(accounts.map((a: any) => a.id));
+          const missingAccountIds = [...tradeAccountIds].filter(id => !existingAccountIds.has(id));
+
+          if (missingAccountIds.length > 0) {
+            console.log(`[Onboarding] Creating ${missingAccountIds.length} missing accounts`);
+
+            // Create accounts for orphaned trades
+            for (const accId of missingAccountIds) {
+              const tradesForAccount = trades.filter((t: any) => t.accountId === accId).length;
+              const newAccount = {
+                id: accId,
+                name: `Recovered Account (${tradesForAccount} trades)`,
+                type: 'demo' as const,
+                broker: 'Unknown',
+                currency: 'USD',
+                initialBalance: 10000,
+                createdAt: new Date().toISOString()
+              };
+              accounts.push(newAccount);
+            }
+
+            // Save fixed accounts back to Firestore
+            const syncDataFn = httpsCallable(functions, 'syncData');
+            await syncDataFn({ key: 'accounts', value: JSON.stringify(accounts) });
+            console.log('[Onboarding] Fixed missing accounts in Firestore');
+          }
+
+          // Restore data locally
+          userStorage.setItem('trades', remoteTrades);
+          userStorage.setItem('accounts', JSON.stringify(accounts));
+
+          // Mark onboarding as complete
+          userStorage.setItem('onboardingCompleted', 'true');
+          userStorage.setItem('onboarding', JSON.stringify({
+            skipped: false,
+            completedAt: new Date().toISOString(),
+            autoRestored: true
+          }));
+
+          toast.success(`Welcome back! Restored ${trades.length} trades across ${accounts.length} account${accounts.length > 1 ? 's' : ''}.`);
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        setCheckingRemoteData(false);
+      } catch (error) {
+        console.error('[Onboarding] Error checking remote data:', error);
+        setCheckingRemoteData(false);
+      }
+    }
+
+    checkForExistingData();
+  }, [user, isPro, isProLoading, userStorage, addAccount, navigate]);
 
   const goToStep = (step: number) => {
     setDirection(step > currentStep ? 1 : -1);
@@ -454,6 +564,25 @@ export default function OnboardingSimplified() {
         return null;
     }
   };
+
+  // Show loading while checking for existing data in Firestore
+  if (checkingRemoteData || isProLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="space-y-4 w-full max-w-md">
+          <div className="text-center space-y-2">
+            <Skeleton className="h-8 w-48 mx-auto" />
+            <Skeleton className="h-4 w-64 mx-auto" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-32 mx-auto" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4 relative overflow-hidden">
