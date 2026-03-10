@@ -95,9 +95,24 @@
       }
     </script>
     
+    <!-- Static content for Google OAuth crawler (hidden but crawlable) -->
+    <div id="static-footer" style="position: absolute; left: -9999px; top: -9999px;">
+      <h1>FreeTradeJournal - Free Trading Journal for Forex, Futures & Stocks</h1>
+      <p>
+        FreeTradeJournal is a free professional trading journal and analytics platform.
+        Track every trade, analyze performance metrics, manage risk, and improve your trading
+        with advanced analytics, calendar heatmaps, and AI-powered insights.
+        Perfect for forex traders, futures traders, stock traders, and prop firm traders.
+      </p>
+      <nav>
+        <a href="https://freetradejournal.com/privacy">Privacy Policy</a>
+        <a href="https://freetradejournal.com/terms">Terms of Service</a>
+      </nav>
+    </div>
+
     <div id="root"></div>
 
-    <!-- Static content for crawlers and non-JS users -->
+    <!-- Fallback for non-JS users -->
     <noscript>
       <div style="padding: 40px; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
         <h1 style="font-size: 32px; margin-bottom: 20px;">FreeTradeJournal</h1>
