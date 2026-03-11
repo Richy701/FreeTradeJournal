@@ -104,14 +104,23 @@
     </div>
     <script>
       // Hide the static content once React loads
-      window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-          var staticContent = document.getElementById('static-content');
-          if (staticContent && document.getElementById('root').children.length > 0) {
-            staticContent.style.display = 'none';
+      (function() {
+        function hideStatic() {
+          var el = document.getElementById('static-content');
+          if (el) el.style.display = 'none';
+        }
+        var root = document.getElementById('root');
+        if (root && root.children.length > 0) { hideStatic(); return; }
+        var observer = new MutationObserver(function() {
+          if (root && root.children.length > 0) {
+            hideStatic();
+            observer.disconnect();
           }
-        }, 100);
-      });
+        });
+        if (root) observer.observe(root, { childList: true });
+        // Fallback: hide after 2s regardless
+        setTimeout(hideStatic, 2000);
+      })();
     </script>
 
     <div id="root"></div>
