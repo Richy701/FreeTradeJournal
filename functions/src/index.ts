@@ -49,6 +49,17 @@ export const createCheckoutSession = functions.https.onCall(
       throw new functions.https.HttpsError("invalid-argument", "Missing priceId.");
     }
 
+    // Validate priceId against allowed values to prevent use of arbitrary Stripe prices
+    const ALLOWED_PRICES = [
+      process.env.STRIPE_PRICE_MONTHLY,
+      process.env.STRIPE_PRICE_YEARLY,
+      process.env.STRIPE_PRICE_LIFETIME,
+    ].filter(Boolean);
+
+    if (!ALLOWED_PRICES.includes(priceId)) {
+      throw new functions.https.HttpsError("invalid-argument", "Invalid price.");
+    }
+
     const uid = context.auth.uid;
     const email = context.auth.token.email || "";
 
@@ -847,6 +858,14 @@ export const syncData = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
   }
 
+  const uid = context.auth.uid;
+
+  // Pro check — cloud sync is a Pro feature
+  const userDoc = await db.collection("users").doc(uid).get();
+  if (!userDoc.exists || !userDoc.data()?.isPro) {
+    throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
+  }
+
   const { key, value } = data as { key: string; value: string };
 
   if (!key || !SYNC_KEYS.includes(key as SyncKey)) {
@@ -862,11 +881,9 @@ export const syncData = functions.https.onCall(async (data, context) => {
   // CRITICAL: Never sync empty arrays - prevents data loss
   const isEmpty = value === '[]' || value === '{}' || value === '' || value === 'null';
   if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
-    console.warn(`[syncData] Blocked empty ${key} from syncing for ${context.auth.uid}`);
+    console.warn(`[syncData] Blocked empty ${key} from syncing for ${uid}`);
     return { success: false, reason: 'empty_data_blocked' };
   }
-
-  const uid = context.auth.uid;
 
   try {
     await db.collection('users').doc(uid).collection('sync').doc(key).set({
@@ -892,6 +909,12 @@ export const getSyncData = functions.https.onCall(async (_data, context) => {
   }
 
   const uid = context.auth.uid;
+
+  // Pro check — cloud sync is a Pro feature
+  const userDoc = await db.collection("users").doc(uid).get();
+  if (!userDoc.exists || !userDoc.data()?.isPro) {
+    throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
+  }
 
   try {
     const syncData: Record<string, string> = {};

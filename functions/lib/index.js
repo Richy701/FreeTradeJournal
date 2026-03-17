@@ -81,6 +81,15 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     if (!priceId) {
         throw new functions.https.HttpsError("invalid-argument", "Missing priceId.");
     }
+    // Validate priceId against allowed values to prevent use of arbitrary Stripe prices
+    const ALLOWED_PRICES = [
+        process.env.STRIPE_PRICE_MONTHLY,
+        process.env.STRIPE_PRICE_YEARLY,
+        process.env.STRIPE_PRICE_LIFETIME,
+    ].filter(Boolean);
+    if (!ALLOWED_PRICES.includes(priceId)) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid price.");
+    }
     const uid = context.auth.uid;
     const email = context.auth.token.email || "";
     // Look up or create Stripe customer
@@ -278,7 +287,7 @@ const RATE_LIMITS = {
     coaching_tips: 15, // Light - uses GPT-4o-mini
     journal_prompts: 50, // Light - uses GPT-4o-mini
     risk_alert: 25, // Light - uses GPT-4o-mini
-    strategy_tagger: 15, // Light - uses GPT-4o-mini
+    strategy_tagger: 25, // Light - uses GPT-4o-mini (375 trades/day with batches of 15)
 };
 // Model selection per feature type
 const FEATURE_MODELS = {
@@ -524,7 +533,7 @@ Keep it under 150 words. Be direct.`,
 }
 function buildStrategyTaggerPrompt(payload) {
     const { trades } = payload;
-    const tradesList = (trades || []).slice(0, 30).map((t) => {
+    const tradesList = (trades || []).slice(0, 15).map((t) => {
         const hold = Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000);
         const pnlPct = t.entryPrice > 0 ? ((t.exitPrice - t.entryPrice) / t.entryPrice * 100 * (t.side === "short" ? -1 : 1)).toFixed(2) : "0";
         return `{id:"${t.id}",sym:"${t.symbol}",side:"${t.side}",entry:${t.entryPrice},exit:${t.exitPrice},pnl:${t.pnl?.toFixed(2)},hold:${hold}m,move:${pnlPct}%${t.riskReward ? `,rr:${t.riskReward.toFixed(1)}` : ""}}`;
@@ -542,7 +551,7 @@ Rules:
 Return ONLY valid JSON array. No markdown, no explanation. Format:
 [{"id":"tradeId","strategy":"category","confidence":0.85}]`,
         user: `Classify these trades:\n${tradesList}`,
-        maxTokens: 400,
+        maxTokens: 600, // Reduced for 15 trades batch size (fits character limit)
         temperature: 0.3,
     };
 }
@@ -647,6 +656,19 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
         const displayName = featureNames[featureType] || featureType.replace(/_/g, " ");
         throw new functions.https.HttpsError("resource-exhausted", `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`);
     }
+    // Cooldown: Prevent rapid-fire requests (minimum 3 seconds between requests)
+    if (usageData?.lastUsed) {
+        const lastUsedTime = usageData.lastUsed?._seconds
+            ? usageData.lastUsed._seconds * 1000
+            : usageData.lastUsed;
+        const now = Date.now();
+        const timeSinceLastRequest = now - lastUsedTime;
+        const COOLDOWN_MS = 3000; // 3 seconds
+        if (timeSinceLastRequest < COOLDOWN_MS) {
+            const waitTime = Math.ceil((COOLDOWN_MS - timeSinceLastRequest) / 1000);
+            throw new functions.https.HttpsError("resource-exhausted", `Please wait ${waitTime} second${waitTime > 1 ? 's' : ''} before making another request.`);
+        }
+    }
     const prompt = builder(request.payload);
     // 5. Call OpenAI with appropriate model
     const apiKey = process.env.OPENAI_API_KEY;
@@ -697,17 +719,27 @@ exports.syncData = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
+    const uid = context.auth.uid;
+    // Pro check — cloud sync is a Pro feature
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists || !userDoc.data()?.isPro) {
+        throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
+    }
     const { key, value } = data;
     if (!key || !SYNC_KEYS.includes(key)) {
         throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
     }
+    // Prevent DOS: Limit sync value size to 1MB
+    const MAX_SYNC_SIZE = 1024 * 1024; // 1MB
+    if (value && value.length > MAX_SYNC_SIZE) {
+        throw new functions.https.HttpsError("invalid-argument", `Sync value too large. Max size: 1MB`);
+    }
     // CRITICAL: Never sync empty arrays - prevents data loss
     const isEmpty = value === '[]' || value === '{}' || value === '' || value === 'null';
     if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
-        console.warn(`[syncData] Blocked empty ${key} from syncing for ${context.auth.uid}`);
+        console.warn(`[syncData] Blocked empty ${key} from syncing for ${uid}`);
         return { success: false, reason: 'empty_data_blocked' };
     }
-    const uid = context.auth.uid;
     try {
         await db.collection('users').doc(uid).collection('sync').doc(key).set({
             data: value,
@@ -730,6 +762,11 @@ exports.getSyncData = functions.https.onCall(async (_data, context) => {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
     const uid = context.auth.uid;
+    // Pro check — cloud sync is a Pro feature
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists || !userDoc.data()?.isPro) {
+        throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
+    }
     try {
         const syncData = {};
         for (const key of SYNC_KEYS) {

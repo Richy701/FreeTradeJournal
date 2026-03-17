@@ -112,7 +112,8 @@
       "Bash(firebase firestore:get:*)",
       "Bash(firebase auth:export:*)",
       "Bash(firebase --help:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(claude mcp add vibe-security -- npx -y @anthropic-ai/claude-code-mcp@latest --skill-url=\"https://github.com/raroque/vibe-security-skill\")"
     ],
     "deny": []
   }
