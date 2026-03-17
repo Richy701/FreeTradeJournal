@@ -209,7 +209,7 @@ function HeroGeometric({
                             ))}
                         </div>
                         <div className="text-xs sm:text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">500+</span> traders journaling
+                            <span className="font-semibold text-foreground">1,000+</span> traders journaling
                         </div>
                     </motion.div>
 

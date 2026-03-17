@@ -15,8 +15,6 @@ Allow: /signup
 Allow: /privacy
 Allow: /terms
 Allow: /cookie-policy
-Allow: /manifest.json
-
 # Disallow authenticated/private routes
 Disallow: /dashboard
 Disallow: /trades
@@ -35,7 +33,6 @@ Disallow: /node_modules/
 Disallow: /src/
 Disallow: /build/
 Disallow: /dist/
-Disallow: /*.json
 
 # Search engine specific rules
 User-agent: Googlebot
@@ -54,13 +51,7 @@ User-agent: DuckDuckBot
 Allow: /
 Crawl-delay: 1
 
-# Block SEO tools and unwanted bots
-User-agent: AhrefsBot
-Disallow: /
-
-User-agent: SemrushBot
-Disallow: /
-
+# Block unwanted bots
 User-agent: MJ12bot
 Disallow: /
 

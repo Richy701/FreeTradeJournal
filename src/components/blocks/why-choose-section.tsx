@@ -66,7 +66,7 @@ export default function WhyChooseSection() {
   const stats = [
     { icon: TrendingUp, value: "92%", label: "Performance Improvement", sublabel: "within 30 days" },
     { icon: Users, value: "10K+", label: "Active Traders", sublabel: "trust FreeTradeJournal" },
-    { icon: Award, value: "4.9★", label: "User Rating", sublabel: "from 500+ reviews" }
+    { icon: Award, value: "4.9★", label: "User Rating", sublabel: "from 1,000+ reviews" }
   ];
 
   return (
