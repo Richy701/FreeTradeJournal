@@ -50,33 +50,30 @@ export const CookieConsent = () => {
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="fixed bottom-0 left-0 right-0 z-50 p-3 sm:p-4"
         >
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto">
             <Card className="border-border shadow-lg">
               <CardContent className="p-4 sm:p-5">
-                <div className="flex items-start gap-3">
-                  <Cookie className="w-5 h-5 text-primary mt-0.5 hidden sm:block" />
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <h3 className="text-sm font-semibold mb-1">Cookie Preferences</h3>
-                        <p className="text-xs text-muted-foreground">
-                          We use cookies to improve your experience and analyze platform usage.
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowBanner(false)}
-                        className="h-6 w-6 p-0 -mt-1 -mr-1"
-                        aria-label="Close cookie banner"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowBanner(false)}
+                    className="absolute top-0 right-0 h-6 w-6 p-0"
+                    aria-label="Close cookie banner"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <div className="flex flex-col items-center text-center mb-3">
+                    <Cookie className="w-5 h-5 text-primary mb-2" />
+                    <h3 className="text-sm font-semibold mb-1">Cookie Preferences</h3>
+                    <p className="text-xs text-muted-foreground">
+                      We use cookies to improve your experience and analyze platform usage.
+                    </p>
+                  </div>
 
                     {showDetails && (
-                      <div className="grid gap-2 mb-3 text-xs">
+                      <div className="grid gap-2 mb-3 text-xs justify-items-center">
                         <div className="flex items-center gap-2">
                           <Shield className="w-3.5 h-3.5 text-green-500" />
                           <span className="font-medium">Necessary</span>
@@ -95,7 +92,7 @@ export const CookieConsent = () => {
                       </div>
                     )}
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap justify-center gap-2">
                       <Button
                         onClick={handleAcceptAll}
                         size="sm"
@@ -121,13 +118,12 @@ export const CookieConsent = () => {
                       </Button>
                     </div>
 
-                    <p className="text-[10px] text-muted-foreground mt-2.5">
-                      By using our site, you agree to our{' '}
-                      <Link to="/privacy" className="text-primary hover:underline">
-                        Privacy Policy
-                      </Link>
-                    </p>
-                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2.5 text-center">
+                    By using our site, you agree to our{' '}
+                    <Link to="/privacy" className="text-primary hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </p>
                 </div>
               </CardContent>
             </Card>
