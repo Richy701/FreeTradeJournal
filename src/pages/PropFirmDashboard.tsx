@@ -1,6 +1,7 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
+import { SEOMeta } from '@/components/seo-meta';
 import { Footer7 } from '@/components/ui/footer-7';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
@@ -72,6 +73,8 @@ export default function PropFirmDashboard() {
   ];
 
   return (
+    <>
+    <SEOMeta />
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -390,5 +393,6 @@ export default function PropFirmDashboard() {
 
       <Footer7 />
     </div>
+    </>
   );
 }
