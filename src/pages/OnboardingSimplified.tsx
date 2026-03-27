@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
@@ -91,6 +91,19 @@ export default function OnboardingSimplified() {
   const userStorage = useUserStorage();
   const navigate = useNavigate();
 
+  // Persist onboarding completion to Firestore for all users so it survives localStorage clearing
+  const persistOnboardingToFirestore = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { getFirebaseFirestore } = await import('@/lib/firebase-lazy');
+      const db = await getFirebaseFirestore();
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'users', user.uid), { onboardingCompleted: true }, { merge: true });
+    } catch {
+      // Non-critical — localStorage is the primary source of truth
+    }
+  }, [user]);
+
   // CRITICAL: Check Firestore for existing data before allowing onboarding
   // Prevents account ID mismatches that orphan trades
   useEffect(() => {
@@ -181,6 +194,7 @@ export default function OnboardingSimplified() {
             completedAt: new Date().toISOString(),
             autoRestored: true
           }));
+          persistOnboardingToFirestore();
 
           toast.success(`Welcome back! Restored ${trades.length} trades across ${accounts.length} account${accounts.length > 1 ? 's' : ''}.`);
           navigate('/dashboard', { replace: true });
@@ -222,6 +236,7 @@ export default function OnboardingSimplified() {
         skipped: true,
         completedAt: new Date().toISOString()
       }));
+      persistOnboardingToFirestore();
 
       toast.success('Welcome to FreeTradeJournal! You can update your settings anytime.');
       navigate('/dashboard');
@@ -253,6 +268,7 @@ export default function OnboardingSimplified() {
 
       userStorage.setItem('onboarding', JSON.stringify(onboardingData));
       userStorage.setItem('onboardingCompleted', 'true');
+      persistOnboardingToFirestore();
 
       toast.success('Setup complete! Welcome to FreeTradeJournal!');
       navigate('/dashboard');

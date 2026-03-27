@@ -3,10 +3,7 @@ import { UserStorage } from './user-storage';
 // Utility functions for onboarding checks
 export const hasCompletedOnboarding = (userId: string | null): boolean => {
   const completed = UserStorage.getItem(userId, 'onboardingCompleted');
-  const onboardingData = UserStorage.getItem(userId, 'onboarding');
-  
-  // Check if both onboarding completion flag and data exist
-  return completed === 'true' && onboardingData !== null;
+  return completed === 'true';
 };
 
 export const getOnboardingRedirect = (userId: string | null): string => {

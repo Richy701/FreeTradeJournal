@@ -13,6 +13,7 @@ export function useAutoRestore() {
   const { isPro, isLoading: isProLoading } = useProStatus();
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreComplete, setRestoreComplete] = useState(false);
+  const [restoreFailed, setRestoreFailed] = useState(false);
 
   useEffect(() => {
     if (!user || isProLoading) return;
@@ -61,6 +62,7 @@ export function useAutoRestore() {
         }
       } catch (error) {
         console.error('[AutoRestore] Failed to restore from Firestore:', error);
+        setRestoreFailed(true);
       } finally {
         setIsRestoring(false);
         setRestoreComplete(true);
@@ -70,5 +72,5 @@ export function useAutoRestore() {
     restoreFromFirestore();
   }, [user, isPro, isProLoading]);
 
-  return { isRestoring, restoreComplete };
+  return { isRestoring, restoreComplete, restoreFailed };
 }

@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { hasCompletedOnboarding } from '@/utils/onboarding';
 import { UserStorage } from '@/utils/user-storage';
 import { useAutoRestore } from '@/hooks/use-auto-restore';
+import { useFirestoreOnboardingCheck } from '@/hooks/use-firestore-onboarding-check';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -30,7 +31,14 @@ function LoadingSkeleton() {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isDemo } = useAuth();
   const location = useLocation();
-  const { isRestoring, restoreComplete } = useAutoRestore();
+  const { isRestoring, restoreComplete, restoreFailed } = useAutoRestore();
+
+  const userId = user?.uid || null;
+  const localOnboardingDone = !isDemo && hasCompletedOnboarding(userId);
+
+  // Only run Firestore fallback check when: user exists, not demo, local flag missing, restore not still running
+  const skipFirestoreCheck = isDemo || !user || localOnboardingDone || !restoreComplete;
+  const { checking: checkingFirestore, completedInFirestore } = useFirestoreOnboardingCheck(userId, skipFirestoreCheck);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -41,16 +49,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <LoadingSkeleton />;
   }
 
+  // Wait for Firestore fallback check if needed
+  if (checkingFirestore) {
+    return <LoadingSkeleton />;
+  }
+
   // Allow demo users through without authentication
   if (!user && !isDemo) {
-    // Redirect to login page with return url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Skip onboarding check for demo users
   if (!isDemo) {
-    const userId = user?.uid || null;
-    const hasOnboarding = hasCompletedOnboarding(userId);
+    const hasOnboarding = localOnboardingDone || completedInFirestore;
 
     // Additional check: if user has data (accounts/trades), skip onboarding even if flag is missing
     const hasData = userId && (
@@ -58,9 +69,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       UserStorage.getItem(userId, 'trades') !== null
     );
 
-    // If user is authenticated but hasn't completed onboarding AND has no data, redirect to onboarding
-    // Exception: if they're already on the onboarding page, let them through
-    if (!hasOnboarding && !hasData && location.pathname !== '/onboarding') {
+    // If restore failed, be conservative — don't re-onboard a returning user whose restore just errored
+    const safeToRedirect = !restoreFailed;
+
+    if (!hasOnboarding && !hasData && safeToRedirect && location.pathname !== '/onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
   }
