@@ -33,9 +33,11 @@ export function useAutoRestore() {
     async function restoreFromFirestore() {
       setIsRestoring(true);
       try {
-        const { getFirebaseAuth } = await import('@/lib/firebase-lazy');
-        const auth = await getFirebaseAuth();
-        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const [{ getFirebaseAuth }, { getFunctions, httpsCallable }] = await Promise.all([
+          import('@/lib/firebase-lazy'),
+          import('firebase/functions'),
+        ]);
+        await getFirebaseAuth();
         const functions = getFunctions();
         const getSyncDataFn = httpsCallable(functions, 'getSyncData');
 

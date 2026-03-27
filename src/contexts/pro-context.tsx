@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { redirectToCheckout } from '@/lib/stripe';
@@ -115,12 +115,12 @@ export function ProProvider({ children }: ProProviderProps) {
     [],
   );
 
-  const value: ProContextType = {
+  const value: ProContextType = useMemo(() => ({
     isPro: isActivePro(subscription),
     isLoading,
     subscription,
     openCheckout: handleOpenCheckout,
-  };
+  }), [subscription, isLoading, handleOpenCheckout]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

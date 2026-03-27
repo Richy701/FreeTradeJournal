@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
 import { useAuth } from '@/contexts/auth-context';
 import { useSync } from '@/contexts/sync-context';
@@ -199,7 +199,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
     }
   };
 
-  const value: AccountContextType = {
+  const value: AccountContextType = useMemo(() => ({
     accounts,
     activeAccount,
     setActiveAccount,
@@ -207,7 +207,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
     updateAccount,
     deleteAccount,
     loading
-  };
+  }), [accounts, activeAccount, setActiveAccount, addAccount, updateAccount, deleteAccount, loading]);
 
   return (
     <AccountContext.Provider value={value}>

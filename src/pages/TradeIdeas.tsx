@@ -221,7 +221,7 @@ export default function TradeIdeas() {
         )}
 
         {/* Symbol Performance Chart */}
-        {charts && charts.symbolPnl.length > 0 && (
+        {charts != null && charts.symbolPnl.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Symbol Performance</CardTitle>
@@ -272,7 +272,7 @@ export default function TradeIdeas() {
         {/* Two-column: Hourly + Direction */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Trader Profile — Radar */}
-          {summary && summary.traderProfile.length > 0 && (
+          {summary != null && summary.traderProfile.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Trader Profile</CardTitle>
@@ -322,7 +322,7 @@ export default function TradeIdeas() {
           )}
 
           {/* Direction Split - Donut */}
-          {charts && charts.direction.length > 0 && (
+          {charts != null && charts.direction.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Direction Split</CardTitle>
@@ -400,7 +400,7 @@ export default function TradeIdeas() {
         </div>
 
         {/* Strategy Performance */}
-        {charts && charts.strategyPnl.length > 0 && (
+        {charts != null && charts.strategyPnl.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Strategy Breakdown</CardTitle>
@@ -442,7 +442,7 @@ export default function TradeIdeas() {
         {/* Two-column: Weekly Trend + Day of Week */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Weekly Trend */}
-          {charts && charts.weeklyPnl.length > 1 && (
+          {charts != null && charts.weeklyPnl.length > 1 && (
             <Card>
               <CardHeader>
                 <CardTitle>Weekly P&L Trend</CardTitle>
@@ -490,7 +490,7 @@ export default function TradeIdeas() {
           )}
 
           {/* Day of Week */}
-          {charts && charts.dayOfWeek.length > 0 && (
+          {charts != null && charts.dayOfWeek.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Day of Week</CardTitle>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { User, Auth } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
 import { DEMO_USER } from '@/data/demo-data';
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await sendPasswordResetEmail(authInstance, email);
   };
 
-  const value: AuthContextType = {
+  const value: AuthContextType = useMemo(() => ({
     user,
     loading,
     isDemo,
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     resetPassword,
     enterDemoMode,
     exitDemoMode
-  };
+  }), [user, loading, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, enterDemoMode, exitDemoMode]);
 
   return (
     <AuthContext.Provider value={value}>

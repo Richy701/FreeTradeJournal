@@ -97,7 +97,19 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   }, [effectiveCurrency]);
 
   const formatCurrency = useCallback((amount: number, showSign: boolean = true) => {
-    const symbol = getCurrencySymbol();
+    const symbol = (() => {
+      switch (effectiveCurrency) {
+        case 'USD': return '$';
+        case 'EUR': return '€';
+        case 'GBP': return '£';
+        case 'JPY': return '¥';
+        case 'CAD': return 'C$';
+        case 'AUD': return 'A$';
+        case 'CHF': return 'CHF';
+        case 'CNY': return '¥';
+        default: return '$';
+      }
+    })();
     const formatted = Math.abs(amount).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -105,19 +117,16 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
 
     // Handle different currency symbol positions
     if (['USD', 'CAD', 'AUD'].includes(effectiveCurrency)) {
-      // Symbol before amount
       const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
       return `${sign}${symbol}${formatted}`;
     } else if (effectiveCurrency === 'EUR') {
-      // Symbol after amount for EUR
       const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
       return `${sign}${formatted}${symbol}`;
     } else {
-      // Default: symbol before amount
       const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
       return `${sign}${symbol}${formatted}`;
     }
-  }, [effectiveCurrency, getCurrencySymbol]);
+  }, [effectiveCurrency]);
 
   const value: SettingsContextType = useMemo(() => ({
     settings,

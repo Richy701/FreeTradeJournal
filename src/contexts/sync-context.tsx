@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { SyncEngine, type SyncStatus } from '@/services/sync-engine';
@@ -100,13 +100,15 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
   }, [user, isPro, isProLoading]);
 
+  const value = useMemo(() => ({
+    isSyncing: syncStatus === 'syncing',
+    syncStatus,
+    lastSyncTime,
+    initialSyncDone,
+  }), [syncStatus, lastSyncTime, initialSyncDone]);
+
   return (
-    <SyncContext.Provider value={{
-      isSyncing: syncStatus === 'syncing',
-      syncStatus,
-      lastSyncTime,
-      initialSyncDone,
-    }}>
+    <SyncContext.Provider value={value}>
       {children}
     </SyncContext.Provider>
   );
