@@ -78,6 +78,21 @@ export default function Documentation() {
             </ul>
           </section>
 
+          {/* Trade Ideas & AI Insights */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-3">Trade Ideas & AI Insights (Pro)</h2>
+            <p className="mb-3">The Trade Ideas page analyses your trade history and surfaces patterns you might miss manually. Available to Pro users, it includes:</p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Symbol Performance</strong> — P&L breakdown by instrument so you can see which pairs or contracts you trade best.</li>
+              <li><strong>Trader Profile</strong> — radar chart scoring your consistency, discipline, risk management, and profitability.</li>
+              <li><strong>Direction Bias</strong> — win rate and P&L split by long vs short to identify directional tendencies.</li>
+              <li><strong>Strategy Breakdown</strong> — performance comparison across your tagged strategies.</li>
+              <li><strong>Weekly & Day-of-Week Analysis</strong> — identifies your best and worst trading days so you can adjust your schedule.</li>
+              <li><strong>Session Heatmap</strong> — shows which trading hours produce the most consistent results.</li>
+            </ul>
+            <p className="mt-3">All charts update automatically as you log new trades. No setup required.</p>
+          </section>
+
           {/* Filtering & Search */}
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Filtering & Search</h2>
