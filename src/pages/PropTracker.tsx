@@ -122,42 +122,6 @@ const TX_TYPE_OPTIONS: { value: TransactionType; label: string; isExpense: boole
   { value: 'other-expense',  label: 'Other Expense',  isExpense: true },
 ]
 
-function makeDemoData(): { accounts: PropFirmAccount[]; transactions: PropFirmTransaction[] } {
-  const a1 = crypto.randomUUID(), a2 = crypto.randomUUID(), a3 = crypto.randomUUID(), a4 = crypto.randomUUID(), a5 = crypto.randomUUID()
-  const now = new Date()
-  const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOString().split('T')[0]
-
-  const accounts: PropFirmAccount[] = [
-    { id: a1, firmName: 'TopStep', accountSize: 50000,  accountType: 'evaluation', status: 'active',    startDate: daysAgo(62), notes: 'Phase 1 passed, currently in phase 2.', createdAt: new Date().toISOString() },
-    { id: a2, firmName: 'Apex Trader Funding', accountSize: 100000, accountType: 'funded',     status: 'passed',    startDate: daysAgo(110), endDate: daysAgo(45), notes: 'Passed both phases in 3 weeks. First payout received.', createdAt: new Date().toISOString() },
-    { id: a3, firmName: 'FTMO', accountSize: 200000, accountType: 'evaluation', status: 'failed',    startDate: daysAgo(90), endDate: daysAgo(60), notes: 'Hit max daily loss on a bad NFP trade. Bought a reset.', createdAt: new Date().toISOString() },
-    { id: a4, firmName: 'My Funded Futures (MFFU)', accountSize: 150000, accountType: 'funded', status: 'active', startDate: daysAgo(45), notes: 'Second payout pending review.', createdAt: new Date().toISOString() },
-    { id: a5, firmName: 'Bulenox', accountSize: 25000,  accountType: 'evaluation', status: 'withdrawn', startDate: daysAgo(30), endDate: daysAgo(10), notes: 'Decided the rules were too restrictive for my strategy.', createdAt: new Date().toISOString() },
-  ]
-
-  const transactions: PropFirmTransaction[] = [
-    // TopStep $50k
-    { id: crypto.randomUUID(), propAccountId: a1, type: 'evaluation-fee', amount: 149,  description: 'Phase 1 evaluation fee', date: daysAgo(62), createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a1, type: 'monthly-fee',    amount: 99,   description: 'Month 2 subscription',   date: daysAgo(32), createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a1, type: 'monthly-fee',    amount: 99,   description: 'Month 3 subscription',   date: daysAgo(2),  createdAt: new Date().toISOString() },
-    // Apex $100k
-    { id: crypto.randomUUID(), propAccountId: a2, type: 'evaluation-fee', amount: 137,  description: 'Challenge fee',          date: daysAgo(110), createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a2, type: 'payout',         amount: 2400, description: 'First profit split 80%', date: daysAgo(40),  createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a2, type: 'payout',         amount: 1800, description: 'Second profit split',    date: daysAgo(12),  createdAt: new Date().toISOString() },
-    // FTMO $200k
-    { id: crypto.randomUUID(), propAccountId: a3, type: 'evaluation-fee', amount: 540,  description: 'FTMO $200k challenge',   date: daysAgo(90), createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a3, type: 'reset-fee',      amount: 270,  description: 'Challenge reset',        date: daysAgo(60), createdAt: new Date().toISOString() },
-    // MFFU $150k
-    { id: crypto.randomUUID(), propAccountId: a4, type: 'evaluation-fee', amount: 429,  description: 'Evaluation fee',         date: daysAgo(45), createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a4, type: 'monthly-fee',    amount: 95,   description: 'Monthly fee',            date: daysAgo(15), createdAt: new Date().toISOString() },
-    { id: crypto.randomUUID(), propAccountId: a4, type: 'payout',         amount: 3500, description: 'First payout — $7k profit split 50/50', date: daysAgo(8), createdAt: new Date().toISOString() },
-    // Bulenox $25k
-    { id: crypto.randomUUID(), propAccountId: a5, type: 'evaluation-fee', amount: 97,   description: 'Bulenox evaluation',     date: daysAgo(30), createdAt: new Date().toISOString() },
-  ]
-
-  return { accounts, transactions }
-}
-
 const HOW_IT_WORKS = [
   {
     icon: Building2,
@@ -285,13 +249,6 @@ export default function PropTracker() {
     setTransactions(updated)
     storage.setItem('propFirmTransactions', JSON.stringify(updated))
   }, [storage])
-
-  function loadDemoData() {
-    const { accounts: demoAccounts, transactions: demoTxs } = makeDemoData()
-    saveAccounts(demoAccounts)
-    saveTransactions(demoTxs)
-    toast.success('Demo data loaded')
-  }
 
   function dismissTip() {
     setTipDismissed(true)
@@ -571,11 +528,6 @@ export default function PropTracker() {
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0 sm:self-start">
-              {accounts.length === 0 && (
-                <Button variant="outline" onClick={loadDemoData}>
-                  Load demo data
-                </Button>
-              )}
               {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT ? (
                 <Link to="/pricing">
                   <Button style={{ backgroundColor: themeColors.primary }}>
@@ -874,9 +826,6 @@ export default function PropTracker() {
                 <Button onClick={openAddAccount} style={{ backgroundColor: themeColors.primary }}>
                   <Plus className="h-4 w-4 mr-1.5" />
                   Add your first account
-                </Button>
-                <Button variant="outline" onClick={loadDemoData}>
-                  Load demo data
                 </Button>
               </div>
             </CardContent>
