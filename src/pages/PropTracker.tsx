@@ -289,45 +289,74 @@ export default function PropTracker() {
     step: 'upload' | 'preview'
     importType: 'billing' | 'payout'
     loading: boolean
+    dragOver: boolean
     parsed: Array<{ id: string; date: string; amount: number; type: TransactionType; notes: string; keep: boolean }>
-  }>({ open: false, accountId: '', step: 'upload', importType: 'billing', loading: false, parsed: [] })
+  }>({ open: false, accountId: '', step: 'upload', importType: 'billing', loading: false, dragOver: false, parsed: [] })
 
   function openImportDialog(accountId: string) {
-    setImportDialog({ open: true, accountId, step: 'upload', importType: 'billing', loading: false, parsed: [] })
+    setImportDialog({ open: true, accountId, step: 'upload', importType: 'billing', loading: false, dragOver: false, parsed: [] })
   }
 
-  async function handleScreenshotUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return }
-    setImportDialog(p => ({ ...p, loading: true }))
+  async function processImageFiles(files: File[], importType: 'billing' | 'payout', accountId: string) {
+    if (!files.length) return
+    const invalid = files.find(f => !f.type.startsWith('image/'))
+    if (invalid) { toast.error('Please upload image files only'); return }
+    setImportDialog(p => ({ ...p, loading: true, dragOver: false }))
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
+      const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = () => resolve((reader.result as string).split(',')[1])
         reader.onerror = reject
-        reader.readAsDataURL(file)
+        reader.readAsDataURL(f)
       })
-      const res = await requestScreenshotParse(base64, file.type, importDialog.importType)
-      if (!res.transactions.length) {
-        toast.error('No transactions found in screenshot')
-        setImportDialog(p => ({ ...p, loading: false }))
-        return
-      }
-      const parsed = res.transactions.map((tx: ParsedTransaction) => ({
+      const mapTx = (tx: ParsedTransaction) => ({
         id: crypto.randomUUID(),
         date: tx.date,
         amount: tx.amount,
-        type: (tx.type ?? (importDialog.importType === 'payout' ? 'payout' : 'other-expense')) as TransactionType,
+        type: (tx.type ?? (importType === 'payout' ? 'payout' : 'other-expense')) as TransactionType,
         notes: tx.notes ?? '',
         keep: true,
-      }))
-      setImportDialog(p => ({ ...p, loading: false, step: 'preview', parsed }))
+      })
+      const allParsed: ReturnType<typeof mapTx>[] = []
+      for (const file of files) {
+        const base64 = await toBase64(file)
+        const res = await requestScreenshotParse(base64, file.type, importType)
+        res.transactions.forEach(tx => allParsed.push(mapTx(tx)))
+      }
+      if (!allParsed.length) {
+        toast.error('No transactions found in screenshots')
+        setImportDialog(p => ({ ...p, loading: false }))
+        return
+      }
+      const existing = transactions.filter(t => t.propAccountId === accountId)
+      const isDup = (tx: typeof allParsed[0]) =>
+        existing.some(e => e.date === tx.date && e.amount === tx.amount && e.type === tx.type)
+      const seen = new Set<string>()
+      const deduped = allParsed.map(tx => {
+        const key = `${tx.date}|${tx.amount}|${tx.type}`
+        if (isDup(tx) || seen.has(key)) return { ...tx, keep: false }
+        seen.add(key)
+        return tx
+      })
+      const skipped = deduped.filter(t => !t.keep).length
+      if (skipped > 0) toast.info(`${skipped} duplicate${skipped !== 1 ? 's' : ''} found — pre-unchecked`)
+      setImportDialog(p => ({ ...p, loading: false, step: 'preview', parsed: deduped }))
     } catch (err: any) {
       toast.error(err?.message || 'Failed to parse screenshot')
       setImportDialog(p => ({ ...p, loading: false }))
     }
+  }
+
+  function handleScreenshotUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
     e.target.value = ''
+    processImageFiles(files, importDialog.importType, importDialog.accountId)
+  }
+
+  function handleDropUpload(e: React.DragEvent<HTMLLabelElement>) {
+    e.preventDefault()
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+    processImageFiles(files, importDialog.importType, importDialog.accountId)
   }
 
   function handleConfirmImport() {
@@ -342,7 +371,7 @@ export default function PropTracker() {
       date: tx.date,
       createdAt: new Date().toISOString(),
     }))])
-    setImportDialog({ open: false, accountId: '', step: 'upload', importType: 'billing', loading: false, parsed: [] })
+    setImportDialog({ open: false, accountId: '', step: 'upload', importType: 'billing', loading: false, dragOver: false, parsed: [] })
     toast.success(`${toImport.length} transaction${toImport.length !== 1 ? 's' : ''} imported`)
   }
 
@@ -1298,22 +1327,27 @@ export default function PropTracker() {
               </div>
 
               {/* Upload area */}
-              <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 px-6 py-10 cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-colors">
+              <label
+                className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 cursor-pointer transition-colors ${importDialog.dragOver ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-primary/50 hover:bg-muted/20'}`}
+                onDragOver={e => { e.preventDefault(); setImportDialog(p => ({ ...p, dragOver: true })) }}
+                onDragLeave={() => setImportDialog(p => ({ ...p, dragOver: false }))}
+                onDrop={handleDropUpload}
+              >
                 {importDialog.loading ? (
                   <>
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }} />
-                    <p className="text-sm text-muted-foreground">Analysing screenshot…</p>
+                    <p className="text-sm text-muted-foreground">Analysing screenshots…</p>
                   </>
                 ) : (
                   <>
-                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <Upload className={`h-8 w-8 ${importDialog.dragOver ? 'text-primary' : 'text-muted-foreground'}`} style={importDialog.dragOver ? { color: themeColors.primary } : {}} />
                     <div className="text-center">
-                      <p className="text-sm font-medium">Click to upload screenshot</p>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP supported</p>
+                      <p className="text-sm font-medium">{importDialog.dragOver ? 'Drop to upload' : 'Drag & drop or click to upload'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Multiple files supported · PNG, JPG, WEBP</p>
                     </div>
                   </>
                 )}
-                <input type="file" accept="image/*" className="hidden" disabled={importDialog.loading} onChange={handleScreenshotUpload} />
+                <input type="file" accept="image/*" multiple className="hidden" disabled={importDialog.loading} onChange={handleScreenshotUpload} />
               </label>
 
               <p className="text-xs text-muted-foreground text-center">
