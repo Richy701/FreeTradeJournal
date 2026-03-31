@@ -8,6 +8,7 @@ import {
   Target,
   BookOpen,
   Lightbulb,
+  Building2,
   Settings2,
   Coffee,
   Megaphone,
@@ -59,6 +60,11 @@ const navMain = [
     title: "Trade Insights",
     url: "/ideas",
     icon: Lightbulb,
+  },
+  {
+    title: "PropTracker",
+    url: "/prop-tracker",
+    icon: Building2,
   },
 ]
 

@@ -3,7 +3,7 @@ import { UserStorage } from '@/utils/user-storage';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
 // Keys we sync between localStorage and Firestore
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding'] as const;
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions'] as const;
 type SyncKey = typeof SYNC_KEYS[number];
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';

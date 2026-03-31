@@ -5,6 +5,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ## Key Features
 
 ### Interactive Dashboard
+
 - Real-time P&L tracking with full-width equity curve (gradient fill, clean design)
 - Account balance displayed on the Total P&L card — starting balance + total return
 - Color-coded performance metrics — win rate, profit factor, total trades, and P&L percentage based on your actual account balance
@@ -17,6 +18,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Remotion-powered animated dashboard intro scene
 
 ### Advanced Trade Logging
+
 - Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
 - CSV import with live preview, validation, and smart column mapping
 - Support for MetaTrader 5, TopStep, standard CSV, and other broker formats
@@ -30,6 +32,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Prop firm assignment per trade
 
 ### Trading Journal
+
 - Journal entries with mood tracking (Bullish, Bearish, Neutral)
 - Pre-trade and post-trade analysis entry types
 - Emotion tracking across 20+ emotional states to identify patterns
@@ -38,6 +41,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Tag system with search and filtering (date range, market, P&L, mood)
 
 ### Goals & Risk Management
+
 - Goal types: profit target, win rate, trade count, risk/reward, max loss, max drawdown
 - Daily, weekly, and monthly goal periods with progress tracking
 - Risk rules: max loss per day/trade, max risk percentage, max open trades
@@ -45,6 +49,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Position size and risk/reward calculators
 
 ### AI Trading Coach
+
 - Automatic detection of overtrading, revenge trading, and FOMO patterns
 - Emotional trading pattern analysis
 - Best/worst trading hours and days analysis
@@ -53,6 +58,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Pro users get AI-generated coaching tips via OpenAI, with 24-hour caching and auto-refresh when trade data changes
 
 ### Pro Features (Powered by Stripe)
+
+- **PropTracker Unlimited** — Unlimited prop firm accounts, charts, and AI analysis (free tier: 2 accounts)
+- **AI PropTracker Analysis** — GPT-4o breakdown of prop firm P&L: which firms are profitable, warning signs, what to do next (5/day)
 - **AI Goal Coach** — Personalized coaching on your trading goals with actionable insights
 - **AI Trade Review** — In-depth analysis of individual trades with improvement suggestions
 - **AI Journal Prompts** — Context-aware journaling prompts based on your recent trades
@@ -65,7 +73,19 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - ProGate component with blur overlay and lock icon for gated features
 - ProBadge indicator in the sidebar for subscribed users
 
+### PropTracker
+
+- Dedicated prop firm tracker — one card per account (evaluation, funded, instant, express)
+- Log every fee (evaluation, reset, monthly) and every payout against each account
+- Per-account stats: Invested, Earned, Net P&L — and aggregate totals across all firms
+- Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
+- AI Analysis powered by GPT-4o — honest verdict on which firms are profitable, warning signs, and next steps (Pro, 5/day)
+- Freemium: 2 accounts free, unlimited on Pro
+- Full cloud sync included for Pro users
+- Demo data with 5 realistic prop firm accounts to explore the feature
+
 ### Multi-Account & Prop Firm Support
+
 - Multiple account types: Live, Demo, Prop Firm, Paper
 - Pre-configured prop firm list (FTMO, Apex, TopStep, E8 Markets, Funded FX, FundingPips, Alpha Capital, The5ers)
 - Per-account trade isolation and filtering — saving on one account never overwrites another account's data
@@ -75,6 +95,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Theme-colored initial avatars in the header and sidebar (adapts to active color theme)
 
 ### 14 Color Themes + Custom Color Picker
+
 - Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage, Clean, Wine
 - Custom color picker with hex input — create your own theme with any primary, profit, and loss colors
 - Dark/Light/System mode with polished light mode — visible decorative shapes, badges, and overlays
@@ -85,6 +106,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Theme persistence across sessions
 
 ### What's New & Release Notes
+
 - Auto-popup changelog dialog on the dashboard when new updates are available
 - Per-user tracking — each account sees the dialog independently on first login after an update
 - Megaphone icon in the sidebar to revisit the changelog anytime
@@ -92,12 +114,14 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Linked from the What's New dialog footer and the site footer under Resources
 
 ### Security & Data Protection
+
 - **XSS Protection** — All AI-generated content sanitized with DOMPurify to prevent cross-site scripting attacks
 - **Content Security Policy** — Strict CSP headers via Vercel configuration
 - **Number Formatting** — Thousand separators (commas) on all currency displays for better readability
 - **Dependency Security** — Regular audits and updates of npm packages
 
 ### PWA & Mobile
+
 - Installable as a Progressive Web App on iOS and Android with custom install prompt
 - Automatic update notifications when a new version is deployed
 - Safe area insets for notched devices (Dynamic Island, iPhone notch)
@@ -106,12 +130,14 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Responsive chart footer and sparkline sizing on small screens
 
 ### Landing Page
+
 - Polished hero section with animated gradient CTA buttons and consistent branding
 - Mobile-optimized button sizing, centered layouts, and responsive badge alignment
 - Sign In link visible on all screen sizes — no hidden-on-mobile nav
 - Instant demo access and sign-up prompts
 
 ### Accessibility & UX
+
 - Keyboard-navigable — focus-visible ring styles on all interactive elements
 - `prefers-reduced-motion` respected across hero animations, onboarding transitions, and logo carousel
 - Proper `<label>` / `htmlFor` / `id` associations on all form fields (Dashboard trade modal, Journal entries, file uploads)
@@ -123,6 +149,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - SPA navigation (`<Link>`) for all internal routes including auth page legal links
 
 ### Demo Mode
+
 - Instant access without signup via "Try Demo"
 - 50+ realistic pre-populated trades across Forex, Futures, and Indices
 - All features fully accessible in demo mode
@@ -130,38 +157,44 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Richy701/FreeTradeJournal.git
 cd FreeTradeJournal
 ```
 
-2. Install dependencies:
+1. Install dependencies:
+
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
+1. Set up environment variables:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Add the following to `.env.local`:
+
 - Firebase configuration (`VITE_FIREBASE_*`)
 - Google Analytics tracking ID (`VITE_GA_TRACKING_ID`) *(optional)*
 - Resend API key (`VITE_RESEND_API_KEY`) *(optional, for email notifications)*
 
-4. Start the development server:
+1. Start the development server:
+
 ```bash
 npm run dev
 ```
 
-5. Open `http://localhost:5173`
+1. Open `http://localhost:5173`
 
 ### Production Build
 
@@ -182,6 +215,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 7. **Settings** — Customize themes, currency, timezone, and notifications
 
 ### Data Management
+
 - **Local-First Storage** — Trade data stored in browser localStorage, scoped per user
 - **Cloud Sync (Pro)** — Real-time Firestore sync via Cloud Functions proxy keeps data safe across devices for logged-in Pro users, with automatic restore on new devices
 - **localStorage Protection (Free)** — Storage usage monitor, backup reminders after 30 days, incognito mode detection, and data warning banners
@@ -268,6 +302,7 @@ Automatically applied when importing futures trades:
 ### Import Preview & Deduplication
 
 When you select a CSV file you get:
+
 - File summary with total rows, successful/failed parse counts, and date range
 - Preview table of the first 5 trades
 - Detailed error report for any parsing issues
@@ -305,6 +340,7 @@ All public routes are pre-rendered at build time using Puppeteer for search engi
 - SEO landing pages for Forex, Futures, and Prop Firm traders
 
 Each route includes:
+
 - Unique `<title>` and `<meta description>` via a centralized `SEOMeta` component
 - Dynamic `<link rel="canonical">` for every route
 - Open Graph and Twitter Card tags

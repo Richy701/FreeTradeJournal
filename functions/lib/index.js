@@ -284,6 +284,7 @@ const RATE_LIMITS = {
     ai_analysis: 10, // Heavy - uses GPT-4o
     goal_coach: 10, // Heavy - uses GPT-4o
     trade_review: 25, // Heavy - uses GPT-4o
+    prop_tracker: 5, // Heavy - uses GPT-4o
     coaching_tips: 15, // Light - uses GPT-4o-mini
     journal_prompts: 50, // Light - uses GPT-4o-mini
     risk_alert: 25, // Light - uses GPT-4o-mini
@@ -294,6 +295,7 @@ const FEATURE_MODELS = {
     ai_analysis: "gpt-4o",
     goal_coach: "gpt-4o",
     trade_review: "gpt-4o",
+    prop_tracker: "gpt-4o",
     coaching_tips: "gpt-4o-mini",
     journal_prompts: "gpt-4o-mini",
     risk_alert: "gpt-4o-mini",
@@ -600,6 +602,43 @@ Return ONLY a valid JSON array. No markdown, no explanation. Example:
         temperature: 0.7,
     };
 }
+function buildPropTrackerPrompt(payload) {
+    const { accounts, transactions } = payload;
+    // Build per-account summaries
+    const accountSummaries = accounts.map(a => {
+        const txs = transactions.filter(t => t.propAccountId === a.id);
+        const expenses = txs.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type));
+        const payouts = txs.filter(t => t.type === "payout");
+        const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
+        const totalPayouts = payouts.reduce((s, t) => s + t.amount, 0);
+        const net = totalPayouts - totalExpenses;
+        const daysActive = a.endDate
+            ? Math.round((new Date(a.endDate).getTime() - new Date(a.startDate).getTime()) / 86400000)
+            : Math.round((Date.now() - new Date(a.startDate).getTime()) / 86400000);
+        const txDetail = txs.length > 0
+            ? txs.map(t => `  - ${t.date}: ${t.type} $${t.amount}${t.description ? ` (${t.description})` : ""}`).join("\n")
+            : "  - No transactions logged";
+        return `${a.firmName} | $${a.accountSize.toLocaleString()} ${a.accountType} | Status: ${a.status} | ${daysActive} days active\n  Fees: $${totalExpenses} | Payouts: $${totalPayouts} | Net: ${net >= 0 ? "+" : ""}$${net}\n${txDetail}`;
+    }).join("\n\n");
+    const totalExpenses = transactions.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type)).reduce((s, t) => s + t.amount, 0);
+    const totalPayouts = transactions.filter(t => t.type === "payout").reduce((s, t) => s + t.amount, 0);
+    const netPnl = totalPayouts - totalExpenses;
+    const roi = totalExpenses > 0 ? ((totalPayouts / totalExpenses - 1) * 100).toFixed(1) : "N/A";
+    return {
+        system: `You are a prop trading analyst. Analyze a trader's prop firm account data and give them an honest, plain-English assessment. Be direct and specific — reference their actual numbers. Structure your response with these sections:
+
+**Overall Verdict** — one sentence on whether prop trading is working for them financially.
+**ROI Breakdown** — fees paid vs payouts received, net P&L, and what the numbers actually mean.
+**Firm-by-Firm** — which accounts are profitable, which are losing money, and why.
+**Warning Signs** — any red flags (e.g. too many resets, high monthly fees eating profits, failed accounts).
+**What to Do Next** — 2-3 specific, actionable recommendations based on the data.
+
+Keep it under 400 words. Use $ amounts from their data. No generic advice.`,
+        user: `Here is my prop firm tracker data:\n\nSummary: ${accounts.length} accounts | Total fees: $${totalExpenses} | Total payouts: $${totalPayouts} | Net P&L: ${netPnl >= 0 ? "+" : ""}$${netPnl} | ROI: ${roi}%\n\nAccounts:\n${accountSummaries}\n\nGive me an honest analysis.`,
+        maxTokens: 600,
+        temperature: 0.5,
+    };
+}
 exports.aiAssist = functions.https.onCall(async (data, context) => {
     // 1. Auth check
     if (!context.auth) {
@@ -625,6 +664,7 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
         strategy_tagger: buildStrategyTaggerPrompt,
         goal_coach: buildGoalCoachPrompt,
         coaching_tips: buildCoachingTipsPrompt,
+        prop_tracker: buildPropTrackerPrompt,
     };
     const builder = promptBuilders[request.type];
     if (!builder) {
@@ -648,6 +688,7 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
             ai_analysis: "AI Trade Analysis",
             goal_coach: "Goal Coach",
             trade_review: "Trade Review",
+            prop_tracker: "PropTracker AI Analysis",
             coaching_tips: "Coaching Tips",
             journal_prompts: "Journal Prompts",
             risk_alert: "Risk Alert",
@@ -710,7 +751,7 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
     };
 });
 // ─── Cloud Sync Proxy (bypasses content blockers) ──────────
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding'];
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions'];
 /**
  * Syncs data to Firestore (bypasses content blockers)
  * Client calls this instead of direct Firestore SDK

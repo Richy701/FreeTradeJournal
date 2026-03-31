@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.2.0',
+    date: '2026-03-31',
+    summary: 'PropTracker — a dedicated prop firm tracker with freemium gating, AI analysis, and full cloud sync support.',
+    items: [
+      {
+        type: 'new',
+        text: 'PropTracker',
+        description: 'Track fees, resets, and payouts across all your prop firm accounts. See your true net P&L and ROI across every firm — the number most prop traders never actually work out.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker AI Analysis (Pro)',
+        description: 'One-click AI breakdown of your prop trading performance powered by GPT-4o. Get an honest verdict on which firms are working, warning signs, and what to do next. 5 analyses per day.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker Freemium Gating',
+        description: 'Free users get up to 2 accounts with full stats. Pro unlocks unlimited accounts, charts (Spend by Firm + P&L Over Time), and AI analysis.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker Cloud Sync',
+        description: 'Prop firm accounts and transactions are now included in Pro cloud sync — your data stays safe across devices.',
+      },
+      {
+        type: 'improved',
+        text: 'Accessibility — PropTracker Forms',
+        description: 'All form fields now have properly linked labels, aria-labelledby on selects, inputMode="decimal" on number inputs, and aria-labels on icon-only buttons.',
+      },
+    ],
+  },
+  {
     version: '2.1.0',
     date: '2026-03-10',
     summary: 'Major security & data protection update — content blocker bypass, XSS protection, localStorage safeguards, auto-restore, and number formatting.',
