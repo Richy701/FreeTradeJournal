@@ -172,6 +172,23 @@ export default function LandingPage() {
         reverseLayout={true}
       />
 
+      {/* PropTracker Section */}
+      <FeatureShowcase
+        title={
+          <span>
+            Prop Firm
+            <br />
+            <span className="text-amber-500">ROI Tracker</span>
+          </span>
+        }
+        description="Finally know if your prop firm journey is actually profitable. Log every evaluation fee, reset cost, and payout across all your accounts. See invested vs earned, net P&L per firm, and get an AI-powered verdict on which firms are worth your money."
+        images={[
+          { src: "/images/screenshots/prop-tracker-screenshot.png", alt: "PropTracker" }
+        ]}
+        imageLayout="stack"
+        reverseLayout={false}
+      />
+
       {/* FAQ Section */}
       <FAQSection />
 
