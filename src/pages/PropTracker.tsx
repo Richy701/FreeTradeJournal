@@ -814,22 +814,103 @@ export default function PropTracker() {
 
         {/* Empty state */}
         {accounts.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-14 text-center gap-4">
-              <div>
-                <p className="font-semibold text-base">No accounts yet</p>
-                <p className="text-sm text-muted-foreground mt-1 max-w-md leading-relaxed">
-                  Most prop traders don't know their real ROI across firms. Add your accounts, log every fee and payout, and PropTracker will give you the honest number.
+          <div className="rounded-xl border border-border/60 overflow-hidden">
+            {/* Hero CTA — clean, no overlap */}
+            <div className="flex flex-col items-center text-center gap-5 px-6 pt-12 pb-8" style={{ background: `radial-gradient(ellipse at 50% 0%, ${themeColors.primary}18 0%, transparent 70%)` }}>
+              <div className="space-y-2 max-w-md">
+                <h2 className="text-2xl font-bold tracking-tight">Do you actually know your prop ROI?</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Log every fee and every payout. PropTracker calculates the number most prop traders never work out.
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <Button onClick={openAddAccount} style={{ backgroundColor: themeColors.primary }}>
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Add your first account
-                </Button>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {[
+                  { icon: Receipt,    label: 'Fees & Payouts' },
+                  { icon: TrendingUp, label: 'True ROI' },
+                  { icon: BarChart2,  label: 'Firm Breakdown' },
+                  { icon: Brain,      label: 'AI Analysis' },
+                ].map(f => (
+                  <div key={f.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border border-border/60 text-muted-foreground">
+                    <f.icon className="h-3 w-3" aria-hidden="true" />
+                    {f.label}
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+
+              <Button onClick={openAddAccount} size="lg" style={{ backgroundColor: themeColors.primary }}>
+                <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                Add your first account
+              </Button>
+
+              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · 2 accounts on free plan</p>}
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center px-6"><div className="w-full border-t border-border/60" /></div>
+              <div className="relative flex justify-center">
+                <span className="bg-card px-3 text-[11px] text-muted-foreground uppercase tracking-wider">Preview</span>
+              </div>
+            </div>
+
+            {/* Ghost preview — visible, fades at bottom */}
+            <div className="relative">
+              <div className="pointer-events-none select-none opacity-50 p-4 sm:p-6 space-y-4">
+                <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
+                  {[
+                    { icon: DollarSign, label: 'Total Invested',  value: '$1,915',  sub: 'All fees paid',        color: themeColors.loss },
+                    { icon: Wallet,     label: 'Total Earned',    value: '$7,700',  sub: 'All payouts received', color: themeColors.profit },
+                    { icon: TrendingUp, label: 'P&L',             value: '+$5,785', sub: '+302% ROI',            color: themeColors.profit },
+                    { icon: Building2,  label: 'Active Accounts', value: '2',       sub: 'of 4 total',          color: themeColors.primary },
+                  ].map(c => (
+                    <Card key={c.label}>
+                      <CardContent className="p-5">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                          <c.icon className="h-3 w-3" aria-hidden="true" />{c.label}
+                        </p>
+                        <p className="text-2xl font-bold tabular-nums" style={{ color: c.color }}>{c.value}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {[
+                    { initials: 'TS', color: '#FFCC06', firm: 'TopStep',              size: '$50,000',  type: 'Evaluation', status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$347',  earned: '—',      pnl: '-$347' },
+                    { initials: 'AT', color: '#007BFF', firm: 'Apex Trader Funding',  size: '$100,000', type: 'Funded',     status: 'Passed',    statusClass: 'bg-blue-500/15 text-blue-600 border-blue-500/20',         invested: '$137',  earned: '$4,200', pnl: '+$4,063' },
+                    { initials: 'FT', color: '#0781FE', firm: 'FTMO',                 size: '$200,000', type: 'Evaluation', status: 'Failed',    statusClass: 'bg-red-500/15 text-red-600 border-red-500/20',           invested: '$810',  earned: '—',      pnl: '-$810' },
+                    { initials: 'MF', color: '#D8AE5E', firm: 'My Funded Futures',    size: '$150,000', type: 'Funded',     status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$524',  earned: '$3,500', pnl: '+$2,976' },
+                  ].map(g => (
+                    <Card key={g.firm}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: g.color }}>{g.initials}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-semibold text-sm">{g.firm}</p>
+                              <span className={`text-[10px] h-5 px-1.5 rounded border font-semibold ${g.statusClass}`}>{g.status}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">{g.size} · {g.type}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[{ l: 'Invested', v: g.invested }, { l: 'Earned', v: g.earned }, { l: 'P&L', v: g.pnl }].map(s => (
+                            <div key={s.l}>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.l}</p>
+                              <p className="text-sm font-semibold mt-0.5">{s.v}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              {/* Fade out at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)' }} />
+            </div>
+          </div>
         ) : (
           /* Accounts grid */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
