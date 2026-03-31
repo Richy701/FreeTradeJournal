@@ -15,6 +15,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.3.0',
+    date: '2026-03-31',
+    summary: 'PropTracker Screenshot Import — upload your billing or payout screenshots and let GPT-4o Vision extract the transactions automatically.',
+    items: [
+      {
+        type: 'new',
+        text: 'Screenshot Import (Pro)',
+        description: 'Upload a screenshot of your prop firm billing or payout page and GPT-4o Vision will automatically extract every transaction. Supports multiple files at once and drag & drop.',
+      },
+      {
+        type: 'new',
+        text: 'Drag & Drop Upload',
+        description: 'Drag one or more screenshots directly onto the upload area — no need to click through a file picker.',
+      },
+      {
+        type: 'new',
+        text: 'Duplicate Detection',
+        description: 'Re-importing the same screenshot won\'t create duplicate transactions. Duplicates are automatically detected (same date + amount + type) and pre-unchecked in the preview.',
+      },
+      {
+        type: 'improved',
+        text: 'PropTracker on the Homepage',
+        description: 'PropTracker now has its own feature section on the landing page so new visitors can see it before signing up.',
+      },
+    ],
+  },
+  {
     version: '2.2.0',
     date: '2026-03-31',
     summary: 'PropTracker — a dedicated prop firm tracker with freemium gating, AI analysis, and full cloud sync support.',

@@ -80,9 +80,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Per-account stats: Invested, Earned, Net P&L — and aggregate totals across all firms
 - Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
 - AI Analysis powered by GPT-4o — honest verdict on which firms are profitable, warning signs, and next steps (Pro, 5/day)
+- **Screenshot Import (Pro)** — upload a billing or payout screenshot and GPT-4o Vision auto-extracts all transactions; supports multiple files, drag & drop, and duplicate detection
 - Freemium: 2 accounts free, unlimited on Pro
 - Full cloud sync included for Pro users
-- Demo data with 5 realistic prop firm accounts to explore the feature
 
 ### Multi-Account & Prop Firm Support
 
