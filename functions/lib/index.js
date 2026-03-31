@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -748,6 +748,97 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
             limit,
             remaining: limit - (usedToday + 1),
         },
+    };
+});
+// ─── Screenshot Parser (GPT-4o Vision) ─────────────────────
+exports.parseScreenshot = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists || !userDoc.data()?.isPro) {
+        throw new functions.https.HttpsError("permission-denied", "Screenshot import is a Pro feature.");
+    }
+    const { image, mimeType, importType } = data;
+    if (!image || !mimeType || !importType) {
+        throw new functions.https.HttpsError("invalid-argument", "Missing image, mimeType, or importType.");
+    }
+    if (!["billing", "payout"].includes(importType)) {
+        throw new functions.https.HttpsError("invalid-argument", "importType must be 'billing' or 'payout'.");
+    }
+    // Rate limit: 20/day
+    const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
+    const usageDoc = await usageRef.get();
+    const todayStr = new Date().toISOString().split("T")[0];
+    const usageData = usageDoc.exists ? usageDoc.data() : null;
+    const LIMIT = 20;
+    let usedToday = 0;
+    if (usageData && usageData.date === todayStr && usageData.screenshot_import) {
+        usedToday = usageData.screenshot_import || 0;
+    }
+    if (usedToday >= LIMIT) {
+        throw new functions.https.HttpsError("resource-exhausted", `Screenshot import limit reached (${LIMIT}/day). Resets at midnight UTC.`);
+    }
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey || apiKey === "your-openai-api-key-here") {
+        throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
+    }
+    const billingPrompt = `Extract all billing/payment transactions from this screenshot. Return a JSON object with a "transactions" array. Each item must have:
+- date: string in YYYY-MM-DD format
+- amount: number (positive dollar amount, no currency symbol)
+- type: one of "evaluation-fee", "reset-fee", "monthly-fee", "payout", "other-expense"
+- notes: string (the original label from the screenshot)
+
+Type mapping:
+- "Activation", "Activation-Fee", "Eval", "Challenge", "Registration" → "evaluation-fee"
+- "Reset" → "reset-fee"
+- "Subscription", "Monthly", "Renewal" → "monthly-fee"
+- "Payout", "Withdrawal", "Disbursement" → "payout"
+- Anything else → "other-expense"
+
+Return only valid JSON with no extra text.`;
+    const payoutPrompt = `Extract all payout or payment received transactions from this screenshot. Return a JSON object with a "transactions" array. Each item must have:
+- date: string in YYYY-MM-DD format
+- amount: number (positive dollar amount, no currency symbol)
+- notes: string (any description or reference number visible)
+
+Return only valid JSON with no extra text.`;
+    const openai = new openai_1.default({ apiKey });
+    let result;
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        { type: "image_url", image_url: { url: `data:${mimeType};base64,${image}` } },
+                        { type: "text", text: importType === "billing" ? billingPrompt : payoutPrompt },
+                    ],
+                },
+            ],
+            max_tokens: 1500,
+            temperature: 0,
+            response_format: { type: "json_object" },
+        });
+        result = completion.choices[0]?.message?.content || "{}";
+    }
+    catch (err) {
+        console.error("OpenAI Vision error:", err.message);
+        throw new functions.https.HttpsError("internal", "Failed to parse screenshot. Please try again.");
+    }
+    await usageRef.set({ date: todayStr, screenshot_import: usedToday + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    let parsed;
+    try {
+        parsed = JSON.parse(result);
+    }
+    catch {
+        throw new functions.https.HttpsError("internal", "Failed to parse AI response.");
+    }
+    return {
+        transactions: parsed.transactions || [],
+        usage: { used: usedToday + 1, limit: LIMIT, remaining: LIMIT - (usedToday + 1) },
     };
 });
 // ─── Cloud Sync Proxy (bypasses content blockers) ──────────

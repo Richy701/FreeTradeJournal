@@ -1,5 +1,5 @@
 import { getFirebaseFunctions } from '@/lib/firebase-lazy';
-import type { PropFirmAccount, PropFirmTransaction } from '@/types/prop-tracker';
+import type { PropFirmAccount, PropFirmTransaction, TransactionType } from '@/types/prop-tracker';
 
 interface TradeInput {
   symbol: string;
@@ -48,6 +48,34 @@ export interface PropAnalysisResponse {
     limit: number;
     remaining: number;
   };
+}
+
+export interface ParsedTransaction {
+  date: string;
+  amount: number;
+  type?: TransactionType;
+  notes?: string;
+}
+
+export interface ScreenshotParseResponse {
+  transactions: ParsedTransaction[];
+  usage: {
+    used: number;
+    limit: number;
+    remaining: number;
+  };
+}
+
+export async function requestScreenshotParse(
+  image: string,
+  mimeType: string,
+  importType: 'billing' | 'payout'
+): Promise<ScreenshotParseResponse> {
+  const fns = await getFirebaseFunctions();
+  const { httpsCallable } = await import('firebase/functions');
+  const parseScreenshotFn = httpsCallable<unknown, ScreenshotParseResponse>(fns, 'parseScreenshot');
+  const result = await parseScreenshotFn({ image, mimeType, importType });
+  return result.data;
 }
 
 export async function requestPropAnalysis(

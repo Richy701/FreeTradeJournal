@@ -33,6 +33,7 @@ import {
   CheckCircle2,
   ListChecks,
   BarChart2,
+  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -63,7 +64,8 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useProStatus } from '@/contexts/pro-context'
 import { ProGate } from '@/components/pro-gate'
 import { toast } from 'sonner'
-import { requestPropAnalysis } from '@/services/ai-analysis'
+import { requestPropAnalysis, requestScreenshotParse } from '@/services/ai-analysis'
+import type { ParsedTransaction } from '@/services/ai-analysis'
 import { Link } from 'react-router-dom'
 import type {
   PropFirmAccount,
@@ -281,6 +283,68 @@ export default function PropTracker() {
   const [accountDialog, setAccountDialog] = useState<{ open: boolean; editing: PropFirmAccount | null }>({ open: false, editing: null })
   const [txDialog, setTxDialog] = useState<{ open: boolean; accountId: string }>({ open: false, accountId: '' })
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; type: 'account' | 'tx'; id: string } | null>(null)
+  const [importDialog, setImportDialog] = useState<{
+    open: boolean
+    accountId: string
+    step: 'upload' | 'preview'
+    importType: 'billing' | 'payout'
+    loading: boolean
+    parsed: Array<{ id: string; date: string; amount: number; type: TransactionType; notes: string; keep: boolean }>
+  }>({ open: false, accountId: '', step: 'upload', importType: 'billing', loading: false, parsed: [] })
+
+  function openImportDialog(accountId: string) {
+    setImportDialog({ open: true, accountId, step: 'upload', importType: 'billing', loading: false, parsed: [] })
+  }
+
+  async function handleScreenshotUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return }
+    setImportDialog(p => ({ ...p, loading: true }))
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve((reader.result as string).split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const res = await requestScreenshotParse(base64, file.type, importDialog.importType)
+      if (!res.transactions.length) {
+        toast.error('No transactions found in screenshot')
+        setImportDialog(p => ({ ...p, loading: false }))
+        return
+      }
+      const parsed = res.transactions.map((tx: ParsedTransaction) => ({
+        id: crypto.randomUUID(),
+        date: tx.date,
+        amount: tx.amount,
+        type: (tx.type ?? (importDialog.importType === 'payout' ? 'payout' : 'other-expense')) as TransactionType,
+        notes: tx.notes ?? '',
+        keep: true,
+      }))
+      setImportDialog(p => ({ ...p, loading: false, step: 'preview', parsed }))
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to parse screenshot')
+      setImportDialog(p => ({ ...p, loading: false }))
+    }
+    e.target.value = ''
+  }
+
+  function handleConfirmImport() {
+    const toImport = importDialog.parsed.filter(tx => tx.keep)
+    if (!toImport.length) { toast.error('No transactions selected'); return }
+    saveTransactions([...transactions, ...toImport.map(tx => ({
+      id: tx.id,
+      propAccountId: importDialog.accountId,
+      type: tx.type,
+      amount: tx.amount,
+      description: tx.notes,
+      date: tx.date,
+      createdAt: new Date().toISOString(),
+    }))])
+    setImportDialog({ open: false, accountId: '', step: 'upload', importType: 'billing', loading: false, parsed: [] })
+    toast.success(`${toImport.length} transaction${toImport.length !== 1 ? 's' : ''} imported`)
+  }
 
   // ── Account form ──
   const [accountForm, setAccountForm] = useState(defaultAccountForm())
@@ -968,8 +1032,14 @@ export default function PropTracker() {
                     <div className="flex items-center gap-1.5 pt-3 border-t border-border/60">
                       <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
                         <Plus className="h-3 w-3" />
-                        Add Transaction
+                        Add
                       </Button>
+                      {isPro && (
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
+                          <Upload className="h-3 w-3" />
+                          Import
+                        </Button>
+                      )}
                       <div className="flex-1" />
                       {txs.length > 0 && (
                         <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => toggleExpand(account.id)}>
@@ -1197,6 +1267,110 @@ export default function PropTracker() {
               else handleDeleteTx(deleteDialog.id)
             }}>Delete</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Screenshot import dialog */}
+      <Dialog open={importDialog.open} onOpenChange={open => !open && setImportDialog(p => ({ ...p, open: false }))}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Import from Screenshot</DialogTitle>
+            <DialogDescription>
+              Upload a screenshot of your prop firm billing or payout page — we'll extract the transactions automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          {importDialog.step === 'upload' && (
+            <div className="space-y-4">
+              {/* Import type toggle */}
+              <div className="flex rounded-lg border border-border p-1 gap-1">
+                {(['billing', 'payout'] as const).map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`flex-1 py-1.5 text-sm rounded-md transition-colors ${importDialog.importType === type ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                    style={importDialog.importType === type ? { backgroundColor: themeColors.primary } : {}}
+                    onClick={() => setImportDialog(p => ({ ...p, importType: type }))}
+                  >
+                    {type === 'billing' ? 'Billing / Fees' : 'Payouts'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Upload area */}
+              <label className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 px-6 py-10 cursor-pointer hover:border-primary/50 hover:bg-muted/20 transition-colors">
+                {importDialog.loading ? (
+                  <>
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }} />
+                    <p className="text-sm text-muted-foreground">Analysing screenshot…</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Click to upload screenshot</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP supported</p>
+                    </div>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" disabled={importDialog.loading} onChange={handleScreenshotUpload} />
+              </label>
+
+              <p className="text-xs text-muted-foreground text-center">
+                {importDialog.importType === 'billing'
+                  ? 'Screenshot your billing history showing eval fees, resets, and subscriptions'
+                  : 'Screenshot your payouts or withdrawal history'}
+              </p>
+            </div>
+          )}
+
+          {importDialog.step === 'preview' && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {importDialog.parsed.filter(t => t.keep).length} transaction{importDialog.parsed.filter(t => t.keep).length !== 1 ? 's' : ''} found — uncheck any you don't want to import.
+              </p>
+
+              <div className="max-h-72 overflow-y-auto rounded-lg border border-border/60 divide-y divide-border/40">
+                {importDialog.parsed.map((tx, i) => {
+                  const expense = tx.type !== 'payout'
+                  return (
+                    <div key={tx.id} className={`flex items-center gap-3 px-3 py-2.5 transition-opacity ${tx.keep ? '' : 'opacity-40'}`}>
+                      <input
+                        type="checkbox"
+                        checked={tx.keep}
+                        onChange={() => setImportDialog(p => ({ ...p, parsed: p.parsed.map((t, j) => j === i ? { ...t, keep: !t.keep } : t) }))}
+                        className="rounded"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium">{TX_TYPE_OPTIONS.find(t => t.value === tx.type)?.label ?? tx.type}</p>
+                        {tx.notes && <p className="text-[10px] text-muted-foreground truncate">{tx.notes}</p>}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {new Date(tx.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                      </span>
+                      <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
+                        {expense ? '-' : '+'}{fmt(tx.amount)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1" onClick={() => setImportDialog(p => ({ ...p, step: 'upload', parsed: [] }))}>
+                  Back
+                </Button>
+                <Button
+                  className="flex-1"
+                  style={{ backgroundColor: themeColors.primary }}
+                  onClick={handleConfirmImport}
+                  disabled={!importDialog.parsed.some(t => t.keep)}
+                >
+                  Import {importDialog.parsed.filter(t => t.keep).length} Transaction{importDialog.parsed.filter(t => t.keep).length !== 1 ? 's' : ''}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

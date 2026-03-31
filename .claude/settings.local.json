@@ -145,7 +145,8 @@
       "WebFetch(domain:www.onlineproptrading.com)",
       "WebFetch(domain:marksinsights.com)",
       "WebFetch(domain:livestreamtrading.com)",
-      "WebFetch(domain:www.bestpropfirms.com)"
+      "WebFetch(domain:www.bestpropfirms.com)",
+      "Bash(wait)"
     ],
     "deny": []
   }
