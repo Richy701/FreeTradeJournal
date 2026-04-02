@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -80,9 +81,15 @@ function ElegantShape({
 function HeroGeometric({
     title1 = "Elevate Your Digital Vision",
     title2 = "Crafting Exceptional Websites",
+    subtitle,
+    showCTA = true,
+    cta,
 }: {
     title1?: string;
     title2?: string;
+    subtitle?: string;
+    showCTA?: boolean;
+    cta?: React.ReactNode;
 }) {
     const { enterDemoMode } = useAuth();
     const navigate = useNavigate();
@@ -179,65 +186,81 @@ function HeroGeometric({
                         animate="visible"
                     >
                         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 md:mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-2 sm:px-4">
-                            Free professional trading journal with AI-powered insights.
-                            Track, analyze, and optimize your performance — upgrade to Pro for coaching, trade reviews, and smart alerts.
+                            {subtitle ?? "Free professional trading journal with AI-powered insights. Track, analyze, and optimize your performance — upgrade to Pro for coaching, trade reviews, and smart alerts."}
                         </p>
                     </motion.div>
 
-                    {/* Social proof avatars */}
-                    <motion.div
-                        custom={3}
-                        variants={fadeUpVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="flex items-center justify-center gap-3 mb-8 sm:mb-10"
-                    >
-                        <div className="flex -space-x-2.5">
-                            {[
-                                { initials: 'JM', bg: 'bg-amber-500' },
-                                { initials: 'AR', bg: 'bg-yellow-600' },
-                                { initials: 'KT', bg: 'bg-amber-600' },
-                                { initials: 'DS', bg: 'bg-yellow-500' },
-                                { initials: 'LP', bg: 'bg-amber-400' },
-                            ].map((user, i) => (
-                                <div
-                                    key={i}
-                                    className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-background ${user.bg} flex items-center justify-center text-[10px] sm:text-xs font-bold text-black`}
-                                >
-                                    {user.initials}
-                                </div>
-                            ))}
-                        </div>
-                        <div className="text-xs sm:text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">3,000+</span> traders journaling
-                        </div>
-                    </motion.div>
-
-                    <motion.div
+                    {cta && (
+                      <motion.div
                         custom={4}
                         variants={fadeUpVariants}
                         initial="hidden"
                         animate="visible"
                         className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-                    >
-                        <Button
-                            onClick={() => {
-                                enterDemoMode();
-                                navigate('/dashboard');
-                            }}
-                            className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]"
+                      >
+                        {cta}
+                      </motion.div>
+                    )}
+
+                    {!cta && showCTA && (
+                      <>
+                        {/* Social proof avatars */}
+                        <motion.div
+                            custom={3}
+                            variants={fadeUpVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="flex items-center justify-center gap-3 mb-8 sm:mb-10"
                         >
-                            View Live Demo
-                        </Button>
-                        <Link to="/signup">
+                            <div className="flex -space-x-2.5">
+                                {[
+                                    { initials: 'JM', bg: 'bg-amber-500' },
+                                    { initials: 'AR', bg: 'bg-yellow-600' },
+                                    { initials: 'KT', bg: 'bg-amber-600' },
+                                    { initials: 'DS', bg: 'bg-yellow-500' },
+                                    { initials: 'LP', bg: 'bg-amber-400' },
+                                ].map((user, i) => (
+                                    <div
+                                        key={i}
+                                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-background ${user.bg} flex items-center justify-center text-[10px] sm:text-xs font-bold text-black`}
+                                    >
+                                        {user.initials}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="text-xs sm:text-sm text-muted-foreground">
+                                <span className="font-semibold text-foreground">3,000+</span> traders journaling
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            custom={4}
+                            variants={fadeUpVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+                        >
                             <Button
-                                variant="outline"
-                                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                                onClick={() => {
+                                    enterDemoMode();
+                                    navigate('/dashboard');
+                                }}
+                                className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]"
                             >
-                                Sign Up Free
+                                View Live Demo
                             </Button>
-                        </Link>
-                    </motion.div>
+                            <Link to="/signup">
+                                <Button
+                                    variant="outline"
+                                    className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                                >
+                                    Sign Up Free
+                                </Button>
+                            </Link>
+                        </motion.div>
+                      </>
+                    )}
+
                 </div>
             </div>
 
