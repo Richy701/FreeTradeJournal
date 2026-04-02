@@ -151,6 +151,12 @@ function FeedbackDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden gap-0">
+        {/* Progress bar */}
+        {loading && (
+          <div className="absolute top-0 left-0 right-0 h-0.5 z-10 overflow-hidden bg-border/30">
+            <div className="h-full bg-primary animate-[progress_1.4s_ease-in-out_infinite]" style={{ width: '40%' }} />
+          </div>
+        )}
         {done ? (
           <SuccessScreen onClose={() => handleClose(false)} />
         ) : (
@@ -165,7 +171,7 @@ function FeedbackDialog({
               </DialogHeader>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-6 py-5">
+            <form onSubmit={handleSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
               {/* Star rating */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">How's your experience so far?</span>

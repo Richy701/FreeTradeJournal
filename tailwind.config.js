@@ -74,6 +74,11 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		keyframes: {
+  			'progress': {
+  				'0%': { transform: 'translateX(-100%)', width: '40%' },
+  				'50%': { width: '60%' },
+  				'100%': { transform: 'translateX(350%)', width: '40%' }
+  			},
   			'accordion-down': {
   				from: {
   					height: '0'
@@ -102,7 +107,8 @@ export default {
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'marquee': 'marquee 20s linear infinite'
+  			'marquee': 'marquee 20s linear infinite',
+  			'progress': 'progress 1.4s ease-in-out infinite'
   		}
   	}
   },
