@@ -2,9 +2,15 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Approved testimonials are publicly readable
+    // Approved testimonials are publicly readable; writes via Admin SDK only
     match /testimonials/{testimonialId} {
       allow read: if resource.data.approved == true;
+      allow write: if false;
+    }
+
+    // Feedback is private; reads and writes via Admin SDK only
+    match /feedback/{docId} {
+      allow read: if false;
       allow write: if false;
     }
 
