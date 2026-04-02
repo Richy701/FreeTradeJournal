@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useProStatus } from '@/contexts/pro-context';
 import type { AIAnalysisResponse } from '@/services/ai-analysis';
 import DOMPurify from 'dompurify';
 
@@ -159,8 +160,60 @@ function AnalysisSection({ section }: { section: ParsedSection }) {
   );
 }
 
+const SAMPLE_SECTIONS = [
+  {
+    title: 'Performance Snapshot',
+    content: '**Win rate: 54%** across 38 trades · Avg R:R **1.8:1** · Net P&L **+$1,240**\n\nBest pair: **GBPUSD** (68% win rate). Worst day: **Thursday** (avg -$180 per session). Your best sessions cluster between **9–11am EST**.',
+  },
+  {
+    title: 'Key Patterns Detected',
+    content: '- **Overtrading on Tuesdays** — averaging 8 trades vs 3.2 on other days, with a 41% win rate on those days\n- **Revenge trading signals** detected in 3 of your last 5 losing streaks — position size increases 60%+ after consecutive losses\n- **Inconsistent sizing** — coefficient of variation 47%, suggesting emotional position decisions',
+  },
+  {
+    title: 'Strengths to Build On',
+    content: '- You cut losers quickly — avg losing trade held **18 minutes**, well below the 45-minute danger zone\n- **EURUSD stop placement** is consistent and rarely hit prematurely\n- Morning sessions (pre-noon) outperform afternoon by **+$340 avg** — you trade better fresh',
+  },
+  {
+    title: 'Critical Improvements',
+    content: '- **Thursday is an outlier** — 6 of your 9 largest drawdown days are Thursdays. Consider halving size or sitting out entirely until you identify the cause\n- Tuesday overtrading correlates directly with your worst win rates. A hard cap of 4 trades/day would have saved an estimated **$520** last month',
+  },
+  {
+    title: 'Action Plan',
+    content: '1. Set a **hard daily trade limit of 4** — log a reason when you feel the urge to take a 5th\n2. Review all Thursday losing trades for a common pattern (news events, fatigue, specific pairs)\n3. Before sizing up after a loss, wait **30 minutes** — add this as a rule in your journal',
+  },
+];
+
+function SampleAnalysisPreview() {
+  return (
+    <div>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10">
+            <Brain className="h-4.5 w-4.5 text-amber-500" />
+          </div>
+          AI Trade Analysis
+          <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 rounded-full">
+            Sample
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {SAMPLE_SECTIONS.map((section, i) => (
+            <AnalysisSection key={i} section={section} />
+          ))}
+          <p className="text-xs text-muted-foreground pt-2 text-right">
+            Based on 38 trades · Sample output — your analysis will use your real trades
+          </p>
+        </div>
+      </CardContent>
+    </div>
+  );
+}
+
 export function AIAnalysis({ trades }: AIAnalysisProps) {
   const { themeColors, alpha } = useThemePresets();
+  const { isPro } = useProStatus();
   const [period, setPeriod] = useState<Period>('last30');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CachedAnalysis | null>(null);
@@ -172,6 +225,16 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
       setPeriod(cached.period);
     }
   }, []);
+
+  if (!isPro) {
+    return (
+      <Card>
+        <ProGate featureName="AI Trade Analysis">
+          <SampleAnalysisPreview />
+        </ProGate>
+      </Card>
+    );
+  }
 
   const filteredTrades = filterTrades(trades, period);
 
