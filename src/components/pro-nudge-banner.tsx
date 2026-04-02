@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
@@ -45,9 +45,6 @@ export function ProNudgeBanner() {
 
   return (
     <div className="mx-4 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-center gap-3 relative">
-      <div className="flex-shrink-0 p-1.5 rounded-lg bg-amber-500/10">
-        <Sparkles className="h-4 w-4 text-amber-500" />
-      </div>
       <p className="text-sm text-foreground/80 flex-1 leading-snug">
         You've logged{' '}
         <span className="font-semibold text-foreground">{tradeCount} trades</span>.
