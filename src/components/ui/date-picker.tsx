@@ -101,11 +101,16 @@ export function DateTimePicker({
 
   const handleTimeChange = (newTime: string) => {
     setTimeValue(newTime)
-    if (selectedDate) {
-      const [hours, minutes, seconds] = newTime.split(':').map(Number)
-      const newDateTime = new Date(selectedDate)
-      newDateTime.setHours(hours, minutes, seconds || 0, 0)
-      onDateChange?.(newDateTime)
+    if (selectedDate && newTime) {
+      const parts = newTime.split(':')
+      const hours = Number(parts[0])
+      const minutes = Number(parts[1])
+      const seconds = Number(parts[2]) || 0
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        const newDateTime = new Date(selectedDate)
+        newDateTime.setHours(hours, minutes, seconds, 0)
+        onDateChange?.(newDateTime)
+      }
     }
   }
 

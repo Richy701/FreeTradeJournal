@@ -84,7 +84,14 @@ export function AccountProvider({ children }: AccountProviderProps) {
     const savedActiveAccountId = UserStorage.getItem(userId, 'active-account-id');
 
     if (currentAccounts) {
-      const parsedAccounts = JSON.parse(currentAccounts);
+      let parsedAccounts: TradingAccount[];
+      try {
+        parsedAccounts = JSON.parse(currentAccounts);
+      } catch {
+        console.error('[AccountProvider] Corrupted accounts data in storage, resetting.');
+        UserStorage.removeItem(userId, 'accounts');
+        return;
+      }
       setAccounts(parsedAccounts);
 
       if (savedActiveAccountId) {
