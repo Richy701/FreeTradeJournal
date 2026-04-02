@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, Bug, Sparkles, Star, CheckCircle2, ChevronRight } from 'lucide-react';
+import { MessageSquare, Bug, Sparkles, Star, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/auth-context';
 
 interface FeedbackButtonProps {
   variant?: 'default' | 'outline' | 'ghost' | 'floating';
@@ -65,10 +66,9 @@ const FEEDBACK_TYPES = [
   {
     value: 'bug',
     label: 'Bug report',
-    description: 'Something isn\'t working',
+    description: "Something isn't working",
     icon: Bug,
     color: 'text-red-500',
-    bg: 'bg-red-500/10 border-red-500/20',
     activeBg: 'bg-red-500/15 border-red-500/40',
   },
   {
@@ -77,7 +77,6 @@ const FEEDBACK_TYPES = [
     description: 'Suggest an improvement',
     icon: Sparkles,
     color: 'text-amber-500',
-    bg: 'bg-amber-500/10 border-amber-500/20',
     activeBg: 'bg-amber-500/15 border-amber-500/40',
   },
   {
@@ -86,12 +85,12 @@ const FEEDBACK_TYPES = [
     description: 'Share your thoughts',
     icon: MessageSquare,
     color: 'text-blue-500',
-    bg: 'bg-blue-500/10 border-blue-500/20',
     activeBg: 'bg-blue-500/15 border-blue-500/40',
   },
 ] as const;
 
 type FeedbackType = typeof FEEDBACK_TYPES[number]['value'];
+type Step = 'feedback' | 'testimonial' | 'done';
 
 const PLACEHOLDERS: Record<FeedbackType, string> = {
   bug: "What went wrong? What were you doing when it happened?",
@@ -101,6 +100,17 @@ const PLACEHOLDERS: Record<FeedbackType, string> = {
 
 const STAR_LABELS = ['Terrible', 'Poor', 'Okay', 'Good', 'Love it'];
 
+const TRADER_ROLES = [
+  'Forex Trader',
+  'Futures Trader',
+  'Prop Firm Trader',
+  'Day Trader',
+  'Swing Trader',
+  'Options Trader',
+  'Crypto Trader',
+  'Other',
+];
+
 function FeedbackDialog({
   open,
   onOpenChange,
@@ -108,27 +118,38 @@ function FeedbackDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { user } = useAuth();
+  const [step, setStep] = useState<Step>('feedback');
   const [type, setType] = useState<FeedbackType>('general');
   const [message, setMessage] = useState('');
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+
+  // Testimonial fields
+  const [testimonialName, setTestimonialName] = useState(user?.displayName || '');
+  const [testimonialRole, setTestimonialRole] = useState('');
+  const [testimonialQuote, setTestimonialQuote] = useState('');
+  const [testimonialConsent, setTestimonialConsent] = useState(false);
 
   function handleClose(val: boolean) {
     onOpenChange(val);
     if (!val) {
       setTimeout(() => {
-        setDone(false);
+        setStep('feedback');
         setMessage('');
         setType('general');
         setRating(0);
         setHoverRating(0);
+        setTestimonialName(user?.displayName || '');
+        setTestimonialRole('');
+        setTestimonialQuote('');
+        setTestimonialConsent(false);
       }, 300);
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleFeedbackSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!message.trim()) return;
 
@@ -137,7 +158,13 @@ function FeedbackDialog({
       const { getFunctions, httpsCallable } = await import('firebase/functions');
       const fn = httpsCallable(getFunctions(), 'sendFeedback');
       await fn({ type, message: message.trim(), rating });
-      setDone(true);
+
+      // If they loved it, invite them to leave a testimonial
+      if (rating >= 4) {
+        setStep('testimonial');
+      } else {
+        setStep('done');
+      }
     } catch {
       toast.error('Failed to send. Please try again.');
     } finally {
@@ -145,8 +172,29 @@ function FeedbackDialog({
     }
   }
 
+  async function handleTestimonialSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!testimonialQuote.trim() || !testimonialConsent) return;
+
+    setLoading(true);
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const fn = httpsCallable(getFunctions(), 'submitTestimonial');
+      await fn({
+        name: testimonialName.trim() || 'Anonymous',
+        role: testimonialRole,
+        quote: testimonialQuote.trim(),
+        rating,
+      });
+      setStep('done');
+    } catch {
+      toast.error('Failed to submit. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const activeRating = hoverRating || rating;
-  const selectedType = FEEDBACK_TYPES.find((t) => t.value === type)!;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -157,11 +205,11 @@ function FeedbackDialog({
             <div className="h-full bg-primary animate-[progress_1.4s_ease-in-out_infinite]" style={{ width: '40%' }} />
           </div>
         )}
-        {done ? (
-          <SuccessScreen onClose={() => handleClose(false)} />
-        ) : (
+
+        {step === 'done' && <SuccessScreen onClose={() => handleClose(false)} />}
+
+        {step === 'feedback' && (
           <>
-            {/* Header */}
             <div className="px-6 pt-6 pb-4 border-b border-border/50">
               <DialogHeader>
                 <DialogTitle className="text-lg">Share your feedback</DialogTitle>
@@ -171,7 +219,7 @@ function FeedbackDialog({
               </DialogHeader>
             </div>
 
-            <form onSubmit={handleSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
+            <form onSubmit={handleFeedbackSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
               {/* Star rating */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">How's your experience so far?</span>
@@ -243,44 +291,132 @@ function FeedbackDialog({
                   required
                   className="w-full rounded-xl border border-input bg-muted/30 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
                 />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground/60">
-                    {message.length > 0 ? `${message.length}/2000` : 'Max 2000 characters'}
-                  </span>
-                  {rating === 0 && message.length === 0 && (
-                    <span className="text-xs text-muted-foreground/50">A rating is optional</span>
+                <span className="text-xs text-muted-foreground/60">
+                  {message.length > 0 ? `${message.length}/2000` : 'Max 2000 characters'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleClose(false)} disabled={loading} className="text-muted-foreground">
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={loading || !message.trim()} className="ml-auto gap-1.5">
+                  {loading ? (
+                    <><span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />Sending...</>
+                  ) : (
+                    <>Send feedback <ChevronRight className="h-3.5 w-3.5" /></>
                   )}
+                </Button>
+              </div>
+            </form>
+          </>
+        )}
+
+        {step === 'testimonial' && (
+          <>
+            <div className="px-6 pt-6 pb-4 border-b border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex">
+                  {[1,2,3,4,5].map((s) => (
+                    <Star key={s} className={cn("h-4 w-4", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
+                  ))}
+                </div>
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-lg">Would you share your story?</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                  You loved it — we'd love to feature you on our homepage to help other traders discover FreeTradeJournal.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <form onSubmit={handleTestimonialSubmit} className={cn("flex flex-col gap-4 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
+              {/* Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">Your name</label>
+                <input
+                  type="text"
+                  value={testimonialName}
+                  onChange={(e) => setTestimonialName(e.target.value)}
+                  placeholder="How should we credit you?"
+                  className="w-full rounded-xl border border-input bg-muted/30 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+
+              {/* Role */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">What kind of trader are you?</label>
+                <div className="flex flex-wrap gap-2">
+                  {TRADER_ROLES.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setTestimonialRole(role)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150",
+                        testimonialRole === role
+                          ? "bg-primary/10 border-primary/40 text-primary"
+                          : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                      )}
+                    >
+                      {role}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* Quote */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">What do you love about FreeTradeJournal?</label>
+                <textarea
+                  value={testimonialQuote}
+                  onChange={(e) => setTestimonialQuote(e.target.value)}
+                  placeholder="Share what's made the biggest difference to your trading..."
+                  rows={4}
+                  maxLength={300}
+                  required
+                  className="w-full rounded-xl border border-input bg-muted/30 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                />
+                <span className="text-xs text-muted-foreground/60">{testimonialQuote.length}/300</span>
+              </div>
+
+              {/* Consent */}
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className={cn(
+                  "mt-0.5 h-4 w-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors",
+                  testimonialConsent ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
+                )}>
+                  {testimonialConsent && (
+                    <svg className="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  <input type="checkbox" className="sr-only" checked={testimonialConsent} onChange={(e) => setTestimonialConsent(e.target.checked)} />
+                </div>
+                <span className="text-xs text-muted-foreground leading-relaxed">
+                  I'm happy for my name, role, and testimonial to appear on the FreeTradeJournal homepage.
+                </span>
+              </label>
+
               <div className="flex items-center gap-3 pt-1">
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleClose(false)}
-                  disabled={loading}
-                  className="text-muted-foreground"
+                  onClick={() => setStep('done')}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Cancel
-                </Button>
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Skip for now
+                </button>
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={loading || !message.trim()}
+                  disabled={loading || !testimonialQuote.trim() || !testimonialConsent}
                   className="ml-auto gap-1.5"
                 >
                   {loading ? (
-                    <>
-                      <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                      Sending...
-                    </>
+                    <><span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />Submitting...</>
                   ) : (
-                    <>
-                      Send feedback
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </>
+                    <>Submit testimonial <ChevronRight className="h-3.5 w-3.5" /></>
                   )}
                 </Button>
               </div>
@@ -299,9 +435,9 @@ function SuccessScreen({ onClose }: { onClose: () => void }) {
         <CheckCircle2 className="h-7 w-7 text-green-500" />
       </div>
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-base font-semibold">Thanks for the feedback!</h3>
+        <h3 className="text-base font-semibold">Thanks — you're the best!</h3>
         <p className="text-sm text-muted-foreground max-w-[280px]">
-          We read every message and use it to improve FreeTradeJournal. You're helping make it better.
+          We read every message and use it to make FreeTradeJournal better for traders like you.
         </p>
       </div>
       <Button size="sm" variant="outline" onClick={onClose} className="mt-2">

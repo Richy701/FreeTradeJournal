@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.sendFeedback = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -208,6 +208,53 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
         </div>
         <p style="margin:16px 0 0;color:#999;font-size:12px">
           Reply to this email to respond directly to the user.
+        </p>
+      </div>
+    `,
+    });
+    return { ok: true };
+});
+// ─── Submit Testimonial ────────────────────────────────────────
+exports.submitTestimonial = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const { name, role, quote, rating } = data;
+    if (!quote || typeof quote !== "string" || quote.trim().length === 0) {
+        throw new functions.https.HttpsError("invalid-argument", "Quote is required.");
+    }
+    if (quote.length > 300) {
+        throw new functions.https.HttpsError("invalid-argument", "Quote too long.");
+    }
+    const uid = context.auth.uid;
+    const userEmail = context.auth.token.email || "unknown";
+    await db.collection("testimonials").add({
+        uid,
+        email: userEmail,
+        name: name || "Anonymous",
+        role: role || "",
+        quote: quote.trim(),
+        rating: typeof rating === "number" ? rating : null,
+        approved: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    // Notify you
+    const stars = typeof rating === "number" ? "⭐".repeat(rating) : "";
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: "support@freetradejournal.com",
+        subject: `[Testimonial] ${stars} from ${name || "Anonymous"}`,
+        html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="margin:0 0 8px">New Testimonial — needs approval</h2>
+        <p style="margin:0 0 16px;color:#666;font-size:14px">
+          From <strong>${name || "Anonymous"}</strong>${role ? ` · ${role}` : ""} · ${userEmail}
+        </p>
+        <blockquote style="margin:0 0 16px;padding:16px;background:#f5f5f5;border-left:4px solid #f59e0b;border-radius:4px;font-size:15px;line-height:1.6;font-style:italic">
+          "${quote.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}"
+        </blockquote>
+        <p style="color:#666;font-size:14px">
+          To approve, open Firestore → <strong>testimonials</strong> collection → find this doc → set <code>approved: true</code>.
         </p>
       </div>
     `,

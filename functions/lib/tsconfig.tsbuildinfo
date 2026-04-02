@@ -1,1 +1,1 @@
-{"root":["../src/index.ts"],"version":"5.9.3"}
+{"root":["../src/index.ts","../src/emails/cancellationemail.tsx","../src/emails/day3nudgeemail.tsx","../src/emails/proupgradeemail.tsx","../src/emails/welcomeemail.tsx"],"version":"5.9.3"}

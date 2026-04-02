@@ -6,6 +6,7 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { FreeTradeJournalFeatures as Features6 } from '@/components/blocks/features-6';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { FAQSection } from '@/components/blocks/faq-section';
+import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
 
 
@@ -186,6 +187,9 @@ export default function LandingPage() {
         imageLayout="stack"
         reverseLayout={false}
       />
+
+      {/* Testimonials */}
+      <TestimonialsSection />
 
       {/* FAQ Section */}
       <FAQSection />
