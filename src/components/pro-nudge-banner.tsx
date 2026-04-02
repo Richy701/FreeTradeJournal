@@ -42,7 +42,7 @@ export function ProNudgeBanner() {
     if (dismissKey) localStorage.setItem(dismissKey, '1');
   }
 
-  if (!visible) return null;
+  if (!visible || isPro || isLoading) return null;
 
   return (
     <div className="mx-4 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-center gap-3 relative">

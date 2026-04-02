@@ -25,6 +25,8 @@ import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/tra
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProNudgeBanner } from '@/components/pro-nudge-banner'
+import { GettingStartedChecklist } from '@/components/getting-started-checklist'
+import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -81,6 +83,9 @@ export default function Dashboard() {
     return (activeAccount?.balance || settings.accountSize || 10000) + totalPnL
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getTrades, activeAccount, settings.accountSize, dataVersion])
+  const tradeCount = useMemo(() => getTrades().length, [getTrades, dataVersion])
+  useFirstTradeCelebration(tradeCount)
+
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
   const [csvUploadState, setCsvUploadState] = useState({
@@ -476,6 +481,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background">
       <SiteHeader />
 
+      <GettingStartedChecklist />
       <ProNudgeBanner />
 
       {/* Free User Data Warning Banner */}

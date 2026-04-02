@@ -300,7 +300,7 @@ export default function Settings() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Frosted Glass Header */}
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
@@ -342,7 +342,7 @@ export default function Settings() {
         </div>
       </div>
 
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto" style={{maxWidth: '1200px'}}>
+        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto" style={{maxWidth: '1200px'}}>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1.5 h-auto p-1.5 bg-muted/30 backdrop-blur-sm rounded-xl border-0">

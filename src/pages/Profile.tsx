@@ -61,7 +61,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Header */}
       <div className="border-b bg-card/80 backdrop-blur-xl">
@@ -85,7 +85,7 @@ export default function Profile() {
       </div>
 
       {/* Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Card */}
           <Card>

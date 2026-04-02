@@ -153,7 +153,19 @@
       "Bash(firebase use:*)",
       "Bash(firebase auth:print-access-token)",
       "Bash(gcloud auth:*)",
-      "Bash(git -C /Users/richy/FreeTradeJournal ls-files)"
+      "Bash(git -C /Users/richy/FreeTradeJournal ls-files)",
+      "Bash(firebase functions:secrets:set RESEND_API_KEY)",
+      "Bash(open:*)",
+      "Bash(git -C /Users/richy/FreeTradeJournal log --oneline --all -- *.env* .env .env.local functions/.env)",
+      "Bash(git -C /Users/richy/FreeTradeJournal show 8f4ed2a --stat)",
+      "Bash(git -C /Users/richy/FreeTradeJournal show 69e39cb --stat)",
+      "Bash(git -C /Users/richy/FreeTradeJournal show 8f4ed2a -- .env)",
+      "Bash(git -C /Users/richy/FreeTradeJournal show 8f4ed2a -- functions/lib/index.js)",
+      "Bash(git -C /Users/richy/FreeTradeJournal log --all --oneline)",
+      "Bash(git -C /Users/richy/FreeTradeJournal show 69e39cb -- .env)",
+      "Bash(git:*)",
+      "Bash(head -10 grep -n \"userStorage.getItem\\\\|getItem\\\\|setItem\" /Users/richy/FreeTradeJournal/src/pages/Journal.tsx)",
+      "Bash(/dev/null grep:*)"
     ],
     "deny": []
   }

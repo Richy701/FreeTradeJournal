@@ -1046,7 +1046,7 @@ export default function TradeLog() {
   // Enhanced loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full bg-background">
+      <div className="min-h-screen flex flex-col w-full bg-background">
         <SiteHeader />
         {/* Header Skeleton */}
         <div className="border-b">
@@ -1066,7 +1066,7 @@ export default function TradeLog() {
         </div>
 
         {/* Stats Skeleton */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-8">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -1110,7 +1110,7 @@ export default function TradeLog() {
 
   return (
     <>
-      <div className="min-h-screen w-full bg-background">
+      <div className="min-h-screen flex flex-col w-full bg-background">
       <SiteHeader />
       {/* Header */}
       <div className="border-b sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
@@ -1802,7 +1802,7 @@ export default function TradeLog() {
       </Dialog>
 
       {/* Main Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Stats */}
         <TooltipProvider>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-6">

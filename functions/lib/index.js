@@ -36,12 +36,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
 const stripe_1 = __importDefault(require("stripe"));
 const resend_1 = require("resend");
+const components_1 = require("@react-email/components");
+const React = __importStar(require("react"));
+const WelcomeEmail_1 = require("./emails/WelcomeEmail");
+const ProUpgradeEmail_1 = require("./emails/ProUpgradeEmail");
+const CancellationEmail_1 = require("./emails/CancellationEmail");
+const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── Resend Email Helper ────────────────────────────────────
@@ -55,121 +61,49 @@ function getResend() {
 const FROM_EMAIL = "FreeTradeJournal <hello@freetradejournal.com>";
 async function sendWelcomeEmail(email, name) {
     const firstName = name?.split(" ")[0] || "trader";
+    const html = await (0, components_1.render)(React.createElement(WelcomeEmail_1.WelcomeEmail, { firstName }));
     await getResend().emails.send({
         from: FROM_EMAIL,
         to: email,
         subject: "Welcome to FreeTradeJournal 👋",
-        html: `
-      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
-        <div style="padding: 32px 0 16px;">
-          <img src="https://www.freetradejournal.com/favicon-64x64.png" width="40" height="40" style="border-radius: 10px;" alt="FTJ" />
-        </div>
-        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">Hey ${firstName}, welcome 🎉</h1>
-        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 0 0 24px;">
-          Your FreeTradeJournal account is ready. The core journal — unlimited trades, analytics, and journaling — is 100% free, forever.
-        </p>
-        <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px;">Get started in 3 steps:</h2>
-        <ol style="font-size: 15px; color: #444; line-height: 2; margin: 0 0 24px; padding-left: 20px;">
-          <li>Add your first trade manually or import a CSV from your broker</li>
-          <li>Check your dashboard — P&amp;L, win rate, equity curve, and heatmap update automatically</li>
-          <li>Set a goal or risk rule to keep yourself accountable</li>
-        </ol>
-        <a href="https://www.freetradejournal.com/dashboard" style="display: inline-block; background: #f59e0b; color: #000; font-weight: 600; font-size: 15px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-          Open your journal →
-        </a>
-        <p style="font-size: 13px; color: #888; margin: 32px 0 0; line-height: 1.6;">
-          If you have any questions, just reply to this email.<br/>
-          — Richy, FreeTradeJournal
-        </p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #aaa;">
-          <a href="https://www.freetradejournal.com/privacy" style="color: #aaa;">Privacy</a> ·
-          <a href="https://www.freetradejournal.com/terms" style="color: #aaa;">Terms</a>
-        </p>
-      </div>
-    `,
+        html,
     });
 }
 async function sendProUpgradeEmail(email, name, planType) {
     const firstName = name?.split(" ")[0] || "trader";
     const planLabel = planType === "lifetime" ? "Lifetime" : planType === "yearly" ? "Pro (Yearly)" : "Pro (Monthly)";
+    const html = await (0, components_1.render)(React.createElement(ProUpgradeEmail_1.ProUpgradeEmail, { firstName, planLabel }));
     await getResend().emails.send({
         from: FROM_EMAIL,
         to: email,
         subject: "You're now Pro — here's what's unlocked",
-        html: `
-      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
-        <div style="padding: 32px 0 16px;">
-          <img src="https://www.freetradejournal.com/favicon-64x64.png" width="40" height="40" style="border-radius: 10px;" alt="FTJ" />
-        </div>
-        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">You're Pro now, ${firstName} ⚡</h1>
-        <p style="font-size: 15px; color: #666; margin: 0 0 4px;">Plan: <strong>${planLabel}</strong></p>
-        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 16px 0 24px;">
-          Everything is unlocked. Here's what you can do right now:
-        </p>
-        <ul style="font-size: 15px; color: #444; line-height: 2; margin: 0 0 24px; padding-left: 20px;">
-          <li><strong>AI Trading Coach</strong> — personalised coaching based on your real trade history</li>
-          <li><strong>AI Trade Analysis</strong> — pattern detection across your last 30 days</li>
-          <li><strong>AI Risk Alerts</strong> — get warned before revenge trading costs you</li>
-          <li><strong>Cloud Sync</strong> — your journal is safe across all your devices</li>
-          <li><strong>PropTracker Unlimited</strong> — unlimited prop firm accounts, charts, and AI analysis</li>
-        </ul>
-        <a href="https://www.freetradejournal.com/dashboard" style="display: inline-block; background: #f59e0b; color: #000; font-weight: 600; font-size: 15px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-          Go to your dashboard →
-        </a>
-        <p style="font-size: 13px; color: #888; margin: 32px 0 0; line-height: 1.6;">
-          Manage your subscription anytime in Settings → Subscription.<br/>
-          — Richy, FreeTradeJournal
-        </p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #aaa;">
-          <a href="https://www.freetradejournal.com/privacy" style="color: #aaa;">Privacy</a> ·
-          <a href="https://www.freetradejournal.com/terms" style="color: #aaa;">Terms</a>
-        </p>
-      </div>
-    `,
+        html,
     });
 }
 async function sendCancellationEmail(email, name, periodEnd) {
     const firstName = name?.split(" ")[0] || "trader";
     const endDate = periodEnd ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "the end of your billing period";
+    const html = await (0, components_1.render)(React.createElement(CancellationEmail_1.CancellationEmail, { firstName, endDate }));
     await getResend().emails.send({
         from: FROM_EMAIL,
         to: email,
         subject: "Your Pro subscription has been cancelled",
-        html: `
-      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
-        <div style="padding: 32px 0 16px;">
-          <img src="https://www.freetradejournal.com/favicon-64x64.png" width="40" height="40" style="border-radius: 10px;" alt="FTJ" />
-        </div>
-        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">Subscription cancelled</h1>
-        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 0 0 24px;">
-          Hey ${firstName}, your Pro subscription has been cancelled. You'll keep full Pro access until <strong>${endDate}</strong>, after which your account will revert to the free plan.
-        </p>
-        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 0 0 24px;">
-          Your trades, journal entries, and goals are safe — nothing is deleted.
-        </p>
-        <p style="font-size: 15px; color: #444; margin: 0 0 24px;">
-          Changed your mind? You can resubscribe anytime from the pricing page.
-        </p>
-        <a href="https://www.freetradejournal.com/pricing" style="display: inline-block; background: #f59e0b; color: #000; font-weight: 600; font-size: 15px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-          Resubscribe →
-        </a>
-        <p style="font-size: 13px; color: #888; margin: 32px 0 0; line-height: 1.6;">
-          If you cancelled by mistake or have questions, just reply to this email.<br/>
-          — Richy, FreeTradeJournal
-        </p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #aaa;">
-          <a href="https://www.freetradejournal.com/privacy" style="color: #aaa;">Privacy</a> ·
-          <a href="https://www.freetradejournal.com/terms" style="color: #aaa;">Terms</a>
-        </p>
-      </div>
-    `,
+        html,
     });
 }
 // ─── Welcome Email on Signup ───────────────────────────────
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
+    // Write user record to Firestore for email scheduling
+    try {
+        await db.collection("users").doc(user.uid).set({
+            email: user.email || null,
+            displayName: user.displayName || null,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+    }
+    catch (err) {
+        console.error("Failed to write user to Firestore:", err);
+    }
     if (!user.email)
         return;
     try {
@@ -179,6 +113,49 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     catch (err) {
         console.error("Failed to send welcome email:", err);
     }
+});
+// ─── Day-3 Nudge Email (Scheduled) ─────────────────────────
+exports.sendDay3NudgeEmails = functions.pubsub
+    .schedule("every 24 hours")
+    .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+    const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
+    const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
+    // Firestore can't query for missing fields — filter in the loop
+    const allSnapshot = await db
+        .collection("users")
+        .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(fourDaysAgo))
+        .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(threeDaysAgo))
+        .get();
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+        const data = doc.data();
+        // Skip if they've already logged a trade or already received this email
+        if (data.firstTradeLoggedAt || data.day3NudgeSentAt)
+            continue;
+        const email = data.email;
+        if (!email)
+            continue;
+        try {
+            const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+            const html = await (0, components_1.render)(React.createElement(Day3NudgeEmail_1.Day3NudgeEmail, { firstName }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: email,
+                subject: "Your journal is set up — log your first trade in 60 seconds",
+                html,
+            });
+            // Mark as sent so we don't send again
+            await doc.ref.update({ day3NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
+            sent++;
+            console.log(`Day-3 nudge sent to ${email}`);
+        }
+        catch (err) {
+            console.error(`Failed to send day-3 nudge to ${email}:`, err);
+        }
+    }
+    console.log(`Day-3 nudge: sent ${sent} emails`);
+    return null;
 });
 // ─── Stripe Integration ────────────────────────────────────
 let _stripe;
@@ -472,20 +449,20 @@ exports.analyzeTradesAI = functions.https.onCall(async (data, context) => {
     if (!userDoc.exists || !userDoc.data()?.isPro) {
         throw new functions.https.HttpsError("permission-denied", "AI Analysis is a Pro feature.");
     }
-    // 3. Rate limit check (don't update yet - will update after successful API call)
+    // 3. Rate limit — atomically check and increment before calling OpenAI
     const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
-    const usageDoc = await usageRef.get();
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-    const usageData = usageDoc.exists ? usageDoc.data() : null;
-    let usedToday = 0;
-    if (usageData && usageData.date === todayStr && usageData.ai_analysis) {
-        usedToday = usageData.ai_analysis || 0;
-    }
+    const todayStr = new Date().toISOString().split("T")[0];
     const limit = RATE_LIMITS.ai_analysis;
-    if (usedToday >= limit) {
-        throw new functions.https.HttpsError("resource-exhausted", `Daily AI Trade Analysis limit reached (${limit}/day). Resets at midnight UTC.`);
-    }
+    const usedToday = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(usageRef);
+        const d = snap.data();
+        const current = (d?.date === todayStr ? d?.ai_analysis : 0) || 0;
+        if (current >= limit) {
+            throw new functions.https.HttpsError("resource-exhausted", `Daily AI Trade Analysis limit reached (${limit}/day). Resets at midnight UTC.`);
+        }
+        tx.set(usageRef, { date: todayStr, ai_analysis: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        return current;
+    });
     // 4. Validate input
     const request = data;
     if (!request.trades || !Array.isArray(request.trades) || request.trades.length === 0) {
@@ -608,12 +585,6 @@ Give me a thorough analysis of my trading.`;
         console.error("OpenAI API error:", err.message);
         throw new functions.https.HttpsError("internal", "Failed to generate analysis. Please try again.");
     }
-    // 7. Update rate limit
-    await usageRef.set({
-        date: todayStr,
-        ai_analysis: usedToday + 1,
-        lastUsed: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
     return {
         analysis,
         usage: {
@@ -635,7 +606,10 @@ function buildJournalPromptsPrompt(payload) {
     };
 }
 function buildTradeReviewPrompt(payload) {
-    const { symbol, side, entryPrice, exitPrice, lotSize, pnl, entryTime, exitTime, strategy, riskReward, notes, recentTrades } = payload;
+    const { symbol: rawSymbol, side, entryPrice, exitPrice, lotSize, pnl, entryTime, exitTime, strategy: rawStrategy, riskReward, notes: rawNotes, recentTrades } = payload;
+    const symbol = typeof rawSymbol === "string" ? rawSymbol.slice(0, 20) : "";
+    const strategy = typeof rawStrategy === "string" ? rawStrategy.slice(0, 100) : undefined;
+    const notes = typeof rawNotes === "string" ? rawNotes.slice(0, 500) : undefined;
     const hold = Math.round((new Date(exitTime).getTime() - new Date(entryTime).getTime()) / 60000);
     const holdStr = hold >= 60 ? `${Math.floor(hold / 60)}h ${hold % 60}m` : `${hold}m`;
     const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(entryTime).getUTCDay()];
@@ -830,46 +804,33 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
     if (!builder) {
         throw new functions.https.HttpsError("invalid-argument", `Unknown type: ${request.type}`);
     }
-    // 4. Check rate limit for this specific feature
+    // 4. Check rate limit for this specific feature — atomically check and increment
     const featureType = request.type;
     const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
-    const usageDoc = await usageRef.get();
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-    const usageData = usageDoc.exists ? usageDoc.data() : null;
-    let usedToday = 0;
-    if (usageData && usageData.date === todayStr && usageData[featureType]) {
-        usedToday = usageData[featureType] || 0;
-    }
+    const todayStr = new Date().toISOString().split("T")[0];
     const limit = RATE_LIMITS[featureType];
-    if (usedToday >= limit) {
-        // Format feature name for display
-        const featureNames = {
-            ai_analysis: "AI Trade Analysis",
-            goal_coach: "Goal Coach",
-            trade_review: "Trade Review",
-            prop_tracker: "PropTracker AI Analysis",
-            coaching_tips: "Coaching Tips",
-            journal_prompts: "Journal Prompts",
-            risk_alert: "Risk Alert",
-            strategy_tagger: "Strategy Tagger",
-        };
-        const displayName = featureNames[featureType] || featureType.replace(/_/g, " ");
-        throw new functions.https.HttpsError("resource-exhausted", `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`);
-    }
-    // Cooldown: Prevent rapid-fire requests (minimum 3 seconds between requests)
-    if (usageData?.lastUsed) {
-        const lastUsedTime = usageData.lastUsed?._seconds
-            ? usageData.lastUsed._seconds * 1000
-            : usageData.lastUsed;
-        const now = Date.now();
-        const timeSinceLastRequest = now - lastUsedTime;
-        const COOLDOWN_MS = 3000; // 3 seconds
-        if (timeSinceLastRequest < COOLDOWN_MS) {
-            const waitTime = Math.ceil((COOLDOWN_MS - timeSinceLastRequest) / 1000);
-            throw new functions.https.HttpsError("resource-exhausted", `Please wait ${waitTime} second${waitTime > 1 ? 's' : ''} before making another request.`);
+    const usedToday = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(usageRef);
+        const d = snap.data();
+        const current = (d?.date === todayStr ? d?.[featureType] : 0) || 0;
+        if (current >= limit) {
+            // Format feature name for display
+            const featureNames = {
+                ai_analysis: "AI Trade Analysis",
+                goal_coach: "Goal Coach",
+                trade_review: "Trade Review",
+                prop_tracker: "PropTracker AI Analysis",
+                coaching_tips: "Coaching Tips",
+                journal_prompts: "Journal Prompts",
+                risk_alert: "Risk Alert",
+                strategy_tagger: "Strategy Tagger",
+            };
+            const displayName = featureNames[featureType] || featureType.replace(/_/g, " ");
+            throw new functions.https.HttpsError("resource-exhausted", `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`);
         }
-    }
+        tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        return current;
+    });
     const prompt = builder(request.payload);
     // 5. Call OpenAI with appropriate model
     const apiKey = process.env.OPENAI_API_KEY;
@@ -895,12 +856,6 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
         console.error("OpenAI API error:", err.message);
         throw new functions.https.HttpsError("internal", "AI request failed. Please try again.");
     }
-    // 6. Update rate limit
-    await usageRef.set({
-        date: todayStr,
-        [featureType]: usedToday + 1,
-        lastUsed: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
     return {
         result,
         usage: {
@@ -927,19 +882,29 @@ exports.parseScreenshot = functions.https.onCall(async (data, context) => {
     if (!["billing", "payout"].includes(importType)) {
         throw new functions.https.HttpsError("invalid-argument", "importType must be 'billing' or 'payout'.");
     }
-    // Rate limit: 20/day
+    // Validate image size and MIME type
+    const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB base64
+    if (image.length > MAX_IMAGE_BYTES) {
+        throw new functions.https.HttpsError("invalid-argument", "Image too large. Maximum size is 4MB.");
+    }
+    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+        throw new functions.https.HttpsError("invalid-argument", "Unsupported image type. Use JPEG, PNG, WebP, or GIF.");
+    }
+    // Rate limit: 20/day — atomically check and increment
     const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
-    const usageDoc = await usageRef.get();
     const todayStr = new Date().toISOString().split("T")[0];
-    const usageData = usageDoc.exists ? usageDoc.data() : null;
     const LIMIT = 20;
-    let usedToday = 0;
-    if (usageData && usageData.date === todayStr && usageData.screenshot_import) {
-        usedToday = usageData.screenshot_import || 0;
-    }
-    if (usedToday >= LIMIT) {
-        throw new functions.https.HttpsError("resource-exhausted", `Screenshot import limit reached (${LIMIT}/day). Resets at midnight UTC.`);
-    }
+    const usedToday = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(usageRef);
+        const d = snap.data();
+        const current = (d?.date === todayStr ? d?.screenshot_import : 0) || 0;
+        if (current >= LIMIT) {
+            throw new functions.https.HttpsError("resource-exhausted", `Screenshot import limit reached (${LIMIT}/day). Resets at midnight UTC.`);
+        }
+        tx.set(usageRef, { date: todayStr, screenshot_import: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        return current;
+    });
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey || apiKey === "your-openai-api-key-here") {
         throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
@@ -988,7 +953,6 @@ Return only valid JSON with no extra text.`;
         console.error("OpenAI Vision error:", err.message);
         throw new functions.https.HttpsError("internal", "Failed to parse screenshot. Please try again.");
     }
-    await usageRef.set({ date: todayStr, screenshot_import: usedToday + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
     let parsed;
     try {
         parsed = JSON.parse(result);

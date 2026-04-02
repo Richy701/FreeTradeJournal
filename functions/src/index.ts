@@ -8,6 +8,7 @@ import * as React from "react";
 import { WelcomeEmail } from "./emails/WelcomeEmail";
 import { ProUpgradeEmail } from "./emails/ProUpgradeEmail";
 import { CancellationEmail } from "./emails/CancellationEmail";
+import { Day3NudgeEmail } from "./emails/Day3NudgeEmail";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -62,6 +63,17 @@ async function sendCancellationEmail(email: string, name: string | undefined, pe
 // ─── Welcome Email on Signup ───────────────────────────────
 
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
+  // Write user record to Firestore for email scheduling
+  try {
+    await db.collection("users").doc(user.uid).set({
+      email: user.email || null,
+      displayName: user.displayName || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  } catch (err) {
+    console.error("Failed to write user to Firestore:", err);
+  }
+
   if (!user.email) return;
   try {
     await sendWelcomeEmail(user.email, user.displayName || undefined);
@@ -70,6 +82,53 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     console.error("Failed to send welcome email:", err);
   }
 });
+
+// ─── Day-3 Nudge Email (Scheduled) ─────────────────────────
+
+export const sendDay3NudgeEmails = functions.pubsub
+  .schedule("every 24 hours")
+  .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+    const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
+    const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
+
+    // Firestore can't query for missing fields — filter in the loop
+    const allSnapshot = await db
+      .collection("users")
+      .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(fourDaysAgo))
+      .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(threeDaysAgo))
+      .get();
+
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+      const data = doc.data();
+      // Skip if they've already logged a trade or already received this email
+      if (data.firstTradeLoggedAt || data.day3NudgeSentAt) continue;
+
+      const email = data.email;
+      if (!email) continue;
+
+      try {
+        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const html = await render(React.createElement(Day3NudgeEmail, { firstName }));
+        await getResend().emails.send({
+          from: FROM_EMAIL,
+          to: email,
+          subject: "Your journal is set up — log your first trade in 60 seconds",
+          html,
+        });
+        // Mark as sent so we don't send again
+        await doc.ref.update({ day3NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
+        sent++;
+        console.log(`Day-3 nudge sent to ${email}`);
+      } catch (err) {
+        console.error(`Failed to send day-3 nudge to ${email}:`, err);
+      }
+    }
+
+    console.log(`Day-3 nudge: sent ${sent} emails`);
+    return null;
+  });
 
 // ─── Stripe Integration ────────────────────────────────────
 

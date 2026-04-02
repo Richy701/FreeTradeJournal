@@ -45,14 +45,14 @@ export default function TradeIdeas() {
 
   if (!hasEnoughData) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
         <SiteHeader />
         <div className="border-b">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-6 text-center sm:text-left">
             <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
           </div>
         </div>
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
               <div className="p-4 rounded-2xl" style={{ backgroundColor: `${themeColors.primary}10` }}>
@@ -103,7 +103,7 @@ export default function TradeIdeas() {
   }), [themeColors.primary])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
       {/* Header */}
@@ -134,7 +134,7 @@ export default function TradeIdeas() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* AI Trade Analysis */}
         {trades.length >= 3 && <AIAnalysis trades={trades} />}

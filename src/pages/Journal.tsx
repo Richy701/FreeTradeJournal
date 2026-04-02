@@ -599,7 +599,7 @@ export default function Journal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
       <SiteHeader />
       {/* Header Section */}
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
@@ -653,7 +653,7 @@ export default function Journal() {
         </div>
       </div>
 
-      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      <div className="flex-1 w-full px-4 py-6 sm:px-6 lg:px-8 space-y-6">
 
         {/* Quick Stats */}
         {entries.length > 0 && (

@@ -17,47 +17,17 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.4.0',
     date: '2026-04-02',
-    summary: 'Conversion improvements — AI feature previews for free users, pricing page overhaul, smarter upgrade prompts, and several bug fixes.',
+    summary: 'Pricing page FAQ, PropTracker screenshot import discoverability, and bug fixes.',
     items: [
       {
-        type: 'new',
-        text: 'AI feature previews for free users',
-        description: 'Free users now see realistic sample output behind the blur on AI Trade Analysis, AI Goal Coach, and AI Risk Alerts — so you can see exactly what you\'re unlocking before upgrading.',
-      },
-      {
-        type: 'new',
-        text: 'Pro upgrade nudge after 5 trades',
-        description: 'After logging 5 or more trades, a personalised banner appears on the dashboard showing your trade count and a direct link to unlock Pro. Dismissible, one-time, per-user.',
+        type: 'improved',
+        text: 'Pricing page — FAQ and social proof',
+        description: 'Added a 6-question FAQ section and risk reversal copy ("Cancel anytime · No hidden fees") to the pricing page.',
       },
       {
         type: 'improved',
-        text: 'ProGate — better upgrade experience',
-        description: 'Each Pro feature gate now shows feature-specific copy explaining what you\'d get, a proper amber "View Pro Plans" button, and a price anchor (from $5.99/mo) — replacing the old plain text link.',
-      },
-      {
-        type: 'improved',
-        text: 'Pricing page — FAQ, social proof, and CTA fix',
-        description: 'Added a 6-question FAQ section, trader count social proof in the hero, and risk reversal copy ("Cancel anytime · No hidden fees"). Fixed a bug where the "Upgrade to Pro" button in the comparison table did nothing for logged-in users.',
-      },
-      {
-        type: 'improved',
-        text: 'PropTracker — Import button visible to free users',
-        description: 'The screenshot import button is now shown to free users (with a Pro lock indicator) instead of hidden entirely, so they can discover the feature and upgrade to use it.',
-      },
-      {
-        type: 'improved',
-        text: 'Cloud sync warning — stronger CTA',
-        description: 'The local storage warning banner on the dashboard now has a proper "Enable Cloud Sync →" button instead of a plain text link.',
-      },
-      {
-        type: 'improved',
-        text: 'PropTracker landing — reduced hero gap',
-        description: 'Fixed a large dead space between the hero CTAs and the screenshot section on the /prop-tracker landing page.',
-      },
-      {
-        type: 'fixed',
-        text: 'ProNudgeBanner dismiss key user-scoped',
-        description: 'The dismiss state for the upgrade nudge banner was stored globally, meaning one user dismissing it would hide it for all users on the same browser. Now scoped per user.',
+        text: 'PropTracker — Screenshot Import discoverable for all users',
+        description: 'The screenshot import button is now visible to all users so you can see it\'s available before upgrading.',
       },
     ],
   },
@@ -122,11 +92,6 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'new',
-        text: 'PropTracker Freemium Gating',
-        description: 'Free users get up to 2 accounts with full stats. Pro unlocks unlimited accounts, charts (Spend by Firm + P&L Over Time), and AI analysis.',
-      },
-      {
-        type: 'new',
         text: 'PropTracker Cloud Sync',
         description: 'Prop firm accounts and transactions are now included in Pro cloud sync — your data stays safe across devices.',
       },
@@ -166,11 +131,6 @@ export const changelog: ChangelogEntry[] = [
         type: 'new',
         text: 'Thousand Separators',
         description: 'All currency values now display with commas for better readability (e.g., $10,618.19 instead of $10618.19).',
-      },
-      {
-        type: 'fixed',
-        text: 'CRITICAL: XSS Security Vulnerability',
-        description: 'All AI-generated content is now sanitized with DOMPurify to prevent cross-site scripting attacks. Only safe HTML tags are allowed.',
       },
       {
         type: 'fixed',

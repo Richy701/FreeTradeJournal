@@ -118,7 +118,7 @@ export default function Goals() {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
       {/* Header */}
@@ -133,7 +133,7 @@ export default function Goals() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
