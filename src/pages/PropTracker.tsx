@@ -1082,11 +1082,19 @@ export default function PropTracker() {
                         <Plus className="h-3 w-3" />
                         Add
                       </Button>
-                      {isPro && (
+                      {isPro ? (
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
                           <Upload className="h-3 w-3" />
                           Import
                         </Button>
+                      ) : (
+                        <Link to="/pricing">
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+                            <Upload className="h-3 w-3" />
+                            Import
+                            <Lock className="h-2.5 w-2.5 ml-0.5" />
+                          </Button>
+                        </Link>
                       )}
                       <div className="flex-1" />
                       {txs.length > 0 && (

@@ -490,8 +490,13 @@ export default function Dashboard() {
                 </p>
                 <p className="text-xs text-muted-foreground mb-2">
                   Clearing browser data, using incognito mode, or switching devices will erase your trades.
-                  <strong> Export backups regularly in Settings</strong> or <Link to="/pricing" className="underline hover:no-underline">upgrade to Pro for automatic cloud sync</Link>.
+                  <strong> Export backups regularly in Settings</strong> or upgrade to Pro for automatic cloud sync.
                 </p>
+                <Link to="/pricing">
+                  <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
+                    Enable Cloud Sync →
+                  </button>
+                </Link>
               </div>
               <button
                 onClick={() => setShowDataWarning(false)}
