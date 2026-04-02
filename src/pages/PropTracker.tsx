@@ -63,6 +63,8 @@ import { AppFooter } from '@/components/app-footer'
 import { useUserStorage } from '@/utils/user-storage'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useProStatus } from '@/contexts/pro-context'
+import { useAuth } from '@/contexts/auth-context'
+import { DemoDataService } from '@/services/demo-service'
 import { ProGate } from '@/components/pro-gate'
 import { toast } from 'sonner'
 import { requestPropAnalysis, requestScreenshotParse } from '@/services/ai-analysis'
@@ -222,6 +224,7 @@ export default function PropTracker() {
   const storage = useUserStorage()
   const { themeColors } = useThemePresets()
   const { isPro } = useProStatus()
+  const { isDemo } = useAuth()
 
   // ── Data ──
   const [accounts, setAccounts] = useState<PropFirmAccount[]>([])
@@ -229,6 +232,12 @@ export default function PropTracker() {
   const [tipDismissed, setTipDismissed] = useState(false)
 
   useEffect(() => {
+    if (isDemo) {
+      setAccounts(DemoDataService.getPropAccounts())
+      setTransactions(DemoDataService.getPropTransactions())
+      setTipDismissed(true)
+      return
+    }
     const savedAccounts = storage.getItem('propFirmAccounts')
     const savedTxs = storage.getItem('propFirmTransactions')
     const dismissed = storage.getItem('propTrackerTipDismissed')
@@ -241,17 +250,17 @@ export default function PropTracker() {
       toast.error('Failed to load saved data')
     }
     setTipDismissed(dismissed === 'true')
-  }, [storage])
+  }, [storage, isDemo])
 
   const saveAccounts = useCallback((updated: PropFirmAccount[]) => {
     setAccounts(updated)
-    storage.setItem('propFirmAccounts', JSON.stringify(updated))
-  }, [storage])
+    if (!isDemo) storage.setItem('propFirmAccounts', JSON.stringify(updated))
+  }, [storage, isDemo])
 
   const saveTransactions = useCallback((updated: PropFirmTransaction[]) => {
     setTransactions(updated)
-    storage.setItem('propFirmTransactions', JSON.stringify(updated))
-  }, [storage])
+    if (!isDemo) storage.setItem('propFirmTransactions', JSON.stringify(updated))
+  }, [storage, isDemo])
 
   function dismissTip() {
     setTipDismissed(true)

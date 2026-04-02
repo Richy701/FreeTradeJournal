@@ -1,4 +1,5 @@
 import type { ExtendedTrade as Trade, JournalEntry, AccountInfo, Goal } from '@/types'
+import type { PropFirmAccount, PropFirmTransaction } from '@/types/prop-tracker'
 
 // Helper to generate dates relative to today so demo data is always recent
 function daysAgo(days: number, time?: string): Date {
@@ -1291,6 +1292,71 @@ export const DEMO_GOALS: Goal[] = [
     createdAt: daysAgo(30).toISOString(),
     updatedAt: new Date().toISOString(),
   },
+]
+
+// Demo PropTracker accounts
+export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
+  {
+    id: 'demo-prop-1',
+    firmName: 'FTMO',
+    accountSize: 100000,
+    accountType: 'funded',
+    status: 'active',
+    startDate: daysAgo(30).toISOString(),
+    notes: 'Phase 1 passed on first attempt. Currently in funded phase.',
+    createdAt: daysAgo(30).toISOString(),
+  },
+  {
+    id: 'demo-prop-2',
+    firmName: 'Apex Trader Funding',
+    accountSize: 50000,
+    accountType: 'evaluation',
+    status: 'passed',
+    startDate: daysAgo(60).toISOString(),
+    endDate: daysAgo(20).toISOString(),
+    notes: 'Passed evaluation. Waiting for funded account activation.',
+    createdAt: daysAgo(60).toISOString(),
+  },
+  {
+    id: 'demo-prop-3',
+    firmName: 'MyForexFunds',
+    accountSize: 25000,
+    accountType: 'evaluation',
+    status: 'failed',
+    startDate: daysAgo(90).toISOString(),
+    endDate: daysAgo(75).toISOString(),
+    notes: 'Hit max drawdown on a bad week. Reset and restarted.',
+    createdAt: daysAgo(90).toISOString(),
+  },
+  {
+    id: 'demo-prop-4',
+    firmName: 'The5ers',
+    accountSize: 20000,
+    accountType: 'instant',
+    status: 'active',
+    startDate: daysAgo(45).toISOString(),
+    notes: 'Bootcamp plan. Steady progress.',
+    createdAt: daysAgo(45).toISOString(),
+  },
+]
+
+// Demo PropTracker transactions
+export const DEMO_PROP_TRANSACTIONS: PropFirmTransaction[] = [
+  // FTMO $100k — fees + payouts
+  { id: 'demo-tx-1', propAccountId: 'demo-prop-1', type: 'evaluation-fee', amount: 540, description: 'FTMO $100k Challenge fee', date: daysAgo(60).toISOString(), createdAt: daysAgo(60).toISOString() },
+  { id: 'demo-tx-2', propAccountId: 'demo-prop-1', type: 'payout', amount: 3200, description: 'First payout — Month 1', date: daysAgo(5).toISOString(), createdAt: daysAgo(5).toISOString() },
+
+  // Apex $50k — evaluation fee
+  { id: 'demo-tx-3', propAccountId: 'demo-prop-2', type: 'evaluation-fee', amount: 167, description: 'Apex $50k Evaluation', date: daysAgo(60).toISOString(), createdAt: daysAgo(60).toISOString() },
+  { id: 'demo-tx-4', propAccountId: 'demo-prop-2', type: 'payout', amount: 980, description: 'Apex payout after passing', date: daysAgo(18).toISOString(), createdAt: daysAgo(18).toISOString() },
+
+  // MyForexFunds — fees, reset, failure
+  { id: 'demo-tx-5', propAccountId: 'demo-prop-3', type: 'evaluation-fee', amount: 129, description: 'MFF $25k Evaluation fee', date: daysAgo(90).toISOString(), createdAt: daysAgo(90).toISOString() },
+  { id: 'demo-tx-6', propAccountId: 'demo-prop-3', type: 'reset-fee', amount: 65, description: 'Reset after drawdown breach', date: daysAgo(76).toISOString(), createdAt: daysAgo(76).toISOString() },
+
+  // The5ers $20k
+  { id: 'demo-tx-7', propAccountId: 'demo-prop-4', type: 'evaluation-fee', amount: 95, description: 'The5ers Bootcamp $20k', date: daysAgo(45).toISOString(), createdAt: daysAgo(45).toISOString() },
+  { id: 'demo-tx-8', propAccountId: 'demo-prop-4', type: 'payout', amount: 620, description: 'The5ers first profit share', date: daysAgo(10).toISOString(), createdAt: daysAgo(10).toISOString() },
 ]
 
 // Realistic trading statistics
