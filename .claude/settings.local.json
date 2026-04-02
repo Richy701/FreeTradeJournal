@@ -169,7 +169,8 @@
       "Bash(while read:*)",
       "Bash(do git:*)",
       "Bash(sed -i '' \"/BuyMeCoffee/d\" \"$f\")",
-      "Bash(sed -i '' \"/buy-me-coffee/d\" \"$f\")"
+      "Bash(sed -i '' \"/buy-me-coffee/d\" \"$f\")",
+      "Bash(find /Users/richy/FreeTradeJournal/functions/src -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))"
     ],
     "deny": []
   }

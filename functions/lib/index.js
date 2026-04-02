@@ -108,7 +108,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
         return;
     try {
         await sendWelcomeEmail(user.email, user.displayName || undefined);
-        console.log(`Welcome email sent to ${user.email}`);
+        console.log(`Welcome email sent`);
     }
     catch (err) {
         console.error("Failed to send welcome email:", err);
@@ -148,7 +148,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
             // Mark as sent so we don't send again
             await doc.ref.update({ day3NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
             sent++;
-            console.log(`Day-3 nudge sent to ${email}`);
+            console.log(`Day-3 nudge sent`);
         }
         catch (err) {
             console.error(`Failed to send day-3 nudge to ${email}:`, err);
