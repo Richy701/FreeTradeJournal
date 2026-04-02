@@ -1,1 +1,3 @@
 .vercel
+lib/
+*.tsbuildinfo
