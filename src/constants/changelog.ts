@@ -15,6 +15,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.4.0',
+    date: '2026-04-02',
+    summary: 'Conversion improvements — AI feature previews for free users, pricing page overhaul, smarter upgrade prompts, and several bug fixes.',
+    items: [
+      {
+        type: 'new',
+        text: 'AI feature previews for free users',
+        description: 'Free users now see realistic sample output behind the blur on AI Trade Analysis, AI Goal Coach, and AI Risk Alerts — so you can see exactly what you\'re unlocking before upgrading.',
+      },
+      {
+        type: 'new',
+        text: 'Pro upgrade nudge after 5 trades',
+        description: 'After logging 5 or more trades, a personalised banner appears on the dashboard showing your trade count and a direct link to unlock Pro. Dismissible, one-time, per-user.',
+      },
+      {
+        type: 'improved',
+        text: 'ProGate — better upgrade experience',
+        description: 'Each Pro feature gate now shows feature-specific copy explaining what you\'d get, a proper amber "View Pro Plans" button, and a price anchor (from $5.99/mo) — replacing the old plain text link.',
+      },
+      {
+        type: 'improved',
+        text: 'Pricing page — FAQ, social proof, and CTA fix',
+        description: 'Added a 6-question FAQ section, trader count social proof in the hero, and risk reversal copy ("Cancel anytime · No hidden fees"). Fixed a bug where the "Upgrade to Pro" button in the comparison table did nothing for logged-in users.',
+      },
+      {
+        type: 'improved',
+        text: 'PropTracker — Import button visible to free users',
+        description: 'The screenshot import button is now shown to free users (with a Pro lock indicator) instead of hidden entirely, so they can discover the feature and upgrade to use it.',
+      },
+      {
+        type: 'improved',
+        text: 'Cloud sync warning — stronger CTA',
+        description: 'The local storage warning banner on the dashboard now has a proper "Enable Cloud Sync →" button instead of a plain text link.',
+      },
+      {
+        type: 'improved',
+        text: 'PropTracker landing — reduced hero gap',
+        description: 'Fixed a large dead space between the hero CTAs and the screenshot section on the /prop-tracker landing page.',
+      },
+      {
+        type: 'fixed',
+        text: 'ProNudgeBanner dismiss key user-scoped',
+        description: 'The dismiss state for the upgrade nudge banner was stored globally, meaning one user dismissing it would hide it for all users on the same browser. Now scoped per user.',
+      },
+    ],
+  },
+  {
     version: '2.3.1',
     date: '2026-04-02',
     summary: 'Bug fixes — resolved a crash when editing exit time and a rare white-screen on app load.',
@@ -504,4 +551,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.0.0'
+export const LATEST_CHANGELOG_VERSION = '2.4.0'

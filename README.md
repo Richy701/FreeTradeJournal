@@ -69,9 +69,11 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - **AI Market Analysis** — Broader market context and how it relates to your trading
 - **PDF Trading Wrapped** — Spotify Wrapped-style PDF report with gradient backgrounds, donut charts, equity curve with filled area, day-of-week bar charts, streak visualizations, trader personality archetypes, and fun facts
 - **Cloud Sync** — Real-time Firestore sync via Cloud Functions proxy (bypasses content blockers and ad blockers), keeping data safe across devices with automatic restore on new devices
+- **PropTracker Screenshot Import** — upload billing or payout screenshots and GPT-4o Vision extracts transactions automatically (multiple files, drag & drop, duplicate detection)
 - Pro status managed via Stripe webhooks → Firebase Cloud Functions → Firestore
-- ProGate component with blur overlay and lock icon for gated features
+- ProGate component with feature-specific copy, amber CTA button, and price anchor for all gated features
 - ProBadge indicator in the sidebar for subscribed users
+- AI feature sample previews — free users see realistic blurred output on AI Trade Analysis, AI Goal Coach, and AI Risk Alerts to show what they're missing
 
 ### PropTracker
 
@@ -113,12 +115,21 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Dedicated `/changelog` release notes page with detailed descriptions for every change
 - Linked from the What's New dialog footer and the site footer under Resources
 
+### Conversion & Upgrade Flow
+
+- Pro upgrade nudge after 5 trades logged — personalised banner with real trade count, dismissible per user
+- AI sample previews behind ProGate blur — free users see realistic example output for AI Trade Analysis, Goal Coach, and Risk Alerts
+- Pricing page FAQ — 6 common questions answered (cancel anytime, data safety, cloud sync, AI features, lifetime deal)
+- Cloud sync warning on dashboard with prominent "Enable Cloud Sync →" CTA button
+- PropTracker screenshot import button visible to free users with lock indicator (was hidden entirely)
+
 ### Security & Data Protection
 
 - **XSS Protection** — All AI-generated content sanitized with DOMPurify to prevent cross-site scripting attacks
 - **Content Security Policy** — Strict CSP headers via Vercel configuration
 - **Number Formatting** — Thousand separators (commas) on all currency displays for better readability
 - **Dependency Security** — Regular audits and updates of npm packages
+- **User-scoped dismiss keys** — Per-user localStorage keys for all dismissible banners to prevent cross-user state bleed
 
 ### PWA & Mobile
 
@@ -186,7 +197,7 @@ Add the following to `.env.local`:
 
 - Firebase configuration (`VITE_FIREBASE_*`)
 - Google Analytics tracking ID (`VITE_GA_TRACKING_ID`) *(optional)*
-- Resend API key (`VITE_RESEND_API_KEY`) *(optional, for email notifications)*
+- Stripe price IDs (`VITE_STRIPE_PRICE_MONTHLY`, `VITE_STRIPE_PRICE_YEARLY`, `VITE_STRIPE_PRICE_LIFETIME`) *(required for Pro subscriptions)*
 
 1. Start the development server:
 
