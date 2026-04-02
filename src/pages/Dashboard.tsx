@@ -344,7 +344,11 @@ export default function Dashboard() {
   const headerInsight = useMemo((): React.ReactNode => {
     const tradesData = getTrades()
     if (!tradesData || tradesData.length === 0) {
-      return 'Add your first trade or import a CSV to get started'
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground/70">
+          Log your first trade to see your stats come to life
+        </span>
+      )
     }
 
     const trades = tradesData.map((t: any) => ({
@@ -481,15 +485,13 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <GettingStartedChecklist />
+      <GettingStartedChecklist refreshKey={dataVersion} />
       <ProNudgeBanner />
 
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (
-        <div className="border-b" style={{ backgroundColor: 'hsl(var(--amber-500) / 0.1)', borderColor: 'hsl(var(--amber-500) / 0.3)' }}>
-          <div className="w-full px-3 py-3 sm:px-6 lg:px-8">
-            <div className="flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">⚠️</span>
+        <div className="mx-4 mb-4 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ backgroundColor: 'hsl(var(--amber-500) / 0.05)', borderColor: 'hsl(var(--amber-500) / 0.3)' }}>
+              <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium mb-1">
                   Your data is stored locally on this device only
@@ -506,13 +508,11 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => setShowDataWarning(false)}
-                className="text-muted-foreground hover:text-foreground flex-shrink-0 text-sm"
+                className="text-muted-foreground hover:text-foreground flex-shrink-0 p-1"
                 aria-label="Close warning"
               >
                 ✕
               </button>
-            </div>
-          </div>
         </div>
       )}
 

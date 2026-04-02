@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -156,6 +156,14 @@ exports.sendDay3NudgeEmails = functions.pubsub
     }
     console.log(`Day-3 nudge: sent ${sent} emails`);
     return null;
+});
+// ─── Mark First Trade (client can't write users doc directly) ──
+exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    await db.collection("users").doc(context.auth.uid).set({ firstTradeLoggedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    return { ok: true };
 });
 // ─── Stripe Integration ────────────────────────────────────
 let _stripe;
@@ -785,7 +793,6 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError("permission-denied", "This is a Pro feature.");
     }
     // 3. Route by type
-    console.log("aiAssist data received:", JSON.stringify(data).slice(0, 500));
     const request = data;
     if (!request.type || !request.payload) {
         console.error("aiAssist invalid-argument: type=", request.type, "payload=", !!request.payload);

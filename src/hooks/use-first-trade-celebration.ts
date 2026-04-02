@@ -43,24 +43,19 @@ export function useFirstTradeCelebration(tradeCount: number) {
       // Mark celebrated
       localStorage.setItem(flagKey, '1');
 
-      // Write flag to Firestore so day-3 email knows not to send
-      markFirstTradeInFirestore(user.uid);
+      // Write flag to Firestore via Cloud Function (client can't write users doc directly)
+      markFirstTradeInFirestore();
     }
 
     prevCountRef.current = tradeCount;
   }, [tradeCount, user, isDemo]);
 }
 
-async function markFirstTradeInFirestore(uid: string) {
+async function markFirstTradeInFirestore() {
   try {
-    const { getFirebaseFirestore } = await import('@/lib/firebase-lazy');
-    const db = await getFirebaseFirestore();
-    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-    await setDoc(
-      doc(db, 'users', uid),
-      { firstTradeLoggedAt: serverTimestamp() },
-      { merge: true }
-    );
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const fn = httpsCallable(getFunctions(), 'markFirstTrade');
+    await fn({});
   } catch {
     // Non-critical
   }

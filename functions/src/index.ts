@@ -130,6 +130,19 @@ export const sendDay3NudgeEmails = functions.pubsub
     return null;
   });
 
+// ─── Mark First Trade (client can't write users doc directly) ──
+
+export const markFirstTrade = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+  await db.collection("users").doc(context.auth.uid).set(
+    { firstTradeLoggedAt: admin.firestore.FieldValue.serverTimestamp() },
+    { merge: true }
+  );
+  return { ok: true };
+});
+
 // ─── Stripe Integration ────────────────────────────────────
 
 let _stripe: Stripe;
@@ -919,7 +932,6 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
   }
 
   // 3. Route by type
-  console.log("aiAssist data received:", JSON.stringify(data).slice(0, 500));
   const request = data as AIAssistRequest;
   if (!request.type || !request.payload) {
     console.error("aiAssist invalid-argument: type=", request.type, "payload=", !!request.payload);

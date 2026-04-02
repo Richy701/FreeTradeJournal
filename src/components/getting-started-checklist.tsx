@@ -12,12 +12,11 @@ interface ChecklistItem {
   icon: React.ElementType;
   href: string;
   done: boolean;
-  proOnly?: boolean;
 }
 
 const DISMISS_KEY_PREFIX = 'getting-started-dismissed-v1-';
 
-export function GettingStartedChecklist() {
+export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: number }) {
   const { user, isDemo } = useAuth();
   const { isPro } = useProStatus();
   const userStorage = useUserStorage();
@@ -82,26 +81,24 @@ export function GettingStartedChecklist() {
         href: '/goals',
         done: hasGoals,
       },
-      {
+      ...(isPro ? [{
         id: 'ai',
         label: 'Check your AI coach',
-        description: isPro ? 'Get personalised coaching based on your trading patterns.' : 'Upgrade to Pro to unlock AI-powered coaching tips.',
+        description: 'Get personalised coaching based on your trading patterns.',
         icon: Bot,
-        href: isPro ? '/dashboard' : '/pricing',
+        href: '/dashboard',
         done: isPro,
-        proOnly: true,
-      },
+      }] : []),
     ];
 
     setItems(checklist);
 
-    // Auto-dismiss once all non-pro items are done
-    const coreItems = checklist.filter(i => !i.proOnly);
-    if (coreItems.every(i => i.done)) {
+    // Auto-dismiss once all items are done
+    if (checklist.every(i => i.done)) {
       localStorage.setItem(dismissKey, '1');
       setDismissed(true);
     }
-  }, [user, isDemo, isPro, userStorage]);
+  }, [user, isDemo, isPro, userStorage, refreshKey]);
 
   function dismiss() {
     if (!user) return;
@@ -187,9 +184,6 @@ export function GettingStartedChecklist() {
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium leading-none mb-0.5 ${item.done ? 'line-through text-muted-foreground' : ''}`}>
                     {item.label}
-                    {item.proOnly && !isPro && (
-                      <span className="ml-2 text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-full">PRO</span>
-                    )}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                 </div>

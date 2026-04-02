@@ -165,7 +165,9 @@
       "Bash(git -C /Users/richy/FreeTradeJournal show 69e39cb -- .env)",
       "Bash(git:*)",
       "Bash(head -10 grep -n \"userStorage.getItem\\\\|getItem\\\\|setItem\" /Users/richy/FreeTradeJournal/src/pages/Journal.tsx)",
-      "Bash(/dev/null grep:*)"
+      "Bash(/dev/null grep:*)",
+      "Bash(while read:*)",
+      "Bash(do git:*)"
     ],
     "deny": []
   }
