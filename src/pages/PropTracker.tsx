@@ -281,6 +281,7 @@ export default function PropTracker() {
   // ── UI state ──
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [toggledMonths, setToggledMonths] = useState<Set<string>>(new Set())
+  const [showAllMonths, setShowAllMonths] = useState<Set<string>>(new Set())
   const currentYearMonth = new Date().toISOString().substring(0, 7)
   const [accountDialog, setAccountDialog] = useState<{ open: boolean; editing: PropFirmAccount | null }>({ open: false, editing: null })
   const [txDialog, setTxDialog] = useState<{ open: boolean; accountId: string }>({ open: false, accountId: '' })
@@ -1111,9 +1112,12 @@ export default function PropTracker() {
                         return acc
                       }, {} as Record<string, typeof txs>)
                       const months = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+                      const showAll = showAllMonths.has(account.id)
+                      const visibleMonths = showAll ? months : months.slice(0, 3)
+                      const hiddenCount = months.length - visibleMonths.length
                       return (
                         <div className="flex flex-col gap-0 pt-1">
-                          {months.map(month => {
+                          {visibleMonths.map(month => {
                             const monthTxs = grouped[month]
                             const monthLabel = new Date(month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                             const monthNet = monthTxs.reduce((sum, tx) => sum + (isExpenseTx(tx.type) ? -tx.amount : tx.amount), 0)
@@ -1174,6 +1178,22 @@ export default function PropTracker() {
                               </div>
                             )
                           })}
+                          {hiddenCount > 0 && (
+                            <button
+                              onClick={() => setShowAllMonths(prev => { const n = new Set(prev); n.add(account.id); return n })}
+                              className="w-full text-[10px] text-muted-foreground hover:text-foreground py-1.5 mt-1 transition-colors text-center"
+                            >
+                              Show {hiddenCount} older {hiddenCount === 1 ? 'month' : 'months'}
+                            </button>
+                          )}
+                          {showAll && months.length > 3 && (
+                            <button
+                              onClick={() => setShowAllMonths(prev => { const n = new Set(prev); n.delete(account.id); return n })}
+                              className="w-full text-[10px] text-muted-foreground hover:text-foreground py-1.5 mt-1 transition-colors text-center"
+                            >
+                              Show less
+                            </button>
+                          )}
                         </div>
                       )
                     })()}
