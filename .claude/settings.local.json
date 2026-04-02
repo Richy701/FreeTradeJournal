@@ -152,7 +152,8 @@
       "Bash(firebase firestore:*)",
       "Bash(firebase use:*)",
       "Bash(firebase auth:print-access-token)",
-      "Bash(gcloud auth:*)"
+      "Bash(gcloud auth:*)",
+      "Bash(git -C /Users/richy/FreeTradeJournal ls-files)"
     ],
     "deny": []
   }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import DOMPurify from 'dompurify'
 import {
   PieChart,
   Pie,
@@ -901,7 +902,7 @@ export default function PropTracker() {
                                 <p
                                   key={i}
                                   className={isBullet ? 'pl-3 border-l-2 border-border/60' : ''}
-                                  dangerouslySetInnerHTML={{ __html: formatted.replace(/^[-•]\s*/, '') }}
+                                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted.replace(/^[-•]\s*/, ''), { ALLOWED_TAGS: ['strong', 'em', 'br'] }) }}
                                 />
                               )
                             })}
