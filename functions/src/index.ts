@@ -137,7 +137,7 @@ export const sendFeedback = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
   }
 
-  const { type, message } = data as { type: string; message: string };
+  const { type, message, rating } = data as { type: string; message: string; rating?: number };
 
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     throw new functions.https.HttpsError("invalid-argument", "Message is required.");
@@ -149,6 +149,7 @@ export const sendFeedback = functions.https.onCall(async (data, context) => {
   const uid = context.auth.uid;
   const userEmail = context.auth.token.email || "unknown";
   const userName = context.auth.token.name || "Unknown user";
+  const starRating = typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : null;
 
   // Store in Firestore
   await db.collection("feedback").add({
@@ -157,28 +158,31 @@ export const sendFeedback = functions.https.onCall(async (data, context) => {
     name: userName,
     type: type || "general",
     message: message.trim(),
+    rating: starRating,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  // Email notification to you
+  // Email notification
   const typeLabel: Record<string, string> = {
     bug: "Bug Report",
     feature: "Feature Request",
     general: "General Feedback",
   };
   const label = typeLabel[type] || "Feedback";
+  const stars = starRating ? "⭐".repeat(starRating) + ` (${starRating}/5)` : "No rating";
 
   await getResend().emails.send({
     from: FROM_EMAIL,
     to: "support@freetradejournal.com",
     replyTo: userEmail,
-    subject: `[${label}] from ${userName}`,
+    subject: `[${label}] ${starRating ? stars + " · " : ""}from ${userName}`,
     html: `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
         <h2 style="margin:0 0 8px">${label}</h2>
-        <p style="margin:0 0 16px;color:#666;font-size:14px">
+        <p style="margin:0 0 4px;color:#666;font-size:14px">
           From <strong>${userName}</strong> (${userEmail}) · ${new Date().toUTCString()}
         </p>
+        <p style="margin:0 0 16px;font-size:14px">Rating: ${stars}</p>
         <div style="background:#f5f5f5;border-radius:8px;padding:16px;white-space:pre-wrap;font-size:15px;line-height:1.6">
           ${message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}
         </div>

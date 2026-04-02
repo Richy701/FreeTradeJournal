@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.sendFeedback = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -156,6 +156,63 @@ exports.sendDay3NudgeEmails = functions.pubsub
     }
     console.log(`Day-3 nudge: sent ${sent} emails`);
     return null;
+});
+// ─── Send Feedback ─────────────────────────────────────────────
+exports.sendFeedback = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const { type, message, rating } = data;
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+        throw new functions.https.HttpsError("invalid-argument", "Message is required.");
+    }
+    if (message.length > 2000) {
+        throw new functions.https.HttpsError("invalid-argument", "Message too long.");
+    }
+    const uid = context.auth.uid;
+    const userEmail = context.auth.token.email || "unknown";
+    const userName = context.auth.token.name || "Unknown user";
+    const starRating = typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : null;
+    // Store in Firestore
+    await db.collection("feedback").add({
+        uid,
+        email: userEmail,
+        name: userName,
+        type: type || "general",
+        message: message.trim(),
+        rating: starRating,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    // Email notification
+    const typeLabel = {
+        bug: "Bug Report",
+        feature: "Feature Request",
+        general: "General Feedback",
+    };
+    const label = typeLabel[type] || "Feedback";
+    const stars = starRating ? "⭐".repeat(starRating) + ` (${starRating}/5)` : "No rating";
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: "support@freetradejournal.com",
+        replyTo: userEmail,
+        subject: `[${label}] ${starRating ? stars + " · " : ""}from ${userName}`,
+        html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="margin:0 0 8px">${label}</h2>
+        <p style="margin:0 0 4px;color:#666;font-size:14px">
+          From <strong>${userName}</strong> (${userEmail}) · ${new Date().toUTCString()}
+        </p>
+        <p style="margin:0 0 16px;font-size:14px">Rating: ${stars}</p>
+        <div style="background:#f5f5f5;border-radius:8px;padding:16px;white-space:pre-wrap;font-size:15px;line-height:1.6">
+          ${message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+        </div>
+        <p style="margin:16px 0 0;color:#999;font-size:12px">
+          Reply to this email to respond directly to the user.
+        </p>
+      </div>
+    `,
+    });
+    return { ok: true };
 });
 // ─── Mark First Trade (client can't write users doc directly) ──
 exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
