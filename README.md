@@ -115,6 +115,15 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Dedicated `/changelog` release notes page with detailed descriptions for every change
 - Linked from the What's New dialog footer and the site footer under Resources
 
+### Feedback & Testimonials
+
+- Native in-app feedback form — star rating (1–5), type selector (bug / feature / general), free-text message
+- Submissions go to Firestore `feedback/` collection + email notification to support inbox via Resend
+- After a 4 or 5 star rating, users are invited to leave a testimonial for the homepage
+- Testimonial form: name (pre-filled from account), trader role picker, free-text quote, consent checkbox
+- Approved testimonials appear on the landing page automatically — approve via Firestore console
+- Rate limited: 1 feedback per minute, 1 testimonial per hour per user
+
 ### Conversion & Upgrade Flow
 
 - Pro upgrade nudge after 5 trades logged — personalised banner with real trade count, dismissible per user
@@ -167,8 +176,11 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ### Demo Mode
 
 - Instant access without signup via "Try Demo"
-- 50+ realistic pre-populated trades across Forex, Futures, and Indices
-- All features fully accessible in demo mode
+- Full Pro experience unlocked — AI coach, AI trade review, PDF Wrapped, PropTracker, cloud sync all accessible
+- 34 realistic pre-populated trades across Forex, Futures, and Indices with detailed notes, emotions, and lessons
+- PropTracker demo with 4 prop firm accounts (FTMO, Apex, MyForexFunds, The5ers) and 8 transactions showing real invested vs earned breakdown
+- Journal entries, goals, and risk rules pre-populated
+- Demo account: FTMO $100k funded, +4.4% growth, 64.7% win rate, 3.36 profit factor
 
 ## Getting Started
 
