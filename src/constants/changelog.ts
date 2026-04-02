@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.3.1',
+    date: '2026-04-02',
+    summary: 'Bug fixes — resolved a crash when editing exit time and a rare white-screen on app load.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Exit time crash',
+        description: 'Clearing or partially editing the exit (or entry) time field caused an Invalid Date to propagate, crashing the app. The time picker now safely ignores incomplete input.',
+      },
+      {
+        type: 'fixed',
+        text: 'White-screen on corrupted storage',
+        description: 'If account data in local storage was corrupted (e.g. after a browser crash), the app would fail to load entirely. It now detects and clears the bad data and recovers gracefully.',
+      },
+    ],
+  },
+  {
     version: '2.3.0',
     date: '2026-03-31',
     summary: 'PropTracker Screenshot Import — upload your billing or payout screenshots and let GPT-4o Vision extract the transactions automatically.',
