@@ -20,72 +20,62 @@ export function WelcomeEmail({ firstName }: WelcomeEmailProps) {
           fontStyle="normal"
         />
       </Head>
-      <Preview>Your FreeTradeJournal account is ready — start journaling your trades</Preview>
+      <Preview>Your trading journal is ready. Let's build an edge.</Preview>
       <Body style={body}>
         <Container style={container}>
 
-          {/* Amber top accent */}
-          <Section style={accentBar} />
-
           {/* Header */}
           <Section style={header}>
-            <Row>
-              <Column style={{ width: '40px' }}>
-                <Img
-                  src="https://www.freetradejournal.com/favicon-64x64.png"
-                  width="32"
-                  height="32"
-                  alt="FTJ"
-                  style={logo}
-                />
-              </Column>
-              <Column>
-                <Text style={brandName}>FreeTradeJournal</Text>
-              </Column>
-            </Row>
+            <Img
+              src="https://www.freetradejournal.com/favicon-64x64.png"
+              width="36"
+              height="36"
+              alt="FTJ"
+              style={logo}
+            />
+            <Text style={brandName}>FreeTradeJournal</Text>
           </Section>
 
           {/* Hero */}
           <Section style={hero}>
-            <Heading style={h1}>Hey {firstName}, welcome 👋</Heading>
+            <Text style={eyebrow}>ACCOUNT READY</Text>
+            <Heading style={h1}>
+              Welcome, {firstName}.
+            </Heading>
             <Text style={subtext}>
-              Your account is ready. The core journal — unlimited trades, analytics, and journaling — is{' '}
-              <strong style={{ color: '#f5f5f5' }}>100% free, forever.</strong>
+              Your journal is set up and waiting. Track trades, spot patterns, and build the discipline to trade consistently.
             </Text>
-          </Section>
-
-          {/* Steps */}
-          <Section style={card}>
-            <Text style={cardLabel}>GET STARTED IN 3 STEPS</Text>
-            <Row style={stepRow}>
-              <Column style={stepNumCol}><Text style={stepNumber}>01</Text></Column>
-              <Column><Text style={stepText}>Add your first trade manually or import a CSV from your broker</Text></Column>
-            </Row>
-            <Hr style={stepDivider} />
-            <Row style={stepRow}>
-              <Column style={stepNumCol}><Text style={stepNumber}>02</Text></Column>
-              <Column><Text style={stepText}>Check your dashboard — P&L, win rate, equity curve, and heatmap update automatically</Text></Column>
-            </Row>
-            <Hr style={stepDivider} />
-            <Row style={stepRow}>
-              <Column style={stepNumCol}><Text style={stepNumber}>03</Text></Column>
-              <Column><Text style={stepText}>Set a goal or risk rule to keep yourself accountable</Text></Column>
-            </Row>
-          </Section>
-
-          {/* CTA */}
-          <Section style={ctaSection}>
             <Link href="https://www.freetradejournal.com/dashboard" style={button}>
               Open your journal →
             </Link>
           </Section>
 
+          {/* Feature strip */}
+          <Section style={featureStrip}>
+            <Row>
+              <Column style={featureCol}>
+                <Text style={featureIcon}>▲</Text>
+                <Text style={featureLabel}>Analytics</Text>
+                <Text style={featureDesc}>P&L, win rate & equity curve</Text>
+              </Column>
+              <Column style={featureDividerCol}><Text style={featureDividerText}>|</Text></Column>
+              <Column style={featureCol}>
+                <Text style={featureIcon}>◎</Text>
+                <Text style={featureLabel}>Goals</Text>
+                <Text style={featureDesc}>Risk rules & accountability</Text>
+              </Column>
+              <Column style={featureDividerCol}><Text style={featureDividerText}>|</Text></Column>
+              <Column style={featureCol}>
+                <Text style={featureIcon}>↓</Text>
+                <Text style={featureLabel}>Import</Text>
+                <Text style={featureDesc}>CSV upload from any broker</Text>
+              </Column>
+            </Row>
+          </Section>
+
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footerText}>
-              If you have any questions, just reply to this email.
-              <br />— Richy, FreeTradeJournal
-            </Text>
+            <Text style={footerText}>Richy<br />Founder, FreeTradeJournal</Text>
             <Hr style={footerDivider} />
             <Text style={footerLinks}>
               <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy</Link>
@@ -108,107 +98,62 @@ const body: React.CSSProperties = {
 }
 
 const container: React.CSSProperties = {
-  maxWidth: '560px',
+  maxWidth: '520px',
   margin: '0 auto',
-  backgroundColor: '#161616',
-  borderRadius: '12px',
+  backgroundColor: '#111',
+  borderRadius: '16px',
   overflow: 'hidden',
-  border: '1px solid #252525',
-}
-
-const accentBar: React.CSSProperties = {
-  backgroundColor: '#f59e0b',
-  height: '4px',
-  lineHeight: '4px',
-  fontSize: '1px',
+  border: '1px solid #1f1f1f',
 }
 
 const header: React.CSSProperties = {
-  padding: '20px 28px',
-  borderBottom: '1px solid #252525',
+  padding: '20px 32px',
+  borderBottom: '1px solid #1f1f1f',
+  textAlign: 'left',
 }
 
 const logo: React.CSSProperties = {
-  borderRadius: '7px',
-  display: 'block',
+  borderRadius: '8px',
+  display: 'inline-block',
+  verticalAlign: 'middle',
 }
 
 const brandName: React.CSSProperties = {
-  margin: 0,
-  fontSize: '15px',
+  display: 'inline-block',
+  verticalAlign: 'middle',
+  margin: '0 0 0 10px',
+  fontSize: '14px',
   fontWeight: 600,
-  color: '#e5e5e5',
-  lineHeight: '32px',
-  paddingLeft: '10px',
+  color: '#888',
+  letterSpacing: '0.01em',
 }
 
 const hero: React.CSSProperties = {
-  padding: '36px 28px 28px',
+  padding: '48px 32px 36px',
+}
+
+const eyebrow: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 700,
+  color: '#f59e0b',
+  letterSpacing: '0.15em',
+  margin: '0 0 16px',
 }
 
 const h1: React.CSSProperties = {
-  fontSize: '28px',
+  fontSize: '32px',
   fontWeight: 700,
   color: '#f5f5f5',
-  margin: '0 0 14px',
-  lineHeight: '1.25',
+  margin: '0 0 16px',
+  lineHeight: '1.2',
+  letterSpacing: '-0.02em',
 }
 
 const subtext: React.CSSProperties = {
   fontSize: '15px',
-  color: '#888',
+  color: '#777',
   lineHeight: '1.7',
-  margin: 0,
-}
-
-const card: React.CSSProperties = {
-  margin: '0 28px 28px',
-  backgroundColor: '#0f0f0f',
-  borderRadius: '10px',
-  border: '1px solid #252525',
-  padding: '20px 22px',
-}
-
-const cardLabel: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 700,
-  color: '#f59e0b',
-  letterSpacing: '0.1em',
-  margin: '0 0 18px',
-}
-
-const stepRow: React.CSSProperties = {
-  marginBottom: 0,
-}
-
-const stepNumCol: React.CSSProperties = {
-  width: '32px',
-  verticalAlign: 'top',
-}
-
-const stepNumber: React.CSSProperties = {
-  fontSize: '12px',
-  fontWeight: 700,
-  color: '#f59e0b',
-  margin: '2px 0 0',
-  lineHeight: '1.5',
-}
-
-const stepText: React.CSSProperties = {
-  fontSize: '14px',
-  color: '#bbb',
-  lineHeight: '1.6',
-  margin: 0,
-}
-
-const stepDivider: React.CSSProperties = {
-  borderColor: '#252525',
-  margin: '12px 0',
-}
-
-const ctaSection: React.CSSProperties = {
-  padding: '4px 28px 36px',
-  textAlign: 'left',
+  margin: '0 0 32px',
 }
 
 const button: React.CSSProperties = {
@@ -216,35 +161,83 @@ const button: React.CSSProperties = {
   color: '#000',
   fontWeight: 700,
   fontSize: '14px',
-  padding: '13px 28px',
+  padding: '13px 24px',
   borderRadius: '8px',
   textDecoration: 'none',
   display: 'inline-block',
+  letterSpacing: '0.01em',
+}
+
+const featureStrip: React.CSSProperties = {
+  backgroundColor: '#0d0d0d',
+  borderTop: '1px solid #1f1f1f',
+  borderBottom: '1px solid #1f1f1f',
+  padding: '28px 24px',
+  textAlign: 'center',
+}
+
+const featureCol: React.CSSProperties = {
+  textAlign: 'center',
+  padding: '0 12px',
+}
+
+const featureDividerCol: React.CSSProperties = {
+  width: '1px',
+  padding: 0,
+}
+
+const featureDividerText: React.CSSProperties = {
+  color: '#222',
+  fontSize: '20px',
+  margin: 0,
+  lineHeight: '1',
+}
+
+const featureIcon: React.CSSProperties = {
+  fontSize: '16px',
+  color: '#f59e0b',
+  margin: '0 0 6px',
+  lineHeight: '1',
+  fontWeight: 700,
+}
+
+const featureLabel: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  color: '#e5e5e5',
+  margin: '0 0 4px',
+  letterSpacing: '0.01em',
+}
+
+const featureDesc: React.CSSProperties = {
+  fontSize: '11px',
+  color: '#555',
+  margin: 0,
+  lineHeight: '1.4',
 }
 
 const footer: React.CSSProperties = {
-  padding: '0 28px 28px',
+  padding: '24px 32px',
 }
 
 const footerText: React.CSSProperties = {
   fontSize: '13px',
-  color: '#555',
-  lineHeight: '1.7',
+  color: '#444',
   margin: '0 0 16px',
 }
 
 const footerDivider: React.CSSProperties = {
-  borderColor: '#252525',
+  borderColor: '#1f1f1f',
   margin: '0 0 14px',
 }
 
 const footerLinks: React.CSSProperties = {
   fontSize: '12px',
-  color: '#444',
+  color: '#333',
   margin: 0,
 }
 
 const footerLink: React.CSSProperties = {
-  color: '#555',
+  color: '#444',
   textDecoration: 'underline',
 }

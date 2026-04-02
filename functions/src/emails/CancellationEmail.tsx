@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {
-  Html, Head, Body, Container, Section, Row, Column, Img, Text, Heading,
+  Html, Head, Body, Container, Section, Img, Text, Heading,
   Hr, Link, Preview, Font,
 } from '@react-email/components'
 
@@ -21,51 +21,36 @@ export function CancellationEmail({ firstName, endDate }: CancellationEmailProps
           fontStyle="normal"
         />
       </Head>
-      <Preview>Your Pro subscription has been cancelled — your data is safe</Preview>
+      <Preview>Your Pro subscription has been cancelled — your data stays safe.</Preview>
       <Body style={body}>
         <Container style={container}>
 
-          {/* Grey top accent for cancellation */}
-          <Section style={accentBar} />
-
           {/* Header */}
           <Section style={header}>
-            <Row>
-              <Column style={{ width: '40px' }}>
-                <Img
-                  src="https://www.freetradejournal.com/favicon-64x64.png"
-                  width="32"
-                  height="32"
-                  alt="FTJ"
-                  style={logo}
-                />
-              </Column>
-              <Column>
-                <Text style={brandName}>FreeTradeJournal</Text>
-              </Column>
-            </Row>
+            <Img
+              src="https://www.freetradejournal.com/favicon-64x64.png"
+              width="36"
+              height="36"
+              alt="FTJ"
+              style={logo}
+            />
+            <Text style={brandName}>FreeTradeJournal</Text>
           </Section>
 
           {/* Hero */}
           <Section style={hero}>
-            <Heading style={h1}>Subscription cancelled</Heading>
+            <Text style={eyebrow}>SUBSCRIPTION CANCELLED</Text>
+            <Heading style={h1}>
+              Sorry to see you go, {firstName}.
+            </Heading>
             <Text style={subtext}>
-              Hey {firstName}, your Pro subscription has been cancelled. You'll keep full Pro access until{' '}
-              <strong style={{ color: '#f5f5f5' }}>{endDate}</strong>, then your account reverts to the free plan.
+              Your Pro access runs until <strong style={{ color: '#e5e5e5' }}>{endDate}</strong>. After that, your account moves to the free plan — but your trades, journal, and goals are all still there.
             </Text>
           </Section>
 
-          {/* Reassurance */}
-          <Section style={card}>
-            <Row>
-              <Column style={iconCol}><Text style={icon}>🔒</Text></Column>
-              <Column>
-                <Text style={cardTitle}>Your data is safe</Text>
-                <Text style={cardText}>
-                  All your trades, journal entries, and goals are intact — nothing is deleted when you downgrade.
-                </Text>
-              </Column>
-            </Row>
+          {/* Reassurance strip */}
+          <Section style={strip}>
+            <Text style={stripText}>✉ Your data is safe and nothing is deleted.</Text>
           </Section>
 
           {/* CTA */}
@@ -78,10 +63,7 @@ export function CancellationEmail({ firstName, endDate }: CancellationEmailProps
 
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footerText}>
-              If you cancelled by mistake or have questions, just reply to this email.
-              <br />— Richy, FreeTradeJournal
-            </Text>
+            <Text style={footerText}>Richy<br />Founder, FreeTradeJournal</Text>
             <Hr style={footerDivider} />
             <Text style={footerLinks}>
               <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy</Link>
@@ -104,137 +86,122 @@ const body: React.CSSProperties = {
 }
 
 const container: React.CSSProperties = {
-  maxWidth: '560px',
+  maxWidth: '520px',
   margin: '0 auto',
-  backgroundColor: '#161616',
-  borderRadius: '12px',
+  backgroundColor: '#111',
+  borderRadius: '16px',
   overflow: 'hidden',
-  border: '1px solid #252525',
-}
-
-const accentBar: React.CSSProperties = {
-  backgroundColor: '#333',
-  height: '4px',
-  lineHeight: '4px',
-  fontSize: '1px',
+  border: '1px solid #1f1f1f',
 }
 
 const header: React.CSSProperties = {
-  padding: '20px 28px',
-  borderBottom: '1px solid #252525',
+  padding: '20px 32px',
+  borderBottom: '1px solid #1f1f1f',
 }
 
 const logo: React.CSSProperties = {
-  borderRadius: '7px',
-  display: 'block',
+  borderRadius: '8px',
+  display: 'inline-block',
+  verticalAlign: 'middle',
 }
 
 const brandName: React.CSSProperties = {
-  margin: 0,
-  fontSize: '15px',
+  display: 'inline-block',
+  verticalAlign: 'middle',
+  margin: '0 0 0 10px',
+  fontSize: '14px',
   fontWeight: 600,
-  color: '#e5e5e5',
-  lineHeight: '32px',
-  paddingLeft: '10px',
+  color: '#888',
+  letterSpacing: '0.01em',
 }
 
 const hero: React.CSSProperties = {
-  padding: '36px 28px 28px',
+  padding: '48px 32px 36px',
+}
+
+const eyebrow: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 700,
+  color: '#555',
+  letterSpacing: '0.15em',
+  margin: '0 0 16px',
 }
 
 const h1: React.CSSProperties = {
-  fontSize: '28px',
+  fontSize: '32px',
   fontWeight: 700,
   color: '#f5f5f5',
-  margin: '0 0 14px',
-  lineHeight: '1.25',
+  margin: '0 0 16px',
+  lineHeight: '1.2',
+  letterSpacing: '-0.02em',
 }
 
 const subtext: React.CSSProperties = {
   fontSize: '15px',
-  color: '#888',
+  color: '#777',
   lineHeight: '1.7',
   margin: 0,
 }
 
-const card: React.CSSProperties = {
-  margin: '0 28px 28px',
-  backgroundColor: '#0f0f0f',
-  borderRadius: '10px',
-  border: '1px solid #252525',
-  padding: '18px 22px',
+const strip: React.CSSProperties = {
+  backgroundColor: '#0d0d0d',
+  borderTop: '1px solid #1f1f1f',
+  borderBottom: '1px solid #1f1f1f',
+  padding: '16px 32px',
+  textAlign: 'center',
 }
 
-const iconCol: React.CSSProperties = {
-  width: '36px',
-  verticalAlign: 'top',
-}
-
-const icon: React.CSSProperties = {
-  fontSize: '18px',
-  margin: '2px 0 0',
-  lineHeight: '1',
-}
-
-const cardTitle: React.CSSProperties = {
-  fontSize: '13px',
-  fontWeight: 600,
-  color: '#e5e5e5',
-  margin: '0 0 4px',
-}
-
-const cardText: React.CSSProperties = {
+const stripText: React.CSSProperties = {
   fontSize: '13px',
   color: '#666',
-  lineHeight: '1.6',
   margin: 0,
 }
 
 const ctaSection: React.CSSProperties = {
-  padding: '4px 28px 36px',
-  textAlign: 'left',
+  padding: '32px 32px',
 }
 
 const ctaLabel: React.CSSProperties = {
   fontSize: '13px',
   color: '#555',
-  margin: '0 0 12px',
+  margin: '0 0 14px',
 }
 
 const button: React.CSSProperties = {
-  backgroundColor: '#f59e0b',
-  color: '#000',
-  fontWeight: 700,
+  backgroundColor: '#1f1f1f',
+  color: '#e5e5e5',
+  fontWeight: 600,
   fontSize: '14px',
-  padding: '13px 28px',
+  padding: '13px 24px',
   borderRadius: '8px',
   textDecoration: 'none',
   display: 'inline-block',
+  border: '1px solid #2a2a2a',
+  letterSpacing: '0.01em',
 }
 
 const footer: React.CSSProperties = {
-  padding: '0 28px 28px',
+  padding: '0 32px 24px',
 }
 
 const footerText: React.CSSProperties = {
   fontSize: '13px',
-  color: '#555',
-  lineHeight: '1.7',
+  color: '#444',
   margin: '0 0 16px',
 }
 
 const footerDivider: React.CSSProperties = {
-  borderColor: '#252525',
+  borderColor: '#1f1f1f',
   margin: '0 0 14px',
 }
 
 const footerLinks: React.CSSProperties = {
   fontSize: '12px',
-  color: '#444',
+  color: '#333',
   margin: 0,
 }
 
 const footerLink: React.CSSProperties = {
-  color: '#555',
+  color: '#444',
   textDecoration: 'underline',
 }
