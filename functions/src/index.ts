@@ -170,7 +170,7 @@ export const sendFeedback = functions.https.onCall(async (data, context) => {
 
   await getResend().emails.send({
     from: FROM_EMAIL,
-    to: "richy@freetradejournal.com",
+    to: "support@freetradejournal.com",
     replyTo: userEmail,
     subject: `[${label}] from ${userName}`,
     html: `
