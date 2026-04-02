@@ -94,6 +94,12 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Prop Firm Dashboard - Trading Journal for Funded Traders | FreeTradeJournal',
     description: 'Professional prop firm dashboard for FTMO, Apex, TopStep traders. Track evaluation progress, manage drawdown limits, monitor daily loss limits. Built for funded and evaluation accounts. 100% free.',
     keywords: 'prop firm dashboard, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, prop firm tracker, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, FTMO tracker, MFF journal, E8 funding tracker, prop firm analytics, challenge tracker, verification tracker, funded trader dashboard'
+  },
+  '/prop-tracker': {
+    title: 'PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal',
+    description: 'Track every prop firm fee, reset, payout and net P&L across all your accounts — free. PropTracker shows your true profit after every cost. Works with FTMO, Apex, TopStep, MyFundedFX and 10+ firms. No credit card required.',
+    keywords: 'prop firm fee tracker, prop firm payout tracker, prop trading cost calculator, FTMO fee tracker, Apex trader payout tracker, TopStep fee calculator, funded trader expense tracker, prop firm net profit, prop firm account tracker, prop firm P&L tracker, prop trading ROI calculator, funded trader cost tracker, prop firm reset fee tracker, evaluation fee tracker, prop firm profit calculator, prop firm expense tracker',
+    image: 'https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot.png'
   }
 };
 

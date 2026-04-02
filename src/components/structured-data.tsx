@@ -207,6 +207,46 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       };
     }
 
+    // PropTracker page
+    if (currentPath === '/prop-tracker') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "PropTracker - Free Prop Firm Fee & Payout Tracker",
+        "description": "Track every prop firm fee, reset, payout and net P&L across all your accounts. Know your true profit after every cost — free forever.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "PropTracker", "item": `${baseUrl}${currentPath}` }
+          ]
+        },
+        "mainEntity": {
+          "@type": "SoftwareApplication",
+          "name": "PropTracker by FreeTradeJournal",
+          "applicationCategory": "FinanceApplication",
+          "applicationSubCategory": "Prop Firm Fee & Payout Tracker",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Track evaluation fees, reset fees, and monthly subscription costs",
+            "Log all payouts and withdrawals per prop firm account",
+            "Net P&L calculation after every fee and payout",
+            "Multi-firm support — FTMO, Apex, TopStep, MyFundedFX, E8 and 10+ firms",
+            "Account status tracking — active, passed, failed, withdrawn",
+            "Full transaction history grouped by month",
+            "Free for all users — no credit card required"
+          ],
+          "screenshot": `${baseUrl}/images/screenshots/prop-tracker-screenshot.png`
+        }
+      };
+    }
+
     // Default WebPage schema
     return {
       ...baseData,
