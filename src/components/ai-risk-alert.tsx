@@ -41,6 +41,50 @@ function renderAlertMarkdown(md: string): string {
   });
 }
 
+function SampleRiskAlert() {
+  const { themeColors, alpha } = useThemePresets();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  return (
+    <div
+      className="rounded-lg border p-4 relative"
+      style={{
+        backgroundColor: alpha(themeColors.loss, '08'),
+        borderColor: alpha(themeColors.loss, '20'),
+      }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
+          <span className="text-sm font-semibold">3 consecutive losing trades detected</span>
+        </div>
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
+          aria-label="Dismiss"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="mt-3 ml-6 space-y-1.5 text-sm text-muted-foreground leading-relaxed blur-[3px] select-none pointer-events-none">
+        <p><strong className="text-foreground">Step away.</strong> Three consecutive losses is a proven signal to pause — not push harder.</p>
+        <p>Your last 3 losing trades averaged <strong className="text-foreground">-$87 each</strong>. Continuing now risks revenge trading, which historically costs you 2× more per trade.</p>
+        <p>Suggested action: close your platform for 30 minutes, review what these 3 trades had in common, then decide if the session is worth continuing.</p>
+      </div>
+      <div className="mt-3 ml-6">
+        <a
+          href="/pricing"
+          className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+        >
+          Upgrade to Pro to unlock AI risk advice →
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export function AIRiskAlertMonitor() {
   const { themeColors, alpha } = useThemePresets();
   const { isPro } = useProStatus();
@@ -200,6 +244,8 @@ export function AIRiskAlertMonitor() {
   };
 
   const visibleAlerts = alerts.filter(a => !dismissed.has(a.type));
+
+  if (!isPro && !isDemo) return <SampleRiskAlert />;
 
   if (visibleAlerts.length === 0) return null;
 

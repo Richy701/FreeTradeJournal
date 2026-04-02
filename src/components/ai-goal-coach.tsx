@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { getAICache, setAICache, clearAICache } from '@/utils/ai-cache';
@@ -72,8 +73,68 @@ const sectionColors = [
   'hsl(var(--chart-5, 340 75% 55%))',
 ];
 
+const GOAL_COACH_SAMPLE_SECTIONS = [
+  {
+    title: 'Progress Summary',
+    content: 'You\'re **68% of the way** to your monthly profit goal of $1,000. With 9 trading days left, you need **$47/day** to hit target — well within your recent average of $62/day on winning sessions.',
+  },
+  {
+    title: 'What\'s Working',
+    content: '- Your **win streak discipline** is solid — you\'ve stuck to your max 5 trades/day rule for 14 straight days\n- **GBPUSD longs** are consistently outperforming your other setups this month (+$420 combined)\n- Risk per trade has stayed below 1.5% — exactly where it should be',
+  },
+  {
+    title: 'Recommendations',
+    content: '- Your drawdown goal (max 5%) is at risk on Thursdays — consider sitting out or reducing size by 50% on that day until you identify the cause\n- You\'ve missed your journaling goal 4 times this week — traders who journal daily improve 23% faster on average\n- Consider raising your daily profit target slightly — you\'re consistently hitting it early and then over-trading',
+  },
+  {
+    title: 'This Week\'s Focus',
+    content: '1. **Journal every trade** — even just one sentence on why you took it\n2. **Thursday rule**: max 2 trades, reduce size to 0.5%\n3. Don\'t chase the monthly goal — let your edge play out and the number will follow',
+  },
+];
+
+function GoalCoachSamplePreview() {
+  return (
+    <div>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10">
+            <Brain className="h-4.5 w-4.5 text-amber-500" />
+          </div>
+          AI Goal Coach
+          <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 rounded-full">
+            Sample
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {GOAL_COACH_SAMPLE_SECTIONS.map((section, i) => {
+            const Icon = getIcon(section.title);
+            const color = sectionColors[i % sectionColors.length];
+            return (
+              <div key={i} className="rounded-lg p-4 bg-card border border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className="h-4 w-4 shrink-0" style={{ color }} />
+                  <h3 className="font-semibold text-sm text-foreground">{section.title}</h3>
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_li]:py-0.5"
+                  dangerouslySetInnerHTML={{ __html: renderContent(section.content) }}
+                />
+              </div>
+            );
+          })}
+          <p className="text-xs text-muted-foreground pt-2 text-right">
+            Sample output — your coaching will be based on your real goals & trades
+          </p>
+        </div>
+      </CardContent>
+    </div>
+  );
+}
+
 export function AIGoalCoach() {
   const { themeColors, alpha } = useThemePresets();
+  const { isPro } = useProStatus();
   const userStorage = useUserStorage();
   const { getTrades } = useDemoData();
   const [loading, setLoading] = useState(false);
@@ -155,6 +216,16 @@ export function AIGoalCoach() {
   };
 
   const sections = result ? parseSections(result) : [];
+
+  if (!isPro) {
+    return (
+      <Card>
+        <ProGate featureName="AI Goal Coach">
+          <GoalCoachSamplePreview />
+        </ProGate>
+      </Card>
+    );
+  }
 
   return (
     <Card>
