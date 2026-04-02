@@ -13,7 +13,7 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'FreeTradeJournal - Free Trading Journal for Forex & Futures',
     description: 'Free professional trading journal with AI-powered coaching. Track trades, analyze performance, manage risk. Features include P&L tracking, calendar heatmaps, AI Trade Analysis, AI Trading Coach, risk alerts, and strategy tagging. Free forever.',
     keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker, AI trading coach, AI trade analysis, AI risk alerts',
-    image: 'https://www.freetradejournal.com/og-image.webp'
+    image: 'https://www.freetradejournal.com/og-image.png'
   },
   '/dashboard': {
     title: 'Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics',
@@ -112,7 +112,7 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     const finalTitle = title || meta.title || 'FreeTradeJournal - Free Trading Journal';
     const finalDescription = description || meta.description || 'Free professional trading journal for forex, futures and stock traders.';
     const finalKeywords = keywords || meta.keywords || 'trading journal, forex, futures, stocks';
-    const finalImage = image || meta.image || 'https://www.freetradejournal.com/og-image.webp';
+    const finalImage = image || meta.image || 'https://www.freetradejournal.com/og-image.png';
     const canonicalUrl = `https://www.freetradejournal.com${currentPath === '/' ? '/' : currentPath}`;
 
     // Update document title
