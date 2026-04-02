@@ -116,12 +116,12 @@ const STATUS_OPTIONS: {
   { value: 'withdrawn', label: 'Withdrawn', badgeClass: 'bg-muted text-muted-foreground border-border' },
 ]
 
-const TX_TYPE_OPTIONS: { value: TransactionType; label: string; isExpense: boolean }[] = [
-  { value: 'evaluation-fee', label: 'Evaluation Fee', isExpense: true },
-  { value: 'reset-fee',      label: 'Reset Fee',      isExpense: true },
-  { value: 'monthly-fee',    label: 'Monthly Fee',    isExpense: true },
-  { value: 'payout',         label: 'Payout',         isExpense: false },
-  { value: 'other-expense',  label: 'Other Expense',  isExpense: true },
+const TX_TYPE_OPTIONS: { value: TransactionType; label: string; isExpense: boolean; badgeClass: string }[] = [
+  { value: 'evaluation-fee', label: 'Evaluation Fee', isExpense: true,  badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  { value: 'reset-fee',      label: 'Reset Fee',      isExpense: true,  badgeClass: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20' },
+  { value: 'monthly-fee',    label: 'Monthly Fee',    isExpense: true,  badgeClass: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+  { value: 'payout',         label: 'Payout',         isExpense: false, badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+  { value: 'other-expense',  label: 'Other Expense',  isExpense: true,  badgeClass: 'bg-muted text-muted-foreground border-border' },
 ]
 
 const HOW_IT_WORKS = [
@@ -166,7 +166,7 @@ const FIRM_BRAND_COLORS: Record<string, string> = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function isExpenseTx(type: TransactionType) {
@@ -1085,40 +1085,71 @@ export default function PropTracker() {
                     </div>
 
                     {/* Expanded transactions */}
-                    {expanded && txs.length > 0 && (
-                      <div className="flex flex-col gap-0.5 pt-1">
-                        {[...txs].sort((a, b) => b.date.localeCompare(a.date)).map(tx => {
-                          const expense = isExpenseTx(tx.type)
-                          const txMeta = TX_TYPE_OPTIONS.find(t => t.value === tx.type)!
-                          return (
-                            <div key={tx.id} className="flex items-center gap-2 rounded-md hover:bg-muted/40 px-1.5 py-1.5 group transition-colors">
-                              <div style={{ color: expense ? themeColors.loss : themeColors.profit }}>
-                                {expense ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                    {expanded && txs.length > 0 && (() => {
+                      const sorted = [...txs].sort((a, b) => b.date.localeCompare(a.date))
+                      const grouped = sorted.reduce((acc, tx) => {
+                        const month = tx.date.substring(0, 7)
+                        if (!acc[month]) acc[month] = []
+                        acc[month].push(tx)
+                        return acc
+                      }, {} as Record<string, typeof txs>)
+                      const months = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+                      return (
+                        <div className="flex flex-col gap-0 pt-1">
+                          {months.map(month => {
+                            const monthTxs = grouped[month]
+                            const monthLabel = new Date(month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                            const monthNet = monthTxs.reduce((sum, tx) => sum + (isExpenseTx(tx.type) ? -tx.amount : tx.amount), 0)
+                            return (
+                              <div key={month}>
+                                <div className="flex items-center justify-between px-1.5 py-1 mt-1.5">
+                                  <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{monthLabel}</span>
+                                  <span className="text-[10px] font-semibold tabular-nums" style={{ color: monthNet >= 0 ? themeColors.profit : themeColors.loss }}>
+                                    {monthNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthNet))}
+                                  </span>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  {monthTxs.map(tx => {
+                                    const expense = isExpenseTx(tx.type)
+                                    const txMeta = TX_TYPE_OPTIONS.find(t => t.value === tx.type)!
+                                    return (
+                                      <div key={tx.id} className="flex items-center gap-2 rounded-md hover:bg-muted/40 px-1.5 py-1.5 group transition-colors">
+                                        <div style={{ color: expense ? themeColors.loss : themeColors.profit }}>
+                                          {expense ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5">
+                                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${txMeta.badgeClass}`}>
+                                              {txMeta.label}
+                                            </span>
+                                            {tx.description && <span className="text-[10px] text-muted-foreground truncate">{tx.description}</span>}
+                                          </div>
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground shrink-0">
+                                          {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                                        </span>
+                                        <span className="text-xs font-semibold shrink-0 tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
+                                          {expense ? '-' : '+'}{fmt(tx.amount)}
+                                        </span>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                                          aria-label="Delete transaction"
+                                          onClick={() => setDeleteDialog({ open: true, type: 'tx', id: tx.id })}
+                                        >
+                                          <Trash2 className="h-3 w-3" aria-hidden="true" />
+                                        </Button>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium leading-none">{txMeta.label}</p>
-                                {tx.description && <p className="text-[10px] text-muted-foreground truncate mt-0.5">{tx.description}</p>}
-                              </div>
-                              <span className="text-[10px] text-muted-foreground shrink-0">
-                                {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                              </span>
-                              <span className="text-xs font-semibold shrink-0 tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
-                                {expense ? '-' : '+'}{fmt(tx.amount)}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                                aria-label="Delete transaction"
-                                onClick={() => setDeleteDialog({ open: true, type: 'tx', id: tx.id })}
-                              >
-                                <Trash2 className="h-3 w-3" aria-hidden="true" />
-                              </Button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
                   </CardContent>
                 </Card>
               )
