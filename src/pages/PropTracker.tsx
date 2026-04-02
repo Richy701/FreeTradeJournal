@@ -280,6 +280,8 @@ export default function PropTracker() {
 
   // ── UI state ──
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [toggledMonths, setToggledMonths] = useState<Set<string>>(new Set())
+  const currentYearMonth = new Date().toISOString().substring(0, 7)
   const [accountDialog, setAccountDialog] = useState<{ open: boolean; editing: PropFirmAccount | null }>({ open: false, editing: null })
   const [txDialog, setTxDialog] = useState<{ open: boolean; accountId: string }>({ open: false, accountId: '' })
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; type: 'account' | 'tx'; id: string } | null>(null)
@@ -483,6 +485,21 @@ export default function PropTracker() {
       else next.add(id)
       return next
     })
+  }
+
+  function toggleMonth(accountId: string, month: string) {
+    const key = `${accountId}:${month}`
+    setToggledMonths(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  function isMonthOpen(accountId: string, month: string) {
+    const toggled = toggledMonths.has(`${accountId}:${month}`)
+    return month === currentYearMonth ? !toggled : toggled
   }
 
   // ── Stats ──
@@ -1100,15 +1117,25 @@ export default function PropTracker() {
                             const monthTxs = grouped[month]
                             const monthLabel = new Date(month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                             const monthNet = monthTxs.reduce((sum, tx) => sum + (isExpenseTx(tx.type) ? -tx.amount : tx.amount), 0)
+                            const monthOpen = isMonthOpen(account.id, month)
                             return (
                               <div key={month}>
-                                <div className="flex items-center justify-between px-1.5 py-1 mt-1.5">
-                                  <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{monthLabel}</span>
+                                <button
+                                  onClick={() => toggleMonth(account.id, month)}
+                                  className="w-full flex items-center justify-between px-1.5 py-1 mt-1.5 rounded hover:bg-muted/40 transition-colors group"
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {monthOpen
+                                      ? <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                      : <ChevronUp className="h-3 w-3 text-muted-foreground" />}
+                                    <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{monthLabel}</span>
+                                    <span className="text-[10px] text-muted-foreground">({monthTxs.length})</span>
+                                  </div>
                                   <span className="text-[10px] font-semibold tabular-nums" style={{ color: monthNet >= 0 ? themeColors.profit : themeColors.loss }}>
                                     {monthNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthNet))}
                                   </span>
-                                </div>
-                                <div className="flex flex-col gap-0.5">
+                                </button>
+                                {monthOpen && <div className="flex flex-col gap-0.5">
                                   {monthTxs.map(tx => {
                                     const expense = isExpenseTx(tx.type)
                                     const txMeta = TX_TYPE_OPTIONS.find(t => t.value === tx.type)!
@@ -1143,7 +1170,7 @@ export default function PropTracker() {
                                       </div>
                                     )
                                   })}
-                                </div>
+                                </div>}
                               </div>
                             )
                           })}
