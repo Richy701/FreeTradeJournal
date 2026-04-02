@@ -8,6 +8,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     priceId: import.meta.env.VITE_STRIPE_PRICE_MONTHLY || '',
     features: [
       'Everything in Free',
+      'PropTracker — unlimited accounts',
       'Advanced analytics',
       'AI trade insights',
       'Unlimited trade exports',
@@ -21,6 +22,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     priceId: import.meta.env.VITE_STRIPE_PRICE_YEARLY || '',
     features: [
       'Everything in Free',
+      'PropTracker — unlimited accounts',
       'Advanced analytics',
       'AI trade insights',
       'Unlimited trade exports',
@@ -35,6 +37,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     priceId: import.meta.env.VITE_STRIPE_PRICE_LIFETIME || '',
     features: [
       'Everything in Free',
+      'PropTracker — unlimited accounts',
       'Advanced analytics',
       'AI trade insights',
       'Unlimited trade exports',
@@ -56,6 +59,7 @@ export const FREE_FEATURES = [
 ];
 
 export const PRO_FEATURES = [
+  'PropTracker — unlimited prop accounts',
   'Advanced analytics & charts',
   'AI Trading Coach & risk alerts',
   'AI trade review & strategy tagger',

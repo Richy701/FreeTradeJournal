@@ -146,7 +146,13 @@
       "WebFetch(domain:marksinsights.com)",
       "WebFetch(domain:livestreamtrading.com)",
       "WebFetch(domain:www.bestpropfirms.com)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Read(//Users/richy/.config/**)",
+      "Read(//Users/richy/.config/firebase/**)",
+      "Bash(firebase firestore:*)",
+      "Bash(firebase use:*)",
+      "Bash(firebase auth:print-access-token)",
+      "Bash(gcloud auth:*)"
     ],
     "deny": []
   }

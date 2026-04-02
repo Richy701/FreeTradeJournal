@@ -84,12 +84,14 @@ function HeroGeometric({
     subtitle,
     showCTA = true,
     cta,
+    compact = false,
 }: {
     title1?: string;
     title2?: string;
     subtitle?: string;
     showCTA?: boolean;
     cta?: React.ReactNode;
+    compact?: boolean;
 }) {
     const { enterDemoMode } = useAuth();
     const navigate = useNavigate();
@@ -107,7 +109,7 @@ function HeroGeometric({
     };
 
     return (
-        <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-background noise-overlay">
+        <div className={`relative ${compact ? 'min-h-[75vh]' : 'min-h-screen'} w-full flex items-center justify-center overflow-hidden bg-background noise-overlay`}>
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-yellow-600/[0.08] dark:from-amber-500/[0.05] dark:to-yellow-600/[0.05] blur-3xl" />
 
             <div className="absolute inset-0 overflow-hidden">
