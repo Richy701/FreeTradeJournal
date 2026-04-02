@@ -167,7 +167,9 @@
       "Bash(head -10 grep -n \"userStorage.getItem\\\\|getItem\\\\|setItem\" /Users/richy/FreeTradeJournal/src/pages/Journal.tsx)",
       "Bash(/dev/null grep:*)",
       "Bash(while read:*)",
-      "Bash(do git:*)"
+      "Bash(do git:*)",
+      "Bash(sed -i '' \"/BuyMeCoffee/d\" \"$f\")",
+      "Bash(sed -i '' \"/buy-me-coffee/d\" \"$f\")"
     ],
     "deny": []
   }

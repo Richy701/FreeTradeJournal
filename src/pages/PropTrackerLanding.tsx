@@ -6,7 +6,6 @@ import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { AppFooter } from '@/components/app-footer';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { ArrowRight, X, Receipt, Building2, BarChart3, Trophy, TrendingUp, Infinity } from 'lucide-react';
 
@@ -65,7 +64,6 @@ export default function PropTrackerLanding() {
               <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base hidden sm:block">Pricing</Link>
               <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base">Sign In</Link>
               <ThemeToggle />
-              <BuyMeCoffee username="richy701" variant="outline" size="sm" className="hidden sm:flex" />
             </div>
           </div>
         </header>

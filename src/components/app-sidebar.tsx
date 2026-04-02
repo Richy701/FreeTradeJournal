@@ -10,7 +10,6 @@ import {
   Lightbulb,
   Building2,
   Settings2,
-  Coffee,
   Megaphone,
   UserPlus,
   LogOut,
@@ -192,14 +191,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Settings2 className="h-4 w-4" />
                     <span>Settings</span>
                   </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton size="sm" asChild>
-                  <a href="https://buymeacoffee.com/richy701" target="_blank" rel="noopener noreferrer">
-                    <Coffee className="h-4 w-4" />
-                    <span>Buy me a coffee</span>
-                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

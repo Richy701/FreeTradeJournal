@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { SEOMeta } from '@/components/seo-meta';
 import { Footer7 } from '@/components/ui/footer-7';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { BuyMeCoffee } from '@/components/ui/buy-me-coffee';
 import {
   TrendingUp,
   ArrowRight,
@@ -80,7 +79,6 @@ export default function ForexTradingJournal() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <BuyMeCoffee username="richy701" variant="outline" size="sm" />
             <Link to="/login">
               <Button variant="outline">Sign In</Button>
             </Link>

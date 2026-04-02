@@ -134,6 +134,242 @@ function normalizeSide(side: string): 'long' | 'short' {
   return 'short';
 }
 
+// ─── IBKR Detection & Parsing ───────────────────────────────
+
+// IBKR FlexQuery date format: "20241128" or "20241128;10:30:45" or "2024-11-28 10:30:45"
+function parseIBKRDate(dateStr: string): string {
+  if (!dateStr) return new Date().toISOString().split('T')[0];
+  const cleaned = dateStr.trim().replace(';', ' ');
+  // YYYYMMDD format
+  if (/^\d{8}/.test(cleaned)) {
+    const y = cleaned.slice(0, 4);
+    const m = cleaned.slice(4, 6);
+    const d = cleaned.slice(6, 8);
+    return `${y}-${m}-${d}`;
+  }
+  return parseDateString(cleaned);
+}
+
+// Detect IBKR Closed Positions format: has OpenDateTime + CloseDateTime + FifoPnlRealized
+function isIBKRClosedPositions(headers: string[]): boolean {
+  const h = headers.map(x => x.toLowerCase());
+  return (
+    h.some(x => x === 'opendatetime' || x === 'opendate') &&
+    h.some(x => x === 'closedatetime' || x === 'closedate') &&
+    h.some(x => x.includes('fifopnl') || x.includes('realizedpnl'))
+  );
+}
+
+// Detect IBKR Trades/Executions format: has Open/CloseIndicator + FifoPnlRealized
+function isIBKRTradesFormat(headers: string[]): boolean {
+  const h = headers.map(x => x.toLowerCase());
+  return (
+    h.some(x => x === 'open/closeindicator' || x === 'openclose') &&
+    h.some(x => x.includes('fifopnl') || x.includes('tradeprice'))
+  );
+}
+
+function parseIBKRClosedPositions(lines: string[], headers: string[]): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false, trades: [], errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.toLowerCase());
+  const col = {
+    symbol:     h.findIndex(x => x === 'symbol'),
+    buySell:    h.findIndex(x => x === 'buy/sell' || x === 'buysell'),
+    quantity:   h.findIndex(x => x === 'quantity'),
+    openPrice:  h.findIndex(x => x === 'tradeprice' || x === 'openprice' || x === 'open price'),
+    closePrice: h.findIndex(x => x === 'closeprice' || x === 'close price'),
+    pnl:        h.findIndex(x => x.includes('fifopnl') || x.includes('realizedpnl') || x === 'realizedpl'),
+    openDate:   h.findIndex(x => x === 'opendatetime' || x === 'opendate'),
+    closeDate:  h.findIndex(x => x === 'closedatetime' || x === 'closedate'),
+  };
+
+  const dates: string[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    result.summary.totalRows++;
+
+    try {
+      const fields = parseCSVLine(line);
+      const symbol = col.symbol >= 0 ? fields[col.symbol]?.trim() : '';
+      const buySell = col.buySell >= 0 ? fields[col.buySell]?.trim().toUpperCase() : '';
+      const quantity = col.quantity >= 0 ? Math.abs(parseFloat(fields[col.quantity]) || 0) : 0;
+      const openPrice = col.openPrice >= 0 ? parseFloat(fields[col.openPrice]) : NaN;
+      const closePrice = col.closePrice >= 0 ? parseFloat(fields[col.closePrice]) : NaN;
+      const pnl = col.pnl >= 0 ? parseFloat(fields[col.pnl]) : NaN;
+      const date = parseIBKRDate(col.closeDate >= 0 ? fields[col.closeDate] : (col.openDate >= 0 ? fields[col.openDate] : ''));
+
+      if (!symbol || !buySell || !quantity || isNaN(pnl)) {
+        result.errors.push(`Row ${i + 1}: Missing required fields`);
+        result.summary.failed++;
+        continue;
+      }
+
+      // In closed positions: BUY/SELL refers to the closing trade direction
+      // SELL to close = was long; BUY to close = was short
+      const side: 'long' | 'short' = buySell === 'SELL' ? 'long' : 'short';
+
+      // Calculate entry price if not directly available
+      let entryPrice = openPrice;
+      let exitPrice = closePrice;
+      if (isNaN(entryPrice) && !isNaN(exitPrice) && quantity > 0) {
+        entryPrice = side === 'long'
+          ? exitPrice - pnl / quantity
+          : exitPrice + pnl / quantity;
+      } else if (isNaN(exitPrice) && !isNaN(entryPrice) && quantity > 0) {
+        exitPrice = side === 'long'
+          ? entryPrice + pnl / quantity
+          : entryPrice - pnl / quantity;
+      }
+
+      dates.push(date);
+      result.trades.push({
+        symbol,
+        side,
+        entryPrice: isNaN(entryPrice) ? '0' : entryPrice.toFixed(6),
+        exitPrice: isNaN(exitPrice) ? '0' : exitPrice.toFixed(6),
+        quantity: quantity.toString(),
+        pnl: pnl.toFixed(2),
+        date,
+      });
+      result.summary.successfulParsed++;
+    } catch {
+      result.errors.push(`Row ${i + 1}: Parse error`);
+      result.summary.failed++;
+    }
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) result.errors.push('No completed trades found in IBKR Closed Positions export');
+  return result;
+}
+
+function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false, trades: [], errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.toLowerCase());
+  const col = {
+    symbol:    h.findIndex(x => x === 'symbol'),
+    buySell:   h.findIndex(x => x === 'buy/sell' || x === 'buysell'),
+    quantity:  h.findIndex(x => x === 'quantity'),
+    price:     h.findIndex(x => x === 'tradeprice' || x === 'price'),
+    pnl:       h.findIndex(x => x.includes('fifopnl') || x === 'realizedpnl'),
+    indicator: h.findIndex(x => x === 'open/closeindicator' || x === 'openclose'),
+    dateTime:  h.findIndex(x => x === 'datetime' || x === 'tradedate' || x === 'date'),
+  };
+
+  // We pair O (open) executions with C (close) executions by symbol+side, FIFO
+  type Execution = { price: number; quantity: number; date: string; side: string };
+  const openQueues = new Map<string, Execution[]>(); // key = symbol:side
+  const dates: string[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    result.summary.totalRows++;
+
+    try {
+      const fields = parseCSVLine(line);
+      const symbol = col.symbol >= 0 ? fields[col.symbol]?.trim() : '';
+      const buySell = col.buySell >= 0 ? fields[col.buySell]?.trim().toUpperCase() : '';
+      const quantity = Math.abs(parseFloat(col.quantity >= 0 ? fields[col.quantity] : '0') || 0);
+      const price = parseFloat(col.price >= 0 ? fields[col.price] : '0');
+      const pnlRaw = col.pnl >= 0 ? parseFloat(fields[col.pnl]) : NaN;
+      const indicator = col.indicator >= 0 ? fields[col.indicator]?.trim().toUpperCase() : '';
+      const date = parseIBKRDate(col.dateTime >= 0 ? fields[col.dateTime] : '');
+
+      if (!symbol || !buySell || !quantity || isNaN(price)) {
+        result.errors.push(`Row ${i + 1}: Missing required fields`);
+        result.summary.failed++;
+        continue;
+      }
+
+      if (indicator === 'O' || indicator === 'OPEN') {
+        // Opening execution — push to queue
+        const key = `${symbol}:${buySell}`;
+        if (!openQueues.has(key)) openQueues.set(key, []);
+        openQueues.get(key)!.push({ price, quantity, date, side: buySell });
+      } else if (indicator === 'C' || indicator === 'CLOSE') {
+        // Closing execution — BUY to close = was short, SELL to close = was long
+        const isLong = buySell === 'SELL';
+        const openKey = `${symbol}:${isLong ? 'BUY' : 'SELL'}`;
+        const queue = openQueues.get(openKey) || [];
+
+        let remaining = quantity;
+        while (remaining > 0 && queue.length > 0) {
+          const open = queue[0];
+          const matched = Math.min(remaining, open.quantity);
+
+          const pnl = !isNaN(pnlRaw) ? pnlRaw * (matched / quantity)
+            : isLong
+              ? (price - open.price) * matched
+              : (open.price - price) * matched;
+
+          dates.push(date);
+          result.trades.push({
+            symbol,
+            side: isLong ? 'long' : 'short',
+            entryPrice: open.price.toFixed(6),
+            exitPrice: price.toFixed(6),
+            quantity: matched.toString(),
+            pnl: pnl.toFixed(2),
+            date,
+          });
+          result.summary.successfulParsed++;
+
+          remaining -= matched;
+          open.quantity -= matched;
+          if (open.quantity <= 0) queue.shift();
+        }
+
+        if (remaining > 0) {
+          result.errors.push(`${symbol}: Could not match ${remaining} closing units to an open position`);
+        }
+      }
+      // Rows with no indicator treated as complete trades if they have P&L
+      else if (!indicator && !isNaN(pnlRaw) && pnlRaw !== 0) {
+        const side: 'long' | 'short' = buySell === 'SELL' ? 'long' : 'short';
+        const entryPrice = side === 'long' ? price - pnlRaw / quantity : price + pnlRaw / quantity;
+        dates.push(date);
+        result.trades.push({
+          symbol, side,
+          entryPrice: entryPrice.toFixed(6),
+          exitPrice: price.toFixed(6),
+          quantity: quantity.toString(),
+          pnl: pnlRaw.toFixed(2),
+          date,
+        });
+        result.summary.successfulParsed++;
+      }
+    } catch {
+      result.errors.push(`Row ${i + 1}: Parse error`);
+      result.summary.failed++;
+    }
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) result.errors.push('No completed trades found. Ensure your FlexQuery includes both opening and closing executions with the Open/CloseIndicator field.');
+  return result;
+}
+
+// ─── TopStep Detection ───────────────────────────────────────
+
 // Detect if this is a TopStep order-level export
 function isTopStepOrderFormat(headers: string[]): boolean {
   const hasExecutePrice = headers.some(h => h.trim().toLowerCase() === 'executeprice');
@@ -411,7 +647,13 @@ export function parseCSV(csvContent: string): CSVParseResult {
     // Parse header
     const headers = parseCSVLine(lines[0]);
 
-    // Check if this is a TopStep order-level export
+    // Detect broker-specific formats
+    if (isIBKRClosedPositions(headers)) {
+      return parseIBKRClosedPositions(lines, headers);
+    }
+    if (isIBKRTradesFormat(headers)) {
+      return parseIBKRTrades(lines, headers);
+    }
     if (isTopStepOrderFormat(headers)) {
       return parseTopStepOrders(lines, headers);
     }

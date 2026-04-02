@@ -130,6 +130,68 @@ export const sendDay3NudgeEmails = functions.pubsub
     return null;
   });
 
+// ─── Send Feedback ─────────────────────────────────────────────
+
+export const sendFeedback = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+
+  const { type, message } = data as { type: string; message: string };
+
+  if (!message || typeof message !== "string" || message.trim().length === 0) {
+    throw new functions.https.HttpsError("invalid-argument", "Message is required.");
+  }
+  if (message.length > 2000) {
+    throw new functions.https.HttpsError("invalid-argument", "Message too long.");
+  }
+
+  const uid = context.auth.uid;
+  const userEmail = context.auth.token.email || "unknown";
+  const userName = context.auth.token.name || "Unknown user";
+
+  // Store in Firestore
+  await db.collection("feedback").add({
+    uid,
+    email: userEmail,
+    name: userName,
+    type: type || "general",
+    message: message.trim(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  // Email notification to you
+  const typeLabel: Record<string, string> = {
+    bug: "Bug Report",
+    feature: "Feature Request",
+    general: "General Feedback",
+  };
+  const label = typeLabel[type] || "Feedback";
+
+  await getResend().emails.send({
+    from: FROM_EMAIL,
+    to: "richy@freetradejournal.com",
+    replyTo: userEmail,
+    subject: `[${label}] from ${userName}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="margin:0 0 8px">${label}</h2>
+        <p style="margin:0 0 16px;color:#666;font-size:14px">
+          From <strong>${userName}</strong> (${userEmail}) · ${new Date().toUTCString()}
+        </p>
+        <div style="background:#f5f5f5;border-radius:8px;padding:16px;white-space:pre-wrap;font-size:15px;line-height:1.6">
+          ${message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+        </div>
+        <p style="margin:16px 0 0;color:#999;font-size:12px">
+          Reply to this email to respond directly to the user.
+        </p>
+      </div>
+    `,
+  });
+
+  return { ok: true };
+});
+
 // ─── Mark First Trade (client can't write users doc directly) ──
 
 export const markFirstTrade = functions.https.onCall(async (_data, context) => {

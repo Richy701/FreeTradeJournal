@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface FeedbackButtonProps {
   variant?: 'default' | 'outline' | 'ghost' | 'floating';
@@ -16,30 +17,12 @@ interface FeedbackButtonProps {
   buttonText?: string;
 }
 
-export function FeedbackButton({ 
-  variant = 'outline', 
+export function FeedbackButton({
+  variant = 'outline',
   className = '',
-  buttonText
+  buttonText,
 }: FeedbackButtonProps) {
   const [open, setOpen] = useState(false);
-  
-  // Your Tally form ID
-  const TALLY_FORM_ID = 'meV7rl';
-
-  // Load Tally script once when component mounts
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://tally.so/widgets/embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      // Cleanup on unmount
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
 
   if (variant === 'floating') {
     return (
@@ -58,11 +41,7 @@ export function FeedbackButton({
         >
           <MessageSquare className="h-5 w-5 group-hover:rotate-12 transition-transform" />
         </button>
-        <FeedbackDialog 
-          open={open} 
-          onOpenChange={setOpen}
-          formId={TALLY_FORM_ID}
-        />
+        <FeedbackDialog open={open} onOpenChange={setOpen} />
       </>
     );
   }
@@ -77,71 +56,113 @@ export function FeedbackButton({
         <MessageSquare className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
         <span>{buttonText || 'Feedback'}</span>
       </Button>
-      <FeedbackDialog 
-        open={open} 
-        onOpenChange={setOpen}
-        formId={TALLY_FORM_ID}
-      />
+      <FeedbackDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }
 
-function FeedbackDialog({ 
-  open, 
+const FEEDBACK_TYPES = [
+  { value: 'bug', label: 'Bug report' },
+  { value: 'feature', label: 'Feature request' },
+  { value: 'general', label: 'General feedback' },
+] as const;
+
+type FeedbackType = typeof FEEDBACK_TYPES[number]['value'];
+
+function FeedbackDialog({
+  open,
   onOpenChange,
-  formId
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  formId: string;
 }) {
-  const [iframeKey, setIframeKey] = useState(0);
+  const [type, setType] = useState<FeedbackType>('general');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Force iframe to reload when dialog opens
-  useEffect(() => {
-    if (open) {
-      setIframeKey(prev => prev + 1);
-      // Trigger Tally to process any new iframes
-      if (window.Tally) {
-        window.Tally.loadEmbeds();
-      }
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!message.trim()) return;
+
+    setLoading(true);
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const fn = httpsCallable(getFunctions(), 'sendFeedback');
+      await fn({ type, message: message.trim() });
+      toast.success('Feedback sent — thanks!');
+      onOpenChange(false);
+      setMessage('');
+      setType('general');
+    } catch {
+      toast.error('Failed to send feedback. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }, [open]);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-        <DialogHeader className="sr-only">
+      <DialogContent className="sm:max-w-[460px]">
+        <DialogHeader>
           <DialogTitle>Send Feedback</DialogTitle>
           <DialogDescription>
-            Share your feedback, report bugs, or request features for FreeTradeJournal
+            Report a bug, request a feature, or share your thoughts.
           </DialogDescription>
         </DialogHeader>
-        {open && (
-          <iframe
-            key={iframeKey}
-            data-tally-src={`https://tally.so/embed/${formId}?alignLeft=1&hideTitle=0&transparentBackground=0&dynamicHeight=1`}
-            src={`https://tally.so/embed/${formId}?alignLeft=1&hideTitle=0&transparentBackground=0&dynamicHeight=1`}
-            loading="lazy"
-            width="100%"
-            height="600"
-            frameBorder="0"
-            marginHeight={0}
-            marginWidth={0}
-            title="Feedback form"
-            style={{ border: 0 }}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-1">
+          <div className="flex gap-2">
+            {FEEDBACK_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setType(t.value)}
+                className={cn(
+                  "flex-1 py-1.5 px-2 rounded-md text-xs font-medium border transition-colors",
+                  type === t.value
+                    ? "bg-primary/10 border-primary/40 text-primary"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={
+              type === 'bug'
+                ? "Describe what happened and how to reproduce it..."
+                : type === 'feature'
+                ? "What would you like to see added or improved?"
+                : "What's on your mind?"
+            }
+            rows={5}
+            maxLength={2000}
+            required
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
           />
-        )}
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-muted-foreground">
+              {message.length}/2000
+            </span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={loading || !message.trim()}>
+                {loading ? 'Sending...' : 'Send feedback'}
+              </Button>
+            </div>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
-}
-
-// Add TypeScript declaration for Tally
-declare global {
-  interface Window {
-    Tally: {
-      loadEmbeds: () => void;
-    };
-  }
 }
