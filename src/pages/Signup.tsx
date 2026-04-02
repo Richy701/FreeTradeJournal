@@ -270,21 +270,31 @@ export default function Signup() {
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="h-4 w-4" />
                 </button>
               </div>
-              {formData.password && (
-                <div className="space-y-1">
-                  {passwordRequirements.map((req, index) => (
-                    <div key={index} className="flex items-center gap-2 text-xs">
-                      <FontAwesomeIcon
-                        icon={faCheck}
-                        className={`h-3 w-3 ${req.met ? 'text-green-500' : 'text-muted-foreground'}`}
-                      />
-                      <span className={req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
-                        {req.label}
-                      </span>
+              {formData.password && (() => {
+                const metCount = passwordRequirements.filter(r => r.met).length;
+                const labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+                const colors = [
+                  'bg-red-500', 'bg-red-500', 'bg-amber-500', 'bg-amber-400', 'bg-green-500'
+                ];
+                const textColors = [
+                  'text-red-500', 'text-red-500', 'text-amber-500', 'text-amber-400', 'text-green-500'
+                ];
+                return (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex gap-1 flex-1">
+                      {[0, 1, 2, 3].map(i => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors duration-200 ${i < metCount ? colors[metCount] : 'bg-muted'}`}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                    <span className={`text-xs font-medium transition-colors duration-200 ${textColors[metCount]}`}>
+                      {labels[metCount]}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="space-y-2">

@@ -36,13 +36,150 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
 const stripe_1 = __importDefault(require("stripe"));
+const resend_1 = require("resend");
 admin.initializeApp();
 const db = admin.firestore();
+// ─── Resend Email Helper ────────────────────────────────────
+let _resend;
+function getResend() {
+    if (!_resend) {
+        _resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+    }
+    return _resend;
+}
+const FROM_EMAIL = "FreeTradeJournal <hello@freetradejournal.com>";
+async function sendWelcomeEmail(email, name) {
+    const firstName = name?.split(" ")[0] || "trader";
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: "Welcome to FreeTradeJournal 👋",
+        html: `
+      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
+        <div style="padding: 32px 0 16px;">
+          <img src="https://www.freetradejournal.com/favicon-64x64.png" width="40" height="40" style="border-radius: 10px;" alt="FTJ" />
+        </div>
+        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">Hey ${firstName}, welcome 🎉</h1>
+        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 0 0 24px;">
+          Your FreeTradeJournal account is ready. The core journal — unlimited trades, analytics, and journaling — is 100% free, forever.
+        </p>
+        <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px;">Get started in 3 steps:</h2>
+        <ol style="font-size: 15px; color: #444; line-height: 2; margin: 0 0 24px; padding-left: 20px;">
+          <li>Add your first trade manually or import a CSV from your broker</li>
+          <li>Check your dashboard — P&amp;L, win rate, equity curve, and heatmap update automatically</li>
+          <li>Set a goal or risk rule to keep yourself accountable</li>
+        </ol>
+        <a href="https://www.freetradejournal.com/dashboard" style="display: inline-block; background: #f59e0b; color: #000; font-weight: 600; font-size: 15px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+          Open your journal →
+        </a>
+        <p style="font-size: 13px; color: #888; margin: 32px 0 0; line-height: 1.6;">
+          If you have any questions, just reply to this email.<br/>
+          — Richy, FreeTradeJournal
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #aaa;">
+          <a href="https://www.freetradejournal.com/privacy" style="color: #aaa;">Privacy</a> ·
+          <a href="https://www.freetradejournal.com/terms" style="color: #aaa;">Terms</a>
+        </p>
+      </div>
+    `,
+    });
+}
+async function sendProUpgradeEmail(email, name, planType) {
+    const firstName = name?.split(" ")[0] || "trader";
+    const planLabel = planType === "lifetime" ? "Lifetime" : planType === "yearly" ? "Pro (Yearly)" : "Pro (Monthly)";
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: "You're now Pro — here's what's unlocked",
+        html: `
+      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
+        <div style="padding: 32px 0 16px;">
+          <img src="https://www.freetradejournal.com/favicon-64x64.png" width="40" height="40" style="border-radius: 10px;" alt="FTJ" />
+        </div>
+        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">You're Pro now, ${firstName} ⚡</h1>
+        <p style="font-size: 15px; color: #666; margin: 0 0 4px;">Plan: <strong>${planLabel}</strong></p>
+        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 16px 0 24px;">
+          Everything is unlocked. Here's what you can do right now:
+        </p>
+        <ul style="font-size: 15px; color: #444; line-height: 2; margin: 0 0 24px; padding-left: 20px;">
+          <li><strong>AI Trading Coach</strong> — personalised coaching based on your real trade history</li>
+          <li><strong>AI Trade Analysis</strong> — pattern detection across your last 30 days</li>
+          <li><strong>AI Risk Alerts</strong> — get warned before revenge trading costs you</li>
+          <li><strong>Cloud Sync</strong> — your journal is safe across all your devices</li>
+          <li><strong>PropTracker Unlimited</strong> — unlimited prop firm accounts, charts, and AI analysis</li>
+        </ul>
+        <a href="https://www.freetradejournal.com/dashboard" style="display: inline-block; background: #f59e0b; color: #000; font-weight: 600; font-size: 15px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+          Go to your dashboard →
+        </a>
+        <p style="font-size: 13px; color: #888; margin: 32px 0 0; line-height: 1.6;">
+          Manage your subscription anytime in Settings → Subscription.<br/>
+          — Richy, FreeTradeJournal
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #aaa;">
+          <a href="https://www.freetradejournal.com/privacy" style="color: #aaa;">Privacy</a> ·
+          <a href="https://www.freetradejournal.com/terms" style="color: #aaa;">Terms</a>
+        </p>
+      </div>
+    `,
+    });
+}
+async function sendCancellationEmail(email, name, periodEnd) {
+    const firstName = name?.split(" ")[0] || "trader";
+    const endDate = periodEnd ? new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "the end of your billing period";
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: "Your Pro subscription has been cancelled",
+        html: `
+      <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #111;">
+        <div style="padding: 32px 0 16px;">
+          <img src="https://www.freetradejournal.com/favicon-64x64.png" width="40" height="40" style="border-radius: 10px;" alt="FTJ" />
+        </div>
+        <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">Subscription cancelled</h1>
+        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 0 0 24px;">
+          Hey ${firstName}, your Pro subscription has been cancelled. You'll keep full Pro access until <strong>${endDate}</strong>, after which your account will revert to the free plan.
+        </p>
+        <p style="font-size: 16px; color: #444; line-height: 1.6; margin: 0 0 24px;">
+          Your trades, journal entries, and goals are safe — nothing is deleted.
+        </p>
+        <p style="font-size: 15px; color: #444; margin: 0 0 24px;">
+          Changed your mind? You can resubscribe anytime from the pricing page.
+        </p>
+        <a href="https://www.freetradejournal.com/pricing" style="display: inline-block; background: #f59e0b; color: #000; font-weight: 600; font-size: 15px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+          Resubscribe →
+        </a>
+        <p style="font-size: 13px; color: #888; margin: 32px 0 0; line-height: 1.6;">
+          If you cancelled by mistake or have questions, just reply to this email.<br/>
+          — Richy, FreeTradeJournal
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #aaa;">
+          <a href="https://www.freetradejournal.com/privacy" style="color: #aaa;">Privacy</a> ·
+          <a href="https://www.freetradejournal.com/terms" style="color: #aaa;">Terms</a>
+        </p>
+      </div>
+    `,
+    });
+}
+// ─── Welcome Email on Signup ───────────────────────────────
+exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
+    if (!user.email)
+        return;
+    try {
+        await sendWelcomeEmail(user.email, user.displayName || undefined);
+        console.log(`Welcome email sent to ${user.email}`);
+    }
+    catch (err) {
+        console.error("Failed to send welcome email:", err);
+    }
+});
 // ─── Stripe Integration ────────────────────────────────────
 let _stripe;
 function getStripe() {
@@ -204,6 +341,16 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
+                // Send Pro upgrade email
+                try {
+                    const userRecord = await admin.auth().getUser(firebaseUid);
+                    if (userRecord.email) {
+                        await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.planType);
+                    }
+                }
+                catch (emailErr) {
+                    console.error("Failed to send Pro upgrade email:", emailErr);
+                }
                 break;
             }
             case "customer.subscription.updated": {
@@ -248,6 +395,19 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`subscription.deleted for ${firebaseUid}`);
+                // Send cancellation email
+                try {
+                    const userRecord = await admin.auth().getUser(firebaseUid);
+                    if (userRecord.email) {
+                        const periodEnd = sub.current_period_end
+                            ? new Date(sub.current_period_end * 1000).toISOString()
+                            : null;
+                        await sendCancellationEmail(userRecord.email, userRecord.displayName || undefined, periodEnd);
+                    }
+                }
+                catch (emailErr) {
+                    console.error("Failed to send cancellation email:", emailErr);
+                }
                 break;
             }
             case "invoice.payment_failed": {
