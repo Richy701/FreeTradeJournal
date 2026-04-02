@@ -116,11 +116,11 @@ export function ProProvider({ children }: ProProviderProps) {
   );
 
   const value: ProContextType = useMemo(() => ({
-    isPro: isActivePro(subscription),
+    isPro: isDemo || isActivePro(subscription),
     isLoading,
     subscription,
     openCheckout: handleOpenCheckout,
-  }), [subscription, isLoading, handleOpenCheckout]);
+  }), [isDemo, subscription, isLoading, handleOpenCheckout]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }
