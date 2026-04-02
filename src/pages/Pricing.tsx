@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
-import { ArrowRight, BadgeCheck, Check, X } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Check, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -205,6 +205,52 @@ function ComparisonRow({ feature, free, pro }: { feature: string; free: boolean;
   );
 }
 
+// ─── FAQ ─────────────────────────────────────────────────────
+const FAQS = [
+  {
+    q: 'Is the free plan really free forever?',
+    a: 'Yes. No credit card, no trial period, no hidden limits. The core journal — unlimited trades, analytics, and journaling — is free for life.',
+  },
+  {
+    q: 'Can I cancel my Pro subscription anytime?',
+    a: 'Yes, cancel from Settings → Subscription at any time. You keep Pro access until the end of your billing period.',
+  },
+  {
+    q: 'What happens to my data if I downgrade?',
+    a: 'Nothing is deleted. Your trades, journal entries, and goals are all still there. You just lose access to Pro features.',
+  },
+  {
+    q: 'Is cloud sync included in the free plan?',
+    a: 'Free users store data locally in the browser. Pro includes cloud sync across devices so your journal is available everywhere.',
+  },
+  {
+    q: 'What AI features does Pro include?',
+    a: 'AI Trading Coach, AI Trade Analysis, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, and AI Goal Coach — all powered by GPT-4.',
+  },
+  {
+    q: 'Is the lifetime deal really one payment?',
+    a: 'Yes. Pay once, own it forever. All future Pro features included at no extra cost.',
+  },
+];
+
+function FAQItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-border/50 last:border-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-4 text-left gap-4"
+      >
+        <span className="text-sm font-medium text-foreground">{q}</span>
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <p className="text-sm text-muted-foreground pb-4 leading-relaxed">{a}</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Pricing Page ───────────────────────────────────────
 export default function Pricing() {
   const { user } = useAuth();
@@ -254,11 +300,19 @@ export default function Pricing() {
       {/* Hero + Toggle */}
       <section className="flex flex-col items-center gap-8 py-14 sm:py-20 px-4">
         <div className="space-y-4 text-center">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
+            <span className="flex -space-x-2">
+              {['JM','AR','KT'].map((i) => (
+                <span key={i} className="w-6 h-6 rounded-full bg-amber-500 ring-2 ring-background flex items-center justify-center text-[8px] font-bold text-black">{i}</span>
+              ))}
+            </span>
+            3,000+ traders already journaling
+          </div>
           <h1 className="font-display text-4xl font-bold md:text-5xl tracking-tight">
             Trade smarter, <span className="text-amber-500">not harder</span>
           </h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            The core journal is free forever. Unlock Pro for advanced analytics, AI insights, and tools that help you find your edge.
+            The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.
           </p>
         </div>
 
@@ -364,15 +418,31 @@ export default function Pricing() {
 
             {/* CTA */}
             {!isPro && (
-              <div className="mt-8 text-center">
+              <div className="mt-8 text-center space-y-2">
                 <Button
                   className="bg-amber-500 text-white hover:bg-amber-600 font-semibold px-8"
-                  onClick={() => user ? navigate('/pricing') : navigate('/signup')}
+                  onClick={() => user ? openCheckout(activePlan.priceId) : navigate('/signup')}
                 >
                   {user ? 'Upgrade to Pro' : 'Get Started Free'}
                 </Button>
+                <p className="text-xs text-muted-foreground">Cancel anytime · No hidden fees</p>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="px-4 pb-16 sm:pb-24">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold mb-2">Common questions</h2>
+            <p className="text-foreground/70 text-base">Everything you need to know before upgrading</p>
+          </div>
+          <div className="rounded-2xl border bg-background px-6 sm:px-8 py-2">
+            {FAQS.map((faq) => (
+              <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+            ))}
           </div>
         </div>
       </section>
