@@ -6,7 +6,7 @@ import { MobileHeader } from '@/components/mobile-header';
 import { DemoBanner } from '@/components/demo-banner';
 import { useAuth } from '@/contexts/auth-context';
 
-export default function Layout() {
+export default function Layout({ children }: { children?: React.ReactNode }) {
   const { isDemo } = useAuth();
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
@@ -32,7 +32,7 @@ export default function Layout() {
           transition={shouldReduceMotion ? {} : { duration: 0.2, ease: 'easeOut' }}
           className="flex-1 w-full"
         >
-          <Outlet />
+          {children ?? <Outlet />}
         </motion.main>
       </SidebarInset>
     </SidebarProvider>

@@ -9,6 +9,7 @@ import { SyncProvider } from '@/contexts/sync-context';
 import { AccountProvider } from '@/contexts/account-context';
 import { SettingsProvider } from '@/contexts/settings-context';
 import { ProtectedRoute } from '@/components/protected-route';
+import { PropTrackerRoute } from '@/components/PropTrackerRoute';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { ScrollToTop } from '@/components/scroll-to-top';
@@ -40,7 +41,6 @@ const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
 const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazy(() => import('@/pages/TradeIdeas'))
-const PropTracker = lazy(() => import('@/pages/PropTracker'));
 const Changelog = lazy(() => import('@/pages/Changelog'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -104,16 +104,18 @@ function App() {
                 <Route path="/futures-trading-tracker" element={<FuturesTradingTracker />} />
                 <Route path="/prop-firm-dashboard" element={<PropFirmDashboard />} />
                 
+                {/* Prop Tracker — public landing for guests, full app for authenticated users */}
+                <Route path="/prop-tracker" element={<PropTrackerRoute />} />
+
                 {/* Protected routes */}
                 <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-                
+
                 <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/trades" element={<TradeLog />} />
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/ideas" element={<TradeIdeas />} />
-                  <Route path="/prop-tracker" element={<PropTracker />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>
