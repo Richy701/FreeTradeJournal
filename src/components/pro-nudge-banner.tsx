@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
 
-const DISMISS_KEY = 'pro-nudge-v1-dismissed';
 const TRADE_THRESHOLD = 5;
 
 export function ProNudgeBanner() {
@@ -15,10 +14,12 @@ export function ProNudgeBanner() {
   const [visible, setVisible] = useState(false);
   const [tradeCount, setTradeCount] = useState(0);
 
-  useEffect(() => {
-    if (!user || isDemo || isPro || isLoading) return;
+  const dismissKey = user ? `pro-nudge-v1-dismissed-${user.uid}` : null;
 
-    const dismissed = localStorage.getItem(DISMISS_KEY);
+  useEffect(() => {
+    if (!user || isDemo || isPro || isLoading || !dismissKey) return;
+
+    const dismissed = localStorage.getItem(dismissKey);
     if (dismissed) return;
 
     const raw = userStorage.getItem('trades');
@@ -34,11 +35,11 @@ export function ProNudgeBanner() {
     } catch {
       // malformed data, skip
     }
-  }, [user, isDemo, isPro, isLoading, userStorage]);
+  }, [user, isDemo, isPro, isLoading, userStorage, dismissKey]);
 
   function dismiss() {
     setVisible(false);
-    localStorage.setItem(DISMISS_KEY, '1');
+    if (dismissKey) localStorage.setItem(dismissKey, '1');
   }
 
   if (!visible) return null;
