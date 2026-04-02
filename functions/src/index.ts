@@ -122,7 +122,7 @@ export const sendDay3NudgeEmails = functions.pubsub
         sent++;
         console.log(`Day-3 nudge sent`);
       } catch (err) {
-        console.error(`Failed to send day-3 nudge to ${email}:`, err);
+        console.error(`Failed to send day-3 nudge:`, err);
       }
     }
 

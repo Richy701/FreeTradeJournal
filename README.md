@@ -125,11 +125,16 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Security & Data Protection
 
-- **XSS Protection** — All AI-generated content sanitized with DOMPurify to prevent cross-site scripting attacks
-- **Content Security Policy** — Strict CSP headers via Vercel configuration
+- **XSS Protection** — All AI-generated content sanitized with DOMPurify before rendering
+- **Content Security Policy** — Strict CSP headers via Vercel with no `unsafe-eval`, no wildcard origins
+- **HSTS** — HTTP Strict Transport Security with preload enabled
+- **Firestore Rules** — All collections locked; `allow write: if false` on user docs; only Admin SDK (Cloud Functions) can write user and feedback data
+- **Rate Limiting** — AI calls, feedback, and testimonial submissions are rate-limited per user via Firestore transactions
+- **Prompt Injection Hardening** — User-supplied trade notes passed to OpenAI are JSON-encoded and labelled as untrusted data
+- **No secrets in client bundle** — All API keys (Stripe, OpenAI, Resend) are server-side only via Cloud Functions environment variables
+- **Webhook verification** — Stripe webhooks verified with `stripe.webhooks.constructEvent` before processing
+- **User-scoped storage** — Per-user localStorage keys for complete data isolation between accounts
 - **Number Formatting** — Thousand separators (commas) on all currency displays for better readability
-- **Dependency Security** — Regular audits and updates of npm packages
-- **User-scoped dismiss keys** — Per-user localStorage keys for all dismissible banners to prevent cross-user state bleed
 
 ### PWA & Mobile
 
@@ -372,9 +377,9 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 ## Support
 
-- **Feedback**: [Send us feedback](https://tally.so/r/meV7rl)
+- **Feedback**: Use the in-app "Send Feedback" button in the sidebar
 - **Bug Reports**: [Open an issue on GitHub](https://github.com/Richy701/FreeTradeJournal/issues)
-- **Feature Requests**: Contribute to discussions
+- **Feature Requests**: Use the in-app feedback form or contribute to discussions
 
 ---
 

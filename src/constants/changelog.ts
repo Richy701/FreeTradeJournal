@@ -15,6 +15,43 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.5.0',
+    date: '2026-04-02',
+    summary: 'Native feedback form with star ratings and testimonials, security hardening, and onboarding improvements.',
+    items: [
+      {
+        type: 'new',
+        text: 'Native feedback form',
+        description: 'Replaced the third-party feedback widget with a built-in form. Rate your experience with stars, pick a feedback type (bug, feature, general), and submit — goes straight to our inbox.',
+      },
+      {
+        type: 'new',
+        text: 'Testimonials — share your story',
+        description: 'After leaving a 4 or 5 star rating, you can optionally write a testimonial. Tell us what you love about FreeTradeJournal and choose your trader role. Approved testimonials appear on the homepage.',
+      },
+      {
+        type: 'new',
+        text: 'Getting started checklist',
+        description: 'New users see a collapsible checklist on the dashboard to guide them through setting up their account, logging their first trade, and exploring key features.',
+      },
+      {
+        type: 'new',
+        text: 'First trade celebration',
+        description: 'When you log your very first trade, confetti fires and a toast message congratulates you. A small touch to mark the start of your trading journey.',
+      },
+      {
+        type: 'improved',
+        text: 'Security hardening',
+        description: 'Rate limiting added to AI calls, feedback, and testimonial submissions. User-supplied trade notes are now JSON-encoded before being sent to the AI to prevent prompt injection. Firestore rules tightened with explicit deny rules on all collections.',
+      },
+      {
+        type: 'improved',
+        text: 'Empty state pages',
+        description: 'Footer now sits at the bottom of the screen on sparse pages (Journal, Goals, Trade Log, Settings) instead of floating mid-page.',
+      },
+    ],
+  },
+  {
     version: '2.4.0',
     date: '2026-04-02',
     summary: 'Pricing page FAQ, PropTracker screenshot import discoverability, and bug fixes.',
