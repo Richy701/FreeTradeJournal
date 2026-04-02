@@ -24,6 +24,7 @@ import { isIncognitoMode } from '@/utils/incognito-detection'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
+import { ProNudgeBanner } from '@/components/pro-nudge-banner'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -474,6 +475,8 @@ export default function Dashboard() {
     <>
       <div className="min-h-screen bg-background">
       <SiteHeader />
+
+      <ProNudgeBanner />
 
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (
