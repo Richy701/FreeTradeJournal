@@ -357,6 +357,20 @@ functions/
   src/index.ts      # Firebase Cloud Functions (AI assist, Stripe webhooks)
 ```
 
+## Blog
+
+FreeTradeJournal runs a content blog at [blog.freetradejournal.com](https://blog.freetradejournal.com), built on Ghost and hosted on Railway. Posts are written in Markdown and published via a custom script:
+
+```bash
+# Save as draft
+npm run publish:post posts/my-post.md
+
+# Publish live
+npm run publish:post posts/my-post.md -- --publish
+```
+
+Posts live in the `posts/` directory. The Ghost Admin API key is stored in `.env` as `GHOST_ADMIN_API_KEY`.
+
 ## SEO
 
 All public routes are pre-rendered at build time using Puppeteer for search engine crawlability:

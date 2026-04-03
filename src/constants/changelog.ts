@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.6.0',
+    date: '2026-04-03',
+    summary: 'Official blog launched at blog.freetradejournal.com, Blog link added to sidebar and landing page, sitemap fix.',
+    items: [
+      {
+        type: 'new',
+        text: 'Blog at blog.freetradejournal.com',
+        description: 'FreeTradeJournal now has an official blog covering prop firm trading, combine strategies, and trading journal tips. Built on Ghost, hosted on Railway.',
+      },
+      {
+        type: 'new',
+        text: 'Blog link in sidebar and landing page footer',
+        description: 'Quick access to the blog from inside the app and the landing page footer.',
+      },
+      {
+        type: 'fixed',
+        text: 'SEO improvements',
+        description: 'Fixed an issue preventing search engines from properly accessing the sitemap. Pages should now index faster.',
+      },
+    ],
+  },
+  {
     version: '2.5.0',
     date: '2026-04-02',
     summary: 'Native feedback form with star ratings and testimonials, security hardening, and onboarding improvements.',

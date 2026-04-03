@@ -209,7 +209,8 @@ export default function LandingPage() {
               { name: "Features", href: "/#features" },
               { name: "Pricing", href: "/pricing" },
               { name: "Documentation", href: "/documentation" },
-              { name: "Changelog", href: "/changelog" }
+              { name: "Changelog", href: "/changelog" },
+              { name: "Blog", href: "https://blog.freetradejournal.com" },
             ]
           },
           {
@@ -218,13 +219,7 @@ export default function LandingPage() {
               { name: "Forex Trading Journal", href: "/forex-trading-journal" },
               { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
               { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
-            ]
-          },
-          {
-            title: "Resources",
-            links: [
-              { name: "Sign Up Free", href: "/signup" },
-              { name: "Login", href: "/login" },
+              { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
             ]
           },
           {
@@ -232,7 +227,7 @@ export default function LandingPage() {
             links: [
               { name: "Privacy Policy", href: "/privacy" },
               { name: "Terms & Conditions", href: "/terms" },
-              { name: "Cookie Policy", href: "/cookie-policy" }
+              { name: "Cookie Policy", href: "/cookie-policy" },
             ]
           }
         ]}
@@ -244,10 +239,7 @@ export default function LandingPage() {
           },
         ]}
         copyright="© 2026 FreeTradeJournal. All rights reserved."
-        legalLinks={[
-          { name: "Privacy Policy", href: "/privacy" },
-          { name: "Terms and Conditions", href: "/terms" },
-        ]}
+        legalLinks={[]}
       />
     </div>
   );

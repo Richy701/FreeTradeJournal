@@ -15,6 +15,7 @@ import {
   LogOut,
   Eye,
   Rocket,
+  Rss,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
@@ -163,6 +164,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <a href="https://blog.freetradejournal.com" target="_blank" rel="noopener noreferrer">
+                    <Rss className="h-4 w-4" />
+                    <span>Blog</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   size="sm"
