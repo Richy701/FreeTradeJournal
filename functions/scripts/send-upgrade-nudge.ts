@@ -52,7 +52,8 @@ const db = admin.firestore()
 const auth = admin.auth()
 
 // ── Init Resend ───────────────────────────────────────────
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_8g49VVbg_NS2N1WqacTr7AHdd8uKSj8aK'
+const RESEND_API_KEY = process.env.RESEND_API_KEY
+if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 const resend = new Resend(RESEND_API_KEY)
 
 // ── Main ──────────────────────────────────────────────────
