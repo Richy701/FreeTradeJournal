@@ -456,9 +456,10 @@ export default function Pricing() {
               title: "Product",
               links: [
                 { name: "Features", href: "/#features" },
-                { name: "Dashboard", href: "/dashboard" },
-                { name: "Trade Log", href: "/trades" },
-                { name: "Goals", href: "/goals" },
+                { name: "Pricing", href: "/pricing" },
+                { name: "Documentation", href: "/documentation" },
+                { name: "Changelog", href: "/changelog" },
+                { name: "Blog", href: "https://blog.freetradejournal.com" },
               ],
             },
             {
@@ -467,14 +468,7 @@ export default function Pricing() {
                 { name: "Forex Trading Journal", href: "/forex-trading-journal" },
                 { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
                 { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
-              ],
-            },
-            {
-              title: "Resources",
-              links: [
-                { name: "Documentation", href: "/documentation" },
-                { name: "Changelog", href: "/changelog" },
-                { name: "Pricing", href: "/pricing" },
+                { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
               ],
             },
             {
@@ -494,10 +488,7 @@ export default function Pricing() {
             },
           ]}
           copyright="&copy; 2026 FreeTradeJournal. All rights reserved."
-          legalLinks={[
-            { name: "Privacy Policy", href: "/privacy" },
-            { name: "Terms and Conditions", href: "/terms" },
-          ]}
+          legalLinks={[]}
         />
       </div>
     </div>

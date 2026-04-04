@@ -1,6 +1,7 @@
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { Link } from 'react-router-dom';
+import { FeedbackLink } from '@/components/feedback-link';
 
 export default function PrivacyPolicy() {
   return (
@@ -10,7 +11,7 @@ export default function PrivacyPolicy() {
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
         <header>
           <h1 className="font-display text-2xl font-bold tracking-tight">Privacy Policy</h1>
-          <p className="mt-2 text-muted-foreground">Last updated: March 5, 2026</p>
+          <p className="mt-2 text-muted-foreground">Last updated: April 3, 2026</p>
         </header>
 
         <hr className="border-border" />
@@ -32,6 +33,7 @@ export default function PrivacyPolicy() {
               <li>Email address and display name</li>
               <li>Authentication credentials (managed by Firebase Authentication)</li>
               <li>Google account information if you sign in with Google</li>
+              <li>Apple account information if you sign in with Apple</li>
             </ul>
 
             <h3 className="text-base font-semibold text-foreground mt-4 mb-2">Trading Data</h3>
@@ -47,7 +49,7 @@ export default function PrivacyPolicy() {
             <p className="mt-2">See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">Stripe's Privacy Policy</a> for details.</p>
 
             <h3 className="text-base font-semibold text-foreground mt-4 mb-2">AI Features (Pro)</h3>
-            <p>When you use AI-powered features (Trading Coach, Trade Review, Strategy Tagger, etc.), relevant trading data is sent to our servers and processed via OpenAI's API to generate personalised insights. This data is:</p>
+            <p>When you use AI-powered features (Trading Coach, Trade Review, Strategy Tagger, PropTracker Analysis, etc.), relevant trading data is sent to our servers and processed via OpenAI's API to generate personalised insights. When you use the PropTracker Screenshot Import feature, uploaded images are also sent to OpenAI for extraction. This data is:</p>
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li>Used solely to generate your AI analysis</li>
               <li>Not stored permanently on our servers</li>
@@ -56,7 +58,7 @@ export default function PrivacyPolicy() {
 
             <h3 className="text-base font-semibold text-foreground mt-4 mb-2">Analytics & Diagnostics</h3>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Anonymous usage analytics (Google Analytics) to understand how the app is used</li>
+              <li>Anonymous usage analytics (Google Analytics, Vercel Analytics) to understand how the app is used</li>
               <li>Error reports and crash logs to improve stability</li>
               <li>Device type, browser, and screen size for compatibility</li>
             </ul>
@@ -94,8 +96,10 @@ export default function PrivacyPolicy() {
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li><strong>Firebase</strong> (Google) — authentication and cloud storage</li>
               <li><strong>Stripe</strong> — payment processing for Pro subscriptions</li>
-              <li><strong>OpenAI</strong> — AI-powered analysis features (Pro only)</li>
+              <li><strong>OpenAI</strong> — AI-powered analysis features, including image processing for Screenshot Import (Pro only)</li>
               <li><strong>Google Analytics</strong> — anonymous usage analytics</li>
+              <li><strong>Vercel Analytics</strong> — anonymous performance and usage analytics</li>
+              <li><strong>Resend</strong> — transactional email delivery (feedback notifications, account emails)</li>
               <li><strong>Cloudflare</strong> — DNS, CDN, DDoS protection, and email routing</li>
               <li><strong>Vercel</strong> — application hosting</li>
             </ul>
@@ -138,7 +142,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Contact Us</h2>
-            <p>Questions about this policy? Reach us at <strong>support@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
+            <p>Questions about this policy? Reach us at <strong>support@freetradejournal.com</strong> or through our <FeedbackLink>feedback form</FeedbackLink>.</p>
           </section>
 
         </div>

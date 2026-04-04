@@ -20,7 +20,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         style={{
           paddingTop: isDemo
             ? 'calc(var(--pwa-safe-top, 0px) + var(--demo-banner-height, 0px))'
-            : 'calc(var(--pwa-safe-top, 0px) + var(--announcement-banner-height, 0px))',
+            : 'var(--pwa-safe-top, 0px)',
           paddingBottom: 'var(--pwa-safe-bottom, 0px)',
         }}
       >

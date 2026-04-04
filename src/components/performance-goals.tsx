@@ -114,7 +114,7 @@ function getRuleIcon(type: string) {
 }
 
 // Circular progress ring component
-function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achieved }: {
+function CircularProgress({ percentage, size = 64, strokeWidth = 6, color, achieved }: {
   percentage: number
   size?: number
   strokeWidth?: number
@@ -126,7 +126,7 @@ function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achie
   const offset = circumference - (Math.min(percentage, 100) / 100) * circumference
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2}
@@ -135,7 +135,7 @@ function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achie
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-muted/40"
+          className="text-muted/30"
         />
         <circle
           cx={size / 2}
@@ -152,9 +152,9 @@ function CircularProgress({ percentage, size = 52, strokeWidth = 5, color, achie
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         {achieved ? (
-          <FontAwesomeIcon icon={faCheck} className="h-4 w-4" style={{ color }} />
+          <FontAwesomeIcon icon={faCheck} className="h-5 w-5" style={{ color }} />
         ) : (
-          <span className="text-xs font-bold" style={{ color }}>{Math.round(percentage)}%</span>
+          <span className="text-sm font-bold" style={{ color }}>{Math.round(percentage)}%</span>
         )}
       </div>
     </div>
@@ -777,16 +777,37 @@ export function PerformanceGoals() {
                   ? Math.max(0, Math.min(100, (1 - (goal.current || 0) / goal.target) * 100))
                   : Math.min(100, ((goal.current || 0) / goal.target) * 100)
 
+                const ringColor = goal.achieved
+                  ? themeColors.profit
+                  : progress >= 85
+                    ? '#f59e0b'
+                    : progress >= 50
+                      ? themeColors.primary
+                      : themeColors.primary
+
+                const bgColor = goal.achieved
+                  ? alpha(themeColors.profit, '08')
+                  : progress >= 85
+                    ? 'rgba(245,158,11,0.06)'
+                    : alpha(themeColors.primary, '05')
+
+                const barColor = goal.achieved
+                  ? themeColors.profit
+                  : progress >= 85
+                    ? '#f59e0b'
+                    : themeColors.primary
+
                 return (
                   <div
                     key={goal.id}
-                    className="group relative rounded-lg border border-border p-4"
+                    className="group relative rounded-lg border border-border overflow-hidden"
+                    style={{ backgroundColor: bgColor }}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-4 p-4">
                       {/* Circular progress ring */}
                       <CircularProgress
                         percentage={progress}
-                        color={goal.achieved ? themeColors.profit : themeColors.primary}
+                        color={ringColor}
                         achieved={goal.achieved || false}
                       />
 
@@ -842,6 +863,13 @@ export function PerformanceGoals() {
                         </Button>
                       </div>
                     </div>
+                    {/* Progress bar at bottom */}
+                    <div className="h-1 w-full bg-muted/40">
+                      <div
+                        className="h-full transition-all duration-500"
+                        style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: barColor }}
+                      />
+                    </div>
                   </div>
                 )
               })}
@@ -878,68 +906,106 @@ export function PerformanceGoals() {
           </div>
         </CardHeader>
         <CardContent className="pt-2 space-y-2">
-          {riskRules.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FontAwesomeIcon icon={faShieldAlt} className="h-8 w-8 mb-2 opacity-40" />
-              <p className="text-sm">No risk rules configured.</p>
-            </div>
-          ) : (
-            riskRules.map(rule => (
-              <div
-                key={rule.id}
-                className="group flex items-center justify-between rounded-lg border border-border p-3.5"
-              >
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={rule.enabled}
-                    onCheckedChange={() => toggleRiskRule(rule.id)}
-                  />
-                  <FontAwesomeIcon
-                    icon={getRuleIcon(rule.type)}
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-foreground">
-                      {getRuleLabel(rule.type)}
-                    </span>
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      {rule.type.includes('Percent') || rule.type === 'maxRiskPerTrade'
-                        ? `${rule.value}%`
-                        : rule.type === 'maxOpenTrades'
-                          ? rule.value
-                          : `$${rule.value}`}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {rule.violations && rule.violations > 0 ? (
-                    <Badge
-                      className="text-xs font-medium"
-                      style={{
-                        backgroundColor: alpha(themeColors.loss, '20'),
-                        color: themeColors.loss,
-                        border: `1px solid ${alpha(themeColors.loss, '30')}`
-                      }}
-                    >
-                      {rule.violations} violation{rule.violations !== 1 ? 's' : ''}
-                    </Badge>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
-                    onClick={() => {
-                      setEditingRule(rule)
-                      setShowRuleDialog(true)
-                    }}
-                    aria-label="Edit rule"
-                  >
-                    <FontAwesomeIcon icon={faPen} className="h-3 w-3" />
-                  </Button>
-                </div>
+          {(() => {
+            const now = new Date()
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            const todayTrades = trades.filter((t: any) => new Date(t.exitTime) >= todayStart)
+            const todayLoss = Math.abs(Math.min(0, todayTrades.reduce((s: number, t: any) => s + (t.pnl || 0), 0)))
+            const worstTradeLoss = trades.length > 0
+              ? Math.abs(Math.min(0, ...trades.map((t: any) => t.pnl || 0)))
+              : 0
+
+            const getRuleCurrent = (rule: RiskRule): number | null => {
+              if (rule.type === 'maxLossPerDay') return todayLoss
+              if (rule.type === 'maxLossPerTrade') return worstTradeLoss
+              return null
+            }
+
+            return riskRules.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FontAwesomeIcon icon={faShieldAlt} className="h-8 w-8 mb-2 opacity-40" />
+                <p className="text-sm">No risk rules configured.</p>
               </div>
-            ))
-          )}
+            ) : riskRules.map(rule => {
+              const current = getRuleCurrent(rule)
+              const pct = current !== null ? Math.min(100, (current / rule.value) * 100) : null
+              const barColor = pct === null ? themeColors.primary
+                : pct >= 90 ? themeColors.loss
+                : pct >= 60 ? '#f59e0b'
+                : themeColors.profit
+
+              return (
+                <div
+                  key={rule.id}
+                  className="group rounded-lg border border-border overflow-hidden"
+                >
+                  <div className="flex items-center justify-between p-3.5">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={rule.enabled}
+                        onCheckedChange={() => toggleRiskRule(rule.id)}
+                      />
+                      <FontAwesomeIcon
+                        icon={getRuleIcon(rule.type)}
+                        className="h-3.5 w-3.5 text-muted-foreground"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">
+                          {getRuleLabel(rule.type)}
+                        </span>
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {rule.type.includes('Percent') || rule.type === 'maxRiskPerTrade'
+                            ? `${rule.value}%`
+                            : rule.type === 'maxOpenTrades'
+                              ? rule.value
+                              : `$${rule.value}`}
+                        </span>
+                        {current !== null && rule.enabled && (
+                          <span className="ml-2 text-xs" style={{ color: barColor }}>
+                            ${current.toFixed(0)} used
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {rule.violations && rule.violations > 0 ? (
+                        <Badge
+                          className="text-xs font-medium"
+                          style={{
+                            backgroundColor: alpha(themeColors.loss, '20'),
+                            color: themeColors.loss,
+                            border: `1px solid ${alpha(themeColors.loss, '30')}`
+                          }}
+                        >
+                          {rule.violations} violation{rule.violations !== 1 ? 's' : ''}
+                        </Badge>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                        onClick={() => {
+                          setEditingRule(rule)
+                          setShowRuleDialog(true)
+                        }}
+                        aria-label="Edit rule"
+                      >
+                        <FontAwesomeIcon icon={faPen} className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  {pct !== null && rule.enabled && (
+                    <div className="h-1 w-full bg-muted/40">
+                      <div
+                        className="h-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: barColor }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          })()}
         </CardContent>
       </Card>
 

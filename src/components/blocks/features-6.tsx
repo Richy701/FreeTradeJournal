@@ -13,7 +13,7 @@ export function FreeTradeJournalFeatures() {
 
     return (
         <section className="py-14 sm:py-16">
-            <div className="mx-auto max-w-7xl space-y-16 px-6">
+            <div className="mx-auto max-w-[1600px] space-y-16 px-6">
                 <div className="relative z-10 grid items-center gap-6 md:grid-cols-2 md:gap-16">
                     <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">Professional trading journal & <span className="text-amber-500">analytics</span></h2>
                     <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. <span className="text-amber-500 font-semibold">Free forever</span>, no credit card required.</p>

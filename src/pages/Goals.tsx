@@ -103,10 +103,10 @@ export default function Goals() {
     },
     {
       icon: faChartBar,
-      value: stats.trades,
-      label: 'Total Trades',
+      value: stats.totalGoals > 0 ? stats.totalGoals - stats.achievedGoals : 0,
+      label: 'In Progress',
       color: themeColors.primary,
-      subtitle: 'All time'
+      subtitle: 'Active goals'
     },
     {
       icon: faFire,

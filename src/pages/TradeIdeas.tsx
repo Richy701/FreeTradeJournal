@@ -557,6 +557,11 @@ export default function TradeIdeas() {
                     <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
                       {idea.insight}
                     </p>
+                    {idea.nextStep && (
+                      <p className="text-xs mt-1.5 font-medium" style={{ color: accentColor, opacity: 0.85 }}>
+                        Next step: {idea.nextStep}
+                      </p>
+                    )}
                   </div>
                 )
               })}

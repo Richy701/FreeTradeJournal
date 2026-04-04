@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
@@ -54,7 +55,7 @@ import {
 } from "@/components/ui/chart";
 import { Pie, PieChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
-import { DateTimePicker } from '@/components/ui/date-picker';
+import { DateTimePicker, DatePicker } from '@/components/ui/date-picker';
 import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findColumnIndex, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -140,11 +141,7 @@ export default function TradeLog() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
-  const [reportType, setReportType] = useState<'monthly' | 'quarterly' | 'yearly' | 'custom'>('monthly');
-  const [reportStartDate, setReportStartDate] = useState<string>('');
-  const [reportEndDate, setReportEndDate] = useState<string>('');
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
   });
@@ -166,6 +163,14 @@ export default function TradeLog() {
   const [journalPromptTrade, setJournalPromptTrade] = useState<Trade | null>(null);
   const [reviewingTradeId, setReviewingTradeId] = useState<string | null>(null);
   const [isStrategyTaggerOpen, setIsStrategyTaggerOpen] = useState(false);
+
+  // Bulk selection state
+  const [selectedTradeIds, setSelectedTradeIds] = useState<Set<string>>(new Set());
+
+  // CSV export filter state
+  const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
+  const [exportFrom, setExportFrom] = useState<Date | undefined>(undefined);
+  const [exportTo, setExportTo] = useState<Date | undefined>(undefined);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -512,8 +517,9 @@ export default function TradeLog() {
       setEditingTrade(null);
     } else {
       saveTrades([...trades, newTrade]);
-      // Show AI journal prompts for new trades
       setJournalPromptTrade(newTrade);
+      // Check risk rules after saving (warn only, never block)
+      if (pnl < 0) checkRiskRules(pnl, newTrade.exitTime);
     }
 
     form.reset();
@@ -544,6 +550,81 @@ export default function TradeLog() {
     if (!window.confirm('Are you sure you want to delete this trade?')) return;
     const updatedTrades = trades.filter((t) => t.id !== id);
     saveTrades(updatedTrades);
+  };
+
+  const handleBulkDelete = () => {
+    if (isDemo) {
+      toast.info('Sign up to delete trades!');
+      return;
+    }
+    if (selectedTradeIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedTradeIds.size} selected trade${selectedTradeIds.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    const updatedTrades = trades.filter((t) => !selectedTradeIds.has(t.id));
+    saveTrades(updatedTrades);
+    setSelectedTradeIds(new Set());
+    toast.success(`Deleted ${selectedTradeIds.size} trade${selectedTradeIds.size > 1 ? 's' : ''}`);
+  };
+
+  const toggleTradeSelection = (id: string) => {
+    setSelectedTradeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedTradeIds.size === paginatedTrades.length) {
+      setSelectedTradeIds(new Set());
+    } else {
+      setSelectedTradeIds(new Set(paginatedTrades.map(t => t.id)));
+    }
+  };
+
+  const checkRiskRules = (newPnl: number, tradeDate: Date): void => {
+    try {
+      const rulesRaw = userStorage.getItem('riskRules');
+      if (!rulesRaw) return;
+      const rules: { id: string; type: string; value: number; enabled: boolean; violations?: number }[] = JSON.parse(rulesRaw);
+      const today = tradeDate.toISOString().split('T')[0];
+      const violations: { id: string; type: string; value: number; enabled: boolean; violations?: number }[] = [];
+
+      for (const rule of rules) {
+        if (!rule.enabled) continue;
+
+        if (rule.type === 'maxLossPerDay' && newPnl < 0) {
+          const todayPnl = trades
+            .filter(t => new Date(t.exitTime).toISOString().split('T')[0] === today)
+            .reduce((sum, t) => sum + t.pnl, 0) + newPnl;
+          if (todayPnl < -rule.value) {
+            violations.push(rule);
+            toast.warning(`Daily loss limit breached`, {
+              description: `Today's P&L is -$${Math.abs(todayPnl).toFixed(2)}, exceeding your $${rule.value} limit.`,
+              duration: 6000,
+            });
+          }
+        }
+
+        if (rule.type === 'maxLossPerTrade' && newPnl < -rule.value) {
+          violations.push(rule);
+          toast.warning(`Per-trade loss limit breached`, {
+            description: `This trade lost $${Math.abs(newPnl).toFixed(2)}, exceeding your $${rule.value} limit.`,
+            duration: 6000,
+          });
+        }
+      }
+
+      if (violations.length > 0) {
+        const updatedRules = rules.map(r =>
+          violations.some(v => v.id === r.id)
+            ? { ...r, violations: (r.violations || 0) + 1 }
+            : r
+        );
+        userStorage.setItem('riskRules', JSON.stringify(updatedRules));
+      }
+    } catch {
+      // Non-critical
+    }
   };
 
   const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -709,20 +790,33 @@ export default function TradeLog() {
     });
   };
 
-  const handleCSVExport = () => {
+  const handleCSVExport = (fromDate?: Date, toDate?: Date) => {
+    const escapeCSV = (val: unknown): string => {
+      let s: string;
+      if (val instanceof Date) s = format(val, 'yyyy-MM-dd HH:mm:ss');
+      else if (val === undefined || val === null) s = '';
+      else s = String(val);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    let exportTrades = trades;
+    if (fromDate || toDate) {
+      const to = toDate ? new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59) : null;
+      exportTrades = trades.filter(t => {
+        const d = t.entryTime instanceof Date ? t.entryTime : new Date(t.entryTime);
+        if (fromDate && d < fromDate) return false;
+        if (to && d > to) return false;
+        return true;
+      });
+    }
     const headers = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes'];
     const csvContent = [
       headers.join(','),
-      ...trades.map(trade => 
+      ...exportTrades.map(trade =>
         headers.map(header => {
-          let value = trade[header as keyof Trade];
-          if (header === 'lotSize' && !value) {
-            value = (trade as any).quantity || 1;
+          if (header === 'lotSize' && !trade[header as keyof Trade]) {
+            return escapeCSV((trade as any).quantity || 1);
           }
-          if (value instanceof Date) {
-            return format(value, 'yyyy-MM-dd HH:mm:ss');
-          }
-          return value?.toString() || '';
+          return escapeCSV(trade[header as keyof Trade]);
         }).join(',')
       )
     ].join('\n');
@@ -733,137 +827,10 @@ export default function TradeLog() {
     a.setAttribute('href', url);
     a.setAttribute('download', `trades_${format(new Date(), 'yyyy-MM-dd')}.csv`);
     a.click();
+    toast.success(`${exportTrades.length} trade${exportTrades.length === 1 ? '' : 's'} exported`);
+    setExportPopoverOpen(false);
   };
 
-  const generateReport = () => {
-    let filteredTrades = [...trades];
-    const now = new Date();
-    let reportStart: Date;
-    let reportEnd: Date;
-
-    switch (reportType) {
-      case 'monthly':
-        reportStart = startOfMonth(now);
-        reportEnd = endOfMonth(now);
-        break;
-      case 'quarterly':
-        reportStart = startOfQuarter(now);
-        reportEnd = endOfQuarter(now);
-        break;
-      case 'yearly':
-        reportStart = startOfYear(now);
-        reportEnd = endOfYear(now);
-        break;
-      case 'custom':
-        reportStart = new Date(reportStartDate);
-        reportEnd = new Date(reportEndDate);
-        break;
-      default:
-        return;
-    }
-
-    filteredTrades = trades.filter(trade => {
-      const tradeDate = new Date(trade.exitTime);
-      return tradeDate >= reportStart && tradeDate <= reportEnd;
-    });
-
-    const wins = filteredTrades.filter(t => t.pnl > 0);
-    const losses = filteredTrades.filter(t => t.pnl < 0);
-    const totalPnL = filteredTrades.reduce((sum, t) => sum + t.pnl, 0);
-    const totalCommission = filteredTrades.reduce((sum, t) => sum + t.commission, 0);
-    const totalSwap = filteredTrades.reduce((sum, t) => sum + t.swap, 0);
-    
-    const symbolStats = new Map<string, { trades: number; pnl: number }>();
-    const strategyStats = new Map<string, { trades: number; pnl: number }>();
-    
-    filteredTrades.forEach(trade => {
-      const symbolStat = symbolStats.get(trade.symbol) || { trades: 0, pnl: 0 };
-      symbolStats.set(trade.symbol, {
-        trades: symbolStat.trades + 1,
-        pnl: symbolStat.pnl + trade.pnl,
-      });
-      
-      if (trade.strategy) {
-        const strategyStat = strategyStats.get(trade.strategy) || { trades: 0, pnl: 0 };
-        strategyStats.set(trade.strategy, {
-          trades: strategyStat.trades + 1,
-          pnl: strategyStat.pnl + trade.pnl,
-        });
-      }
-    });
-
-    const reportData = {
-      period: { start: reportStart, end: reportEnd },
-      summary: {
-        totalTrades: filteredTrades.length,
-        wins: wins.length,
-        losses: losses.length,
-        winRate: filteredTrades.length > 0 ? (wins.length / filteredTrades.length) * 100 : 0,
-        totalPnL,
-        totalCommission,
-        totalSwap,
-        netPnL: totalPnL,
-        averagePnL: filteredTrades.length > 0 ? totalPnL / filteredTrades.length : 0,
-        largestWin: wins.length > 0 ? Math.max(...wins.map(t => t.pnl)) : 0,
-        largestLoss: losses.length > 0 ? Math.min(...losses.map(t => t.pnl)) : 0,
-      },
-      symbolBreakdown: Array.from(symbolStats.entries()).map(([symbol, data]) => ({
-        symbol,
-        ...data,
-      })),
-      strategyBreakdown: Array.from(strategyStats.entries()).map(([strategy, data]) => ({
-        strategy,
-        ...data,
-      })),
-      trades: filteredTrades,
-    };
-
-    exportReportCSV(reportData);
-    setIsReportDialogOpen(false);
-  };
-
-  const exportReportCSV = (reportData: any) => {
-    const headers = [
-      'Trading Report',
-      `Period: ${format(reportData.period.start, 'MM/dd/yyyy')} - ${format(reportData.period.end, 'MM/dd/yyyy')}`,
-      '',
-      'Summary Metrics',
-      'Metric,Value',
-      `Total Trades,${reportData.summary.totalTrades}`,
-      `Winning Trades,${reportData.summary.wins}`,
-      `Losing Trades,${reportData.summary.losses}`,
-      `Win Rate,${reportData.summary.winRate.toFixed(2)}%`,
-      `Total P&L,$${reportData.summary.totalPnL.toFixed(2)}`,
-      `Total Commission,$${reportData.summary.totalCommission.toFixed(2)}`,
-      `Total Swap/Rollover,$${reportData.summary.totalSwap.toFixed(2)}`,
-      `Net P&L,$${reportData.summary.netPnL.toFixed(2)}`,
-      `Average P&L per Trade,$${reportData.summary.averagePnL.toFixed(2)}`,
-      `Largest Win,$${reportData.summary.largestWin.toFixed(2)}`,
-      `Largest Loss,$${reportData.summary.largestLoss.toFixed(2)}`,
-      '',
-      'Performance by Symbol',
-      'Symbol,Trades,P&L',
-      ...reportData.symbolBreakdown.map((item: any) => `${item.symbol},${item.trades},$${item.pnl.toFixed(2)}`),
-      '',
-      'Performance by Strategy',
-      'Strategy,Trades,P&L',
-      ...reportData.strategyBreakdown.map((item: any) => `${item.strategy},${item.trades},$${item.pnl.toFixed(2)}`),
-      '',
-      'Individual Trade Details',
-      'Date,Symbol,Market,Side,Entry,Exit,Lots,Spread,Commission,Swap,P&L,R:R,Strategy,Notes',
-      ...reportData.trades.map((t: Trade) => 
-        `${format(new Date(t.exitTime), 'MM/dd/yyyy HH:mm')},${t.symbol},${detectMarketFromSymbol(t.symbol)},${t.side},${t.entryPrice},${t.exitPrice},${t.lotSize},${t.spread},${t.commission},${t.swap},${t.pnl.toFixed(2)},${t.riskReward ? t.riskReward.toFixed(2) : ''},${t.strategy || ''},"${t.notes || ''}"`
-      ),
-    ];
-
-    const csvContent = headers.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', `trading_report_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    a.click();
-  };
 
   // Enhanced loading and stats state
   const [isLoading, setIsLoading] = useState(true);
@@ -1113,7 +1080,7 @@ export default function TradeLog() {
       <div className="min-h-screen flex flex-col w-full bg-background">
       <SiteHeader />
       {/* Header */}
-      <div className="border-b sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
+      <div className="border-b sticky top-[var(--mobile-header-height,0px)] md:top-0 z-20 bg-background/95 backdrop-blur-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
             <div className="space-y-1">
@@ -1158,24 +1125,50 @@ export default function TradeLog() {
               </>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={trades.length === 0}
-                onClick={handleCSVExport}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
+              <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={trades.length === 0}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96 p-4 space-y-3" align="end">
+                  <p className="text-sm font-medium">Export trades as CSV</p>
+                  <div className="flex gap-1.5">
+                    {[
+                      { label: 'This month', from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
+                      { label: 'This quarter', from: startOfQuarter(new Date()), to: endOfQuarter(new Date()) },
+                      { label: 'This year', from: startOfYear(new Date()), to: endOfYear(new Date()) },
+                    ].map(({ label, from, to }) => (
+                      <button
+                        key={label}
+                        className="flex-1 text-xs rounded-md border px-1.5 py-1 hover:bg-muted transition-colors"
+                        onClick={() => { setExportFrom(from); setExportTo(to); }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <DatePicker date={exportFrom} onDateChange={setExportFrom} placeholder="Start date" className="w-full h-8 text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">To</Label>
+                    <DatePicker date={exportTo} onDateChange={setExportTo} placeholder="End date" className="w-full h-8 text-sm" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Leave blank to export all trades</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 h-8" onClick={() => handleCSVExport(exportFrom, exportTo)}>
+                      Download
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-8 px-2 text-xs text-muted-foreground" onClick={() => { setExportFrom(undefined); setExportTo(undefined); }}>
+                      Clear
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsReportDialogOpen(true)}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Report
-              </Button>
 
               <Button
                 variant="outline"
@@ -1208,82 +1201,6 @@ export default function TradeLog() {
         <AIRiskAlertMonitor />
       </div>
 
-      {/* Report Dialog */}
-      <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-        <DialogContent className="w-[90vw] max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">Generate Trading Report</DialogTitle>
-                    <DialogDescription className="text-base">
-                      Create a comprehensive performance report for analysis or tax purposes.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-6 py-4">
-                    <div className="space-y-2">
-                      <Label className="text-base font-semibold">Report Period</Label>
-                      <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
-                        <SelectTrigger className="text-lg h-12">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="monthly">Current Month</SelectItem>
-                          <SelectItem value="quarterly">Current Quarter</SelectItem>
-                          <SelectItem value="yearly">Current Year</SelectItem>
-                          <SelectItem value="custom">Custom Date Range</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {reportType === 'custom' && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-base font-semibold">Start Date</Label>
-                          <Input 
-                            type="date" 
-                            value={reportStartDate}
-                            onChange={(e) => setReportStartDate(e.target.value)}
-                            className="text-lg h-12"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-semibold">End Date</Label>
-                          <Input 
-                            type="date" 
-                            value={reportEndDate}
-                            onChange={(e) => setReportEndDate(e.target.value)}
-                            className="text-lg h-12"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="bg-muted/30 p-4 rounded-lg">
-                      <h4 className="font-semibold mb-2">Report Includes:</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>• Performance summary & key metrics</li>
-                        <li>• Win/loss analysis & statistics</li>
-                        <li>• Performance breakdown by symbol</li>
-                        <li>• Performance breakdown by strategy</li>
-                        <li>• Complete trade details for the period</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-4 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setIsReportDialogOpen(false)} className="px-6">
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={generateReport} 
-                      disabled={reportType === 'custom' && (!reportStartDate || !reportEndDate)}
-                      className="px-6 bg-primary text-primary-foreground"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      Generate Report
-                    </Button>
-                  </div>
-                </DialogContent>
-      </Dialog>
 
       {/* PDF Report Dialog */}
       <PDFReportDialog
@@ -2044,40 +1961,87 @@ export default function TradeLog() {
           
           <CardContent className="p-0">
             {trades.length === 0 ? (
-              <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No trades recorded yet</h3>
-                <p className="text-muted-foreground mb-6">
-                  Click "Add Trade" to record your first trade or import from CSV/Excel.
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <Button 
-                    onClick={() => {
-                      setEditingTrade(null);
-                      form.reset();
-                      setIsDialogOpen(true);
-                    }}
+              <div className="px-6 py-14 flex flex-col items-center text-center gap-8">
+                {/* Icon */}
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}15` }}>
+                  <BarChart3 className="h-8 w-8" style={{ color: themeColors.primary }} />
+                </div>
+
+                <div className="space-y-2 max-w-xs">
+                  <h3 className="text-xl font-bold tracking-tight">Your trade log is empty</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Add your first trade manually or import a CSV export from your broker. Your analytics, win rate, and P&L will appear automatically.
+                  </p>
+                </div>
+
+                {/* CTAs */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => { setEditingTrade(null); form.reset(); setIsDialogOpen(true); }}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Trade
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => document.getElementById('csv-import')?.click()}
-                  >
+                  <Button variant="outline" onClick={() => document.getElementById('csv-import')?.click()}>
                     <Upload className="mr-2 h-4 w-4" />
-                    Import
+                    Import CSV
                   </Button>
+                </div>
+
+                {/* Tips */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left">
+                  {([
+                    { Icon: Upload, title: 'Import from broker', body: 'Export a CSV from MT4/MT5, IBKR, or Tradovate and import it in one click.' },
+                    { Icon: Edit, title: 'Log manually', body: 'Record entry/exit prices, lot size, spread, commission and let us calculate your P&L.' },
+                    { Icon: Brain, title: 'AI insights unlock', body: 'Once you have trades, AI analysis, coaching, and strategy tagging become available.' },
+                  ] as const).map((tip) => (
+                    <div key={tip.title} className="rounded-xl border border-border/40 bg-muted/30 p-4 space-y-2">
+                      <tip.Icon className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-xs font-semibold text-foreground">{tip.title}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{tip.body}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
               <>
+              {/* Bulk actions bar */}
+              {selectedTradeIds.size > 0 && (
+                <div className="flex items-center gap-3 px-1 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
+                  <span className="text-sm font-medium text-muted-foreground ml-1">
+                    {selectedTradeIds.size} selected
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    className="h-7 text-xs px-3"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete selected
+                  </Button>
+                  <button
+                    onClick={() => setSelectedTradeIds(new Set())}
+                    className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors mr-2"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+
               {/* Desktop Table View */}
               <div className="hidden md:block w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-border/30 hover:bg-transparent">
+                      <TableHead className="w-10 py-3">
+                        <Checkbox
+                          checked={paginatedTrades.length > 0 && selectedTradeIds.size === paginatedTrades.length}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80 py-3">Date</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Symbol</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Market</TableHead>
@@ -2095,6 +2059,13 @@ export default function TradeLog() {
                     {paginatedTrades.map((trade) => (
                       <React.Fragment key={trade.id}>
                       <TableRow className="hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-b border-border/20">
+                        <TableCell className="py-6 w-10">
+                          <Checkbox
+                            checked={selectedTradeIds.has(trade.id)}
+                            onCheckedChange={() => toggleTradeSelection(trade.id)}
+                            aria-label="Select trade"
+                          />
+                        </TableCell>
                         <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
@@ -2179,7 +2150,7 @@ export default function TradeLog() {
                       </TableRow>
                       {reviewingTradeId === trade.id && (
                         <TableRow>
-                          <TableCell colSpan={11} className="p-0">
+                          <TableCell colSpan={12} className="p-0">
                             <AITradeReview
                               trade={trade}
                               surroundingTrades={trades.slice(Math.max(0, trades.indexOf(trade) - 2), trades.indexOf(trade) + 3)}

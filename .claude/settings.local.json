@@ -170,7 +170,24 @@
       "Bash(do git:*)",
       "Bash(sed -i '' \"/BuyMeCoffee/d\" \"$f\")",
       "Bash(sed -i '' \"/buy-me-coffee/d\" \"$f\")",
-      "Bash(find /Users/richy/FreeTradeJournal/functions/src -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))"
+      "Bash(find /Users/richy/FreeTradeJournal/functions/src -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))",
+      "Bash(HASHNODE_API_KEY=7e8d4955-74b5-40f6-b3a3-b863b6769961 node scripts/publish-post.mjs posts/best-free-trading-journal-prop-firm.md)",
+      "Bash(HASHNODE_API_KEY=7e8d4955-74b5-40f6-b3a3-b863b6769961 node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/best-free-trading-journal-prop-firm.md)",
+      "Bash(HASHNODE_API_KEY=7e8d4955-74b5-40f6-b3a3-b863b6769961 node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/prop-firm-tracker.md)",
+      "Bash(HASHNODE_API_KEY=7e8d4955-74b5-40f6-b3a3-b863b6769961 node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/how-to-pass-topstep-combine.md)",
+      "WebFetch(domain:www.tradezella.com)",
+      "WebFetch(domain:ghost-production-daff.up.railway.app)",
+      "Bash(GHOST_URL=https://ghost-production-daff.up.railway.app GHOST_ADMIN_API_KEY=69cf187d01619d0001d6a0da:9532a07a730d7eafc57fb7c9ca95b40c369f139cf5c6ea3f024021593a7f9d6c node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/best-free-trading-journal-prop-firm.md)",
+      "Bash(GHOST_URL=https://ghost-production-daff.up.railway.app GHOST_ADMIN_API_KEY=69cf187d01619d0001d6a0da:9532a07a730d7eafc57fb7c9ca95b40c369f139cf5c6ea3f024021593a7f9d6c node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/prop-firm-tracker.md)",
+      "Bash(GHOST_URL=https://ghost-production-daff.up.railway.app GHOST_ADMIN_API_KEY=69cf187d01619d0001d6a0da:9532a07a730d7eafc57fb7c9ca95b40c369f139cf5c6ea3f024021593a7f9d6c node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/how-to-pass-topstep-combine.md)",
+      "Bash(GHOST_URL=https://blog.freetradejournal.com GHOST_ADMIN_API_KEY=69cf187d01619d0001d6a0da:9532a07a730d7eafc57fb7c9ca95b40c369f139cf5c6ea3f024021593a7f9d6c node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/best-free-trading-journal-prop-firm.md)",
+      "Bash(GHOST_URL=https://blog.freetradejournal.com GHOST_ADMIN_API_KEY=69cf25a396fa7600017ba078:fc05f8aa4c7ceaed2d1a34a3a645e6e574502d3a4218692294f3ead53fc9fe20 node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/best-free-trading-journal-prop-firm.md)",
+      "Bash(GHOST_URL=https://blog.freetradejournal.com GHOST_ADMIN_API_KEY=69cf25a396fa7600017ba078:fc05f8aa4c7ceaed2d1a34a3a645e6e574502d3a4218692294f3ead53fc9fe20 node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/prop-firm-tracker.md)",
+      "Bash(GHOST_URL=https://blog.freetradejournal.com GHOST_ADMIN_API_KEY=69cf25a396fa7600017ba078:fc05f8aa4c7ceaed2d1a34a3a645e6e574502d3a4218692294f3ead53fc9fe20 node /Users/richy/FreeTradeJournal/scripts/publish-post.mjs /Users/richy/FreeTradeJournal/posts/how-to-pass-topstep-combine.md)",
+      "WebFetch(domain:freetradejournal.com)",
+      "WebFetch(domain:blog.freetradejournal.com)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsImtpZCI6IjY5Y2YyNWEzOTZmYTc2MDAwMTdiYTA3OCIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NzUxODQ4MTEsImV4cCI6MTc3NTE4NTExMSwiYXVkIjoiL2FkbWluLyJ9.uG3yvYfx-99rfMTb68jJ6ap5hrN2Nuiz3sf-8C8vMJQ\" __NEW_LINE_c186723d83a867c8__ curl -s -X PUT \"https://blog.freetradejournal.com/ghost/api/admin/posts/69cf25b496fa7600017ba07b/\" -H \"Content-Type: application/json\" -H \"Authorization: Ghost $TOKEN\" -d '{\"\"\"\"posts\"\"\"\":[{\"\"\"\"id\"\"\"\":\"\"\"\"69cf25b496fa7600017ba07b\"\"\"\",\"\"\"\"custom_excerpt\"\"\"\":\"\"\"\"Tired of paying for TradeZella? FreeTradeJournal is 100% free, built for Topstep and prop firm traders. Track trades, spot patterns, and pass your combine.\"\"\"\",\"\"\"\"updated_at\"\"\"\":\"\"\"\"2026-04-03T02:35:21.000Z\"\"\"\"}]}')",
+      "Bash(wc -l /Users/richy/FreeTradeJournal/src/pages/*.tsx)"
     ],
     "deny": []
   }

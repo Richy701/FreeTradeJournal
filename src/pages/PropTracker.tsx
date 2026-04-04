@@ -97,7 +97,7 @@ const PROP_FIRMS = [
   'Custom...',
 ] as const
 
-const FREE_ACCOUNT_LIMIT = 2
+const FREE_ACCOUNT_LIMIT = 3
 
 const ACCOUNT_SIZES = [10000, 25000, 50000, 75000, 100000, 150000, 200000, 300000]
 
@@ -623,6 +623,20 @@ export default function PropTracker() {
     },
   ]
 
+  // ─── Deadline alerts ────────────────────────────────────────────────────────
+  const upcomingDeadlines = useMemo(() => {
+    const now = new Date()
+    return accounts
+      .filter(a => a.status === 'active' && a.endDate)
+      .map(a => {
+        const end = new Date(a.endDate! + 'T12:00:00')
+        const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        return { account: a, daysLeft }
+      })
+      .filter(({ daysLeft }) => daysLeft >= 0 && daysLeft <= 7)
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+  }, [accounts])
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -630,10 +644,11 @@ export default function PropTracker() {
       <SiteHeader />
 
       {/* Page header */}
-      <div className="border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-center sm:text-left">
-            <div>
+      <div className="border-b sticky top-[var(--mobile-header-height,0px)] md:top-0 z-20 bg-background/95 backdrop-blur-sm">
+        <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            {/* Title + subtitle */}
+            <div className="text-center sm:text-left">
               <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
                 PropTracker
               </h1>
@@ -641,23 +656,24 @@ export default function PropTracker() {
                 <p className="text-sm text-muted-foreground mt-1">
                   {subtitleParts.base}
                   {subtitleParts.net && (
-                    <> · <span className="font-medium" style={{ color: subtitleParts.netColor }}>{subtitleParts.net}</span></>
+                    <> · <span className="font-medium whitespace-nowrap" style={{ color: subtitleParts.netColor }}>{subtitleParts.net}</span></>
                   )}
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground mt-1">Track fees, resets, and payouts across your prop firms</p>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0 sm:self-start">
+            {/* Action button */}
+            <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
               {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT ? (
                 <Link to="/pricing">
-                  <Button style={{ backgroundColor: themeColors.primary }}>
+                  <Button className="h-11 touch-manipulation" style={{ backgroundColor: themeColors.primary }}>
                     <Lock className="h-4 w-4 mr-1.5" aria-hidden="true" />
                     Upgrade for More
                   </Button>
                 </Link>
               ) : (
-                <Button onClick={openAddAccount} style={{ backgroundColor: themeColors.primary }}>
+                <Button onClick={openAddAccount} className="h-11 touch-manipulation" style={{ backgroundColor: themeColors.primary }}>
                   <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
                   Add Account
                 </Button>
@@ -668,6 +684,34 @@ export default function PropTracker() {
       </div>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+
+        {/* Deadline alerts */}
+        {upcomingDeadlines.length > 0 && (
+          <div className="space-y-2">
+            {upcomingDeadlines.map(({ account, daysLeft }) => (
+              <div
+                key={account.id}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm"
+                style={{
+                  borderColor: daysLeft <= 2 ? `${themeColors.loss}40` : `${themeColors.primary}30`,
+                  backgroundColor: daysLeft <= 2 ? `${themeColors.loss}08` : `${themeColors.primary}06`,
+                }}
+              >
+                <AlertTriangle
+                  className="h-4 w-4 shrink-0"
+                  style={{ color: daysLeft <= 2 ? themeColors.loss : themeColors.primary }}
+                />
+                <span className="font-medium" style={{ color: daysLeft <= 2 ? themeColors.loss : themeColors.primary }}>
+                  {daysLeft === 0 ? 'Expires today' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`}
+                </span>
+                <span className="text-muted-foreground">
+                  — {account.firmName} ({account.accountType}) evaluation ends {new Date(account.endDate! + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
 
         {/* Dismissible how-it-works — plain text, no step circles */}
         {accounts.length > 0 && !tipDismissed && (
@@ -964,7 +1008,7 @@ export default function PropTracker() {
                 Add your first account
               </Button>
 
-              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · 2 accounts on free plan</p>}
+              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · 3 accounts on free plan</p>}
             </div>
 
             {/* Divider */}

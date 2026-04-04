@@ -524,6 +524,23 @@ export default function Journal() {
     return filtered;
   }, [entries, searchTerm, dateRange, selectedMarket, selectedTags, pnlRange, selectedMood, selectedEntryType, sortBy, sortOrder, trades]);
 
+  // Mood vs P&L correlation
+  const moodPnlStats = useMemo(() => {
+    const buckets: Record<'bullish' | 'bearish' | 'neutral', number[]> = { bullish: [], bearish: [], neutral: [] };
+    entries.forEach(entry => {
+      if (!entry.tradeId) return;
+      const trade = trades.find(t => t.id === entry.tradeId);
+      if (trade) buckets[entry.mood].push(Number(trade.pnl) || 0);
+    });
+    const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    return {
+      bullish: { avg: avg(buckets.bullish), count: buckets.bullish.length },
+      bearish: { avg: avg(buckets.bearish), count: buckets.bearish.length },
+      neutral: { avg: avg(buckets.neutral), count: buckets.neutral.length },
+      hasData: buckets.bullish.length + buckets.bearish.length + buckets.neutral.length >= 2,
+    };
+  }, [entries, trades]);
+
   // Reset filters
   const resetFilters = () => {
     setDateRange({ start: '', end: '' });
@@ -714,6 +731,49 @@ export default function Journal() {
           </div>
         )}
 
+        {/* Mood vs P&L correlation */}
+        {moodPnlStats.hasData && (
+          <Card>
+            <CardHeader className="pb-3 pt-5 px-5">
+              <CardTitle className="text-sm font-semibold">Sentiment vs. P&L</CardTitle>
+              <p className="text-xs text-muted-foreground">Average trade P&L grouped by your market sentiment when you journaled</p>
+            </CardHeader>
+            <CardContent className="px-5 pb-5">
+              <div className="grid grid-cols-3 gap-3">
+                {([
+                  { key: 'bullish', label: 'Bullish', color: themeColors.profit },
+                  { key: 'neutral', label: 'Neutral', color: themeColors.primary },
+                  { key: 'bearish', label: 'Bearish', color: themeColors.loss },
+                ] as const).map(({ key, label, color }) => {
+                  const stat = moodPnlStats[key];
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-xl border p-4 space-y-2"
+                      style={{ borderColor: `${color}25`, backgroundColor: `${color}08` }}
+                    >
+                      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                      {stat.avg !== null ? (
+                        <>
+                          <p
+                            className="text-xl font-bold tabular-nums"
+                            style={{ color }}
+                          >
+                            {stat.avg >= 0 ? '+' : ''}${stat.avg.toFixed(2)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{stat.count} linked {stat.count === 1 ? 'trade' : 'trades'}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">—</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {showNewEntry && (
           <div className="space-y-4">
             {/* Form Header */}
@@ -783,7 +843,45 @@ export default function Journal() {
 
                 {/* Content */}
                 <div className="space-y-1.5">
-                  <label htmlFor="journal-content" className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Content</label>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <label htmlFor="journal-content" className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Content</label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide font-medium">Templates:</span>
+                      {([
+                        {
+                          label: 'Pre-trade',
+                          type: 'pre-trade',
+                          text: 'Pre-Trade Analysis\n\nSetup: \n\nBias: Bullish / Bearish / Neutral\n\nEntry trigger: \n\nStop loss: \n\nTake profit: \n\nRisk (% of account): \n\nWhat could invalidate this trade: ',
+                        },
+                        {
+                          label: 'Post-trade',
+                          type: 'post-trade',
+                          text: 'Post-Trade Review\n\nWhat was the plan:\n\nWhat actually happened:\n\nDid I follow my rules? Yes / No\nIf not, why:\n\nEmotional state during trade:\n\nKey lesson:\n\nWhat I\'d do differently: ',
+                        },
+                        {
+                          label: 'Daily review',
+                          type: 'general',
+                          text: 'Daily Review\n\nMarket conditions:\n\nKey levels watched:\n\nHow I felt: Focused / Distracted / Confident / Cautious\n\nWhat went well:\n\nWhat to improve:\n\nTomorrow\'s focus: ',
+                        },
+                      ] as const).map((tpl) => (
+                        <button
+                          key={tpl.type}
+                          type="button"
+                          onClick={() => {
+                            const content = newEntry.content.trim();
+                            setNewEntry({
+                              ...newEntry,
+                              content: content ? `${content}\n\n${tpl.text}` : tpl.text,
+                              entryType: tpl.type === 'general' ? 'general' : tpl.type === 'pre-trade' ? 'pre-trade' : 'post-trade',
+                            });
+                          }}
+                          className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                        >
+                          {tpl.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Textarea
                     id="journal-content"
                     placeholder="Share your thoughts, analysis, market observations, lessons learned..."
@@ -1308,19 +1406,34 @@ export default function Journal() {
                 >
                   <BookOpen className="h-10 w-10" style={{ color: themeColors.primary }} />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">No entries found</h3>
+                <h3 className="text-xl font-semibold mb-2">{searchTerm ? 'No entries found' : 'Start your trading journal'}</h3>
                 <p className="text-muted-foreground mb-8 max-w-md">
-                  {searchTerm ? 'Try adjusting your search terms or create a new entry' : 'Start documenting your trading journey with insights, analysis, and market observations'}
+                  {searchTerm ? 'Try adjusting your search terms or create a new entry' : 'Document your setups, track your psychology, and review your decisions. Traders who journal consistently improve faster.'}
                 </p>
                 {!searchTerm && (
-                  <Button
-                    onClick={() => setShowNewEntry(true)}
-                    className="gap-2 shadow-lg"
-                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create First Entry
-                  </Button>
+                  <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+                    <Button
+                      onClick={() => setShowNewEntry(true)}
+                      className="gap-2 shadow-lg w-full sm:w-auto"
+                      style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Write First Entry
+                    </Button>
+                    <div className="grid grid-cols-3 gap-2 w-full text-left">
+                      {([
+                        { Icon: PenLine, label: 'Pre-trade', desc: 'Plan before you enter' },
+                        { Icon: BarChart3, label: 'Post-trade', desc: 'Review after you exit' },
+                        { Icon: Calendar, label: 'Daily review', desc: 'End-of-day reflection' },
+                      ] as const).map((t) => (
+                        <div key={t.label} className="rounded-xl border border-border/40 bg-muted/30 p-3 space-y-1.5">
+                          <t.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                          <p className="text-xs font-semibold">{t.label}</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{t.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

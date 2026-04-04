@@ -7,7 +7,7 @@ interface FeedbackLinkProps {
 }
 
 export function FeedbackLink({ children, className = '' }: FeedbackLinkProps) {
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -15,17 +15,13 @@ export function FeedbackLink({ children, className = '' }: FeedbackLinkProps) {
         type="button"
         onClick={(e) => {
           e.preventDefault();
-          setShowFeedback(true);
+          setOpen(true);
         }}
-        className={className || "text-current hover:text-primary transition-colors"}
+        className={className || 'text-amber-500 hover:underline transition-colors'}
       >
         {children}
       </button>
-      {showFeedback && (
-        <div style={{ display: 'none' }}>
-          <FeedbackButton variant="ghost" />
-        </div>
-      )}
+      <FeedbackButton open={open} onOpenChange={setOpen} variant="ghost" />
     </>
   );
 }

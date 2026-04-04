@@ -26,7 +26,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Interactive column mapping UI for unknown/custom CSV formats
 - Duplicate detection on re-import — same CSV won't create duplicate trades, even across Dashboard and Trade Log imports
 - Full CRUD operations with pagination and filtering
-- Report generation (monthly, quarterly, yearly, custom)
+- CSV export with date range filter — quick-select This Month, This Quarter, This Year, or pick a custom range
+- Bulk trade delete — select multiple trades across the current page and delete in one action
+- Risk rule warnings when a new trade breaches your daily or per-trade loss limits
 - Automatic P&L calculations with market-specific futures multipliers (MNQ, MES, MGC, CL, etc.)
 - Multi-account support with per-account data isolation
 - Prop firm assignment per trade
@@ -35,6 +37,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 - Journal entries with mood tracking (Bullish, Bearish, Neutral)
 - Pre-trade and post-trade analysis entry types
+- One-click journal templates — Pre-Trade, Post-Trade, and Daily Review fill in a structured format instantly
+- Mood vs P&L correlation — see your average return when you were bullish, neutral, or bearish
 - Emotion tracking across 20+ emotional states to identify patterns
 - Screenshot and chart attachment support via drag-and-drop
 - Trade linking to connect journal entries to specific trades
@@ -43,9 +47,11 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ### Goals & Risk Management
 
 - Goal types: profit target, win rate, trade count, risk/reward, max loss, max drawdown
-- Daily, weekly, and monthly goal periods with progress tracking
+- Daily, weekly, and monthly goal periods with live progress tracking
+- Visual goal cards with circular progress rings that shift color as you approach your target
 - Risk rules: max loss per day/trade, max risk percentage, max open trades
-- Rule violation tracking with visual indicators
+- Live progress bars on risk rules showing how much of your limit you've used today
+- Rule violation warnings when logging trades that breach your limits
 - Position size and risk/reward calculators
 
 ### AI Trading Coach
@@ -59,7 +65,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Pro Features (Powered by Stripe)
 
-- **PropTracker Unlimited** — Unlimited prop firm accounts, charts, and AI analysis (free tier: 2 accounts)
+- **PropTracker Unlimited** — Unlimited prop firm accounts, charts, and AI analysis (free tier: 3 accounts)
 - **AI PropTracker Analysis** — GPT-4o breakdown of prop firm P&L: which firms are profitable, warning signs, what to do next (5/day)
 - **AI Goal Coach** — Personalized coaching on your trading goals with actionable insights
 - **AI Trade Review** — In-depth analysis of individual trades with improvement suggestions
@@ -83,7 +89,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
 - AI Analysis powered by GPT-4o — honest verdict on which firms are profitable, warning signs, and next steps (Pro, 5/day)
 - **Screenshot Import (Pro)** — upload a billing or payout screenshot and GPT-4o Vision auto-extracts all transactions; supports multiple files, drag & drop, and duplicate detection
-- Freemium: 2 accounts free, unlimited on Pro
+- Deadline alerts — banner warning when a prop firm account expires within 7 days (red if ≤2 days, amber if 3–7)
+- Freemium: 3 accounts free, unlimited on Pro
 - Full cloud sync included for Pro users
 
 ### Multi-Account & Prop Firm Support

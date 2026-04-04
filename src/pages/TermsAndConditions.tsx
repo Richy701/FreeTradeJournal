@@ -1,6 +1,7 @@
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { Link } from 'react-router-dom';
+import { FeedbackLink } from '@/components/feedback-link';
 
 export default function TermsAndConditions() {
   return (
@@ -10,7 +11,7 @@ export default function TermsAndConditions() {
       <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
         <header>
           <h1 className="font-display text-2xl font-bold tracking-tight">Terms and Conditions</h1>
-          <p className="mt-2 text-muted-foreground">Last updated: March 5, 2026</p>
+          <p className="mt-2 text-muted-foreground">Last updated: April 3, 2026</p>
         </header>
 
         <hr className="border-border" />
@@ -27,13 +28,13 @@ export default function TermsAndConditions() {
             <p>FreeTradeJournal is a web-based trading journal and analytics platform that allows users to log trades, track performance, set goals, and analyse trading activity. The Service is available in two tiers:</p>
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li><strong>Free</strong> — core trade logging, analytics, journaling, calendar heatmap, goals and risk management, CSV import/export</li>
-              <li><strong>Pro</strong> — all Free features plus AI-powered coaching, trade reviews, strategy tagging, risk alerts, journal prompts, PDF reports, and cloud sync</li>
+              <li><strong>Pro</strong> — all Free features plus AI-powered coaching, trade reviews, strategy tagging, risk alerts, journal prompts, PDF Trading Wrapped reports, PropTracker screenshot import, unlimited prop firm accounts, and cloud sync</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Account Registration</h2>
-            <p>To use certain features, you must create an account with accurate and complete information. You are responsible for:</p>
+            <p>To use certain features, you must create an account with accurate and complete information. You can sign in with email/password, Google, or Apple. You are responsible for:</p>
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li>Maintaining the confidentiality of your login credentials</li>
               <li>All activity that occurs under your account</li>
@@ -135,7 +136,7 @@ export default function TermsAndConditions() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Contact</h2>
-            <p>Questions about these terms? Reach us at <strong>support@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
+            <p>Questions about these terms? Reach us at <strong>support@freetradejournal.com</strong> or through our <FeedbackLink>feedback form</FeedbackLink>.</p>
           </section>
 
         </div>

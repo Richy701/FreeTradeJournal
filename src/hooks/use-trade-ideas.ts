@@ -6,6 +6,7 @@ export interface TradeIdea {
   id: string
   title: string
   insight: string
+  nextStep: string
   sentiment: 'positive' | 'neutral' | 'opportunity'
 }
 
@@ -343,7 +344,8 @@ function generateIdeas(
     ideas.push({
       id: 'focus-best-symbol',
       title: `Focus on ${best.symbol}`,
-      insight: `Consider increasing your ${best.symbol} allocation — you win ${best.winRate}% of trades with ${fmt(best.pnl, true)} total P&L. This is your strongest instrument.`,
+      insight: `You win ${best.winRate}% of trades with ${fmt(best.pnl, true)} total P&L. This is your strongest instrument.`,
+      nextStep: `In your next session, only take ${best.symbol} setups until you have a clean read on why it works for you.`,
       sentiment: 'positive',
     })
   }
@@ -355,7 +357,8 @@ function generateIdeas(
     ideas.push({
       id: 'reduce-worst-symbol',
       title: `Reduce ${worst.symbol} exposure`,
-      insight: `${worst.symbol} is costing you ${fmt(Math.abs(worst.pnl))} with a ${worst.winRate}% win rate. Consider tighter stops, smaller size, or removing it from your watchlist.`,
+      insight: `${worst.symbol} is costing you ${fmt(Math.abs(worst.pnl))} with only a ${worst.winRate}% win rate.`,
+      nextStep: `Cut your lot size on ${worst.symbol} by half, or remove it from your watchlist for 2 weeks and see if your P&L improves.`,
       sentiment: 'opportunity',
     })
   }
@@ -366,7 +369,8 @@ function generateIdeas(
     ideas.push({
       id: 'time-symbol-combo',
       title: `Trade ${charts.symbolPnl[0].symbol} around ${bestHour.hour}`,
-      insight: `Combine your best instrument (${charts.symbolPnl[0].symbol}) with your peak hour (${bestHour.hour}) for the highest edge. That hour has a ${bestHour.winRate}% win rate.`,
+      insight: `Your best instrument meets your peak hour — ${bestHour.hour} has a ${bestHour.winRate}% win rate.`,
+      nextStep: `Set a calendar reminder for ${bestHour.hour} on your best trading days and prioritise ${charts.symbolPnl[0].symbol} setups in that window.`,
       sentiment: 'positive',
     })
   }
@@ -377,10 +381,12 @@ function generateIdeas(
     const wrDiff = Math.abs(d1.winRate - d2.winRate)
     if (wrDiff >= 10) {
       const better = d1.winRate > d2.winRate ? d1 : d2
+      const worse = better === d1 ? d2 : d1
       ideas.push({
         id: 'direction-edge',
         title: `Lean into ${better.name.toLowerCase()} trades`,
-        insight: `Your ${better.name.toLowerCase()} trades win ${better.winRate}% of the time vs ${(better === d1 ? d2 : d1).winRate}% on the other side. Prioritize setups in this direction.`,
+        insight: `Your ${better.name.toLowerCase()} trades win ${better.winRate}% vs ${worse.winRate}% on the other side — a ${wrDiff}pt gap.`,
+        nextStep: `For the next 20 trades, only take ${better.name.toLowerCase()} setups. Journal whether your conviction feels stronger on those entries.`,
         sentiment: 'positive',
       })
     }
@@ -394,7 +400,8 @@ function generateIdeas(
       ideas.push({
         id: 'stick-to-strategies',
         title: `Double down on "${profitable[0].strategy}"`,
-        insight: `"${profitable[0].strategy}" is your edge (${profitable[0].winRate}% WR, ${fmt(profitable[0].pnl, true)}). Consider dropping "${unprofitable[unprofitable.length - 1].strategy}" which is losing you money.`,
+        insight: `"${profitable[0].strategy}" is your edge (${profitable[0].winRate}% WR, ${fmt(profitable[0].pnl, true)}). "${unprofitable[unprofitable.length - 1].strategy}" is losing you money.`,
+        nextStep: `Stop tagging new trades as "${unprofitable[unprofitable.length - 1].strategy}" for 30 days and reallocate that focus to "${profitable[0].strategy}" setups.`,
         sentiment: 'opportunity',
       })
     }
@@ -407,14 +414,16 @@ function generateIdeas(
       ideas.push({
         id: 'let-winners-run',
         title: 'Let your winners run',
-        insight: `Your average winner (${fmt(summary.avgWin)}) is smaller than your average loser (${fmt(summary.avgLoss)}). Try trailing stops or wider take-profit levels to improve your R:R from ${rr.toFixed(1)}:1.`,
+        insight: `Average winner ${fmt(summary.avgWin)} is smaller than average loser ${fmt(summary.avgLoss)}. Current R:R is ${rr.toFixed(1)}:1.`,
+        nextStep: `On your next 10 trades, move your take-profit 20% further than usual and use a trailing stop instead of a fixed exit.`,
         sentiment: 'opportunity',
       })
     } else if (rr >= 2) {
       ideas.push({
         id: 'great-rr',
         title: 'Your risk management is solid',
-        insight: `${rr.toFixed(1)}:1 reward-to-risk ratio means you can afford a lower win rate and still be profitable. Keep managing risk the same way.`,
+        insight: `${rr.toFixed(1)}:1 reward-to-risk means you can be profitable even with a sub-50% win rate.`,
+        nextStep: `Keep your current stop/target discipline. Review any trades where you moved your stop — those are your biggest risk to this edge.`,
         sentiment: 'positive',
       })
     }
@@ -431,7 +440,8 @@ function generateIdeas(
     ideas.push({
       id: 'day-schedule',
       title: `Trade more on ${bestDayData.day}s`,
-      insight: `${bestDayData.day}s are your best day (${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}). Consider reducing activity on ${worstDayData.day}s where you're down ${fmt(Math.abs(worstDayData.pnl))}.`,
+      insight: `${bestDayData.day}s: ${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}. ${worstDayData.day}s: down ${fmt(Math.abs(worstDayData.pnl))}.`,
+      nextStep: `Block ${worstDayData.day}s as a no-trade or review-only day for one month. Log what you do instead and whether your weekly P&L improves.`,
       sentiment: 'neutral',
     })
   }
@@ -446,10 +456,11 @@ function generateIdeas(
       ideas.push({
         id: `revisit-${sym.symbol}`,
         title: `Revisit ${sym.symbol}`,
-        insight: `You haven't traded ${sym.symbol} recently, but it was profitable (${sym.winRate}% WR, ${fmt(sym.pnl, true)}). Worth adding back to your watchlist.`,
+        insight: `You haven't traded ${sym.symbol} recently, but historically it's profitable (${sym.winRate}% WR, ${fmt(sym.pnl, true)}).`,
+        nextStep: `Add ${sym.symbol} back to your watchlist this week. Paper trade one setup before going live to re-familiarise yourself.`,
         sentiment: 'opportunity',
       })
-      break // Only one underexplored idea
+      break
     }
   }
 

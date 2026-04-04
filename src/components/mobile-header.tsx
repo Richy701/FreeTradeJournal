@@ -1,4 +1,6 @@
+import * as React from 'react';
 import { Menu, X, User, LogOut, UserPlus, Eye } from 'lucide-react';
+import { AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -13,17 +15,45 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { AccountSwitcher } from '@/components/account-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useUserStorage } from '@/utils/user-storage';
 
 export function MobileHeader({ title }: { title?: string }) {
   const { toggleSidebar, openMobile } = useSidebar();
   const { themeColors } = useThemePresets();
   const { user, isDemo, exitDemoMode, logout } = useAuth();
   const navigate = useNavigate();
+  const ref = React.useRef<HTMLDivElement>(null);
+  const userStorage = useUserStorage();
+  const [avatarUrl, setAvatarUrl] = React.useState(() => userStorage.getItem('avatar') || '');
+  const [avatarEmoji, setAvatarEmoji] = React.useState(() => userStorage.getItem('avatarEmoji') || '');
+  const [avatarColor, setAvatarColor] = React.useState(() => userStorage.getItem('avatarColor') || '');
+
+  // Keep avatar prefs in sync if updated on another tab
+  React.useEffect(() => {
+    const handler = () => {
+      setAvatarUrl(userStorage.getItem('avatar') || '');
+      setAvatarEmoji(userStorage.getItem('avatarEmoji') || '');
+      setAvatarColor(userStorage.getItem('avatarColor') || '');
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [userStorage]);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--mobile-header-height', `${el.offsetHeight}px`);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
-      className="mobile-header sticky top-0 z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-      style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}
+      className="mobile-header sticky z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+      style={{ top: 'var(--announcement-banner-height, 0px)', paddingTop: 'var(--pwa-safe-top, 0px)' }}
+      ref={ref}
     >
       <div className="flex items-center justify-between px-3 h-14">
         <Button
@@ -85,8 +115,9 @@ export function MobileHeader({ title }: { title?: string }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="User menu">
                 <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
-                  <AvatarFallback className="rounded-full text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary }}>
-                    {(user.displayName || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
+                  <AvatarFallback className="rounded-full font-semibold text-white" style={{ backgroundColor: avatarColor || themeColors.primary, fontSize: avatarEmoji ? '14px' : '11px' }}>
+                    {avatarEmoji || (user.displayName || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </Button>

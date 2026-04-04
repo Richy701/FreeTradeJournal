@@ -15,6 +15,58 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.7.0',
+    date: '2026-04-04',
+    summary: 'Major quality-of-life update — smarter trade export, journal templates, mood analytics, live risk rule feedback, and a refreshed Goals page.',
+    items: [
+      {
+        type: 'improved',
+        text: 'CSV export with date range filter',
+        description: 'The Export button in the Trade Log now opens a quick picker. Choose This Month, This Quarter, This Year, or set a custom date range. No dialog, no extra steps — pick your range and download.',
+      },
+      {
+        type: 'new',
+        text: 'Bulk trade delete',
+        description: 'Select multiple trades at once using the checkboxes in the Trade Log and delete them all in one go. A select-all option covers everything on the current page.',
+      },
+      {
+        type: 'new',
+        text: 'Journal templates',
+        description: 'One-click templates in the Journal for Pre-Trade, Post-Trade, and Daily Review. Clicking a template fills in a structured format so you never start from a blank page.',
+      },
+      {
+        type: 'new',
+        text: 'Mood vs P&L correlation',
+        description: 'The Journal now shows your average P&L when you logged entries as Bullish, Neutral, or Bearish. See whether your mindset actually matches your results.',
+      },
+      {
+        type: 'new',
+        text: 'Risk rule warnings when logging trades',
+        description: 'When you log a trade that pushes you past your daily loss limit or per-trade loss limit, you get an instant warning. The violation counter on the rule increments automatically.',
+      },
+      {
+        type: 'improved',
+        text: 'Goals & Risk Management redesign',
+        description: 'Goal cards are larger and more visual — circular progress rings shift from blue to amber as you close in on your target, and green when achieved. A progress bar runs along the bottom of each card. Risk rules now show a live bar of how much of your limit you\'ve used today.',
+      },
+      {
+        type: 'improved',
+        text: 'PropTracker free tier bumped to 3 accounts',
+        description: 'Free users can now track up to 3 prop firm accounts instead of 2.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker deadline alerts',
+        description: 'If a prop firm account is expiring within 7 days, a banner appears at the top of PropTracker. Red for 2 days or less, amber for up to 7 days.',
+      },
+      {
+        type: 'improved',
+        text: 'Trade Insights — actionable next steps',
+        description: 'Every insight card in Trade Insights now includes a concrete next step — a specific action you can take today, not just an observation about your data.',
+      },
+    ],
+  },
+  {
     version: '2.6.0',
     date: '2026-04-03',
     summary: 'Official blog launched at blog.freetradejournal.com, Blog link added to sidebar and landing page, sitemap fix.',

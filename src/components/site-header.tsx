@@ -10,7 +10,8 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbS
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLocation, useNavigate } from "react-router-dom"
 import { User, LogOut, UserPlus, Eye, ArrowLeft } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useUserStorage } from "@/utils/user-storage"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,20 @@ function UserAvatar() {
   const { user, isDemo, exitDemoMode, logout } = useAuth()
   const { themeColors } = useThemePresets()
   const navigate = useNavigate()
+  const userStorage = useUserStorage()
+  const [avatarUrl, setAvatarUrl] = React.useState(() => userStorage.getItem('avatar') || '')
+  const [avatarEmoji, setAvatarEmoji] = React.useState(() => userStorage.getItem('avatarEmoji') || '')
+  const [avatarColor, setAvatarColor] = React.useState(() => userStorage.getItem('avatarColor') || '')
+
+  React.useEffect(() => {
+    const handler = () => {
+      setAvatarUrl(userStorage.getItem('avatar') || '')
+      setAvatarEmoji(userStorage.getItem('avatarEmoji') || '')
+      setAvatarColor(userStorage.getItem('avatarColor') || '')
+    }
+    window.addEventListener('storage', handler)
+    return () => window.removeEventListener('storage', handler)
+  }, [userStorage])
 
   if (!user) return null
 
@@ -68,7 +83,10 @@ function UserAvatar() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="User menu">
           <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
-            <AvatarFallback className="rounded-full text-xs font-semibold text-white" style={{ backgroundColor: themeColors.primary }}>{name.charAt(0).toUpperCase()}</AvatarFallback>
+            {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
+            <AvatarFallback className="rounded-full font-semibold text-white" style={{ backgroundColor: avatarColor || themeColors.primary, fontSize: avatarEmoji ? '14px' : '11px' }}>
+              {avatarEmoji || name.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

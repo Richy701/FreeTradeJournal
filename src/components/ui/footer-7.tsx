@@ -155,8 +155,8 @@ export const Footer7 = ({
               ))}
             </ul>
           </motion.div>
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full lg:max-w-3xl">
-            <div className="grid w-full gap-8 grid-cols-2 xl:grid-cols-4 lg:gap-16">
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full lg:max-w-4xl">
+            <div className="grid w-full gap-8 grid-cols-2 lg:grid-cols-3 lg:gap-10">
               {sections.map((section, sectionIdx) => (
                 <motion.div
                   key={sectionIdx}
@@ -256,7 +256,7 @@ export const Footer7 = ({
                 )}
               </li>
             ))}
-            <li className="md:border-l md:border-border/50 md:pl-6">
+            <li className={legalLinks.length > 0 ? "md:border-l md:border-border/50 md:pl-6" : ""}>
               <FeedbackButton
                 variant="ghost"
                 className="h-auto p-0 text-muted-foreground/70 hover:text-foreground text-sm font-medium"

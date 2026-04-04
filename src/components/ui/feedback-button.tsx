@@ -16,14 +16,25 @@ interface FeedbackButtonProps {
   variant?: 'default' | 'outline' | 'ghost' | 'floating';
   className?: string;
   buttonText?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function FeedbackButton({
   variant = 'outline',
   className = '',
   buttonText,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: FeedbackButtonProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
+
+  // Controlled mode — just render the dialog, no trigger button
+  if (controlledOpen !== undefined) {
+    return <FeedbackDialog open={open} onOpenChange={setOpen} />;
+  }
 
   if (variant === 'floating') {
     return (

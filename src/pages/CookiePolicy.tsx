@@ -1,6 +1,7 @@
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { Link } from 'react-router-dom';
+import { FeedbackLink } from '@/components/feedback-link';
 
 export default function CookiePolicy() {
   return (
@@ -134,7 +135,7 @@ export default function CookiePolicy() {
 
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">Contact Us</h2>
-            <p>Questions about cookies? Reach us at <strong>support@freetradejournal.com</strong> or through our <a href="https://tally.so/r/meV7rl" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">feedback form</a>.</p>
+            <p>Questions about cookies? Reach us at <strong>support@freetradejournal.com</strong> or through our <FeedbackLink>feedback form</FeedbackLink>.</p>
           </section>
 
         </div>
