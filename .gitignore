@@ -33,3 +33,6 @@ functions/service-account.json
 *.sln
 *.sw?
 .vercel
+
+# Claude Code local settings (may contain secrets in allow-list)
+.claude/settings.local.json
