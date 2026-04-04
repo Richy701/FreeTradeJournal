@@ -20,8 +20,8 @@ const MAX_SENDS = 46  // 50 total - 4 already sent
 const FROM = 'Richy at FreeTradeJournal <richy@freetradejournal.com>'
 const subject = (firstName: string) =>
   firstName
-    ? `${firstName}, you've been logging trades — here's what you're missing`
-    : "You've been logging trades — here's what you're missing"
+    ? `${firstName}, here's what your trades are missing`
+    : "Here's what your trades are missing"
 
 // Emails already sent + owner to skip
 const SKIP_EMAILS = new Set([

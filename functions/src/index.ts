@@ -116,6 +116,10 @@ export const sendDay3NudgeEmails = functions.pubsub
           to: email,
           subject: "Your journal is set up — log your first trade in 60 seconds",
           html,
+          headers: {
+            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         });
         // Mark as sent so we don't send again
         await doc.ref.update({ day3NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });

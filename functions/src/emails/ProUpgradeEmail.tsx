@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {
-  Html, Head, Body, Container, Section, Row, Column, Img, Text, Heading,
+  Html, Head, Body, Container, Section, Img, Text, Heading,
   Hr, Link, Preview, Font,
 } from '@react-email/components'
 
@@ -10,11 +10,10 @@ interface ProUpgradeEmailProps {
 }
 
 const features = [
-  { icon: '◆', label: 'AI Trading Coach' },
-  { icon: '▲', label: 'AI Trade Analysis' },
-  { icon: '◎', label: 'AI Risk Alerts' },
-  { icon: '↑', label: 'Cloud Sync' },
-  { icon: '✦', label: 'PropTracker' },
+  { label: 'AI Trade Review', desc: 'A breakdown of each trade — what worked, what cost you, what to fix.' },
+  { label: 'PropTracker AI Analysis', desc: 'An honest verdict on each prop firm and whether it is worth your time.' },
+  { label: 'AI Goal Coach', desc: 'Reads your data and tells you exactly where you are falling short.' },
+  { label: 'Cloud Sync', desc: 'Your trades and journal backed up across every device.' },
 ]
 
 export function ProUpgradeEmail({ firstName, planLabel }: ProUpgradeEmailProps) {
@@ -29,53 +28,72 @@ export function ProUpgradeEmail({ firstName, planLabel }: ProUpgradeEmailProps) 
           fontStyle="normal"
         />
       </Head>
-      <Preview>You're Pro. Everything is unlocked.</Preview>
+      <Preview>You are Pro. Every feature is unlocked and ready to use.</Preview>
       <Body style={body}>
         <Container style={container}>
 
-          {/* Amber hero header */}
-          <Section style={amberHeader}>
+          {/* Header */}
+          <Section style={header}>
             <Img
               src="https://www.freetradejournal.com/favicon-64x64.png"
-              width="32"
-              height="32"
+              width="28"
+              height="28"
               alt="FTJ"
               style={logo}
             />
-            <Text style={proLabel}>PRO</Text>
+            <Text style={brandName}>FreeTradeJournal</Text>
+          </Section>
+
+          <Hr style={topDivider} />
+
+          {/* Banner */}
+          <Section style={{ padding: 0 }}>
+            <Img
+              src="https://www.freetradejournal.com/images/email-banner-pro.png"
+              width="600"
+              height="200"
+              alt="Pro unlocked"
+              style={{ display: 'block', width: '100%' }}
+            />
           </Section>
 
           {/* Hero */}
-          <Section style={hero}>
-            <Text style={eyebrow}>{planLabel.toUpperCase()}</Text>
-            <Heading style={h1}>You're Pro now,{'\n'}{firstName}.</Heading>
-            <Text style={subtext}>
-              Every feature is unlocked. Your edge just got sharper.
+          <Section style={content}>
+            <Text style={planBadge}>{planLabel.toUpperCase()}</Text>
+            <Heading style={h1}>
+              {firstName ? `You're Pro now, ${firstName}.` : "You're Pro now."}
+            </Heading>
+            <Text style={body1}>
+              Every feature is unlocked. Here is what you now have access to.
             </Text>
             <Link href="https://www.freetradejournal.com/dashboard" style={button}>
-              Go to your dashboard →
+              Go to your dashboard
             </Link>
           </Section>
 
+          <Hr style={divider} />
+
           {/* Features */}
-          <Section style={featuresSection}>
-            <Text style={featuresLabel}>WHAT'S NOW UNLOCKED</Text>
-            <Row style={featuresGrid}>
-              {features.map((f, i) => (
-                <Column key={i} style={featureItem}>
-                  <Text style={featureIcon}>{f.icon}</Text>
-                  <Text style={featureName}>{f.label}</Text>
-                </Column>
-              ))}
-            </Row>
+          <Section style={content}>
+            <Text style={label}>WHAT IS NOW UNLOCKED</Text>
+            {features.map((f, i) => (
+              <React.Fragment key={f.label}>
+                <Text style={featureTitle}>{f.label}</Text>
+                <Text style={featureDesc}>{f.desc}</Text>
+                {i < features.length - 1 && <Hr style={featureDivider} />}
+              </React.Fragment>
+            ))}
           </Section>
+
+          <Hr style={divider} />
 
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footerText}>Richy<br />Founder, FreeTradeJournal</Text>
-            <Hr style={footerDivider} />
+            <Text style={footerText}>
+              Richy from FreeTradeJournal. Reply if you have questions — I read every one.
+            </Text>
             <Text style={footerLinks}>
-              <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy</Link>
+              <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy Policy</Link>
               {' · '}
               <Link href="https://www.freetradejournal.com/terms" style={footerLink}>Terms</Link>
             </Text>
@@ -93,144 +111,111 @@ const body: React.CSSProperties = {
   margin: 0,
   padding: '40px 0',
 }
-
 const container: React.CSSProperties = {
-  maxWidth: '520px',
+  maxWidth: '600px',
   margin: '0 auto',
-  backgroundColor: '#111',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  border: '1px solid #1f1f1f',
 }
-
-const amberHeader: React.CSSProperties = {
-  backgroundColor: '#f59e0b',
-  padding: '20px 32px',
-  textAlign: 'left',
+const header: React.CSSProperties = {
+  padding: '24px 32px',
+  display: 'flex',
+  alignItems: 'center',
 }
-
 const logo: React.CSSProperties = {
-  borderRadius: '8px',
+  borderRadius: '6px',
   display: 'inline-block',
   verticalAlign: 'middle',
-  filter: 'brightness(0)',
 }
-
-const proLabel: React.CSSProperties = {
+const brandName: React.CSSProperties = {
   display: 'inline-block',
   verticalAlign: 'middle',
   margin: '0 0 0 10px',
-  fontSize: '11px',
-  fontWeight: 800,
-  color: '#000',
-  letterSpacing: '0.15em',
-}
-
-const hero: React.CSSProperties = {
-  padding: '48px 32px 36px',
-}
-
-const eyebrow: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 700,
-  color: '#f59e0b',
-  letterSpacing: '0.15em',
-  margin: '0 0 16px',
-}
-
-const h1: React.CSSProperties = {
-  fontSize: '32px',
-  fontWeight: 700,
-  color: '#f5f5f5',
-  margin: '0 0 16px',
-  lineHeight: '1.2',
-  letterSpacing: '-0.02em',
-  whiteSpace: 'pre-line',
-}
-
-const subtext: React.CSSProperties = {
-  fontSize: '15px',
-  color: '#777',
-  lineHeight: '1.7',
-  margin: '0 0 32px',
-}
-
-const button: React.CSSProperties = {
-  backgroundColor: '#f59e0b',
-  color: '#000',
-  fontWeight: 700,
   fontSize: '14px',
-  padding: '13px 24px',
-  borderRadius: '8px',
-  textDecoration: 'none',
-  display: 'inline-block',
-  letterSpacing: '0.01em',
-}
-
-const featuresSection: React.CSSProperties = {
-  backgroundColor: '#0d0d0d',
-  borderTop: '1px solid #1f1f1f',
-  borderBottom: '1px solid #1f1f1f',
-  padding: '28px 32px',
-}
-
-const featuresLabel: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 700,
-  color: '#444',
-  letterSpacing: '0.15em',
-  margin: '0 0 20px',
-}
-
-const featuresGrid: React.CSSProperties = {
-  width: '100%',
-}
-
-const featureItem: React.CSSProperties = {
-  textAlign: 'center',
-  padding: '0 4px',
-  width: '20%',
-}
-
-const featureIcon: React.CSSProperties = {
-  fontSize: '14px',
-  color: '#f59e0b',
-  margin: '0 0 6px',
-  lineHeight: '1',
-  fontWeight: 700,
-}
-
-const featureName: React.CSSProperties = {
-  fontSize: '10px',
   fontWeight: 600,
-  color: '#888',
-  margin: 0,
-  lineHeight: '1.3',
-  letterSpacing: '0.01em',
+  color: '#ededed',
+  lineHeight: '28px',
 }
-
+const topDivider: React.CSSProperties = {
+  borderColor: '#1f1f1f',
+  margin: 0,
+}
+const divider: React.CSSProperties = {
+  borderColor: '#1f1f1f',
+  margin: 0,
+}
+const featureDivider: React.CSSProperties = {
+  borderColor: '#1a1a1a',
+  margin: '16px 0',
+}
+const content: React.CSSProperties = {
+  padding: '32px 32px',
+}
+const planBadge: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 700,
+  color: '#f59e0b',
+  letterSpacing: '0.1em',
+  margin: '0 0 12px',
+}
+const h1: React.CSSProperties = {
+  fontSize: '26px',
+  fontWeight: 700,
+  color: '#ededed',
+  margin: '0 0 16px',
+  lineHeight: '1.3',
+  letterSpacing: '-0.01em',
+}
+const body1: React.CSSProperties = {
+  fontSize: '15px',
+  color: '#888',
+  lineHeight: '1.5',
+  margin: '0 0 24px',
+}
+const label: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 600,
+  color: '#f59e0b',
+  letterSpacing: '0.08em',
+  margin: '0 0 20px',
+  textTransform: 'uppercase' as const,
+}
+const featureTitle: React.CSSProperties = {
+  fontSize: '14px',
+  fontWeight: 600,
+  color: '#ededed',
+  margin: '0 0 6px',
+}
+const featureDesc: React.CSSProperties = {
+  fontSize: '13px',
+  color: '#666',
+  lineHeight: '1.5',
+  margin: 0,
+}
+const button: React.CSSProperties = {
+  display: 'inline-block',
+  backgroundColor: '#f59e0b',
+  color: '#000000',
+  fontWeight: 700,
+  fontSize: '15px',
+  padding: '13px 28px',
+  borderRadius: '6px',
+  textDecoration: 'none',
+  lineHeight: '1.5',
+}
 const footer: React.CSSProperties = {
   padding: '24px 32px',
 }
-
 const footerText: React.CSSProperties = {
   fontSize: '13px',
   color: '#444',
-  margin: '0 0 16px',
+  lineHeight: '1.5',
+  margin: '0 0 12px',
 }
-
-const footerDivider: React.CSSProperties = {
-  borderColor: '#1f1f1f',
-  margin: '0 0 14px',
-}
-
 const footerLinks: React.CSSProperties = {
   fontSize: '12px',
   color: '#333',
   margin: 0,
 }
-
 const footerLink: React.CSSProperties = {
-  color: '#444',
+  color: '#555',
   textDecoration: 'underline',
 }

@@ -21,7 +21,7 @@ export function CancellationEmail({ firstName, endDate }: CancellationEmailProps
           fontStyle="normal"
         />
       </Head>
-      <Preview>Your Pro subscription has been cancelled — your data stays safe.</Preview>
+      <Preview>Your Pro access runs until {endDate}. Your data stays safe.</Preview>
       <Body style={body}>
         <Container style={container}>
 
@@ -29,44 +29,49 @@ export function CancellationEmail({ firstName, endDate }: CancellationEmailProps
           <Section style={header}>
             <Img
               src="https://www.freetradejournal.com/favicon-64x64.png"
-              width="36"
-              height="36"
+              width="28"
+              height="28"
               alt="FTJ"
               style={logo}
             />
             <Text style={brandName}>FreeTradeJournal</Text>
           </Section>
 
+          <Hr style={topDivider} />
+
           {/* Hero */}
-          <Section style={hero}>
+          <Section style={content}>
             <Text style={eyebrow}>SUBSCRIPTION CANCELLED</Text>
             <Heading style={h1}>
-              Sorry to see you go, {firstName}.
+              {firstName ? `Sorry to see you go, ${firstName}.` : 'Sorry to see you go.'}
             </Heading>
-            <Text style={subtext}>
-              Your Pro access runs until <strong style={{ color: '#e5e5e5' }}>{endDate}</strong>. After that, your account moves to the free plan — but your trades, journal, and goals are all still there.
+            <Text style={body1}>
+              Your Pro access runs until <strong style={{ color: '#ededed' }}>{endDate}</strong>. After that, your account moves to the free plan.
+            </Text>
+            <Text style={body1}>
+              Your trades, journal, and goals are all still there. Nothing gets deleted.
             </Text>
           </Section>
 
-          {/* Reassurance strip */}
-          <Section style={strip}>
-            <Text style={stripText}>✉ Your data is safe and nothing is deleted.</Text>
-          </Section>
+          <Hr style={divider} />
 
           {/* CTA */}
-          <Section style={ctaSection}>
-            <Text style={ctaLabel}>Changed your mind?</Text>
+          <Section style={content}>
+            <Text style={body1}>Changed your mind?</Text>
             <Link href="https://www.freetradejournal.com/pricing" style={button}>
-              Resubscribe →
+              Resubscribe
             </Link>
           </Section>
 
+          <Hr style={divider} />
+
           {/* Footer */}
           <Section style={footer}>
-            <Text style={footerText}>Richy<br />Founder, FreeTradeJournal</Text>
-            <Hr style={footerDivider} />
+            <Text style={footerText}>
+              Richy from FreeTradeJournal. Reply if you have questions — I read every one.
+            </Text>
             <Text style={footerLinks}>
-              <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy</Link>
+              <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy Policy</Link>
               {' · '}
               <Link href="https://www.freetradejournal.com/terms" style={footerLink}>Terms</Link>
             </Text>
@@ -84,124 +89,90 @@ const body: React.CSSProperties = {
   margin: 0,
   padding: '40px 0',
 }
-
 const container: React.CSSProperties = {
-  maxWidth: '520px',
+  maxWidth: '600px',
   margin: '0 auto',
-  backgroundColor: '#111',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  border: '1px solid #1f1f1f',
 }
-
 const header: React.CSSProperties = {
-  padding: '20px 32px',
-  borderBottom: '1px solid #1f1f1f',
+  padding: '24px 32px',
+  display: 'flex',
+  alignItems: 'center',
 }
-
 const logo: React.CSSProperties = {
-  borderRadius: '8px',
+  borderRadius: '6px',
   display: 'inline-block',
   verticalAlign: 'middle',
 }
-
 const brandName: React.CSSProperties = {
   display: 'inline-block',
   verticalAlign: 'middle',
   margin: '0 0 0 10px',
   fontSize: '14px',
   fontWeight: 600,
-  color: '#888',
-  letterSpacing: '0.01em',
+  color: '#ededed',
+  lineHeight: '28px',
 }
-
-const hero: React.CSSProperties = {
-  padding: '48px 32px 36px',
-}
-
-const eyebrow: React.CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 700,
-  color: '#555',
-  letterSpacing: '0.15em',
-  margin: '0 0 16px',
-}
-
-const h1: React.CSSProperties = {
-  fontSize: '32px',
-  fontWeight: 700,
-  color: '#f5f5f5',
-  margin: '0 0 16px',
-  lineHeight: '1.2',
-  letterSpacing: '-0.02em',
-}
-
-const subtext: React.CSSProperties = {
-  fontSize: '15px',
-  color: '#777',
-  lineHeight: '1.7',
+const topDivider: React.CSSProperties = {
+  borderColor: '#1f1f1f',
   margin: 0,
 }
-
-const strip: React.CSSProperties = {
-  backgroundColor: '#0d0d0d',
-  borderTop: '1px solid #1f1f1f',
-  borderBottom: '1px solid #1f1f1f',
-  padding: '16px 32px',
-  textAlign: 'center',
-}
-
-const stripText: React.CSSProperties = {
-  fontSize: '13px',
-  color: '#666',
+const divider: React.CSSProperties = {
+  borderColor: '#1f1f1f',
   margin: 0,
 }
-
-const ctaSection: React.CSSProperties = {
+const content: React.CSSProperties = {
   padding: '32px 32px',
 }
-
-const ctaLabel: React.CSSProperties = {
-  fontSize: '13px',
-  color: '#555',
-  margin: '0 0 14px',
-}
-
-const button: React.CSSProperties = {
-  backgroundColor: '#1f1f1f',
-  color: '#e5e5e5',
+const eyebrow: React.CSSProperties = {
+  fontSize: '11px',
   fontWeight: 600,
-  fontSize: '14px',
-  padding: '13px 24px',
-  borderRadius: '8px',
-  textDecoration: 'none',
+  color: '#555',
+  letterSpacing: '0.08em',
+  margin: '0 0 14px',
+  textTransform: 'uppercase' as const,
+}
+const h1: React.CSSProperties = {
+  fontSize: '26px',
+  fontWeight: 700,
+  color: '#ededed',
+  margin: '0 0 16px',
+  lineHeight: '1.3',
+  letterSpacing: '-0.01em',
+}
+const body1: React.CSSProperties = {
+  fontSize: '15px',
+  color: '#888',
+  lineHeight: '1.5',
+  margin: '0 0 12px',
+}
+const button: React.CSSProperties = {
   display: 'inline-block',
+  marginTop: '4px',
+  backgroundColor: '#1f1f1f',
+  color: '#ededed',
+  fontWeight: 600,
+  fontSize: '15px',
+  padding: '13px 28px',
+  borderRadius: '6px',
+  textDecoration: 'none',
+  lineHeight: '1.5',
   border: '1px solid #2a2a2a',
-  letterSpacing: '0.01em',
 }
-
 const footer: React.CSSProperties = {
-  padding: '0 32px 24px',
+  padding: '24px 32px',
 }
-
 const footerText: React.CSSProperties = {
   fontSize: '13px',
   color: '#444',
-  margin: '0 0 16px',
+  lineHeight: '1.5',
+  margin: '0 0 12px',
 }
-
-const footerDivider: React.CSSProperties = {
-  borderColor: '#1f1f1f',
-  margin: '0 0 14px',
-}
-
 const footerLinks: React.CSSProperties = {
   fontSize: '12px',
   color: '#333',
   margin: 0,
 }
-
 const footerLink: React.CSSProperties = {
-  color: '#444',
+  color: '#555',
   textDecoration: 'underline',
 }
