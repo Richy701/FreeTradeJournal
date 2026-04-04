@@ -262,7 +262,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 ## Technology Stack
 
 | Category | Technology |
-|---|---|
+| --- | --- |
 | **Framework** | React 19 + TypeScript |
 | **Build Tool** | Vite 7 |
 | **Authentication** | Firebase Auth (Google OAuth + Apple Sign-In + Email/Password) |
@@ -311,7 +311,7 @@ side-aware queues and futures contract multipliers for accurate dollar P&L.
 The importer recognizes these column name variations:
 
 | Field | Accepted Column Names |
-|---|---|
+| --- | --- |
 | **Symbol** | Symbol, Instrument, Pair |
 | **Side** | Side, Type, Direction, Action (long/short, buy/sell) |
 | **Entry Price** | Open Price, Entry Price, Open, Entry |
@@ -327,7 +327,7 @@ For unrecognized CSV formats, an interactive column mapping dialog lets you manu
 Automatically applied when importing futures trades:
 
 | Contract | Multiplier | Contract | Multiplier |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | MNQ | $2/pt | NQ | $20/pt |
 | MES | $5/pt | ES | $50/pt |
 | MYM | $0.50/pt | YM | $5/pt |
@@ -346,7 +346,7 @@ When you select a CSV file you get:
 
 ## Project Structure
 
-```
+```text
 src/
   components/       # Reusable UI components (shadcn/ui, charts, layout)
   pages/            # Route-level page components

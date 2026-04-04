@@ -57,7 +57,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
 import { useUserStorage } from '@/utils/user-storage'
@@ -127,23 +126,6 @@ const TX_TYPE_OPTIONS: { value: TransactionType; label: string; isExpense: boole
   { value: 'other-expense',  label: 'Other Expense',  isExpense: true,  badgeClass: 'bg-muted text-muted-foreground border-border' },
 ]
 
-const HOW_IT_WORKS = [
-  {
-    icon: Building2,
-    title: 'Add your accounts',
-    desc: 'One entry per prop firm challenge or funded account. Include the firm, account size, type, and current status.',
-  },
-  {
-    icon: Receipt,
-    title: 'Log every transaction',
-    desc: 'Record evaluation fees, monthly subscriptions, resets, and every payout you receive from the firm.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'See your true P&L',
-    desc: 'PropTracker calculates your net across all firms — so you know whether prop trading is actually profitable for you.',
-  },
-]
 
 const AVATAR_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
@@ -280,8 +262,9 @@ export default function PropTracker() {
       const res = await requestPropAnalysis(accounts, transactions)
       setAiAnalysis(res.result)
       setAiUsage(res.usage)
-    } catch (err: any) {
-      const msg = err?.message || err?.details || 'AI analysis failed'
+    } catch (err: unknown) {
+      const e = err as { message?: string; details?: string }
+      const msg = e?.message || e?.details || 'AI analysis failed'
       toast.error(msg)
     } finally {
       setAiLoading(false)
@@ -354,8 +337,8 @@ export default function PropTracker() {
       const skipped = deduped.filter(t => !t.keep).length
       if (skipped > 0) toast.info(`${skipped} duplicate${skipped !== 1 ? 's' : ''} found — pre-unchecked`)
       setImportDialog(p => ({ ...p, loading: false, step: 'preview', parsed: deduped }))
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to parse screenshot')
+    } catch (err: unknown) {
+      toast.error((err as { message?: string })?.message || 'Failed to parse screenshot')
       setImportDialog(p => ({ ...p, loading: false }))
     }
   }
@@ -1511,6 +1494,7 @@ export default function PropTracker() {
                     <div key={tx.id} className={`flex items-center gap-3 px-3 py-2.5 transition-opacity ${tx.keep ? '' : 'opacity-40'}`}>
                       <input
                         type="checkbox"
+                        aria-label="Include transaction in import"
                         checked={tx.keep}
                         onChange={() => setImportDialog(p => ({ ...p, parsed: p.parsed.map((t, j) => j === i ? { ...t, keep: !t.keep } : t) }))}
                         className="rounded"
