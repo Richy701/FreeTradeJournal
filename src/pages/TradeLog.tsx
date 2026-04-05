@@ -1080,7 +1080,7 @@ export default function TradeLog() {
       <div className="min-h-screen flex flex-col w-full bg-background">
       <SiteHeader />
       {/* Header */}
-      <div className="border-b sticky top-[var(--mobile-header-height,0px)] md:top-0 z-20 bg-background/95 backdrop-blur-sm">
+      <div className="border-b bg-background">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
             <div className="space-y-1">

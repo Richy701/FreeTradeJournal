@@ -627,7 +627,7 @@ export default function PropTracker() {
       <SiteHeader />
 
       {/* Page header */}
-      <div className="border-b sticky top-[var(--mobile-header-height,0px)] md:top-0 z-20 bg-background/95 backdrop-blur-sm">
+      <div className="border-b bg-background">
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             {/* Title + subtitle */}
@@ -1113,38 +1113,41 @@ export default function PropTracker() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1.5 pt-3 border-t border-border/60">
-                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
-                        <Plus className="h-3 w-3" />
-                        Add
-                      </Button>
-                      {isPro ? (
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
-                          <Upload className="h-3 w-3" />
-                          Import
+                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border/60">
+                      <div className="flex items-center gap-1.5">
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
+                          <Plus className="h-3 w-3" />
+                          Add
                         </Button>
-                      ) : (
-                        <Link to="/pricing">
-                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+                        {isPro ? (
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
                             <Upload className="h-3 w-3" />
                             Import
-                            <Lock className="h-2.5 w-2.5 ml-0.5" />
                           </Button>
-                        </Link>
-                      )}
-                      <div className="flex-1" />
-                      {txs.length > 0 && (
-                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => toggleExpand(account.id)}>
-                          {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                          {txs.length} transaction{txs.length !== 1 ? 's' : ''}
+                        ) : (
+                          <Link to="/pricing">
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+                              <Upload className="h-3 w-3" />
+                              Import
+                              <Lock className="h-2.5 w-2.5 ml-0.5" />
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 ml-auto">
+                        {txs.length > 0 && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => toggleExpand(account.id)}>
+                            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                            {txs.length} transaction{txs.length !== 1 ? 's' : ''}
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Edit account" onClick={() => openEditAccount(account)}>
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                         </Button>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Edit account" onClick={() => openEditAccount(account)}>
-                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" aria-label="Delete account" onClick={() => setDeleteDialog({ open: true, type: 'account', id: account.id })}>
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" aria-label="Delete account" onClick={() => setDeleteDialog({ open: true, type: 'account', id: account.id })}>
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Expanded transactions */}

@@ -345,7 +345,7 @@ export default function Dashboard() {
     const tradesData = getTrades()
     if (!tradesData || tradesData.length === 0) {
       return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground/70">
             No trades yet — log your first trade to see live stats
           </span>

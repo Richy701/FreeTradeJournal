@@ -4,31 +4,17 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 
-const FIRST_SHOWN_KEY = 'prop-tracker-announcement-v2-first-shown';
 const SNOOZED_UNTIL_KEY = 'prop-tracker-announcement-v2-snoozed-until';
 const DISMISSED_KEY = 'prop-tracker-announcement-v2-dismissed';
-const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 function shouldShowBanner(): boolean {
   // Permanently dismissed (clicked "Try it")
   if (localStorage.getItem(DISMISSED_KEY) === 'true') return false;
 
-  const now = Date.now();
-
   // Snoozed (clicked X) — hidden until snooze expires
   const snoozedUntil = localStorage.getItem(SNOOZED_UNTIL_KEY);
-  if (snoozedUntil && now < parseInt(snoozedUntil, 10)) return false;
-
-  // Record first-shown timestamp
-  let firstShown = localStorage.getItem(FIRST_SHOWN_KEY);
-  if (!firstShown) {
-    localStorage.setItem(FIRST_SHOWN_KEY, String(now));
-    firstShown = String(now);
-  }
-
-  // Hide after 2 weeks from first shown
-  if (now - parseInt(firstShown, 10) > TWO_WEEKS_MS) return false;
+  if (snoozedUntil && Date.now() < parseInt(snoozedUntil, 10)) return false;
 
   return true;
 }
@@ -37,6 +23,7 @@ export function PropTrackerAnnouncement() {
   const { user, isDemo } = useAuth();
   const { themeColors } = useThemePresets();
   const [isVisible, setIsVisible] = useState(false);
+  const [mounted, setMounted] = useState(true);
   const [show] = useState(() => shouldShowBanner());
   const bannerRef = useRef<HTMLDivElement>(null);
 
@@ -61,20 +48,24 @@ export function PropTrackerAnnouncement() {
     return () => window.removeEventListener('resize', updateHeight);
   }, [isVisible, updateHeight]);
 
-  if (!user || isDemo || !show) return null;
+  if (!user || isDemo || !show || !mounted) return null;
+
+  const dismiss = () => {
+    setIsVisible(false);
+    document.documentElement.style.setProperty('--announcement-banner-height', '0px');
+    setTimeout(() => setMounted(false), 500);
+  };
 
   // X = snooze for 24h
   const handleSnooze = () => {
-    setIsVisible(false);
-    document.documentElement.style.setProperty('--announcement-banner-height', '0px');
     localStorage.setItem(SNOOZED_UNTIL_KEY, String(Date.now() + ONE_DAY_MS));
+    dismiss();
   };
 
   // "Try it" = permanently dismissed
   const handleTry = () => {
-    setIsVisible(false);
-    document.documentElement.style.setProperty('--announcement-banner-height', '0px');
     localStorage.setItem(DISMISSED_KEY, 'true');
+    dismiss();
   };
 
   return (
@@ -108,7 +99,7 @@ export function PropTrackerAnnouncement() {
               <TrendingUp className="h-2.5 w-2.5" aria-hidden="true" />
               New
             </span>
-            <p className="text-xs sm:text-sm font-medium text-white truncate">
+            <p className="text-xs sm:text-sm font-medium text-white">
               <span className="sm:hidden">
                 <span className="font-bold">PropTracker is live</span> — track every prop firm fee & payout.
               </span>
