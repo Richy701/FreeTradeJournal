@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -51,6 +51,7 @@ const CancellationEmail_1 = require("./emails/CancellationEmail");
 const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
 const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
 const TrialEndingEmail_1 = require("./emails/TrialEndingEmail");
+const TrialOfferEmail_1 = require("./emails/TrialOfferEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -270,6 +271,66 @@ exports.sendTrialEndingEmails = functions.pubsub
     }
     console.log(`Trial ending: sent ${sent} emails`);
     return null;
+});
+// ─── Trial Offer Batch (Admin callable) ────────────────────────
+exports.sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const batchSize = typeof data?.batchSize === "number" ? data.batchSize : 40;
+    const dryRun = data?.dryRun === true;
+    // Fetch a broad pool of users — Firestore can't query for missing fields,
+    // so we pull up to 2000 and filter in memory
+    const snapshot = await db.collection("users").limit(2000).get();
+    const eligible = [];
+    for (const doc of snapshot.docs) {
+        const d = doc.data();
+        // Skip pro users, already-outreached users, and users without an email
+        if (d.isPro === true)
+            continue;
+        if (d.trialOutreachSentAt)
+            continue;
+        if (!d.email)
+            continue;
+        const firstName = (d.displayName || d.email || "trader").split(" ")[0];
+        eligible.push({ uid: doc.id, email: d.email, firstName });
+    }
+    // Shuffle so each run picks a different random 40
+    for (let i = eligible.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+    }
+    const batch = eligible.slice(0, batchSize);
+    if (dryRun) {
+        return {
+            dryRun: true,
+            eligibleTotal: eligible.length,
+            wouldSendTo: batch.map((u) => ({ email: u.email, firstName: u.firstName })),
+        };
+    }
+    let sent = 0;
+    const failed = [];
+    for (const user of batch) {
+        try {
+            const html = await (0, components_1.render)(React.createElement(TrialOfferEmail_1.TrialOfferEmail, { firstName: user.firstName }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: user.email,
+                subject: "14 days of Pro — on us",
+                html,
+            });
+            await db.collection("users").doc(user.uid).update({
+                trialOutreachSentAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            sent++;
+        }
+        catch (err) {
+            console.error(`Failed to send trial offer to ${user.email}:`, err);
+            failed.push(user.email);
+        }
+    }
+    console.log(`Trial offer batch: sent ${sent}, failed ${failed.length}`);
+    return { sent, failed, eligibleRemaining: eligible.length - sent };
 });
 // ─── Send Feedback ─────────────────────────────────────────────
 exports.sendFeedback = functions.https.onCall(async (data, context) => {

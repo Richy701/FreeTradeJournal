@@ -84,6 +84,74 @@
     <link rel="alternate" hreflang="en" href="https://www.freetradejournal.com/" />
     <link rel="alternate" hreflang="x-default" href="https://www.freetradejournal.com/" />
 
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.freetradejournal.com/#organization",
+          "name": "FreeTradeJournal",
+          "url": "https://www.freetradejournal.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.freetradejournal.com/favicon-512x512.png",
+            "width": 512,
+            "height": 512
+          },
+          "sameAs": [
+            "https://twitter.com/freetradejournal"
+          ]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://www.freetradejournal.com/#software",
+          "name": "FreeTradeJournal",
+          "url": "https://www.freetradejournal.com",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "Web",
+          "description": "Free professional trading journal for forex, futures, and stock traders. Features P&L tracking, AI-powered trade analysis, AI coaching, performance analytics, and prop firm dashboards.",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free Plan",
+              "price": "0",
+              "priceCurrency": "USD",
+              "description": "Free forever: trade logging, analytics, journaling, goal tracking, CSV import/export"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro Monthly",
+              "price": "5.99",
+              "priceCurrency": "USD",
+              "description": "AI Trading Coach, AI Trade Review, cloud sync, unlimited exports"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro Yearly",
+              "price": "49.99",
+              "priceCurrency": "USD",
+              "description": "All Pro features, billed annually — save 30%"
+            }
+          ],
+          "publisher": {
+            "@id": "https://www.freetradejournal.com/#organization"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.freetradejournal.com/#website",
+          "url": "https://www.freetradejournal.com",
+          "name": "FreeTradeJournal",
+          "publisher": {
+            "@id": "https://www.freetradejournal.com/#organization"
+          }
+        }
+      ]
+    }
+    </script>
+
 <!-- Google tag (gtag.js) -->
     <script>
       var _gaId = '%VITE_GA_TRACKING_ID%';

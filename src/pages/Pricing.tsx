@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS } from '@/constants/pricing';
 import { cn } from '@/lib/utils';
+import { SEOMeta } from '@/components/seo-meta';
 
 const FREQUENCIES = ['monthly', 'yearly'] as const;
 type Frequency = typeof FREQUENCIES[number];
@@ -278,6 +279,7 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOMeta />
       {/* Header */}
       <header className="bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -313,7 +315,7 @@ export default function Pricing() {
             3,000+ traders already journaling
           </div>
           <h1 className="font-display text-4xl font-bold md:text-5xl tracking-tight">
-            Trade smarter, <span className="text-amber-500">not harder</span>
+            Free Trading Journal, <span className="text-amber-500">Pro When You Need It</span>
           </h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
             The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.

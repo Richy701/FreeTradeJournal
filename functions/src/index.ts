@@ -12,6 +12,7 @@ import { CancellationEmail } from "./emails/CancellationEmail";
 import { Day3NudgeEmail } from "./emails/Day3NudgeEmail";
 import { TrialStartedEmail } from "./emails/TrialStartedEmail";
 import { TrialEndingEmail } from "./emails/TrialEndingEmail";
+import { TrialOfferEmail } from "./emails/TrialOfferEmail";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -250,6 +251,74 @@ export const sendTrialEndingEmails = functions.pubsub
     console.log(`Trial ending: sent ${sent} emails`);
     return null;
   });
+
+// ─── Trial Offer Batch (Admin callable) ────────────────────────
+
+export const sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+
+  const batchSize: number = typeof data?.batchSize === "number" ? data.batchSize : 40;
+  const dryRun: boolean = data?.dryRun === true;
+
+  // Fetch a broad pool of users — Firestore can't query for missing fields,
+  // so we pull up to 2000 and filter in memory
+  const snapshot = await db.collection("users").limit(2000).get();
+
+  const eligible: Array<{ uid: string; email: string; firstName: string }> = [];
+
+  for (const doc of snapshot.docs) {
+    const d = doc.data();
+    // Skip pro users, already-outreached users, and users without an email
+    if (d.isPro === true) continue;
+    if (d.trialOutreachSentAt) continue;
+    if (!d.email) continue;
+    const firstName = (d.displayName || d.email || "trader").split(" ")[0];
+    eligible.push({ uid: doc.id, email: d.email, firstName });
+  }
+
+  // Shuffle so each run picks a different random 40
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+
+  const batch = eligible.slice(0, batchSize);
+
+  if (dryRun) {
+    return {
+      dryRun: true,
+      eligibleTotal: eligible.length,
+      wouldSendTo: batch.map((u) => ({ email: u.email, firstName: u.firstName })),
+    };
+  }
+
+  let sent = 0;
+  const failed: string[] = [];
+
+  for (const user of batch) {
+    try {
+      const html = await render(React.createElement(TrialOfferEmail, { firstName: user.firstName }));
+      await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: user.email,
+        subject: "14 days of Pro — on us",
+        html,
+      });
+      await db.collection("users").doc(user.uid).update({
+        trialOutreachSentAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      sent++;
+    } catch (err) {
+      console.error(`Failed to send trial offer to ${user.email}:`, err);
+      failed.push(user.email);
+    }
+  }
+
+  console.log(`Trial offer batch: sent ${sent}, failed ${failed.length}`);
+  return { sent, failed, eligibleRemaining: eligible.length - sent };
+});
 
 // ─── Send Feedback ─────────────────────────────────────────────
 

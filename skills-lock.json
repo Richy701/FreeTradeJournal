@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "email-design": {
+      "source": "inferen-sh/skills",
+      "sourceType": "github",
+      "computedHash": "32e4ebb0f91e9aa9c0cf3c5b866a423460f94cab9386194aead0bf2718d4ac3b"
+    },
+    "onboard": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "computedHash": "1cbedf70f906150b1b8bb70b61393eaf67e2e1311e1b5e43bde3e47411bcaa2b"
+    }
+  }
+}

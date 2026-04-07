@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
+import { SEOMeta } from '@/components/seo-meta';
 
 
 export default function LandingPage() {
@@ -21,6 +22,7 @@ export default function LandingPage() {
   
   return (
     <div className="w-full">
+      <SEOMeta />
       {/* Navigation overlay */}
       <header className="absolute top-0 left-0 right-0 z-50" style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}>
         <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
