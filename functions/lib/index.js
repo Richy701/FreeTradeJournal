@@ -42,6 +42,7 @@ const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
 const stripe_1 = __importDefault(require("stripe"));
 const resend_1 = require("resend");
+const posthog_node_1 = require("posthog-node");
 const components_1 = require("@react-email/components");
 const React = __importStar(require("react"));
 const WelcomeEmail_1 = require("./emails/WelcomeEmail");
@@ -52,6 +53,20 @@ const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
 const TrialEndingEmail_1 = require("./emails/TrialEndingEmail");
 admin.initializeApp();
 const db = admin.firestore();
+// ─── PostHog Analytics ──────────────────────────────────────
+let _posthog;
+function getPostHog() {
+    if (!_posthog) {
+        _posthog = new posthog_node_1.PostHog(process.env.POSTHOG_API_KEY, {
+            host: process.env.POSTHOG_HOST,
+            enableExceptionAutocapture: true,
+            // Firebase Cloud Functions are serverless — flush immediately
+            flushAt: 1,
+            flushInterval: 0,
+        });
+    }
+    return _posthog;
+}
 // ─── Resend Email Helper ────────────────────────────────────
 let _resend;
 function getResend() {
@@ -135,6 +150,34 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     }
     catch (err) {
         console.error("Failed to write user to Firestore:", err);
+    }
+    // Identify user and capture signup event
+    try {
+        const posthog = getPostHog();
+        posthog.identify({
+            distinctId: user.uid,
+            properties: {
+                $set: {
+                    email: user.email || null,
+                    name: user.displayName || null,
+                },
+                $set_once: {
+                    first_seen_at: new Date().toISOString(),
+                },
+            },
+        });
+        await posthog.captureImmediate({
+            distinctId: user.uid,
+            event: "user signed up",
+            properties: {
+                email: user.email || null,
+                name: user.displayName || null,
+                provider: user.providerData?.[0]?.providerId || "password",
+            },
+        });
+    }
+    catch (err) {
+        console.error("PostHog: failed to track user signup:", err);
     }
     if (!user.email)
         return;
@@ -293,6 +336,19 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
       </div>
     `,
     });
+    try {
+        await getPostHog().captureImmediate({
+            distinctId: uid,
+            event: "feedback submitted",
+            properties: {
+                feedback_type: type || "general",
+                rating: starRating,
+            },
+        });
+    }
+    catch (err) {
+        console.error("PostHog: failed to track feedback:", err);
+    }
     return { ok: true };
 });
 // ─── Submit Testimonial ────────────────────────────────────────
@@ -350,6 +406,18 @@ exports.submitTestimonial = functions.https.onCall(async (data, context) => {
       </div>
     `,
     });
+    try {
+        await getPostHog().captureImmediate({
+            distinctId: uid,
+            event: "testimonial submitted",
+            properties: {
+                rating: typeof rating === "number" ? rating : null,
+            },
+        });
+    }
+    catch (err) {
+        console.error("PostHog: failed to track testimonial:", err);
+    }
     return { ok: true };
 });
 // ─── Mark First Trade (client can't write users doc directly) ──
@@ -357,7 +425,17 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
-    await db.collection("users").doc(context.auth.uid).set({ firstTradeLoggedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const uid = context.auth.uid;
+    await db.collection("users").doc(uid).set({ firstTradeLoggedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    try {
+        await getPostHog().captureImmediate({
+            distinctId: uid,
+            event: "first trade logged",
+        });
+    }
+    catch (err) {
+        console.error("PostHog: failed to track first trade:", err);
+    }
     return { ok: true };
 });
 // ─── Stripe Integration ────────────────────────────────────
@@ -559,6 +637,20 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 catch (emailErr) {
                     console.error("Failed to send checkout email:", emailErr);
                 }
+                try {
+                    getPostHog().capture({
+                        distinctId: firebaseUid,
+                        event: "subscription started",
+                        properties: {
+                            plan_type: subscriptionData.planType,
+                            is_trial: subscriptionData.status === "on_trial",
+                            status: subscriptionData.status,
+                        },
+                    });
+                }
+                catch (phErr) {
+                    console.error("PostHog: failed to track subscription started:", phErr);
+                }
                 break;
             }
             case "customer.subscription.updated": {
@@ -597,6 +689,18 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     catch (emailErr) {
                         console.error("Failed to send trial conversion email:", emailErr);
                     }
+                    try {
+                        getPostHog().capture({
+                            distinctId: firebaseUid,
+                            event: "trial converted",
+                            properties: {
+                                plan_type: getPlanTypeFromPriceId(priceId),
+                            },
+                        });
+                    }
+                    catch (phErr) {
+                        console.error("PostHog: failed to track trial conversion:", phErr);
+                    }
                 }
                 break;
             }
@@ -630,6 +734,15 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 catch (emailErr) {
                     console.error("Failed to send cancellation email:", emailErr);
                 }
+                try {
+                    getPostHog().capture({
+                        distinctId: firebaseUid,
+                        event: "subscription cancelled",
+                    });
+                }
+                catch (phErr) {
+                    console.error("PostHog: failed to track subscription cancellation:", phErr);
+                }
                 break;
             }
             case "invoice.payment_failed": {
@@ -648,6 +761,15 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`invoice.payment_failed for ${firebaseUid}`);
+                try {
+                    getPostHog().capture({
+                        distinctId: firebaseUid,
+                        event: "subscription payment failed",
+                    });
+                }
+                catch (phErr) {
+                    console.error("PostHog: failed to track payment failure:", phErr);
+                }
                 break;
             }
             default:
@@ -656,6 +778,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     }
     catch (err) {
         console.error("Error processing webhook:", err.message);
+        getPostHog().captureException(err);
         res.status(500).send("Webhook handler error");
         return;
     }
