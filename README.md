@@ -133,9 +133,11 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Conversion & Upgrade Flow
 
-- Pro upgrade nudge after 5 trades logged — personalised banner with real trade count, dismissible per user
+- **14-day free trial** on Pro monthly and yearly plans — full Pro access from checkout, no charge until trial ends, cancel anytime before then
+- Dismissible trial banner on the dashboard for free users — shown on first login, one per user, gone forever after dismissal
+- Trial email flow — trial started confirmation, 2-day ending reminder, and conversion confirmation when trial converts to paid
 - AI sample previews behind ProGate blur — free users see realistic example output for AI Trade Analysis, Goal Coach, and Risk Alerts
-- Pricing page FAQ — 6 common questions answered (cancel anytime, data safety, cloud sync, AI features, lifetime deal)
+- Pricing page updated with trial messaging — "Start free trial" CTA, trial note under the price, and a dedicated trial FAQ entry
 - Cloud sync warning on dashboard with prominent "Enable Cloud Sync →" CTA button
 - PropTracker screenshot import button visible to free users with lock indicator (was hidden entirely)
 

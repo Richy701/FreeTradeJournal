@@ -833,11 +833,13 @@ export default function Settings() {
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5 capitalize">{subscription?.planType} plan</p>
                           </div>
-                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 capitalize">{subscription?.status || 'Active'}</Badge>
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 capitalize">
+                            {subscription?.status === 'on_trial' ? 'Trial' : subscription?.status || 'Active'}
+                          </Badge>
                         </div>
                         {subscription?.currentPeriodEnd && subscription.planType !== 'lifetime' && (
                           <p className="text-xs text-muted-foreground">
-                            {subscription.status === 'cancelled' ? 'Access until' : 'Renews on'}{' '}
+                            {subscription.status === 'cancelled' ? 'Access until' : subscription.status === 'on_trial' ? 'Trial ends on' : 'Renews on'}{' '}
                             {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                           </p>
                         )}

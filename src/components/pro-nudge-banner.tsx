@@ -3,39 +3,19 @@ import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
-import { useUserStorage } from '@/utils/user-storage';
-
-const TRADE_THRESHOLD = 5;
 
 export function ProNudgeBanner() {
   const { user, isDemo } = useAuth();
   const { isPro, isLoading } = useProStatus();
-  const userStorage = useUserStorage();
   const [visible, setVisible] = useState(false);
-  const [tradeCount, setTradeCount] = useState(0);
 
-  const dismissKey = user ? `pro-nudge-v1-dismissed-${user.uid}` : null;
+  const dismissKey = user ? `trial-nudge-v1-${user.uid}` : null;
 
   useEffect(() => {
     if (!user || isDemo || isPro || isLoading || !dismissKey) return;
-
     const dismissed = localStorage.getItem(dismissKey);
-    if (dismissed) return;
-
-    const raw = userStorage.getItem('trades');
-    if (!raw) return;
-
-    try {
-      const trades = JSON.parse(raw);
-      const count = Array.isArray(trades) ? trades.length : 0;
-      if (count >= TRADE_THRESHOLD) {
-        setTradeCount(count);
-        setVisible(true);
-      }
-    } catch {
-      // malformed data, skip
-    }
-  }, [user, isDemo, isPro, isLoading, userStorage, dismissKey]);
+    if (!dismissed) setVisible(true);
+  }, [user, isDemo, isPro, isLoading, dismissKey]);
 
   function dismiss() {
     setVisible(false);
@@ -47,15 +27,15 @@ export function ProNudgeBanner() {
   return (
     <div className="mx-4 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-center gap-3 relative">
       <p className="text-sm text-foreground/80 flex-1 leading-snug">
-        You've logged{' '}
-        <span className="font-semibold text-foreground">{tradeCount} trades</span>.
-        {' '}Unlock AI coaching to find out what's actually costing you money.
+        Try every Pro feature free for{' '}
+        <span className="font-semibold text-foreground">14 days</span>
+        {' '}— AI coaching, trade analysis, cloud sync and more. No charge until your trial ends.
       </p>
       <Link
         to="/pricing"
-        className="flex-shrink-0 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150"
+        className="flex-shrink-0 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap"
       >
-        Unlock Pro →
+        Start free trial →
       </Link>
       <button
         onClick={dismiss}

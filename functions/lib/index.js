@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -48,6 +48,8 @@ const WelcomeEmail_1 = require("./emails/WelcomeEmail");
 const ProUpgradeEmail_1 = require("./emails/ProUpgradeEmail");
 const CancellationEmail_1 = require("./emails/CancellationEmail");
 const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
+const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
+const TrialEndingEmail_1 = require("./emails/TrialEndingEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── Resend Email Helper ────────────────────────────────────
@@ -89,6 +91,36 @@ async function sendCancellationEmail(email, name, periodEnd) {
         to: email,
         subject: "Your Pro subscription has been cancelled",
         html,
+    });
+}
+async function sendTrialStartedEmail(email, name, trialEnd) {
+    const firstName = name?.split(" ")[0] || "trader";
+    const trialEndDate = new Date(trialEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    const html = await (0, components_1.render)(React.createElement(TrialStartedEmail_1.TrialStartedEmail, { firstName, trialEndDate }));
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: "Your 14-day Pro trial has started",
+        html,
+        headers: {
+            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+    });
+}
+async function sendTrialEndingEmail(email, name, trialEnd) {
+    const firstName = name?.split(" ")[0] || "trader";
+    const trialEndDate = new Date(trialEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    const html = await (0, components_1.render)(React.createElement(TrialEndingEmail_1.TrialEndingEmail, { firstName, trialEndDate }));
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: "Your Pro trial ends in 2 days",
+        html,
+        headers: {
+            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
     });
 }
 // ─── Welcome Email on Signup ───────────────────────────────
@@ -144,6 +176,10 @@ exports.sendDay3NudgeEmails = functions.pubsub
                 to: email,
                 subject: "Your journal is set up — log your first trade in 60 seconds",
                 html,
+                headers: {
+                    'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                },
             });
             // Mark as sent so we don't send again
             await doc.ref.update({ day3NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
@@ -155,6 +191,41 @@ exports.sendDay3NudgeEmails = functions.pubsub
         }
     }
     console.log(`Day-3 nudge: sent ${sent} emails`);
+    return null;
+});
+// ─── Trial Ending Email (Scheduled) ────────────────────────
+exports.sendTrialEndingEmails = functions.pubsub
+    .schedule("every 24 hours")
+    .onRun(async () => {
+    const now = Date.now();
+    // Query for trial end dates 1–3 days from now (48-hour window, daily run)
+    const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
+    const threeDaysFromNow = new Date(now + 3 * 24 * 60 * 60 * 1000).toISOString();
+    const snapshot = await db
+        .collection("users")
+        .where("subscription.status", "==", "on_trial")
+        .where("subscription.currentPeriodEnd", ">=", oneDayFromNow)
+        .where("subscription.currentPeriodEnd", "<=", threeDaysFromNow)
+        .get();
+    let sent = 0;
+    for (const doc of snapshot.docs) {
+        const data = doc.data();
+        if (data.trialEndingEmailSentAt)
+            continue;
+        try {
+            const userRecord = await admin.auth().getUser(doc.id);
+            if (!userRecord.email)
+                continue;
+            await sendTrialEndingEmail(userRecord.email, userRecord.displayName || undefined, data.subscription.currentPeriodEnd);
+            await doc.ref.update({ trialEndingEmailSentAt: admin.firestore.FieldValue.serverTimestamp() });
+            sent++;
+            console.log(`Trial ending email sent to ${doc.id}`);
+        }
+        catch (err) {
+            console.error(`Failed to send trial ending email for ${doc.id}:`, err);
+        }
+    }
+    console.log(`Trial ending: sent ${sent} emails`);
     return null;
 });
 // ─── Send Feedback ─────────────────────────────────────────────
@@ -350,26 +421,47 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         await db.collection("users").doc(uid).set({ stripeCustomerId }, { merge: true });
     }
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
-    const sessionParams = {
-        customer: stripeCustomerId,
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: isLifetime ? "payment" : "subscription",
-        success_url: `${process.env.APP_URL}/settings?tab=subscription&checkout=success`,
-        cancel_url: `${process.env.APP_URL}/pricing`,
-        allow_promotion_codes: true,
-        metadata: { firebase_uid: uid },
+    const buildSessionParams = (customerId) => {
+        const params = {
+            customer: customerId,
+            line_items: [{ price: priceId, quantity: 1 }],
+            mode: isLifetime ? "payment" : "subscription",
+            success_url: `${process.env.APP_URL}/settings?tab=subscription&checkout=success`,
+            cancel_url: `${process.env.APP_URL}/pricing`,
+            allow_promotion_codes: true,
+            metadata: { firebase_uid: uid },
+        };
+        if (!isLifetime) {
+            params.subscription_data = {
+                trial_period_days: 14,
+                metadata: { firebase_uid: uid },
+            };
+        }
+        else {
+            params.payment_intent_data = {
+                metadata: { firebase_uid: uid },
+            };
+        }
+        return params;
     };
-    if (!isLifetime) {
-        sessionParams.subscription_data = {
-            metadata: { firebase_uid: uid },
-        };
+    let session;
+    try {
+        session = await getStripe().checkout.sessions.create(buildSessionParams(stripeCustomerId));
     }
-    else {
-        sessionParams.payment_intent_data = {
-            metadata: { firebase_uid: uid },
-        };
+    catch (err) {
+        // Stale/deleted customer (e.g. test-mode ID in prod) — recreate and retry
+        if (err?.code === "resource_missing" && err?.param === "customer") {
+            const newCustomer = await getStripe().customers.create({
+                email,
+                metadata: { firebase_uid: uid },
+            });
+            await db.collection("users").doc(uid).set({ stripeCustomerId: newCustomer.id }, { merge: true });
+            session = await getStripe().checkout.sessions.create(buildSessionParams(newCustomer.id));
+        }
+        else {
+            throw err;
+        }
     }
-    const session = await getStripe().checkout.sessions.create(sessionParams);
     return { url: session.url };
 });
 exports.createPortalSession = functions.https.onCall(async (_data, context) => {
@@ -421,8 +513,9 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 if (session.mode === "subscription") {
                     const sub = await getStripe().subscriptions.retrieve(session.subscription);
                     const priceId = sub.items.data[0]?.price.id || "";
+                    const subStatus = mapStripeStatus(sub.status);
                     subscriptionData = {
-                        status: "active",
+                        status: subStatus,
                         planType: getPlanTypeFromPriceId(priceId),
                         stripeCustomerId: customerId,
                         stripeSubscriptionId: sub.id,
@@ -443,22 +536,28 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                         updatedAt: new Date().toISOString(),
                     };
                 }
+                const isProStatus = subscriptionData.status === "active" || subscriptionData.status === "on_trial";
                 await db.collection("users").doc(firebaseUid).set({
-                    isPro: true,
+                    isPro: isProStatus,
                     stripeCustomerId: customerId,
                     subscription: subscriptionData,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
-                // Send Pro upgrade email
+                // Send trial started or pro upgrade email
                 try {
                     const userRecord = await admin.auth().getUser(firebaseUid);
                     if (userRecord.email) {
-                        await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.planType);
+                        if (subscriptionData.status === "on_trial" && subscriptionData.currentPeriodEnd) {
+                            await sendTrialStartedEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.currentPeriodEnd);
+                        }
+                        else {
+                            await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.planType);
+                        }
                     }
                 }
                 catch (emailErr) {
-                    console.error("Failed to send Pro upgrade email:", emailErr);
+                    console.error("Failed to send checkout email:", emailErr);
                 }
                 break;
             }
@@ -485,6 +584,20 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`subscription.updated for ${firebaseUid}: ${status}`);
+                // Send Pro upgrade email when trial converts to paid
+                const prevStatus = event.data.previous_attributes?.status;
+                if (prevStatus === "trialing" && sub.status === "active") {
+                    try {
+                        const userRecord = await admin.auth().getUser(firebaseUid);
+                        if (userRecord.email) {
+                            const planType = getPlanTypeFromPriceId(priceId);
+                            await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, planType);
+                        }
+                    }
+                    catch (emailErr) {
+                        console.error("Failed to send trial conversion email:", emailErr);
+                    }
+                }
                 break;
             }
             case "customer.subscription.deleted": {

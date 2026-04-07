@@ -260,6 +260,16 @@ function HeroGeometric({
                                 </Button>
                             </Link>
                         </motion.div>
+
+                        <motion.p
+                            custom={5}
+                            variants={fadeUpVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="text-xs text-muted-foreground mt-2"
+                        >
+                            Pro plans include a 14-day free trial · Cancel anytime
+                        </motion.p>
                       </>
                     )}
 

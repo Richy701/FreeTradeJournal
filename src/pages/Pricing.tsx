@@ -209,7 +209,11 @@ function ComparisonRow({ feature, free, pro }: { feature: string; free: boolean;
 const FAQS = [
   {
     q: 'Is the free plan really free forever?',
-    a: 'Yes. No credit card, no trial period, no hidden limits. The core journal — unlimited trades, analytics, and journaling — is free for life.',
+    a: 'Yes. No credit card, no hidden limits. The core journal — unlimited trades, analytics, and journaling — is free for life.',
+  },
+  {
+    q: 'How does the 14-day free trial work?',
+    a: 'Start a monthly or yearly Pro subscription and get 14 days free — no charge until the trial ends. Cancel anytime before then and you will not be billed.',
   },
   {
     q: 'Can I cancel my Pro subscription anytime?',
@@ -350,10 +354,10 @@ export default function Pricing() {
           <PricingCard
             name={`Pro ${activePlan.name}`}
             price={activePlan.price}
-            subtitle={frequency === 'monthly' ? 'Per month' : 'Per year'}
+            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · 14-day free trial'}
             description="For traders who want an edge"
             features={activePlan.features}
-            cta="Upgrade to Pro"
+            cta="Start free trial"
             popular
             isCurrentPlan={isPro && currentPlan === activePlan.interval}
             onCtaClick={() => handleUpgrade(activePlan.priceId)}
@@ -423,9 +427,9 @@ export default function Pricing() {
                   className="bg-amber-500 text-white hover:bg-amber-600 font-semibold px-8"
                   onClick={() => user ? openCheckout(activePlan.priceId) : navigate('/signup')}
                 >
-                  {user ? 'Upgrade to Pro' : 'Get Started Free'}
+                  {user ? 'Start free trial' : 'Get Started Free'}
                 </Button>
-                <p className="text-xs text-muted-foreground">Cancel anytime · No hidden fees</p>
+                <p className="text-xs text-muted-foreground">14-day free trial · Cancel anytime · No hidden fees</p>
               </div>
             )}
           </div>

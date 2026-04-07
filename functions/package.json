@@ -22,6 +22,8 @@
   },
   "devDependencies": {
     "@react-email/preview-server": "^5.2.10",
+    "node-html-to-image": "^5.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
   }
 }

@@ -15,6 +15,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.8.0',
+    date: '2026-04-07',
+    summary: '14-day free trial for Pro — try every Pro feature before you pay, with full trial email flow and in-app trial messaging.',
+    items: [
+      {
+        type: 'new',
+        text: '14-day free trial on Pro monthly and yearly plans',
+        description: 'New subscribers get 14 days of full Pro access before their first charge. No trial on the lifetime plan — that remains a one-time payment.',
+      },
+      {
+        type: 'new',
+        text: 'Trial started email',
+        description: 'When your trial begins you get a confirmation email listing every Pro feature that is now unlocked, with the exact date your trial ends.',
+      },
+      {
+        type: 'new',
+        text: 'Trial ending reminder email',
+        description: 'Two days before your trial expires you get a heads-up email. Cancel before then and you will not be charged — or do nothing and your subscription continues automatically.',
+      },
+      {
+        type: 'new',
+        text: 'Trial conversion email',
+        description: 'When your trial converts to a paid subscription you receive a welcome email confirming your Pro status.',
+      },
+      {
+        type: 'new',
+        text: 'In-app trial banner',
+        description: 'Free users see a dismissible banner on the dashboard promoting the 14-day trial. Shown once per user, hidden forever after dismissal.',
+      },
+      {
+        type: 'improved',
+        text: 'Pricing page updated with trial messaging',
+        description: 'The Pro card now shows "14-day free trial" under the price, the CTA reads "Start free trial", and a new FAQ entry explains how the trial works.',
+      },
+      {
+        type: 'improved',
+        text: 'Settings subscription tab shows trial status',
+        description: 'Trial users now see a "Trial" badge and "Trial ends on [date]" instead of the standard renewal date.',
+      },
+      {
+        type: 'improved',
+        text: 'Sidebar upgrade button updated',
+        description: 'The sidebar link for free users now reads "Start free trial" to match the current offer.',
+      },
+    ],
+  },
+  {
     version: '2.7.0',
     date: '2026-04-04',
     summary: 'Major quality-of-life update — smarter trade export, journal templates, mood analytics, live risk rule feedback, and a refreshed Goals page.',
@@ -622,4 +669,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.4.0'
+export const LATEST_CHANGELOG_VERSION = '2.8.0'

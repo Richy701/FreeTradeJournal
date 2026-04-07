@@ -159,7 +159,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       style={{ backgroundColor: alpha(themeColors.primary, '15') }}
                     >
                       <Rocket className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      <span>Upgrade to Pro</span>
+                      <span>Start free trial</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
