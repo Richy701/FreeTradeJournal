@@ -17,7 +17,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.8.0',
     date: '2026-04-07',
-    summary: '14-day free trial for Pro — try every Pro feature before you pay, with full trial email flow and in-app trial messaging.',
+    summary: '14-day free trial for Pro — try every Pro feature before you pay.',
     items: [
       {
         type: 'new',
@@ -26,18 +26,8 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'new',
-        text: 'Trial started email',
-        description: 'When your trial begins you get a confirmation email listing every Pro feature that is now unlocked, with the exact date your trial ends.',
-      },
-      {
-        type: 'new',
-        text: 'Trial ending reminder email',
-        description: 'Two days before your trial expires you get a heads-up email. Cancel before then and you will not be charged — or do nothing and your subscription continues automatically.',
-      },
-      {
-        type: 'new',
-        text: 'Trial conversion email',
-        description: 'When your trial converts to a paid subscription you receive a welcome email confirming your Pro status.',
+        text: 'Trial email notifications',
+        description: 'You get a confirmation email when your trial starts, a reminder 2 days before it ends, and a welcome email when your subscription begins.',
       },
       {
         type: 'new',
@@ -116,22 +106,17 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.6.0',
     date: '2026-04-03',
-    summary: 'Official blog launched at blog.freetradejournal.com, Blog link added to sidebar and landing page, sitemap fix.',
+    summary: 'Official blog launched at blog.freetradejournal.com, with links added to the sidebar and landing page.',
     items: [
       {
         type: 'new',
         text: 'Blog at blog.freetradejournal.com',
-        description: 'FreeTradeJournal now has an official blog covering prop firm trading, combine strategies, and trading journal tips. Built on Ghost, hosted on Railway.',
+        description: 'FreeTradeJournal now has an official blog covering prop firm trading, combine strategies, and trading journal tips.',
       },
       {
         type: 'new',
         text: 'Blog link in sidebar and landing page footer',
         description: 'Quick access to the blog from inside the app and the landing page footer.',
-      },
-      {
-        type: 'fixed',
-        text: 'SEO improvements',
-        description: 'Fixed an issue preventing search engines from properly accessing the sitemap. Pages should now index faster.',
       },
     ],
   },
@@ -163,7 +148,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'Security hardening',
-        description: 'Rate limiting added to AI calls, feedback, and testimonial submissions. User-supplied trade notes are now JSON-encoded before being sent to the AI to prevent prompt injection. Firestore rules tightened with explicit deny rules on all collections.',
+        description: 'Added protections against abuse across AI features, feedback, and testimonial submissions.',
       },
       {
         type: 'improved',
@@ -236,7 +221,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.2.0',
     date: '2026-03-31',
-    summary: 'PropTracker — a dedicated prop firm tracker with freemium gating, AI analysis, and full cloud sync support.',
+    summary: 'PropTracker — a dedicated prop firm tracker with a free tier, AI analysis, and full cloud sync support.',
     items: [
       {
         type: 'new',
@@ -256,19 +241,19 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'Accessibility — PropTracker Forms',
-        description: 'All form fields now have properly linked labels, aria-labelledby on selects, inputMode="decimal" on number inputs, and aria-labels on icon-only buttons.',
+        description: 'Form fields in PropTracker now have proper labels and keyboard navigation, improving accessibility for screen reader users.',
       },
     ],
   },
   {
     version: '2.1.0',
     date: '2026-03-10',
-    summary: 'Major security & data protection update — content blocker bypass, XSS protection, localStorage safeguards, auto-restore, and number formatting.',
+    summary: 'Major security & data protection update — sync with content blockers, data safeguards, auto-restore, and number formatting.',
     items: [
       {
         type: 'new',
-        text: 'Cloud Function Sync Proxy',
-        description: 'Cloud sync now works with ALL content blockers! Sync routes through Cloud Functions instead of direct Firestore, bypassing ad blockers and content filters completely.',
+        text: 'Sync works with all content blockers',
+        description: 'Cloud sync now works regardless of ad blockers or content filters. Previously, some blockers would silently prevent data from syncing.',
       },
       {
         type: 'new',
@@ -278,7 +263,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Onboarding Protection',
-        description: 'Pro users with existing data never see onboarding again. The app checks Firestore first and auto-creates any missing accounts to match your trades.',
+        description: 'Pro users with existing cloud data are never shown onboarding again. Any missing accounts are automatically created to match your synced trades.',
       },
       {
         type: 'new',
@@ -294,11 +279,6 @@ export const changelog: ChangelogEntry[] = [
         type: 'fixed',
         text: 'Account ID Mismatches',
         description: 'Fixed data loss bug where new accounts with different IDs orphaned existing trades, making them invisible.',
-      },
-      {
-        type: 'fixed',
-        text: 'Content Blocker Sync Failures',
-        description: 'Replaced real-time Firestore listeners with Cloud Function polling (every 10s) to completely bypass content blockers and ad blockers.',
       },
       {
         type: 'improved',
@@ -355,7 +335,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Cloud Sync for Pro users',
-        description: 'Your trades, journal entries, goals, accounts, and risk rules sync across devices in real-time via Firestore.',
+        description: 'Your trades, journal entries, goals, accounts, and risk rules sync across all your devices in real-time.',
       },
     ],
   },
@@ -409,17 +389,17 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'fixed',
         text: 'Mobile long-press and copy/share restored',
-        description: 'A global -webkit-touch-callout: none rule was blocking text selection, image saving, and share menus on mobile. Removed so standard mobile interactions work again.',
+        description: 'Text selection, image saving, and share menus on mobile were being blocked. Standard long-press interactions now work as expected.',
       },
       {
         type: 'fixed',
         text: 'Form labels properly linked to inputs',
-        description: 'Added htmlFor/id associations to the Dashboard trade modal (Market, Side, Symbol, Prop Firm), Journal entry form (Title, Content), and file upload input for screen reader accessibility.',
+        description: 'Form fields in the trade modal, journal entry form, and file upload now have proper labels for screen reader accessibility.',
       },
       {
         type: 'improved',
         text: 'Site header now visible on mobile',
-        description: 'The breadcrumb header was hidden on screens below 768px. It now shows a condensed current page name with theme toggle and user avatar on all screen sizes.',
+        description: 'The page header was hidden on small screens. It now shows the current page name, theme toggle, and user avatar on all screen sizes.',
       },
       {
         type: 'improved',
@@ -567,7 +547,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'fixed',
         text: 'Theme switching is now fully instant',
-        description: 'Switched the theme provider to useLayoutEffect and changed all buttons from transition-all to scoped transitions, eliminating the delayed color fade on theme toggle.',
+        description: 'Theme and dark mode now switch instantly with no color fade or delay.',
       },
       {
         type: 'fixed',
@@ -632,11 +612,6 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         text: 'Trade dialog scroll and overflow handling',
         description: 'The trade entry dialog now scrolls properly on smaller screens and no longer clips content at the bottom when many fields are visible.',
-      },
-      {
-        type: 'fixed',
-        text: 'Framer Motion animation type errors on Vercel',
-        description: 'Resolved TypeScript type mismatches with Framer Motion\'s ease property that were causing build failures on Vercel deployments.',
       },
     ],
   },
