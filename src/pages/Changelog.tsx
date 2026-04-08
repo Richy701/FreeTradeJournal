@@ -1,13 +1,11 @@
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
-import { Badge } from '@/components/ui/badge'
 import { changelog, type ChangelogItemType } from '@/constants/changelog'
-import { Plus, Zap, Bug } from 'lucide-react'
 
-const typeConfig: Record<ChangelogItemType, { label: string; icon: typeof Plus; color: string; bg: string }> = {
-  new: { label: 'New', icon: Plus, color: '#22c55e', bg: '#22c55e15' },
-  improved: { label: 'Improved', icon: Zap, color: '#3b82f6', bg: '#3b82f615' },
-  fixed: { label: 'Fixed', icon: Bug, color: '#f59e0b', bg: '#f59e0b15' },
+const typeConfig: Record<ChangelogItemType, { label: string; className: string }> = {
+  new:      { label: 'New',      className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+  improved: { label: 'Improved', className: 'bg-violet-500/10 text-violet-600 dark:text-violet-400' },
+  fixed:    { label: 'Fixed',    className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
 }
 
 export default function Changelog() {
@@ -15,70 +13,42 @@ export default function Changelog() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
-        <header>
-          <h1 className="font-display text-2xl font-bold tracking-tight">Release Notes</h1>
-          <p className="mt-2 text-muted-foreground">
-            Everything new, improved, and fixed in FreeTradeJournal.
-          </p>
-        </header>
+      <div className="max-w-2xl mx-auto px-6 py-14">
+        <div className="mb-14">
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Changelog</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">Release Notes</h1>
+          <p className="mt-3 text-muted-foreground">Everything new, improved, and fixed in FreeTradeJournal.</p>
+        </div>
 
-        <hr className="border-border" />
-
-        <div className="space-y-12">
+        <div className="space-y-16">
           {changelog.map((release, releaseIndex) => (
-            <section key={release.version} className="space-y-4">
+            <div key={release.version}>
               {/* Version header */}
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                  v{release.version}
-                </h2>
+              <div className="flex items-baseline gap-3 mb-1">
+                <h2 className="text-2xl font-bold text-foreground">v{release.version}</h2>
                 <span className="text-sm text-muted-foreground">
-                  {new Date(release.date).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+                  {new Date(release.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </span>
                 {releaseIndex === 0 && (
-                  <Badge className="text-xs border-0" style={{ backgroundColor: '#22c55e20', color: '#22c55e' }}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                     Latest
-                  </Badge>
+                  </span>
                 )}
               </div>
 
-              {/* Summary */}
-              <p className="text-muted-foreground leading-relaxed">
-                {release.summary}
-              </p>
-
               {/* Items */}
-              <div className="space-y-5 mt-2">
+              <div className="space-y-5 mt-5">
                 {release.items.map((item, i) => {
                   const config = typeConfig[item.type]
-                  const Icon = config.icon
                   return (
-                    <div key={i} className="flex gap-3.5">
-                      <div
-                        className="mt-1 shrink-0 h-6 w-6 rounded-md flex items-center justify-center"
-                        style={{ backgroundColor: config.bg }}
-                      >
-                        <Icon className="h-3.5 w-3.5" style={{ color: config.color }} />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">{item.text}</span>
-                          <Badge
-                            className="text-[10px] px-1.5 py-0 border-0 font-medium"
-                            style={{ backgroundColor: config.bg, color: config.color }}
-                          >
-                            {config.label}
-                          </Badge>
-                        </div>
+                    <div key={i} className="grid grid-cols-[72px_1fr] gap-4">
+                      <span className={`mt-0.5 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded h-fit text-center ${config.className}`}>
+                        {config.label}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{item.text}</p>
                         {item.description && (
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {item.description}
-                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                         )}
                       </div>
                     </div>
@@ -86,11 +56,10 @@ export default function Changelog() {
                 })}
               </div>
 
-              {/* Separator */}
               {releaseIndex < changelog.length - 1 && (
-                <hr className="border-border mt-8" />
+                <div className="border-t border-border mt-12" />
               )}
-            </section>
+            </div>
           ))}
         </div>
       </div>

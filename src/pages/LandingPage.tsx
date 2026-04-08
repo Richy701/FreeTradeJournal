@@ -52,7 +52,9 @@ export default function LandingPage() {
       <LogoCloud />
 
       {/* Features Section with Dashboard Preview */}
-      <Features6 />
+      <div id="features">
+        <Features6 />
+      </div>
         
       {/* Dashboard Performance Section */}
       <FeatureShowcase
