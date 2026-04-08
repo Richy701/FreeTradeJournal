@@ -24,31 +24,6 @@ export const changelog: ChangelogEntry[] = [
         text: '14-day free trial on Pro monthly and yearly plans',
         description: 'New subscribers get 14 days of full Pro access before their first charge. No trial on the lifetime plan — that remains a one-time payment.',
       },
-      {
-        type: 'new',
-        text: 'Trial email notifications',
-        description: 'You get a confirmation email when your trial starts, a reminder 2 days before it ends, and a welcome email when your subscription begins.',
-      },
-      {
-        type: 'new',
-        text: 'In-app trial banner',
-        description: 'Free users see a dismissible banner on the dashboard promoting the 14-day trial. Shown once per user, hidden forever after dismissal.',
-      },
-      {
-        type: 'improved',
-        text: 'Pricing page updated with trial messaging',
-        description: 'The Pro card now shows "14-day free trial" under the price, the CTA reads "Start free trial", and a new FAQ entry explains how the trial works.',
-      },
-      {
-        type: 'improved',
-        text: 'Settings subscription tab shows trial status',
-        description: 'Trial users now see a "Trial" badge and "Trial ends on [date]" instead of the standard renewal date.',
-      },
-      {
-        type: 'improved',
-        text: 'Sidebar upgrade button updated',
-        description: 'The sidebar link for free users now reads "Start free trial" to match the current offer.',
-      },
     ],
   },
   {
@@ -59,7 +34,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'CSV export with date range filter',
-        description: 'The Export button in the Trade Log now opens a quick picker. Choose This Month, This Quarter, This Year, or set a custom date range. No dialog, no extra steps — pick your range and download.',
+        description: 'The Export button in the Trade Log now opens a quick picker. Choose This Month, This Quarter, This Year, or set a custom date range. No extra steps — pick your range and download.',
       },
       {
         type: 'new',
@@ -79,12 +54,12 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Risk rule warnings when logging trades',
-        description: 'When you log a trade that pushes you past your daily loss limit or per-trade loss limit, you get an instant warning. The violation counter on the rule increments automatically.',
+        description: 'When you log a trade that pushes you past your daily loss limit or per-trade loss limit, you get an instant warning. Your violation count updates automatically.',
       },
       {
         type: 'improved',
         text: 'Goals & Risk Management redesign',
-        description: 'Goal cards are larger and more visual — circular progress rings shift from blue to amber as you close in on your target, and green when achieved. A progress bar runs along the bottom of each card. Risk rules now show a live bar of how much of your limit you\'ve used today.',
+        description: 'Goal cards are larger and more visual — progress rings shift from blue to amber as you close in on your target, and green when achieved. Risk rules now show a live bar of how much of your limit you\'ve used today.',
       },
       {
         type: 'improved',
@@ -99,36 +74,31 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'Trade Insights — actionable next steps',
-        description: 'Every insight card in Trade Insights now includes a concrete next step — a specific action you can take today, not just an observation about your data.',
+        description: 'Every insight card now includes a concrete next step — a specific action you can take today, not just an observation about your data.',
       },
     ],
   },
   {
     version: '2.6.0',
     date: '2026-04-03',
-    summary: 'Official blog launched at blog.freetradejournal.com, with links added to the sidebar and landing page.',
+    summary: 'Official blog launched at blog.freetradejournal.com.',
     items: [
       {
         type: 'new',
         text: 'Blog at blog.freetradejournal.com',
-        description: 'FreeTradeJournal now has an official blog covering prop firm trading, combine strategies, and trading journal tips.',
-      },
-      {
-        type: 'new',
-        text: 'Blog link in sidebar and landing page footer',
-        description: 'Quick access to the blog from inside the app and the landing page footer.',
+        description: 'FreeTradeJournal now has an official blog covering prop firm trading, combine strategies, and trading journal tips. Linked from the sidebar and landing page.',
       },
     ],
   },
   {
     version: '2.5.0',
     date: '2026-04-02',
-    summary: 'Native feedback form with star ratings and testimonials, security hardening, and onboarding improvements.',
+    summary: 'Feedback form, testimonials, and onboarding improvements.',
     items: [
       {
         type: 'new',
-        text: 'Native feedback form',
-        description: 'Replaced the third-party feedback widget with a built-in form. Rate your experience with stars, pick a feedback type (bug, feature, general), and submit — goes straight to our inbox.',
+        text: 'Feedback form',
+        description: 'Leave feedback directly in the app. Rate your experience with stars, pick a type (bug, feature, general), and submit.',
       },
       {
         type: 'new',
@@ -138,90 +108,53 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Getting started checklist',
-        description: 'New users see a collapsible checklist on the dashboard to guide them through setting up their account, logging their first trade, and exploring key features.',
+        description: 'New users see a checklist on the dashboard to guide them through setting up their account, logging their first trade, and exploring key features.',
       },
       {
         type: 'new',
         text: 'First trade celebration',
-        description: 'When you log your very first trade, confetti fires and a toast message congratulates you. A small touch to mark the start of your trading journey.',
-      },
-      {
-        type: 'improved',
-        text: 'Security hardening',
-        description: 'Added protections against abuse across AI features, feedback, and testimonial submissions.',
-      },
-      {
-        type: 'improved',
-        text: 'Empty state pages',
-        description: 'Footer now sits at the bottom of the screen on sparse pages (Journal, Goals, Trade Log, Settings) instead of floating mid-page.',
-      },
-    ],
-  },
-  {
-    version: '2.4.0',
-    date: '2026-04-02',
-    summary: 'Pricing page FAQ, PropTracker screenshot import discoverability, and bug fixes.',
-    items: [
-      {
-        type: 'improved',
-        text: 'Pricing page — FAQ and social proof',
-        description: 'Added a 6-question FAQ section and risk reversal copy ("Cancel anytime · No hidden fees") to the pricing page.',
-      },
-      {
-        type: 'improved',
-        text: 'PropTracker — Screenshot Import discoverable for all users',
-        description: 'The screenshot import button is now visible to all users so you can see it\'s available before upgrading.',
+        description: 'When you log your very first trade, confetti fires and you get a congratulations message.',
       },
     ],
   },
   {
     version: '2.3.1',
     date: '2026-04-02',
-    summary: 'Bug fixes — resolved a crash when editing exit time and a rare white-screen on app load.',
+    summary: 'Bug fixes — resolved a crash when editing exit time and a rare white-screen on load.',
     items: [
       {
         type: 'fixed',
         text: 'Exit time crash',
-        description: 'Clearing or partially editing the exit (or entry) time field caused an Invalid Date to propagate, crashing the app. The time picker now safely ignores incomplete input.',
+        description: 'Clearing or partially editing the exit (or entry) time field caused the app to crash. The time picker now safely ignores incomplete input.',
       },
       {
         type: 'fixed',
-        text: 'White-screen on corrupted storage',
-        description: 'If account data in local storage was corrupted (e.g. after a browser crash), the app would fail to load entirely. It now detects and clears the bad data and recovers gracefully.',
+        text: 'White-screen on app load after a browser crash',
+        description: 'If your account data was corrupted after a browser crash, the app would fail to load entirely. It now detects and clears the bad data and recovers gracefully.',
       },
     ],
   },
   {
     version: '2.3.0',
     date: '2026-03-31',
-    summary: 'PropTracker Screenshot Import — upload your billing or payout screenshots and let GPT-4o Vision extract the transactions automatically.',
+    summary: 'PropTracker Screenshot Import — upload your billing or payout screenshots and let AI extract the transactions automatically.',
     items: [
       {
         type: 'new',
         text: 'Screenshot Import (Pro)',
-        description: 'Upload a screenshot of your prop firm billing or payout page and GPT-4o Vision will automatically extract every transaction. Supports multiple files at once and drag & drop.',
+        description: 'Upload a screenshot of your prop firm billing or payout page and AI will automatically extract every transaction. Supports multiple files at once and drag & drop.',
       },
       {
         type: 'new',
-        text: 'Drag & Drop Upload',
-        description: 'Drag one or more screenshots directly onto the upload area — no need to click through a file picker.',
-      },
-      {
-        type: 'new',
-        text: 'Duplicate Detection',
-        description: 'Re-importing the same screenshot won\'t create duplicate transactions. Duplicates are automatically detected (same date + amount + type) and pre-unchecked in the preview.',
-      },
-      {
-        type: 'improved',
-        text: 'PropTracker on the Homepage',
-        description: 'PropTracker now has its own feature section on the landing page so new visitors can see it before signing up.',
+        text: 'Duplicate detection on import',
+        description: 'Re-importing the same screenshot won\'t create duplicate transactions. Duplicates are automatically flagged and excluded by default in the preview.',
       },
     ],
   },
   {
     version: '2.2.0',
     date: '2026-03-31',
-    summary: 'PropTracker — a dedicated prop firm tracker with a free tier, AI analysis, and full cloud sync support.',
+    summary: 'PropTracker — a dedicated prop firm tracker with a free tier, AI analysis, and cloud sync.',
     items: [
       {
         type: 'new',
@@ -231,24 +164,19 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'PropTracker AI Analysis (Pro)',
-        description: 'One-click AI breakdown of your prop trading performance powered by GPT-4o. Get an honest verdict on which firms are working, warning signs, and what to do next. 5 analyses per day.',
+        description: 'One-click AI breakdown of your prop trading performance. Get an honest verdict on which firms are working, warning signs, and what to do next. 5 analyses per day.',
       },
       {
         type: 'new',
         text: 'PropTracker Cloud Sync',
-        description: 'Prop firm accounts and transactions are now included in Pro cloud sync — your data stays safe across devices.',
-      },
-      {
-        type: 'improved',
-        text: 'Accessibility — PropTracker Forms',
-        description: 'Form fields in PropTracker now have proper labels and keyboard navigation, improving accessibility for screen reader users.',
+        description: 'Prop firm accounts and transactions are included in Pro cloud sync — your data stays safe across devices.',
       },
     ],
   },
   {
     version: '2.1.0',
     date: '2026-03-10',
-    summary: 'Major security & data protection update — sync with content blockers, data safeguards, auto-restore, and number formatting.',
+    summary: 'Major data protection update — sync with content blockers, auto-restore, free tier safeguards, and comma formatting.',
     items: [
       {
         type: 'new',
@@ -257,38 +185,38 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'new',
-        text: 'Auto-Restore for Pro Users',
+        text: 'Auto-restore on new devices',
         description: 'Opening the app on a new device automatically restores all your trades, journal entries, and settings from the cloud. No manual steps needed.',
       },
       {
         type: 'new',
-        text: 'Onboarding Protection',
+        text: 'Skip setup if you already have data',
         description: 'Pro users with existing cloud data are never shown onboarding again. Any missing accounts are automatically created to match your synced trades.',
       },
       {
         type: 'new',
-        text: 'Free Tier Data Protection',
-        description: 'New safeguards for free users: storage usage monitor, backup reminders, incognito mode detection, data warning banners, and complete backup/restore.',
+        text: 'Data protection for free users',
+        description: 'New safeguards for free users: storage usage monitor, backup reminders, incognito mode warning, and complete backup/restore.',
       },
       {
         type: 'new',
-        text: 'Thousand Separators',
+        text: 'Comma formatting on currency values',
         description: 'All currency values now display with commas for better readability (e.g., $10,618.19 instead of $10618.19).',
       },
       {
         type: 'fixed',
-        text: 'Account ID Mismatches',
-        description: 'Fixed data loss bug where new accounts with different IDs orphaned existing trades, making them invisible.',
+        text: 'Trades going missing after account changes',
+        description: 'Fixed a bug where switching or recreating an account could make existing trades invisible.',
       },
       {
         type: 'improved',
-        text: 'Complete Backup Export',
-        description: 'Export now includes ALL data: trades, accounts, journal entries, goals, risk rules, and settings. Previously missed accounts, journal, and goals.',
+        text: 'Backup export now includes all data',
+        description: 'Export now covers everything: trades, accounts, journal entries, goals, risk rules, and settings.',
       },
       {
         type: 'improved',
-        text: 'Storage Usage Display',
-        description: 'Settings now shows localStorage usage with a progress bar and warns when approaching storage limits.',
+        text: 'Storage usage visible in Settings',
+        description: 'Settings now shows how much storage you\'re using with a progress bar and a warning when you\'re approaching the limit.',
       },
     ],
   },
@@ -300,12 +228,12 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'AI Trading Coach',
-        description: 'Personalised GPT-powered coaching tips based on your trading patterns, win rate, streaks, and performance metrics. Updates daily with fresh insights.',
+        description: 'Personalised coaching tips based on your trading patterns, win rate, streaks, and performance metrics. Updates daily with fresh insights.',
       },
       {
         type: 'new',
         text: 'AI Trade Analysis',
-        description: 'Comprehensive AI review of your overall trading performance with sections for strengths, patterns, improvements, and an action plan.',
+        description: 'A full AI review of your overall trading performance — strengths, patterns, areas to improve, and an action plan.',
       },
       {
         type: 'new',
@@ -315,12 +243,12 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'AI Journal Prompts',
-        description: 'After logging a trade, receive AI-generated reflective questions to deepen self-awareness and improve decision-making.',
+        description: 'After logging a trade, get AI-generated reflective questions to deepen self-awareness and improve decision-making.',
       },
       {
         type: 'new',
         text: 'AI Strategy Tagger',
-        description: 'Auto-classify your trades by strategy pattern — breakout, pullback, reversal, momentum, scalp, and more. Accept or reject each suggestion.',
+        description: 'Auto-classify your trades by strategy — breakout, pullback, reversal, momentum, scalp, and more. Accept or reject each suggestion.',
       },
       {
         type: 'new',
@@ -342,17 +270,17 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '1.9.0',
     date: '2026-02-19',
-    summary: 'Trade Insights page redesign — new trader profile radar, summary pill badges, colored actionable ideas, and chart alignment fixes.',
+    summary: 'Trade Insights page redesign — new trader profile radar, cleaner stats, colored ideas, and chart fixes.',
     items: [
       {
         type: 'new',
         text: 'Trader Profile radar chart',
-        description: 'Replaced the hourly P&L radar with a multi-dimensional trader profile showing Win Rate, Risk/Reward, Consistency, Volume, Best Day, and Direction scores with a legend.',
+        description: 'A multi-dimensional view of your trading style — Win Rate, Risk/Reward, Consistency, Volume, Best Day, and Direction scores all in one chart.',
       },
       {
         type: 'improved',
-        text: 'Summary stats redesigned as pill badges with natural language',
-        description: 'Replaced the 4-card stat grid with compact colored pill badges and a supporting summary sentence for a less generic, more human layout.',
+        text: 'Summary stats — cleaner layout',
+        description: 'The stats section is now compact colored badges with a plain-English summary sentence instead of a grid of cards.',
       },
       {
         type: 'improved',
@@ -361,30 +289,30 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'improved',
-        text: 'Page header shows total P&L and win rate inline',
-        description: 'The Trade Insights header now surfaces key stats directly so you see performance at a glance without scrolling.',
+        text: 'Key stats visible at the top of Trade Insights',
+        description: 'Total P&L and win rate now appear in the page header so you don\'t have to scroll to find them.',
       },
       {
         type: 'fixed',
-        text: 'Chart card alignment across rows',
-        description: 'Cards in two-column grids now stretch to equal height instead of mismatching due to different content sizes.',
+        text: 'Chart cards now align to equal height',
+        description: 'Cards in two-column rows now stretch to the same height regardless of content.',
       },
       {
         type: 'fixed',
-        text: 'Symbol Performance Y-axis labels no longer truncated',
-        description: 'Fixed negative left margin that was clipping ticker symbols on the horizontal bar chart.',
+        text: 'Ticker symbols no longer cut off on charts',
+        description: 'Fixed ticker symbols being clipped on the Symbol Performance chart.',
       },
     ],
   },
   {
     version: '1.8.0',
     date: '2026-02-18',
-    summary: 'Accessibility audit and UI/UX polish — keyboard navigation, reduced motion support, mobile header, and consistent typography.',
+    summary: 'Accessibility fixes, mobile improvements, and reduced motion support.',
     items: [
       {
         type: 'fixed',
-        text: 'Keyboard focus indicators restored across the app',
-        description: 'A global CSS rule was suppressing all focus outlines, making the app unusable for keyboard-only users. Focus-visible ring styles now work on all interactive elements.',
+        text: 'Keyboard focus indicators restored',
+        description: 'A bug was hiding focus indicators across the entire app, making it very difficult to navigate with a keyboard. Focus outlines now work correctly on all interactive elements.',
       },
       {
         type: 'fixed',
@@ -393,87 +321,72 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'fixed',
-        text: 'Form labels properly linked to inputs',
-        description: 'Form fields in the trade modal, journal entry form, and file upload now have proper labels for screen reader accessibility.',
+        text: 'Form fields now accessible to screen readers',
+        description: 'Form fields in the trade modal, journal entry form, and file upload now have proper labels for screen reader users.',
       },
       {
         type: 'improved',
-        text: 'Site header now visible on mobile',
+        text: 'Page header now visible on mobile',
         description: 'The page header was hidden on small screens. It now shows the current page name, theme toggle, and user avatar on all screen sizes.',
       },
       {
         type: 'improved',
-        text: 'Consistent typography with Sora display font',
-        description: 'Page headings on Dashboard, Trade Log, Journal, Profile, Settings, Login, and Signup now use the same Sora display font as the landing page for a cohesive feel.',
-      },
-      {
-        type: 'improved',
-        text: 'Reduced motion support for animations',
-        description: 'The hero shimmer button, onboarding step transitions, and logo carousel now respect the prefers-reduced-motion OS setting. Users who prefer reduced motion see instant transitions.',
-      },
-      {
-        type: 'improved',
-        text: 'Login page matches Signup branding',
-        description: 'Added the chart icon logo to the Login page header and matched the card border styling, so both auth pages feel like the same app.',
+        text: 'Reduced motion support',
+        description: 'Animated elements throughout the app now respect your OS reduced motion setting, showing instant transitions instead.',
       },
       {
         type: 'fixed',
-        text: 'Sign In link visible on mobile landing page',
-        description: 'The Sign In link was hidden inside a desktop-only nav. It now appears alongside the theme toggle on all screen sizes.',
+        text: 'Sign In link visible on mobile',
+        description: 'The Sign In link was hidden on mobile. It now appears alongside the theme toggle on all screen sizes.',
       },
     ],
   },
   {
     version: '1.7.0',
     date: '2026-02-17',
-    summary: 'CSV import deduplication fixes, multi-account data safety, currency sync, and Dashboard import UX improvements.',
+    summary: 'CSV import deduplication fixes, multi-account data safety, and currency sync.',
     items: [
       {
         type: 'fixed',
         text: 'CSV re-import no longer creates duplicate trades',
-        description: 'Importing the same CSV file again now correctly detects and skips trades you\'ve already imported. Previously, duplicates could appear when switching between accounts or importing from different pages.',
+        description: 'Importing the same CSV again now correctly detects and skips trades you\'ve already imported.',
       },
       {
         type: 'fixed',
-        text: 'Multi-account trade data is no longer lost on save',
-        description: 'Adding, editing, or deleting trades on one account no longer silently wipes trades from other accounts. All save operations now preserve data across accounts.',
+        text: 'Trades on other accounts no longer lost on save',
+        description: 'Adding, editing, or deleting trades on one account no longer wipes trades from your other accounts.',
       },
       {
         type: 'fixed',
         text: 'Currency setting stays in sync across the app',
-        description: 'Changing currency in Regional Settings now updates the active account, and editing an account\'s currency updates the global setting. Both stay in sync.',
+        description: 'Changing currency in Settings now updates your active account, and editing an account\'s currency updates the global setting. Both stay in sync.',
       },
       {
         type: 'improved',
-        text: 'Dashboard CSV import with progress indicator',
-        description: 'Importing a CSV from the Dashboard now shows a progress overlay with phase labels and a progress bar. The Add Trade form closes automatically when you pick a file, and the dashboard updates in-place without a page reload.',
-      },
-      {
-        type: 'improved',
-        text: 'Duplicate trade notification on import',
-        description: 'A message in the import preview dialog lets you know that duplicate trades are automatically detected and skipped, so you can safely re-import updated broker exports.',
+        text: 'CSV import progress indicator',
+        description: 'Importing a CSV now shows a progress overlay so you can see what\'s happening. The form closes automatically when you pick a file and the dashboard refreshes when done.',
       },
     ],
   },
   {
     version: '1.6.0',
     date: '2026-02-16',
-    summary: 'Modernized sidebar and navigation with user profile moved to the page header and a cleaner account switcher.',
+    summary: 'Modernized sidebar and navigation with user profile in the page header and a cleaner account switcher.',
     items: [
       {
         type: 'improved',
         text: 'User profile moved to the page header',
-        description: 'Your avatar and account dropdown are now in the top-right corner of the page header — visible on every page without opening the sidebar.',
+        description: 'Your avatar and account dropdown are now in the top-right corner — visible on every page without opening the sidebar.',
       },
       {
         type: 'improved',
         text: 'Cleaner sidebar navigation',
-        description: 'Removed section labels and simplified the sidebar layout. Active nav items now show a themed icon background for clearer visual feedback.',
+        description: 'Simplified layout with no section labels. Active pages now show a highlighted icon for clearer visual feedback.',
       },
       {
         type: 'improved',
         text: 'Modernized account switcher',
-        description: 'The account switcher dropdown has been rebuilt with a cleaner trigger, account type and broker info per item, and a checkmark indicator for the active account.',
+        description: 'The account switcher now shows account type and broker per item, with a checkmark on the active account.',
       },
     ],
   },
@@ -485,64 +398,49 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Account balance shown on the Total P&L card',
-        description: 'Your current account balance (starting balance + total P&L) is now displayed directly on the Total P&L stat card so you can see your equity at a glance.',
+        description: 'Your current account balance (starting balance + total P&L) is now displayed on the Total P&L card so you can see your equity at a glance.',
       },
       {
         type: 'new',
         text: 'Trading Days count in the calendar',
-        description: 'The calendar heatmap stats panel now shows how many days you traded in the selected month alongside Monthly P&L, Win Rate, and other stats.',
+        description: 'The calendar now shows how many days you traded in the selected month alongside Monthly P&L, Win Rate, and other stats.',
       },
       {
         type: 'improved',
         text: 'Stat cards are now clickable',
-        description: 'All four dashboard metric cards (P&L, Win Rate, Total Trades, Profit Factor) now link to the Trade Log for quick access to details.',
+        description: 'All four dashboard stat cards (P&L, Win Rate, Total Trades, Profit Factor) now link to the Trade Log.',
       },
       {
         type: 'improved',
         text: 'Equity curve is now full-width',
-        description: 'The equity curve chart takes the full width of the dashboard instead of sharing space with the recent trades table, giving you a bigger view of your performance.',
-      },
-      {
-        type: 'improved',
-        text: 'Colored stat card subtitles',
-        description: 'Subtitle text on stat cards now uses profit/loss colors — winners green, losers red, averages colored by performance — instead of plain gray text.',
+        description: 'The equity curve now takes up the full width of the dashboard for a bigger view of your performance.',
       },
       {
         type: 'improved',
         text: 'Better empty state with action buttons',
-        description: 'When you have no trades, the recent trades panel now shows "Add Trade" and "Import CSV" buttons instead of generic placeholder text.',
+        description: 'When you have no trades, the dashboard now shows "Add Trade" and "Import CSV" buttons instead of blank space.',
       },
       {
         type: 'fixed',
-        text: 'Theme colors now switch instantly everywhere',
-        description: 'Removed CSS transitions that were causing stat cards, chart toggles, and calendar elements to fade slowly when switching themes.',
+        text: 'Theme colors now switch instantly',
+        description: 'Stat cards, chart toggles, and calendar elements were fading slowly when switching themes. They now update instantly.',
       },
     ],
   },
   {
     version: '1.4.0',
     date: '2026-02-13',
-    summary: 'Mobile UI polish, accurate account metrics, themed dashboard cards, and improved light mode.',
+    summary: 'Mobile UI polish, accurate account metrics, and color-coded dashboard cards.',
     items: [
       {
         type: 'fixed',
         text: 'P&L percentage now uses your actual account balance',
-        description: 'The "% of account" metric on the dashboard and trade log was hardcoded to a $10k balance. It now reads from your active account\'s balance set in Settings, so the percentage reflects your real account size.',
+        description: 'The "% of account" metric was hardcoded to a $10k balance. It now reads from your account balance in Settings.',
       },
       {
         type: 'improved',
         text: 'Dashboard metric cards are now color-coded',
-        description: 'Win Rate, Total Trades, and Profit Factor cards now use themed colors (green/red based on performance) instead of plain white text, matching the Total P&L card style.',
-      },
-      {
-        type: 'improved',
-        text: 'Equity curve has a gradient fill and cleaner look',
-        description: 'The equity curve chart now uses a smooth gradient fill that fades from top to bottom, and grid lines have been removed from both the equity and P&L views for a cleaner appearance.',
-      },
-      {
-        type: 'improved',
-        text: 'Light mode overhaul for landing page',
-        description: 'Decorative hero shapes, badges, social icons, and overlays are now properly visible in light mode with stronger opacities and amber-tinted accents instead of faint near-invisible elements.',
+        description: 'Win Rate, Total Trades, and Profit Factor cards now use green/red based on performance instead of plain white text.',
       },
       {
         type: 'fixed',
@@ -552,48 +450,43 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'fixed',
         text: 'Mobile button sizing and layout consistency',
-        description: 'Hero CTA buttons no longer stretch full-width on mobile. The signup terms checkbox no longer gets squashed, and the header/footer now use the same logo icon for consistent branding.',
-      },
-      {
-        type: 'fixed',
-        text: 'Peerlist badge now matches Product Hunt badge size',
-        description: 'The Peerlist badge in the footer was larger than the Product Hunt badge on mobile. Both badges now use matching heights across all breakpoints.',
+        description: 'Buttons no longer stretch full-width on mobile. The signup terms checkbox no longer gets squashed.',
       },
     ],
   },
   {
     version: '1.3.0',
     date: '2026-02-12',
-    summary: 'Major prop firm support update with TopStep integration, smarter CSV imports, and polished theming.',
+    summary: 'TopStep CSV import, column mapping for unknown brokers, futures contract multipliers, and instant theme switching.',
     items: [
       {
         type: 'new',
-        text: 'TopStep CSV import support for prop firm traders',
-        description: 'You can now import trade history directly from TopStep. The parser automatically recognizes TopStep\'s CSV format and maps columns to the correct fields — no manual setup needed.',
+        text: 'TopStep CSV import',
+        description: 'Import trade history directly from TopStep. It automatically recognizes the format and maps everything correctly — no manual setup needed.',
       },
       {
         type: 'new',
-        text: 'Column mapping UI for unknown CSV formats',
-        description: 'When importing a CSV we don\'t recognize, a column mapping interface lets you manually assign each column (symbol, entry price, P&L, etc.) so you can import from any broker or platform.',
+        text: 'Column mapping for unknown CSV formats',
+        description: 'When importing a file from an unrecognized broker, you can manually map each column (symbol, entry price, P&L, etc.) so you can import from any platform.',
       },
       {
         type: 'new',
         text: 'Futures contract multipliers for accurate P&L',
-        description: 'Futures trades now apply the correct contract multiplier (e.g. ES = $50, NQ = $20, CL = $1,000) when calculating profit and loss, so your numbers match your broker statements.',
+        description: 'Futures trades now apply the correct multiplier (e.g. ES = $50, NQ = $20, CL = $1,000) so your numbers match your broker statements.',
       },
       {
         type: 'improved',
-        text: 'CSV import now deduplicates trades automatically',
-        description: 'Re-importing the same CSV file no longer creates duplicate entries. The importer checks for matching trade data and skips rows that already exist in your log.',
+        text: 'CSV import skips duplicate trades automatically',
+        description: 'Re-importing the same file no longer creates duplicate entries. Trades that already exist in your log are automatically skipped.',
       },
       {
         type: 'improved',
         text: 'Theme switching is now instant with no flash',
-        description: 'Switching between light and dark mode (or custom themes) now applies instantly without the brief white flash that previously occurred during the transition.',
+        description: 'Switching between light and dark mode now applies instantly without the brief white flash.',
       },
       {
         type: 'fixed',
-        text: 'Light mode visibility issues across all components',
+        text: 'Light mode visibility issues',
         description: 'Fixed contrast and readability problems in light mode — charts, badges, table borders, and card backgrounds now look correct in both themes.',
       },
     ],
@@ -605,13 +498,13 @@ export const changelog: ChangelogEntry[] = [
     items: [
       {
         type: 'new',
-        text: 'Instrument combobox with search for faster trade entry',
-        description: 'The symbol field in the trade dialog is now a searchable combobox. Start typing to filter through forex pairs, futures contracts, and indices instead of scrolling through a long dropdown.',
+        text: 'Searchable instrument picker',
+        description: 'The symbol field in the trade form is now a searchable dropdown. Start typing to filter through forex pairs, futures contracts, and indices instead of scrolling through a long list.',
       },
       {
         type: 'improved',
-        text: 'Trade dialog scroll and overflow handling',
-        description: 'The trade entry dialog now scrolls properly on smaller screens and no longer clips content at the bottom when many fields are visible.',
+        text: 'Trade form scrolls properly on small screens',
+        description: 'The trade form now scrolls correctly on smaller screens and no longer cuts off fields at the bottom.',
       },
     ],
   },
@@ -623,22 +516,22 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Trading Coach AI for personalized insights',
-        description: 'The new Trading Coach analyzes your trade history and provides actionable feedback — identifying patterns in your wins and losses, suggesting risk adjustments, and highlighting your best setups.',
+        description: 'The Trading Coach analyzes your trade history and provides actionable feedback — identifying patterns in your wins and losses, suggesting risk adjustments, and highlighting your best setups.',
       },
       {
         type: 'new',
-        text: 'Calendar heatmap to visualize trading activity',
-        description: 'A GitHub-style heatmap on the dashboard shows your daily trading activity at a glance. Green days are profitable, red days are losses, and intensity shows magnitude.',
+        text: 'Calendar heatmap',
+        description: 'See your daily trading activity at a glance. Green days are profitable, red days are losses — the darker the color, the bigger the move.',
       },
       {
         type: 'new',
-        text: 'Radar chart for pairs/instrument performance',
-        description: 'See how you perform across different instruments with a radar chart. Quickly spot which pairs or contracts you trade best and where you might want to focus or improve.',
+        text: 'Instrument performance radar chart',
+        description: 'See how you perform across different instruments. Quickly spot which pairs or contracts you trade best and where you might want to improve.',
       },
       {
         type: 'improved',
-        text: 'Dashboard layout optimized for mobile devices',
-        description: 'Cards, charts, and tables now stack and resize properly on phones and tablets. Touch targets are larger and the layout uses available screen space more efficiently.',
+        text: 'Dashboard layout optimized for mobile',
+        description: 'Cards, charts, and tables now stack and resize properly on phones and tablets with larger touch targets.',
       },
     ],
   },
