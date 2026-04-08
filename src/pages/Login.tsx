@@ -21,12 +21,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
-  const [resetEmailSent, setResetEmailSent] = useState(false);
   const [formAnimation, setFormAnimation] = useState('');
 
-  const { signIn, signInWithGoogle, resetPassword } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -90,24 +88,6 @@ export default function Login() {
     }
   };
 
-
-  const handleResetPassword = async () => {
-    if (!email) {
-      setError('Please enter your email address first');
-      return;
-    }
-
-    setError('');
-    setResetLoading(true);
-    try {
-      await resetPassword(email);
-      setResetEmailSent(true);
-    } catch (error: any) {
-      setError(error.message || 'Failed to send reset email');
-    } finally {
-      setResetLoading(false);
-    }
-  };
 
   const features = [
     { icon: faChartPie, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
@@ -190,14 +170,6 @@ export default function Login() {
             </Alert>
           )}
 
-          {resetEmailSent && (
-            <Alert className="mb-4 animate-in slide-in-from-top-2 duration-300">
-              <AlertDescription className="font-medium">
-                Password reset email sent! Check your inbox for instructions.
-              </AlertDescription>
-            </Alert>
-          )}
-
           <form onSubmit={handleSubmit} className={`space-y-4 ${formAnimation}`}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -239,15 +211,9 @@ export default function Login() {
             </div>
 
             <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleResetPassword}
-                disabled={resetLoading}
-                className="text-sm text-amber-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center gap-2"
-              >
-                {resetLoading && <FontAwesomeIcon icon={faSpinner} className="h-3 w-3 animate-spin" />}
+              <Link to="/forgot-password" className="text-sm text-amber-500 hover:underline">
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             <Button

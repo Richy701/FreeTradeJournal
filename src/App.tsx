@@ -43,6 +43,8 @@ const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazy(() => import('@/pages/TradeIdeas'))
 const Changelog = lazy(() => import('@/pages/Changelog'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const toastOptions = {
@@ -92,6 +94,8 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/cookie-policy" element={<CookiePolicy />} />

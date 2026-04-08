@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -52,6 +52,7 @@ const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
 const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
 const TrialEndingEmail_1 = require("./emails/TrialEndingEmail");
 const TrialOfferEmail_1 = require("./emails/TrialOfferEmail");
+const PasswordResetEmail_1 = require("./emails/PasswordResetEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -139,6 +140,49 @@ async function sendTrialEndingEmail(email, name, trialEnd) {
         },
     });
 }
+// ─── Password Reset Email ───────────────────────────────────
+exports.sendPasswordResetLink = functions.https.onCall(async (data) => {
+    const { email } = data;
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+        throw new functions.https.HttpsError("invalid-argument", "A valid email address is required.");
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+    // Rate limit: 3 reset requests per 10 minutes per email
+    const rateLimitRef = db.collection("passwordResetRateLimit").doc(Buffer.from(normalizedEmail).toString("base64"));
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(rateLimitRef);
+        const data = snap.data() || {};
+        const windowStart = data.windowStart?.toMillis() || 0;
+        const count = data.count || 0;
+        const now = Date.now();
+        if (now - windowStart < 10 * 60 * 1000 && count >= 3) {
+            throw new functions.https.HttpsError("resource-exhausted", "Too many reset requests. Please wait a few minutes.");
+        }
+        if (now - windowStart >= 10 * 60 * 1000) {
+            tx.set(rateLimitRef, { windowStart: admin.firestore.FieldValue.serverTimestamp(), count: 1 });
+        }
+        else {
+            tx.update(rateLimitRef, { count: admin.firestore.FieldValue.increment(1) });
+        }
+    });
+    try {
+        const resetLink = await admin.auth().generatePasswordResetLink(normalizedEmail, {
+            url: "https://www.freetradejournal.com/reset-password",
+        });
+        const html = await (0, components_1.render)(React.createElement(PasswordResetEmail_1.PasswordResetEmail, { resetLink }));
+        await getResend().emails.send({
+            from: FROM_EMAIL,
+            to: normalizedEmail,
+            subject: "Reset your FreeTradeJournal password",
+            html,
+        });
+    }
+    catch (err) {
+        // Don't reveal whether the email exists — silently succeed
+        console.error("Password reset error (suppressed):", err?.message || err);
+    }
+    return { success: true };
+});
 // ─── Welcome Email on Signup ───────────────────────────────
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     // Write user record to Firestore for email scheduling

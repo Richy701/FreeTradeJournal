@@ -13,6 +13,7 @@ import { Day3NudgeEmail } from "./emails/Day3NudgeEmail";
 import { TrialStartedEmail } from "./emails/TrialStartedEmail";
 import { TrialEndingEmail } from "./emails/TrialEndingEmail";
 import { TrialOfferEmail } from "./emails/TrialOfferEmail";
+import { PasswordResetEmail } from "./emails/PasswordResetEmail";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -111,6 +112,56 @@ async function sendTrialEndingEmail(email: string, name: string | undefined, tri
     },
   });
 }
+
+// ─── Password Reset Email ───────────────────────────────────
+
+export const sendPasswordResetLink = functions.https.onCall(async (data) => {
+  const { email } = data as { email?: string };
+
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    throw new functions.https.HttpsError("invalid-argument", "A valid email address is required.");
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Rate limit: 3 reset requests per 10 minutes per email
+  const rateLimitRef = db.collection("passwordResetRateLimit").doc(Buffer.from(normalizedEmail).toString("base64"));
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(rateLimitRef);
+    const data = snap.data() || {};
+    const windowStart: number = data.windowStart?.toMillis() || 0;
+    const count: number = data.count || 0;
+    const now = Date.now();
+
+    if (now - windowStart < 10 * 60 * 1000 && count >= 3) {
+      throw new functions.https.HttpsError("resource-exhausted", "Too many reset requests. Please wait a few minutes.");
+    }
+
+    if (now - windowStart >= 10 * 60 * 1000) {
+      tx.set(rateLimitRef, { windowStart: admin.firestore.FieldValue.serverTimestamp(), count: 1 });
+    } else {
+      tx.update(rateLimitRef, { count: admin.firestore.FieldValue.increment(1) });
+    }
+  });
+
+  try {
+    const resetLink = await admin.auth().generatePasswordResetLink(normalizedEmail, {
+      url: "https://www.freetradejournal.com/reset-password",
+    });
+    const html = await render(React.createElement(PasswordResetEmail, { resetLink }));
+    await getResend().emails.send({
+      from: FROM_EMAIL,
+      to: normalizedEmail,
+      subject: "Reset your FreeTradeJournal password",
+      html,
+    });
+  } catch (err: any) {
+    // Don't reveal whether the email exists — silently succeed
+    console.error("Password reset error (suppressed):", err?.message || err);
+  }
+
+  return { success: true };
+});
 
 // ─── Welcome Email on Signup ───────────────────────────────
 

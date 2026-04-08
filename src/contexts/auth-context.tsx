@@ -13,6 +13,9 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<User>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  verifyPasswordResetCode: (oobCode: string) => Promise<string>;
+  confirmPasswordReset: (oobCode: string, newPassword: string) => Promise<void>;
+  applyActionCode: (oobCode: string) => Promise<void>;
   enterDemoMode: () => void;
   exitDemoMode: () => void;
 }
@@ -141,11 +144,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const resetPassword = async (email: string): Promise<void> => {
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const { getApp } = await import('firebase/app');
+    const fns = getFunctions(getApp());
+    const sendPasswordResetLink = httpsCallable(fns, 'sendPasswordResetLink');
+    await sendPasswordResetLink({ email });
+  };
+
+  const verifyPasswordResetCode = async (oobCode: string): Promise<string> => {
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
-    
-    const { sendPasswordResetEmail } = await import('firebase/auth');
-    await sendPasswordResetEmail(authInstance, email);
+
+    const { verifyPasswordResetCode: firebaseVerify } = await import('firebase/auth');
+    return firebaseVerify(authInstance, oobCode);
+  };
+
+  const confirmPasswordReset = async (oobCode: string, newPassword: string): Promise<void> => {
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
+
+    const { confirmPasswordReset: firebaseConfirm } = await import('firebase/auth');
+    await firebaseConfirm(authInstance, oobCode, newPassword);
+  };
+
+  const applyActionCode = async (oobCode: string): Promise<void> => {
+    const authInstance = auth || await initAuth();
+    if (!authInstance) throw new Error('Auth not initialized');
+
+    const { applyActionCode: firebaseApply } = await import('firebase/auth');
+    await firebaseApply(authInstance, oobCode);
   };
 
   const value: AuthContextType = useMemo(() => ({
@@ -157,9 +184,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signInWithGoogle,
     logout,
     resetPassword,
+    verifyPasswordResetCode,
+    confirmPasswordReset,
+    applyActionCode,
     enterDemoMode,
     exitDemoMode
-  }), [user, loading, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, enterDemoMode, exitDemoMode]);
+  }), [user, loading, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, enterDemoMode, exitDemoMode]);
 
   return (
     <AuthContext.Provider value={value}>
