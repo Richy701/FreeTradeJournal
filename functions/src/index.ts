@@ -14,6 +14,9 @@ import { TrialStartedEmail } from "./emails/TrialStartedEmail";
 import { TrialEndingEmail } from "./emails/TrialEndingEmail";
 import { TrialOfferEmail } from "./emails/TrialOfferEmail";
 import { PasswordResetEmail } from "./emails/PasswordResetEmail";
+import { EmailVerificationEmail } from "./emails/EmailVerificationEmail";
+import { Day7NudgeEmail } from "./emails/Day7NudgeEmail";
+import { Day14UpgradeEmail } from "./emails/Day14UpgradeEmail";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -163,6 +166,55 @@ export const sendPasswordResetLink = functions.https.onCall(async (data) => {
   return { success: true };
 });
 
+// ─── Email Verification ─────────────────────────────────────
+
+export const sendEmailVerificationLink = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+
+  const email = context.auth.token.email;
+  if (!email) {
+    throw new functions.https.HttpsError("invalid-argument", "No email on account.");
+  }
+
+  // Rate limit: 3 requests per 10 minutes per email
+  const rateLimitRef = db.collection("emailVerificationRateLimit").doc(Buffer.from(email).toString("base64"));
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(rateLimitRef);
+    const existing = snap.data() || {};
+    const windowStart: number = existing.windowStart?.toMillis() || 0;
+    const count: number = existing.count || 0;
+    const now = Date.now();
+
+    if (now - windowStart < 10 * 60 * 1000 && count >= 3) {
+      throw new functions.https.HttpsError("resource-exhausted", "Too many requests. Please wait a few minutes.");
+    }
+
+    if (now - windowStart >= 10 * 60 * 1000) {
+      tx.set(rateLimitRef, { windowStart: admin.firestore.FieldValue.serverTimestamp(), count: 1 });
+    } else {
+      tx.update(rateLimitRef, { count: admin.firestore.FieldValue.increment(1) });
+    }
+  });
+
+  const verificationLink = await admin.auth().generateEmailVerificationLink(email, {
+    url: "https://www.freetradejournal.com/verify-email",
+  });
+
+  const firstName = (context.auth.token.name || email).split(" ")[0];
+  const html = await render(React.createElement(EmailVerificationEmail, { verificationLink, firstName }));
+
+  await getResend().emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: "Verify your FreeTradeJournal email",
+    html,
+  });
+
+  return { success: true };
+});
+
 // ─── Welcome Email on Signup ───────────────────────────────
 
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
@@ -219,6 +271,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
 export const sendDay3NudgeEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
+    const MAX_SENDS = 20;
     const now = admin.firestore.Timestamp.now();
     const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
     const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
@@ -232,6 +285,7 @@ export const sendDay3NudgeEmails = functions.pubsub
 
     let sent = 0;
     for (const doc of allSnapshot.docs) {
+      if (sent >= MAX_SENDS) break;
       const data = doc.data();
       // Skip if they've already logged a trade or already received this email
       if (data.firstTradeLoggedAt || data.day3NudgeSentAt) continue;
@@ -270,6 +324,7 @@ export const sendDay3NudgeEmails = functions.pubsub
 export const sendTrialEndingEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
+    const MAX_SENDS = 20;
     const now = Date.now();
     // Query for trial end dates 1–3 days from now (48-hour window, daily run)
     const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
@@ -284,6 +339,7 @@ export const sendTrialEndingEmails = functions.pubsub
 
     let sent = 0;
     for (const doc of snapshot.docs) {
+      if (sent >= MAX_SENDS) break;
       const data = doc.data();
       if (data.trialEndingEmailSentAt) continue;
 
@@ -300,6 +356,108 @@ export const sendTrialEndingEmails = functions.pubsub
     }
 
     console.log(`Trial ending: sent ${sent} emails`);
+    return null;
+  });
+
+// ─── Day 7 Nudge (Scheduled) ────────────────────────────────────
+
+export const sendDay7NudgeEmails = functions.pubsub
+  .schedule("every 24 hours")
+  .onRun(async () => {
+    const MAX_SENDS = 20;
+    const now = admin.firestore.Timestamp.now();
+    const sevenDaysAgo = new Date(now.toMillis() - 7 * 24 * 60 * 60 * 1000);
+    const eightDaysAgo = new Date(now.toMillis() - 8 * 24 * 60 * 60 * 1000);
+
+    const allSnapshot = await db
+      .collection("users")
+      .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(eightDaysAgo))
+      .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(sevenDaysAgo))
+      .get();
+
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+      if (sent >= MAX_SENDS) break;
+      const data = doc.data();
+      // Only target users who still haven't logged a trade and haven't received this email
+      if (data.firstTradeLoggedAt || data.day7NudgeSentAt) continue;
+
+      const email = data.email;
+      if (!email) continue;
+
+      try {
+        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const html = await render(React.createElement(Day7NudgeEmail, { firstName }));
+        await getResend().emails.send({
+          from: FROM_EMAIL,
+          to: email,
+          subject: "A week in — have you logged a trade yet?",
+          html,
+          headers: {
+            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        });
+        await doc.ref.update({ day7NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
+        sent++;
+        console.log(`Day-7 nudge sent`);
+      } catch (err) {
+        console.error(`Failed to send day-7 nudge:`, err);
+      }
+    }
+
+    console.log(`Day-7 nudge: sent ${sent} emails`);
+    return null;
+  });
+
+// ─── Day 14 Upgrade Pitch (Scheduled) ───────────────────────────
+
+export const sendDay14UpgradeEmails = functions.pubsub
+  .schedule("every 24 hours")
+  .onRun(async () => {
+    const MAX_SENDS = 20;
+    const now = admin.firestore.Timestamp.now();
+    const fourteenDaysAgo = new Date(now.toMillis() - 14 * 24 * 60 * 60 * 1000);
+    const fifteenDaysAgo = new Date(now.toMillis() - 15 * 24 * 60 * 60 * 1000);
+
+    const allSnapshot = await db
+      .collection("users")
+      .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(fifteenDaysAgo))
+      .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(fourteenDaysAgo))
+      .get();
+
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+      if (sent >= MAX_SENDS) break;
+      const data = doc.data();
+      // Only target free users who have logged at least one trade
+      if (data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt) continue;
+
+      const email = data.email;
+      if (!email) continue;
+
+      try {
+        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const html = await render(React.createElement(Day14UpgradeEmail, { firstName }));
+        await getResend().emails.send({
+          from: FROM_EMAIL,
+          to: email,
+          subject: "Two weeks of data — here's what Pro does with it",
+          html,
+          headers: {
+            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        });
+        await doc.ref.update({ day14UpgradeSentAt: admin.firestore.FieldValue.serverTimestamp() });
+        sent++;
+        console.log(`Day-14 upgrade pitch sent`);
+      } catch (err) {
+        console.error(`Failed to send day-14 upgrade pitch:`, err);
+      }
+    }
+
+    console.log(`Day-14 upgrade pitch: sent ${sent} emails`);
     return null;
   });
 

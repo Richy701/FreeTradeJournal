@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendPasswordResetLink = void 0;
+exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -53,6 +53,9 @@ const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
 const TrialEndingEmail_1 = require("./emails/TrialEndingEmail");
 const TrialOfferEmail_1 = require("./emails/TrialOfferEmail");
 const PasswordResetEmail_1 = require("./emails/PasswordResetEmail");
+const EmailVerificationEmail_1 = require("./emails/EmailVerificationEmail");
+const Day7NudgeEmail_1 = require("./emails/Day7NudgeEmail");
+const Day14UpgradeEmail_1 = require("./emails/Day14UpgradeEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -183,6 +186,46 @@ exports.sendPasswordResetLink = functions.https.onCall(async (data) => {
     }
     return { success: true };
 });
+// ─── Email Verification ─────────────────────────────────────
+exports.sendEmailVerificationLink = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const email = context.auth.token.email;
+    if (!email) {
+        throw new functions.https.HttpsError("invalid-argument", "No email on account.");
+    }
+    // Rate limit: 3 requests per 10 minutes per email
+    const rateLimitRef = db.collection("emailVerificationRateLimit").doc(Buffer.from(email).toString("base64"));
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(rateLimitRef);
+        const existing = snap.data() || {};
+        const windowStart = existing.windowStart?.toMillis() || 0;
+        const count = existing.count || 0;
+        const now = Date.now();
+        if (now - windowStart < 10 * 60 * 1000 && count >= 3) {
+            throw new functions.https.HttpsError("resource-exhausted", "Too many requests. Please wait a few minutes.");
+        }
+        if (now - windowStart >= 10 * 60 * 1000) {
+            tx.set(rateLimitRef, { windowStart: admin.firestore.FieldValue.serverTimestamp(), count: 1 });
+        }
+        else {
+            tx.update(rateLimitRef, { count: admin.firestore.FieldValue.increment(1) });
+        }
+    });
+    const verificationLink = await admin.auth().generateEmailVerificationLink(email, {
+        url: "https://www.freetradejournal.com/verify-email",
+    });
+    const firstName = (context.auth.token.name || email).split(" ")[0];
+    const html = await (0, components_1.render)(React.createElement(EmailVerificationEmail_1.EmailVerificationEmail, { verificationLink, firstName }));
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: "Verify your FreeTradeJournal email",
+        html,
+    });
+    return { success: true };
+});
 // ─── Welcome Email on Signup ───────────────────────────────
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     // Write user record to Firestore for email scheduling
@@ -238,6 +281,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
 exports.sendDay3NudgeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
+    const MAX_SENDS = 20;
     const now = admin.firestore.Timestamp.now();
     const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
     const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
@@ -249,6 +293,8 @@ exports.sendDay3NudgeEmails = functions.pubsub
         .get();
     let sent = 0;
     for (const doc of allSnapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
         const data = doc.data();
         // Skip if they've already logged a trade or already received this email
         if (data.firstTradeLoggedAt || data.day3NudgeSentAt)
@@ -285,6 +331,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
 exports.sendTrialEndingEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
+    const MAX_SENDS = 20;
     const now = Date.now();
     // Query for trial end dates 1–3 days from now (48-hour window, daily run)
     const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
@@ -297,6 +344,8 @@ exports.sendTrialEndingEmails = functions.pubsub
         .get();
     let sent = 0;
     for (const doc of snapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
         const data = doc.data();
         if (data.trialEndingEmailSentAt)
             continue;
@@ -314,6 +363,102 @@ exports.sendTrialEndingEmails = functions.pubsub
         }
     }
     console.log(`Trial ending: sent ${sent} emails`);
+    return null;
+});
+// ─── Day 7 Nudge (Scheduled) ────────────────────────────────────
+exports.sendDay7NudgeEmails = functions.pubsub
+    .schedule("every 24 hours")
+    .onRun(async () => {
+    const MAX_SENDS = 20;
+    const now = admin.firestore.Timestamp.now();
+    const sevenDaysAgo = new Date(now.toMillis() - 7 * 24 * 60 * 60 * 1000);
+    const eightDaysAgo = new Date(now.toMillis() - 8 * 24 * 60 * 60 * 1000);
+    const allSnapshot = await db
+        .collection("users")
+        .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(eightDaysAgo))
+        .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(sevenDaysAgo))
+        .get();
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
+        const data = doc.data();
+        // Only target users who still haven't logged a trade and haven't received this email
+        if (data.firstTradeLoggedAt || data.day7NudgeSentAt)
+            continue;
+        const email = data.email;
+        if (!email)
+            continue;
+        try {
+            const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+            const html = await (0, components_1.render)(React.createElement(Day7NudgeEmail_1.Day7NudgeEmail, { firstName }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: email,
+                subject: "A week in — have you logged a trade yet?",
+                html,
+                headers: {
+                    'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                },
+            });
+            await doc.ref.update({ day7NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
+            sent++;
+            console.log(`Day-7 nudge sent`);
+        }
+        catch (err) {
+            console.error(`Failed to send day-7 nudge:`, err);
+        }
+    }
+    console.log(`Day-7 nudge: sent ${sent} emails`);
+    return null;
+});
+// ─── Day 14 Upgrade Pitch (Scheduled) ───────────────────────────
+exports.sendDay14UpgradeEmails = functions.pubsub
+    .schedule("every 24 hours")
+    .onRun(async () => {
+    const MAX_SENDS = 20;
+    const now = admin.firestore.Timestamp.now();
+    const fourteenDaysAgo = new Date(now.toMillis() - 14 * 24 * 60 * 60 * 1000);
+    const fifteenDaysAgo = new Date(now.toMillis() - 15 * 24 * 60 * 60 * 1000);
+    const allSnapshot = await db
+        .collection("users")
+        .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(fifteenDaysAgo))
+        .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(fourteenDaysAgo))
+        .get();
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
+        const data = doc.data();
+        // Only target free users who have logged at least one trade
+        if (data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
+            continue;
+        const email = data.email;
+        if (!email)
+            continue;
+        try {
+            const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+            const html = await (0, components_1.render)(React.createElement(Day14UpgradeEmail_1.Day14UpgradeEmail, { firstName }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: email,
+                subject: "Two weeks of data — here's what Pro does with it",
+                html,
+                headers: {
+                    'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                },
+            });
+            await doc.ref.update({ day14UpgradeSentAt: admin.firestore.FieldValue.serverTimestamp() });
+            sent++;
+            console.log(`Day-14 upgrade pitch sent`);
+        }
+        catch (err) {
+            console.error(`Failed to send day-14 upgrade pitch:`, err);
+        }
+    }
+    console.log(`Day-14 upgrade pitch: sent ${sent} emails`);
     return null;
 });
 // ─── Trial Offer Batch (Admin callable) ────────────────────────

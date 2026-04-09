@@ -84,7 +84,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
     const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
-    
+
     if (displayName && userCredential.user) {
       await updateProfile(userCredential.user, {
         displayName: displayName
@@ -92,7 +92,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await userCredential.user.reload();
       setUser({ ...userCredential.user });
     }
-    
+
+    // Send branded verification email via Cloud Function
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const fns = getFunctions();
+      const sendVerification = httpsCallable(fns, 'sendEmailVerificationLink');
+      await sendVerification();
+    } catch (err) {
+      console.error('Failed to send verification email:', err);
+    }
+
     return userCredential.user;
   };
 

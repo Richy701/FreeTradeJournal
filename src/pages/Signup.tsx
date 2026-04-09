@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { clearOnboardingData } from '@/utils/onboarding';
+import { isBadEmail } from '@/lib/email-validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,6 +71,11 @@ export default function Signup() {
       return;
     }
 
+    if (isBadEmail(formData.email)) {
+      setError("That email address doesn't look right. Please use a real email.");
+      return;
+    }
+
     setLoading(true);
     setFormAnimation('animate-pulse');
 
@@ -80,7 +86,7 @@ export default function Signup() {
       clearOnboardingData(user.uid);
       setFormAnimation('animate-bounce');
       setTimeout(() => {
-        navigate('/onboarding');
+        navigate('/verify-email');
       }, 300);
     } catch (error: any) {
       let errorMessage = 'Failed to create account';

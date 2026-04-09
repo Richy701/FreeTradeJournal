@@ -37,6 +37,36 @@ const SKIP_EMAILS = new Set([
   'dhshsja@gmail.con',
 ])
 
+// ── Email validation ──────────────────────────────────────
+const TYPO_DOMAINS = new Set([
+  'gamil.com', 'gmal.com', 'gmali.com', 'gmaill.com', 'gmial.com',
+  'yahooo.com', 'yaho.com', 'yahho.com', 'yhoo.com',
+  'hotmai.com', 'hotmial.com', 'hotmali.com',
+  'outlok.com', 'outloo.com',
+])
+
+const DISPOSABLE_DOMAINS = new Set([
+  'mogash.com', 'passinbox.com', 'mailinator.com', 'guerrillamail.com',
+  'tempmail.com', 'throwam.com', 'trashmail.com', 'sharklasers.com',
+  'spam4.me', 'yopmail.com', 'maildrop.cc', 'dispostable.com',
+  'fakeinbox.com', 'getairmail.com',
+])
+
+const BAD_TLDS = new Set(['con', 'cds', 'cpm', 'ocm', 'comd', 'vom', 'cmo'])
+
+function isBadEmail(email: string): string | null {
+  if (!email.includes('@')) return 'missing @'
+  const parts = email.split('@')
+  if (parts.length !== 2) return 'invalid format'
+  const [local, domain] = parts
+  if (!local || !domain || !domain.includes('.')) return 'invalid format'
+  const tld = domain.split('.').pop()!.toLowerCase()
+  if (BAD_TLDS.has(tld)) return `bad TLD (.${tld})`
+  if (TYPO_DOMAINS.has(domain.toLowerCase())) return `typo domain (${domain})`
+  if (DISPOSABLE_DOMAINS.has(domain.toLowerCase())) return `disposable (${domain})`
+  return null
+}
+
 // ── Init Firebase Admin ───────────────────────────────────
 const serviceAccountPath = path.resolve(__dirname, '../service-account.json')
 if (!fs.existsSync(serviceAccountPath)) {
@@ -70,16 +100,28 @@ async function main() {
   console.log(`Total Auth users: ${allUsers.users.length}`)
 
   const candidates: { uid: string; email: string; name: string }[] = []
+  const rejected: { email: string; reason: string }[] = []
 
   for (const user of allUsers.users) {
     if (!user.email) continue
     if (SKIP_EMAILS.has(user.email)) continue
     if (proUids.has(user.uid)) continue
 
+    const badReason = isBadEmail(user.email)
+    if (badReason) {
+      rejected.push({ email: user.email, reason: badReason })
+      continue
+    }
+
     const name = (user.displayName || '').split(' ')[0] || ''
     candidates.push({ uid: user.uid, email: user.email, name })
 
     if (candidates.length >= MAX_SENDS) break
+  }
+
+  if (rejected.length > 0) {
+    console.log(`\nSkipping ${rejected.length} bad addresses:`)
+    rejected.forEach(r => console.log(`  ✗ ${r.email} — ${r.reason}`))
   }
 
   console.log(`\nTargeting ${candidates.length} free users:\n`)
