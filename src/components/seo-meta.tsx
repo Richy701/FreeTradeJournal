@@ -115,10 +115,15 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     const finalImage = image || meta.image || 'https://www.freetradejournal.com/og-image.png';
     const canonicalUrl = `https://www.freetradejournal.com${currentPath === '/' ? '/' : currentPath}`;
 
+    const noindexPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
+    const isNoindex = noindexPaths.includes(currentPath);
+
     // Update document title
     document.title = finalTitle;
 
     // Update meta tags
+    updateMetaTag('robots', isNoindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+    updateMetaTag('googlebot', isNoindex ? 'noindex, follow' : 'index, follow');
     updateMetaTag('description', finalDescription);
     updateMetaTag('keywords', finalKeywords);
 

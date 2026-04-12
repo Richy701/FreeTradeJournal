@@ -10,8 +10,6 @@ Allow: /futures-trading-tracker
 Allow: /prop-firm-dashboard
 Allow: /documentation
 Allow: /changelog
-Allow: /login
-Allow: /signup
 Allow: /privacy
 Allow: /terms
 Allow: /cookie-policy
