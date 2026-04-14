@@ -62,6 +62,12 @@ export function ProProvider({ children }: ProProviderProps) {
       return;
     }
 
+    // If uid just became available (fresh login, no cached sub), mark as loading
+    // so dependents like useAutoRestore wait before making decisions
+    if (!cachedSub) {
+      setIsLoading(true);
+    }
+
     let unsubscribe: (() => void) | undefined;
 
     (async () => {

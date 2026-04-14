@@ -14,6 +14,15 @@ export function useFirestoreOnboardingCheck(userId: string | null, skipCheck: bo
   });
   const [completedInFirestore, setCompletedInFirestore] = useState(false);
 
+  // Re-trigger check if skipCheck transitions from true→false (e.g. after auto-restore completes)
+  useEffect(() => {
+    if (skipCheck || !userId) return;
+    const flag = UserStorage.getItem(userId, 'onboardingCompleted');
+    if (flag !== 'true') {
+      setChecking(true);
+    }
+  }, [skipCheck, userId]);
+
   useEffect(() => {
     if (!checking || !userId) return;
 

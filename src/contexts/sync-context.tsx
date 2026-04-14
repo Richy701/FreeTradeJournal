@@ -38,6 +38,11 @@ function bumpVersion() {
   changeListeners.forEach(cb => cb());
 }
 
+/** Notify all data subscribers (e.g. useDemoData) that localStorage has changed */
+export function notifyDataChange() {
+  bumpVersion();
+}
+
 export function SyncProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { isPro, isLoading: isProLoading } = useProStatus();

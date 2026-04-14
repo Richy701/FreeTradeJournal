@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.8.1',
+    date: '2026-04-14',
+    summary: 'Login reliability fix — returning users no longer hit onboarding after signing in.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Returning users incorrectly sent to onboarding after Google sign-in',
+        description: 'A timing issue caused the app to check onboarding status before confirming your account and pro status. This sent existing users through onboarding on new devices or after clearing their browser data. Fixed for both free and Pro accounts.',
+      },
+      {
+        type: 'fixed',
+        text: 'Data not visible after login until manual refresh',
+        description: 'When Pro data was restored from the cloud after signing in, the dashboard did not update automatically. Data is now applied immediately without needing a page refresh.',
+      },
+    ],
+  },
+  {
     version: '2.8.0',
     date: '2026-04-07',
     summary: '14-day free trial for Pro — try every Pro feature before you pay.',

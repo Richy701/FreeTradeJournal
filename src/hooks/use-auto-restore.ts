@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { UserStorage } from '@/utils/user-storage';
+import { notifyDataChange } from '@/contexts/sync-context';
 
 /**
  * Auto-restore data from Firestore for Pro users on new devices
@@ -57,6 +58,7 @@ export function useAutoRestore() {
 
         if (restoredAny) {
           console.log('[AutoRestore] ✅ Data restored via Cloud Function');
+          notifyDataChange();
         } else {
           console.log('[AutoRestore] No data found in Firestore (new user)');
         }
