@@ -11,7 +11,7 @@ interface SEOMetaProps {
 const pageMeta: Record<string, SEOMetaProps> = {
   '/': {
     title: 'FreeTradeJournal - Free Trading Journal for Forex & Futures',
-    description: 'Free professional trading journal with AI-powered coaching. Track trades, analyze performance, manage risk. Features include P&L tracking, calendar heatmaps, AI Trade Analysis, AI Trading Coach, risk alerts, and strategy tagging. Free forever.',
+    description: 'Free trading journal for forex, futures & stocks. Track P&L, analyze performance, manage risk, and get AI-powered coaching. No credit card required.',
     keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker, AI trading coach, AI trade analysis, AI risk alerts',
     image: 'https://www.freetradejournal.com/og-image.png'
   },
@@ -115,7 +115,7 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     const finalImage = image || meta.image || 'https://www.freetradejournal.com/og-image.png';
     const canonicalUrl = `https://www.freetradejournal.com${currentPath === '/' ? '/' : currentPath}`;
 
-    const noindexPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
+    const noindexPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/documentation'];
     const isNoindex = noindexPaths.includes(currentPath);
 
     // Update document title

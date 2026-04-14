@@ -110,9 +110,24 @@ async function prerender() {
     const label = route === "/" ? "/" : route;
     try {
       const page = await browser.newPage();
+      // Use networkidle2 (≤2 active connections) rather than networkidle0 so
+      // that Firebase's persistent auth connection doesn't block the wait.
       await page.goto(`http://localhost:${PORT}${route}`, {
-        waitUntil: "networkidle0",
+        waitUntil: "networkidle2",
         timeout: PAGE_TIMEOUT,
+      });
+
+      // Wait for React to render content into #root before capturing.
+      // This handles the case where networkidle2 fires while React is still
+      // flushing (e.g. lazy-loaded chunks, auth context initialisation).
+      await page.waitForFunction(
+        () => {
+          const root = document.getElementById("root");
+          return root !== null && root.children.length > 0;
+        },
+        { timeout: 10_000 }
+      ).catch(() => {
+        console.warn(`  ⚠  ${route}: #root still empty after 10 s — capturing anyway`);
       });
 
       const html = await page.evaluate(() => {
