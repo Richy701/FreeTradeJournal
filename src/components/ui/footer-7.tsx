@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaXTwitter } from "react-icons/fa6";
+import { XIcon } from './brand-icons';
 import { ArrowUp } from "lucide-react";
 import { FeedbackButton } from './feedback-button';
 import { motion } from "framer-motion";
@@ -61,7 +61,7 @@ const defaultSections = [
 ];
 
 const defaultSocialLinks = [
-  { icon: <FaXTwitter className="size-5" />, href: "#", label: "X" },
+  { icon: <XIcon className="size-5" />, href: "#", label: "X" },
 ];
 
 const defaultLegalLinks = [

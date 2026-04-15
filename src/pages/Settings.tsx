@@ -16,19 +16,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faCheck,
-  faDownload,
-  faUpload,
-  faSun,
-  faMoon,
-  faDesktop,
-  faCrown,
-  faArrowTrendUp,
-  faArrowTrendDown,
-} from '@fortawesome/free-solid-svg-icons';
-import { SlidersHorizontal, Wallet, BarChart2, Shield, Database, CreditCard } from 'lucide-react';
+import { SlidersHorizontal, Wallet, BarChart2, Shield, Database, CreditCard, Check, Download, Upload, Sun, Moon, Monitor, Crown, TrendingUp, TrendingDown } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useProStatus } from '@/contexts/pro-context';
@@ -83,8 +71,7 @@ export default function Settings() {
   const scrollTo = (id: string) => {
     const el = sectionRefs.current[id];
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 90;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setActiveSection(id);
   };
 
@@ -301,9 +288,9 @@ export default function Settings() {
                       </div>
                       <div className="grid grid-cols-3 gap-2 max-w-xs">
                         {([
-                          { value: 'light', label: 'Light', icon: faSun },
-                          { value: 'dark', label: 'Dark', icon: faMoon },
-                          { value: 'system', label: 'System', icon: faDesktop },
+                          { value: 'light', label: 'Light', icon: Sun },
+                          { value: 'dark', label: 'Dark', icon: Moon },
+                          { value: 'system', label: 'System', icon: Monitor },
                         ] as const).map(({ value, label, icon }) => (
                           <button
                             key={value}
@@ -314,7 +301,7 @@ export default function Settings() {
                             }`}
                             style={theme === value ? { borderColor: `${themeColors.primary}60`, backgroundColor: `${themeColors.primary}10` } : {}}
                           >
-                            <FontAwesomeIcon icon={icon} aria-hidden="true" className="h-4 w-4" style={theme === value ? { color: themeColors.primary } : {}} />
+                            {(() => { const ThemeIcon = icon; return <ThemeIcon aria-hidden="true" className="h-4 w-4" style={theme === value ? { color: themeColors.primary } : {}} />; })()}
                             {label}
                           </button>
                         ))}
@@ -381,7 +368,7 @@ export default function Settings() {
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm font-medium truncate">{preset.name}</span>
-                              {isSelected && <FontAwesomeIcon icon={faCheck} aria-hidden="true" className="h-3 w-3 shrink-0" style={{ color: preset.colors.primary }} />}
+                              {isSelected && <Check aria-hidden="true" className="h-3 w-3 shrink-0" style={{ color: preset.colors.primary }} />}
                             </div>
                             <div className="flex mt-1 text-[10px] text-muted-foreground">
                               <span className="flex-1">Profit</span>
@@ -598,7 +585,7 @@ export default function Settings() {
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
-                    { label: 'Total P&L', value: formatCurrency(stats.totalPnL, true), color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, icon: stats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown },
+                    { label: 'Total P&L', value: formatCurrency(stats.totalPnL, true), color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, icon: stats.totalPnL >= 0 ? TrendingUp : TrendingDown },
                     { label: 'Win Rate', value: `${stats.winRate.toFixed(1)}%`, sub: `${stats.wins}W / ${stats.losses}L`, color: stats.winRate >= 50 ? themeColors.profit : themeColors.loss },
                     { label: 'Profit Factor', value: stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2), sub: stats.profitFactor > 1 ? 'Profitable' : stats.profitFactor === 0 ? 'No data' : 'Unprofitable', color: stats.profitFactor > 1 ? themeColors.profit : themeColors.loss },
                     { label: 'Streak', value: `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? 'Wins' : stats.currentStreak < 0 ? 'Losses' : 'N/A'}`, sub: `Max: ${stats.maxWinStreak}W / ${stats.maxLossStreak}L`, color: stats.currentStreak > 0 ? themeColors.profit : stats.currentStreak < 0 ? themeColors.loss : undefined },
@@ -606,7 +593,7 @@ export default function Settings() {
                     <div key={label} className="rounded-xl border border-border/50 bg-muted/20 p-4">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-xs text-muted-foreground">{label}</p>
-                        {icon && <FontAwesomeIcon icon={icon} aria-hidden="true" className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color }} />}
+                        {icon && (() => { const StatIcon = icon; return <StatIcon aria-hidden="true" className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color }} />; })()}
                       </div>
                       <p className="text-xl font-bold mt-1.5" style={{ color }}>{value}</p>
                       {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
@@ -764,11 +751,11 @@ export default function Settings() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" onClick={exportData}>
-                        <FontAwesomeIcon icon={faDownload} className="mr-2 h-3.5 w-3.5" />
+                        <Download className="mr-2 h-3.5 w-3.5" />
                         Export Data
                       </Button>
 <Button variant="outline" size="sm" onClick={() => document.getElementById('import-data')?.click()}>
-                        <FontAwesomeIcon icon={faUpload} className="mr-2 h-3.5 w-3.5" />
+                        <Upload className="mr-2 h-3.5 w-3.5" />
                         Import Data
                       </Button>
                       <input id="import-data" type="file" accept=".json" className="hidden" onChange={importData} />
@@ -871,7 +858,7 @@ export default function Settings() {
                           </ul>
                         </div>
                         <Button size="sm" className="font-semibold" style={{ backgroundColor: '#f59e0b' }} onClick={() => navigate('/pricing')}>
-                          <FontAwesomeIcon icon={faCrown} className="mr-2 h-3.5 w-3.5" />
+                          <Crown className="mr-2 h-3.5 w-3.5" />
                           Upgrade to Pro
                         </Button>
                       </div>
@@ -936,7 +923,7 @@ export default function Settings() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="text-center items-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10">
-              <FontAwesomeIcon icon={faCrown} className="h-8 w-8 text-amber-500" />
+              <Crown className="h-8 w-8 text-amber-500" />
             </div>
             <DialogTitle className="text-2xl font-bold">Welcome to Pro!</DialogTitle>
             <DialogDescription className="text-base">Your upgrade is complete. You now have access to all premium features.</DialogDescription>
@@ -945,7 +932,7 @@ export default function Settings() {
             {PRO_FEATURES.map(feature => (
               <div key={feature} className="flex items-center gap-3">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500/10">
-                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3 text-green-500" />
+                  <Check className="h-3 w-3 text-green-500" />
                 </div>
                 <span className="text-sm">{feature}</span>
               </div>

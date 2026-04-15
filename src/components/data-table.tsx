@@ -2,8 +2,7 @@ import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faList, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
+import { List, ArrowUp, ArrowDown } from 'lucide-react'
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Plus, Upload } from "lucide-react"
@@ -105,11 +104,10 @@ export function DataTable({ data }: DataTableProps) {
                           color: trade.side === 'long' ? themeColors.profit : themeColors.loss
                         }}
                       >
-                        <FontAwesomeIcon 
-                          icon={trade.side === 'long' ? faArrowUp : faArrowDown} 
-                          className="h-2 w-2 mr-1"
-                          style={{color: trade.side === 'long' ? themeColors.profit : themeColors.loss}} 
-                        />
+                        {trade.side === 'long'
+                          ? <ArrowUp className="h-2 w-2 mr-1" style={{color: themeColors.profit}} />
+                          : <ArrowDown className="h-2 w-2 mr-1" style={{color: themeColors.loss}} />
+                        }
                         {trade.side.toUpperCase()}
                       </Badge>
                     </TableCell>
@@ -130,7 +128,7 @@ export function DataTable({ data }: DataTableProps) {
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <div className="text-center space-y-3">
-              <FontAwesomeIcon icon={faList} className="h-8 w-8 opacity-40" />
+              <List className="h-8 w-8 opacity-40" />
               <p className="text-lg font-medium">No trades found</p>
               <p className="text-sm">Add your first trade or import a CSV to get started</p>
               <div className="flex items-center justify-center gap-2 pt-2">

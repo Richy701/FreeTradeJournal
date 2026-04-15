@@ -25,23 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, FileDown, Calendar, Brain, Tags } from 'lucide-react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faDollarSign,
-  faBullseye,
-  faTrophy,
-  faBalanceScale,
-  faCheckCircle,
-  faExclamationTriangle,
-  faArrowTrendUp,
-  faArrowTrendDown,
-  faChartLine,
-  faClock,
-  faCoins,
-  faSlidersH,
-  faStickyNote,
-  faArrowRight
-} from '@fortawesome/free-solid-svg-icons';
+import { DollarSign, Target, Trophy, Scale, CheckCircle, AlertTriangle, TrendingUp, TrendingDown, LineChart, Clock, Coins, SlidersHorizontal, StickyNote, ArrowRight } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -1217,7 +1201,7 @@ export default function TradeLog() {
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold flex items-center gap-2.5">
                       <div className="p-1.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                        <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" style={{ color: themeColors.primary }} />
+                        <LineChart className="h-4 w-4" style={{ color: themeColors.primary }} />
                       </div>
                       {editingTrade ? 'Edit Trade' : 'Add New Trade'}
                     </DialogTitle>
@@ -1230,7 +1214,7 @@ export default function TradeLog() {
                       {/* Trade Info */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <LineChart className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Trade Info
                         </div>
                         <Separator />
@@ -1343,7 +1327,7 @@ export default function TradeLog() {
                       {/* Pricing */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <FontAwesomeIcon icon={faDollarSign} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <DollarSign className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Pricing
                         </div>
                         <Separator />
@@ -1415,7 +1399,7 @@ export default function TradeLog() {
                       {/* Costs */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <FontAwesomeIcon icon={faCoins} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <Coins className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Costs
                         </div>
                         <Separator />
@@ -1486,7 +1470,7 @@ export default function TradeLog() {
                       {/* Timing */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <Clock className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Timing
                         </div>
                         <Separator />
@@ -1535,7 +1519,7 @@ export default function TradeLog() {
                       {/* Advanced */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <FontAwesomeIcon icon={faSlidersH} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <SlidersHorizontal className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Advanced
                         </div>
                         <Separator />
@@ -1654,7 +1638,7 @@ export default function TradeLog() {
                       {/* Notes & Strategy */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <FontAwesomeIcon icon={faStickyNote} className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <StickyNote className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Notes & Strategy
                         </div>
                         <Separator />
@@ -1710,7 +1694,7 @@ export default function TradeLog() {
                           }}
                         >
                           {editingTrade ? 'Update Trade' : 'Add Trade'}
-                          <FontAwesomeIcon icon={faArrowRight} className="ml-2 h-3.5 w-3.5" />
+                          <ArrowRight className="ml-2 h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </form>
@@ -1733,7 +1717,7 @@ export default function TradeLog() {
                       className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                     >
-                      <FontAwesomeIcon icon={quickStats.totalPnL >= 0 ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+                      {quickStats.totalPnL >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                       {quickStats.totalPnL >= 0 ? '+' : '-'}{quickStats.pnlPct.toFixed(1)}%
                     </div>
                   </TooltipTrigger>
@@ -1827,7 +1811,7 @@ export default function TradeLog() {
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                   style={{ color: themeColors.profit }}
                 >
-                  <FontAwesomeIcon icon={faTrophy} className="h-3 w-3" />
+                  <Trophy className="h-3 w-3" />
                   {quickStats.bestTradeSymbol}
                 </div>
               </CardHeader>
@@ -1856,7 +1840,7 @@ export default function TradeLog() {
                       className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                       style={{ color: quickStats.avgRR >= 1.5 ? themeColors.profit : quickStats.avgRR >= 1 ? themeColors.primary : themeColors.loss }}
                     >
-                      <FontAwesomeIcon icon={quickStats.avgRR >= 1 ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+                      {quickStats.avgRR >= 1 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                       {quickStats.avgRR >= 2 ? 'Excellent' : quickStats.avgRR >= 1.5 ? 'Good' : quickStats.avgRR >= 1 ? 'Okay' : 'Low'}
                     </div>
                   </TooltipTrigger>
@@ -2418,7 +2402,7 @@ export default function TradeLog() {
                   className="hover:opacity-90 shadow-lg px-6 font-medium"
                 >
                   <span className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faCheckCircle} className="h-4 w-4" />
+                    <CheckCircle className="h-4 w-4" />
                     Parse with These Mappings
                   </span>
                 </Button>
@@ -2670,7 +2654,7 @@ export default function TradeLog() {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" style={{ color: themeColors.loss }} />
+                      <AlertTriangle className="h-4 w-4" style={{ color: themeColors.loss }} />
                       <h3 className="font-semibold text-sm" style={{ color: themeColors.loss }}>
                         Import Warnings ({csvPreview.parseResult.errors.length})
                       </h3>
@@ -2700,12 +2684,12 @@ export default function TradeLog() {
                 <div className="text-sm text-muted-foreground">
                   {csvPreview.parseResult.trades.length > 0 ? (
                     <span className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faCheckCircle} className="h-4 w-4" style={{ color: themeColors.profit }} />
+                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
                       Ready to import {csvPreview.parseResult.trades.length} trades
                     </span>
                   ) : (
                     <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
-                      <FontAwesomeIcon icon={faExclamationTriangle} className="h-4 w-4" />
+                      <AlertTriangle className="h-4 w-4" />
                       No valid trades found
                     </span>
                   )}
@@ -2736,7 +2720,7 @@ export default function TradeLog() {
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        <FontAwesomeIcon icon={faCheckCircle} className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                         Import {csvPreview.parseResult.trades.length} Trades
                       </span>
                     )}

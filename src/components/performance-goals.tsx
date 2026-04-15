@@ -4,30 +4,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faBullseye,
-  faTrophy,
-  faChartLine,
-  faShieldAlt,
-  faExclamationTriangle,
-  faMedal,
-  faFire,
-  faStar,
-  faDollarSign,
-  faPercentage,
-  faBolt,
-  faBalanceScale,
-  faShield,
-  faChartArea,
-  faCalendarDay,
-  faCalendarWeek,
-  faCalendar,
-  faRotateRight,
-  faPen,
-  faCheck,
-  faTrash
-} from '@fortawesome/free-solid-svg-icons'
+import { Target, Trophy, LineChart, ShieldCheck, AlertTriangle, Medal, Flame, Star, DollarSign, Percent, Zap, Scale, Shield, AreaChart, Calendar, CalendarDays, RotateCcw, Pen, Check, Trash2, type LucideIcon } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -103,14 +80,14 @@ function formatCurrentValue(goal: { type: string; current?: number }): string {
 }
 
 // Helper: icon for risk rule type
-function getRuleIcon(type: string) {
-  const icons: Record<string, any> = {
-    maxLossPerDay: faFire,
-    maxLossPerTrade: faExclamationTriangle,
-    maxRiskPerTrade: faPercentage,
-    maxOpenTrades: faChartLine
+function getRuleIcon(type: string): LucideIcon {
+  const icons: Record<string, LucideIcon> = {
+    maxLossPerDay: Flame,
+    maxLossPerTrade: AlertTriangle,
+    maxRiskPerTrade: Percent,
+    maxOpenTrades: LineChart
   }
-  return icons[type] || faShieldAlt
+  return icons[type] || ShieldCheck
 }
 
 // Circular progress ring component
@@ -152,7 +129,7 @@ function CircularProgress({ percentage, size = 64, strokeWidth = 6, color, achie
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         {achieved ? (
-          <FontAwesomeIcon icon={faCheck} className="h-5 w-5" style={{ color }} />
+          <Check className="h-5 w-5" style={{ color }} />
         ) : (
           <span className="text-sm font-bold" style={{ color }}>{Math.round(percentage)}%</span>
         )}
@@ -547,12 +524,12 @@ export function PerformanceGoals() {
     })
   }
 
-  const getPeriodIcon = (period: string) => {
+  const getPeriodIcon = (period: string): LucideIcon => {
     switch (period) {
-      case 'daily': return faCalendarDay
-      case 'weekly': return faCalendarWeek
-      case 'monthly': return faCalendar
-      default: return faCalendar
+      case 'daily': return Calendar
+      case 'weekly': return CalendarDays
+      case 'monthly': return Calendar
+      default: return Calendar
     }
   }
 
@@ -570,7 +547,7 @@ export function PerformanceGoals() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <FontAwesomeIcon icon={faBullseye} className="h-4 w-4 text-muted-foreground" />
+              <Target className="h-4 w-4 text-muted-foreground" />
               Active Goals
             </CardTitle>
             <div className="flex items-center gap-3">
@@ -599,12 +576,12 @@ export function PerformanceGoals() {
                       <Label className="text-sm font-semibold">Popular Goals</Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
-                          { type: 'profit', period: 'monthly', target: 1000, label: 'Make $1,000 this month', icon: faDollarSign },
-                          { type: 'winRate', period: 'weekly', target: 70, label: '70% win rate this week', icon: faBullseye },
-                          { type: 'profit', period: 'daily', target: 100, label: '$100 daily profit goal', icon: faChartLine },
-                          { type: 'trades', period: 'weekly', target: 20, label: '20 trades this week', icon: faBolt },
-                          { type: 'riskReward', period: 'monthly', target: 2, label: '2:1 risk/reward ratio', icon: faBalanceScale },
-                          { type: 'maxLoss', period: 'daily', target: 200, label: 'Max $200 daily loss', icon: faShield }
+                          { type: 'profit', period: 'monthly', target: 1000, label: 'Make $1,000 this month', icon: DollarSign },
+                          { type: 'winRate', period: 'weekly', target: 70, label: '70% win rate this week', icon: Target },
+                          { type: 'profit', period: 'daily', target: 100, label: '$100 daily profit goal', icon: LineChart },
+                          { type: 'trades', period: 'weekly', target: 20, label: '20 trades this week', icon: Zap },
+                          { type: 'riskReward', period: 'monthly', target: 2, label: '2:1 risk/reward ratio', icon: Scale },
+                          { type: 'maxLoss', period: 'daily', target: 200, label: 'Max $200 daily loss', icon: Shield }
                         ].map((preset, index) => (
                           <Button
                             key={index}
@@ -622,7 +599,7 @@ export function PerformanceGoals() {
                             }}
                           >
                             <div className="flex items-center gap-2.5">
-                              <FontAwesomeIcon icon={preset.icon} className="h-3.5 w-3.5 text-muted-foreground" />
+                              {(() => { const PresetIcon = preset.icon; return <PresetIcon className="h-3.5 w-3.5 text-muted-foreground" />; })()}
                               <div>
                                 <div className="font-medium text-sm">{preset.label}</div>
                                 <div className="text-xs text-muted-foreground capitalize">
@@ -666,37 +643,37 @@ export function PerformanceGoals() {
                           <SelectContent>
                             <SelectItem value="profit">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faDollarSign} className="h-3 w-3" />
+                                <DollarSign className="h-3 w-3" />
                                 Profit Target
                               </div>
                             </SelectItem>
                             <SelectItem value="winRate">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faPercentage} className="h-3 w-3" />
+                                <Percent className="h-3 w-3" />
                                 Win Rate %
                               </div>
                             </SelectItem>
                             <SelectItem value="trades">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faBolt} className="h-3 w-3" />
+                                <Zap className="h-3 w-3" />
                                 Trade Count
                               </div>
                             </SelectItem>
                             <SelectItem value="riskReward">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faBalanceScale} className="h-3 w-3" />
+                                <Scale className="h-3 w-3" />
                                 Risk/Reward
                               </div>
                             </SelectItem>
                             <SelectItem value="maxLoss">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faShield} className="h-3 w-3" />
+                                <Shield className="h-3 w-3" />
                                 Max Loss Limit
                               </div>
                             </SelectItem>
                             <SelectItem value="maxDrawdown">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faChartArea} className="h-3 w-3" />
+                                <AreaChart className="h-3 w-3" />
                                 Max Drawdown
                               </div>
                             </SelectItem>
@@ -712,19 +689,19 @@ export function PerformanceGoals() {
                           <SelectContent>
                             <SelectItem value="daily">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faCalendarDay} className="h-3 w-3" />
+                                <Calendar className="h-3 w-3" />
                                 Daily
                               </div>
                             </SelectItem>
                             <SelectItem value="weekly">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faCalendarWeek} className="h-3 w-3" />
+                                <CalendarDays className="h-3 w-3" />
                                 Weekly
                               </div>
                             </SelectItem>
                             <SelectItem value="monthly">
                               <div className="flex items-center gap-2">
-                                <FontAwesomeIcon icon={faCalendar} className="h-3 w-3" />
+                                <Calendar className="h-3 w-3" />
                                 Monthly
                               </div>
                             </SelectItem>
@@ -767,7 +744,7 @@ export function PerformanceGoals() {
         <CardContent className="pt-2">
           {goalProgress.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
-              <FontAwesomeIcon icon={faBullseye} className="h-10 w-10 mb-3 opacity-40" />
+              <Target className="h-10 w-10 mb-3 opacity-40" />
               <p className="text-sm">No goals set. Add your first goal to start tracking!</p>
             </div>
           ) : (
@@ -822,7 +799,7 @@ export function PerformanceGoals() {
                             className="text-[10px] px-1.5 py-0 capitalize"
                             style={{ borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary }}
                           >
-                            <FontAwesomeIcon icon={getPeriodIcon(goal.period)} className="h-2.5 w-2.5 mr-1" />
+                            {(() => { const PeriodIcon = getPeriodIcon(goal.period); return <PeriodIcon className="h-2.5 w-2.5 mr-1" />; })()}
                             {goal.period}
                           </Badge>
                         </div>
@@ -831,7 +808,7 @@ export function PerformanceGoals() {
                         </div>
                         {goal.achieved && (
                           <div className="flex items-center gap-1 text-xs" style={{ color: themeColors.profit }}>
-                            <FontAwesomeIcon icon={faTrophy} className="h-3 w-3" />
+                            <Trophy className="h-3 w-3" />
                             <span>Achieved {goal.achievedAt ? new Date(goal.achievedAt).toLocaleDateString() : 'today'}!</span>
                           </div>
                         )}
@@ -848,7 +825,7 @@ export function PerformanceGoals() {
                             title="Reset progress"
                             aria-label="Reset goal"
                           >
-                            <FontAwesomeIcon icon={faRotateRight} className="h-3 w-3" />
+                            <RotateCcw className="h-3 w-3" />
                           </Button>
                         )}
                         <Button
@@ -859,7 +836,7 @@ export function PerformanceGoals() {
                           title="Delete goal"
                           aria-label="Delete goal"
                         >
-                          <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -883,7 +860,7 @@ export function PerformanceGoals() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <FontAwesomeIcon icon={faShieldAlt} className="h-4 w-4 text-muted-foreground" />
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
               Risk Management Rules
             </CardTitle>
             <Button
@@ -923,7 +900,7 @@ export function PerformanceGoals() {
 
             return riskRules.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <FontAwesomeIcon icon={faShieldAlt} className="h-8 w-8 mb-2 opacity-40" />
+                <ShieldCheck className="h-8 w-8 mb-2 opacity-40" />
                 <p className="text-sm">No risk rules configured.</p>
               </div>
             ) : riskRules.map(rule => {
@@ -945,10 +922,7 @@ export function PerformanceGoals() {
                         checked={rule.enabled}
                         onCheckedChange={() => toggleRiskRule(rule.id)}
                       />
-                      <FontAwesomeIcon
-                        icon={getRuleIcon(rule.type)}
-                        className="h-3.5 w-3.5 text-muted-foreground"
-                      />
+                      {(() => { const RuleIcon = getRuleIcon(rule.type); return <RuleIcon className="h-3.5 w-3.5 text-muted-foreground" />; })()}
                       <div>
                         <span className="text-sm font-medium text-foreground">
                           {getRuleLabel(rule.type)}
@@ -990,7 +964,7 @@ export function PerformanceGoals() {
                         }}
                         aria-label="Edit rule"
                       >
-                        <FontAwesomeIcon icon={faPen} className="h-3 w-3" />
+                        <Pen className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
@@ -1076,7 +1050,7 @@ export function PerformanceGoals() {
         <Card className="">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <FontAwesomeIcon icon={faTrophy} className="h-4 w-4 text-muted-foreground" />
+              <Trophy className="h-4 w-4 text-muted-foreground" />
               Achievements
             </CardTitle>
           </CardHeader>
@@ -1088,14 +1062,13 @@ export function PerformanceGoals() {
                   className="rounded-lg border border-border p-4"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <FontAwesomeIcon
-                      icon={goal.type === 'profit' ? faDollarSign
-                        : goal.type === 'winRate' ? faStar
-                        : goal.type === 'trades' ? faBolt
-                        : faMedal}
-                      className="h-3.5 w-3.5"
-                      style={{ color: themeColors.profit }}
-                    />
+                    {(() => {
+                      const GoalIcon = goal.type === 'profit' ? DollarSign
+                        : goal.type === 'winRate' ? Star
+                        : goal.type === 'trades' ? Zap
+                        : Medal;
+                      return <GoalIcon className="h-3.5 w-3.5" style={{ color: themeColors.profit }} />;
+                    })()}
                     <span className="text-sm font-semibold text-foreground">
                       {getGoalLabel(goal.type)}
                     </span>

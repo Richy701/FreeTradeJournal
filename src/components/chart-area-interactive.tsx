@@ -1,7 +1,6 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts"
 import {
   Card,
@@ -244,11 +243,10 @@ export function ChartAreaInteractive() {
             <>
               <div className="flex items-center gap-1.5 sm:gap-2 font-medium leading-none whitespace-nowrap">
                 {isPositive ? 'Trending up' : 'Trending down'}
-                <FontAwesomeIcon
-                  icon={isPositive ? faArrowUp : faArrowDown}
-                  className="h-3 w-3"
-                  style={{color: isPositive ? themeColors.profit : themeColors.loss}}
-                />
+                {isPositive
+                  ? <ArrowUp className="h-3 w-3" style={{color: themeColors.profit}} />
+                  : <ArrowDown className="h-3 w-3" style={{color: themeColors.loss}} />
+                }
               </div>
               <div className="h-4 w-px bg-border shrink-0"></div>
               <div className="flex items-center gap-1.5 sm:gap-2 leading-none whitespace-nowrap min-w-0">

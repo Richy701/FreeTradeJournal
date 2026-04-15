@@ -8,12 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import {
-  faEye, faEyeSlash, faCheck, faChartLine, faSpinner,
-  faBrain, faShieldAlt, faChartPie, faBookOpen, faArrowRight
-} from '@fortawesome/free-solid-svg-icons';
+import { Eye, EyeOff, Check, LineChart, Loader2, Brain, ShieldCheck, PieChart, BookOpen, ArrowRight } from 'lucide-react';
+import { GoogleIcon } from '@/components/ui/brand-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Signup() {
@@ -127,10 +123,10 @@ export default function Signup() {
 
 
   const features = [
-    { icon: faChartPie, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
-    { icon: faBrain, title: 'AI Trade Coaching', desc: 'Get personalized insights on your trades' },
-    { icon: faBookOpen, title: 'Trading Journal', desc: 'Document setups, emotions, and lessons' },
-    { icon: faShieldAlt, title: 'Risk Management', desc: 'Set rules and monitor your discipline' },
+    { icon: PieChart, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
+    { icon: Brain, title: 'AI Trade Coaching', desc: 'Get personalized insights on your trades' },
+    { icon: BookOpen, title: 'Trading Journal', desc: 'Document setups, emotions, and lessons' },
+    { icon: ShieldCheck, title: 'Risk Management', desc: 'Set rules and monitor your discipline' },
   ];
 
   return (
@@ -145,7 +141,7 @@ export default function Signup() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
-                <FontAwesomeIcon icon={faChartLine} className="h-6 w-6 text-white" />
+                <LineChart className="h-6 w-6 text-white" />
               </div>
               <span className="font-display text-xl font-bold text-white">FreeTradeJournal</span>
             </div>
@@ -164,7 +160,7 @@ export default function Signup() {
             {features.map((feature, i) => (
               <div key={i} className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-white/15 backdrop-blur-sm shrink-0 mt-0.5">
-                  <FontAwesomeIcon icon={feature.icon} className="h-4 w-4 text-white" />
+                  {(() => { const FeatureIcon = feature.icon; return <FeatureIcon className="h-4 w-4 text-white" />; })()}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">{feature.title}</p>
@@ -187,7 +183,7 @@ export default function Signup() {
           <div className="lg:hidden -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 px-6 py-6 sm:px-8 sm:py-8 bg-gradient-to-br from-amber-600 to-amber-500 rounded-t-2xl">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
-                <FontAwesomeIcon icon={faChartLine} className="h-5 w-5 text-white" />
+                <LineChart className="h-5 w-5 text-white" />
               </div>
               <span className="font-display text-lg font-bold text-white">FreeTradeJournal</span>
             </div>
@@ -273,7 +269,7 @@ export default function Signup() {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="h-4 w-4" />
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {formData.password && (() => {
@@ -323,15 +319,12 @@ export default function Signup() {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                 >
-                  <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} className="h-4 w-4" />
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {formData.confirmPassword && (
                 <div className="flex items-center gap-2 text-xs">
-                  <FontAwesomeIcon
-                    icon={faCheck}
-                    className={`h-3 w-3 ${passwordsMatch ? 'text-green-500' : 'text-muted-foreground'}`}
-                  />
+                  <Check className={`h-3 w-3 ${passwordsMatch ? 'text-green-500' : 'text-muted-foreground'}`} />
                   <span className={passwordsMatch ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
                     Passwords match
                   </span>
@@ -361,13 +354,13 @@ export default function Signup() {
             >
               {loading ? (
                 <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Creating account...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   Create account
-                  <FontAwesomeIcon icon={faArrowRight} className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               )}
             </Button>
@@ -391,12 +384,12 @@ export default function Signup() {
             >
               {googleLoading ? (
                 <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Connecting...
                 </div>
               ) : (
                 <>
-                  <FontAwesomeIcon icon={faGoogle} className="mr-2 h-4 w-4" />
+                  <GoogleIcon className="mr-2 h-4 w-4" />
                   Continue with Google
                 </>
               )}

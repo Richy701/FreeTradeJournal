@@ -5,14 +5,13 @@ import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCalendarDays, faArrowUp, faArrowDown, faChevronLeft, faChevronRight, faBookOpen, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { CalendarDays, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom"
-import { Plus, DollarSign, Target, TrendingUp, BarChart3, Activity } from "lucide-react"
+import { Plus, DollarSign, Target, TrendingUp, BarChart3, Activity, ArrowUp, ArrowDown } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import {
   Popover,
@@ -619,7 +618,7 @@ export function CalendarHeatmap() {
                 title="Previous month (←)"
                 aria-label="Previous month"
               >
-                <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3 text-muted-foreground" />
+                <ChevronLeft className="h-3 w-3 text-muted-foreground" />
               </button>
 
               <div className="flex items-center gap-1 px-1">
@@ -652,7 +651,7 @@ export function CalendarHeatmap() {
                 title="Next month (→)"
                 aria-label="Next month"
               >
-                <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3 text-muted-foreground" />
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </button>
             </div>
 
@@ -723,7 +722,7 @@ export function CalendarHeatmap() {
 
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <FontAwesomeIcon icon={faCalendarDays} className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <CalendarDays className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
               <div className="text-[10px] md:text-sm text-muted-foreground">Trading Days</div>
             </div>
             <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
@@ -881,7 +880,7 @@ export function CalendarHeatmap() {
                           {/* Journal indicator with count */}
                           {hasJournal && (
                             <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:left-1 sm:right-auto flex items-center gap-0.5">
-                              <FontAwesomeIcon icon={faBookOpen} className="h-2 w-2 sm:h-3 sm:w-3 text-slate-800 dark:text-white drop-shadow-lg" />
+                              <BookOpen className="h-2 w-2 sm:h-3 sm:w-3 text-slate-800 dark:text-white drop-shadow-lg" />
                               {journalEntries[dateKey].length > 1 && (
                                 <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[7px] sm:text-[10px] font-bold rounded-full w-2.5 h-2.5 sm:w-4 sm:h-4 flex items-center justify-center drop-shadow-lg">
                                   {journalEntries[dateKey].length}
@@ -1021,7 +1020,7 @@ export function CalendarHeatmap() {
             <div className="flex items-center gap-3 text-xs">
               {monthlyStats.bestDay && (
                 <div className="flex items-center gap-1">
-                  <FontAwesomeIcon icon={faArrowUp} className="h-3 w-3" style={{color: themeColors.profit}} />
+                  <ArrowUp className="h-3 w-3" style={{color: themeColors.profit}} />
                   <span className="font-medium text-muted-foreground">Best: </span>
                   <span className="font-bold" style={{color: themeColors.profit}}>
                     {formatCurrency(monthlyStats.bestDay.pnl)}
@@ -1035,7 +1034,7 @@ export function CalendarHeatmap() {
                 <>
                   <div className="h-4 w-px bg-border"></div>
                   <div className="flex items-center gap-1">
-                    <FontAwesomeIcon icon={faArrowDown} className="h-3 w-3" style={{color: themeColors.loss}} />
+                    <ArrowDown className="h-3 w-3" style={{color: themeColors.loss}} />
                     <span className="font-medium text-muted-foreground">Worst: </span>
                     <span className="font-bold" style={{color: themeColors.loss}}>
                       {formatCurrency(monthlyStats.worstDay.pnl)}
@@ -1087,7 +1086,7 @@ export function CalendarHeatmap() {
             <TabsContent value="journal" className="space-y-3 sm:space-y-4 mt-6 sm:mt-8">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
-                  <FontAwesomeIcon icon={faPlus} className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                   Add New Journal Entry
                 </div>
 

@@ -1,7 +1,6 @@
 "use client"
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChartBar } from '@fortawesome/free-solid-svg-icons'
+import { BarChart2 } from 'lucide-react'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts"

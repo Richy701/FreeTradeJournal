@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faSpinner, faCheck, faRotateRight } from '@fortawesome/free-solid-svg-icons';
+import { Mail, Loader2, Check, RotateCcw } from 'lucide-react';
 
 export default function VerifyEmail() {
   const { user, logout } = useAuth();
@@ -79,7 +78,7 @@ export default function VerifyEmail() {
         {verified ? (
           <>
             <div className="mx-auto w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-              <FontAwesomeIcon icon={faCheck} className="h-7 w-7 text-green-500" />
+              <Check className="h-7 w-7 text-green-500" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">Email verified</h1>
@@ -89,7 +88,7 @@ export default function VerifyEmail() {
         ) : (
           <>
             <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <FontAwesomeIcon icon={faEnvelope} className="h-7 w-7 text-amber-500" />
+              <Mail className="h-7 w-7 text-amber-500" />
             </div>
 
             <div className="space-y-2">
@@ -112,14 +111,14 @@ export default function VerifyEmail() {
               >
                 {resending ? (
                   <>
-                    <FontAwesomeIcon icon={faSpinner} className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Sending...
                   </>
                 ) : resendCooldown > 0 ? (
                   `Resend in ${resendCooldown}s`
                 ) : (
                   <>
-                    <FontAwesomeIcon icon={faRotateRight} className="mr-2 h-4 w-4" />
+                    <RotateCcw className="mr-2 h-4 w-4" />
                     Resend verification email
                   </>
                 )}

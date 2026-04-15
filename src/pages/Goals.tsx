@@ -3,13 +3,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useUserStorage } from '@/utils/user-storage'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faTrophy,
-  faShield,
-  faFire,
-  faChartBar
-} from '@fortawesome/free-solid-svg-icons'
+import { Trophy, Shield, Flame, BarChart2 } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/card"
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
@@ -87,7 +81,7 @@ export default function Goals() {
 
   const statCards = [
     {
-      icon: faTrophy,
+      icon: Trophy,
       value: stats.achievedGoals,
       label: 'Goals Achieved',
       total: stats.totalGoals,
@@ -95,21 +89,21 @@ export default function Goals() {
       trend: stats.achievedGoals > 0 ? '+' : null
     },
     {
-      icon: faShield,
+      icon: Shield,
       value: stats.activeRules,
       label: 'Active Rules',
       color: themeColors.primary,
       subtitle: 'Risk protection'
     },
     {
-      icon: faChartBar,
+      icon: BarChart2,
       value: stats.totalGoals > 0 ? stats.totalGoals - stats.achievedGoals : 0,
       label: 'In Progress',
       color: themeColors.primary,
       subtitle: 'Active goals'
     },
     {
-      icon: faFire,
+      icon: Flame,
       value: stats.violations || 0,
       label: 'Risk Violations',
       color: themeColors.loss,
@@ -136,11 +130,13 @@ export default function Goals() {
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
-          {statCards.map((stat, index) => (
+          {statCards.map((stat, index) => {
+            const StatIcon = stat.icon;
+            return (
             <Card key={index}>
               <CardContent className="p-5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={stat.icon} className="h-3 w-3" />
+                  <StatIcon className="h-3 w-3" />
                   {stat.label}
                 </p>
                 <div className="flex items-baseline gap-2">
@@ -153,7 +149,8 @@ export default function Goals() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {/* Performance Goals Section */}

@@ -3,8 +3,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowTrendUp, faArrowTrendDown } from '@fortawesome/free-solid-svg-icons'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 import { Link } from "react-router-dom"
 import {
   Tooltip,
@@ -142,7 +141,7 @@ export function SectionCards() {
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                   style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}
                 >
-                  <FontAwesomeIcon icon={pnlPositive ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+                  {pnlPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {pnlPositive ? '+' : '-'}{formatPercentage(pnlPct)}
                 </div>
               </TooltipTrigger>
@@ -319,7 +318,7 @@ export function SectionCards() {
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                   style={{ color: pfGood ? themeColors.profit : themeColors.loss }}
                 >
-                  <FontAwesomeIcon icon={pfGood ? faArrowTrendUp : faArrowTrendDown} className="h-3 w-3" />
+                  {pfGood ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {pfLabel}
                 </div>
               </TooltipTrigger>

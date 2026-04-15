@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -101,10 +102,10 @@ export default defineConfig({
           'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs', '@radix-ui/react-popover', '@radix-ui/react-dropdown-menu'],
           'vendor-form': ['react-hook-form', '@hookform/resolvers', 'zod'],
           'vendor-charts': ['recharts'],
-          'vendor-date': ['date-fns', 'date-fns-tz', 'react-datepicker', 'react-day-picker'],
+          'vendor-date': ['date-fns', 'date-fns-tz', 'react-day-picker'],
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           'vendor-animation': ['framer-motion'],
-          'vendor-icons': ['lucide-react', 'react-icons', '@radix-ui/react-icons'],
+          'vendor-icons': ['lucide-react', '@radix-ui/react-icons'],
           'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
           'vendor-remotion': ['remotion', '@remotion/player']
         },
@@ -123,5 +124,9 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 500
-  }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+  },
 })
