@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.9.0',
+    date: '2026-04-26',
+    summary: 'PropTracker now supports multiple currencies, plus a community poll to help shape what comes next.',
+    items: [
+      {
+        type: 'new',
+        text: 'Currency selection for PropTracker accounts',
+        description: 'You can now set the currency for each prop firm account (USD, EUR, GBP, CHF, AUD, CAD, JPY, CZK). All amounts — account size, fees, payouts, and P&L — display in the currency you choose. Existing accounts default to USD.',
+      },
+      {
+        type: 'new',
+        text: '80K added to preset account sizes',
+        description: 'A common prop firm account size that was previously only available through the custom input is now a one-click preset.',
+      },
+      {
+        type: 'new',
+        text: 'Community poll on the dashboard',
+        description: 'We are building a community and want your input. Vote for Discord or Telegram directly from your dashboard. Results update in real time so you can see what others prefer.',
+      },
+    ],
+  },
+  {
     version: '2.8.1',
     date: '2026-04-14',
     summary: 'Login reliability fix — returning users no longer hit onboarding after signing in.',
@@ -554,4 +576,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.8.0'
+export const LATEST_CHANGELOG_VERSION = '2.9.0'
