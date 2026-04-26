@@ -25,6 +25,7 @@ import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/tra
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProNudgeBanner } from '@/components/pro-nudge-banner'
+import { CommunityPoll } from '@/components/community-poll'
 import { GettingStartedChecklist } from '@/components/getting-started-checklist'
 import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
 
@@ -489,6 +490,7 @@ export default function Dashboard() {
 
       <GettingStartedChecklist refreshKey={dataVersion} />
       <ProNudgeBanner />
+      <CommunityPoll />
 
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (
