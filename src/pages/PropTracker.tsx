@@ -74,6 +74,7 @@ import type {
   PropFirmTransaction,
   PropAccountType,
   PropAccountStatus,
+  PropCurrency,
   TransactionType,
 } from '@/types/prop-tracker'
 
@@ -98,7 +99,18 @@ const PROP_FIRMS = [
 
 const FREE_ACCOUNT_LIMIT = 3
 
-const ACCOUNT_SIZES = [10000, 25000, 50000, 75000, 100000, 150000, 200000, 300000]
+const ACCOUNT_SIZES = [10000, 25000, 50000, 75000, 80000, 100000, 150000, 200000, 300000]
+
+const CURRENCY_OPTIONS: { value: PropCurrency; label: string; symbol: string }[] = [
+  { value: 'USD', label: 'USD ($)', symbol: '$' },
+  { value: 'EUR', label: 'EUR (\u20AC)', symbol: '\u20AC' },
+  { value: 'GBP', label: 'GBP (\u00A3)', symbol: '\u00A3' },
+  { value: 'CHF', label: 'CHF', symbol: 'CHF ' },
+  { value: 'AUD', label: 'AUD (A$)', symbol: 'A$' },
+  { value: 'CAD', label: 'CAD (C$)', symbol: 'C$' },
+  { value: 'JPY', label: 'JPY (\u00A5)', symbol: '\u00A5' },
+  { value: 'CZK', label: 'CZK', symbol: 'CZK ' },
+]
 
 const ACCOUNT_TYPE_OPTIONS: { value: PropAccountType; label: string }[] = [
   { value: 'evaluation', label: 'Evaluation' },
@@ -150,8 +162,13 @@ const FIRM_BRAND_COLORS: Record<string, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function fmt(n: number) {
-  return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function currencySymbol(currency?: PropCurrency) {
+  return CURRENCY_OPTIONS.find(c => c.value === currency)?.symbol ?? '$'
+}
+
+function fmt(n: number, currency?: PropCurrency) {
+  const sym = currencySymbol(currency)
+  return sym + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function isExpenseTx(type: TransactionType) {
@@ -182,6 +199,7 @@ function defaultAccountForm() {
     customFirm: '',
     accountSizeStr: '100000',
     customSizeStr: '',
+    currency: 'USD' as PropCurrency,
     accountType: 'evaluation' as PropAccountType,
     status: 'active' as PropAccountStatus,
     startDate: new Date().toISOString().split('T')[0],
@@ -391,6 +409,7 @@ export default function PropTracker() {
       customFirm: isCustomFirm ? account.firmName : '',
       accountSizeStr: isCustomSize ? 'custom' : String(account.accountSize),
       customSizeStr: isCustomSize ? String(account.accountSize) : '',
+      currency: account.currency ?? 'USD',
       accountType: account.accountType,
       status: account.status,
       startDate: account.startDate,
@@ -411,7 +430,7 @@ export default function PropTracker() {
     if (accountDialog.editing) {
       saveAccounts(accounts.map(a =>
         a.id === accountDialog.editing!.id
-          ? { ...a, firmName, accountSize, accountType: accountForm.accountType, status: accountForm.status, startDate: accountForm.startDate, endDate: accountForm.endDate || undefined, notes: accountForm.notes || undefined }
+          ? { ...a, firmName, accountSize, currency: accountForm.currency, accountType: accountForm.accountType, status: accountForm.status, startDate: accountForm.startDate, endDate: accountForm.endDate || undefined, notes: accountForm.notes || undefined }
           : a
       ))
       toast.success('Account updated')
@@ -420,6 +439,7 @@ export default function PropTracker() {
         id: crypto.randomUUID(),
         firmName,
         accountSize,
+        currency: accountForm.currency,
         accountType: accountForm.accountType,
         status: accountForm.status,
         startDate: accountForm.startDate,
@@ -1089,7 +1109,7 @@ export default function PropTracker() {
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          ${account.accountSize.toLocaleString()} · {typeMeta.label} · Since {new Date(account.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          {currencySymbol(account.currency)}{account.accountSize.toLocaleString()} · {typeMeta.label} · Since {new Date(account.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
@@ -1097,9 +1117,9 @@ export default function PropTracker() {
                     {/* Stats — 3 col text, no boxes */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       {[
-                        { label: 'Invested', value: invested > 0 ? fmt(invested) : '—', color: invested > 0 ? themeColors.loss : undefined },
-                        { label: 'Earned',   value: earned > 0  ? fmt(earned)   : '—', color: earned > 0  ? themeColors.profit : undefined },
-                        { label: 'P&L',      value: txs.length > 0 ? (net >= 0 ? '+' : '-') + fmt(net) : '—', color: txs.length > 0 ? (net >= 0 ? themeColors.profit : themeColors.loss) : undefined },
+                        { label: 'Invested', value: invested > 0 ? fmt(invested, account.currency) : '—', color: invested > 0 ? themeColors.loss : undefined },
+                        { label: 'Earned',   value: earned > 0  ? fmt(earned, account.currency)   : '—', color: earned > 0  ? themeColors.profit : undefined },
+                        { label: 'P&L',      value: txs.length > 0 ? (net >= 0 ? '+' : '-') + fmt(net, account.currency) : '—', color: txs.length > 0 ? (net >= 0 ? themeColors.profit : themeColors.loss) : undefined },
                       ].map(s => (
                         <div key={s.label}>
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
@@ -1184,7 +1204,7 @@ export default function PropTracker() {
                                     <span className="text-[10px] text-muted-foreground">({monthTxs.length})</span>
                                   </div>
                                   <span className="text-[10px] font-semibold tabular-nums" style={{ color: monthNet >= 0 ? themeColors.profit : themeColors.loss }}>
-                                    {monthNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthNet))}
+                                    {monthNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthNet), account.currency)}
                                   </span>
                                 </button>
                                 {monthOpen && <div className="flex flex-col gap-0.5">
@@ -1208,7 +1228,7 @@ export default function PropTracker() {
                                           {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                                         </span>
                                         <span className="text-xs font-semibold shrink-0 tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
-                                          {expense ? '-' : '+'}{fmt(tx.amount)}
+                                          {expense ? '-' : '+'}{fmt(tx.amount, account.currency)}
                                         </span>
                                         <Button
                                           variant="ghost"
@@ -1279,13 +1299,25 @@ export default function PropTracker() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-size">Account Size</label>
-              <Select value={accountForm.accountSizeStr} onValueChange={v => setAccountForm(p => ({ ...p, accountSizeStr: v }))}>
-                <SelectTrigger aria-labelledby="label-size"><SelectValue placeholder="Select size" /></SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_SIZES.map(s => <SelectItem key={s} value={String(s)}>${s.toLocaleString()}</SelectItem>)}
-                  <SelectItem value="custom">Custom…</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select value={accountForm.accountSizeStr} onValueChange={v => setAccountForm(p => ({ ...p, accountSizeStr: v }))}>
+                    <SelectTrigger aria-labelledby="label-size"><SelectValue placeholder="Select size" /></SelectTrigger>
+                    <SelectContent>
+                      {ACCOUNT_SIZES.map(s => <SelectItem key={s} value={String(s)}>{currencySymbol(accountForm.currency)}{s.toLocaleString()}</SelectItem>)}
+                      <SelectItem value="custom">Custom...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-[100px]">
+                  <Select value={accountForm.currency} onValueChange={v => setAccountForm(p => ({ ...p, currency: v as PropCurrency }))}>
+                    <SelectTrigger aria-label="Currency"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CURRENCY_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               {accountForm.accountSizeStr === 'custom' && (
                 <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="e.g. 150000…" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => ({ ...p, customSizeStr: e.target.value }))} />
               )}

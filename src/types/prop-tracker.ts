@@ -1,3 +1,4 @@
+export type PropCurrency = 'USD' | 'EUR' | 'GBP' | 'CHF' | 'AUD' | 'CAD' | 'JPY' | 'CZK'
 export type PropAccountType = 'evaluation' | 'funded' | 'instant' | 'express'
 export type PropAccountStatus = 'active' | 'passed' | 'failed' | 'withdrawn'
 export type TransactionType =
@@ -11,6 +12,7 @@ export interface PropFirmAccount {
   id: string
   firmName: string
   accountSize: number
+  currency?: PropCurrency
   accountType: PropAccountType
   status: PropAccountStatus
   startDate: string
