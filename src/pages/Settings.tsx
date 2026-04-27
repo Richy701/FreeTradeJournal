@@ -809,17 +809,18 @@ export default function Settings() {
                   </div>
 
                   {/* Danger zone */}
-                  <div className="px-5 py-4 space-y-3">
+                  <div className="px-5 py-4 space-y-2">
                     <p className="text-sm font-medium text-destructive">Danger Zone</p>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Permanently deletes all trades, journals, goals, and settings from this device.</p>
-                      <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteConfirm(true)}>Delete All Data</Button>
-                    </div>
-                    {user && !isDemo && (
-                      <div className="pt-2 border-t border-border">
-                        <p className="text-xs text-muted-foreground">Permanently delete your account, all cloud data, and cancel any active subscription. This cannot be undone.</p>
+                    {user && !isDemo ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">Permanently delete your account, all data, and cancel any active subscription. This cannot be undone.</p>
                         <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteAccountConfirm(true)}>Delete My Account</Button>
-                      </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted-foreground">Permanently deletes all trades, journals, goals, and settings. Cannot be undone.</p>
+                        <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteConfirm(true)}>Delete All Data</Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -940,7 +941,7 @@ export default function Settings() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Your Account?</DialogTitle>
-            <DialogDescription>This will permanently delete your account, all cloud-synced data, and cancel any active subscription. You will be signed out and this cannot be undone.</DialogDescription>
+            <DialogDescription>This will permanently delete your account, all local and cloud data, and cancel any active subscription. You will be signed out and this cannot be undone.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 mt-2">
             <Button variant="outline" className="flex-1" onClick={() => setShowDeleteAccountConfirm(false)} disabled={deletingAccount}>Cancel</Button>
