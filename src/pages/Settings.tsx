@@ -53,7 +53,7 @@ const NAV = [
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha, setCustomColors, customColors } = useThemePresets();
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
   const userStorage = useUserStorage();
@@ -63,6 +63,8 @@ export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProWelcome, setShowProWelcome] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteAccountId, setDeleteAccountId] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState<string>('general');
@@ -177,6 +179,27 @@ export default function Settings() {
   const clearAllData = () => {
     ['trades','journalEntries','goals','accounts','settings'].forEach(k => userStorage.removeItem(k));
     window.location.reload();
+  };
+
+  const deleteMyAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+      const { httpsCallable } = await import('firebase/functions');
+      const fns = await getFirebaseFunctions();
+      const deleteAccount = httpsCallable(fns, 'deleteUserAccount');
+      await deleteAccount();
+      // Clear local data
+      ['trades','journalEntries','goals','accounts','settings','riskRules','onboarding','propFirmAccounts','propFirmTransactions'].forEach(k => userStorage.removeItem(k));
+      toast.success('Account deleted successfully');
+      navigate('/');
+    } catch (err: any) {
+      console.error('Failed to delete account:', err);
+      toast.error('Failed to delete account. Please try again or contact support.');
+    } finally {
+      setDeletingAccount(false);
+      setShowDeleteAccountConfirm(false);
+    }
   };
 
   const storageUsed = (() => {
@@ -786,10 +809,18 @@ export default function Settings() {
                   </div>
 
                   {/* Danger zone */}
-                  <div className="px-5 py-4 space-y-2">
+                  <div className="px-5 py-4 space-y-3">
                     <p className="text-sm font-medium text-destructive">Danger Zone</p>
-                    <p className="text-xs text-muted-foreground">Permanently deletes all trades, journals, goals, and settings. Cannot be undone.</p>
-                    <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteConfirm(true)}>Delete All Data</Button>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Permanently deletes all trades, journals, goals, and settings from this device.</p>
+                      <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteConfirm(true)}>Delete All Data</Button>
+                    </div>
+                    {user && !isDemo && (
+                      <div className="pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground">Permanently delete your account, all cloud data, and cancel any active subscription. This cannot be undone.</p>
+                        <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteAccountConfirm(true)}>Delete My Account</Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
@@ -900,6 +931,22 @@ export default function Settings() {
           <div className="flex gap-3 mt-2">
             <Button variant="outline" className="flex-1" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
             <Button variant="destructive" className="flex-1" onClick={() => { setShowDeleteConfirm(false); clearAllData(); }}>Delete Everything</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete My Account Confirmation Dialog */}
+      <Dialog open={showDeleteAccountConfirm} onOpenChange={(open) => { if (!deletingAccount) setShowDeleteAccountConfirm(open); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Your Account?</DialogTitle>
+            <DialogDescription>This will permanently delete your account, all cloud-synced data, and cancel any active subscription. You will be signed out and this cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowDeleteAccountConfirm(false)} disabled={deletingAccount}>Cancel</Button>
+            <Button variant="destructive" className="flex-1" onClick={deleteMyAccount} disabled={deletingAccount}>
+              {deletingAccount ? 'Deleting...' : 'Delete My Account'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

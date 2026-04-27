@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.10.0',
+    date: '2026-04-27',
+    summary: 'You can now delete your account and all associated data directly from Settings.',
+    items: [
+      {
+        type: 'new',
+        text: 'Self-serve account deletion',
+        description: 'You can now permanently delete your account from Settings > Data > Danger Zone. This removes your Firebase Auth account, all Firestore data, cloud-synced data, and cancels any active Stripe subscription.',
+      },
+    ],
+  },
+  {
     version: '2.9.0',
     date: '2026-04-26',
     summary: 'PropTracker now supports multiple currencies, plus a community poll to help shape what comes next.',
