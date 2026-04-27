@@ -21,6 +21,14 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']);
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['votes']);
+
+      // Per-user vote record: users can read their own and create once
+      match /userVotes/{uid} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['option', 'votedAt']);
+        allow update, delete: if false;
+      }
     }
 
     match /users/{userId} {
