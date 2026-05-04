@@ -94,7 +94,7 @@ async function sendTrialStartedEmail(email: string, name: string | undefined, tr
     subject: "Your 14-day Pro trial has started",
     html,
     headers: {
-      'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+      'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   });
@@ -110,7 +110,7 @@ async function sendTrialEndingEmail(email: string, name: string | undefined, tri
     subject: "Your Pro trial ends in 2 days",
     html,
     headers: {
-      'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+      'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   });
@@ -302,7 +302,7 @@ export const sendDay3NudgeEmails = functions.pubsub
           subject: "Your journal is set up — log your first trade in 60 seconds",
           html,
           headers: {
-            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
           },
         });
@@ -394,7 +394,7 @@ export const sendDay7NudgeEmails = functions.pubsub
           subject: "A week in — have you logged a trade yet?",
           html,
           headers: {
-            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
           },
         });
@@ -445,7 +445,7 @@ export const sendDay14UpgradeEmails = functions.pubsub
           subject: "Two weeks of data — here's what Pro does with it",
           html,
           headers: {
-            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
           },
         });

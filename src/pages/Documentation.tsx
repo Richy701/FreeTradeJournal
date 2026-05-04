@@ -134,7 +134,7 @@ export default function Documentation() {
               </DocSection>
 
               <DocSection id="csv-import" title="CSV Import">
-                <p>Import trade history from any broker via CSV. Supports MetaTrader, TradingView, TopStep, and most prop firm formats with automatic field mapping and duplicate detection.</p>
+                <p>Import trade history from any broker via CSV. Supports MetaTrader, TradingView, TopStep, Tradovate, Interactive Brokers, and most prop firm formats with automatic field mapping and duplicate detection.</p>
               </DocSection>
 
               <DocSection id="analytics" title="Advanced Analytics">
@@ -193,7 +193,7 @@ export default function Documentation() {
                 <Accordion type="single" collapsible className="w-full">
                   {[
                     ['Is my trading data secure?', 'Data is stored locally on your device by default. Cloud sync uses industry-standard encryption, and your financial information never leaves your control without consent.'],
-                    ['What file formats can I import?', 'CSV files from most major brokers — MetaTrader, TradingView, Interactive Brokers, and common prop firm formats.'],
+                    ['What file formats can I import?', 'CSV files from most major brokers — MetaTrader, TradingView, Interactive Brokers, Tradovate, TopStep, and common prop firm formats.'],
                     ['Can I use this for tax reporting?', 'FreeTradeJournal provides detailed P&L calculations and exports, but always verify data accuracy and consult a tax professional.'],
                     ['Does FreeTradeJournal provide trading advice?', 'No. FreeTradeJournal is purely an analysis and journaling tool. All trading decisions remain your responsibility.'],
                     ['How do I export my data?', 'Go to Settings → Data Management to export trades, journal entries, and analytics in CSV, Excel, or JSON.'],

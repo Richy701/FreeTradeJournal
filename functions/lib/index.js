@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -123,7 +123,7 @@ async function sendTrialStartedEmail(email, name, trialEnd) {
         subject: "Your 14-day Pro trial has started",
         html,
         headers: {
-            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
     });
@@ -138,7 +138,7 @@ async function sendTrialEndingEmail(email, name, trialEnd) {
         subject: "Your Pro trial ends in 2 days",
         html,
         headers: {
-            'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
     });
@@ -311,7 +311,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
                 subject: "Your journal is set up — log your first trade in 60 seconds",
                 html,
                 headers: {
-                    'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+                    'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
                     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
                 },
             });
@@ -398,7 +398,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
                 subject: "A week in — have you logged a trade yet?",
                 html,
                 headers: {
-                    'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+                    'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
                     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
                 },
             });
@@ -446,7 +446,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
                 subject: "Two weeks of data — here's what Pro does with it",
                 html,
                 headers: {
-                    'List-Unsubscribe': '<mailto:richy@freetradejournal.com?subject=Unsubscribe>',
+                    'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
                     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
                 },
             });
@@ -1658,5 +1658,91 @@ exports.getSyncData = functions.https.onCall(async (_data, context) => {
         console.error(`[getSyncData] Error for ${uid}:`, err.message);
         throw new functions.https.HttpsError("internal", "Failed to get sync data.");
     }
+});
+// ─── Delete User Account ──────────────────────────────────
+exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const email = context.auth.token.email || "unknown";
+    console.log(`[deleteUserAccount] Starting deletion for ${uid} (${email})`);
+    // 1. Cancel Stripe subscription if exists
+    try {
+        const userDoc = await db.collection("users").doc(uid).get();
+        const userData = userDoc.data();
+        if (userData?.stripeCustomerId) {
+            const stripe = getStripe();
+            const subscriptions = await stripe.subscriptions.list({
+                customer: userData.stripeCustomerId,
+                status: "all",
+            });
+            for (const sub of subscriptions.data) {
+                if (["active", "trialing", "past_due"].includes(sub.status)) {
+                    await stripe.subscriptions.cancel(sub.id);
+                    console.log(`[deleteUserAccount] Cancelled Stripe subscription ${sub.id}`);
+                }
+            }
+        }
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Stripe cleanup error:`, err.message);
+        // Continue with deletion even if Stripe fails
+    }
+    // 2. Delete Firestore subcollections (sync, meta)
+    const subcollections = ["sync", "meta"];
+    for (const subcol of subcollections) {
+        const snapshot = await db.collection("users").doc(uid).collection(subcol).get();
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        if (snapshot.docs.length > 0) {
+            await batch.commit();
+            console.log(`[deleteUserAccount] Deleted ${snapshot.docs.length} docs from users/${uid}/${subcol}`);
+        }
+    }
+    // 3. Delete user's feedback docs
+    try {
+        const feedbackSnapshot = await db.collection("feedback").where("uid", "==", uid).get();
+        if (feedbackSnapshot.docs.length > 0) {
+            const batch = db.batch();
+            feedbackSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+            await batch.commit();
+            console.log(`[deleteUserAccount] Deleted ${feedbackSnapshot.docs.length} feedback docs`);
+        }
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Feedback cleanup error:`, err.message);
+    }
+    // 4. Delete user's testimonial docs
+    try {
+        const testimonialSnapshot = await db.collection("testimonials").where("uid", "==", uid).get();
+        if (testimonialSnapshot.docs.length > 0) {
+            const batch = db.batch();
+            testimonialSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
+            await batch.commit();
+            console.log(`[deleteUserAccount] Deleted ${testimonialSnapshot.docs.length} testimonial docs`);
+        }
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Testimonial cleanup error:`, err.message);
+    }
+    // 5. Delete main user document
+    await db.collection("users").doc(uid).delete();
+    console.log(`[deleteUserAccount] Deleted users/${uid}`);
+    // 6. Track deletion in PostHog
+    try {
+        await getPostHog().captureImmediate({
+            distinctId: uid,
+            event: "account deleted",
+            properties: { email },
+        });
+    }
+    catch (err) {
+        console.error("[deleteUserAccount] PostHog error:", err);
+    }
+    // 7. Delete Firebase Auth account (do this last)
+    await admin.auth().deleteUser(uid);
+    console.log(`[deleteUserAccount] Deleted Firebase Auth user ${uid}`);
+    return { ok: true };
 });
 //# sourceMappingURL=index.js.map

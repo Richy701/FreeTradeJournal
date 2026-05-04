@@ -79,7 +79,7 @@ export function TrialEndingEmail({ firstName, trialEndDate }: TrialEndingEmailPr
               {' · '}
               <Link href="https://www.freetradejournal.com/terms" style={footerLink}>Terms</Link>
               {' · '}
-              <Link href="mailto:richy@freetradejournal.com?subject=Unsubscribe" style={footerLink}>Unsubscribe</Link>
+              <Link href="mailto:hello@freetradejournal.com?subject=Unsubscribe" style={footerLink}>Unsubscribe</Link>
             </Text>
           </Section>
 

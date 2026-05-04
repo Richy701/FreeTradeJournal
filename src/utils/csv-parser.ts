@@ -368,6 +368,223 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
   return result;
 }
 
+// ─── Tradovate Detection & Parsing ─────────────────────────
+
+function isTradovateFormat(headers: string[]): boolean {
+  const h = headers.map(x => x.toLowerCase().trim());
+  return (
+    h.some(x => x === 'b/s') &&
+    h.some(x => x === 'product' || x === 'product description') &&
+    h.some(x => x === 'avg fill price' || x === 'avgprice') &&
+    h.some(x => x === 'filled qty' || x === 'filledqty') &&
+    h.some(x => x === 'status')
+  );
+}
+
+function parseTradovateTimestamp(ts: string): number {
+  if (!ts) return 0;
+  const cleaned = ts.replace(/\s*[+-]\d{2}:\d{2}\s*$/, '').trim();
+  // Try ISO-ish: "2026-04-02T22:42:07.000Z" or "2026-04-02 22:42:07"
+  const d = new Date(cleaned);
+  if (!isNaN(d.getTime())) return d.getTime();
+  // Try MM/DD/YYYY HH:MM:SS
+  const match = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+  if (match) {
+    const [, mm, dd, yyyy, hh, min, ss] = match;
+    return new Date(+yyyy, +mm - 1, +dd, +hh, +min, +ss).getTime();
+  }
+  return 0;
+}
+
+function parseTradovateOrders(lines: string[], headers: string[]): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false,
+    trades: [],
+    errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.toLowerCase().trim());
+  const col = {
+    buySell:     h.findIndex(x => x === 'b/s'),
+    contract:    h.findIndex(x => x === 'contract'),
+    product:     h.findIndex(x => x === 'product'),
+    avgPrice:    h.findIndex(x => x === 'avg fill price'),
+    avgPrice2:   h.findIndex(x => x === 'avgprice'),
+    filledQty:   h.findIndex(x => x === 'filled qty'),
+    filledQty2:  h.findIndex(x => x === 'filledqty'),
+    fillTime:    h.findIndex(x => x === 'fill time'),
+    date:        h.findIndex(x => x === 'date'),
+    status:      h.findIndex(x => x === 'status'),
+  };
+
+  interface TradovateFill {
+    symbol: string;
+    product: string;
+    side: 'Buy' | 'Sell';
+    price: number;
+    qty: number;
+    fillTime: string;
+    date: string;
+  }
+
+  const fills: TradovateFill[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    result.summary.totalRows++;
+
+    const fields = parseCSVLine(line);
+    const status = (fields[col.status] || '').trim();
+
+    if (status !== 'Filled') continue;
+
+    const buySell = (fields[col.buySell] || '').trim();
+    if (buySell !== 'Buy' && buySell !== 'Sell') {
+      result.errors.push(`Row ${i + 1}: Unexpected B/S value "${buySell}"`);
+      result.summary.failed++;
+      continue;
+    }
+
+    const priceIdx = col.avgPrice >= 0 ? col.avgPrice : col.avgPrice2;
+    const qtyIdx = col.filledQty >= 0 ? col.filledQty : col.filledQty2;
+    const price = parseFloat(fields[priceIdx] || '');
+    const qty = parseInt(fields[qtyIdx] || '', 10);
+
+    if (!price || isNaN(price) || !qty || qty <= 0) {
+      result.errors.push(`Row ${i + 1}: Missing price or quantity`);
+      result.summary.failed++;
+      continue;
+    }
+
+    const contract = (fields[col.contract] || '').trim();
+    const product = (fields[col.product] || '').trim();
+    const fillTime = col.fillTime >= 0 ? (fields[col.fillTime] || '').trim() : '';
+    const dateStr = col.date >= 0 ? (fields[col.date] || '').trim() : '';
+
+    fills.push({
+      symbol: contract || product,
+      product: product || contract.replace(/[FGHJKMNQUVXZ]\d{1,2}$/, ''),
+      side: buySell as 'Buy' | 'Sell',
+      price,
+      qty,
+      fillTime,
+      date: dateStr,
+    });
+  }
+
+  fills.sort((a, b) => {
+    const tA = parseTradovateTimestamp(a.fillTime) || parseTradovateTimestamp(a.date);
+    const tB = parseTradovateTimestamp(b.fillTime) || parseTradovateTimestamp(b.date);
+    return tA - tB;
+  });
+
+  // Group by product to pair buys with sells
+  const groups = new Map<string, TradovateFill[]>();
+  for (const fill of fills) {
+    const key = fill.product;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(fill);
+  }
+
+  const dates: string[] = [];
+
+  for (const [, productFills] of groups) {
+    // Net position tracking with FIFO queue
+    // Position > 0 = long, < 0 = short
+    type OpenEntry = { price: number; qty: number; fillTime: string; date: string; symbol: string };
+    const openQueue: OpenEntry[] = [];
+    let position = 0; // net signed position
+
+    for (const fill of productFills) {
+      const signedQty = fill.side === 'Buy' ? fill.qty : -fill.qty;
+      const prevPosition = position;
+      const newPosition = position + signedQty;
+
+      // Check if this fill is (partially) closing an existing position
+      // Closing = moving position toward zero (opposite direction of current position)
+      const isClosing = prevPosition !== 0 && Math.sign(signedQty) !== Math.sign(prevPosition);
+
+      if (isClosing) {
+        let closingQty = Math.min(Math.abs(signedQty), Math.abs(prevPosition));
+        const exitPrice = fill.price;
+        const isLong = prevPosition > 0;
+        const multiplier = getFuturesMultiplier(fill.symbol);
+
+        let remaining = closingQty;
+        while (remaining > 0 && openQueue.length > 0) {
+          const open = openQueue[0];
+          const matched = Math.min(remaining, open.qty);
+
+          const pnl = isLong
+            ? (exitPrice - open.price) * matched * multiplier
+            : (open.price - exitPrice) * matched * multiplier;
+
+          const tradeDate = parseDateString(fill.date || fill.fillTime || open.date);
+          dates.push(tradeDate);
+
+          result.trades.push({
+            symbol: fill.symbol,
+            side: isLong ? 'long' : 'short',
+            entryPrice: open.price.toFixed(6),
+            exitPrice: exitPrice.toFixed(6),
+            quantity: matched.toString(),
+            pnl: pnl.toFixed(2),
+            date: tradeDate,
+          });
+          result.summary.successfulParsed++;
+
+          remaining -= matched;
+          open.qty -= matched;
+          if (open.qty <= 0) openQueue.shift();
+        }
+
+        // If the fill flipped position (crossed zero), the remainder is a new opening
+        const overflowQty = Math.abs(signedQty) - closingQty;
+        if (overflowQty > 0) {
+          openQueue.push({
+            price: fill.price,
+            qty: overflowQty,
+            fillTime: fill.fillTime,
+            date: fill.date,
+            symbol: fill.symbol,
+          });
+        }
+      } else {
+        // Pure opening fill (same direction as position, or position is flat)
+        openQueue.push({
+          price: fill.price,
+          qty: fill.qty,
+          fillTime: fill.fillTime,
+          date: fill.date,
+          symbol: fill.symbol,
+        });
+      }
+
+      position = newPosition;
+    }
+
+    const unmatchedQty = openQueue.reduce((sum, o) => sum + o.qty, 0);
+    if (unmatchedQty > 0) {
+      result.errors.push(
+        `${productFills[0].product}: ${unmatchedQty} contract(s) still open (no matching close)`
+      );
+    }
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+
+  result.success = result.trades.length > 0;
+  if (!result.success) {
+    result.errors.push('No completed trades found. Ensure your Tradovate Orders export contains both opening and closing fills.');
+  }
+  return result;
+}
+
 // ─── TopStep Detection ───────────────────────────────────────
 
 // Detect if this is a TopStep order-level export
@@ -656,6 +873,9 @@ export function parseCSV(csvContent: string): CSVParseResult {
     }
     if (isTopStepOrderFormat(headers)) {
       return parseTopStepOrders(lines, headers);
+    }
+    if (isTradovateFormat(headers)) {
+      return parseTradovateOrders(lines, headers);
     }
 
     // Find column indices

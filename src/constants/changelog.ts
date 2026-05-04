@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.11.0',
+    date: '2026-05-04',
+    summary: 'Tradovate CSV import is here, plus a fix for the email unsubscribe link.',
+    items: [
+      {
+        type: 'new',
+        text: 'Tradovate import support',
+        description: 'Import your Tradovate Orders CSV and have trades automatically paired and P&L calculated. The parser detects the Tradovate format, filters for filled orders, and matches entries to exits using FIFO. All standard futures contracts are supported.',
+      },
+      {
+        type: 'fixed',
+        text: 'Unsubscribe link in emails returned invalid',
+        description: 'The unsubscribe link in marketing emails pointed to an address that did not exist. It now correctly routes to a monitored inbox.',
+      },
+    ],
+  },
+  {
     version: '2.10.0',
     date: '2026-04-27',
     summary: 'You can now delete your account and all associated data directly from Settings.',
