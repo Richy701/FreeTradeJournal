@@ -61,7 +61,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Require email verification only for accounts created after verification was introduced
   const verificationCutoff = new Date('2026-04-09T00:00:00Z').getTime();
-  const accountCreatedAt = user?.metadata.creationTime ? new Date(user.metadata.creationTime).getTime() : 0;
+  const accountCreatedAt = user?.metadata?.creationTime ? new Date(user.metadata.creationTime).getTime() : 0;
   if (!isDemo && user && !user.emailVerified && accountCreatedAt >= verificationCutoff) {
     return <Navigate to="/verify-email" replace />;
   }
