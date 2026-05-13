@@ -1,437 +1,280 @@
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { SEOMeta } from '@/components/seo-meta';
+import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/ui/footer-7';
 import { ThemeToggle } from '@/components/theme-toggle';
-import {
-  TrendingUp,
-  ArrowRight,
-  Shield,
-  Target,
-  Award,
-  BarChart3,
-  AlertTriangle,
-  CheckCircle,
-  Users,
-  Zap,
-  Trophy,
-  Calculator
-} from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { HeroGeometric } from '@/components/ui/shape-landing-hero';
+import { ArrowRight, X, Building2, Receipt, Target, Trophy, BarChart3, Infinity } from 'lucide-react';
+
+const FEATURES = [
+  {
+    icon: <Building2 className="h-5 w-5" />,
+    title: 'Account Tracking',
+    desc: 'Create a separate account for each evaluation or funded seat. Name it after your firm and challenge, set the type, and log trades against it.',
+  },
+  {
+    icon: <Receipt className="h-5 w-5" />,
+    title: 'PropTracker',
+    desc: 'Log every expense (eval fees, resets, subscriptions) and income (profit splits, payouts) per account. See your true net P&L and ROI across all firms.',
+  },
+  {
+    icon: <Target className="h-5 w-5" />,
+    title: 'Goal Setting',
+    desc: 'Set targets for max drawdown, max daily loss, win rate, and profit. Match them to your prop firm rules and see at a glance if you are within limits.',
+  },
+  {
+    icon: <Trophy className="h-5 w-5" />,
+    title: 'Multi-Firm',
+    desc: 'Works with FTMO, Apex, TopStep, MyFundedFX, E8 Funding, The5ers, and any other firm. You create the accounts and enter your details.',
+  },
+  {
+    icon: <BarChart3 className="h-5 w-5" />,
+    title: 'Full Analytics',
+    desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.',
+  },
+  {
+    icon: <Infinity className="h-5 w-5" />,
+    title: 'Free Forever',
+    desc: 'Account creation, trade logging, analytics, PropTracker, goal setting, CSV import, and the calendar heatmap — free, no credit card. Pro adds AI analysis, cloud sync, and exports.',
+  },
+];
+
+const FAQS = [
+  { q: 'How do I track prop firm accounts?', a: 'Create a separate account for each evaluation or funded seat. Name it after your firm and challenge (e.g. "FTMO 100k Challenge"), set the type to funded, and log trades against it.' },
+  { q: 'Which prop firms does this work with?', a: 'All of them. You create your own accounts and enter your firm\'s details, so it works with FTMO, Apex, TopStep, MyFundedFX, E8 Funding, The5ers, and any other firm.' },
+  { q: 'Can I track fees, resets, and payouts?', a: 'Yes. PropTracker lets you log every expense (eval fees, resets, subscriptions) and income (profit splits, payouts) per account. It calculates your true net P&L and ROI across all firms.' },
+  { q: 'Can I set drawdown and loss goals?', a: 'Yes. Set targets for max drawdown, max daily loss, win rate, and profit. Match them to your prop firm\'s rules so you can see at a glance if you are within limits.' },
+  { q: 'Can I track multiple accounts at once?', a: 'Yes. Each account is completely separate with its own trades, balance, and analytics. Switch between them from the sidebar and compare performance across firms.' },
+  { q: 'Is the prop firm dashboard free?', a: 'Yes. Account creation, trade logging, analytics, PropTracker, goal setting, CSV import, and the calendar heatmap are free forever. No credit card. Pro adds AI analysis, cloud sync, and exports.' },
+];
 
 export default function PropFirmDashboard() {
-  const { user, enterDemoMode } = useAuth();
+  const { enterDemoMode } = useAuth();
   const navigate = useNavigate();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  const propFirmFeatures = [
-    {
-      icon: <Shield className="h-8 w-8 text-red-500" />,
-      title: "Drawdown Management",
-      description: "Real-time tracking of daily and maximum drawdown limits. Never breach your prop firm rules again."
-    },
-    {
-      icon: <AlertTriangle className="h-8 w-8 text-yellow-500" />,
-      title: "Daily Loss Limit Alerts",
-      description: "Automatic warnings when approaching daily loss limits. Stay within your funded account rules."
-    },
-    {
-      icon: <Target className="h-8 w-8 text-green-500" />,
-      title: "Profit Target Tracking",
-      description: "Monitor progress toward evaluation profit targets. Track Phase 1, Phase 2, and funded account goals."
-    },
-    {
-      icon: <Trophy className="h-8 w-8 text-purple-500" />,
-      title: "Multi-Account Management",
-      description: "Track multiple prop firm accounts simultaneously. Compare performance across different firms."
-    },
-    {
-      icon: <BarChart3 className="h-8 w-8 text-blue-500" />,
-      title: "Evaluation Analytics",
-      description: "Detailed statistics for challenge and verification phases. Optimize your path to funding."
-    },
-    {
-      icon: <Calculator className="h-8 w-8 text-indigo-500" />,
-      title: "Payout Tracking",
-      description: "Track profit splits, payout history, and scaling plans. Monitor your funded trading income."
-    }
-  ];
-
-  const propFirms = [
-    "FTMO", "Apex Trader", "TopStep", "MyFundedFX", "E8 Funding", "The5ers",
-    "Funded Next", "True Forex Funds", "Surge Trader", "Lux Trading", "FTML", "Blue Guardian"
-  ];
-
-  const evaluationMetrics = [
-    { phase: "Challenge", target: "$10,000", current: "$7,250", progress: 72.5, days: "8/30" },
-    { phase: "Verification", target: "$5,000", current: "$3,800", progress: 76, days: "12/60" }
-  ];
+  useEffect(() => {
+    const sd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQS.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(sd);
+    script.id = 'faq-structured-data-prop-firm';
+    document.getElementById('faq-structured-data-prop-firm')?.remove();
+    document.head.appendChild(script);
+    return () => { document.getElementById('faq-structured-data-prop-firm')?.remove(); };
+  }, []);
 
   return (
     <>
-    <SEOMeta />
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-3">
-            <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 rounded-lg flex-shrink-0" />
-            <span className="text-xl font-bold">FreeTradeJournal</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Link to="/login">
-              <Button variant="outline">Sign In</Button>
+      <SEOMeta />
+      <StructuredData />
+      <div className="min-h-screen bg-background flex flex-col">
+
+        <header className="absolute top-0 left-0 right-0 z-50">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
+              <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
             </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="py-20 px-6 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/10 rounded-full text-sm font-medium text-amber-500 mb-4">
-              <Award className="h-4 w-4" />
-              Professional Prop Firm Dashboard - 100% Free
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base hidden sm:block">Pricing</Link>
+              <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base">Sign In</Link>
+              <ThemeToggle />
             </div>
-            
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              The Ultimate <span className="text-amber-500">Prop Firm Dashboard</span>
-              <br />for Funded Traders
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Track evaluations, manage drawdown limits, and monitor your funded accounts with the only journal 
-              built specifically for prop firm traders. Compatible with FTMO, Apex, TopStep, and all major firms.
-            </p>
+          </div>
+        </header>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-              <Button 
-                size="lg"
-                onClick={() => {
-                  enterDemoMode();
-                  navigate('/dashboard');
-                }}
-                className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6 shadow-lg hover:shadow-xl transition-[transform,box-shadow]"
-              >
-                Try Live Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+        <HeroGeometric
+          title1="Track Every Prop Firm"
+          title2="Challenge & Payout"
+          subtitle="Log trades, track eval fees and payouts, set drawdown goals, and see your true net P&L across every firm. Built for funded traders — free."
+          compact
+          cta={
+            <>
               <Link to="/signup">
-                <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6">
-                  Start Free Forever
+                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]">
+                  Start Tracking Free
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </div>
-
-            {/* Prop Firms */}
-            <div className="pt-8">
-              <p className="text-sm text-muted-foreground mb-3">Compatible with all major prop firms:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {propFirms.map((firm) => (
-                  <span key={firm} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm font-medium">
-                    {firm}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Evaluation Progress Dashboard */}
-      <section className="py-20 px-6 bg-secondary/20">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Real-Time Evaluation Tracking</h2>
-            <p className="text-lg text-muted-foreground">Monitor your progress through challenge and verification phases</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {evaluationMetrics.map((metric, index) => (
-              <Card key={index} className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold">{metric.phase}</h3>
-                  <span className="text-sm text-muted-foreground">Day {metric.days}</span>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">Profit Target</span>
-                      <span className="font-semibold">{metric.current} / {metric.target}</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-3">
-                      <div 
-                        className="bg-primary rounded-full h-3 transition-[width]"
-                        style={{ width: `${metric.progress}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">{metric.progress}% Complete</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Max Daily Loss</p>
-                      <p className="font-semibold text-green-500">$480 / $500</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Max Drawdown</p>
-                      <p className="font-semibold text-green-500">$950 / $1000</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-          
-          {/* Risk Monitoring Panel */}
-          <Card className="mt-6 p-6 border-yellow-500/50 bg-yellow-500/5">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="h-6 w-6 text-yellow-500" />
-              <h3 className="text-lg font-semibold">Active Risk Monitoring</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Today's P&L</span>
-                <span className="font-semibold text-green-500">+$285</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Daily Loss Remaining</span>
-                <span className="font-semibold">$215</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Max DD Remaining</span>
-                <span className="font-semibold">$715</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-20 px-6">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Features Built for Prop Firm Success</h2>
-            <p className="text-lg text-muted-foreground">Everything you need to pass evaluations and manage funded accounts</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {propFirmFeatures.map((feature, index) => (
-              <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
-                <div className="mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Prop Firm Specific Benefits */}
-      <section className="py-20 px-6 bg-secondary/20">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold">Why Prop Traders Choose FreeTradeJournal</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">Never Breach Rules Again</h3>
-                    <p className="text-muted-foreground">Real-time alerts before hitting drawdown or daily loss limits. Protect your funded account.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">Multi-Firm Support</h3>
-                    <p className="text-muted-foreground">Track FTMO, Apex, TopStep, and 20+ other prop firms in one dashboard.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">Evaluation Optimizer</h3>
-                    <p className="text-muted-foreground">AI-powered insights to help you pass challenges faster and more consistently.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">Scaling Plan Tracker</h3>
-                    <p className="text-muted-foreground">Monitor your progress through scaling plans. Track account growth from $10k to $1M+.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-1">Payout Analytics</h3>
-                    <p className="text-muted-foreground">Track profit splits, payout history, and calculate your monthly trading income.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-6">
-              <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5">
-                <div className="flex items-center gap-3 mb-4">
-                  <Trophy className="h-6 w-6 text-green-500" />
-                  <h3 className="text-lg font-semibold">Success Rate Tracker</h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Challenges Passed</span>
-                    <span className="font-semibold">12/15 (80%)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Active Funded Accounts</span>
-                    <span className="font-semibold">4</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Funding</span>
-                    <span className="font-semibold text-green-500">$450,000</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Lifetime Payouts</span>
-                    <span className="font-semibold text-green-500">$28,500</span>
-                  </div>
-                </div>
-              </Card>
-              
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Prop Firm Compatibility</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {["FTMO", "Apex Trader", "TopStep", "MyFundedFX", "E8 Funding", "The5ers"].map((firm) => (
-                    <div key={firm} className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{firm}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground mt-4">+ 15 more prop firms supported</p>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonial */}
-      <section className="py-20 px-6">
-        <div className="container mx-auto max-w-4xl">
-          <Card className="p-8 bg-amber-500/5">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="h-5 w-5 text-amber-500" />
-              <span className="text-sm font-medium text-amber-500">Funded Trader Success Story</span>
-            </div>
-            <blockquote className="text-lg italic mb-4">
-              "FreeTradeJournal helped me pass 3 FTMO challenges in a row. The drawdown alerts saved my account multiple times. 
-              Now managing $300k in funded capital and the multi-account dashboard is a game-changer."
-            </blockquote>
-            <p className="font-semibold">- Alex M., Professional Prop Trader</p>
-          </Card>
-        </div>
-      </section>
-
-      {/* Related Tools */}
-      <section className="py-12 px-6">
-        <div className="container mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold mb-6 text-center">Explore More Trading Tools</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Link to="/forex-trading-journal">
-              <Card className="p-5 hover:shadow-lg transition-shadow">
-                <h3 className="font-semibold mb-1">Forex Trading Journal</h3>
-                <p className="text-sm text-muted-foreground">Track every pip across all major, minor, and exotic currency pairs with session analysis.</p>
-              </Card>
-            </Link>
-            <Link to="/futures-trading-tracker">
-              <Card className="p-5 hover:shadow-lg transition-shadow">
-                <h3 className="font-semibold mb-1">Futures Trading Tracker</h3>
-                <p className="text-sm text-muted-foreground">Track ES, NQ, CL, GC and all major futures contracts with tick-level precision.</p>
-              </Card>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-6 bg-amber-500/5">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold mb-4">Start Your Prop Trading Journey Right</h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            Join thousands of funded traders who track their evaluations and manage their accounts with FreeTradeJournal.
-            No credit card required. Free forever.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg"
-              onClick={() => {
-                enterDemoMode();
-                navigate('/dashboard');
-              }}
-              className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6"
-            >
-              View Live Demo
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Link to="/signup">
-              <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-6">
-                Create Free Account
+              <Button
+                variant="outline"
+                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                onClick={() => { enterDemoMode(); navigate('/dashboard'); }}
+              >
+                Try Live Demo
               </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+            </>
+          }
+        />
 
-      <Footer7
-        logo={{ url: "/", src: "", alt: "FreeTradeJournal Logo", title: "FreeTradeJournal" }}
-        description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
-        sections={[
-          {
-            title: "Product",
-            links: [
-              { name: "Features", href: "/#features" },
-              { name: "Pricing", href: "/pricing" },
-              { name: "Documentation", href: "/documentation" },
-              { name: "Changelog", href: "/changelog" },
-              { name: "Blog", href: "https://blog.freetradejournal.com" },
-            ],
-          },
-          {
-            title: "Trading Tools",
-            links: [
-              { name: "Forex Trading Journal", href: "/forex-trading-journal" },
-              { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
-              { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
-              { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
-            ],
-          },
-          {
-            title: "Legal",
-            links: [
-              { name: "Privacy Policy", href: "/privacy" },
-              { name: "Terms & Conditions", href: "/terms" },
-              { name: "Cookie Policy", href: "/cookie-policy" },
-            ],
-          },
-        ]}
-        socialLinks={[
-          {
-            icon: <svg className="size-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
-            href: "https://x.com/richytiup",
-            label: "Follow on X",
-          },
-        ]}
-        copyright="© 2026 FreeTradeJournal. All rights reserved."
-        legalLinks={[]}
-      />
-    </div>
+        <section className="pb-16 px-6 bg-background">
+          <div className="container mx-auto max-w-5xl">
+            <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">What it looks like</p>
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className="w-full block rounded-2xl overflow-hidden border border-amber-500/20 shadow-2xl shadow-amber-500/5 ring-1 ring-white/5 cursor-zoom-in group relative"
+              aria-label="View full screenshot"
+            >
+              <img
+                src="/images/screenshots/goals-risk-management-screenshot.png"
+                alt="FreeTradeJournal prop firm goal tracking — drawdown limits, daily loss targets, and win rate goals"
+                className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-transparent transition-colors duration-300 flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full tracking-wide">
+                  Click to expand
+                </span>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        {lightboxOpen && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 sm:p-8"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-2"
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Close"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img
+              src="/images/screenshots/goals-risk-management-screenshot.png"
+              alt="FreeTradeJournal prop firm goal tracking — drawdown limits, daily loss targets, and win rate goals"
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+
+        <section className="py-24 px-6 bg-background">
+          <div className="container mx-auto max-w-5xl">
+
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">What you get</p>
+                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                  Stop guessing.<br />
+                  <span className="text-amber-500">Know your real numbers.</span>
+                </h2>
+              </div>
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                Every eval fee, reset, and payout tracked. One clear number that tells you if prop trading is working.
+              </p>
+            </div>
+
+            <div className="divide-y divide-border/40">
+              {FEATURES.map((f, i) => (
+                <div key={f.title} className="flex items-start gap-6 py-5 group">
+                  <span className="text-[11px] font-mono text-amber-500/50 pt-0.5 w-6 shrink-0 select-none">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-10 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 sm:w-44 shrink-0">
+                      <span className="text-amber-500">{f.icon}</span>
+                      <h3 className="font-semibold text-foreground text-sm">{f.title}</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 flex flex-col sm:flex-row gap-4">
+              <Link to="/signup">
+                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-8 py-2.5 rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
+                  Start Tracking Free
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground text-sm px-4"
+                onClick={() => { enterDemoMode(); navigate('/dashboard'); }}
+              >
+                Try the live demo first →
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-24 px-6 bg-background">
+          <div className="container mx-auto max-w-5xl">
+
+            <div className="mb-8 border-b border-border/50 pb-8">
+              <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">FAQ</p>
+              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                Common questions.<br />
+                <span className="text-amber-500">Straight answers.</span>
+              </h2>
+            </div>
+
+            <div className="divide-y divide-border/40">
+              {FAQS.map((f, i) => (
+                <div key={i} className="flex items-start gap-6 py-5">
+                  <span className="text-[11px] font-mono text-amber-500/50 pt-0.5 w-6 shrink-0 select-none">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div className="flex flex-col gap-2 flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-sm">{f.q}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{f.a}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <Footer7
+          logo={{ url: "/", src: "", alt: "FreeTradeJournal Logo", title: "FreeTradeJournal" }}
+          description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
+          sections={[
+            {
+              title: "Product",
+              links: [
+                { name: "Features", href: "/#features" },
+                { name: "Pricing", href: "/pricing" },
+                { name: "Documentation", href: "/documentation" },
+                { name: "Changelog", href: "/changelog" },
+                { name: "Blog", href: "https://blog.freetradejournal.com" },
+              ],
+            },
+            {
+              title: "Trading Tools",
+              links: [
+                { name: "Forex Trading Journal", href: "/forex-trading-journal" },
+                { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
+                { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
+                { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
+              ],
+            },
+            {
+              title: "Legal",
+              links: [
+                { name: "Privacy Policy", href: "/privacy" },
+                { name: "Terms & Conditions", href: "/terms" },
+                { name: "Cookie Policy", href: "/cookie-policy" },
+              ],
+            },
+          ]}
+          socialLinks={[
+            {
+              icon: <svg className="size-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
+              href: "https://x.com/richytiup",
+              label: "Follow on X",
+            },
+          ]}
+          copyright="&copy; 2026 FreeTradeJournal. All rights reserved."
+          legalLinks={[]}
+        />
+      </div>
     </>
   );
 }
