@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
 import { useAuth } from '@/contexts/auth-context';
 import { useSync } from '@/contexts/sync-context';
+import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
 
 export interface TradingAccount {
@@ -46,6 +47,11 @@ export function AccountProvider({ children }: AccountProviderProps) {
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [activeAccount, setActiveAccountState] = useState<TradingAccount | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [syncVersion, setSyncVersion] = useState(() => getChangeVersion());
+  useEffect(() => {
+    return onSyncChange(() => setSyncVersion(getChangeVersion()));
+  }, []);
 
   // Load accounts from user-scoped localStorage (waits for cloud sync if applicable)
   useEffect(() => {
@@ -120,7 +126,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
 
     migrateTradesToAccountId();
     setLoading(false);
-  }, [userId, initialSyncDone]);
+  }, [userId, initialSyncDone, syncVersion]);
 
   // Save accounts whenever they change
   useEffect(() => {

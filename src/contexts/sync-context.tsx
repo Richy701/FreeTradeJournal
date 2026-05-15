@@ -49,8 +49,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const engineRef = useRef<SyncEngine | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  // Start with true for faster initial load - sync will update in background
-  const [initialSyncDone, setInitialSyncDone] = useState(true);
+  const [initialSyncDone, setInitialSyncDone] = useState(false);
 
   useEffect(() => {
     // Clean up previous engine
@@ -89,6 +88,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setLastSyncTime(engine.lastSyncTime);
     });
 
+    // Signal initial sync done only after pull completes (or all retries exhausted)
+    const unsubInitial = engine.onInitialPullDone(() => {
+      setInitialSyncDone(true);
+    });
+
     // Listen for remote data changes → bump version so React re-reads
     const unsubChange = engine.onChange(() => {
       bumpVersion();
@@ -99,6 +103,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     return () => {
       unsubStatus();
+      unsubInitial();
       unsubChange();
       engine.disable();
       setSyncRef(null);

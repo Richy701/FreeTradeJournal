@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
-import { getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { UserStorage } from '@/utils/user-storage';
 import { notifyDataChange } from '@/contexts/sync-context';
 
@@ -50,7 +49,8 @@ export function useAutoRestore() {
 
         for (const [key, value] of Object.entries(syncData)) {
           if (value) {
-            UserStorage.setItem(userId, key, value);
+            const scopedKey = `user_${userId}_${key}`;
+            localStorage.setItem(scopedKey, value);
             restoredAny = true;
             console.log(`[AutoRestore] Restored ${key} from Firestore`);
           }

@@ -24,6 +24,8 @@ export class SyncEngine {
   private maxRetries = 3;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private _initialPullDone = false;
+  private initialPullCallbacks: Set<() => void> = new Set();
 
   constructor(uid: string) {
     this.uid = uid;
@@ -31,6 +33,20 @@ export class SyncEngine {
 
   get status() { return this._status; }
   get lastSyncTime() { return this._lastSyncTime; }
+  get initialPullDone() { return this._initialPullDone; }
+
+  onInitialPullDone(cb: () => void) {
+    if (this._initialPullDone) { cb(); return () => {}; }
+    this.initialPullCallbacks.add(cb);
+    return () => { this.initialPullCallbacks.delete(cb); };
+  }
+
+  private markInitialPullDone() {
+    if (this._initialPullDone) return;
+    this._initialPullDone = true;
+    this.initialPullCallbacks.forEach(cb => cb());
+    this.initialPullCallbacks.clear();
+  }
 
   onStatusChange(cb: () => void) {
     this.statusListeners.add(cb);
@@ -100,12 +116,12 @@ export class SyncEngine {
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');
-      console.log('[Sync] ✅ Cloud Function polling enabled (content blocker bypass active)');
+      this.markInitialPullDone();
+      console.log('[Sync] Cloud Function polling enabled');
     } catch (err) {
       console.error('SyncEngine enable failed:', err);
       this.setStatus('error');
 
-      // Retry with exponential backoff (1s, 2s, 4s)
       if (this.retryCount < this.maxRetries) {
         this.retryCount++;
         const delay = Math.pow(2, this.retryCount - 1) * 1000;
@@ -115,6 +131,7 @@ export class SyncEngine {
         }, delay);
       } else {
         console.warn('Sync failed after max retries. Please check your internet connection.');
+        this.markInitialPullDone();
       }
     }
   }
@@ -171,11 +188,24 @@ export class SyncEngine {
     if (!SYNC_KEYS.includes(key as SyncKey)) return;
 
     // CRITICAL: Never sync empty arrays - this prevents data loss
-    // Empty arrays from fresh onboarding should NOT overwrite real data in Firestore
     const isEmpty = data === '[]' || data === '{}' || data === '' || data === 'null';
     if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
       console.warn(`[Sync] Blocked empty ${key} from syncing to prevent data loss`);
       return;
+    }
+
+    // CRITICAL: Never sync default-only accounts before initial pull completes
+    // This prevents a race condition where a freshly created default account
+    // overwrites real accounts in Firestore on new devices / cleared cache
+    if (key === 'accounts' && !this._initialPullDone) {
+      try {
+        const parsed = JSON.parse(data);
+        const allDefaults = Array.isArray(parsed) && parsed.every((a: any) => a.id?.startsWith('default-'));
+        if (allDefaults) {
+          console.warn('[Sync] Blocked default-only accounts from syncing before initial pull');
+          return;
+        }
+      } catch { /* parse error, let it through */ }
     }
 
     try {
@@ -231,5 +261,6 @@ export class SyncEngine {
     // Notify status listeners before clearing them
     this.setStatus('idle');
     this.statusListeners.clear();
+    this.initialPullCallbacks.clear();
   }
 }

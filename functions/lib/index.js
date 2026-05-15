@@ -1613,6 +1613,29 @@ exports.syncData = functions.https.onCall(async (data, context) => {
         console.warn(`[syncData] Blocked empty ${key} from syncing for ${uid}`);
         return { success: false, reason: 'empty_data_blocked' };
     }
+    // CRITICAL: Don't let a default-only account list overwrite real accounts
+    // that are referenced by existing trades
+    if (key === 'accounts') {
+        try {
+            const incoming = JSON.parse(value);
+            const allDefaults = Array.isArray(incoming) && incoming.length > 0 &&
+                incoming.every((a) => a.id?.startsWith('default-'));
+            if (allDefaults) {
+                const tradesDoc = await db.collection('users').doc(uid).collection('sync').doc('trades').get();
+                if (tradesDoc.exists) {
+                    const trades = JSON.parse(tradesDoc.data()?.data || '[]');
+                    const tradeAccountIds = new Set(trades.map((t) => t.accountId).filter(Boolean));
+                    const incomingIds = new Set(incoming.map((a) => a.id));
+                    const hasOrphanedTrades = [...tradeAccountIds].some(id => !incomingIds.has(id));
+                    if (hasOrphanedTrades) {
+                        console.warn(`[syncData] Blocked default-only accounts from overwriting trade-linked accounts for ${uid}`);
+                        return { success: false, reason: 'would_orphan_trades' };
+                    }
+                }
+            }
+        }
+        catch { /* parse error, let it through */ }
+    }
     try {
         await db.collection('users').doc(uid).collection('sync').doc(key).set({
             data: value,
