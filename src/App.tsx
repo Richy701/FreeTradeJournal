@@ -19,6 +19,9 @@ import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
 import { Toaster } from 'sonner';
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
+import { PostHogProvider } from 'posthog-js/react';
+import { posthog } from '@/lib/posthog';
+import { PostHogTracker } from '@/components/PostHogTracker';
 import { initGA } from '@/lib/analytics';
 import Layout from '@/components/Layout';
 
@@ -62,6 +65,7 @@ function App() {
   }, []);
 
   return (
+    <PostHogProvider client={posthog}>
     <ThemeProvider defaultTheme="dark" storageKey="ftj-theme">
       <ThemePresetsProvider>
         <AuthProvider>
@@ -70,6 +74,7 @@ function App() {
           <AccountProvider>
             <SettingsProvider>
               <Router>
+            <PostHogTracker />
             <ScrollToTop />
             <SEOMeta />
             <StructuredData />
@@ -138,6 +143,7 @@ function App() {
         </AuthProvider>
       </ThemePresetsProvider>
     </ThemeProvider>
+    </PostHogProvider>
   );
 }
 

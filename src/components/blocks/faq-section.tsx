@@ -67,13 +67,13 @@ export function FAQSection() {
     script.type = 'application/ld+json';
     script.text = JSON.stringify(faqStructuredData);
     script.id = 'faq-structured-data';
-    
+
     // Remove existing script if present
     const existingScript = document.getElementById('faq-structured-data');
     if (existingScript) {
       document.head.removeChild(existingScript);
     }
-    
+
     document.head.appendChild(script);
 
     return () => {

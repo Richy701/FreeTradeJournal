@@ -4,6 +4,7 @@ import { Cookie, X, Shield, ChartBar, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { updatePostHogConsent } from '@/lib/posthog';
 
 export const CookieConsent = () => {
   const [showBanner, setShowBanner] = useState(false);
@@ -23,6 +24,7 @@ export const CookieConsent = () => {
       functional: true,
       timestamp: new Date().toISOString()
     }));
+    updatePostHogConsent(true);
     setShowBanner(false);
   };
 
@@ -33,6 +35,7 @@ export const CookieConsent = () => {
       functional: false,
       timestamp: new Date().toISOString()
     }));
+    updatePostHogConsent(false);
     setShowBanner(false);
   };
 
