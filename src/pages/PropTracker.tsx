@@ -35,6 +35,13 @@ import {
   ListChecks,
   BarChart2,
   Upload,
+  Tag,
+  RefreshCw,
+  Target,
+  Shield,
+  Trophy,
+  Calculator,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -76,6 +83,8 @@ import type {
   PropAccountStatus,
   PropCurrency,
   TransactionType,
+  ChallengeRules,
+  ChallengeProgress,
 } from '@/types/prop-tracker'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -84,16 +93,18 @@ const PROP_FIRMS = [
   'TopStep',
   'Apex Trader Funding',
   'My Funded Futures (MFFU)',
-  'Bulenox',
   'FTMO',
   'The5ers',
-  'E8 Funding',
-  'Earn2Trade',
-  'Leeloo Trading',
+  'E8 Markets',
   'FundedNext',
-  'True Forex Funds',
   'Funded Trading Plus',
   'Tradeday',
+  'Tradeify',
+  'Take Profit Trader',
+  'Funding Pips',
+  'Lucid Trading',
+  'Alpha Futures',
+  'Aqua Funded',
   'Custom...',
 ] as const
 
@@ -148,16 +159,18 @@ const FIRM_BRAND_COLORS: Record<string, string> = {
   'TopStep':                    '#FFCC06',
   'Apex Trader Funding':        '#007BFF',
   'My Funded Futures (MFFU)':   '#D8AE5E',
-  'Bulenox':                    '#3498DB',
   'FTMO':                       '#0781FE',
   'The5ers':                    '#FFD000',
-  'E8 Funding':                 '#30D5F1',
-  'Earn2Trade':                 '#FF6700',
-  'Leeloo Trading':             '#DC342E',
+  'E8 Markets':                 '#30D5F1',
   'FundedNext':                 '#635BFF',
-  'True Forex Funds':           '#4169E1',
   'Funded Trading Plus':        '#4169E1',
   'Tradeday':                   '#4D65FF',
+  'Tradeify':                   '#00C853',
+  'Take Profit Trader':         '#22C55E',
+  'Funding Pips':               '#1E3A5F',
+  'Lucid Trading':              '#FFFFFF',
+  'Alpha Futures':              '#00E676',
+  'Aqua Funded':                '#2979FF',
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -205,6 +218,11 @@ function defaultAccountForm() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     notes: '',
+    rulesEnabled: false,
+    profitTarget: '',
+    maxDailyDrawdown: '',
+    maxTotalDrawdown: '',
+    minTradingDays: '',
   }
 }
 
@@ -216,6 +234,91 @@ function defaultTxForm(accountId = '') {
     description: '',
     date: new Date().toISOString().split('T')[0],
   }
+}
+
+// ─── Firm Logos ──────────────────────────────────────────────────────────────
+
+const FIRM_LOGOS: Record<string, string> = {
+  'TopStep':                    '/images/firms/topstep.png',
+  'Apex Trader Funding':        '/images/firms/apex.png',
+  'My Funded Futures (MFFU)':   '/images/firms/mffu.png',
+  'FTMO':                       '/images/firms/ftmo.png',
+  'The5ers':                    '/images/firms/the5ers.png',
+  'FundedNext':                 '/images/firms/fundednext.png',
+  'Funded Trading Plus':        '/images/firms/fundedplus.png',
+  'Tradeday':                   '/images/firms/tradeday.png',
+  'Tradeify':                   '/images/firms/tradeify.png',
+  'Funding Pips':               '/images/firms/fundingpips.png',
+  'Alpha Futures':              '/images/firms/alphafutures.png',
+  'Lucid Trading':              '/images/firms/lucidtrading.png',
+  'E8 Markets':                 '/images/firms/e8markets.png',
+  'Aqua Funded':                '/images/firms/aquafunded.png',
+  'Take Profit Trader':         '/images/firms/takeprofittrader.png',
+}
+
+// ─── Challenge Rules ─────────────────────────────────────────────────────────
+
+const FIRM_RULE_PRESETS: Record<string, { profitTarget: number; maxDailyDrawdown: number; maxTotalDrawdown: number; minTradingDays?: number }> = {
+  'FTMO':                     { profitTarget: 10, maxDailyDrawdown: 5,   maxTotalDrawdown: 10, minTradingDays: 4 },
+  'The5ers':                  { profitTarget: 8,  maxDailyDrawdown: 5,   maxTotalDrawdown: 10, minTradingDays: 3 },
+  'Apex Trader Funding':      { profitTarget: 5,  maxDailyDrawdown: 0,   maxTotalDrawdown: 6 },
+  'TopStep':                  { profitTarget: 6,  maxDailyDrawdown: 4,   maxTotalDrawdown: 5 },
+  'FundedNext':               { profitTarget: 10, maxDailyDrawdown: 5,   maxTotalDrawdown: 10, minTradingDays: 5 },
+  'E8 Markets':               { profitTarget: 6,  maxDailyDrawdown: 3,   maxTotalDrawdown: 4 },
+  'Tradeday':                 { profitTarget: 6,  maxDailyDrawdown: 0,   maxTotalDrawdown: 5 },
+  'Tradeify':                 { profitTarget: 6,  maxDailyDrawdown: 0,   maxTotalDrawdown: 4 },
+  'Take Profit Trader':       { profitTarget: 6,  maxDailyDrawdown: 0,   maxTotalDrawdown: 4, minTradingDays: 5 },
+  'Funding Pips':             { profitTarget: 8,  maxDailyDrawdown: 4,   maxTotalDrawdown: 8, minTradingDays: 5 },
+  'Lucid Trading':            { profitTarget: 8,  maxDailyDrawdown: 5,   maxTotalDrawdown: 10 },
+  'Alpha Futures':            { profitTarget: 6,  maxDailyDrawdown: 0,   maxTotalDrawdown: 4 },
+  'Aqua Funded':              { profitTarget: 8,  maxDailyDrawdown: 5,   maxTotalDrawdown: 8 },
+}
+
+type HealthStatus = 'green' | 'amber' | 'red'
+
+function getChallengeStatus(account: PropFirmAccount) {
+  const rules = account.challengeRules
+  const progress = account.challengeProgress
+  if (!rules || !progress) return null
+
+  const { accountSize } = account
+  const { currentBalance, highWaterMark, todayPnL, tradingDaysCount } = progress
+
+  const profitGain = currentBalance - accountSize
+  const profitPct = rules.profitTarget > 0 ? Math.min((profitGain / rules.profitTarget) * 100, 100) : 0
+
+  const totalDDDollars = Math.max(0, highWaterMark - currentBalance)
+  const maxTotalDDDollars = (rules.maxTotalDrawdown / 100) * accountSize
+  const totalDDUsedPct = maxTotalDDDollars > 0 ? (totalDDDollars / maxTotalDDDollars) * 100 : 0
+
+  const dailyDDDollars = todayPnL !== undefined && todayPnL < 0 ? Math.abs(todayPnL) : 0
+  const maxDailyDDDollars = rules.maxDailyDrawdown > 0 ? (rules.maxDailyDrawdown / 100) * accountSize : 0
+  const dailyDDUsedPct = maxDailyDDDollars > 0 ? (dailyDDDollars / maxDailyDDDollars) * 100 : 0
+
+  const tradingDaysPct = rules.minTradingDays ? Math.min((tradingDaysCount / rules.minTradingDays) * 100, 100) : null
+
+  let health: HealthStatus = 'green'
+  if (totalDDUsedPct >= 80 || dailyDDUsedPct >= 80) health = 'red'
+  else if (totalDDUsedPct >= 50 || dailyDDUsedPct >= 50) health = 'amber'
+
+  return {
+    profitGain, profitPct,
+    totalDDDollars, totalDDUsedPct, maxTotalDDDollars,
+    dailyDDDollars, dailyDDUsedPct, maxDailyDDDollars,
+    tradingDaysCount, tradingDaysPct,
+    health,
+  }
+}
+
+function ddBarColor(usedPct: number, themeColors: { profit: string; loss: string }) {
+  if (usedPct >= 80) return themeColors.loss
+  if (usedPct >= 50) return '#f59e0b'
+  return themeColors.profit
+}
+
+function profitBarColor(pct: number, themeColors: { profit: string; primary: string }) {
+  if (pct >= 100) return themeColors.profit
+  return themeColors.primary
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -230,6 +333,7 @@ export default function PropTracker() {
   const [accounts, setAccounts] = useState<PropFirmAccount[]>([])
   const [transactions, setTransactions] = useState<PropFirmTransaction[]>([])
   const [tipDismissed, setTipDismissed] = useState(false)
+  const [showDealsBanner, setShowDealsBanner] = useState(() => !localStorage.getItem('ftj-dismiss-deals-pt'))
 
   useEffect(() => {
     if (isDemo) {
@@ -353,7 +457,7 @@ export default function PropTracker() {
         return tx
       })
       const skipped = deduped.filter(t => !t.keep).length
-      if (skipped > 0) toast.info(`${skipped} duplicate${skipped !== 1 ? 's' : ''} found — pre-unchecked`)
+      if (skipped > 0) toast.info(`${skipped} duplicate${skipped !== 1 ? 's' : ''} found, pre-unchecked`)
       setImportDialog(p => ({ ...p, loading: false, step: 'preview', parsed: deduped }))
     } catch (err: unknown) {
       toast.error((err as { message?: string })?.message || 'Failed to parse screenshot')
@@ -404,6 +508,7 @@ export default function PropTracker() {
   function openEditAccount(account: PropFirmAccount) {
     const isCustomFirm = !PROP_FIRMS.slice(0, -1).includes(account.firmName as typeof PROP_FIRMS[number])
     const isCustomSize = !ACCOUNT_SIZES.includes(account.accountSize)
+    const rules = account.challengeRules
     setAccountForm({
       firmName: isCustomFirm ? 'Custom...' : account.firmName,
       customFirm: isCustomFirm ? account.firmName : '',
@@ -415,6 +520,11 @@ export default function PropTracker() {
       startDate: account.startDate,
       endDate: account.endDate ?? '',
       notes: account.notes ?? '',
+      rulesEnabled: !!rules,
+      profitTarget: rules ? String(rules.profitTarget) : '',
+      maxDailyDrawdown: rules ? String(rules.maxDailyDrawdown) : '',
+      maxTotalDrawdown: rules ? String(rules.maxTotalDrawdown) : '',
+      minTradingDays: rules?.minTradingDays ? String(rules.minTradingDays) : '',
     })
     setAccountDialog({ open: true, editing: account })
   }
@@ -427,12 +537,33 @@ export default function PropTracker() {
     if (!accountSize || accountSize <= 0) { toast.error('Account size must be greater than 0'); return }
     if (!accountForm.startDate) { toast.error('Start date is required'); return }
 
+    let challengeRules: ChallengeRules | undefined
+    if (accountForm.rulesEnabled) {
+      const profitTarget = Number(accountForm.profitTarget)
+      const maxDailyDrawdown = Number(accountForm.maxDailyDrawdown) || 0
+      const maxTotalDrawdown = Number(accountForm.maxTotalDrawdown)
+      if (!profitTarget || profitTarget <= 0) { toast.error('Profit target is required when rules are enabled'); return }
+      if (!maxTotalDrawdown || maxTotalDrawdown <= 0) { toast.error('Max total drawdown is required when rules are enabled'); return }
+      challengeRules = {
+        profitTarget,
+        maxDailyDrawdown,
+        maxTotalDrawdown,
+        ...(Number(accountForm.minTradingDays) > 0 ? { minTradingDays: Number(accountForm.minTradingDays) } : {}),
+      }
+    }
+
     if (accountDialog.editing) {
-      saveAccounts(accounts.map(a =>
-        a.id === accountDialog.editing!.id
-          ? { ...a, firmName, accountSize, currency: accountForm.currency, accountType: accountForm.accountType, status: accountForm.status, startDate: accountForm.startDate, endDate: accountForm.endDate || undefined, notes: accountForm.notes || undefined }
-          : a
-      ))
+      saveAccounts(accounts.map(a => {
+        if (a.id !== accountDialog.editing!.id) return a
+        const updated = { ...a, firmName, accountSize, currency: accountForm.currency, accountType: accountForm.accountType, status: accountForm.status, startDate: accountForm.startDate, endDate: accountForm.endDate || undefined, notes: accountForm.notes || undefined, challengeRules }
+        if (challengeRules && !a.challengeProgress) {
+          updated.challengeProgress = { currentBalance: accountSize, highWaterMark: accountSize, tradingDaysCount: 0, lastUpdated: '' }
+        }
+        if (!challengeRules) {
+          updated.challengeProgress = undefined
+        }
+        return updated
+      }))
       toast.success('Account updated')
     } else {
       saveAccounts([...accounts, {
@@ -445,6 +576,8 @@ export default function PropTracker() {
         startDate: accountForm.startDate,
         endDate: accountForm.endDate || undefined,
         notes: accountForm.notes || undefined,
+        challengeRules,
+        challengeProgress: challengeRules ? { currentBalance: accountSize, highWaterMark: accountSize, tradingDaysCount: 0, lastUpdated: '' } : undefined,
         createdAt: new Date().toISOString(),
       }])
       toast.success('Account added')
@@ -490,6 +623,50 @@ export default function PropTracker() {
     saveTransactions(transactions.filter(t => t.id !== id))
     setDeleteDialog(null)
     toast.success('Transaction deleted')
+  }
+
+  // ── Balance update ──
+  const [balanceDialog, setBalanceDialog] = useState<{
+    open: boolean
+    accountId: string
+    balance: string
+    todayPnL: string
+    tradingDays: string
+  }>({ open: false, accountId: '', balance: '', todayPnL: '', tradingDays: '' })
+
+  function openBalanceDialog(account: PropFirmAccount) {
+    const progress = account.challengeProgress
+    setBalanceDialog({
+      open: true,
+      accountId: account.id,
+      balance: progress ? String(progress.currentBalance) : String(account.accountSize),
+      todayPnL: '',
+      tradingDays: progress ? String(progress.tradingDaysCount) : '0',
+    })
+  }
+
+  function handleSaveBalance() {
+    const balance = Number(balanceDialog.balance)
+    if (isNaN(balance) || balance < 0) { toast.error('Enter a valid balance'); return }
+    const tradingDays = Number(balanceDialog.tradingDays) || 0
+    const todayPnL = balanceDialog.todayPnL ? Number(balanceDialog.todayPnL) : undefined
+
+    saveAccounts(accounts.map(a => {
+      if (a.id !== balanceDialog.accountId) return a
+      const prev = a.challengeProgress
+      return {
+        ...a,
+        challengeProgress: {
+          currentBalance: balance,
+          highWaterMark: Math.max(prev?.highWaterMark ?? a.accountSize, balance),
+          tradingDaysCount: tradingDays,
+          todayPnL,
+          lastUpdated: new Date().toISOString().split('T')[0],
+        },
+      }
+    }))
+    setBalanceDialog({ open: false, accountId: '', balance: '', todayPnL: '', tradingDays: '' })
+    toast.success('Balance updated')
   }
 
   function toggleExpand(id: string) {
@@ -626,6 +803,135 @@ export default function PropTracker() {
     },
   ]
 
+  // ── Success rate stats ──
+  const successStats = useMemo(() => {
+    if (accounts.length < 3) return null
+    const passed = accounts.filter(a => a.status === 'passed' || (a.status === 'active' && a.accountType === 'funded')).length
+    const failed = accounts.filter(a => a.status === 'failed').length
+    const resolved = passed + failed
+    const passRate = resolved > 0 ? (passed / resolved) * 100 : null
+
+    const costOfFunded: number[] = []
+    const costOfFailed: number[] = []
+    for (const a of accounts) {
+      const txs = transactions.filter(t => t.propAccountId === a.id)
+      const spent = txs.filter(t => isExpenseTx(t.type)).reduce((s, t) => s + t.amount, 0)
+      if (a.status === 'passed' || (a.status === 'active' && a.accountType === 'funded')) {
+        costOfFunded.push(spent)
+      }
+      if (a.status === 'failed') {
+        costOfFailed.push(spent)
+      }
+    }
+    const avgCostToFund = costOfFunded.length > 0 ? costOfFunded.reduce((a, b) => a + b, 0) / costOfFunded.length : null
+    const totalWastedOnFailed = costOfFailed.reduce((a, b) => a + b, 0)
+
+    const firmROI: { firm: string; roi: number }[] = []
+    const firmMap = new Map<string, { invested: number; earned: number }>()
+    for (const a of accounts) {
+      const txs = transactions.filter(t => t.propAccountId === a.id)
+      let inv = 0, ear = 0
+      for (const t of txs) {
+        if (isExpenseTx(t.type)) inv += t.amount; else ear += t.amount
+      }
+      const prev = firmMap.get(a.firmName) ?? { invested: 0, earned: 0 }
+      firmMap.set(a.firmName, { invested: prev.invested + inv, earned: prev.earned + ear })
+    }
+    for (const [firm, { invested, earned }] of firmMap) {
+      if (invested > 0) firmROI.push({ firm, roi: ((earned / invested) - 1) * 100 })
+    }
+    firmROI.sort((a, b) => b.roi - a.roi)
+    const bestFirm = firmROI.length > 0 ? firmROI[0] : null
+
+    return { passed, failed, total: accounts.length, passRate, avgCostToFund, totalWastedOnFailed, bestFirm }
+  }, [accounts, transactions])
+
+  // ── Quick balance check-in ──
+  const activeRulesAccounts = useMemo(() =>
+    accounts.filter(a => a.status === 'active' && a.challengeRules),
+  [accounts])
+
+  const [checkinDialog, setCheckinDialog] = useState<{
+    open: boolean
+    entries: Array<{ accountId: string; balance: string; todayPnL: string; tradingDays: string }>
+  }>({ open: false, entries: [] })
+
+  function openCheckinDialog() {
+    setCheckinDialog({
+      open: true,
+      entries: activeRulesAccounts.map(a => ({
+        accountId: a.id,
+        balance: a.challengeProgress ? String(a.challengeProgress.currentBalance) : String(a.accountSize),
+        todayPnL: '',
+        tradingDays: a.challengeProgress ? String(a.challengeProgress.tradingDaysCount) : '0',
+      })),
+    })
+  }
+
+  function handleSaveCheckin() {
+    const today = new Date().toISOString().split('T')[0]
+    saveAccounts(accounts.map(a => {
+      const entry = checkinDialog.entries.find(e => e.accountId === a.id)
+      if (!entry) return a
+      const balance = Number(entry.balance)
+      if (isNaN(balance) || balance < 0) return a
+      const tradingDays = Number(entry.tradingDays) || 0
+      const todayPnL = entry.todayPnL ? Number(entry.todayPnL) : undefined
+      const prev = a.challengeProgress
+      return {
+        ...a,
+        challengeProgress: {
+          currentBalance: balance,
+          highWaterMark: Math.max(prev?.highWaterMark ?? a.accountSize, balance),
+          tradingDaysCount: tradingDays,
+          todayPnL,
+          lastUpdated: today,
+        },
+      }
+    }))
+    setCheckinDialog({ open: false, entries: [] })
+    toast.success(`Updated ${checkinDialog.entries.length} account${checkinDialog.entries.length !== 1 ? 's' : ''}`)
+  }
+
+  // ── Risk calculator ──
+  const [riskCalcOpen, setRiskCalcOpen] = useState(false)
+  const [riskCalcAmount, setRiskCalcAmount] = useState('')
+
+  const riskCalcResults = useMemo(() => {
+    const loss = Number(riskCalcAmount)
+    if (!loss || loss <= 0) return null
+    return activeRulesAccounts.map(a => {
+      const rules = a.challengeRules!
+      const progress = a.challengeProgress ?? { currentBalance: a.accountSize, highWaterMark: a.accountSize, tradingDaysCount: 0, lastUpdated: '' }
+      const maxTotalDDDollars = (rules.maxTotalDrawdown / 100) * a.accountSize
+      const maxDailyDDDollars = rules.maxDailyDrawdown > 0 ? (rules.maxDailyDrawdown / 100) * a.accountSize : 0
+
+      const currentDD = Math.max(0, progress.highWaterMark - progress.currentBalance)
+      const afterDD = currentDD + loss
+      const totalDDPctAfter = maxTotalDDDollars > 0 ? (afterDD / maxTotalDDDollars) * 100 : 0
+      const wouldBreachTotal = totalDDPctAfter >= 100
+
+      const existingDailyLoss = (progress.todayPnL !== undefined && progress.todayPnL < 0) ? Math.abs(progress.todayPnL) : 0
+      const dailyAfter = existingDailyLoss + loss
+      const dailyDDPctAfter = maxDailyDDDollars > 0 ? (dailyAfter / maxDailyDDDollars) * 100 : 0
+      const wouldBreachDaily = maxDailyDDDollars > 0 && dailyDDPctAfter >= 100
+
+      const remainingBeforeTotal = Math.max(0, maxTotalDDDollars - currentDD - loss)
+      const remainingBeforeDaily = maxDailyDDDollars > 0 ? Math.max(0, maxDailyDDDollars - dailyAfter) : null
+
+      return {
+        account: a,
+        totalDDPctAfter: Math.min(totalDDPctAfter, 100),
+        dailyDDPctAfter: Math.min(dailyDDPctAfter, 100),
+        wouldBreachTotal,
+        wouldBreachDaily,
+        remainingBeforeTotal,
+        remainingBeforeDaily,
+        balanceAfter: progress.currentBalance - loss,
+      }
+    })
+  }, [riskCalcAmount, activeRulesAccounts])
+
   // ─── Deadline alerts ────────────────────────────────────────────────────────
   const upcomingDeadlines = useMemo(() => {
     const now = new Date()
@@ -646,28 +952,80 @@ export default function PropTracker() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
+      {/* Affiliate Deals Banner */}
+      {showDealsBanner && (
+        <div className="mx-3 sm:mx-6 lg:mx-8 mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-2.5 flex items-center gap-3">
+          <Tag className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="flex-1 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Save on your next challenge</span>
+            <span className="hidden sm:inline"> · Exclusive codes for The5ers, FTMO, Apex, and more</span>
+          </p>
+          <a href="/affiliate" target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
+              View Deals →
+            </button>
+          </a>
+          <button
+            onClick={() => { localStorage.setItem('ftj-dismiss-deals-pt', '1'); setShowDealsBanner(false); }}
+            className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
+
       {/* Page header */}
-      <div className="border-b bg-background">
-        <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="border-b relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 20% 50%, ${themeColors.primary}12 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, ${themeColors.primary}06 0%, transparent 40%)` }} />
+        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full pointer-events-none opacity-[0.04]" style={{ backgroundColor: themeColors.primary, filter: 'blur(40px)' }} />
+        <div className="relative w-full px-3 py-5 sm:px-6 lg:px-8 sm:py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             {/* Title + subtitle */}
             <div className="text-center sm:text-left">
-              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
-                PropTracker
-              </h1>
+              <div className="flex items-center gap-3 justify-center sm:justify-start">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: `${themeColors.primary}15` }}>
+                  <BarChart2 className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
+                <div>
+                  <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
+                    PropTracker
+                  </h1>
+                </div>
+              </div>
               {subtitleParts ? (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {subtitleParts.base}
+                <div className="flex flex-wrap items-center gap-2 mt-3 justify-center sm:justify-start">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border border-border/60 bg-muted/50 text-muted-foreground">
+                    <Building2 className="h-3 w-3" />
+                    {subtitleParts.base}
+                  </span>
                   {subtitleParts.net && (
-                    <> · <span className="font-medium whitespace-nowrap" style={{ color: subtitleParts.netColor }}>{subtitleParts.net}</span></>
+                    <span
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap"
+                      style={{
+                        color: subtitleParts.netColor,
+                        borderColor: `${subtitleParts.netColor}30`,
+                        backgroundColor: `${subtitleParts.netColor}10`,
+                      }}
+                    >
+                      {stats.netPnL >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {subtitleParts.net}
+                    </span>
                   )}
-                </p>
+                </div>
               ) : (
-                <p className="text-sm text-muted-foreground mt-1">Track fees, resets, and payouts across your prop firms</p>
+                <p className="text-sm text-muted-foreground mt-2 sm:pl-[52px]">Track fees, resets, and payouts across your prop firms</p>
               )}
             </div>
             {/* Action button */}
             <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
+              {activeRulesAccounts.length >= 2 && (
+                <Button variant="outline" onClick={openCheckinDialog} className="h-11 touch-manipulation">
+                  <ClipboardCheck className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">End of Day</span>
+                  <span className="sm:hidden">Check-In</span>
+                </Button>
+              )}
               {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT ? (
                 <Link to="/pricing">
                   <Button className="h-11 touch-manipulation" style={{ backgroundColor: themeColors.primary }}>
@@ -708,7 +1066,7 @@ export default function PropTracker() {
                   {daysLeft === 0 ? 'Expires today' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`}
                 </span>
                 <span className="text-muted-foreground">
-                  — {account.firmName} ({account.accountType}) evaluation ends {new Date(account.endDate! + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {account.firmName} ({account.accountType}) evaluation ends {new Date(account.endDate! + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </span>
               </div>
             ))}
@@ -721,9 +1079,9 @@ export default function PropTracker() {
           <div className="flex items-start gap-3 rounded-lg border border-border/60 px-4 py-3.5 text-sm">
             <Info className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
             <div className="flex-1 space-y-1">
-              <p className="font-medium text-foreground text-sm">How to use PropTracker</p>
+              <p className="font-medium text-foreground text-sm">Quick start</p>
               <p className="text-muted-foreground leading-relaxed text-xs">
-                Add one entry per account — each evaluation challenge, funded seat, or instant funding account gets its own card. Log every expense against it: evaluation fees, monthly subscriptions, resets. Log every income: profit splits and payouts. PropTracker calculates your true net P&L and ROI across all firms — the number most prop traders never actually work out.
+                Create one card per prop account. Log every fee (evaluations, resets, subscriptions) and every payout. Set challenge rules to track drawdown limits and profit targets in real time. PropTracker shows your true net P&L across all firms.
               </p>
             </div>
             <button onClick={dismissTip} aria-label="Dismiss tip" className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5">
@@ -735,13 +1093,18 @@ export default function PropTracker() {
         {/* Stat Cards */}
         <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
           {statCards.map((card) => (
-            <Card key={card.label}>
-              <CardContent className="p-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <card.icon className="h-3 w-3" />
-                  {card.label}
-                </p>
-                <p className="text-2xl font-bold tabular-nums" style={{ color: card.valueColor }}>
+            <Card key={card.label} className="relative overflow-hidden transition-shadow duration-300 hover:shadow-lg">
+              <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none" style={{ background: `radial-gradient(circle at 100% 0%, ${card.valueColor}10 0%, transparent 70%)` }} />
+              <CardContent className="p-5 relative">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    {card.label}
+                  </p>
+                  <div className="h-7 w-7 rounded-md flex items-center justify-center" style={{ backgroundColor: `${card.valueColor}15` }}>
+                    <card.icon className="h-3.5 w-3.5" style={{ color: card.valueColor }} />
+                  </div>
+                </div>
+                <p className="text-2xl font-bold tabular-nums tracking-tight" style={{ color: card.valueColor }}>
                   {card.value}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
@@ -749,6 +1112,180 @@ export default function PropTracker() {
             </Card>
           ))}
         </div>
+
+        {/* Success Rate Dashboard */}
+        {successStats && (
+          <ProGate featureName="Success Rate Dashboard">
+            <div className="rounded-xl border border-border/60 overflow-hidden relative">
+              <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${themeColors.primary}06 0%, transparent 40%)` }} />
+              <div className="relative flex items-center gap-2.5 px-5 py-3.5 border-b border-border/60">
+                <div className="p-1.5 rounded-md" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <Trophy className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Performance Overview</p>
+                  <p className="text-[10px] text-muted-foreground">Your prop trading track record</p>
+                </div>
+              </div>
+              <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-border/40">
+                {[
+                  {
+                    label: 'Pass Rate',
+                    value: successStats.passRate !== null ? `${successStats.passRate.toFixed(0)}%` : '--',
+                    sub: `${successStats.passed} passed, ${successStats.failed} failed`,
+                    color: successStats.passRate !== null && successStats.passRate >= 50 ? themeColors.profit : themeColors.loss,
+                  },
+                  {
+                    label: 'Attempts',
+                    value: String(successStats.total),
+                    sub: `${successStats.passed} funded`,
+                    color: themeColors.primary,
+                  },
+                  {
+                    label: 'Avg Cost to Fund',
+                    value: successStats.avgCostToFund !== null ? fmt(successStats.avgCostToFund) : '--',
+                    sub: 'Per funded account',
+                    color: successStats.avgCostToFund !== null ? themeColors.loss : 'var(--muted-foreground)',
+                  },
+                  {
+                    label: 'Wasted on Failed',
+                    value: successStats.totalWastedOnFailed > 0 ? fmt(successStats.totalWastedOnFailed) : '--',
+                    sub: `Across ${successStats.failed} failed`,
+                    color: successStats.totalWastedOnFailed > 0 ? themeColors.loss : 'var(--muted-foreground)',
+                  },
+                  {
+                    label: 'Best Firm ROI',
+                    value: successStats.bestFirm ? `${successStats.bestFirm.roi >= 0 ? '+' : ''}${successStats.bestFirm.roi.toFixed(0)}%` : '--',
+                    sub: successStats.bestFirm?.firm ?? 'N/A',
+                    color: successStats.bestFirm && successStats.bestFirm.roi >= 0 ? themeColors.profit : themeColors.loss,
+                  },
+                ].map(s => (
+                  <div key={s.label} className="bg-card px-4 py-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                    <p className="text-xl font-bold tabular-nums mt-0.5" style={{ color: s.color }}>{s.value}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ProGate>
+        )}
+
+        {/* Risk Calculator */}
+        {activeRulesAccounts.length > 0 && (
+          <div className="rounded-xl border border-border/60 overflow-hidden">
+            <button
+              onClick={() => setRiskCalcOpen(p => !p)}
+              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-md" style={{ backgroundColor: `${themeColors.primary}20` }}>
+                  <Calculator className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold">Risk Calculator</p>
+                  <p className="text-[10px] text-muted-foreground">Check the impact before you trade</p>
+                </div>
+              </div>
+              {riskCalcOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </button>
+            {riskCalcOpen && (
+              <div className="px-5 pb-4 space-y-4 border-t border-border/60 pt-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-muted-foreground whitespace-nowrap">If I lose</label>
+                  <div className="relative max-w-[160px]">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">$</span>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-7"
+                      value={riskCalcAmount}
+                      onChange={e => setRiskCalcAmount(e.target.value)}
+                      aria-label="Hypothetical loss amount"
+                    />
+                  </div>
+                  <label className="text-sm text-muted-foreground whitespace-nowrap">today...</label>
+                </div>
+
+                {riskCalcResults && riskCalcResults.length > 0 && (
+                  <div className="space-y-2">
+                    {riskCalcResults.map(r => {
+                      const brandColor = firmAvatarColor(r.account.firmName)
+                      const breached = r.wouldBreachTotal || r.wouldBreachDaily
+                      return (
+                        <div
+                          key={r.account.id}
+                          className="rounded-lg border p-3 space-y-2"
+                          style={{
+                            borderColor: breached ? `${themeColors.loss}40` : 'var(--border)',
+                            backgroundColor: breached ? `${themeColors.loss}06` : undefined,
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            {FIRM_LOGOS[r.account.firmName] ? (
+                              <div className="h-6 w-6 rounded shrink-0 bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-contain" /></div>
+                            ) : (
+                              <div
+                                className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+                                style={{ backgroundColor: brandColor }}
+                              >
+                                {firmInitials(r.account.firmName)}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium truncate">{r.account.firmName}</span>
+                            <span className="text-xs text-muted-foreground">{currencySymbol(r.account.currency)}{r.account.accountSize.toLocaleString()}</span>
+                            {breached && (
+                              <Badge variant="outline" className="ml-auto text-[10px] h-5 px-1.5 bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20">
+                                BREACH
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+                            <div>
+                              <p className="text-muted-foreground">Balance after</p>
+                              <p className="font-semibold tabular-nums" style={{ color: r.balanceAfter < r.account.accountSize ? themeColors.loss : themeColors.profit }}>
+                                {fmt(r.balanceAfter, r.account.currency)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Total DD used</p>
+                              <p className="font-semibold tabular-nums" style={{ color: ddBarColor(r.totalDDPctAfter, themeColors) }}>
+                                {r.totalDDPctAfter.toFixed(1)}%
+                                {r.wouldBreachTotal && <span className="text-red-500 ml-1">LIMIT</span>}
+                              </p>
+                            </div>
+                            {r.account.challengeRules!.maxDailyDrawdown > 0 && (
+                              <div>
+                                <p className="text-muted-foreground">Daily DD used</p>
+                                <p className="font-semibold tabular-nums" style={{ color: ddBarColor(r.dailyDDPctAfter, themeColors) }}>
+                                  {r.dailyDDPctAfter.toFixed(1)}%
+                                  {r.wouldBreachDaily && <span className="text-red-500 ml-1">LIMIT</span>}
+                                </p>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-muted-foreground">Room left (total)</p>
+                              <p className="font-semibold tabular-nums">
+                                {fmt(r.remainingBeforeTotal, r.account.currency)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {(!riskCalcResults || riskCalcResults.length === 0) && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Enter an amount to see the impact on your active challenges.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Pie charts — Pro only */}
         {chartData.length > 0 && (
@@ -982,9 +1519,9 @@ export default function PropTracker() {
 
         {/* Empty state */}
         {accounts.length === 0 ? (
-          <div className="rounded-xl border border-border/60 overflow-hidden">
+          <div className="rounded-xl border border-border/60 overflow-hidden relative">
             {/* Hero CTA — clean, no overlap */}
-            <div className="flex flex-col items-center text-center gap-5 px-6 pt-12 pb-8" style={{ background: `radial-gradient(ellipse at 50% 0%, ${themeColors.primary}18 0%, transparent 70%)` }}>
+            <div className="flex flex-col items-center text-center gap-5 px-6 pt-12 pb-8 relative" style={{ background: `radial-gradient(ellipse at 50% 0%, ${themeColors.primary}15 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, ${themeColors.primary}08 0%, transparent 50%)` }}>
               <div className="space-y-2 max-w-md">
                 <h2 className="text-2xl font-bold tracking-tight">Do you actually know your prop ROI?</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -996,7 +1533,7 @@ export default function PropTracker() {
                 {[
                   { icon: Receipt,    label: 'Fees & Payouts' },
                   { icon: TrendingUp, label: 'True ROI' },
-                  { icon: BarChart2,  label: 'Firm Breakdown' },
+                  { icon: Shield,     label: 'Challenge Rules' },
                   { icon: Brain,      label: 'AI Analysis' },
                 ].map(f => (
                   <div key={f.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border border-border/60 text-muted-foreground">
@@ -1032,12 +1569,16 @@ export default function PropTracker() {
                     { icon: TrendingUp, label: 'P&L',             value: '+$5,785', sub: '+302% ROI',            color: themeColors.profit },
                     { icon: Building2,  label: 'Active Accounts', value: '2',       sub: 'of 4 total',          color: themeColors.primary },
                   ].map(c => (
-                    <Card key={c.label}>
-                      <CardContent className="p-5">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                          <c.icon className="h-3 w-3" aria-hidden="true" />{c.label}
-                        </p>
-                        <p className="text-2xl font-bold tabular-nums" style={{ color: c.color }}>{c.value}</p>
+                    <Card key={c.label} className="relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none" style={{ background: `radial-gradient(circle at 100% 0%, ${c.color}10 0%, transparent 70%)` }} />
+                      <CardContent className="p-5 relative">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider">{c.label}</p>
+                          <div className="h-7 w-7 rounded-md flex items-center justify-center" style={{ backgroundColor: `${c.color}15` }}>
+                            <c.icon className="h-3.5 w-3.5" style={{ color: c.color }} aria-hidden="true" />
+                          </div>
+                        </div>
+                        <p className="text-2xl font-bold tabular-nums tracking-tight" style={{ color: c.color }}>{c.value}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
                       </CardContent>
                     </Card>
@@ -1050,10 +1591,15 @@ export default function PropTracker() {
                     { initials: 'FT', color: '#0781FE', firm: 'FTMO',                 size: '$200,000', type: 'Evaluation', status: 'Failed',    statusClass: 'bg-red-500/15 text-red-600 border-red-500/20',           invested: '$810',  earned: '—',      pnl: '-$810' },
                     { initials: 'MF', color: '#D8AE5E', firm: 'My Funded Futures',    size: '$150,000', type: 'Funded',     status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$524',  earned: '$3,500', pnl: '+$2,976' },
                   ].map(g => (
-                    <Card key={g.firm}>
-                      <CardContent className="p-4">
+                    <Card key={g.firm} className="relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-1 opacity-60" style={{ backgroundColor: g.color }} />
+                      <CardContent className="p-4 pt-5">
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: g.color }}>{g.initials}</div>
+                          {FIRM_LOGOS[g.firm] ? (
+                            <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-contain" /></div>
+                          ) : (
+                            <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm" style={{ backgroundColor: g.color }}>{g.initials}</div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-semibold text-sm">{g.firm}</p>
@@ -1088,45 +1634,209 @@ export default function PropTracker() {
               const meta = statusMeta(account.status)
               const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)!
               const brandColor = firmAvatarColor(account.firmName)
+              const challengeStatus = getChallengeStatus(account)
 
               return (
-                <Card key={account.id}>
-                  <CardContent className="p-4">
+                <Card key={account.id} className="relative overflow-hidden transition-[transform,box-shadow] duration-300 hover:shadow-lg hover:scale-[1.005]">
+                  <div className="absolute top-0 left-0 w-full h-1 opacity-60" style={{ backgroundColor: brandColor }} />
+                  <CardContent className="p-4 pt-5">
 
                     {/* Account header */}
                     <div className="flex items-start gap-3 mb-3">
-                      <div
-                        className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5"
-                        style={{ backgroundColor: brandColor }}
-                      >
-                        {firmInitials(account.firmName)}
-                      </div>
+                      {FIRM_LOGOS[account.firmName] ? (
+                        <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm bg-white overflow-hidden">
+                          <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div
+                          className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5 shadow-sm"
+                          style={{ backgroundColor: brandColor }}
+                        >
+                          {firmInitials(account.firmName)}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-semibold text-sm leading-tight truncate">{account.firmName}</p>
-                          <Badge variant="outline" className={`text-[10px] h-5 px-1.5 shrink-0 ${meta.badgeClass}`}>
-                            {meta.label}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {challengeStatus && (
+                              <span
+                                className="h-2 w-2 rounded-full shrink-0"
+                                style={{ backgroundColor:
+                                  challengeStatus.health === 'red' ? themeColors.loss :
+                                  challengeStatus.health === 'amber' ? '#f59e0b' :
+                                  themeColors.profit
+                                }}
+                                aria-label={`Challenge health: ${challengeStatus.health}`}
+                              />
+                            )}
+                            <Badge variant="outline" className={`text-[10px] h-5 px-1.5 shrink-0 ${meta.badgeClass}`}>
+                              {meta.label}
+                            </Badge>
+                          </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {currencySymbol(account.currency)}{account.accountSize.toLocaleString()} · {typeMeta.label} · Since {new Date(account.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          <span className="font-medium text-foreground/70">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
+                          {' '}&middot; {typeMeta.label} &middot; Since {new Date(account.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
 
-                    {/* Stats — 3 col text, no boxes */}
+                    {/* Stats — 3 col with tinted backgrounds */}
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       {[
                         { label: 'Invested', value: invested > 0 ? fmt(invested, account.currency) : '—', color: invested > 0 ? themeColors.loss : undefined },
                         { label: 'Earned',   value: earned > 0  ? fmt(earned, account.currency)   : '—', color: earned > 0  ? themeColors.profit : undefined },
                         { label: 'P&L',      value: txs.length > 0 ? (net >= 0 ? '+' : '-') + fmt(net, account.currency) : '—', color: txs.length > 0 ? (net >= 0 ? themeColors.profit : themeColors.loss) : undefined },
                       ].map(s => (
-                        <div key={s.label}>
+                        <div
+                          key={s.label}
+                          className="rounded-lg px-2.5 py-2"
+                          style={{ backgroundColor: s.color ? `${s.color}08` : 'var(--muted)' }}
+                        >
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
-                          <p className="text-sm font-semibold tabular-nums mt-0.5" style={{ color: s.color ?? 'var(--muted-foreground)' }}>{s.value}</p>
+                          <p className="text-sm font-bold tabular-nums mt-0.5" style={{ color: s.color ?? 'var(--muted-foreground)' }}>{s.value}</p>
                         </div>
                       ))}
                     </div>
+
+                    {/* Cost recovery indicator */}
+                    {invested > 0 && (
+                      <p className="text-[10px] text-muted-foreground mb-3 flex items-center gap-1.5">
+                        {net >= 0 ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3 shrink-0" style={{ color: themeColors.profit }} />
+                            <span>Costs recovered{earned > invested ? `, ${fmt(earned - invested, account.currency)} profit` : ''}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Target className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            <span>{fmt(Math.abs(net), account.currency)} more in payouts to break even</span>
+                          </>
+                        )}
+                      </p>
+                    )}
+
+                    {/* Challenge progress bars */}
+                    {challengeStatus && account.challengeRules && (
+                      <div className="mb-3 space-y-2 rounded-lg border border-border/60 p-3 relative overflow-hidden">
+                        <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${brandColor}04 0%, transparent 50%)` }} />
+                        <div className="relative flex items-center justify-between mb-1">
+                          <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+                            <Shield className="h-3 w-3" />
+                            Challenge Progress
+                          </p>
+                          {account.challengeProgress?.lastUpdated && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {(() => {
+                                const days = Math.floor((Date.now() - new Date(account.challengeProgress!.lastUpdated + 'T12:00:00').getTime()) / 86400000)
+                                if (days === 0) return 'Updated today'
+                                if (days === 1) return 'Updated yesterday'
+                                return `Updated ${days}d ago`
+                              })()}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Profit Target — hero metric */}
+                        <div className="rounded-md p-2.5 -mx-0.5" style={{ backgroundColor: `${profitBarColor(challengeStatus.profitPct, themeColors)}08` }}>
+                          <div className="flex items-center justify-between text-[10px] mb-1.5">
+                            <span className="font-medium" style={{ color: profitBarColor(challengeStatus.profitPct, themeColors) }}>Profit Target</span>
+                            <span className="font-semibold tabular-nums" style={{ color: profitBarColor(challengeStatus.profitPct, themeColors) }}>
+                              {Math.max(0, Math.min(100, challengeStatus.profitPct)).toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-300"
+                              style={{
+                                width: `${Math.max(0, Math.min(100, challengeStatus.profitPct))}%`,
+                                backgroundColor: profitBarColor(challengeStatus.profitPct, themeColors),
+                              }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                            {challengeStatus.profitGain >= 0 ? '+' : ''}{fmt(challengeStatus.profitGain, account.currency)} of {fmt(account.challengeRules.profitTarget, account.currency)}
+                          </p>
+                        </div>
+
+                        {/* Total Drawdown */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-muted-foreground">Total Drawdown</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground tabular-nums">
+                                {fmt(challengeStatus.totalDDDollars, account.currency)} / {fmt(challengeStatus.maxTotalDDDollars, account.currency)}
+                              </span>
+                              <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: ddBarColor(challengeStatus.totalDDUsedPct, themeColors) }}>
+                                {Math.min(100, challengeStatus.totalDDUsedPct).toFixed(0)}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-300"
+                              style={{
+                                width: `${Math.min(100, challengeStatus.totalDDUsedPct)}%`,
+                                backgroundColor: ddBarColor(challengeStatus.totalDDUsedPct, themeColors),
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Daily Drawdown */}
+                        {account.challengeRules.maxDailyDrawdown > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">Daily Drawdown</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground tabular-nums">
+                                  {fmt(challengeStatus.dailyDDDollars, account.currency)} / {fmt(challengeStatus.maxDailyDDDollars, account.currency)}
+                                </span>
+                                <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors) }}>
+                                  {Math.min(100, challengeStatus.dailyDDUsedPct).toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${Math.min(100, challengeStatus.dailyDDUsedPct)}%`,
+                                  backgroundColor: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors),
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Trading Days */}
+                        {challengeStatus.tradingDaysPct !== null && account.challengeRules.minTradingDays && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="text-muted-foreground">Trading Days</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground tabular-nums">
+                                  {challengeStatus.tradingDaysCount} / {account.challengeRules.minTradingDays}
+                                </span>
+                                <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: themeColors.primary }}>
+                                  {Math.min(100, challengeStatus.tradingDaysPct).toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${Math.min(100, challengeStatus.tradingDaysPct)}%`,
+                                  backgroundColor: themeColors.primary,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {account.notes && (
                       <p className="text-xs text-muted-foreground line-clamp-1 mb-3">{account.notes}</p>
@@ -1137,8 +1847,19 @@ export default function PropTracker() {
                       <div className="flex items-center gap-1.5">
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
                           <Plus className="h-3 w-3" />
-                          Add
+                          Transaction
                         </Button>
+                        {account.challengeRules && (
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs gap-1 text-white"
+                            style={{ backgroundColor: brandColor }}
+                            onClick={() => openBalanceDialog(account)}
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                            Update Balance
+                          </Button>
+                        )}
                         {isPro ? (
                           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
                             <Upload className="h-3 w-3" />
@@ -1277,51 +1998,125 @@ export default function PropTracker() {
 
       {/* ── Add / Edit Account Dialog ── */}
       <Dialog open={accountDialog.open} onOpenChange={open => setAccountDialog(p => ({ ...p, open }))}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{accountDialog.editing ? 'Edit Account' : 'Add Prop Firm Account'}</DialogTitle>
-            <DialogDescription>
-              {accountDialog.editing ? 'Update the details for this account.' : 'Track a new prop firm challenge or funded account.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-1">
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          {/* Branded header */}
+          {(() => {
+            const selectedFirm = accountForm.firmName && accountForm.firmName !== 'Custom...' ? accountForm.firmName : null
+            const brandCol = selectedFirm ? (FIRM_BRAND_COLORS[selectedFirm] ?? themeColors.primary) : themeColors.primary
+            const logo = selectedFirm ? FIRM_LOGOS[selectedFirm] : null
+            return (
+              <div className="relative px-6 pt-5 pb-4 border-b border-border/60 overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${brandCol}12 0%, transparent 50%)` }} />
+                <div className="relative flex items-center gap-3">
+                  {logo ? (
+                    <div className="h-10 w-10 rounded-lg shadow-sm bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={logo} alt="" className="w-full h-full object-contain" /></div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center shadow-sm" style={{ backgroundColor: `${brandCol}20` }}>
+                      <Building2 className="h-5 w-5" style={{ color: brandCol }} />
+                    </div>
+                  )}
+                  <div>
+                    <DialogHeader className="p-0 space-y-0.5">
+                      <DialogTitle className="text-lg">{accountDialog.editing ? 'Edit Account' : 'New Account'}</DialogTitle>
+                      <DialogDescription className="text-xs">
+                        {selectedFirm ? selectedFirm : 'Select a prop firm to get started'}
+                      </DialogDescription>
+                    </DialogHeader>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+          <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            {/* Firm selector with logos */}
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-firm">Prop Firm</label>
-              <Select value={accountForm.firmName} onValueChange={v => setAccountForm(p => ({ ...p, firmName: v }))}>
+              <Select value={accountForm.firmName} onValueChange={v => {
+                setAccountForm(p => {
+                  const next = { ...p, firmName: v }
+                  if (v !== 'Custom...' && FIRM_RULE_PRESETS[v]) {
+                    const preset = FIRM_RULE_PRESETS[v]
+                    const sizeRaw = p.accountSizeStr === 'custom' ? p.customSizeStr : p.accountSizeStr
+                    const accountSize = Number(sizeRaw) || 100000
+                    next.rulesEnabled = true
+                    next.profitTarget = String((preset.profitTarget / 100) * accountSize)
+                    next.maxDailyDrawdown = String(preset.maxDailyDrawdown)
+                    next.maxTotalDrawdown = String(preset.maxTotalDrawdown)
+                    next.minTradingDays = preset.minTradingDays ? String(preset.minTradingDays) : ''
+                  }
+                  return next
+                })
+              }}>
                 <SelectTrigger aria-labelledby="label-firm"><SelectValue placeholder="Select firm" /></SelectTrigger>
                 <SelectContent>
-                  {PROP_FIRMS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  {PROP_FIRMS.map(f => (
+                    <SelectItem key={f} value={f}>
+                      <span className="flex items-center gap-2">
+                        {FIRM_LOGOS[f] ? (
+                          <div className="h-4 w-4 rounded-sm shrink-0 bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[f]} alt="" className="w-full h-full object-contain" /></div>
+                        ) : f !== 'Custom...' ? (
+                          <span className="h-4 w-4 rounded-sm flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ backgroundColor: FIRM_BRAND_COLORS[f] ?? '#888' }}>{firmInitials(f)}</span>
+                        ) : null}
+                        {f}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {accountForm.firmName === 'Custom...' && (
-                <Input aria-label="Custom firm name" placeholder="Enter firm name…" value={accountForm.customFirm} onChange={e => setAccountForm(p => ({ ...p, customFirm: e.target.value }))} />
+                <Input aria-label="Custom firm name" placeholder="Enter firm name" value={accountForm.customFirm} onChange={e => setAccountForm(p => ({ ...p, customFirm: e.target.value }))} />
               )}
             </div>
+
+            {/* Account size chips + currency */}
             <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-size">Account Size</label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select value={accountForm.accountSizeStr} onValueChange={v => setAccountForm(p => ({ ...p, accountSizeStr: v }))}>
-                    <SelectTrigger aria-labelledby="label-size"><SelectValue placeholder="Select size" /></SelectTrigger>
-                    <SelectContent>
-                      {ACCOUNT_SIZES.map(s => <SelectItem key={s} value={String(s)}>{currencySymbol(accountForm.currency)}{s.toLocaleString()}</SelectItem>)}
-                      <SelectItem value="custom">Custom...</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="w-[100px]">
-                  <Select value={accountForm.currency} onValueChange={v => setAccountForm(p => ({ ...p, currency: v as PropCurrency }))}>
-                    <SelectTrigger aria-label="Currency"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CURRENCY_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account Size</label>
+                <Select value={accountForm.currency} onValueChange={v => setAccountForm(p => ({ ...p, currency: v as PropCurrency }))}>
+                  <SelectTrigger aria-label="Currency" className="w-auto h-6 text-[10px] px-2 border-0 bg-muted/50 rounded-full gap-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {ACCOUNT_SIZES.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setAccountForm(p => ({ ...p, accountSizeStr: String(s) }))}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      accountForm.accountSizeStr === String(s)
+                        ? 'text-white shadow-sm'
+                        : 'border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground bg-transparent'
+                    }`}
+                    style={accountForm.accountSizeStr === String(s) ? { backgroundColor: themeColors.primary, borderColor: themeColors.primary } : {}}
+                  >
+                    {currencySymbol(accountForm.currency)}{(s / 1000)}k
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setAccountForm(p => ({ ...p, accountSizeStr: 'custom' }))}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                    accountForm.accountSizeStr === 'custom'
+                      ? 'text-white shadow-sm'
+                      : 'border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground bg-transparent'
+                  }`}
+                  style={accountForm.accountSizeStr === 'custom' ? { backgroundColor: themeColors.primary, borderColor: themeColors.primary } : {}}
+                >
+                  Custom
+                </button>
               </div>
               {accountForm.accountSizeStr === 'custom' && (
-                <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="e.g. 150000…" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => ({ ...p, customSizeStr: e.target.value }))} />
+                <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="e.g. 150000" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => ({ ...p, customSizeStr: e.target.value }))} />
               )}
             </div>
+
+            {/* Type + Status */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-actype">Account Type</label>
@@ -1342,6 +2137,8 @@ export default function PropTracker() {
                 </Select>
               </div>
             </div>
+
+            {/* Dates */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Start Date</label>
@@ -1353,7 +2150,7 @@ export default function PropTracker() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">End Date <span className="normal-case">(optional)</span></label>
+                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">End Date <span className="normal-case">(opt.)</span></label>
                 <DatePicker
                   date={accountForm.endDate ? new Date(accountForm.endDate + 'T12:00:00') : undefined}
                   onDateChange={d => setAccountForm(p => ({ ...p, endDate: d ? d.toISOString().split('T')[0] : '' }))}
@@ -1362,77 +2159,165 @@ export default function PropTracker() {
                 />
               </div>
             </div>
+
+            {/* Notes */}
             <div className="space-y-1.5">
               <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="account-notes">Notes <span className="normal-case">(optional)</span></label>
-              <Textarea id="account-notes" placeholder="E.g. passed phase 1, waiting on funded account…" value={accountForm.notes} onChange={e => setAccountForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
+              <Textarea id="account-notes" placeholder="Phase 1 passed, waiting on funded account..." value={accountForm.notes} onChange={e => setAccountForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
+            </div>
+
+            {/* Challenge Rules */}
+            <div className="border-t border-border/60 pt-3 space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const enabling = !accountForm.rulesEnabled
+                  if (enabling && !accountForm.profitTarget) {
+                    const firmName = accountForm.firmName === 'Custom...' ? '' : accountForm.firmName
+                    const sizeRaw = accountForm.accountSizeStr === 'custom' ? accountForm.customSizeStr : accountForm.accountSizeStr
+                    const accountSize = Number(sizeRaw) || 100000
+                    const preset = FIRM_RULE_PRESETS[firmName]
+                    if (preset) {
+                      setAccountForm(p => ({
+                        ...p,
+                        rulesEnabled: true,
+                        profitTarget: String((preset.profitTarget / 100) * accountSize),
+                        maxDailyDrawdown: String(preset.maxDailyDrawdown),
+                        maxTotalDrawdown: String(preset.maxTotalDrawdown),
+                        minTradingDays: preset.minTradingDays ? String(preset.minTradingDays) : '',
+                      }))
+                      return
+                    }
+                  }
+                  setAccountForm(p => ({ ...p, rulesEnabled: enabling }))
+                }}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Challenge Rules</span>
+                  {!accountForm.rulesEnabled && <span className="text-[10px] text-muted-foreground normal-case">(optional)</span>}
+                </div>
+                {accountForm.rulesEnabled
+                  ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                  : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+              </button>
+
+              {accountForm.rulesEnabled && (
+                <div className="space-y-3 rounded-lg border border-border/40 p-3 bg-muted/20">
+                  {accountForm.firmName && FIRM_RULE_PRESETS[accountForm.firmName] && (
+                    <p className="text-[10px] text-muted-foreground">Pre-filled from {accountForm.firmName} defaults. Adjust to match your challenge.</p>
+                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-profit-target">
+                      Profit Target ({currencySymbol(accountForm.currency)})
+                    </label>
+                    <Input id="rule-profit-target" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 10000" value={accountForm.profitTarget} onChange={e => setAccountForm(p => ({ ...p, profitTarget: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-daily-dd">Max Daily DD (%)</label>
+                      <Input id="rule-daily-dd" type="number" inputMode="decimal" min="0" step="0.1" placeholder="e.g. 5" value={accountForm.maxDailyDrawdown} onChange={e => setAccountForm(p => ({ ...p, maxDailyDrawdown: e.target.value }))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-total-dd">Max Total DD (%)</label>
+                      <Input id="rule-total-dd" type="number" inputMode="decimal" min="0" step="0.1" placeholder="e.g. 10" value={accountForm.maxTotalDrawdown} onChange={e => setAccountForm(p => ({ ...p, maxTotalDrawdown: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-min-days">Min Trading Days <span className="normal-case">(optional)</span></label>
+                    <Input id="rule-min-days" type="number" inputMode="numeric" min="0" step="1" placeholder="e.g. 4" value={accountForm.minTradingDays} onChange={e => setAccountForm(p => ({ ...p, minTradingDays: e.target.value }))} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <DialogFooter>
+
+          <div className="px-6 py-4 border-t border-border/60 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setAccountDialog({ open: false, editing: null })}>Cancel</Button>
             <Button onClick={handleSaveAccount} style={{ backgroundColor: themeColors.primary }}>
               {accountDialog.editing ? 'Save Changes' : 'Add Account'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* ── Add Transaction Dialog ── */}
-      <Dialog open={txDialog.open} onOpenChange={open => setTxDialog(p => ({ ...p, open }))}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Add Transaction</DialogTitle>
-            <DialogDescription>
-              {txDialog.accountId
-                ? `Recording for ${accounts.find(a => a.id === txDialog.accountId)?.firmName ?? 'this account'}.`
-                : 'Record a fee or payout for this account.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-1">
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-txtype">Type</label>
-              <Select value={txForm.type} onValueChange={v => setTxForm(p => ({ ...p, type: v as TransactionType }))}>
-                <SelectTrigger aria-labelledby="label-txtype"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TX_TYPE_OPTIONS.map(t => (
-                    <SelectItem key={t.value} value={t.value}>
-                      <span className="flex items-center gap-2">
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${t.isExpense ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
-                          {t.isExpense ? 'OUT' : 'IN'}
-                        </span>
-                        {t.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="tx-amount">Amount (USD)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">$</span>
-                <Input id="tx-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00…" className="pl-7" value={txForm.amount} onChange={e => setTxForm(p => ({ ...p, amount: e.target.value }))} />
+      {(() => {
+        const txAccount = accounts.find(a => a.id === txDialog.accountId)
+        const txBrandColor = txAccount ? firmAvatarColor(txAccount.firmName) : themeColors.primary
+        const txLogo = txAccount ? FIRM_LOGOS[txAccount.firmName] : null
+        const txCurrSym = currencySymbol(txAccount?.currency)
+        return (
+          <Dialog open={txDialog.open} onOpenChange={open => setTxDialog(p => ({ ...p, open }))}>
+            <DialogContent className="max-w-sm p-0 overflow-hidden">
+              {/* Branded header */}
+              <div className="relative px-5 pt-4 pb-3 border-b border-border/60 overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${txBrandColor}12 0%, transparent 50%)` }} />
+                <div className="relative flex items-center gap-2.5">
+                  {txLogo ? (
+                    <div className="h-8 w-8 rounded-lg shadow-sm bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={txLogo} alt="" className="w-full h-full object-contain" /></div>
+                  ) : txAccount ? (
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: txBrandColor }}>{firmInitials(txAccount.firmName)}</div>
+                  ) : null}
+                  <DialogHeader className="p-0 space-y-0">
+                    <DialogTitle className="text-base">Add Transaction</DialogTitle>
+                    <DialogDescription className="text-xs">
+                      {txAccount?.firmName ?? 'Record a fee or payout'}
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="tx-description">Description <span className="normal-case">(optional)</span></label>
-              <Input id="tx-description" placeholder="e.g. Phase 1 reset after drawdown…" value={txForm.description} onChange={e => setTxForm(p => ({ ...p, description: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Date</label>
-              <DatePicker
-                date={txForm.date ? new Date(txForm.date + 'T12:00:00') : undefined}
-                onDateChange={d => setTxForm(p => ({ ...p, date: d ? d.toISOString().split('T')[0] : '' }))}
-                placeholder="Pick a date"
-                className="w-full"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTxDialog({ open: false, accountId: '' })}>Cancel</Button>
-            <Button onClick={handleSaveTx} style={{ backgroundColor: themeColors.primary }}>Add Transaction</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+              <div className="px-5 py-4 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-txtype">Type</label>
+                  <Select value={txForm.type} onValueChange={v => setTxForm(p => ({ ...p, type: v as TransactionType }))}>
+                    <SelectTrigger aria-labelledby="label-txtype"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {TX_TYPE_OPTIONS.map(t => (
+                        <SelectItem key={t.value} value={t.value}>
+                          <span className="flex items-center gap-2">
+                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${t.isExpense ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
+                              {t.isExpense ? 'OUT' : 'IN'}
+                            </span>
+                            {t.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="tx-amount">Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{txCurrSym}</span>
+                    <Input id="tx-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" className="pl-7" value={txForm.amount} onChange={e => setTxForm(p => ({ ...p, amount: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="tx-description">Description <span className="normal-case">(optional)</span></label>
+                  <Input id="tx-description" placeholder="Phase 1 reset after drawdown..." value={txForm.description} onChange={e => setTxForm(p => ({ ...p, description: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Date</label>
+                  <DatePicker
+                    date={txForm.date ? new Date(txForm.date + 'T12:00:00') : undefined}
+                    onDateChange={d => setTxForm(p => ({ ...p, date: d ? d.toISOString().split('T')[0] : '' }))}
+                    placeholder="Pick a date"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="px-5 py-3 border-t border-border/60 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setTxDialog({ open: false, accountId: '' })}>Cancel</Button>
+                <Button onClick={handleSaveTx} style={{ backgroundColor: txBrandColor }} className="text-white">Add Transaction</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )
+      })()}
 
       {/* ── Delete Confirmation Dialog ── */}
       <Dialog open={!!deleteDialog?.open} onOpenChange={open => !open && setDeleteDialog(null)}>
@@ -1463,7 +2348,7 @@ export default function PropTracker() {
           <DialogHeader>
             <DialogTitle>Import from Screenshot</DialogTitle>
             <DialogDescription>
-              Upload a screenshot of your prop firm billing or payout page — we'll extract the transactions automatically.
+              Upload a screenshot of your prop firm billing or payout page. Transactions are extracted automatically.
             </DialogDescription>
           </DialogHeader>
 
@@ -1519,7 +2404,7 @@ export default function PropTracker() {
           {importDialog.step === 'preview' && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                {importDialog.parsed.filter(t => t.keep).length} transaction{importDialog.parsed.filter(t => t.keep).length !== 1 ? 's' : ''} found — uncheck any you don't want to import.
+                {importDialog.parsed.filter(t => t.keep).length} transaction{importDialog.parsed.filter(t => t.keep).length !== 1 ? 's' : ''} found. Uncheck any you don't want to import.
               </p>
 
               <div className="max-h-72 overflow-y-auto rounded-lg border border-border/60 divide-y divide-border/40">
@@ -1564,6 +2449,136 @@ export default function PropTracker() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* ── Quick Balance Check-In Dialog ── */}
+      <Dialog open={checkinDialog.open} onOpenChange={open => !open && setCheckinDialog(p => ({ ...p, open: false }))}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>End of Day Check-In</DialogTitle>
+            <DialogDescription>
+              Update all your active challenge balances at once.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {checkinDialog.entries.map((entry, i) => {
+              const account = accounts.find(a => a.id === entry.accountId)
+              if (!account) return null
+              const brandColor = firmAvatarColor(account.firmName)
+              return (
+                <div key={entry.accountId} className="rounded-lg border border-border/60 p-3 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    {FIRM_LOGOS[account.firmName] ? (
+                      <div className="h-6 w-6 rounded shrink-0 bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-contain" /></div>
+                    ) : (
+                      <div
+                        className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+                        style={{ backgroundColor: brandColor }}
+                      >
+                        {firmInitials(account.firmName)}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium truncate">{account.firmName}</span>
+                    <span className="text-xs text-muted-foreground">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Balance</label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="h-8 text-xs"
+                        value={entry.balance}
+                        onChange={e => setCheckinDialog(p => ({
+                          ...p,
+                          entries: p.entries.map((en, j) => j === i ? { ...en, balance: e.target.value } : en),
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Today P&L</label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="h-8 text-xs"
+                        value={entry.todayPnL}
+                        onChange={e => setCheckinDialog(p => ({
+                          ...p,
+                          entries: p.entries.map((en, j) => j === i ? { ...en, todayPnL: e.target.value } : en),
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Trading Days</label>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        step="1"
+                        placeholder="0"
+                        className="h-8 text-xs"
+                        value={entry.tradingDays}
+                        onChange={e => setCheckinDialog(p => ({
+                          ...p,
+                          entries: p.entries.map((en, j) => j === i ? { ...en, tradingDays: e.target.value } : en),
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCheckinDialog(p => ({ ...p, open: false }))}>Cancel</Button>
+            <Button onClick={handleSaveCheckin} style={{ backgroundColor: themeColors.primary }}>
+              Update All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Balance Update Dialog ── */}
+      <Dialog open={balanceDialog.open} onOpenChange={open => !open && setBalanceDialog(p => ({ ...p, open: false }))}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Balance</DialogTitle>
+            <DialogDescription>
+              Enter your current account balance from your prop firm dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="bal-current">Current Balance</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">
+                  {currencySymbol(accounts.find(a => a.id === balanceDialog.accountId)?.currency)}
+                </span>
+                <Input id="bal-current" type="number" inputMode="decimal" step="0.01" placeholder="0.00" className="pl-7" value={balanceDialog.balance} onChange={e => setBalanceDialog(p => ({ ...p, balance: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="bal-today-pnl">Today's P&L <span className="normal-case">(optional, can be negative)</span></label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">
+                  {currencySymbol(accounts.find(a => a.id === balanceDialog.accountId)?.currency)}
+                </span>
+                <Input id="bal-today-pnl" type="number" inputMode="decimal" step="0.01" placeholder="0.00" className="pl-7" value={balanceDialog.todayPnL} onChange={e => setBalanceDialog(p => ({ ...p, todayPnL: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="bal-trading-days">Trading Days So Far</label>
+              <Input id="bal-trading-days" type="number" inputMode="numeric" min="0" step="1" placeholder="0" value={balanceDialog.tradingDays} onChange={e => setBalanceDialog(p => ({ ...p, tradingDays: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBalanceDialog(p => ({ ...p, open: false }))}>Cancel</Button>
+            <Button onClick={handleSaveBalance} style={{ backgroundColor: themeColors.primary }}>Update</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

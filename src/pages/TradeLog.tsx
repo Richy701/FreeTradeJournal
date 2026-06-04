@@ -76,6 +76,7 @@ interface Trade {
   customMultiplier?: number
   propFirm?: string
   accountId?: string
+  emotions?: string
 }
 
 interface TradeFormData {
@@ -93,6 +94,7 @@ interface TradeFormData {
   swap: number
   notes?: string
   strategy?: string
+  emotions?: string
   market?: 'forex' | 'futures' | 'indices'
   tags?: string[]
   useManualPnL?: boolean
@@ -184,6 +186,7 @@ export default function TradeLog() {
       swap: 0,
       notes: '',
       strategy: '',
+      emotions: '',
       market: 'forex',
       tags: [],
       propFirm: '',
@@ -968,6 +971,7 @@ export default function TradeLog() {
             swap: formData.swap || 0,
             notes: formData.notes || '',
             strategy: formData.strategy || '',
+            emotions: formData.emotions || '',
             market: formData.market || 'forex',
             tags: formData.tags || [],
             useManualPnL: formData.useManualPnL || false,
@@ -1662,6 +1666,40 @@ export default function TradeLog() {
 
                       <FormField
                         control={form.control}
+                        name="emotions"
+                        render={({ field }) => {
+                          const selected = field.value ? field.value.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                          const toggle = (emotion: string) => {
+                            const next = selected.includes(emotion) ? selected.filter((e: string) => e !== emotion) : [...selected, emotion];
+                            field.onChange(next.join(', '));
+                          };
+                          return (
+                            <FormItem>
+                              <FormLabel className="text-base font-semibold">Emotions</FormLabel>
+                              <div className="flex flex-wrap gap-2">
+                                {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => (
+                                  <button
+                                    key={e}
+                                    type="button"
+                                    onClick={() => toggle(e)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150 ${
+                                      selected.includes(e)
+                                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                                        : 'bg-muted/30 border-border/50 text-muted-foreground hover:border-border hover:text-foreground'
+                                    }`}
+                                  >
+                                    {e}
+                                  </button>
+                                ))}
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
+                      />
+
+                      <FormField
+                        control={form.control}
                         name="notes"
                         render={({ field }) => (
                           <FormItem>
@@ -2202,14 +2240,21 @@ export default function TradeLog() {
                         </div>
                       </div>
                       
-                      {trade.strategy && (
-                        <div className="mt-3">
-                          <Badge variant="outline" className="bg-muted/50 font-medium">
-                            {trade.strategy}
-                          </Badge>
+                      {(trade.strategy || trade.emotions) && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {trade.strategy && (
+                            <Badge variant="outline" className="bg-muted/50 font-medium">
+                              {trade.strategy}
+                            </Badge>
+                          )}
+                          {trade.emotions && trade.emotions.split(',').map(e => e.trim()).filter(Boolean).map(e => (
+                            <Badge key={e} variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-500 font-medium text-xs">
+                              {e}
+                            </Badge>
+                          ))}
                         </div>
                       )}
-                      
+
                       <div className="flex gap-2 mt-4 pt-3 border-t border-border/20">
                         <Button
                           size="sm"

@@ -83,20 +83,29 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### PropTracker
 
-- Dedicated prop firm tracker — one card per account (evaluation, funded, instant, express)
+- Dedicated prop firm tracker with real firm logos for 15 built-in firms (TopStep, Apex, FTMO, The5ers, FundedNext, Tradeify, Take Profit Trader, and more)
+- One card per account (evaluation, funded, instant, express) with firm brand color accents
 - Log every fee (evaluation, reset, monthly) and every payout against each account
-- Per-account stats: Invested, Earned, Net P&L — and aggregate totals across all firms
+- Per-account stats: Invested, Earned, Net P&L with tinted stat containers
+- **Challenge Rules Engine** — set profit target, max daily/total drawdown, and min trading days per account. Known firms auto-fill rules from presets. Live progress bars with percentage readouts and green/amber/red health indicators
+- **Balance Update** — update your current balance from your prop firm dashboard. High water mark auto-tracks. Daily P&L and trading days tracked per account
+- **End of Day Check-In** — update all active challenge balances in one dialog instead of opening each card individually
+- **Risk Calculator** — "If I lose $X today..." shows per-account impact on drawdown limits with breach warnings
+- **Success Rate Dashboard (Pro)** — pass rate, total attempts vs funded, average cost-to-fund, money wasted on failed accounts, best firm by ROI
+- **Cost Recovery Tracker** — per-account indicator showing how much more in payouts until break-even, or profit earned after costs recovered
 - Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
 - AI Analysis powered by GPT-4o — honest verdict on which firms are profitable, warning signs, and next steps (Pro, 5/day)
 - **Screenshot Import (Pro)** — upload a billing or payout screenshot and GPT-4o Vision auto-extracts all transactions; supports multiple files, drag & drop, and duplicate detection
-- Deadline alerts — banner warning when a prop firm account expires within 7 days (red if ≤2 days, amber if 3–7)
+- Deadline alerts when a prop firm account expires within 7 days
+- Account size quick-select chips and firm logo dropdown in the add/edit form
+- Theme-aware logo rendering with neutral background containers
 - Freemium: 3 accounts free, unlimited on Pro
 - Full cloud sync included for Pro users
 
 ### Multi-Account & Prop Firm Support
 
 - Multiple account types: Live, Demo, Prop Firm, Paper
-- Pre-configured prop firm list (FTMO, Apex, TopStep, E8 Markets, Funded FX, FundingPips, Alpha Capital, The5ers)
+- Pre-configured prop firm list (FTMO, Apex, TopStep, The5ers, E8 Markets, FundedNext, Tradeify, Take Profit Trader, Funding Pips, Lucid Trading, Alpha Futures, Aqua Funded, and more)
 - Per-account trade isolation and filtering — saving on one account never overwrites another account's data
 - Account deletion automatically cleans up orphaned trades — no stale data blocking CSV re-imports
 - Inline account editing in Settings — edit form replaces the card in-place for better UX

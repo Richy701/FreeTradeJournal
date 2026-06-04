@@ -8,6 +8,21 @@ export type TransactionType =
   | 'payout'
   | 'other-expense'
 
+export interface ChallengeRules {
+  profitTarget: number
+  maxDailyDrawdown: number
+  maxTotalDrawdown: number
+  minTradingDays?: number
+}
+
+export interface ChallengeProgress {
+  currentBalance: number
+  highWaterMark: number
+  tradingDaysCount: number
+  todayPnL?: number
+  lastUpdated: string
+}
+
 export interface PropFirmAccount {
   id: string
   firmName: string
@@ -18,6 +33,8 @@ export interface PropFirmAccount {
   startDate: string
   endDate?: string
   notes?: string
+  challengeRules?: ChallengeRules
+  challengeProgress?: ChallengeProgress
   createdAt: string
 }
 

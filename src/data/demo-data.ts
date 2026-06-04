@@ -1304,6 +1304,19 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
     status: 'active',
     startDate: daysAgo(30).toISOString(),
     notes: 'Phase 1 passed on first attempt. Currently in funded phase.',
+    challengeRules: {
+      profitTarget: 10000,
+      maxDailyDrawdown: 5,
+      maxTotalDrawdown: 10,
+      minTradingDays: 4,
+    },
+    challengeProgress: {
+      currentBalance: 106340,
+      highWaterMark: 107200,
+      tradingDaysCount: 18,
+      todayPnL: -860,
+      lastUpdated: daysAgo(0).toISOString().split('T')[0],
+    },
     createdAt: daysAgo(30).toISOString(),
   },
   {
@@ -1319,8 +1332,8 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
   },
   {
     id: 'demo-prop-3',
-    firmName: 'MyForexFunds',
-    accountSize: 25000,
+    firmName: 'Tradeify',
+    accountSize: 50000,
     accountType: 'evaluation',
     status: 'failed',
     startDate: daysAgo(90).toISOString(),
@@ -1336,6 +1349,17 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
     status: 'active',
     startDate: daysAgo(45).toISOString(),
     notes: 'Bootcamp plan. Steady progress.',
+    challengeRules: {
+      profitTarget: 1600,
+      maxDailyDrawdown: 3,
+      maxTotalDrawdown: 6,
+    },
+    challengeProgress: {
+      currentBalance: 20840,
+      highWaterMark: 20840,
+      tradingDaysCount: 12,
+      lastUpdated: daysAgo(1).toISOString().split('T')[0],
+    },
     createdAt: daysAgo(45).toISOString(),
   },
 ]
@@ -1350,9 +1374,9 @@ export const DEMO_PROP_TRANSACTIONS: PropFirmTransaction[] = [
   { id: 'demo-tx-3', propAccountId: 'demo-prop-2', type: 'evaluation-fee', amount: 167, description: 'Apex $50k Evaluation', date: daysAgo(60).toISOString(), createdAt: daysAgo(60).toISOString() },
   { id: 'demo-tx-4', propAccountId: 'demo-prop-2', type: 'payout', amount: 980, description: 'Apex payout after passing', date: daysAgo(18).toISOString(), createdAt: daysAgo(18).toISOString() },
 
-  // MyForexFunds — fees, reset, failure
-  { id: 'demo-tx-5', propAccountId: 'demo-prop-3', type: 'evaluation-fee', amount: 129, description: 'MFF $25k Evaluation fee', date: daysAgo(90).toISOString(), createdAt: daysAgo(90).toISOString() },
-  { id: 'demo-tx-6', propAccountId: 'demo-prop-3', type: 'reset-fee', amount: 65, description: 'Reset after drawdown breach', date: daysAgo(76).toISOString(), createdAt: daysAgo(76).toISOString() },
+  // Tradeify — fees, reset, failure
+  { id: 'demo-tx-5', propAccountId: 'demo-prop-3', type: 'evaluation-fee', amount: 150, description: 'Tradeify $50k Evaluation fee', date: daysAgo(90).toISOString(), createdAt: daysAgo(90).toISOString() },
+  { id: 'demo-tx-6', propAccountId: 'demo-prop-3', type: 'reset-fee', amount: 75, description: 'Reset after drawdown breach', date: daysAgo(76).toISOString(), createdAt: daysAgo(76).toISOString() },
 
   // The5ers $20k
   { id: 'demo-tx-7', propAccountId: 'demo-prop-4', type: 'evaluation-fee', amount: 95, description: 'The5ers Bootcamp $20k', date: daysAgo(45).toISOString(), createdAt: daysAgo(45).toISOString() },

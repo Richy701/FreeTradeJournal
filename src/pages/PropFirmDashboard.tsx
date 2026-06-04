@@ -28,7 +28,7 @@ const FEATURES = [
   {
     icon: <Trophy className="h-5 w-5" />,
     title: 'Multi-Firm',
-    desc: 'Works with FTMO, Apex, TopStep, MyFundedFX, E8 Funding, The5ers, and any other firm. You create the accounts and enter your details.',
+    desc: 'Works with FTMO, Apex, TopStep, Tradeify, E8 Markets, The5ers, and any other firm. You create the accounts and enter your details.',
   },
   {
     icon: <BarChart3 className="h-5 w-5" />,
@@ -44,7 +44,7 @@ const FEATURES = [
 
 const FAQS = [
   { q: 'How do I track prop firm accounts?', a: 'Create a separate account for each evaluation or funded seat. Name it after your firm and challenge (e.g. "FTMO 100k Challenge"), set the type to funded, and log trades against it.' },
-  { q: 'Which prop firms does this work with?', a: 'All of them. You create your own accounts and enter your firm\'s details, so it works with FTMO, Apex, TopStep, MyFundedFX, E8 Funding, The5ers, and any other firm.' },
+  { q: 'Which prop firms does this work with?', a: 'All of them. You create your own accounts and enter your firm\'s details, so it works with FTMO, Apex, TopStep, Tradeify, E8 Markets, The5ers, and any other firm.' },
   { q: 'Can I track fees, resets, and payouts?', a: 'Yes. PropTracker lets you log every expense (eval fees, resets, subscriptions) and income (profit splits, payouts) per account. It calculates your true net P&L and ROI across all firms.' },
   { q: 'Can I set drawdown and loss goals?', a: 'Yes. Set targets for max drawdown, max daily loss, win rate, and profit. Match them to your prop firm\'s rules so you can see at a glance if you are within limits.' },
   { q: 'Can I track multiple accounts at once?', a: 'Yes. Each account is completely separate with its own trades, balance, and analytics. Switch between them from the sidebar and compare performance across firms.' },
@@ -205,6 +205,25 @@ export default function PropFirmDashboard() {
           </div>
         </section>
 
+        <section className="px-6 pb-16 bg-background">
+          <div className="container mx-auto max-w-5xl">
+            <Link
+              to="/affiliate"
+              className="block rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] px-6 py-5 hover:border-amber-500/40 hover:bg-amber-500/[0.07] transition-all duration-300 group"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Save on your next prop firm challenge</p>
+                  <p className="text-sm text-muted-foreground">Exclusive discount codes from our affiliate partners.</p>
+                </div>
+                <span className="text-sm font-semibold text-amber-500 group-hover:translate-x-1 transition-transform duration-200 shrink-0">
+                  View deals →
+                </span>
+              </div>
+            </Link>
+          </div>
+        </section>
+
         <section className="py-24 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
 
@@ -253,6 +272,7 @@ export default function PropFirmDashboard() {
                 { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
                 { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
                 { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
+                { name: "Affiliate", href: "/affiliate" },
               ],
             },
             {
