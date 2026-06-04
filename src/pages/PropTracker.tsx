@@ -1226,7 +1226,7 @@ export default function PropTracker() {
                         >
                           <div className="flex items-center gap-2">
                             {FIRM_LOGOS[r.account.firmName] ? (
-                              <div className="h-6 w-6 rounded shrink-0 bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-contain" /></div>
+                              <div className="h-6 w-6 rounded shrink-0 overflow-hidden"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-cover" /></div>
                             ) : (
                               <div
                                 className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
@@ -1596,7 +1596,7 @@ export default function PropTracker() {
                       <CardContent className="p-4 pt-5">
                         <div className="flex items-start gap-3 mb-3">
                           {FIRM_LOGOS[g.firm] ? (
-                            <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-contain" /></div>
+                            <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm overflow-hidden"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
                           ) : (
                             <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm" style={{ backgroundColor: g.color }}>{g.initials}</div>
                           )}
@@ -1645,7 +1645,7 @@ export default function PropTracker() {
                     <div className="flex items-start gap-3 mb-3">
                       {FIRM_LOGOS[account.firmName] ? (
                         <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm bg-white overflow-hidden">
-                          <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-contain" />
+                          <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" />
                         </div>
                       ) : (
                         <div
@@ -2009,7 +2009,7 @@ export default function PropTracker() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${brandCol}12 0%, transparent 50%)` }} />
                 <div className="relative flex items-center gap-3">
                   {logo ? (
-                    <div className="h-10 w-10 rounded-lg shadow-sm bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={logo} alt="" className="w-full h-full object-contain" /></div>
+                    <div className="h-10 w-10 rounded-lg shadow-sm overflow-hidden"><img src={logo} alt="" className="w-full h-full object-cover" /></div>
                   ) : (
                     <div className="h-10 w-10 rounded-lg flex items-center justify-center shadow-sm" style={{ backgroundColor: `${brandCol}20` }}>
                       <Building2 className="h-5 w-5" style={{ color: brandCol }} />
@@ -2054,7 +2054,7 @@ export default function PropTracker() {
                     <SelectItem key={f} value={f}>
                       <span className="flex items-center gap-2">
                         {FIRM_LOGOS[f] ? (
-                          <div className="h-4 w-4 rounded-sm shrink-0 bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[f]} alt="" className="w-full h-full object-contain" /></div>
+                          <div className="h-4 w-4 rounded-sm shrink-0 overflow-hidden"><img src={FIRM_LOGOS[f]} alt="" className="w-full h-full object-cover" /></div>
                         ) : f !== 'Custom...' ? (
                           <span className="h-4 w-4 rounded-sm flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ backgroundColor: FIRM_BRAND_COLORS[f] ?? '#888' }}>{firmInitials(f)}</span>
                         ) : null}
@@ -2256,7 +2256,7 @@ export default function PropTracker() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${txBrandColor}12 0%, transparent 50%)` }} />
                 <div className="relative flex items-center gap-2.5">
                   {txLogo ? (
-                    <div className="h-8 w-8 rounded-lg shadow-sm bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={txLogo} alt="" className="w-full h-full object-contain" /></div>
+                    <div className="h-8 w-8 rounded-lg shadow-sm overflow-hidden"><img src={txLogo} alt="" className="w-full h-full object-cover" /></div>
                   ) : txAccount ? (
                     <div className="h-8 w-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: txBrandColor }}>{firmInitials(txAccount.firmName)}</div>
                   ) : null}
@@ -2469,7 +2469,7 @@ export default function PropTracker() {
                 <div key={entry.accountId} className="rounded-lg border border-border/60 p-3 space-y-2.5">
                   <div className="flex items-center gap-2">
                     {FIRM_LOGOS[account.firmName] ? (
-                      <div className="h-6 w-6 rounded shrink-0 bg-neutral-100 dark:bg-neutral-800 overflow-hidden"><img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-contain" /></div>
+                      <div className="h-6 w-6 rounded shrink-0 overflow-hidden"><img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" /></div>
                     ) : (
                       <div
                         className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
