@@ -50,36 +50,21 @@ export const changelog: ChangelogEntry[] = [
         description: 'Curated partner deals on prop firms, tools, and services. Available from the sidebar.',
       },
       {
-        type: 'improved',
-        text: 'Landing pages redesigned for SEO',
-        description: 'All landing pages now include FAQ sections, feature screenshots, and a full footer for better search visibility and user experience.',
-      },
-      {
         type: 'fixed',
         text: 'Cloud sync race condition on new devices',
         description: 'Signing in on a new device could trigger a race condition that wiped existing user data. Cloud data is now restored safely before any local writes.',
-      },
-      {
-        type: 'fixed',
-        text: 'Demo mode crash',
-        description: 'The app could crash in demo mode when user metadata was missing. Demo mode now handles missing data gracefully.',
       },
     ],
   },
   {
     version: '2.11.0',
     date: '2026-05-04',
-    summary: 'Tradovate CSV import is here, plus a fix for the email unsubscribe link.',
+    summary: 'Tradovate CSV import is here.',
     items: [
       {
         type: 'new',
         text: 'Tradovate import support',
         description: 'Import your Tradovate Orders CSV and have trades automatically paired and P&L calculated. The parser detects the Tradovate format, filters for filled orders, and matches entries to exits using FIFO. All standard futures contracts are supported.',
-      },
-      {
-        type: 'fixed',
-        text: 'Unsubscribe link in emails returned invalid',
-        description: 'The unsubscribe link in marketing emails pointed to an address that did not exist. It now correctly routes to a monitored inbox.',
       },
     ],
   },
@@ -98,22 +83,12 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.9.0',
     date: '2026-04-26',
-    summary: 'PropTracker now supports multiple currencies, plus a community poll to help shape what comes next.',
+    summary: 'PropTracker now supports multiple currencies.',
     items: [
       {
         type: 'new',
         text: 'Currency selection for PropTracker accounts',
         description: 'You can now set the currency for each prop firm account (USD, EUR, GBP, CHF, AUD, CAD, JPY, CZK). All amounts — account size, fees, payouts, and P&L — display in the currency you choose. Existing accounts default to USD.',
-      },
-      {
-        type: 'new',
-        text: '80K added to preset account sizes',
-        description: 'A common prop firm account size that was previously only available through the custom input is now a one-click preset.',
-      },
-      {
-        type: 'new',
-        text: 'Community poll on the dashboard',
-        description: 'We are building a community and want your input. Vote for Discord or Telegram directly from your dashboard. Results update in real time so you can see what others prefer.',
       },
     ],
   },
@@ -296,7 +271,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.1.0',
     date: '2026-03-10',
-    summary: 'Major data protection update — sync with content blockers, auto-restore, free tier safeguards, and comma formatting.',
+    summary: 'Major data protection update — sync with content blockers, auto-restore, and free tier safeguards.',
     items: [
       {
         type: 'new',
@@ -317,11 +292,6 @@ export const changelog: ChangelogEntry[] = [
         type: 'new',
         text: 'Data protection for free users',
         description: 'New safeguards for free users: storage usage monitor, backup reminders, incognito mode warning, and complete backup/restore.',
-      },
-      {
-        type: 'new',
-        text: 'Comma formatting on currency values',
-        description: 'All currency values now display with commas for better readability (e.g., $10,618.19 instead of $10618.19).',
       },
       {
         type: 'fixed',
@@ -390,7 +360,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '1.9.0',
     date: '2026-02-19',
-    summary: 'Trade Insights page redesign — new trader profile radar, cleaner stats, colored ideas, and chart fixes.',
+    summary: 'Trade Insights page redesign — new trader profile radar, cleaner stats, and colored ideas.',
     items: [
       {
         type: 'new',
@@ -411,16 +381,6 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         text: 'Key stats visible at the top of Trade Insights',
         description: 'Total P&L and win rate now appear in the page header so you don\'t have to scroll to find them.',
-      },
-      {
-        type: 'fixed',
-        text: 'Chart cards now align to equal height',
-        description: 'Cards in two-column rows now stretch to the same height regardless of content.',
-      },
-      {
-        type: 'fixed',
-        text: 'Ticker symbols no longer cut off on charts',
-        description: 'Fixed ticker symbols being clipped on the Symbol Performance chart.',
       },
     ],
   },
@@ -453,11 +413,6 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         text: 'Reduced motion support',
         description: 'Animated elements throughout the app now respect your OS reduced motion setting, showing instant transitions instead.',
-      },
-      {
-        type: 'fixed',
-        text: 'Sign In link visible on mobile',
-        description: 'The Sign In link was hidden on mobile. It now appears alongside the theme toggle on all screen sizes.',
       },
     ],
   },
@@ -540,17 +495,12 @@ export const changelog: ChangelogEntry[] = [
         text: 'Better empty state with action buttons',
         description: 'When you have no trades, the dashboard now shows "Add Trade" and "Import CSV" buttons instead of blank space.',
       },
-      {
-        type: 'fixed',
-        text: 'Theme colors now switch instantly',
-        description: 'Stat cards, chart toggles, and calendar elements were fading slowly when switching themes. They now update instantly.',
-      },
     ],
   },
   {
     version: '1.4.0',
     date: '2026-02-13',
-    summary: 'Mobile UI polish, accurate account metrics, and color-coded dashboard cards.',
+    summary: 'Accurate account metrics and color-coded dashboard cards.',
     items: [
       {
         type: 'fixed',
@@ -562,22 +512,12 @@ export const changelog: ChangelogEntry[] = [
         text: 'Dashboard metric cards are now color-coded',
         description: 'Win Rate, Total Trades, and Profit Factor cards now use green/red based on performance instead of plain white text.',
       },
-      {
-        type: 'fixed',
-        text: 'Theme switching is now fully instant',
-        description: 'Theme and dark mode now switch instantly with no color fade or delay.',
-      },
-      {
-        type: 'fixed',
-        text: 'Mobile button sizing and layout consistency',
-        description: 'Buttons no longer stretch full-width on mobile. The signup terms checkbox no longer gets squashed.',
-      },
     ],
   },
   {
     version: '1.3.0',
     date: '2026-02-12',
-    summary: 'TopStep CSV import, column mapping for unknown brokers, futures contract multipliers, and instant theme switching.',
+    summary: 'TopStep CSV import, column mapping for unknown brokers, and futures contract multipliers.',
     items: [
       {
         type: 'new',
@@ -600,11 +540,6 @@ export const changelog: ChangelogEntry[] = [
         description: 'Re-importing the same file no longer creates duplicate entries. Trades that already exist in your log are automatically skipped.',
       },
       {
-        type: 'improved',
-        text: 'Theme switching is now instant with no flash',
-        description: 'Switching between light and dark mode now applies instantly without the brief white flash.',
-      },
-      {
         type: 'fixed',
         text: 'Light mode visibility issues',
         description: 'Fixed contrast and readability problems in light mode — charts, badges, table borders, and card backgrounds now look correct in both themes.',
@@ -614,17 +549,12 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '2026-02-05',
-    summary: 'Faster trade entry with a searchable instrument picker and smoother UI interactions.',
+    summary: 'Faster trade entry with a searchable instrument picker.',
     items: [
       {
         type: 'new',
         text: 'Searchable instrument picker',
         description: 'The symbol field in the trade form is now a searchable dropdown. Start typing to filter through forex pairs, futures contracts, and indices instead of scrolling through a long list.',
-      },
-      {
-        type: 'improved',
-        text: 'Trade form scrolls properly on small screens',
-        description: 'The trade form now scrolls correctly on smaller screens and no longer cuts off fields at the bottom.',
       },
     ],
   },
