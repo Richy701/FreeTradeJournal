@@ -24,7 +24,8 @@ export const footerConfig = {
         { name: "Forex Trading Journal", href: "/forex-trading-journal" },
         { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
         { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
-        { name: "Prop Firm ROI Tracker", href: "/prop-tracker" }
+        { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
+        { name: "Affiliate", href: "/affiliate" }
       ]
     },
     {

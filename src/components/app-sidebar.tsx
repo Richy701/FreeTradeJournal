@@ -16,6 +16,7 @@ import {
   Eye,
   Rocket,
   Rss,
+  Tag,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
@@ -164,6 +165,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <a href="/affiliate" target="_blank" rel="noopener noreferrer">
+                    <Tag className="h-4 w-4" />
+                    <span>Prop Firm Deals</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton size="sm" asChild>
                   <a href="https://blog.freetradejournal.com" target="_blank" rel="noopener noreferrer">

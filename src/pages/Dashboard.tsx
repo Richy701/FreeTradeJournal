@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp, UserPlus } from "lucide-react"
+import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp, UserPlus, Tag, Building2 } from "lucide-react"
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -61,6 +61,8 @@ export default function Dashboard() {
   const userStorage = useUserStorage()
   const [dataVersion, setDataVersion] = useState(0)
   const [showDataWarning, setShowDataWarning] = useState(true)
+  const [showDealsBanner, setShowDealsBanner] = useState(() => !localStorage.getItem('ftj-dismiss-deals'))
+  const [showTrackerBanner, setShowTrackerBanner] = useState(() => !localStorage.getItem('ftj-dismiss-tracker'))
 
   // Check for incognito mode (free users only)
   useEffect(() => {
@@ -120,6 +122,7 @@ export default function Dashboard() {
     lotSize: "",
     pnl: "",
     strategy: "",
+    emotions: "",
     notes: "",
     propFirm: "none"
   })
@@ -169,6 +172,7 @@ export default function Dashboard() {
       pnlPercentage: entryPrice > 0 ? (pnl / (entryPrice * lotSize)) * 100 : 0,
       notes: tradeForm.notes,
       strategy: tradeForm.strategy,
+      emotions: tradeForm.emotions || undefined,
       market: tradeForm.market,
       propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm
     }
@@ -186,10 +190,11 @@ export default function Dashboard() {
       lotSize: "",
       pnl: "",
       strategy: "",
+      emotions: "",
       notes: "",
       propFirm: "none"
     })
-    
+
     setIsTradeModalOpen(false)
   }
 
@@ -518,6 +523,52 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Affiliate Deals Banner */}
+      {showDealsBanner && (
+        <div className="mx-4 mb-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-2.5 flex items-center gap-3">
+          <Tag className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="flex-1 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Save on your next challenge</span>
+            <span className="hidden sm:inline"> · Exclusive codes for The5ers, FTMO, Apex, and more</span>
+          </p>
+          <a href="/affiliate" target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
+              View Deals →
+            </button>
+          </a>
+          <button
+            onClick={() => { localStorage.setItem('ftj-dismiss-deals', '1'); setShowDealsBanner(false); }}
+            className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
+
+      {/* PropTracker Banner */}
+      {showTrackerBanner && (
+        <div className="mx-4 mb-4 rounded-xl border border-border/50 bg-card/50 px-4 py-2.5 flex items-center gap-3">
+          <Building2 className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="flex-1 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Track your prop firm P&L</span>
+            <span className="hidden sm:inline"> · Log fees, resets, and payouts across every firm</span>
+          </p>
+          <Link to="/prop-tracker" className="shrink-0">
+            <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
+              Open PropTracker →
+            </button>
+          </Link>
+          <button
+            onClick={() => { localStorage.setItem('ftj-dismiss-tracker', '1'); setShowTrackerBanner(false); }}
+            className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
+
       {/* Mobile-optimized Header Section */}
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
@@ -688,6 +739,33 @@ export default function Dashboard() {
                           value={tradeForm.strategy}
                           onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
                         />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Emotions</Label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => {
+                          const selected = tradeForm.emotions.split(',').map(s => s.trim()).filter(Boolean);
+                          const isActive = selected.includes(e);
+                          return (
+                            <button
+                              key={e}
+                              type="button"
+                              onClick={() => {
+                                const next = isActive ? selected.filter(s => s !== e) : [...selected, e];
+                                setTradeForm(prev => ({ ...prev, emotions: next.join(', ') }));
+                              }}
+                              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors duration-150 ${
+                                isActive
+                                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                                  : 'bg-muted/30 border-border/50 text-muted-foreground hover:border-border hover:text-foreground'
+                              }`}
+                            >
+                              {e}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 

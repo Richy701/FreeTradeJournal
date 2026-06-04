@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { LogoCarousel } from "@/components/ui/logo-carousel";
 
 export function LogoCloud() {
@@ -61,6 +62,11 @@ export function LogoCloud() {
 
         <p className="mt-8 text-center text-sm text-muted-foreground/70">
           Compatible with every prop firm, broker, and market
+        </p>
+        <p className="mt-2 text-center">
+          <Link to="/affiliate" className="text-sm text-amber-500/80 hover:text-amber-500 transition-colors duration-200">
+            Save on challenges with our partner deals →
+          </Link>
         </p>
       </div>
     </section>

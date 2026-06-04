@@ -190,6 +190,25 @@ export default function PropTrackerLanding() {
           </div>
         </section>
 
+        <section className="px-6 pb-16 bg-background">
+          <div className="container mx-auto max-w-5xl">
+            <Link
+              to="/affiliate"
+              className="block rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] px-6 py-5 hover:border-amber-500/40 hover:bg-amber-500/[0.07] transition-all duration-300 group"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Save on your next prop firm challenge</p>
+                  <p className="text-sm text-muted-foreground">Exclusive discount codes from our affiliate partners.</p>
+                </div>
+                <span className="text-sm font-semibold text-amber-500 group-hover:translate-x-1 transition-transform duration-200 shrink-0">
+                  View deals →
+                </span>
+              </div>
+            </Link>
+          </div>
+        </section>
+
         <Footer7
           logo={{ url: "/", src: "", alt: "FreeTradeJournal Logo", title: "FreeTradeJournal" }}
           description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
@@ -211,6 +230,7 @@ export default function PropTrackerLanding() {
                 { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
                 { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
                 { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
+                { name: "Affiliate", href: "/affiliate" },
               ],
             },
             {

@@ -253,6 +253,7 @@ export default function FuturesTradingTracker() {
                 { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
                 { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
                 { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
+                { name: "Affiliate", href: "/affiliate" },
               ],
             },
             {

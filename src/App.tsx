@@ -49,6 +49,7 @@ const Pricing = lazy(() => import('@/pages/Pricing'));
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('@/pages/VerifyEmail'));
+const Affiliate = lazy(() => import('@/pages/Affiliate'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const toastOptions = {
@@ -114,6 +115,7 @@ function App() {
                 <Route path="/forex-trading-journal" element={<ForexTradingJournal />} />
                 <Route path="/futures-trading-tracker" element={<FuturesTradingTracker />} />
                 <Route path="/prop-firm-dashboard" element={<PropFirmDashboard />} />
+                <Route path="/affiliate" element={<Affiliate />} />
                 
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
                 <Route path="/prop-tracker" element={<PropTrackerRoute />} />
