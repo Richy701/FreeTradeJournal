@@ -15,6 +15,58 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.12.0',
+    date: '2026-06-04',
+    summary: 'Major PropTracker upgrade with challenge rules, success tracking, risk calculator, and a new affiliate page.',
+    items: [
+      {
+        type: 'new',
+        text: 'PropTracker Challenge Rules Engine',
+        description: 'Set and track drawdown limits, profit targets, daily loss caps, and other challenge rules for each prop firm account. Rules are checked automatically so you always know where you stand.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker Success Rate Dashboard',
+        description: 'See your pass/fail rate across challenges with visual breakdowns. Understand which firms and account sizes you perform best on.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker Risk Calculator',
+        description: 'Estimate your risk exposure per challenge based on account size, fees, and rules. Know your break-even point before you start.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker Quick Check-In',
+        description: 'Fast daily status update for active challenges. Log your current P&L and rule compliance in seconds.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker Cost Recovery tracker',
+        description: 'Track how much you have spent on challenges versus earned back. See your true ROI across all prop firm attempts.',
+      },
+      {
+        type: 'new',
+        text: 'Affiliate page',
+        description: 'Curated partner deals on prop firms, tools, and services. Available from the sidebar.',
+      },
+      {
+        type: 'improved',
+        text: 'Landing pages redesigned for SEO',
+        description: 'All landing pages now include FAQ sections, feature screenshots, and a full footer for better search visibility and user experience.',
+      },
+      {
+        type: 'fixed',
+        text: 'Cloud sync race condition on new devices',
+        description: 'Signing in on a new device could trigger a race condition that wiped existing user data. Cloud data is now restored safely before any local writes.',
+      },
+      {
+        type: 'fixed',
+        text: 'Demo mode crash',
+        description: 'The app could crash in demo mode when user metadata was missing. Demo mode now handles missing data gracefully.',
+      },
+    ],
+  },
+  {
     version: '2.11.0',
     date: '2026-05-04',
     summary: 'Tradovate CSV import is here, plus a fix for the email unsubscribe link.',
@@ -605,4 +657,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.9.0'
+export const LATEST_CHANGELOG_VERSION = '2.12.0'
