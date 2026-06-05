@@ -1452,13 +1452,20 @@ export default function PropTracker() {
 
               {/* Results */}
               {aiAnalysis && !aiLoading && (() => {
-                // Parse sections from markdown-style response
+                // Parse score from first line
+                const scoreMatch = aiAnalysis.match(/^SCORE:\s*(\d+)\s*\/\s*10/im)
+                const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null
+                const scoreColor = score !== null
+                  ? score >= 7 ? themeColors.profit : score >= 4 ? themeColors.primary : themeColors.loss
+                  : themeColors.primary
+
                 const sections = [
-                  { key: 'verdict',  heading: 'Overall Verdict',  icon: CheckCircle2,   color: themeColors.profit },
-                  { key: 'roi',      heading: 'ROI Breakdown',    icon: BarChart2,      color: themeColors.primary },
-                  { key: 'firms',    heading: 'Firm-by-Firm',     icon: Building2,      color: themeColors.primary },
-                  { key: 'warnings', heading: 'Warning Signs',    icon: AlertTriangle,  color: themeColors.loss },
-                  { key: 'next',     heading: 'What to Do Next',  icon: ListChecks,     color: themeColors.profit },
+                  { key: 'verdict',   heading: 'Overall Verdict',   icon: CheckCircle2,   color: themeColors.profit },
+                  { key: 'roi',       heading: 'ROI Breakdown',     icon: BarChart2,       color: themeColors.primary },
+                  { key: 'challenge', heading: 'Challenge Progress', icon: Target,          color: themeColors.primary },
+                  { key: 'firms',     heading: 'Firm-by-Firm',      icon: Building2,       color: themeColors.primary },
+                  { key: 'warnings',  heading: 'Warning Signs',     icon: AlertTriangle,   color: themeColors.loss },
+                  { key: 'next',      heading: 'What to Do Next',   icon: ListChecks,      color: themeColors.profit },
                 ]
 
                 const parsed: Record<string, string> = {}
@@ -1474,11 +1481,30 @@ export default function PropTracker() {
 
                 return (
                   <div className="divide-y divide-border/60">
+                    {/* Score card */}
+                    {score !== null && (
+                      <div className="px-5 py-4 flex items-center gap-4">
+                        <div
+                          className="flex items-center justify-center w-14 h-14 rounded-xl text-white font-bold text-lg shrink-0"
+                          style={{ backgroundColor: scoreColor }}
+                        >
+                          {score}/10
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">
+                            {score >= 8 ? 'Strong Performance' : score >= 6 ? 'On Track' : score >= 4 ? 'Needs Improvement' : 'At Risk'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {score >= 8 ? 'Your prop trading is profitable and sustainable.' : score >= 6 ? 'Profitable direction, but room to optimize.' : score >= 4 ? 'Costs are eating into returns. Review your approach.' : 'Spending more than you\'re making. Action needed.'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {sections.map(s => {
                       const content = parsed[s.key]
                       if (!content) return null
                       const Icon = s.icon
-                      // Format bullet points
                       const lines = content.split('\n').filter(Boolean)
                       return (
                         <div key={s.key} className="px-5 py-4 space-y-2">
@@ -1488,7 +1514,6 @@ export default function PropTracker() {
                           </div>
                           <div className="space-y-1.5 text-sm text-foreground leading-relaxed">
                             {lines.map((line, i) => {
-                              // Bold firm names (**text**)
                               const formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                               const isBullet = line.startsWith('-') || /^\d+\./.test(line)
                               return (

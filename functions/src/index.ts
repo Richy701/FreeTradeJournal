@@ -1533,11 +1533,35 @@ Return ONLY a valid JSON array. No markdown, no explanation. Example:
 
 function buildPropTrackerPrompt(payload: Record<string, any>) {
   const { accounts, transactions } = payload as {
-    accounts: Array<{ id: string; firmName: string; accountSize: number; accountType: string; status: string; startDate: string; endDate?: string }>;
+    accounts: Array<{
+      id: string; firmName: string; accountSize: number; accountType: string;
+      status: string; startDate: string; endDate?: string; currency?: string;
+      challengeRules?: { profitTarget: number; maxDailyDrawdown: number; maxTotalDrawdown: number; minTradingDays?: number };
+      challengeProgress?: { currentBalance: number; highWaterMark: number; tradingDaysCount: number; todayPnL?: number; lastUpdated: string };
+    }>;
     transactions: Array<{ propAccountId: string; type: string; amount: number; description: string; date: string }>;
   };
 
-  // Build per-account summaries
+  // Compute cross-account patterns
+  const firmStats: Record<string, { attempts: number; passed: number; failed: number; resets: number; totalFees: number; totalPayouts: number }> = {};
+  for (const a of accounts) {
+    const firm = a.firmName;
+    if (!firmStats[firm]) firmStats[firm] = { attempts: 0, passed: 0, failed: 0, resets: 0, totalFees: 0, totalPayouts: 0 };
+    firmStats[firm].attempts++;
+    if (a.status === "passed") firmStats[firm].passed++;
+    if (a.status === "failed") firmStats[firm].failed++;
+    const txs = transactions.filter(t => t.propAccountId === a.id);
+    firmStats[firm].resets += txs.filter(t => t.type === "reset-fee").length;
+    firmStats[firm].totalFees += txs.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type)).reduce((s, t) => s + t.amount, 0);
+    firmStats[firm].totalPayouts += txs.filter(t => t.type === "payout").reduce((s, t) => s + t.amount, 0);
+  }
+
+  const patternSummary = Object.entries(firmStats).map(([firm, s]) => {
+    const passRate = s.attempts > 0 ? ((s.passed / s.attempts) * 100).toFixed(0) : "0";
+    const costPerAttempt = s.attempts > 0 ? (s.totalFees / s.attempts).toFixed(0) : "0";
+    return `${firm}: ${s.attempts} attempts, ${s.passed} passed, ${s.failed} failed, ${s.resets} resets, ${passRate}% pass rate, $${costPerAttempt} avg cost/attempt, net ${s.totalPayouts - s.totalFees >= 0 ? "+" : ""}$${s.totalPayouts - s.totalFees}`;
+  }).join("\n");
+
   const accountSummaries = accounts.map(a => {
     const txs = transactions.filter(t => t.propAccountId === a.id);
     const expenses = txs.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type));
@@ -1545,6 +1569,7 @@ function buildPropTrackerPrompt(payload: Record<string, any>) {
     const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
     const totalPayouts = payouts.reduce((s, t) => s + t.amount, 0);
     const net = totalPayouts - totalExpenses;
+    const resetCount = txs.filter(t => t.type === "reset-fee").length;
     const daysActive = a.endDate
       ? Math.round((new Date(a.endDate).getTime() - new Date(a.startDate).getTime()) / 86400000)
       : Math.round((Date.now() - new Date(a.startDate).getTime()) / 86400000);
@@ -1553,27 +1578,65 @@ function buildPropTrackerPrompt(payload: Record<string, any>) {
       ? txs.map(t => `  - ${t.date}: ${t.type} $${t.amount}${t.description ? ` (${t.description})` : ""}`).join("\n")
       : "  - No transactions logged";
 
-    return `${a.firmName} | $${a.accountSize.toLocaleString()} ${a.accountType} | Status: ${a.status} | ${daysActive} days active\n  Fees: $${totalExpenses} | Payouts: $${totalPayouts} | Net: ${net >= 0 ? "+" : ""}$${net}\n${txDetail}`;
+    let summary = `${a.firmName} | $${a.accountSize.toLocaleString()} ${a.accountType} | Status: ${a.status} | ${daysActive} days active | ${resetCount} resets`;
+    summary += `\n  Fees: $${totalExpenses} | Payouts: $${totalPayouts} | Net: ${net >= 0 ? "+" : ""}$${net}`;
+
+    if (a.challengeRules) {
+      const r = a.challengeRules;
+      summary += `\n  Rules: ${r.profitTarget}% profit target | ${r.maxDailyDrawdown}% max daily DD | ${r.maxTotalDrawdown}% max total DD${r.minTradingDays ? ` | ${r.minTradingDays} min trading days` : ""}`;
+    }
+    if (a.challengeProgress && a.status === "active") {
+      const p = a.challengeProgress;
+      const targetBalance = a.accountSize * (1 + (a.challengeRules?.profitTarget || 0) / 100);
+      const profitPct = ((p.currentBalance - a.accountSize) / a.accountSize * 100).toFixed(1);
+      const progressPct = a.challengeRules?.profitTarget ? ((p.currentBalance - a.accountSize) / (targetBalance - a.accountSize) * 100).toFixed(0) : "N/A";
+      const ddFromHWM = ((p.highWaterMark - p.currentBalance) / p.highWaterMark * 100).toFixed(1);
+      summary += `\n  Progress: $${p.currentBalance.toLocaleString()} balance (${profitPct}% P&L) | ${progressPct}% to target | ${p.tradingDaysCount} trading days | ${ddFromHWM}% DD from HWM${p.todayPnL !== undefined ? ` | Today: ${p.todayPnL >= 0 ? "+" : ""}$${p.todayPnL}` : ""}`;
+    }
+
+    summary += `\n${txDetail}`;
+    return summary;
   }).join("\n\n");
 
-  const totalExpenses = transactions.filter(t => ["evaluation-fee","reset-fee","monthly-fee","other-expense"].includes(t.type)).reduce((s,t) => s+t.amount, 0);
-  const totalPayouts = transactions.filter(t => t.type === "payout").reduce((s,t) => s+t.amount, 0);
+  const totalExpenses = transactions.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type)).reduce((s, t) => s + t.amount, 0);
+  const totalPayouts = transactions.filter(t => t.type === "payout").reduce((s, t) => s + t.amount, 0);
   const netPnl = totalPayouts - totalExpenses;
   const roi = totalExpenses > 0 ? ((totalPayouts / totalExpenses - 1) * 100).toFixed(1) : "N/A";
+  const totalAccounts = accounts.length;
+  const activeAccounts = accounts.filter(a => a.status === "active").length;
+  const passedAccounts = accounts.filter(a => a.status === "passed").length;
+  const failedAccounts = accounts.filter(a => a.status === "failed").length;
+  const overallPassRate = (passedAccounts + failedAccounts) > 0 ? ((passedAccounts / (passedAccounts + failedAccounts)) * 100).toFixed(0) : "N/A";
 
   return {
-    system: `You are a prop trading analyst. Analyze a trader's prop firm account data and give them an honest, plain-English assessment. Be direct and specific — reference their actual numbers. Structure your response with these sections:
+    system: `You are a prop trading analyst. Analyze a trader's prop firm account data and give them an honest, data-driven assessment. Be direct — reference their actual numbers, never give generic advice.
 
-**Overall Verdict** — one sentence on whether prop trading is working for them financially.
-**ROI Breakdown** — fees paid vs payouts received, net P&L, and what the numbers actually mean.
-**Firm-by-Firm** — which accounts are profitable, which are losing money, and why.
-**Warning Signs** — any red flags (e.g. too many resets, high monthly fees eating profits, failed accounts).
-**What to Do Next** — 2-3 specific, actionable recommendations based on the data.
+Start your response with exactly this format on the first line (score 1-10 based on overall financial health, profitability, and trajectory):
+SCORE: X/10
 
-Keep it under 400 words. Use $ amounts from their data. No generic advice.`,
-    user: `Here is my prop firm tracker data:\n\nSummary: ${accounts.length} accounts | Total fees: $${totalExpenses} | Total payouts: $${totalPayouts} | Net P&L: ${netPnl >= 0 ? "+" : ""}$${netPnl} | ROI: ${roi}%\n\nAccounts:\n${accountSummaries}\n\nGive me an honest analysis.`,
-    maxTokens: 600,
-    temperature: 0.5,
+Then structure the rest with these sections:
+
+**Overall Verdict** — 1-2 sentences on whether prop trading is working for them financially. Reference their net P&L and ROI.
+**ROI Breakdown** — fees paid vs payouts, net P&L, cost per attempt, and break-even analysis. How many more payouts do they need to become profitable?
+**Challenge Progress** — for any active accounts with challenge data: how close to profit target, drawdown risk level, and whether they're on pace. Skip this section if no active challenges have progress data.
+**Firm-by-Firm** — which firms are profitable vs draining money. Compare pass rates and cost per attempt across firms. Recommend which firms to stick with or drop.
+**Warning Signs** — red flags: excessive resets, low pass rates, high fees relative to payouts, accounts near drawdown limits, failed streaks.
+**What to Do Next** — 3 specific, actionable steps based on the data. Prioritize by financial impact.
+
+Keep it under 600 words. Use $ amounts and percentages from their data.`,
+    user: `Here is my prop firm tracker data:
+
+Summary: ${totalAccounts} accounts (${activeAccounts} active, ${passedAccounts} passed, ${failedAccounts} failed) | Pass rate: ${overallPassRate}% | Total fees: $${totalExpenses} | Total payouts: $${totalPayouts} | Net P&L: ${netPnl >= 0 ? "+" : ""}$${netPnl} | ROI: ${roi}%
+
+Firm Patterns:
+${patternSummary}
+
+Accounts:
+${accountSummaries}
+
+Give me an honest analysis with a score.`,
+    maxTokens: 900,
+    temperature: 0.4,
   };
 }
 
