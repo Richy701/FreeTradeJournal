@@ -116,7 +116,7 @@ function PricingCard({
       </h2>
 
       {/* Price */}
-      <div className="relative h-12">
+      <div className="relative h-16">
         {typeof price === 'number' ? (
           <>
             <NumberFlow
