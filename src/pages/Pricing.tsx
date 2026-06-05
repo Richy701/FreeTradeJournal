@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
-import { ArrowRight, BadgeCheck, Check, ChevronDown, X } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Check, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
@@ -14,6 +14,12 @@ import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS } from '@/constants/pricing'
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
 import { useThemePresets } from '@/contexts/theme-presets';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 const FREQUENCIES = ['monthly', 'yearly'] as const;
 type Frequency = typeof FREQUENCIES[number];
@@ -239,24 +245,6 @@ const FAQS = [
     a: 'Yes. Pay once, own it forever. All future Pro features included at no extra cost.',
   },
 ];
-
-function FAQItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-border/70 last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-4 text-left gap-4"
-      >
-        <span className="text-sm font-medium text-foreground">{q}</span>
-        <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <p className="text-sm text-muted-foreground pb-4 leading-relaxed">{a}</p>
-      )}
-    </div>
-  );
-}
 
 // ─── Main Pricing Page ───────────────────────────────────────
 export default function Pricing() {
@@ -531,15 +519,37 @@ export default function Pricing() {
       {/* FAQ */}
       <section className="px-4 pb-16 sm:pb-24">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
+          <motion.div
+            className="text-center mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            viewport={{ once: true }}
+          >
             <h2 className="text-2xl font-bold mb-2">Common questions</h2>
             <p className="text-muted-foreground text-base">Everything you need to know before upgrading</p>
-          </div>
-          <div className="rounded-2xl border bg-background px-6 sm:px-8 py-2">
-            {FAQS.map((faq) => (
-              <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+          </motion.div>
+
+          <Accordion type="single" collapsible className="w-full">
+            {FAQS.map((faq, index) => (
+              <motion.div
+                key={faq.q}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: index * 0.06, ease: 'easeOut' }}
+                viewport={{ once: true, margin: '-30px' }}
+              >
+                <AccordionItem value={`faq-${index}`} className="border-b border-border py-1">
+                  <AccordionTrigger className="text-left hover:no-underline hover:text-amber-500 transition-colors duration-200 py-4">
+                    <span className="text-base font-medium pr-4">{faq.q}</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-4 pr-4">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              </motion.div>
             ))}
-          </div>
+          </Accordion>
         </div>
       </section>
 

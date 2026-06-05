@@ -28,7 +28,7 @@ export function FAQSection() {
     },
     {
       question: "How much does it cost?",
-      answer: "The core journal is completely free — trade logging, analytics, journaling, goal tracking, and CSV import/export with no credit card required. Pro adds AI-powered coaching, automated trade reviews, strategy tagging, risk alerts, cloud sync, and unlimited exports."
+      answer: "The core journal is completely free — trade logging, analytics, journaling, goal tracking, and CSV import/export with no credit card required. Pro adds AI-powered coaching, automated trade reviews, strategy tagging, risk alerts, cloud sync, and unlimited exports starting at $12.99/mo."
     },
     {
       question: "Does it work with prop firms like FTMO?",
@@ -36,7 +36,7 @@ export function FAQSection() {
     },
     {
       question: "What's included in the Pro plan?",
-      answer: "AI Trading Coach, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, cloud sync across devices, unlimited data exports, priority email support, and early access to new features. Choose Monthly ($5.99/mo), Yearly ($49.99/yr — save 30%), or Lifetime ($149.99 one-time)."
+      answer: "AI Trading Coach, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, cloud sync across devices, unlimited data exports, priority email support, and early access to new features. Choose Monthly ($12.99/mo), Yearly ($99.99/yr — save 36%), or Lifetime ($249 one-time)."
     },
     {
       question: "Can I see what the app looks like before signing up?",
