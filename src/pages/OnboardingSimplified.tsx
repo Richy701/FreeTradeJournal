@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, ArrowRight, Check, Rocket, ChevronLeft, Wallet, Monitor, Building2, FileText } from 'lucide-react';
+import { ArrowRight, Check, Rocket, ChevronLeft, Wallet, Monitor, Building2, FileText, Sprout, BarChart2, Zap, Trophy, BarChart3, BookOpen, Target } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,10 +33,10 @@ const STEPS = [
 ];
 
 const EXPERIENCE_OPTIONS = [
-  { value: 'beginner', emoji: '🌱', label: 'Just Starting Out', sub: 'Under 1 year' },
-  { value: 'developing', emoji: '📈', label: 'Building Skills', sub: '1–3 years' },
-  { value: 'experienced', emoji: '⚡', label: 'Battle Tested', sub: '3–5 years' },
-  { value: 'veteran', emoji: '🏆', label: 'Veteran Trader', sub: '5+ years' },
+  { value: 'beginner', icon: Sprout, label: 'Just Starting Out', sub: 'Under 1 year' },
+  { value: 'developing', icon: BarChart2, label: 'Building Skills', sub: '1-3 years' },
+  { value: 'experienced', icon: Zap, label: 'Battle Tested', sub: '3-5 years' },
+  { value: 'veteran', icon: Trophy, label: 'Veteran Trader', sub: '5+ years' },
 ];
 
 const ACCOUNT_TYPE_OPTIONS = [
@@ -311,15 +311,15 @@ export default function OnboardingSimplified() {
     visible: { opacity: 1, y: 0 },
   } : fadeUpItem;
 
-  // Progress bar shown from step 2 onward: step2=25%, step3=50%, step4=75%, step5=100%
+  // Progress bar shown from step 2 onward
   const progressPercent = currentStep > 1
     ? ((currentStep - 1) / (STEPS.length - 1)) * 100
     : 0;
 
   const selectionCardClass = (selected: boolean) =>
-    `p-4 rounded-xl border text-left transition-all cursor-pointer ${
+    `p-4 rounded-xl border text-left transition-all duration-150 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
       selected
-        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+        ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
         : 'border-border hover:border-primary/40 hover:bg-muted/40'
     }`;
 
@@ -336,16 +336,19 @@ export default function OnboardingSimplified() {
             exit="exit"
           >
             <motion.div
-              className="text-center space-y-10"
+              className="text-center space-y-8"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
             >
               <motion.div
                 variants={activeFadeUpItem}
-                className="mx-auto w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center"
+                className="relative mx-auto w-24 h-24"
               >
-                <TrendingUp className="h-10 w-10 text-primary" />
+                <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-xl" />
+                <div className="relative w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center border border-primary/10">
+                  <img src="/favicon.svg" alt="FreeTradeJournal" className="h-12 w-12" />
+                </div>
               </motion.div>
 
               <div className="space-y-3">
@@ -355,10 +358,25 @@ export default function OnboardingSimplified() {
                     FreeTradeJournal
                   </span>
                 </motion.h1>
-                <motion.p variants={activeFadeUpItem} className="text-muted-foreground text-lg max-w-xs mx-auto leading-relaxed">
-                  Track, analyze, and level up your trading — completely free.
+                <motion.p variants={activeFadeUpItem} className="text-muted-foreground text-lg max-w-sm mx-auto leading-relaxed">
+                  Your trading journal, built to help you find your edge.
                 </motion.p>
               </div>
+
+              <motion.div variants={activeFadeUpItem} className="flex flex-col gap-2.5 max-w-xs mx-auto text-left">
+                {[
+                  { icon: BarChart3, text: 'Log trades and track performance' },
+                  { icon: BookOpen, text: 'Journal your process and mindset' },
+                  { icon: Target, text: 'Set goals and manage risk' },
+                ].map((item) => (
+                  <div key={item.text} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40">
+                    <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <item.icon className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="text-sm text-foreground/80">{item.text}</span>
+                  </div>
+                ))}
+              </motion.div>
 
               <motion.div variants={activeFadeUpItem} className="space-y-3 max-w-xs mx-auto">
                 <Button onClick={() => goToStep(2)} size="lg" className="w-full">
@@ -395,21 +413,29 @@ export default function OnboardingSimplified() {
             >
               <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">How long have you been trading?</h2>
-                <p className="text-muted-foreground">We'll tailor your experience to your level</p>
+                <p className="text-muted-foreground">This helps us personalise your dashboard and tips</p>
               </motion.div>
 
               <motion.div variants={activeFadeUpItem} className="grid grid-cols-2 gap-3">
-                {EXPERIENCE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setData({ ...data, experienceLevel: opt.value })}
-                    className={selectionCardClass(data.experienceLevel === opt.value)}
-                  >
-                    <span className="text-2xl">{opt.emoji}</span>
-                    <p className="font-semibold mt-2 text-sm">{opt.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{opt.sub}</p>
-                  </button>
-                ))}
+                {EXPERIENCE_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const selected = data.experienceLevel === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setData({ ...data, experienceLevel: opt.value })}
+                      className={selectionCardClass(selected)}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-colors ${
+                        selected ? 'bg-primary/15' : 'bg-muted'
+                      }`}>
+                        <Icon className={`h-5 w-5 transition-colors ${selected ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <p className="font-semibold text-sm">{opt.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{opt.sub}</p>
+                    </button>
+                  );
+                })}
               </motion.div>
 
               <motion.div variants={activeFadeUpItem}>
@@ -556,7 +582,7 @@ export default function OnboardingSimplified() {
                     className="h-11"
                     value={data.broker}
                     onChange={(e) => setData({ ...data, broker: e.target.value })}
-                    placeholder="e.g., FTMO, Apex, TopStep…"
+                    placeholder="e.g., FTMO, Apex, TopStep..."
                   />
                 </div>
               </motion.div>
@@ -640,7 +666,7 @@ export default function OnboardingSimplified() {
                   disabled={loading}
                 >
                   {loading ? (
-                    'Setting up…'
+                    'Setting up...'
                   ) : (
                     <>
                       <Rocket className="mr-2 h-4 w-4" />
@@ -666,9 +692,7 @@ export default function OnboardingSimplified() {
       <div className="min-h-screen flex flex-col bg-background">
         <header className="flex items-center gap-4 px-6 py-4 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-primary" />
-            </div>
+            <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-sm">FreeTradeJournal</span>
           </div>
           <div className="flex-1 mx-8">
@@ -696,14 +720,16 @@ export default function OnboardingSimplified() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/[0.03] blur-3xl" />
+      </div>
+
       {/* Header */}
-      <header className="flex items-center gap-4 px-6 py-4 border-b border-border/50 shrink-0">
+      <header className="relative flex items-center gap-4 px-6 py-4 border-b border-border/50 shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </div>
+          <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-lg" />
           <span className="font-bold text-sm">FreeTradeJournal</span>
         </div>
 
@@ -721,8 +747,13 @@ export default function OnboardingSimplified() {
           )}
         </div>
 
-        {/* Back + Skip */}
+        {/* Step counter + Back + Skip */}
         <div className="flex items-center gap-3 shrink-0">
+          {currentStep > 1 && currentStep < 5 && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {currentStep} of {STEPS.length}
+            </span>
+          )}
           {currentStep > 1 && currentStep < 5 && (
             <button
               onClick={() => goToStep(currentStep - 1)}
@@ -745,7 +776,7 @@ export default function OnboardingSimplified() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center p-6">
+      <main className="relative flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-lg">
           <AnimatePresence custom={direction} mode="wait">
             {renderStep()}
@@ -753,10 +784,10 @@ export default function OnboardingSimplified() {
         </div>
       </main>
 
-      {/* Footer – social proof */}
-      <footer className="py-4 border-t border-border/50 shrink-0">
+      {/* Footer */}
+      <footer className="relative py-4 border-t border-border/50 shrink-0">
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground flex-wrap px-4">
-          <span>Free forever</span>
+          <span>Free to start</span>
           <span className="w-1 h-1 bg-muted-foreground/40 rounded-full" />
           <span>No credit card required</span>
           <span className="w-1 h-1 bg-muted-foreground/40 rounded-full" />

@@ -4,6 +4,7 @@ import { Check, X, ChevronDown, ChevronUp, BookOpen, Target, TrendingUp, Bot } f
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
+import { getExperienceLevel, type ExperienceLevel } from '@/utils/onboarding';
 
 interface ChecklistItem {
   id: string;
@@ -15,6 +16,36 @@ interface ChecklistItem {
 }
 
 const DISMISS_KEY_PREFIX = 'getting-started-dismissed-v1-';
+
+const DESCRIPTIONS: Record<string, Record<ExperienceLevel | 'default', string>> = {
+  trade: {
+    beginner: 'Add your first trade manually -- even a small one counts.',
+    developing: 'Add a trade manually or import a CSV from your broker.',
+    experienced: 'Import your trades via CSV or log them manually.',
+    veteran: 'Import your trade history or log recent trades.',
+    default: 'Add a trade manually or import a CSV from your broker.',
+  },
+  journal: {
+    beginner: 'Write down what you noticed about the market today.',
+    developing: 'Document your analysis and what you learned from a trade.',
+    experienced: 'Capture your thesis, execution notes, and lessons.',
+    veteran: 'Track your process and edge refinement notes.',
+    default: 'Document your analysis, emotions, and what you learned.',
+  },
+  goal: {
+    beginner: 'Start simple -- set a daily loss limit to protect your account.',
+    developing: 'Set a profit target or loss limit to stay disciplined.',
+    experienced: 'Define risk rules that match your trading plan.',
+    veteran: 'Configure risk parameters and performance benchmarks.',
+    default: 'Hold yourself accountable with a profit target or loss limit.',
+  },
+};
+
+function getDescription(id: string, level: ExperienceLevel | null): string {
+  const map = DESCRIPTIONS[id];
+  if (!map) return '';
+  return map[level ?? 'default'] ?? map.default;
+}
 
 export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: number }) {
   const { user, isDemo } = useAuth();
@@ -33,6 +64,8 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
       return;
     }
 
+    const level = getExperienceLevel(user.uid);
+
     // Read all the data we need to check completion
     const tradesRaw = userStorage.getItem('trades');
     const journalRaw = userStorage.getItem('journalEntries');
@@ -48,6 +81,8 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
     const DEFAULT_GOAL_IDS = new Set(['1', '2']);
     const hasGoals = Array.isArray(goals) && goals.some((g: { id?: string }) => !DEFAULT_GOAL_IDS.has(g.id ?? ''));
 
+    const hasUsedAiCoach = localStorage.getItem('ftj-ai-coaching-tips') !== null;
+
     const checklist: ChecklistItem[] = [
       {
         id: 'account',
@@ -60,7 +95,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
       {
         id: 'trade',
         label: 'Log your first trade',
-        description: 'Add a trade manually or import a CSV from your broker.',
+        description: getDescription('trade', level),
         icon: TrendingUp,
         href: '/trades',
         done: hasTrades,
@@ -68,7 +103,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
       {
         id: 'journal',
         label: 'Write a journal entry',
-        description: 'Document your analysis, emotions, and what you learned.',
+        description: getDescription('journal', level),
         icon: BookOpen,
         href: '/journal',
         done: hasJournal,
@@ -76,7 +111,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
       {
         id: 'goal',
         label: 'Set a goal or risk rule',
-        description: 'Hold yourself accountable with a profit target or loss limit.',
+        description: getDescription('goal', level),
         icon: Target,
         href: '/goals',
         done: hasGoals,
@@ -87,7 +122,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         description: 'Get personalised coaching based on your trading patterns.',
         icon: Bot,
         href: '/dashboard',
-        done: isPro,
+        done: hasUsedAiCoach,
       }] : []),
     ];
 
@@ -190,7 +225,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
 
                 {/* Arrow for incomplete */}
                 {!item.done && (
-                  <span className="text-muted-foreground text-xs flex-shrink-0 group-hover:text-foreground transition-colors">→</span>
+                  <span className="text-muted-foreground text-xs flex-shrink-0 group-hover:text-foreground transition-colors">-&gt;</span>
                 )}
               </Link>
             );
