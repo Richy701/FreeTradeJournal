@@ -16,11 +16,6 @@ export function initPostHog() {
     capture_pageleave: true,
     persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
     autocapture: analyticsAllowed,
-    loaded: (ph) => {
-      if (!analyticsAllowed) {
-        ph.opt_out_capturing();
-      }
-    },
   });
 }
 

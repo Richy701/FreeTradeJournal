@@ -60,7 +60,7 @@ export const CookieConsent = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowBanner(false)}
+                    onClick={handleAcceptNecessary}
                     className="absolute top-0 right-0 h-6 w-6 p-0"
                     aria-label="Close cookie banner"
                   >
