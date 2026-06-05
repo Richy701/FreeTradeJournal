@@ -1641,7 +1641,13 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
         `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`
       );
     }
-    tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const isNewDay = d?.date !== todayStr;
+    if (isNewDay) {
+      // New day: overwrite the entire document to clear stale counters from previous days
+      tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() });
+    } else {
+      tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    }
     return current;
   });
 

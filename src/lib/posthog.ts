@@ -1,7 +1,7 @@
 import posthog from 'posthog-js';
 
 const key = import.meta.env.VITE_POSTHOG_KEY;
-const host = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
+const host = import.meta.env.VITE_POSTHOG_HOST || '/ingest';
 
 export function initPostHog() {
   if (!key || typeof window === 'undefined') return;
@@ -11,7 +11,8 @@ export function initPostHog() {
 
   posthog.init(key, {
     api_host: host,
-    capture_pageview: false, // we handle this manually on route changes
+    ui_host: 'https://us.posthog.com',
+    capture_pageview: false,
     capture_pageleave: true,
     persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
     autocapture: analyticsAllowed,
