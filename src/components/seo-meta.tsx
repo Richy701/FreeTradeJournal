@@ -10,9 +10,9 @@ interface SEOMetaProps {
 
 const pageMeta: Record<string, SEOMetaProps> = {
   '/': {
-    title: 'Free Trading Journal for Forex, Futures & Stocks | FreeTradeJournal',
-    description: 'Log trades, track P&L, and spot patterns with a free trading journal built for forex, futures, and stock traders. AI coaching, analytics dashboards, and CSV import included. No credit card required.',
-    keywords: 'free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker, AI trading coach, AI trade analysis, AI risk alerts',
+    title: 'Best Free Trading Journal (2026) | AI Analytics & CSV Import | FreeTradeJournal',
+    description: 'The #1 free trading journal for forex, futures & stocks. Log trades, track P&L, get AI coaching, and import from MT5/Tradovate. Used by 5,000+ traders. No credit card required.',
+    keywords: 'free trading journal, best free trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, free day trading journal, trading journal online, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker, AI trading coach, AI trade analysis, AI risk alerts, online trading journal, free trading journal website',
     image: 'https://www.freetradejournal.com/og-image.png'
   },
   '/dashboard': {
@@ -76,30 +76,40 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'changelog, updates, release notes, new features, trading journal updates'
   },
   '/pricing': {
-    title: 'Pricing | Free Forever + Pro Plans | FreeTradeJournal',
-    description: 'Free forever with unlimited trades, analytics, and CSV import. Upgrade to Pro for AI coaching, cloud sync, and advanced exports. Plans from $5.99/mo.',
+    title: 'Pricing | Free Forever + Pro Plans from $12.99/mo | FreeTradeJournal',
+    description: 'Free forever with unlimited trades, analytics, and CSV import. Upgrade to Pro for AI coaching, cloud sync, and advanced exports. Plans from $12.99/mo with 14-day free trial.',
     keywords: 'trading journal pricing, free trading journal, pro trading tools, AI trading coach, trading analytics subscription, trade analysis pricing'
   },
   '/forex-trading-journal': {
-    title: 'Free Forex Trading Journal | Track FX Pairs & Pips',
-    description: 'Track every forex trade, analyze pip performance by pair, and manage risk with built-in position sizing. Works with MT4/MT5 CSV exports. 100% free, no sign-up wall.',
-    keywords: 'forex trading journal, free forex trading journal, FX trading tracker, currency trading log, forex performance tracker, pip counter, forex P&L tracker, MT4 journal, MT5 trading journal, forex risk management, currency pair analysis, forex win rate, FX trading diary, forex trade log, EURUSD tracker, GBPUSD journal, forex position sizing, pip calculator journal, forex drawdown tracker'
+    title: 'Free Forex Trading Journal (2026) | Track Pips, Pairs & P&L | FreeTradeJournal',
+    description: 'The best free forex trading journal. Log every FX trade, auto-calculate pips, analyze performance by pair, and import from MT4/MT5. No credit card, no sign-up wall.',
+    keywords: 'forex trading journal, free forex trading journal, free forex journal, FX trading tracker, currency trading log, forex performance tracker, pip counter, forex P&L tracker, MT4 journal, MT5 trading journal, forex risk management, currency pair analysis, forex win rate, FX trading diary, forex trade log, EURUSD tracker, GBPUSD journal, forex position sizing, pip calculator journal, forex drawdown tracker'
   },
   '/futures-trading-tracker': {
-    title: 'Free Futures Trading Tracker | ES, NQ, CL & GC Journal',
-    description: 'Log ES, NQ, CL, and GC futures trades with tick-level P&L tracking, risk analytics, and performance charts. Import from any broker CSV. 100% free.',
-    keywords: 'futures trading tracker, free futures trading journal, futures journal, ES trading journal, NQ trading tracker, crude oil futures log, gold futures tracker, futures P&L tracker, futures risk management, tick counter, futures margin calculator, E-mini journal, micro futures tracker, futures performance analytics, futures trade log, CME futures journal, futures position tracker, commodity trading journal, index futures tracker'
+    title: 'Free Futures Trading Journal (2026) | ES, NQ, CL & GC Tracker | FreeTradeJournal',
+    description: 'The best free futures trading tracker. Log ES, NQ, CL, GC contracts with P&L calculation, analytics, and Tradovate/MT5 import. Used by day traders and scalpers. 100% free.',
+    keywords: 'futures trading tracker, free futures trading journal, futures journal, free day trading journal, ES trading journal, NQ trading tracker, crude oil futures log, gold futures tracker, futures P&L tracker, futures risk management, tick counter, futures margin calculator, E-mini journal, micro futures tracker, futures performance analytics, futures trade log, CME futures journal, futures position tracker, commodity trading journal, index futures tracker'
   },
   '/prop-firm-dashboard': {
-    title: 'Free Prop Firm Dashboard | FTMO, Apex & TopStep Tracker',
-    description: 'Track evaluation progress, drawdown limits, and daily loss caps across FTMO, Apex, TopStep, and more. Built for funded and challenge accounts. 100% free.',
-    keywords: 'prop firm dashboard, free prop firm dashboard, prop trading dashboard, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, prop firm tracker, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, FTMO tracker, MFF journal, E8 funding tracker, prop firm analytics, challenge tracker, verification tracker, funded trader dashboard'
+    title: 'Free Prop Firm Dashboard (2026) | FTMO, Apex & TopStep Tracker | FreeTradeJournal',
+    description: 'The best free prop firm dashboard. Track eval progress, drawdown limits, daily loss caps, fees, and payouts across FTMO, Apex, TopStep, and 10+ firms. 100% free.',
+    keywords: 'prop firm dashboard, free prop firm dashboard, prop trading dashboard, prop firm trading journal, prop firm tracker, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, FTMO tracker, MFF journal, E8 funding tracker, prop firm analytics, challenge tracker, verification tracker, funded trader dashboard'
   },
   '/prop-tracker': {
     title: 'PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal',
     description: 'Track every prop firm fee, reset, payout and net P&L across all your accounts — free. PropTracker shows your true profit after every cost. Works with FTMO, Apex, TopStep, MyFundedFX and 10+ firms. No credit card required.',
     keywords: 'prop firm fee tracker, prop firm payout tracker, prop trading cost calculator, FTMO fee tracker, Apex trader payout tracker, TopStep fee calculator, funded trader expense tracker, prop firm net profit, prop firm account tracker, prop firm P&L tracker, prop trading ROI calculator, funded trader cost tracker, prop firm reset fee tracker, evaluation fee tracker, prop firm profit calculator, prop firm expense tracker',
     image: 'https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot.png'
+  },
+  '/day-trading-journal': {
+    title: 'Free Day Trading Journal (2026) | Log Scalps & Intraday Trades | FreeTradeJournal',
+    description: 'The best free day trading journal. Log scalps and intraday trades, track daily P&L, analyze win rate by session, and spot overtrading. CSV import from any broker. No credit card.',
+    keywords: 'free day trading journal, day trading journal, best free trading journal, day trading tracker, scalping journal, intraday trading log, day trading analytics, trading journal online, day trading performance, overtrading tracker, daily P&L tracker, day trading diary'
+  },
+  '/online-trading-journal': {
+    title: 'Free Online Trading Journal (2026) | No Download Required | FreeTradeJournal',
+    description: 'The best free online trading journal. Works in your browser with no download. Log trades, track P&L, get AI coaching, and import CSV from any broker. Free forever.',
+    keywords: 'online trading journal, free online trading journal, trading journal online, trading journal website, best free trading journal, online trade journal, web trading journal, browser trading journal, trading journal online free, free trading journal website, trading journal software free'
   }
 };
 

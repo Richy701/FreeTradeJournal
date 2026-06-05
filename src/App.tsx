@@ -45,6 +45,8 @@ const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
 const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazy(() => import('@/pages/TradeIdeas'))
+const DayTradingJournal = lazy(() => import('@/pages/DayTradingJournal'));
+const OnlineTradingJournal = lazy(() => import('@/pages/OnlineTradingJournal'));
 const Changelog = lazy(() => import('@/pages/Changelog'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
@@ -122,6 +124,8 @@ function App() {
                 <Route path="/forex-trading-journal" element={<ForexTradingJournal />} />
                 <Route path="/futures-trading-tracker" element={<FuturesTradingTracker />} />
                 <Route path="/prop-firm-dashboard" element={<PropFirmDashboard />} />
+                <Route path="/day-trading-journal" element={<DayTradingJournal />} />
+                <Route path="/online-trading-journal" element={<OnlineTradingJournal />} />
                 <Route path="/affiliate" element={<Affiliate />} />
                 
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
