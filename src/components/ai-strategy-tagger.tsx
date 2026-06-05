@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Brain, Loader2, Check, X, Tags } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'sonner'
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -152,6 +153,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
       setResults(allResults);
       setAccepted(new Set(allResults.map(r => r.id)));
       setRejected(new Set());
+      trackEvent('ai_strategy_tagger_used', { count: allResults.length });
       toast.success(`Tagged ${allResults.length} trade${allResults.length !== 1 ? 's' : ''}`);
     } catch (err: any) {
       toast.dismiss('batch-progress');

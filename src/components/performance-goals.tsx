@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { toast } from 'sonner'
+import { trackEvent } from '@/lib/analytics'
 
 interface Goal {
   id: string
@@ -459,6 +460,7 @@ export function PerformanceGoals() {
     userStorage.setItem('tradingGoals', JSON.stringify(updatedGoals))
     setShowGoalDialog(false)
 
+    trackEvent('goal_created', { type: goal.type, period: goal.period })
     toast.success('Goal Added!', {
       description: `New ${goal.period} ${goal.type} target set.`
     })

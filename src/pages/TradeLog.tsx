@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { trackEvent } from '@/lib/analytics';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -504,9 +505,11 @@ export default function TradeLog() {
     if (editingTrade) {
       const updatedTrades = trades.map((t) => (t.id === editingTrade.id ? newTrade : t));
       saveTrades(updatedTrades);
+      trackEvent('trade_edited', { symbol: newTrade.symbol, side: newTrade.side });
       setEditingTrade(null);
     } else {
       saveTrades([...trades, newTrade]);
+      trackEvent('trade_created', { symbol: newTrade.symbol, side: newTrade.side, market: newTrade.market });
       setJournalPromptTrade(newTrade);
       // Check risk rules after saving (warn only, never block)
       if (pnl < 0) checkRiskRules(pnl, newTrade.exitTime);
@@ -540,6 +543,7 @@ export default function TradeLog() {
     if (!window.confirm('Are you sure you want to delete this trade?')) return;
     const updatedTrades = trades.filter((t) => t.id !== id);
     saveTrades(updatedTrades);
+    trackEvent('trade_deleted');
   };
 
   const handleBulkDelete = () => {
@@ -728,6 +732,7 @@ export default function TradeLog() {
             ? `${result.summary.failed} rows had errors and were skipped`
             : 'P&L shown is gross (before broker commissions/fees)';
 
+        if (newTrades.length > 0) trackEvent('csv_imported', { count: newTrades.length });
         toast.success(
           newTrades.length > 0
             ? `Imported ${newTrades.length} new trade${newTrades.length > 1 ? 's' : ''} from ${file.name}`

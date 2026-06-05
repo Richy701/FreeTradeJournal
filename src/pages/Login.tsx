@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { getOnboardingRedirect } from '@/utils/onboarding';
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +44,7 @@ export default function Login() {
 
     try {
       const user = await signIn(email, password);
+      trackEvent('login_completed');
       setFormAnimation('animate-bounce');
       setTimeout(() => {
         navigate(getRedirectPath(user.uid), { replace: true });

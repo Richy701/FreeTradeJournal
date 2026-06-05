@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Brain, Loader2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'sonner'
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
@@ -92,6 +93,7 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
 
       setReview(response.result);
       setAICache(cacheKey, response.result);
+      trackEvent('ai_trade_review_used');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to review trade');
     } finally {

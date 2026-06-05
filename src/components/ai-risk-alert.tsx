@@ -6,6 +6,7 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { getAICache, setAICache } from '@/utils/ai-cache';
+import { trackEvent } from '@/lib/analytics';
 import DOMPurify from 'dompurify';
 
 interface Trade {
@@ -223,6 +224,7 @@ export function AIRiskAlertMonitor() {
       const cacheKey = `ftj-risk-alert-${alert.type}-${today}`;
       setAICache(cacheKey, true);
 
+      trackEvent('ai_risk_alert_used');
       setAlerts(prev =>
         prev.map(a => a.type === alert.type ? { ...a, advice: response.result } : a)
       );

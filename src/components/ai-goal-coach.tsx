@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Brain, Loader2, RotateCcw, Target, Trophy, TrendingUp, Lightbulb } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from 'sonner'
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProGate } from '@/components/pro-gate';
@@ -207,6 +208,7 @@ export function AIGoalCoach() {
 
       setResult(response.result);
       setAICache(CACHE_KEY, response.result);
+      trackEvent('ai_goal_coach_used');
       toast.success('Coaching ready');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to get coaching');

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { trackEvent } from '@/lib/analytics';
 import { Badge } from '@/components/ui/badge';
 import { 
   TrendingUp, 
@@ -261,6 +262,7 @@ export default function Journal() {
       setSelectedTrade(null);
       setUploadedImages([]);
       setShowNewEntry(false);
+      trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new' });
       toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
     } finally {
       setIsSubmitting(false);
