@@ -442,7 +442,7 @@ export default function Pricing() {
       <section className="px-4 pb-16 sm:pb-24">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold mb-2">How we compare</h2>
+            <h2 className="text-2xl font-bold mb-2">How we <span className="text-amber-500">compare</span></h2>
             <p className="text-muted-foreground text-base">Same features, fraction of the price</p>
           </div>
 
@@ -526,7 +526,7 @@ export default function Pricing() {
             transition={{ duration: 0.5, ease: 'easeOut' }}
             viewport={{ once: true }}
           >
-            <h2 className="text-2xl font-bold mb-2">Common questions</h2>
+            <h2 className="text-2xl font-bold mb-2">Common <span className="text-amber-500">questions</span></h2>
             <p className="text-muted-foreground text-base">Everything you need to know before upgrading</p>
           </motion.div>
 
