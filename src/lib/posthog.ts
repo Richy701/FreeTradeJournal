@@ -1,7 +1,7 @@
 import posthog from 'posthog-js';
 
 const key = import.meta.env.VITE_POSTHOG_KEY;
-const host = import.meta.env.VITE_POSTHOG_HOST || '/ingest';
+const host = '/ingest';
 
 export function initPostHog() {
   if (!key || typeof window === 'undefined') return;
