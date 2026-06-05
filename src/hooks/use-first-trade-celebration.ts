@@ -53,8 +53,10 @@ export function useFirstTradeCelebration(tradeCount: number) {
 
 async function markFirstTradeInFirestore() {
   try {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
-    const fn = httpsCallable(getFunctions(), 'markFirstTrade');
+    const { httpsCallable } = await import('firebase/functions');
+    const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+    const fns = await getFirebaseFunctions();
+    const fn = httpsCallable(fns, 'markFirstTrade');
     await fn({});
   } catch {
     // Non-critical

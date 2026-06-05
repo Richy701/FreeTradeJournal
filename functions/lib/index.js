@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -896,11 +896,11 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
                 console.log(`Referral not counted for ${uid}: email not verified`);
                 return { ok: true };
             }
-            // 2. Account must be at least 7 days old
+            // 2. Account must be at least 7 days old -- defer, don't reject
             const createdAt = userData?.createdAt?.toMillis?.() || 0;
             if (createdAt && Date.now() - createdAt < 7 * 24 * 60 * 60 * 1000) {
-                console.log(`Referral not counted for ${uid}: account under 7 days old`);
-                return { ok: true };
+                console.log(`Referral deferred for ${uid}: account under 7 days old`);
+                return { ok: true, deferred: true };
             }
             // 3. Normalized email dedup: block if another counted referral
             //    from the same referrer has the same normalized email
@@ -977,6 +977,84 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
         console.error("Failed to process referral credit:", err);
     }
     return { ok: true };
+});
+// ─── Process Deferred Referrals (accounts that were too new) ──
+exports.processDeferredReferrals = functions.pubsub
+    .schedule("every 24 hours")
+    .onRun(async () => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Find users with uncounted referrals who have logged a first trade
+    // and whose account is now old enough
+    const snapshot = await db.collection("users")
+        .where("referralCounted", "==", false)
+        .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(sevenDaysAgo))
+        .limit(50)
+        .get();
+    let processed = 0;
+    for (const userDoc of snapshot.docs) {
+        const userData = userDoc.data();
+        const uid = userDoc.id;
+        const referrerUid = userData?.referredBy;
+        // Must have a referrer and a first trade
+        if (!referrerUid || !userData?.firstTradeLoggedAt)
+            continue;
+        // 1. Email must be verified
+        let userRecord;
+        try {
+            userRecord = await admin.auth().getUser(uid);
+        }
+        catch {
+            continue;
+        }
+        if (!userRecord.emailVerified)
+            continue;
+        // 2. Normalized email dedup
+        const myNormalized = userData?.normalizedEmail
+            || (userRecord.email ? normalizeEmail(userRecord.email) : null);
+        if (myNormalized) {
+            const dupeSnap = await db.collection("users")
+                .where("referredBy", "==", referrerUid)
+                .where("referralCounted", "==", true)
+                .where("normalizedEmail", "==", myNormalized)
+                .limit(1)
+                .get();
+            if (!dupeSnap.empty) {
+                await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+                console.log(`Deferred referral blocked for ${uid}: duplicate normalized email`);
+                continue;
+            }
+        }
+        // 3. Anti-ring
+        const referrerDoc = await db.collection("users").doc(referrerUid).get();
+        if (!referrerDoc.exists) {
+            await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+            continue;
+        }
+        if (referrerDoc.data()?.referredBy === uid) {
+            await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+            console.log(`Deferred referral blocked for ${uid}: circular referral`);
+            continue;
+        }
+        // All checks passed — count it
+        await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+        const REFERRAL_REWARD_THRESHOLD = 5;
+        const REFERRAL_REWARD_DAYS = 14;
+        const prevCount = referrerDoc.data()?.referralCount || 0;
+        const newCount = prevCount + 1;
+        const referrerUpdate = {
+            referralCount: admin.firestore.FieldValue.increment(1),
+        };
+        if (newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt) {
+            const expiresAt = new Date(Date.now() + REFERRAL_REWARD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+            referrerUpdate.referralProExpiresAt = expiresAt;
+            referrerUpdate.isPro = true;
+        }
+        await db.collection("users").doc(referrerUid).set(referrerUpdate, { merge: true });
+        processed++;
+        console.log(`Deferred referral counted: ${uid} → referrer ${referrerUid} (now ${newCount})`);
+    }
+    console.log(`Deferred referrals: processed ${processed}`);
+    return null;
 });
 // ─── Push Notifications (Web Push / VAPID) ─────────────────
 function initWebPush() {

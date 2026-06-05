@@ -108,8 +108,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { getStoredReferral, clearStoredReferral } = await import('@/hooks/use-referral-tracker');
       const referrerUid = getStoredReferral();
       if (referrerUid && referrerUid !== userCredential.user.uid) {
-        const { getFunctions, httpsCallable } = await import('firebase/functions');
-        const fns = getFunctions();
+        const { httpsCallable } = await import('firebase/functions');
+        const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+        const fns = await getFirebaseFunctions();
         const recordRef = httpsCallable(fns, 'recordReferral');
         await recordRef({ referrerUid });
         clearStoredReferral();
@@ -124,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = async (email: string, password: string): Promise<User> => {
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
-    
+
     const { signInWithEmailAndPassword } = await import('firebase/auth');
     const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
     return userCredential.user;
@@ -144,8 +145,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const { getStoredReferral, clearStoredReferral } = await import('@/hooks/use-referral-tracker');
         const referrerUid = getStoredReferral();
         if (referrerUid && referrerUid !== userCredential.user.uid) {
-          const { getFunctions, httpsCallable } = await import('firebase/functions');
-          const fns = getFunctions();
+          const { httpsCallable } = await import('firebase/functions');
+          const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+          const fns = await getFirebaseFunctions();
           const recordRef = httpsCallable(fns, 'recordReferral');
           await recordRef({ referrerUid });
           clearStoredReferral();
