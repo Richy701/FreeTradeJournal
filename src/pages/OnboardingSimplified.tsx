@@ -748,7 +748,7 @@ export default function OnboardingSimplified() {
       </main>
 
       {/* Footer – social proof */}
-      <footer className="py-4 border-t border-border/30 shrink-0">
+      <footer className="py-4 border-t border-border/50 shrink-0">
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground flex-wrap px-4">
           <span>Free forever</span>
           <span className="w-1 h-1 bg-muted-foreground/40 rounded-full" />

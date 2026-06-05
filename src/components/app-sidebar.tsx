@@ -17,11 +17,16 @@ import {
   Rocket,
   Rss,
   Tag,
+  Flame,
+  Zap,
+  CheckCircle2,
+  Gift,
 } from "lucide-react"
 import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProBadge } from '@/components/pro-badge'
 import { useProStatus } from '@/contexts/pro-context'
+import { useLoggingStreak } from '@/hooks/use-logging-streak'
 
 import { NavMain } from "@/components/nav-main"
 import { AccountSwitcher } from "@/components/account-switcher"
@@ -78,6 +83,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
   const { isPro } = useProStatus()
+  const { streak, loggedToday } = useLoggingStreak()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
   const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
@@ -122,6 +128,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={navMain} />
       </SidebarContent>
+      {!isDemo && streak > 0 && (
+        <div className="px-4 pb-2 space-y-1.5">
+          <div
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
+            style={{ backgroundColor: alpha(streak >= 3 ? '#f59e0b' : themeColors.primary, '10') }}
+          >
+            {streak >= 7 ? (
+              <Flame className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
+            ) : streak >= 3 ? (
+              <Zap className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
+            )}
+            <span className="font-semibold tabular-nums" style={{ color: streak >= 3 ? '#f59e0b' : themeColors.primary }}>
+              {streak}-day streak
+            </span>
+            {!loggedToday && (
+              <span className="text-xs text-muted-foreground ml-auto">Log today!</span>
+            )}
+          </div>
+          {!isPro && streak >= 7 && !localStorage.getItem(`pro-nudge-streak-${user.uid}`) && (
+            <Link
+              to="/pricing"
+              className="block rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              style={{ backgroundColor: alpha('#f59e0b', '5') }}
+            >
+              <span className="font-medium text-amber-500">{streak} days strong.</span>{' '}
+              Pro's AI coach can help you keep improving.
+            </Link>
+          )}
+        </div>
+      )}
       <SidebarFooter className="gap-0">
         <SidebarMenu className="gap-0.5 px-1">
           {isDemo ? (
@@ -179,6 +217,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <Rss className="h-4 w-4" />
                     <span>Blog</span>
                   </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <Link
+                    to="/settings?tab=subscription"
+                    onClick={() => isMobile && setOpenMobile(false)}
+                  >
+                    <Gift className="h-4 w-4" />
+                    <span>Invite Friends</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

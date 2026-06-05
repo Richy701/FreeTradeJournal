@@ -794,7 +794,7 @@ export default function Journal() {
                 variant="ghost"
                 size="sm"
                 onClick={cancelEdit}
-                className="h-11 w-11 p-0 rounded-full hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
+                className="h-11 w-11 p-0 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />
@@ -837,7 +837,7 @@ export default function Journal() {
                     placeholder="What's on your mind about the markets?"
                     value={newEntry.title}
                     onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                    className="bg-background/60 border-border/30 focus:border-primary/50 h-11 text-base"
+                    className="bg-background/60 border-border/50 focus:border-primary/50 h-11 text-base"
                   />
                 </div>
 
@@ -887,7 +887,7 @@ export default function Journal() {
                     placeholder="Share your thoughts, analysis, market observations, lessons learned..."
                     value={newEntry.content}
                     onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-                    className="min-h-36 sm:min-h-44 bg-background/60 border-border/30 focus:border-primary/50 resize-none text-sm leading-relaxed"
+                    className="min-h-36 sm:min-h-44 bg-background/60 border-border/50 focus:border-primary/50 resize-none text-sm leading-relaxed"
                   />
                 </div>
 
@@ -931,12 +931,12 @@ export default function Journal() {
                     {isLoadingTrades && <Loader2 className="h-3 w-3 animate-spin" />}
                   </label>
                   {isLoadingTrades ? (
-                    <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/30 flex items-center gap-2">
+                    <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/50 flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-muted-foreground">Loading trades...</span>
                     </div>
                   ) : trades.length === 0 ? (
-                    <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/30 flex items-center gap-2">
+                    <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/50 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-orange-500" />
                       <span className="text-sm text-muted-foreground">No trades found. Upload trades in Trade Log first.</span>
                     </div>
@@ -945,7 +945,7 @@ export default function Journal() {
                       value={newEntry.tradeId || 'none'}
                       onValueChange={(value) => handleTradeSelection(value)}
                     >
-                      <SelectTrigger className="w-full h-11 bg-background/60 border-border/30 focus:border-primary/50 text-sm">
+                      <SelectTrigger className="w-full h-11 bg-background/60 border-border/50 focus:border-primary/50 text-sm">
                         <SelectValue placeholder="Choose a trade to analyze..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1008,7 +1008,7 @@ export default function Journal() {
                     placeholder="e.g., EUR/USD, analysis, strategy"
                     value={newEntry.tags}
                     onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-                    className="bg-background/60 border-border/30 focus:border-primary/50 h-11"
+                    className="bg-background/60 border-border/50 focus:border-primary/50 h-11"
                   />
                 </div>
               </CardContent>
@@ -1495,7 +1495,7 @@ export default function Journal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => startEdit(entry)}
-                          className="h-9 w-9 p-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
+                          className="h-9 w-9 p-0 hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                           aria-label="Edit entry"
                         >
                           <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1575,7 +1575,7 @@ export default function Journal() {
                     )}
 
                     {((entry.emotions && entry.emotions.length > 0) || entry.tags.length > 0) && (
-                      <div className="flex flex-wrap items-center gap-1.5 bg-muted/20 rounded-lg px-3 py-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 rounded-lg px-3 py-2.5">
                         {entry.emotions && entry.emotions.map((emotion) => (
                           <Badge
                             key={emotion}

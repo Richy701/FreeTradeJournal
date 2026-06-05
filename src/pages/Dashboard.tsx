@@ -25,8 +25,13 @@ import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/tra
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProNudgeBanner } from '@/components/pro-nudge-banner'
+import { ReferralBanner } from '@/components/referral-banner'
 import { GettingStartedChecklist } from '@/components/getting-started-checklist'
 import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
+import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
+import { ShareStatsCard } from '@/components/share-stats-card'
+import { ProUpgradeCard } from '@/components/pro-upgrade-card'
+import { Brain, CloudUpload, BarChart3 as BarChart3Icon } from 'lucide-react'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -87,6 +92,7 @@ export default function Dashboard() {
   }, [getTrades, activeAccount, settings.accountSize, dataVersion])
   const tradeCount = useMemo(() => getTrades().length, [getTrades, dataVersion])
   useFirstTradeCelebration(tradeCount)
+  useMilestoneCelebrations(tradeCount)
 
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
@@ -408,7 +414,7 @@ export default function Dashboard() {
 
   // Skeleton loader components
   const MetricCardSkeleton = () => (
-    <div className="bg-muted/30 backdrop-blur-sm rounded-lg border-0 p-6 space-y-4">
+    <div className="bg-muted/50 backdrop-blur-sm rounded-lg border-0 p-6 space-y-4">
       <div className="flex justify-between items-center">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-8 w-8 rounded-lg" />
@@ -421,7 +427,7 @@ export default function Dashboard() {
   )
 
   const ChartSkeleton = ({ height = "h-[400px]" }) => (
-    <div className={`bg-muted/30 backdrop-blur-sm rounded-lg border p-6 ${height}`}>
+    <div className={`bg-muted/50 backdrop-blur-sm rounded-lg border p-6 ${height}`}>
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <Skeleton className="h-5 w-32" />
@@ -523,21 +529,45 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Affiliate Deals Banner */}
-      {showDealsBanner && (
-        <div className="mx-4 mb-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-2.5 flex items-center gap-3">
-          <Tag className="h-4 w-4 text-amber-500 shrink-0" />
-          <p className="flex-1 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Save on your next challenge</span>
-            <span className="hidden sm:inline"> · Exclusive codes for The5ers, FTMO, Apex, and more</span>
-          </p>
-          <a href="/affiliate" target="_blank" rel="noopener noreferrer" className="shrink-0">
-            <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
-              View Deals →
-            </button>
-          </a>
+      {/* Deals & PropTracker Banner */}
+      {(showDealsBanner || showTrackerBanner) && (
+        <div className="mx-4 mb-4 rounded-xl border px-4 py-3 flex items-center gap-4" style={{borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '08')}}>
+          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+            <div className="flex items-center gap-2">
+              <Tag className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
+              <span className="text-sm">
+                <span className="font-medium text-foreground">Prop firm deals</span>
+                <span className="text-muted-foreground hidden sm:inline"> · The5ers, FTMO, Apex codes</span>
+              </span>
+            </div>
+            <span className="hidden sm:block w-px h-4 bg-border/60 shrink-0" />
+            <div className="flex items-center gap-2">
+              <Building2 className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
+              <span className="text-sm">
+                <span className="font-medium text-foreground">PropTracker</span>
+                <span className="text-muted-foreground hidden sm:inline"> · Track P&L across every firm</span>
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a href="/affiliate" target="_blank" rel="noopener noreferrer">
+              <button className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150" style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}>
+                View Deals →
+              </button>
+            </a>
+            <Link to="/prop-tracker">
+              <button className="text-xs font-semibold border px-3 py-1.5 rounded-lg transition-colors duration-150" style={{borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary}}>
+                PropTracker →
+              </button>
+            </Link>
+          </div>
           <button
-            onClick={() => { localStorage.setItem('ftj-dismiss-deals', '1'); setShowDealsBanner(false); }}
+            onClick={() => {
+              localStorage.setItem('ftj-dismiss-deals', '1');
+              localStorage.setItem('ftj-dismiss-tracker', '1');
+              setShowDealsBanner(false);
+              setShowTrackerBanner(false);
+            }}
             className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
             aria-label="Dismiss"
           >
@@ -546,28 +576,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* PropTracker Banner */}
-      {showTrackerBanner && (
-        <div className="mx-4 mb-4 rounded-xl border border-border/50 bg-card/50 px-4 py-2.5 flex items-center gap-3">
-          <Building2 className="h-4 w-4 text-amber-500 shrink-0" />
-          <p className="flex-1 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Track your prop firm P&L</span>
-            <span className="hidden sm:inline"> · Log fees, resets, and payouts across every firm</span>
-          </p>
-          <Link to="/prop-tracker" className="shrink-0">
-            <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
-              Open PropTracker →
-            </button>
-          </Link>
-          <button
-            onClick={() => { localStorage.setItem('ftj-dismiss-tracker', '1'); setShowTrackerBanner(false); }}
-            className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
-            aria-label="Dismiss"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-      )}
+      <ReferralBanner />
 
       {/* Mobile-optimized Header Section */}
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
@@ -607,6 +616,8 @@ export default function Dashboard() {
                   </Button>
                 </Link>
               ) : (
+              <>
+              {tradeCount > 0 && <ShareStatsCard />}
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -759,7 +770,7 @@ export default function Dashboard() {
                               className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors duration-150 ${
                                 isActive
                                   ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                                  : 'bg-muted/30 border-border/50 text-muted-foreground hover:border-border hover:text-foreground'
+                                  : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
                               }`}
                             >
                               {e}
@@ -821,6 +832,7 @@ export default function Dashboard() {
                   </div>
                 </DialogContent>
               </Dialog>
+              </>
               )}
             </div>
             </div>
@@ -853,6 +865,17 @@ export default function Dashboard() {
           </Suspense>
         </div>
 
+        {/* Pro nudge — contextual, after equity curve */}
+        {tradeCount >= 5 && (
+          <ProUpgradeCard
+            icon={Brain}
+            title={`You have ${tradeCount} trades — unlock AI insights`}
+            description="Pro's AI coach analyses your patterns, detects weaknesses, and gives you a personalised action plan to improve."
+            cta="Try free for 14 days"
+            dismissKey="dashboard-ai"
+          />
+        )}
+
         {/* Recent trades — full width below */}
         <div>
           <DataTable />
@@ -869,6 +892,17 @@ export default function Dashboard() {
         <div>
           <CalendarHeatmap />
         </div>
+
+        {/* Cloud sync nudge — after all data-heavy sections */}
+        {tradeCount >= 10 && (
+          <ProUpgradeCard
+            icon={CloudUpload}
+            title="Your trades live only in this browser"
+            description="Switch device or clear data and it's gone. Pro syncs your journal across all devices automatically."
+            cta="Enable cloud sync"
+            dismissKey="dashboard-sync"
+          />
+        )}
 
         {/* Demo CTA Card - Only show in demo mode */}
         {isDemo && (
@@ -1039,7 +1073,7 @@ export default function Dashboard() {
                       </TableHeader>
                       <TableBody>
                         {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index} className="hover:bg-black/[0.03] dark:hover:bg-white/[0.06] border-border">
+                          <TableRow key={index} className="hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border-border">
                             <TableCell className="font-semibold text-foreground">
                               {trade.symbol}
                             </TableCell>

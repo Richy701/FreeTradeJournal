@@ -24,6 +24,7 @@ import { posthog } from '@/lib/posthog';
 import { PostHogTracker } from '@/components/PostHogTracker';
 import { initGA } from '@/lib/analytics';
 import Layout from '@/components/Layout';
+import { useReferralTracker } from '@/hooks/use-referral-tracker';
 
 // Lazy load all page components for smaller initial bundle
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
@@ -60,6 +61,11 @@ const toastOptions = {
   },
 };
 
+function ReferralTracker() {
+  useReferralTracker();
+  return null;
+}
+
 function App() {
   useEffect(() => {
     initGA();
@@ -76,6 +82,7 @@ function App() {
             <SettingsProvider>
               <Router>
             <PostHogTracker />
+            <ReferralTracker />
             <ScrollToTop />
             <SEOMeta />
             <StructuredData />

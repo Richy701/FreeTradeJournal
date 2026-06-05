@@ -112,7 +112,7 @@ function CircularProgress({ percentage, size = 64, strokeWidth = 6, color, achie
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-muted/30"
+          className="text-muted/50"
         />
         <circle
           cx={size / 2}
@@ -586,7 +586,7 @@ export function PerformanceGoals() {
                           <Button
                             key={index}
                             variant="outline"
-                            className="h-auto p-3 justify-start text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
+                            className="h-auto p-3 justify-start text-left hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                             onClick={() => {
                               setNewGoal({
                                 ...preset,
@@ -841,7 +841,7 @@ export function PerformanceGoals() {
                       </div>
                     </div>
                     {/* Progress bar at bottom */}
-                    <div className="h-1 w-full bg-muted/40">
+                    <div className="h-1 w-full bg-muted/60">
                       <div
                         className="h-full transition-all duration-500"
                         style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: barColor }}
@@ -898,87 +898,134 @@ export function PerformanceGoals() {
               return null
             }
 
-            return riskRules.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ShieldCheck className="h-8 w-8 mb-2 opacity-40" />
-                <p className="text-sm">No risk rules configured.</p>
-              </div>
-            ) : riskRules.map(rule => {
+            const enabledRules = riskRules.filter(r => r.enabled)
+            const ruleUtilizations = enabledRules.map(rule => {
               const current = getRuleCurrent(rule)
-              const pct = current !== null ? Math.min(100, (current / rule.value) * 100) : null
-              const barColor = pct === null ? themeColors.primary
-                : pct >= 90 ? themeColors.loss
-                : pct >= 60 ? '#f59e0b'
-                : themeColors.profit
+              return current !== null ? Math.min(100, (current / rule.value) * 100) : 0
+            })
+            const avgUtilization = ruleUtilizations.length > 0
+              ? Math.round(ruleUtilizations.reduce((a, b) => a + b, 0) / ruleUtilizations.length)
+              : 0
+            const totalViolations = riskRules.reduce((s, r) => s + (r.violations || 0), 0)
+            const healthColor = totalViolations > 0 ? themeColors.loss
+              : avgUtilization >= 75 ? '#f59e0b'
+              : themeColors.profit
 
-              return (
-                <div
-                  key={rule.id}
-                  className="group rounded-lg border border-border overflow-hidden"
-                >
-                  <div className="flex items-center justify-between p-3.5">
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={rule.enabled}
-                        onCheckedChange={() => toggleRiskRule(rule.id)}
-                      />
-                      {(() => { const RuleIcon = getRuleIcon(rule.type); return <RuleIcon className="h-3.5 w-3.5 text-muted-foreground" />; })()}
-                      <div>
-                        <span className="text-sm font-medium text-foreground">
-                          {getRuleLabel(rule.type)}
-                        </span>
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {rule.type.includes('Percent') || rule.type === 'maxRiskPerTrade'
-                            ? `${rule.value}%`
-                            : rule.type === 'maxOpenTrades'
-                              ? rule.value
-                              : `$${rule.value}`}
-                        </span>
-                        {current !== null && rule.enabled && (
-                          <span className="ml-2 text-xs" style={{ color: barColor }}>
-                            ${current.toFixed(0)} used
-                          </span>
-                        )}
+            return (
+              <>
+                {/* Risk health summary */}
+                {enabledRules.length > 0 && (
+                  <div className="rounded-lg p-4 mb-2" style={{ backgroundColor: alpha(healthColor, '08'), border: `1px solid ${alpha(healthColor, '20')}` }}>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: alpha(healthColor, '15') }}>
+                          <Shield className="h-3.5 w-3.5" style={{ color: healthColor }} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold" style={{ color: healthColor }}>
+                            {totalViolations > 0 ? 'Rules Breached' : avgUtilization >= 75 ? 'Approaching Limits' : 'All Clear'}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {totalViolations > 0
+                              ? `${totalViolations} violation${totalViolations !== 1 ? 's' : ''} detected`
+                              : `${avgUtilization}% average utilization across ${enabledRules.length} rule${enabledRules.length !== 1 ? 's' : ''}`}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {rule.violations && rule.violations > 0 ? (
-                        <Badge
-                          className="text-xs font-medium"
-                          style={{
-                            backgroundColor: alpha(themeColors.loss, '20'),
-                            color: themeColors.loss,
-                            border: `1px solid ${alpha(themeColors.loss, '30')}`
-                          }}
-                        >
-                          {rule.violations} violation{rule.violations !== 1 ? 's' : ''}
-                        </Badge>
-                      ) : null}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
-                        onClick={() => {
-                          setEditingRule(rule)
-                          setShowRuleDialog(true)
-                        }}
-                        aria-label="Edit rule"
-                      >
-                        <Pen className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  {pct !== null && rule.enabled && (
-                    <div className="h-1 w-full bg-muted/40">
+                    <div className="h-2 w-full rounded-full bg-muted/50 overflow-hidden">
                       <div
-                        className="h-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: barColor }}
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.max(avgUtilization, 2)}%`, backgroundColor: healthColor }}
                       />
                     </div>
-                  )}
-                </div>
-              )
-            })
+                  </div>
+                )}
+
+                {riskRules.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ShieldCheck className="h-8 w-8 mb-2 opacity-40 mx-auto" />
+                    <p className="text-sm font-medium">No risk rules configured</p>
+                    <p className="text-xs mt-1">Add rules to protect your capital and track violations</p>
+                  </div>
+                ) : riskRules.map(rule => {
+                  const current = getRuleCurrent(rule)
+                  const pct = current !== null ? Math.min(100, (current / rule.value) * 100) : null
+                  const barColor = pct === null ? themeColors.primary
+                    : pct >= 90 ? themeColors.loss
+                    : pct >= 60 ? '#f59e0b'
+                    : themeColors.profit
+
+                  return (
+                    <div
+                      key={rule.id}
+                      className="group rounded-lg border border-border overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between p-3.5">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={rule.enabled}
+                            onCheckedChange={() => toggleRiskRule(rule.id)}
+                          />
+                          {(() => { const RuleIcon = getRuleIcon(rule.type); return <RuleIcon className="h-3.5 w-3.5 text-muted-foreground" />; })()}
+                          <div>
+                            <span className="text-sm font-medium text-foreground">
+                              {getRuleLabel(rule.type)}
+                            </span>
+                            <span className="ml-2 text-sm text-muted-foreground">
+                              {rule.type.includes('Percent') || rule.type === 'maxRiskPerTrade'
+                                ? `${rule.value}%`
+                                : rule.type === 'maxOpenTrades'
+                                  ? rule.value
+                                  : `$${rule.value}`}
+                            </span>
+                            {current !== null && rule.enabled && (
+                              <span className="ml-2 text-xs" style={{ color: barColor }}>
+                                ${current.toFixed(0)} used
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {rule.violations && rule.violations > 0 ? (
+                            <Badge
+                              className="text-xs font-medium"
+                              style={{
+                                backgroundColor: alpha(themeColors.loss, '20'),
+                                color: themeColors.loss,
+                                border: `1px solid ${alpha(themeColors.loss, '30')}`
+                              }}
+                            >
+                              {rule.violations} violation{rule.violations !== 1 ? 's' : ''}
+                            </Badge>
+                          ) : null}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                            onClick={() => {
+                              setEditingRule(rule)
+                              setShowRuleDialog(true)
+                            }}
+                            aria-label="Edit rule"
+                          >
+                            <Pen className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      {pct !== null && rule.enabled && (
+                        <div className="h-1 w-full bg-muted/60">
+                          <div
+                            className="h-full transition-all duration-500"
+                            style={{ width: `${pct}%`, backgroundColor: barColor }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </>
+            )
           })()}
         </CardContent>
       </Card>
@@ -1049,40 +1096,57 @@ export function PerformanceGoals() {
       {achievedGoals.length > 0 && (
         <Card className="">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-              Achievements
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Trophy className="h-4 w-4 text-muted-foreground" />
+                Achievements
+              </CardTitle>
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+                backgroundColor: alpha(themeColors.profit, '15'),
+                color: themeColors.profit,
+              }}>
+                {achievedGoals.length} earned
+              </span>
+            </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {achievedGoals.map(goal => (
-                <div
-                  key={goal.id}
-                  className="rounded-lg border border-border p-4"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    {(() => {
-                      const GoalIcon = goal.type === 'profit' ? DollarSign
-                        : goal.type === 'winRate' ? Star
-                        : goal.type === 'trades' ? Zap
-                        : Medal;
-                      return <GoalIcon className="h-3.5 w-3.5" style={{ color: themeColors.profit }} />;
-                    })()}
-                    <span className="text-sm font-semibold text-foreground">
-                      {getGoalLabel(goal.type)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground capitalize">
-                    {goal.period} · {formatTarget(goal)}
-                  </div>
-                  {goal.achievedAt && (
-                    <div className="text-[10px] text-muted-foreground mt-1">
-                      {new Date(goal.achievedAt).toLocaleDateString()}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {achievedGoals.map(goal => {
+                const GoalIcon = goal.type === 'profit' ? DollarSign
+                  : goal.type === 'winRate' ? Star
+                  : goal.type === 'trades' ? Zap
+                  : goal.type === 'maxLoss' ? Shield
+                  : goal.type === 'maxDrawdown' ? ShieldCheck
+                  : Medal
+                return (
+                  <div
+                    key={goal.id}
+                    className="rounded-lg border overflow-hidden"
+                    style={{ borderColor: alpha(themeColors.profit, '25') }}
+                  >
+                    <div className="px-4 py-3 flex items-center gap-3" style={{ backgroundColor: alpha(themeColors.profit, '06') }}>
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: alpha(themeColors.profit, '15') }}
+                      >
+                        <GoalIcon className="h-4 w-4" style={{ color: themeColors.profit }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{getGoalLabel(goal.type)}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {goal.period} · {formatTarget(goal)}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div className="px-4 py-2 flex items-center gap-1.5 border-t" style={{ borderColor: alpha(themeColors.profit, '15') }}>
+                      <Trophy className="h-3 w-3" style={{ color: themeColors.profit }} />
+                      <span className="text-[11px] font-medium" style={{ color: themeColors.profit }}>
+                        Achieved {goal.achievedAt ? new Date(goal.achievedAt).toLocaleDateString() : 'today'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>

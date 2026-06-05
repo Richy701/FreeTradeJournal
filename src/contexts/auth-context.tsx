@@ -103,6 +103,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Failed to send verification email:', err);
     }
 
+    // Record referral if one exists
+    try {
+      const { getStoredReferral, clearStoredReferral } = await import('@/hooks/use-referral-tracker');
+      const referrerUid = getStoredReferral();
+      if (referrerUid && referrerUid !== userCredential.user.uid) {
+        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const fns = getFunctions();
+        const recordRef = httpsCallable(fns, 'recordReferral');
+        await recordRef({ referrerUid });
+        clearStoredReferral();
+      }
+    } catch (err) {
+      console.error('Failed to record referral:', err);
+    }
+
     return userCredential.user;
   };
 
@@ -118,10 +133,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signInWithGoogle = async (): Promise<User> => {
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
-    
-    const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+
+    const { GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } = await import('firebase/auth');
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(authInstance, provider);
+
+    const additionalInfo = getAdditionalUserInfo(userCredential);
+    if (additionalInfo?.isNewUser) {
+      try {
+        const { getStoredReferral, clearStoredReferral } = await import('@/hooks/use-referral-tracker');
+        const referrerUid = getStoredReferral();
+        if (referrerUid && referrerUid !== userCredential.user.uid) {
+          const { getFunctions, httpsCallable } = await import('firebase/functions');
+          const fns = getFunctions();
+          const recordRef = httpsCallable(fns, 'recordReferral');
+          await recordRef({ referrerUid });
+          clearStoredReferral();
+        }
+      } catch (err) {
+        console.error('Failed to record referral:', err);
+      }
+    }
+
     return userCredential.user;
   };
 

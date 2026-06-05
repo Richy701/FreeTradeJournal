@@ -28,8 +28,8 @@ export const trackPageView = (url: string) => {
   }
 };
 
-// Track custom events
-export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
+// Track custom events (Google Analytics)
+export const trackGAEvent = (action: string, category: string, label?: string, value?: number) => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', action, {
       event_category: category,
@@ -39,7 +39,7 @@ export const trackEvent = (action: string, category: string, label?: string, val
   }
 };
 
-// Track user interactions
+// Track user interactions (Google Analytics)
 export const trackUserAction = (action: string, details?: Record<string, any>) => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', action, {
@@ -47,3 +47,18 @@ export const trackUserAction = (action: string, details?: Record<string, any>) =
     });
   }
 };
+
+// ─── PostHog Event Tracking ─────────────────────────────────
+import { posthog } from './posthog';
+
+/**
+ * Track a named event in PostHog with optional properties.
+ * Silently swallows errors so analytics never breaks the app.
+ */
+export function trackEvent(event: string, properties?: Record<string, any>) {
+  try {
+    posthog.capture(event, properties);
+  } catch {
+    // Analytics should never break the app
+  }
+}

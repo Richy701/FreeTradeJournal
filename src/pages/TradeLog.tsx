@@ -48,6 +48,8 @@ import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
+import { ProUpgradeCard } from '@/components/pro-upgrade-card';
+import { useProStatus } from '@/contexts/pro-context';
 
 interface Trade {
   id: string
@@ -121,6 +123,7 @@ export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
   const { settings } = useSettings();
   const { isDemo } = useAuth();
+  const { isPro } = useProStatus();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries } = useDemoData();
@@ -1189,6 +1192,19 @@ export default function TradeLog() {
         <AIRiskAlertMonitor />
       </div>
 
+      {/* Pro nudge — contextual after trades list */}
+      {!isPro && !isDemo && trades.length >= 5 && (
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <ProUpgradeCard
+            icon={FileDown}
+            title="Generate professional PDF reports"
+            description={`Export your ${trades.length} trades as a detailed performance report — perfect for prop firm applications or tracking progress.`}
+            cta="Unlock with Pro"
+            dismissKey="tradelog-pdf"
+          />
+        </div>
+      )}
+
 
       {/* PDF Report Dialog */}
       <PDFReportDialog
@@ -1558,7 +1574,7 @@ export default function TradeLog() {
 
                       {/* Contract Info Display for Futures */}
                       {watchedMarket === 'futures' && form.watch('symbol') && (
-                        <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+                        <div className="p-4 bg-muted/50 rounded-lg border border-border/70">
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm font-semibold text-muted-foreground">Contract Details</p>
@@ -1685,7 +1701,7 @@ export default function TradeLog() {
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150 ${
                                       selected.includes(e)
                                         ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                                        : 'bg-muted/30 border-border/50 text-muted-foreground hover:border-border hover:text-foreground'
+                                        : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
                                     }`}
                                   >
                                     {e}
@@ -1746,7 +1762,7 @@ export default function TradeLog() {
         <TooltipProvider>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-6">
             {/* Total P&L */}
-            <Card className="relative overflow-visible hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
                 <Tooltip>
@@ -1781,7 +1797,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Win Rate */}
-            <Card className="relative overflow-visible hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
                 <div
@@ -1842,7 +1858,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Best Trade */}
-            <Card className="relative overflow-visible hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Best Trade</CardTitle>
                 <div
@@ -1869,7 +1885,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Avg R:R */}
-            <Card className="relative overflow-visible hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Avg R:R</CardTitle>
                 <Tooltip>
@@ -1906,7 +1922,7 @@ export default function TradeLog() {
         </TooltipProvider>
 
         {/* Secondary stats strip */}
-        <Card className="border-border/40 mb-2">
+        <Card className="border-border/60 mb-2">
           <CardContent className="py-3 px-4">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
@@ -2018,7 +2034,7 @@ export default function TradeLog() {
                     { Icon: Edit, title: 'Log manually', body: 'Record entry/exit prices, lot size, spread, commission and let us calculate your P&L.' },
                     { Icon: Brain, title: 'AI insights unlock', body: 'Once you have trades, AI analysis, coaching, and strategy tagging become available.' },
                   ] as const).map((tip) => (
-                    <div key={tip.title} className="rounded-xl border border-border/40 bg-muted/30 p-4 space-y-2">
+                    <div key={tip.title} className="rounded-xl border border-border/60 bg-muted/50 p-4 space-y-2">
                       <tip.Icon className="h-4 w-4 text-muted-foreground" />
                       <p className="text-xs font-semibold text-foreground">{tip.title}</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{tip.body}</p>
@@ -2030,7 +2046,7 @@ export default function TradeLog() {
               <>
               {/* Bulk actions bar */}
               {selectedTradeIds.size > 0 && (
-                <div className="flex items-center gap-3 px-1 py-2 mb-2 rounded-lg bg-muted/60 border border-border/40">
+                <div className="flex items-center gap-3 px-1 py-2 mb-2 rounded-lg bg-muted/60 border border-border/60">
                   <span className="text-sm font-medium text-muted-foreground ml-1">
                     {selectedTradeIds.size} selected
                   </span>
@@ -2056,7 +2072,7 @@ export default function TradeLog() {
               <div className="hidden md:block w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-b border-border/30 hover:bg-transparent">
+                    <TableRow className="border-b border-border/70 hover:bg-transparent">
                       <TableHead className="w-10 py-3">
                         <Checkbox
                           checked={paginatedTrades.length > 0 && selectedTradeIds.size === paginatedTrades.length}
@@ -2080,7 +2096,7 @@ export default function TradeLog() {
                   <TableBody>
                     {paginatedTrades.map((trade) => (
                       <React.Fragment key={trade.id}>
-                      <TableRow className="hover:bg-black/[0.03] dark:hover:bg-white/[0.04] border-b border-border/20">
+                      <TableRow className="hover:bg-black/[0.05] dark:hover:bg-white/[0.04] border-b border-border/20">
                         <TableCell className="py-6 w-10">
                           <Checkbox
                             checked={selectedTradeIds.has(trade.id)}
@@ -2307,7 +2323,7 @@ export default function TradeLog() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/30">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/70">
                 <div className="text-sm text-muted-foreground text-center sm:text-left">
                   Showing {startIndex + 1} to {Math.min(endIndex, trades.length)} of {trades.length} trades
                 </div>
@@ -2619,7 +2635,7 @@ export default function TradeLog() {
                       </TableHeader>
                       <TableBody>
                         {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index} className="hover:bg-black/[0.03] dark:hover:bg-white/[0.06] border-border">
+                          <TableRow key={index} className="hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border-border">
                             <TableCell className="font-semibold text-foreground">
                               {trade.symbol}
                             </TableCell>

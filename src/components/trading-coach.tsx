@@ -928,7 +928,7 @@ export function TradingCoach() {
             ))}
             <button
               onClick={dismissCurrentTip}
-              className="indicator-dot ml-1.5 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors"
+              className="indicator-dot ml-1.5 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors"
               aria-label="Dismiss this tip"
               title="Got it, dismiss"
             >

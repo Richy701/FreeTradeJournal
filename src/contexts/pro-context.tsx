@@ -52,6 +52,7 @@ export function ProProvider({ children }: ProProviderProps) {
   })();
 
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedSub);
+  const [referralProExpiresAt, setReferralProExpiresAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(!cachedSub && !!uid && !isDemo);
 
   // Firestore real-time listener
@@ -89,8 +90,10 @@ export function ProProvider({ children }: ProProviderProps) {
                 setSubscription(null);
                 UserStorage.removeItem(uid, PRO_CACHE_KEY);
               }
+              setReferralProExpiresAt(data.referralProExpiresAt || null);
             } else {
               setSubscription(null);
+              setReferralProExpiresAt(null);
               UserStorage.removeItem(uid, PRO_CACHE_KEY);
             }
             setIsLoading(false);
@@ -121,12 +124,14 @@ export function ProProvider({ children }: ProProviderProps) {
     [],
   );
 
+  const hasReferralPro = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
+
   const value: ProContextType = useMemo(() => ({
-    isPro: isDemo || isActivePro(subscription),
+    isPro: isDemo || isActivePro(subscription) || hasReferralPro,
     isLoading,
     subscription,
     openCheckout: handleOpenCheckout,
-  }), [isDemo, subscription, isLoading, handleOpenCheckout]);
+  }), [isDemo, subscription, isLoading, handleOpenCheckout, hasReferralPro]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

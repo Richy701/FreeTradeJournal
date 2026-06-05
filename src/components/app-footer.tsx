@@ -3,7 +3,7 @@ import { FeedbackButton } from '@/components/ui/feedback-button';
 
 export function AppFooter() {
   return (
-    <footer className="border-t border-border/50 mt-8 py-6 px-4">
+    <footer className="border-t border-border/70 mt-8 py-6 px-4">
       <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground transition-colors">
           &copy; {new Date().getFullYear()} FreeTradeJournal

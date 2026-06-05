@@ -158,7 +158,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
               </div>
             )}
 
-            <div className="bg-muted/30 p-4 rounded-lg space-y-3">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Trades in period</span>
                 <span className="text-sm font-bold">{filteredCount}</span>
@@ -178,7 +178,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
                 </div>
               )}
 
-              <div className="pt-2 border-t border-border/50">
+              <div className="pt-2 border-t border-border/70">
                 <h4 className="font-semibold text-sm mb-1.5">Your Wrapped includes:</h4>
                 <ul className="text-xs text-muted-foreground space-y-0.5">
                   <li>• Your numbers — P&L, win rate, profit factor</li>

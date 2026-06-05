@@ -147,7 +147,7 @@ function AnalysisSection({ section }: { section: ParsedSection }) {
   const isSnapshot = section.title.toLowerCase().includes('snapshot') || section.title.toLowerCase().includes('performance');
 
   return (
-    <div className={`rounded-lg p-4 bg-card border border-border ${isSnapshot ? 'bg-muted/30' : ''}`}>
+    <div className={`rounded-lg p-4 bg-card border border-border ${isSnapshot ? 'bg-muted/50' : ''}`}>
       <div className="flex items-center gap-2 mb-2.5">
         <Icon className="h-4 w-4 shrink-0" style={{ color: config.color }} />
         <h3 className="font-semibold text-sm text-foreground">{section.title}</h3>

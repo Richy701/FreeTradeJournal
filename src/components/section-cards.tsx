@@ -132,7 +132,7 @@ export function SectionCards() {
 
         {/* Total P&L */}
         <Link to="/trades">
-        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.05] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
             <Tooltip>
@@ -180,7 +180,7 @@ export function SectionCards() {
 
         {/* Win Rate */}
         <Link to="/trades">
-        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.05] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
             <div
@@ -244,7 +244,7 @@ export function SectionCards() {
 
         {/* Total Trades */}
         <Link to="/trades">
-        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.05] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Trades</CardTitle>
             <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground">
@@ -309,7 +309,7 @@ export function SectionCards() {
 
         {/* Profit Factor */}
         <Link to="/trades">
-        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.06]">
+        <Card className="relative overflow-visible cursor-pointer hover:bg-black/[0.05] dark:hover:bg-white/[0.06]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>
             <Tooltip>

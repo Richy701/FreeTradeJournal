@@ -76,6 +76,7 @@ import { toast } from 'sonner'
 import { requestPropAnalysis, requestScreenshotParse } from '@/services/ai-analysis'
 import type { ParsedTransaction } from '@/services/ai-analysis'
 import { Link } from 'react-router-dom'
+import { ProUpgradeCard } from '@/components/pro-upgrade-card'
 import type {
   PropFirmAccount,
   PropFirmTransaction,
@@ -325,7 +326,7 @@ function profitBarColor(pct: number, themeColors: { profit: string; primary: str
 
 export default function PropTracker() {
   const storage = useUserStorage()
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { isPro } = useProStatus()
   const { isDemo } = useAuth()
 
@@ -954,14 +955,14 @@ export default function PropTracker() {
 
       {/* Affiliate Deals Banner */}
       {showDealsBanner && (
-        <div className="mx-3 sm:mx-6 lg:mx-8 mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-2.5 flex items-center gap-3">
-          <Tag className="h-4 w-4 text-amber-500 shrink-0" />
+        <div className="mx-3 sm:mx-6 lg:mx-8 mt-4 rounded-xl border px-4 py-2.5 flex items-center gap-3" style={{borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '08')}}>
+          <Tag className="h-4 w-4 shrink-0" style={{color: themeColors.primary}} />
           <p className="flex-1 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Save on your next challenge</span>
             <span className="hidden sm:inline"> · Exclusive codes for The5ers, FTMO, Apex, and more</span>
           </p>
           <a href="/affiliate" target="_blank" rel="noopener noreferrer" className="shrink-0">
-            <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
+            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150" style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}>
               View Deals →
             </button>
           </a>
@@ -1045,6 +1046,17 @@ export default function PropTracker() {
       </div>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+
+        {/* Pro nudge when at free account limit */}
+        {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT && (
+          <ProUpgradeCard
+            icon={Building2}
+            title={`You've used all ${FREE_ACCOUNT_LIMIT} free accounts`}
+            description="Upgrade to Pro for unlimited prop firm accounts, advanced analytics, AI-powered challenge analysis, and more."
+            cta="Unlock unlimited accounts"
+            dismissKey="proptracker-limit"
+          />
+        )}
 
         {/* Deadline alerts */}
         {upcomingDeadlines.length > 0 && (
@@ -2229,7 +2241,7 @@ export default function PropTracker() {
               </button>
 
               {accountForm.rulesEnabled && (
-                <div className="space-y-3 rounded-lg border border-border/40 p-3 bg-muted/20">
+                <div className="space-y-3 rounded-lg border border-border/40 p-3 bg-muted/40">
                   {accountForm.firmName && FIRM_RULE_PRESETS[accountForm.firmName] && (
                     <p className="text-[10px] text-muted-foreground">Pre-filled from {accountForm.firmName} defaults. Adjust to match your challenge.</p>
                   )}
@@ -2396,7 +2408,7 @@ export default function PropTracker() {
 
               {/* Upload area */}
               <label
-                className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 cursor-pointer transition-colors ${importDialog.dragOver ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-primary/50 hover:bg-muted/20'}`}
+                className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 cursor-pointer transition-colors ${importDialog.dragOver ? 'border-primary bg-primary/5' : 'border-border/60 hover:border-primary/50 hover:bg-muted/40'}`}
                 onDragOver={e => { e.preventDefault(); setImportDialog(p => ({ ...p, dragOver: true })) }}
                 onDragLeave={() => setImportDialog(p => ({ ...p, dragOver: false }))}
                 onDrop={handleDropUpload}

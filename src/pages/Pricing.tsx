@@ -5,6 +5,7 @@ import NumberFlow from '@number-flow/react';
 import { ArrowRight, BadgeCheck, Check, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
+import { trackEvent } from '@/lib/analytics';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Footer7 } from '@/components/ui/footer-7';
 import { Button } from '@/components/ui/button';
@@ -241,7 +242,7 @@ const FAQS = [
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-border/50 last:border-0">
+    <div className="border-b border-border/70 last:border-0">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between py-4 text-left gap-4"
@@ -263,7 +264,8 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [frequency, setFrequency] = useState<Frequency>('yearly');
 
-  const handleUpgrade = (priceId: string) => {
+  const handleUpgrade = (priceId: string, plan: string) => {
+    trackEvent('pricing_cta_clicked', { plan });
     if (!user) {
       navigate('/login', { state: { from: '/pricing' } });
       return;
@@ -293,7 +295,7 @@ export default function Pricing() {
             {!user && (
               <Link
                 to="/login"
-                className="text-foreground/70 hover:text-foreground transition-colors font-medium px-3 py-2 rounded-md text-sm"
+                className="text-foreground/80 hover:text-foreground transition-colors font-medium px-3 py-2 rounded-md text-sm"
               >
                 Sign In
               </Link>
@@ -348,7 +350,12 @@ export default function Pricing() {
             features={FREE_FEATURES}
             cta={user ? 'Current Plan' : 'Get Started Free'}
             isCurrentPlan={!!user && !isPro}
-            onCtaClick={() => !user && navigate('/signup')}
+            onCtaClick={() => {
+              if (!user) {
+                trackEvent('pricing_cta_clicked', { plan: 'free' });
+                navigate('/signup');
+              }
+            }}
             disabled={!!user && !isPro}
           />
 
@@ -356,13 +363,13 @@ export default function Pricing() {
           <PricingCard
             name={`Pro ${activePlan.name}`}
             price={activePlan.price}
-            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · 14-day free trial'}
+            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · Save $21.89 vs monthly · 14-day free trial'}
             description="For traders who want an edge"
             features={activePlan.features}
             cta="Start free trial"
             popular
             isCurrentPlan={isPro && currentPlan === activePlan.interval}
-            onCtaClick={() => handleUpgrade(activePlan.priceId)}
+            onCtaClick={() => handleUpgrade(activePlan.priceId, activePlan.interval)}
             disabled={isPro && currentPlan === 'lifetime'}
           />
 
@@ -376,7 +383,7 @@ export default function Pricing() {
             cta="Get Lifetime Access"
             highlighted
             isCurrentPlan={isPro && currentPlan === 'lifetime'}
-            onCtaClick={() => handleUpgrade(lifetimePlan.priceId)}
+            onCtaClick={() => handleUpgrade(lifetimePlan.priceId, 'lifetime')}
           />
         </div>
       </section>
@@ -386,7 +393,7 @@ export default function Pricing() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2">Free vs <span className="text-amber-500">Pro</span></h2>
-            <p className="text-foreground/70 text-base">Everything in Free, plus powerful tools to level up</p>
+            <p className="text-foreground/80 text-base">Everything in Free, plus powerful tools to level up</p>
           </div>
 
           <div className="rounded-2xl border bg-background p-6 sm:p-8">
@@ -427,7 +434,10 @@ export default function Pricing() {
               <div className="mt-8 text-center space-y-2">
                 <Button
                   className="bg-amber-500 text-white hover:bg-amber-600 font-semibold px-8"
-                  onClick={() => user ? openCheckout(activePlan.priceId) : navigate('/signup')}
+                  onClick={() => {
+                    trackEvent('pricing_cta_clicked', { plan: user ? activePlan.interval : 'free', source: 'comparison_table' });
+                    user ? openCheckout(activePlan.priceId) : navigate('/signup');
+                  }}
                 >
                   {user ? 'Start free trial' : 'Get Started Free'}
                 </Button>
@@ -438,12 +448,75 @@ export default function Pricing() {
         </div>
       </section>
 
+      {/* Competitor Comparison */}
+      <section className="px-4 pb-16 sm:pb-24">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold mb-2">How we compare</h2>
+            <p className="text-foreground/80 text-base">Same features, fraction of the price</p>
+          </div>
+
+          <div className="rounded-2xl border bg-background p-6 sm:p-8">
+            <div className="space-y-0 divide-y divide-border/50">
+              {[
+                { name: 'FreeTradeJournal', price: '$5.99/mo', yearly: '$49.99/yr', highlight: true },
+                { name: 'TraderSync', price: '$29.95/mo', yearly: '$359.40/yr', highlight: false },
+                { name: 'TradeZella', price: '$29/mo', yearly: '$348/yr', highlight: false },
+                { name: 'Tradervue', price: '$49/mo', yearly: '$588/yr', highlight: false },
+                { name: 'Edgewonk', price: '$169/yr', yearly: '$169/yr', highlight: false },
+              ].map((comp) => (
+                <div
+                  key={comp.name}
+                  className={cn(
+                    'flex items-center justify-between py-3.5 px-2 rounded-lg',
+                    comp.highlight && 'bg-amber-500/[0.06] -mx-2 px-4'
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {comp.highlight && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    )}
+                    <span className={cn(
+                      'text-sm font-medium',
+                      comp.highlight ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/80'
+                    )}>
+                      {comp.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-6 sm:gap-10">
+                    <span className={cn(
+                      'text-sm font-semibold tabular-nums',
+                      comp.highlight ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/60'
+                    )}>
+                      {comp.price}
+                    </span>
+                    <span className={cn(
+                      'text-xs tabular-nums hidden sm:block w-20 text-right',
+                      comp.highlight ? 'text-amber-600/70 dark:text-amber-400/70' : 'text-foreground/50'
+                    )}>
+                      {comp.yearly}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-border/70 text-center">
+              <p className="text-sm text-muted-foreground">
+                Save up to <span className="font-semibold text-amber-600 dark:text-amber-400">$538/year</span> compared to Tradervue
+                {' '} — with AI features they don't even offer.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="px-4 pb-16 sm:pb-24">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2">Common questions</h2>
-            <p className="text-foreground/70 text-base">Everything you need to know before upgrading</p>
+            <p className="text-foreground/80 text-base">Everything you need to know before upgrading</p>
           </div>
           <div className="rounded-2xl border bg-background px-6 sm:px-8 py-2">
             {FAQS.map((faq) => (

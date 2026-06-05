@@ -115,7 +115,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
   return (
     <div className="mx-4 mb-4 rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/80">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <p className="text-sm font-semibold">Get started</p>
@@ -151,7 +151,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
 
       {/* Items */}
       {!collapsed && (
-        <div className="divide-y divide-border/40">
+        <div className="divide-y divide-border/60">
           {items.map((item) => {
             const Icon = item.icon;
             return (
@@ -159,7 +159,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
                 key={item.id}
                 to={item.href}
                 className={`flex items-center gap-3 px-4 py-3 transition-colors group ${
-                  item.done ? 'opacity-60' : 'hover:bg-muted/40'
+                  item.done ? 'opacity-60' : 'hover:bg-muted/60'
                 }`}
               >
                 {/* Checkbox */}
@@ -167,7 +167,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
                   className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                     item.done
                       ? 'bg-primary border-primary'
-                      : 'border-muted-foreground/40 group-hover:border-primary/60'
+                      : 'border-muted-foreground/60 group-hover:border-primary/60'
                   }`}
                 >
                   {item.done && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />}

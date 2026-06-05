@@ -103,7 +103,7 @@ export const Footer7 = ({
   return (
     <section className="relative py-16 mt-16 overflow-hidden">
       {/* Glass background layer */}
-      <div className="absolute inset-0 bg-muted/30 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-muted/50 backdrop-blur-sm" />
       {/* Fade gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/50" />
       {/* Gradient top border line */}
@@ -256,14 +256,14 @@ export const Footer7 = ({
                 )}
               </li>
             ))}
-            <li className={legalLinks.length > 0 ? "md:border-l md:border-border/50 md:pl-6" : ""}>
+            <li className={legalLinks.length > 0 ? "md:border-l md:border-border/70 md:pl-6" : ""}>
               <FeedbackButton
                 variant="ghost"
                 className="h-auto p-0 text-muted-foreground/70 hover:text-foreground text-sm font-medium"
                 buttonText="Feedback"
               />
             </li>
-            <li className="md:border-l md:border-border/50 md:pl-6">
+            <li className="md:border-l md:border-border/70 md:pl-6">
               <button
                 onClick={scrollToTop}
                 className="flex items-center gap-1.5 hover:text-foreground transition-colors duration-200"

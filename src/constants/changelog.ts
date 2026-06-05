@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.13.0',
+    date: '2026-06-05',
+    summary: 'Smarter PropTracker AI with score cards, redesigned Goals page, referral program on the dashboard, and critical bug fixes.',
+    items: [
+      {
+        type: 'new',
+        text: 'Referral banner on Dashboard',
+        description: 'Invite 5 friends who sign up and log a trade to earn 14 days of Pro free. Your referral link, progress bar, and share buttons are now front and center on the dashboard.',
+      },
+      {
+        type: 'improved',
+        text: 'PropTracker AI Analysis',
+        description: 'The AI now sees your challenge rules, progress toward profit targets, drawdown risk, and cross-firm patterns (pass rate, cost per attempt, reset count). Responses include a 1-10 score card and a new Challenge Progress section.',
+      },
+      {
+        type: 'improved',
+        text: 'Goals & Risk Management page',
+        description: 'Redesigned stat cards with colored icons, mini arc gauges, and a completion rate metric. Risk section now shows a health gauge with overall utilization. Achievement cards have a polished trophy-badge look.',
+      },
+      {
+        type: 'fixed',
+        text: 'AI daily usage limits not resetting',
+        description: 'Using one AI feature on a new day could leave other features stuck at their previous day\'s count, showing "limit reached" even with no usage. Counters now reset correctly across all features.',
+      },
+      {
+        type: 'fixed',
+        text: 'PostHog analytics errors in production',
+        description: 'PostHog requests were hitting the SPA fallback and returning HTML instead of proxying correctly, causing 405 and MIME type errors. Added reverse proxy rewrites through Vercel.',
+      },
+    ],
+  },
+  {
     version: '2.12.0',
     date: '2026-06-04',
     summary: 'Major PropTracker upgrade with challenge rules, success tracking, risk calculator, and a new affiliate page.',
@@ -587,4 +619,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.12.0'
+export const LATEST_CHANGELOG_VERSION = '2.13.0'

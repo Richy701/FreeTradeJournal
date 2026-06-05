@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.markFirstTrade = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -45,6 +45,8 @@ const resend_1 = require("resend");
 const posthog_node_1 = require("posthog-node");
 const components_1 = require("@react-email/components");
 const React = __importStar(require("react"));
+const webpush = __importStar(require("web-push"));
+const crypto = __importStar(require("crypto"));
 const WelcomeEmail_1 = require("./emails/WelcomeEmail");
 const ProUpgradeEmail_1 = require("./emails/ProUpgradeEmail");
 const CancellationEmail_1 = require("./emails/CancellationEmail");
@@ -56,6 +58,8 @@ const PasswordResetEmail_1 = require("./emails/PasswordResetEmail");
 const EmailVerificationEmail_1 = require("./emails/EmailVerificationEmail");
 const Day7NudgeEmail_1 = require("./emails/Day7NudgeEmail");
 const Day14UpgradeEmail_1 = require("./emails/Day14UpgradeEmail");
+const Day21BackupEmail_1 = require("./emails/Day21BackupEmail");
+const WeeklyDigestEmail_1 = require("./emails/WeeklyDigestEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -87,7 +91,7 @@ async function sendWelcomeEmail(email, name) {
     await getResend().emails.send({
         from: FROM_EMAIL,
         to: email,
-        subject: "Welcome to FreeTradeJournal 👋",
+        subject: "Welcome to FreeTradeJournal",
         html,
     });
 }
@@ -113,7 +117,14 @@ async function sendCancellationEmail(email, name, periodEnd) {
         html,
     });
 }
-async function sendTrialStartedEmail(email, name, trialEnd) {
+function unsubHeaders(uid) {
+    const url = getUnsubscribeUrl(uid);
+    return {
+        'List-Unsubscribe': `<${url}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    };
+}
+async function sendTrialStartedEmail(email, name, trialEnd, uid) {
     const firstName = name?.split(" ")[0] || "trader";
     const trialEndDate = new Date(trialEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const html = await (0, components_1.render)(React.createElement(TrialStartedEmail_1.TrialStartedEmail, { firstName, trialEndDate }));
@@ -122,13 +133,10 @@ async function sendTrialStartedEmail(email, name, trialEnd) {
         to: email,
         subject: "Your 14-day Pro trial has started",
         html,
-        headers: {
-            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        },
+        headers: uid ? unsubHeaders(uid) : {},
     });
 }
-async function sendTrialEndingEmail(email, name, trialEnd) {
+async function sendTrialEndingEmail(email, name, trialEnd, uid) {
     const firstName = name?.split(" ")[0] || "trader";
     const trialEndDate = new Date(trialEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const html = await (0, components_1.render)(React.createElement(TrialEndingEmail_1.TrialEndingEmail, { firstName, trialEndDate }));
@@ -137,10 +145,7 @@ async function sendTrialEndingEmail(email, name, trialEnd) {
         to: email,
         subject: "Your Pro trial ends in 2 days",
         html,
-        headers: {
-            'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        },
+        headers: uid ? unsubHeaders(uid) : {},
     });
 }
 // ─── Password Reset Email ───────────────────────────────────
@@ -226,12 +231,28 @@ exports.sendEmailVerificationLink = functions.https.onCall(async (data, context)
     });
     return { success: true };
 });
+// ─── Email Normalization (anti-fraud) ──────────────────────
+function normalizeEmail(email) {
+    const [local, domain] = email.toLowerCase().trim().split("@");
+    if (!local || !domain)
+        return email.toLowerCase().trim();
+    const gmailDomains = ["gmail.com", "googlemail.com"];
+    if (gmailDomains.includes(domain)) {
+        return `${local.split("+")[0].replace(/\./g, "")}@gmail.com`;
+    }
+    const outlookDomains = ["outlook.com", "hotmail.com", "live.com"];
+    if (outlookDomains.includes(domain)) {
+        return `${local.split("+")[0]}@${domain}`;
+    }
+    return `${local.split("+")[0]}@${domain}`;
+}
 // ─── Welcome Email on Signup ───────────────────────────────
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     // Write user record to Firestore for email scheduling
     try {
         await db.collection("users").doc(user.uid).set({
             email: user.email || null,
+            normalizedEmail: user.email ? normalizeEmail(user.email) : null,
             displayName: user.displayName || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
@@ -281,7 +302,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
 exports.sendDay3NudgeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 20;
+    const MAX_SENDS = 10;
     const now = admin.firestore.Timestamp.now();
     const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
     const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
@@ -296,8 +317,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        // Skip if they've already logged a trade or already received this email
-        if (data.firstTradeLoggedAt || data.day3NudgeSentAt)
+        if (data.emailOptOut || data.firstTradeLoggedAt || data.day3NudgeSentAt)
             continue;
         const email = data.email;
         if (!email)
@@ -310,10 +330,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
                 to: email,
                 subject: "Your journal is set up — log your first trade in 60 seconds",
                 html,
-                headers: {
-                    'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
-                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-                },
+                headers: unsubHeaders(doc.id),
             });
             // Mark as sent so we don't send again
             await doc.ref.update({ day3NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
@@ -331,7 +348,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
 exports.sendTrialEndingEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 20;
+    const MAX_SENDS = 10;
     const now = Date.now();
     // Query for trial end dates 1–3 days from now (48-hour window, daily run)
     const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
@@ -369,7 +386,7 @@ exports.sendTrialEndingEmails = functions.pubsub
 exports.sendDay7NudgeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 20;
+    const MAX_SENDS = 10;
     const now = admin.firestore.Timestamp.now();
     const sevenDaysAgo = new Date(now.toMillis() - 7 * 24 * 60 * 60 * 1000);
     const eightDaysAgo = new Date(now.toMillis() - 8 * 24 * 60 * 60 * 1000);
@@ -383,8 +400,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        // Only target users who still haven't logged a trade and haven't received this email
-        if (data.firstTradeLoggedAt || data.day7NudgeSentAt)
+        if (data.emailOptOut || data.firstTradeLoggedAt || data.day7NudgeSentAt)
             continue;
         const email = data.email;
         if (!email)
@@ -397,10 +413,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
                 to: email,
                 subject: "A week in — have you logged a trade yet?",
                 html,
-                headers: {
-                    'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
-                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-                },
+                headers: unsubHeaders(doc.id),
             });
             await doc.ref.update({ day7NudgeSentAt: admin.firestore.FieldValue.serverTimestamp() });
             sent++;
@@ -417,7 +430,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
 exports.sendDay14UpgradeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 20;
+    const MAX_SENDS = 10;
     const now = admin.firestore.Timestamp.now();
     const fourteenDaysAgo = new Date(now.toMillis() - 14 * 24 * 60 * 60 * 1000);
     const fifteenDaysAgo = new Date(now.toMillis() - 15 * 24 * 60 * 60 * 1000);
@@ -432,7 +445,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
             break;
         const data = doc.data();
         // Only target free users who have logged at least one trade
-        if (data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
+        if (data.emailOptOut || data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
             continue;
         const email = data.email;
         if (!email)
@@ -445,10 +458,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
                 to: email,
                 subject: "Two weeks of data — here's what Pro does with it",
                 html,
-                headers: {
-                    'List-Unsubscribe': '<mailto:hello@freetradejournal.com?subject=Unsubscribe>',
-                    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-                },
+                headers: unsubHeaders(doc.id),
             });
             await doc.ref.update({ day14UpgradeSentAt: admin.firestore.FieldValue.serverTimestamp() });
             sent++;
@@ -459,6 +469,130 @@ exports.sendDay14UpgradeEmails = functions.pubsub
         }
     }
     console.log(`Day-14 upgrade pitch: sent ${sent} emails`);
+    return null;
+});
+// ─── Day 21 "Your data isn't backed up" Email (Scheduled) ─────
+exports.sendDay21BackupEmails = functions.pubsub
+    .schedule("every 24 hours")
+    .onRun(async () => {
+    const MAX_SENDS = 10;
+    const now = admin.firestore.Timestamp.now();
+    const twentyOneDaysAgo = new Date(now.toMillis() - 21 * 24 * 60 * 60 * 1000);
+    const twentyTwoDaysAgo = new Date(now.toMillis() - 22 * 24 * 60 * 60 * 1000);
+    const allSnapshot = await db
+        .collection("users")
+        .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(twentyTwoDaysAgo))
+        .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(twentyOneDaysAgo))
+        .get();
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
+        const data = doc.data();
+        if (data.emailOptOut || data.isPro || data.day21BackupSentAt || !data.firstTradeLoggedAt)
+            continue;
+        const email = data.email;
+        if (!email)
+            continue;
+        try {
+            const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+            const html = await (0, components_1.render)(React.createElement(Day21BackupEmail_1.Day21BackupEmail, { firstName }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: email,
+                subject: "Your trading data isn't backed up",
+                html,
+                headers: unsubHeaders(doc.id),
+            });
+            await doc.ref.update({ day21BackupSentAt: admin.firestore.FieldValue.serverTimestamp() });
+            sent++;
+            console.log(`Day-21 backup email sent`);
+        }
+        catch (err) {
+            console.error(`Failed to send day-21 backup email:`, err);
+        }
+    }
+    console.log(`Day-21 backup: sent ${sent} emails`);
+    return null;
+});
+// ─── Weekly Digest Email (Scheduled — every Monday 8am UTC) ───
+exports.sendWeeklyDigestEmails = functions.pubsub
+    .schedule("every monday 08:00")
+    .timeZone("UTC")
+    .onRun(async () => {
+    const MAX_SENDS = 30;
+    const now = Date.now();
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const weekLabel = `Week of ${weekAgo.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(now).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+    // Only send to Pro users (free users' trades are in localStorage, not Firestore)
+    const allSnapshot = await db.collection("users")
+        .where("isPro", "==", true)
+        .where("firstTradeLoggedAt", "!=", null)
+        .limit(500)
+        .get();
+    const currentWeek = `${new Date(now).getFullYear()}-W${Math.ceil((now - new Date(new Date(now).getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}`;
+    let sent = 0;
+    for (const doc of allSnapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
+        const data = doc.data();
+        const email = data.email;
+        if (!email)
+            continue;
+        if (data.emailOptOut || data.weeklyDigestLastSentWeek === currentWeek)
+            continue;
+        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        let tradeCount = 0;
+        let winRate = 0;
+        let pnl = "$0.00";
+        let bestTrade = "$0.00";
+        // Pro users with synced trades — compute real weekly stats
+        if (data.isPro) {
+            try {
+                const tradesDoc = await db.collection("users").doc(doc.id).collection("sync").doc("trades").get();
+                if (tradesDoc.exists) {
+                    const allTrades = JSON.parse(tradesDoc.data()?.data || "[]");
+                    const weekTrades = allTrades.filter((t) => {
+                        const exitDate = new Date(t.exitTime || t.date);
+                        return exitDate >= weekAgo;
+                    });
+                    tradeCount = weekTrades.length;
+                    if (tradeCount > 0) {
+                        const wins = weekTrades.filter((t) => Number(t.pnl) > 0).length;
+                        winRate = Math.round((wins / tradeCount) * 100);
+                        const totalPnl = weekTrades.reduce((s, t) => s + (Number(t.pnl) || 0), 0);
+                        const best = weekTrades.reduce((max, t) => Math.max(max, Number(t.pnl) || 0), -Infinity);
+                        const sym = totalPnl >= 0 ? "+" : "";
+                        pnl = `${sym}$${Math.abs(totalPnl).toFixed(2)}`;
+                        bestTrade = best > 0 ? `+$${best.toFixed(2)}` : `$${best.toFixed(2)}`;
+                    }
+                }
+            }
+            catch (err) {
+                console.error(`Failed to compute weekly stats for ${doc.id}:`, err);
+            }
+        }
+        try {
+            const html = await (0, components_1.render)(React.createElement(WeeklyDigestEmail_1.WeeklyDigestEmail, {
+                firstName, tradeCount, winRate, pnl, bestTrade, weekLabel,
+            }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: email,
+                subject: tradeCount > 0
+                    ? `Your week: ${tradeCount} trades, ${winRate}% win rate`
+                    : "Your weekly trading recap",
+                html,
+                headers: unsubHeaders(doc.id),
+            });
+            await doc.ref.update({ weeklyDigestLastSentWeek: currentWeek });
+            sent++;
+        }
+        catch (err) {
+            console.error(`Failed to send weekly digest:`, err);
+        }
+    }
+    console.log(`Weekly digest: sent ${sent} emails`);
     return null;
 });
 // ─── Trial Offer Batch (Admin callable) ────────────────────────
@@ -475,7 +609,7 @@ exports.sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
     for (const doc of snapshot.docs) {
         const d = doc.data();
         // Skip pro users, already-outreached users, and users without an email
-        if (d.isPro === true)
+        if (d.emailOptOut || d.isPro === true)
             continue;
         if (d.trialOutreachSentAt)
             continue;
@@ -670,6 +804,70 @@ exports.submitTestimonial = functions.https.onCall(async (data, context) => {
     }
     return { ok: true };
 });
+// ─── Record Referral ──────────────────────────────────────────
+exports.recordReferral = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const { referrerUid } = data;
+    if (!referrerUid || typeof referrerUid !== "string" || referrerUid.length < 5) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid referral code.");
+    }
+    if (referrerUid === uid) {
+        throw new functions.https.HttpsError("invalid-argument", "Cannot refer yourself.");
+    }
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (userDoc.data()?.referredBy) {
+        return { ok: true, alreadyRecorded: true };
+    }
+    const referrerDoc = await db.collection("users").doc(referrerUid).get();
+    if (!referrerDoc.exists) {
+        throw new functions.https.HttpsError("not-found", "Referrer not found.");
+    }
+    // Anti-ring: block if referrer was referred by this user (A→B→A)
+    if (referrerDoc.data()?.referredBy === uid) {
+        throw new functions.https.HttpsError("invalid-argument", "Circular referrals are not allowed.");
+    }
+    // Only save the relationship — referral does NOT count until the
+    // referred user verifies their email AND logs their first trade.
+    // That validation happens in markFirstTrade.
+    await db.collection("users").doc(uid).set({
+        referredBy: referrerUid,
+        referredAt: admin.firestore.FieldValue.serverTimestamp(),
+        referralCounted: false,
+    }, { merge: true });
+    try {
+        getPostHog().capture({
+            distinctId: uid,
+            event: "referral recorded",
+            properties: { referrer_uid: referrerUid },
+        });
+    }
+    catch (err) {
+        console.error("PostHog: failed to track referral:", err);
+    }
+    return { ok: true };
+});
+// ─── Get Referral Stats ─────────────────────────────────────
+exports.getReferralStats = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const userDoc = await db.collection("users").doc(uid).get();
+    const data = userDoc.data() || {};
+    const referralCount = data.referralCount || 0;
+    const referralProExpiresAt = data.referralProExpiresAt || null;
+    const rewardThreshold = 5;
+    return {
+        referralCount,
+        referralCode: uid,
+        rewardThreshold,
+        referralProExpiresAt,
+        rewardEarned: referralCount >= rewardThreshold && !!referralProExpiresAt,
+    };
+});
 // ─── Mark First Trade (client can't write users doc directly) ──
 exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
     if (!context.auth) {
@@ -686,7 +884,269 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
     catch (err) {
         console.error("PostHog: failed to track first trade:", err);
     }
+    // ── Referral credit: only counts when referred user has verified email + first trade ──
+    try {
+        const userDoc = await db.collection("users").doc(uid).get();
+        const userData = userDoc.data();
+        const referrerUid = userData?.referredBy;
+        if (referrerUid && !userData?.referralCounted) {
+            // 1. Email must be verified
+            const userRecord = await admin.auth().getUser(uid);
+            if (!userRecord.emailVerified) {
+                console.log(`Referral not counted for ${uid}: email not verified`);
+                return { ok: true };
+            }
+            // 2. Account must be at least 7 days old
+            const createdAt = userData?.createdAt?.toMillis?.() || 0;
+            if (createdAt && Date.now() - createdAt < 7 * 24 * 60 * 60 * 1000) {
+                console.log(`Referral not counted for ${uid}: account under 7 days old`);
+                return { ok: true };
+            }
+            // 3. Normalized email dedup: block if another counted referral
+            //    from the same referrer has the same normalized email
+            //    (catches Gmail +alias and . tricks)
+            const myNormalized = userData?.normalizedEmail
+                || (userRecord.email ? normalizeEmail(userRecord.email) : null);
+            if (myNormalized) {
+                const dupeSnap = await db.collection("users")
+                    .where("referredBy", "==", referrerUid)
+                    .where("referralCounted", "==", true)
+                    .where("normalizedEmail", "==", myNormalized)
+                    .limit(1)
+                    .get();
+                if (!dupeSnap.empty) {
+                    console.log(`Referral not counted for ${uid}: duplicate normalized email ${myNormalized}`);
+                    await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+                    return { ok: true };
+                }
+            }
+            // 4. Anti-ring: referrer can't have been referred by this user
+            const referrerDoc2 = await db.collection("users").doc(referrerUid).get();
+            if (referrerDoc2.data()?.referredBy === uid) {
+                console.log(`Referral not counted for ${uid}: circular referral with ${referrerUid}`);
+                await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+                return { ok: true };
+            }
+            // All checks passed — mark as counted
+            await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
+            const REFERRAL_REWARD_THRESHOLD = 5;
+            const REFERRAL_REWARD_DAYS = 14;
+            const referrerDoc = await db.collection("users").doc(referrerUid).get();
+            if (!referrerDoc.exists)
+                return { ok: true };
+            const prevCount = referrerDoc.data()?.referralCount || 0;
+            const newCount = prevCount + 1;
+            const referrerUpdate = {
+                referralCount: admin.firestore.FieldValue.increment(1),
+            };
+            if (newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt) {
+                const expiresAt = new Date(Date.now() + REFERRAL_REWARD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+                referrerUpdate.referralProExpiresAt = expiresAt;
+                referrerUpdate.isPro = true;
+            }
+            await db.collection("users").doc(referrerUid).set(referrerUpdate, { merge: true });
+            // Notify the referrer
+            const referrerEmail = referrerDoc.data()?.email;
+            const newUserName = userRecord.displayName || userRecord.email || "Someone";
+            if (referrerEmail) {
+                const rewardEarned = newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt;
+                const subject = rewardEarned
+                    ? `You earned 14 days of Pro! ${newUserName} was your 5th referral`
+                    : `${newUserName} just started trading with your link`;
+                const body = rewardEarned
+                    ? `<p style="color:#ededed;font-size:16px;font-weight:600;margin:0 0 8px">You just earned 14 days of Pro</p>
+             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserName} was your 5th referral. Your Pro access is now active — AI coaching, cloud sync, and everything else is unlocked for the next 14 days.</p>`
+                    : `<p style="color:#ededed;font-size:16px;font-weight:600;margin:0 0 8px">Referral confirmed</p>
+             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserName} signed up with your link and logged their first trade. ${REFERRAL_REWARD_THRESHOLD - newCount} more referral${REFERRAL_REWARD_THRESHOLD - newCount !== 1 ? "s" : ""} to unlock 14 days of Pro free.</p>`;
+                await getResend().emails.send({
+                    from: FROM_EMAIL,
+                    to: referrerEmail,
+                    subject,
+                    html: `
+            <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#0a0a0a;color:#999;border-radius:12px">
+              ${body}
+              <a href="https://www.freetradejournal.com/settings?tab=subscription" style="display:inline-block;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">View your referrals</a>
+            </div>
+          `,
+                });
+            }
+            console.log(`Referral counted: ${uid} → referrer ${referrerUid} (now ${newCount})`);
+        }
+    }
+    catch (err) {
+        console.error("Failed to process referral credit:", err);
+    }
     return { ok: true };
+});
+// ─── Push Notifications (Web Push / VAPID) ─────────────────
+function initWebPush() {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    if (publicKey && privateKey) {
+        webpush.setVapidDetails("mailto:hello@freetradejournal.com", publicKey, privateKey);
+    }
+}
+function hashEndpoint(endpoint) {
+    return crypto.createHash("sha256").update(endpoint).digest("hex");
+}
+exports.savePushSubscription = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const { subscription } = data;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+        throw new functions.https.HttpsError("invalid-argument", "Invalid push subscription.");
+    }
+    const docId = hashEndpoint(subscription.endpoint);
+    const batch = db.batch();
+    batch.set(db.collection("users").doc(uid).collection("pushSubscriptions").doc(docId), {
+        endpoint: subscription.endpoint,
+        keys: {
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth,
+        },
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    batch.set(db.collection("users").doc(uid), { hasPushSubscription: true }, { merge: true });
+    await batch.commit();
+    console.log(`Push subscription saved for ${uid}`);
+    return { ok: true };
+});
+exports.removePushSubscription = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const { endpoint } = data;
+    if (!endpoint) {
+        throw new functions.https.HttpsError("invalid-argument", "Missing endpoint.");
+    }
+    const docId = hashEndpoint(endpoint);
+    await db.collection("users").doc(uid).collection("pushSubscriptions").doc(docId).delete();
+    // Check if any subscriptions remain
+    const remaining = await db.collection("users").doc(uid).collection("pushSubscriptions").limit(1).get();
+    if (remaining.empty) {
+        await db.collection("users").doc(uid).set({ hasPushSubscription: false }, { merge: true });
+    }
+    console.log(`Push subscription removed for ${uid}`);
+    return { ok: true };
+});
+exports.sendStreakReminders = functions.pubsub
+    .schedule("every day 20:00")
+    .timeZone("UTC")
+    .onRun(async () => {
+    initWebPush();
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    if (!publicKey || !privateKey) {
+        console.error("VAPID keys not configured, skipping push reminders");
+        return null;
+    }
+    const MAX_SENDS = 50;
+    const todayStr = new Date().toISOString().split("T")[0];
+    const usersSnapshot = await db.collection("users")
+        .where("hasPushSubscription", "==", true)
+        .limit(500)
+        .get();
+    let sent = 0;
+    for (const userDoc of usersSnapshot.docs) {
+        if (sent >= MAX_SENDS)
+            break;
+        const userData = userDoc.data();
+        // Skip if already sent a push today
+        if (userData.lastPushSentDate === todayStr)
+            continue;
+        // Get push subscriptions for this user
+        const subsSnapshot = await db
+            .collection("users")
+            .doc(userDoc.id)
+            .collection("pushSubscriptions")
+            .get();
+        if (subsSnapshot.empty)
+            continue;
+        const payload = JSON.stringify({
+            title: "FreeTradeJournal",
+            body: "Don't forget to log your trades today. Keep your streak alive!",
+            icon: "/favicon.svg",
+            badge: "/favicon.svg",
+            data: { url: "/trades" },
+            tag: "streak-reminder",
+        });
+        let anySent = false;
+        for (const subDoc of subsSnapshot.docs) {
+            const sub = subDoc.data();
+            try {
+                await webpush.sendNotification({
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: sub.keys.p256dh,
+                        auth: sub.keys.auth,
+                    },
+                }, payload);
+                anySent = true;
+            }
+            catch (err) {
+                // 410 Gone or 404 means subscription expired — clean it up
+                if (err?.statusCode === 410 || err?.statusCode === 404) {
+                    await subDoc.ref.delete();
+                    console.log(`Removed expired push subscription for ${userDoc.id}`);
+                }
+                else {
+                    console.error(`Failed to send push to ${userDoc.id}:`, err?.message || err);
+                }
+            }
+        }
+        if (anySent) {
+            await userDoc.ref.update({ lastPushSentDate: todayStr });
+            sent++;
+        }
+        else if (subsSnapshot.docs.length > 0) {
+            // All subscriptions expired -- check if any remain
+            const remaining = await db.collection("users").doc(userDoc.id)
+                .collection("pushSubscriptions").limit(1).get();
+            if (remaining.empty) {
+                await userDoc.ref.update({ hasPushSubscription: false });
+            }
+        }
+    }
+    console.log(`Streak reminders: sent ${sent} push notifications`);
+    return null;
+});
+// ─── Email Unsubscribe ─────────────────────────────────────
+function generateUnsubscribeToken(uid) {
+    const hmac = crypto.createHmac("sha256", process.env.UNSUBSCRIBE_SECRET || "ftj-unsub-default");
+    hmac.update(uid);
+    return hmac.digest("hex");
+}
+function verifyUnsubscribeToken(uid, token) {
+    return generateUnsubscribeToken(uid) === token;
+}
+function getUnsubscribeUrl(uid) {
+    const token = generateUnsubscribeToken(uid);
+    const region = process.env.FUNCTION_REGION || "us-central1";
+    const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || "";
+    return `https://${region}-${projectId}.cloudfunctions.net/unsubscribe?uid=${uid}&token=${token}`;
+}
+exports.unsubscribe = functions.https.onRequest(async (req, res) => {
+    const { uid, token } = req.query;
+    if (!uid || !token || !verifyUnsubscribeToken(uid, token)) {
+        res.status(400).send(`
+      <html><body style="font-family:sans-serif;max-width:500px;margin:80px auto;text-align:center;color:#999;background:#0a0a0a">
+        <h2 style="color:#ededed">Invalid unsubscribe link</h2>
+        <p>This link is invalid or has expired. Contact hello@freetradejournal.com for help.</p>
+      </body></html>
+    `);
+        return;
+    }
+    await db.collection("users").doc(uid).set({ emailOptOut: true }, { merge: true });
+    res.status(200).send(`
+    <html><body style="font-family:sans-serif;max-width:500px;margin:80px auto;text-align:center;color:#999;background:#0a0a0a">
+      <h2 style="color:#ededed">You've been unsubscribed</h2>
+      <p>You will no longer receive marketing emails from FreeTradeJournal. Transactional emails (password resets, account alerts) will still be sent.</p>
+      <a href="https://www.freetradejournal.com" style="display:inline-block;margin-top:16px;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">Back to FreeTradeJournal</a>
+    </body></html>
+  `);
 });
 // ─── Stripe Integration ────────────────────────────────────
 let _stripe;
@@ -1356,7 +1816,27 @@ Return ONLY a valid JSON array. No markdown, no explanation. Example:
 }
 function buildPropTrackerPrompt(payload) {
     const { accounts, transactions } = payload;
-    // Build per-account summaries
+    // Compute cross-account patterns
+    const firmStats = {};
+    for (const a of accounts) {
+        const firm = a.firmName;
+        if (!firmStats[firm])
+            firmStats[firm] = { attempts: 0, passed: 0, failed: 0, resets: 0, totalFees: 0, totalPayouts: 0 };
+        firmStats[firm].attempts++;
+        if (a.status === "passed")
+            firmStats[firm].passed++;
+        if (a.status === "failed")
+            firmStats[firm].failed++;
+        const txs = transactions.filter(t => t.propAccountId === a.id);
+        firmStats[firm].resets += txs.filter(t => t.type === "reset-fee").length;
+        firmStats[firm].totalFees += txs.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type)).reduce((s, t) => s + t.amount, 0);
+        firmStats[firm].totalPayouts += txs.filter(t => t.type === "payout").reduce((s, t) => s + t.amount, 0);
+    }
+    const patternSummary = Object.entries(firmStats).map(([firm, s]) => {
+        const passRate = s.attempts > 0 ? ((s.passed / s.attempts) * 100).toFixed(0) : "0";
+        const costPerAttempt = s.attempts > 0 ? (s.totalFees / s.attempts).toFixed(0) : "0";
+        return `${firm}: ${s.attempts} attempts, ${s.passed} passed, ${s.failed} failed, ${s.resets} resets, ${passRate}% pass rate, $${costPerAttempt} avg cost/attempt, net ${s.totalPayouts - s.totalFees >= 0 ? "+" : ""}$${s.totalPayouts - s.totalFees}`;
+    }).join("\n");
     const accountSummaries = accounts.map(a => {
         const txs = transactions.filter(t => t.propAccountId === a.id);
         const expenses = txs.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type));
@@ -1364,31 +1844,68 @@ function buildPropTrackerPrompt(payload) {
         const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
         const totalPayouts = payouts.reduce((s, t) => s + t.amount, 0);
         const net = totalPayouts - totalExpenses;
+        const resetCount = txs.filter(t => t.type === "reset-fee").length;
         const daysActive = a.endDate
             ? Math.round((new Date(a.endDate).getTime() - new Date(a.startDate).getTime()) / 86400000)
             : Math.round((Date.now() - new Date(a.startDate).getTime()) / 86400000);
         const txDetail = txs.length > 0
             ? txs.map(t => `  - ${t.date}: ${t.type} $${t.amount}${t.description ? ` (${t.description})` : ""}`).join("\n")
             : "  - No transactions logged";
-        return `${a.firmName} | $${a.accountSize.toLocaleString()} ${a.accountType} | Status: ${a.status} | ${daysActive} days active\n  Fees: $${totalExpenses} | Payouts: $${totalPayouts} | Net: ${net >= 0 ? "+" : ""}$${net}\n${txDetail}`;
+        let summary = `${a.firmName} | $${a.accountSize.toLocaleString()} ${a.accountType} | Status: ${a.status} | ${daysActive} days active | ${resetCount} resets`;
+        summary += `\n  Fees: $${totalExpenses} | Payouts: $${totalPayouts} | Net: ${net >= 0 ? "+" : ""}$${net}`;
+        if (a.challengeRules) {
+            const r = a.challengeRules;
+            summary += `\n  Rules: ${r.profitTarget}% profit target | ${r.maxDailyDrawdown}% max daily DD | ${r.maxTotalDrawdown}% max total DD${r.minTradingDays ? ` | ${r.minTradingDays} min trading days` : ""}`;
+        }
+        if (a.challengeProgress && a.status === "active") {
+            const p = a.challengeProgress;
+            const targetBalance = a.accountSize * (1 + (a.challengeRules?.profitTarget || 0) / 100);
+            const profitPct = ((p.currentBalance - a.accountSize) / a.accountSize * 100).toFixed(1);
+            const progressPct = a.challengeRules?.profitTarget ? ((p.currentBalance - a.accountSize) / (targetBalance - a.accountSize) * 100).toFixed(0) : "N/A";
+            const ddFromHWM = ((p.highWaterMark - p.currentBalance) / p.highWaterMark * 100).toFixed(1);
+            summary += `\n  Progress: $${p.currentBalance.toLocaleString()} balance (${profitPct}% P&L) | ${progressPct}% to target | ${p.tradingDaysCount} trading days | ${ddFromHWM}% DD from HWM${p.todayPnL !== undefined ? ` | Today: ${p.todayPnL >= 0 ? "+" : ""}$${p.todayPnL}` : ""}`;
+        }
+        summary += `\n${txDetail}`;
+        return summary;
     }).join("\n\n");
     const totalExpenses = transactions.filter(t => ["evaluation-fee", "reset-fee", "monthly-fee", "other-expense"].includes(t.type)).reduce((s, t) => s + t.amount, 0);
     const totalPayouts = transactions.filter(t => t.type === "payout").reduce((s, t) => s + t.amount, 0);
     const netPnl = totalPayouts - totalExpenses;
     const roi = totalExpenses > 0 ? ((totalPayouts / totalExpenses - 1) * 100).toFixed(1) : "N/A";
+    const totalAccounts = accounts.length;
+    const activeAccounts = accounts.filter(a => a.status === "active").length;
+    const passedAccounts = accounts.filter(a => a.status === "passed").length;
+    const failedAccounts = accounts.filter(a => a.status === "failed").length;
+    const overallPassRate = (passedAccounts + failedAccounts) > 0 ? ((passedAccounts / (passedAccounts + failedAccounts)) * 100).toFixed(0) : "N/A";
     return {
-        system: `You are a prop trading analyst. Analyze a trader's prop firm account data and give them an honest, plain-English assessment. Be direct and specific — reference their actual numbers. Structure your response with these sections:
+        system: `You are a prop trading analyst. Analyze a trader's prop firm account data and give them an honest, data-driven assessment. Be direct — reference their actual numbers, never give generic advice.
 
-**Overall Verdict** — one sentence on whether prop trading is working for them financially.
-**ROI Breakdown** — fees paid vs payouts received, net P&L, and what the numbers actually mean.
-**Firm-by-Firm** — which accounts are profitable, which are losing money, and why.
-**Warning Signs** — any red flags (e.g. too many resets, high monthly fees eating profits, failed accounts).
-**What to Do Next** — 2-3 specific, actionable recommendations based on the data.
+Start your response with exactly this format on the first line (score 1-10 based on overall financial health, profitability, and trajectory):
+SCORE: X/10
 
-Keep it under 400 words. Use $ amounts from their data. No generic advice.`,
-        user: `Here is my prop firm tracker data:\n\nSummary: ${accounts.length} accounts | Total fees: $${totalExpenses} | Total payouts: $${totalPayouts} | Net P&L: ${netPnl >= 0 ? "+" : ""}$${netPnl} | ROI: ${roi}%\n\nAccounts:\n${accountSummaries}\n\nGive me an honest analysis.`,
-        maxTokens: 600,
-        temperature: 0.5,
+Then structure the rest with these sections:
+
+**Overall Verdict** — 1-2 sentences on whether prop trading is working for them financially. Reference their net P&L and ROI.
+**ROI Breakdown** — fees paid vs payouts, net P&L, cost per attempt, and break-even analysis. How many more payouts do they need to become profitable?
+**Challenge Progress** — for any active accounts with challenge data: how close to profit target, drawdown risk level, and whether they're on pace. Skip this section if no active challenges have progress data.
+**Firm-by-Firm** — which firms are profitable vs draining money. Compare pass rates and cost per attempt across firms. Recommend which firms to stick with or drop.
+**Warning Signs** — red flags: excessive resets, low pass rates, high fees relative to payouts, accounts near drawdown limits, failed streaks.
+**What to Do Next** — 3 specific, actionable steps based on the data. Prioritize by financial impact.
+
+Keep it under 600 words. Use $ amounts and percentages from their data.`,
+        user: `Here is my prop firm tracker data:
+
+Summary: ${totalAccounts} accounts (${activeAccounts} active, ${passedAccounts} passed, ${failedAccounts} failed) | Pass rate: ${overallPassRate}% | Total fees: $${totalExpenses} | Total payouts: $${totalPayouts} | Net P&L: ${netPnl >= 0 ? "+" : ""}$${netPnl} | ROI: ${roi}%
+
+Firm Patterns:
+${patternSummary}
+
+Accounts:
+${accountSummaries}
+
+Give me an honest analysis with a score.`,
+        maxTokens: 900,
+        temperature: 0.4,
     };
 }
 exports.aiAssist = functions.https.onCall(async (data, context) => {
@@ -1445,7 +1962,14 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
             const displayName = featureNames[featureType] || featureType.replace(/_/g, " ");
             throw new functions.https.HttpsError("resource-exhausted", `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`);
         }
-        tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        const isNewDay = d?.date !== todayStr;
+        if (isNewDay) {
+            // New day: overwrite the entire document to clear stale counters from previous days
+            tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() });
+        }
+        else {
+            tx.set(usageRef, { date: todayStr, [featureType]: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        }
         return current;
     });
     const prompt = builder(request.payload);
@@ -1712,8 +2236,8 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
         console.error(`[deleteUserAccount] Stripe cleanup error:`, err.message);
         // Continue with deletion even if Stripe fails
     }
-    // 2. Delete Firestore subcollections (sync, meta)
-    const subcollections = ["sync", "meta"];
+    // 2. Delete Firestore subcollections (sync, meta, pushSubscriptions)
+    const subcollections = ["sync", "meta", "pushSubscriptions"];
     for (const subcol of subcollections) {
         const snapshot = await db.collection("users").doc(uid).collection(subcol).get();
         const batch = db.batch();

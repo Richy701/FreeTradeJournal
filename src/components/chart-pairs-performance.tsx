@@ -141,7 +141,7 @@ export function ChartPairsPerformance() {
           </div>
         )}
       </CardContent>
-      <CardFooter className="border-t border-border/50">
+      <CardFooter className="border-t border-border/70">
         <div className="flex w-full items-center justify-between text-sm">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-medium leading-none">

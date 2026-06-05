@@ -458,7 +458,7 @@ export function CalendarHeatmap() {
   const roundedPnl = (pnl: number) => Math.round(pnl * 100) / 100
 
   const getPnLColor = (pnl: number, trades: number) => {
-    if (trades === 0) return 'bg-muted/10 border-muted/30 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] cursor-default'
+    if (trades === 0) return 'bg-muted/25 border-muted/50 hover:bg-black/[0.05] dark:hover:bg-white/[0.04] cursor-default'
 
     const rounded = roundedPnl(pnl)
     if (rounded > 0) {
@@ -611,10 +611,10 @@ export function CalendarHeatmap() {
 
           {/* Navigation */}
           <div className="flex items-center justify-between sm:justify-start gap-3">
-            <div className="flex items-center gap-1 rounded-full bg-muted/30 p-1">
+            <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1">
               <button
                 onClick={goToPreviousMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Previous month (←)"
                 aria-label="Previous month"
               >
@@ -647,7 +647,7 @@ export function CalendarHeatmap() {
 
               <button
                 onClick={goToNextMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
+                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Next month (→)"
                 aria-label="Next month"
               >
@@ -748,7 +748,7 @@ export function CalendarHeatmap() {
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-1 sm:gap-3 mb-2">
             {DAYS.map((day) => (
-              <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/60 py-1.5 sm:py-2">
+              <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
                 <span className="sm:hidden">{day.slice(0, 1)}</span>
                 <span className="hidden sm:inline">{day}</span>
               </div>
@@ -826,7 +826,7 @@ export function CalendarHeatmap() {
                             <div className={cn(
                               "self-start pl-0.5 text-[10px] sm:text-[11px] font-medium leading-none tabular-nums",
                               hasData ? `${getCellTextColor(day.pnl, day.trades)} opacity-60` :
-                              day.isCurrentMonth ? "text-foreground/50" : "text-muted-foreground/30"
+                              day.isCurrentMonth ? "text-foreground/60" : "text-muted-foreground/50"
                             )}>
                               {day.date.getDate()}
                             </div>
@@ -893,7 +893,7 @@ export function CalendarHeatmap() {
                       {hasData && (
                         <PopoverContent className="w-[90vw] max-w-64 p-0 border-0 shadow-xl" side="bottom" align="center">
                           <div className="bg-card/95 backdrop-blur-md rounded-lg border p-4 space-y-3">
-                            <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                            <div className="flex items-center justify-between pb-2 border-b border-border/70">
                               <div className="flex items-center gap-2">
                                 <div 
                                   className="w-3 h-3 rounded-full"
@@ -946,7 +946,7 @@ export function CalendarHeatmap() {
                             
                             {/* Additional stats */}
                             {(day.avgWin > 0 || day.avgLoss > 0) && (
-                              <div className="pt-2 border-t border-border/30">
+                              <div className="pt-2 border-t border-border/70">
                                 <div className="grid grid-cols-2 gap-4 text-xs">
                                   {day.avgWin > 0 && (
                                     <div>
@@ -974,7 +974,7 @@ export function CalendarHeatmap() {
           </div>
           
           {/* Enhanced Legend */}
-          <div className="hidden sm:flex items-center justify-between mt-4 pt-3 border-t border-border/30">
+          <div className="hidden sm:flex items-center justify-between mt-4 pt-3 border-t border-border/70">
             <div className="flex items-center gap-2 sm:gap-4 text-xs">
               <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
                 <div style={{width: '10px', height: '10px', borderRadius: '5px', backgroundColor: themeColors.profit, border: `1px solid ${themeColors.profit}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'}} className="sm:w-3 sm:h-3"></div>
@@ -1008,11 +1008,11 @@ export function CalendarHeatmap() {
               </div>
               
               {/* Interactive shortcuts */}
-              <div className="hidden sm:flex items-center gap-2 ml-4 text-[10px] text-muted-foreground/60">
-                <kbd className="px-1.5 py-0.5 bg-muted/20 rounded text-[9px]">←</kbd>
-                <kbd className="px-1.5 py-0.5 bg-muted/20 rounded text-[9px]">→</kbd>
+              <div className="hidden sm:flex items-center gap-2 ml-4 text-[10px] text-muted-foreground/70">
+                <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">←</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">→</kbd>
                 <span>navigate</span>
-                <kbd className="px-1.5 py-0.5 bg-muted/20 rounded text-[9px]">Home</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">Home</kbd>
                 <span>today</span>
               </div>
             </div>
@@ -1161,7 +1161,7 @@ export function CalendarHeatmap() {
                 </div>
 
                 {/* Mobile-optimized button layout */}
-                <div className="flex flex-col gap-2 pt-3 border-t border-border/50">
+                <div className="flex flex-col gap-2 pt-3 border-t border-border/70">
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 

@@ -51,7 +51,7 @@ export function MobileHeader({ title }: { title?: string }) {
 
   return (
     <div
-      className="mobile-header sticky z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+      className="mobile-header sticky z-50 md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 border-b"
       style={{ top: 'var(--announcement-banner-height, 0px)', paddingTop: 'var(--pwa-safe-top, 0px)' }}
       ref={ref}
     >
@@ -145,7 +145,7 @@ export function MobileHeader({ title }: { title?: string }) {
       </div>
 
       {!isDemo && (
-        <div className="px-3 pb-2 border-b border-border/30 overflow-hidden min-w-0">
+        <div className="px-3 pb-2 border-b border-border/70 overflow-hidden min-w-0">
           <AccountSwitcher />
         </div>
       )}

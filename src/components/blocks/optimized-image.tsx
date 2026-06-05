@@ -30,7 +30,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       
       {/* Error state */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/10 rounded-lg">
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/30 rounded-lg">
           <div className="text-center p-4">
             <p className="text-sm text-muted-foreground">Image not available</p>
           </div>

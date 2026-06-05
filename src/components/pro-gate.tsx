@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Sparkles } from 'lucide-react';
 import { useProStatus } from '@/contexts/pro-context';
+import { trackEvent } from '@/lib/analytics';
 
 interface ProGateProps {
   children: ReactNode;
@@ -50,6 +51,7 @@ export function ProGate({ children, featureName, featureDescription }: ProGatePr
           </div>
           <Link
             to="/pricing"
+            onClick={() => trackEvent('pro_gate_cta_clicked', { feature: featureName })}
             className="mt-1 inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-semibold px-4 py-2 rounded-lg transition-colors duration-150 shadow-sm"
           >
             <Sparkles className="h-3.5 w-3.5" />

@@ -81,7 +81,7 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
                   return (
                     <div
                       key={i}
-                      className="flex items-start gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.06]"
+                      className="flex items-start gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                     >
                       <div
                         className="mt-0.5 shrink-0 h-5 w-5 rounded-md flex items-center justify-center"
@@ -110,14 +110,14 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
 
               {/* Separator between releases */}
               {releaseIndex < changelog.length - 1 && (
-                <div className="border-b border-border/60 mt-5" />
+                <div className="border-b border-border/80 mt-5" />
               )}
             </div>
           ))}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t bg-muted/30 flex items-center justify-between">
+        <div className="px-6 py-4 border-t bg-muted/50 flex items-center justify-between">
           <Link
             to="/changelog"
             onClick={() => onOpenChange(false)}

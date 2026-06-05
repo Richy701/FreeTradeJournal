@@ -38,7 +38,7 @@ export function ResponsiveImage({ src, alt, className = '', imgClassName, priori
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
       {!isLoaded && (
-        <div className="w-full aspect-video bg-muted/20 animate-pulse rounded-2xl" />
+        <div className="w-full aspect-video bg-muted/40 animate-pulse rounded-2xl" />
       )}
 
       {isInView && (() => {

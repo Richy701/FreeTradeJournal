@@ -583,11 +583,8 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;
     const val = parseInt(hexOpacity, 16);
-    // High values (>50%) are intentionally strong — pass through
     if (val >= 0x80) return color + hexOpacity;
-    // Light mode needs a stronger boost: white backgrounds wash out low alpha.
-    // 2.5x multiplier + 10% floor so nothing is invisible.
-    const boosted = Math.min(0x80, Math.max(0x25, Math.round(val * 2.5)));
+    const boosted = Math.min(0xa0, Math.max(0x30, Math.round(val * 3.5)));
     return color + boosted.toString(16).padStart(2, '0');
   }, [isDarkMode]);
 

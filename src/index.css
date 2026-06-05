@@ -95,7 +95,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 @layer base {
   :root {
     /* FreeTradeJournal light theme */
-    --background: 220 14% 96%;
+    --background: 220 14% 94%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -103,25 +103,25 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 43 96% 56%; /* Amber/gold - premium finance */
     --primary-foreground: 26 83% 8%; /* Dark brown-black */
-    --secondary: 210 30% 93%;
+    --secondary: 210 28% 88%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 30% 93%;
-    --muted-foreground: 215 20% 38%;
-    --accent: 210 30% 93%;
+    --muted: 210 28% 88%;
+    --muted-foreground: 215 20% 34%;
+    --accent: 210 28% 88%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 76% 50%; /* Trading red - same as dark theme */
     --destructive-foreground: 210 40% 98%;
-    --border: 214 20% 86%;
-    --input: 214 20% 86%;
+    --border: 214 20% 82%;
+    --input: 214 20% 82%;
     --ring: 43 96% 56%; /* Amber/gold ring */
     --radius: 0.85rem;
-    --sidebar-background: 220 14% 95%;
+    --sidebar-background: 220 14% 91%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 220 12% 91%;
+    --sidebar-accent: 220 12% 86%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 86%;
+    --sidebar-border: 220 13% 80%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 

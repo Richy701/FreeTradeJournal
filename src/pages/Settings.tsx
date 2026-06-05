@@ -16,13 +16,15 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { SlidersHorizontal, Wallet, BarChart2, Shield, Database, CreditCard, Check, Download, Upload, Sun, Moon, Monitor, Crown, TrendingUp, TrendingDown } from 'lucide-react';
+import { SlidersHorizontal, Wallet, BarChart2, Shield, Database, CreditCard, Check, Download, Upload, Sun, Moon, Monitor, Crown, TrendingUp, TrendingDown, Bell } from 'lucide-react';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useProStatus } from '@/contexts/pro-context';
 import { useSync } from '@/contexts/sync-context';
 import { ProBadge } from '@/components/pro-badge';
 import { PRO_FEATURES } from '@/constants/pricing';
+import { ReferralCard } from '@/components/referral-card';
+import { PushNotificationPrompt } from '@/components/push-notification-prompt';
 
 const BROKERS = [
   'OANDA','IC Markets','MetaTrader 4','MetaTrader 5','Pepperstone','IG',
@@ -42,12 +44,13 @@ const CURRENCIES = [
 ] as const;
 
 const NAV = [
-  { id: 'general',      label: 'General',      Icon: SlidersHorizontal },
-  { id: 'accounts',     label: 'Accounts',     Icon: Wallet },
-  { id: 'performance',  label: 'Performance',  Icon: BarChart2 },
-  { id: 'risk',         label: 'Risk',         Icon: Shield },
-  { id: 'data',         label: 'Data',         Icon: Database },
-  { id: 'subscription', label: 'Subscription', Icon: CreditCard },
+  { id: 'general',       label: 'General',       Icon: SlidersHorizontal },
+  { id: 'accounts',      label: 'Accounts',      Icon: Wallet },
+  { id: 'performance',   label: 'Performance',   Icon: BarChart2 },
+  { id: 'risk',          label: 'Risk',          Icon: Shield },
+  { id: 'data',          label: 'Data',          Icon: Database },
+  { id: 'notifications', label: 'Notifications', Icon: Bell },
+  { id: 'subscription',  label: 'Subscription',  Icon: CreditCard },
 ] as const;
 
 export default function Settings() {
@@ -96,6 +99,9 @@ export default function Settings() {
       toast.success('Welcome to Pro! Your upgrade is complete.');
       setSearchParams({}, { replace: true });
       setTimeout(() => scrollTo('subscription'), 600);
+    } else if (searchParams.get('tab')) {
+      const tab = searchParams.get('tab')!;
+      setTimeout(() => scrollTo(tab), 300);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -297,8 +303,8 @@ export default function Settings() {
                 </div>
 
                 {/* Appearance */}
-                <div className="rounded-xl border border-border/50 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/50">
+                <div className="rounded-xl border border-border/70 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Appearance</p>
                   </div>
                   <div className="divide-y divide-border/50">
@@ -364,8 +370,8 @@ export default function Settings() {
                 </div>
 
                 {/* Color theme */}
-                <div className="rounded-xl border border-border/50 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/50">
+                <div className="rounded-xl border border-border/70 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Color Theme</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Accent, profit, and loss colors across the app</p>
                   </div>
@@ -404,7 +410,7 @@ export default function Settings() {
                     </div>
 
                     {currentTheme === 'custom' && (
-                      <div className="pt-4 border-t border-border/50 space-y-3">
+                      <div className="pt-4 border-t border-border/70 space-y-3">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Custom colors</p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           {([
@@ -456,7 +462,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 overflow-hidden divide-y divide-border/50">
+                <div className="rounded-xl border border-border/70 overflow-hidden divide-y divide-border/50">
                   {accounts.map((account) => (
                     <div key={account.id}>
                       {editForm?.id === account.id ? (
@@ -613,7 +619,7 @@ export default function Settings() {
                     { label: 'Profit Factor', value: stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2), sub: stats.profitFactor > 1 ? 'Profitable' : stats.profitFactor === 0 ? 'No data' : 'Unprofitable', color: stats.profitFactor > 1 ? themeColors.profit : themeColors.loss },
                     { label: 'Streak', value: `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? 'Wins' : stats.currentStreak < 0 ? 'Losses' : 'N/A'}`, sub: `Max: ${stats.maxWinStreak}W / ${stats.maxLossStreak}L`, color: stats.currentStreak > 0 ? themeColors.profit : stats.currentStreak < 0 ? themeColors.loss : undefined },
                   ].map(({ label, value, sub, color, icon }) => (
-                    <div key={label} className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                    <div key={label} className="rounded-xl border border-border/70 bg-muted/40 p-4">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-xs text-muted-foreground">{label}</p>
                         {icon && (() => { const StatIcon = icon; return <StatIcon aria-hidden="true" className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color }} />; })()}
@@ -631,7 +637,7 @@ export default function Settings() {
                     { label: 'Best Trade', value: formatCurrency(stats.bestTrade, true), color: themeColors.profit },
                     { label: 'Worst Trade', value: formatCurrency(stats.worstTrade, true), color: themeColors.loss },
                   ].map(({ label, value, sub, color }) => (
-                    <div key={label} className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                    <div key={label} className="rounded-xl border border-border/70 bg-muted/40 p-4">
                       <p className="text-xs text-muted-foreground">{label}</p>
                       <p className="text-base font-bold mt-1" style={{ color }}>{value}</p>
                       {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
@@ -656,8 +662,8 @@ export default function Settings() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {/* Parameters */}
-                  <div className="lg:col-span-2 rounded-xl border border-border/50 overflow-hidden">
-                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/50">
+                  <div className="lg:col-span-2 rounded-xl border border-border/70 overflow-hidden">
+                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parameters</p>
                     </div>
                     <div className="divide-y divide-border/50">
@@ -697,8 +703,8 @@ export default function Settings() {
                   </div>
 
                   {/* Calculator */}
-                  <div className="rounded-xl border border-border/50 overflow-hidden">
-                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/50">
+                  <div className="rounded-xl border border-border/70 overflow-hidden">
+                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Calculator</p>
                     </div>
                     <div className="p-4 space-y-3">
@@ -717,8 +723,8 @@ export default function Settings() {
                 </div>
 
                 {/* Guidelines */}
-                <div className="rounded-xl border border-border/50 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/50">
+                <div className="rounded-xl border border-border/70 overflow-hidden">
+                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guidelines</p>
                   </div>
                   <div className="p-5 space-y-4">
@@ -765,7 +771,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 divide-y divide-border/50 overflow-hidden">
+                <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden">
                   {/* Backup */}
                   <div className="p-5 space-y-4">
                     <div>
@@ -826,6 +832,25 @@ export default function Settings() {
                 </div>
               </section>
 
+              {/* ── NOTIFICATIONS ─────────────────────────────────────── */}
+              <section
+                id="notifications"
+                ref={(el) => { sectionRefs.current['notifications'] = el; }}
+                className="scroll-mt-24 space-y-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                  <div>
+                    <h2 className="text-base font-semibold">Notifications</h2>
+                    <p className="text-xs text-muted-foreground">Manage push notification preferences</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden">
+                  <PushNotificationPrompt />
+                </div>
+              </section>
+
               {/* ── SUBSCRIPTION ────────────────────────────────────────── */}
               <section
                 id="subscription"
@@ -840,7 +865,7 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/50 divide-y divide-border/50 overflow-hidden">
+                <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden">
                   <div className="p-5 space-y-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Plan</p>
                     {isPro ? (
@@ -910,6 +935,13 @@ export default function Settings() {
                           {lastSyncTime && <p className="text-xs text-muted-foreground">Last synced {new Date(lastSyncTime).toLocaleTimeString()}</p>}
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Referral Program */}
+                  {!isDemo && (
+                    <div className="px-5 py-4 border-t border-border/70">
+                      <ReferralCard />
                     </div>
                   )}
                 </div>

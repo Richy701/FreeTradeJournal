@@ -78,19 +78,19 @@ export function DataTable({ data }: DataTableProps) {
           <div className="h-full overflow-y-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-border/50">
-                  <TableHead className="font-semibold text-foreground/70">Symbol</TableHead>
-                  <TableHead className="font-semibold text-foreground/70">Side</TableHead>
-                  <TableHead className="font-semibold text-foreground/70 text-right">P&L</TableHead>
-                  <TableHead className="font-semibold text-foreground/70">Date</TableHead>
+                <TableRow className="border-border/70">
+                  <TableHead className="font-semibold text-foreground/80">Symbol</TableHead>
+                  <TableHead className="font-semibold text-foreground/80">Side</TableHead>
+                  <TableHead className="font-semibold text-foreground/80 text-right">P&L</TableHead>
+                  <TableHead className="font-semibold text-foreground/80">Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {trades.slice(0, 10).map((trade: Trade, index: number) => (
                   <TableRow 
                     key={trade.id} 
-                    className={`hover:bg-black/[0.03] dark:hover:bg-white/[0.06] border-border/30 ${
-                      index % 2 === 1 ? 'bg-muted/20' : ''
+                    className={`hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border-border/50 ${
+                      index % 2 === 1 ? 'bg-muted/40' : ''
                     }`}
                   >
                     <TableCell className="font-semibold">{trade.symbol}</TableCell>

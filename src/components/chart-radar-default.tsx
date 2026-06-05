@@ -207,7 +207,7 @@ export function ChartRadarDefault() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="border-t border-border/50 py-3">
+        <CardFooter className="border-t border-border/70 py-3">
           <div className="flex w-full items-center justify-between text-sm">
             <span className="text-muted-foreground">{chartData.length} pairs tracked</span>
             <span className="font-semibold" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
@@ -285,7 +285,7 @@ export function ChartRadarDefault() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="border-t border-border/50 py-3">
+        <CardFooter className="border-t border-border/70 py-3">
           <div className="flex w-full items-center justify-between text-sm">
             <span className="text-muted-foreground">{chartData.length} pairs traded</span>
             <span className="font-semibold">{totalTrades} trades</span>

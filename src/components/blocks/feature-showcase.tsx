@@ -176,7 +176,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         >
                             {/* Main image container */}
                             <div
-                                className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/30 cursor-pointer"
+                                className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/70 cursor-pointer"
                                 onClick={() => setSelectedImage(images[0])}
                             >
                                 <motion.div

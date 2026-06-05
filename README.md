@@ -49,9 +49,12 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Goal types: profit target, win rate, trade count, risk/reward, max loss, max drawdown
 - Daily, weekly, and monthly goal periods with live progress tracking
 - Visual goal cards with circular progress rings that shift color as you approach your target
+- Stat cards with colored icon containers, mini arc gauges, completion rate %, and risk health indicator
+- Risk health gauge showing overall utilization across all enabled rules with color-coded status (green/amber/red)
 - Risk rules: max loss per day/trade, max risk percentage, max open trades
 - Live progress bars on risk rules showing how much of your limit you've used today
 - Rule violation warnings when logging trades that breach your limits
+- Achievement badges with trophy-style cards and earned dates
 - Position size and risk/reward calculators
 
 ### AI Trading Coach
@@ -94,7 +97,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - **Success Rate Dashboard (Pro)** — pass rate, total attempts vs funded, average cost-to-fund, money wasted on failed accounts, best firm by ROI
 - **Cost Recovery Tracker** — per-account indicator showing how much more in payouts until break-even, or profit earned after costs recovered
 - Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
-- AI Analysis powered by GPT-4o — honest verdict on which firms are profitable, warning signs, and next steps (Pro, 5/day)
+- AI Analysis powered by GPT-4o — 1-10 score card, challenge progress tracking, cross-firm pattern analysis (pass rate, cost per attempt, reset count), ROI breakdown with break-even analysis, and actionable next steps (Pro, 5/day)
 - **Screenshot Import (Pro)** — upload a billing or payout screenshot and GPT-4o Vision auto-extracts all transactions; supports multiple files, drag & drop, and duplicate detection
 - Deadline alerts when a prop firm account expires within 7 days
 - Account size quick-select chips and firm logo dropdown in the add/edit form
@@ -139,6 +142,15 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Testimonial form: name (pre-filled from account), trader role picker, free-text quote, consent checkbox
 - Approved testimonials appear on the landing page automatically — approve via Firestore console
 - Rate limited: 1 feedback per minute, 1 testimonial per hour per user
+
+### Referral Program
+
+- **Invite 5 friends, earn 14 days of Pro free** — referral link with one-click copy and native share
+- Prominent referral banner on the Dashboard with progress tracker
+- Friends must sign up, verify email, wait 7 days, and log their first trade for the referral to count
+- Anti-fraud: email dedup (catches Gmail dot/plus tricks), circular referral prevention, account age gate
+- Email notifications when each referral is credited and when the reward is earned
+- Referral stats also visible in Settings > Subscription tab
 
 ### Conversion & Upgrade Flow
 

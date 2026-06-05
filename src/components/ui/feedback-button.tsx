@@ -221,7 +221,7 @@ function FeedbackDialog({
 
         {step === 'feedback' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/50">
+            <div className="px-6 pt-6 pb-4 border-b border-border/70">
               <DialogHeader>
                 <DialogTitle className="text-lg">Share your feedback</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground mt-0.5">
@@ -277,7 +277,7 @@ function FeedbackDialog({
                         onClick={() => setType(t.value)}
                         className={cn(
                           "flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-center transition-all duration-150",
-                          isActive ? t.activeBg : "border-border/60 hover:border-border bg-muted/30 hover:bg-muted/50"
+                          isActive ? t.activeBg : "border-border/80 hover:border-border bg-muted/50 hover:bg-muted/50"
                         )}
                       >
                         <Icon className={cn("h-4 w-4", isActive ? t.color : "text-muted-foreground")} />
@@ -300,7 +300,7 @@ function FeedbackDialog({
                   rows={4}
                   maxLength={2000}
                   required
-                  className="w-full rounded-xl border border-input bg-muted/30 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
+                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
                 />
                 <span className="text-xs text-muted-foreground/60">
                   {message.length > 0 ? `${message.length}/2000` : 'Max 2000 characters'}
@@ -325,7 +325,7 @@ function FeedbackDialog({
 
         {step === 'testimonial' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/50">
+            <div className="px-6 pt-6 pb-4 border-b border-border/70">
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex">
                   {[1,2,3,4,5].map((s) => (
@@ -350,7 +350,7 @@ function FeedbackDialog({
                   value={testimonialName}
                   onChange={(e) => setTestimonialName(e.target.value)}
                   placeholder="How should we credit you?"
-                  className="w-full rounded-xl border border-input bg-muted/30 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
 
@@ -367,7 +367,7 @@ function FeedbackDialog({
                         "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150",
                         testimonialRole === role
                           ? "bg-primary/10 border-primary/40 text-primary"
-                          : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                          : "border-border/80 text-muted-foreground hover:border-border hover:text-foreground"
                       )}
                     >
                       {role}
@@ -386,7 +386,7 @@ function FeedbackDialog({
                   rows={4}
                   maxLength={300}
                   required
-                  className="w-full rounded-xl border border-input bg-muted/30 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                 />
                 <span className="text-xs text-muted-foreground/60">{testimonialQuote.length}/300</span>
               </div>
