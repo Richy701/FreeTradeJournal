@@ -68,7 +68,7 @@ export const CookieConsent = () => {
                   </Button>
 
                   <div className="flex flex-col items-center text-center mb-3">
-                    <Cookie className="w-5 h-5 text-primary mb-2" />
+                    <Cookie className="w-5 h-5 text-amber-500 mb-2" />
                     <h3 className="text-sm font-semibold mb-1">Cookie Preferences</h3>
                     <p className="text-xs text-muted-foreground">
                       We use cookies to improve your experience and analyze platform usage.
@@ -83,7 +83,7 @@ export const CookieConsent = () => {
                           <span className="text-muted-foreground">Always active</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <ChartBar className="w-3.5 h-3.5 text-primary" />
+                          <ChartBar className="w-3.5 h-3.5 text-amber-500" />
                           <span className="font-medium">Analytics</span>
                           <span className="text-muted-foreground">Usage insights</span>
                         </div>
@@ -99,7 +99,7 @@ export const CookieConsent = () => {
                       <Button
                         onClick={handleAcceptAll}
                         size="sm"
-                        className="h-8 px-4 text-xs"
+                        className="h-8 px-4 text-xs bg-amber-500 hover:bg-amber-600 text-black"
                       >
                         Accept All
                       </Button>
@@ -123,7 +123,7 @@ export const CookieConsent = () => {
 
                   <p className="text-[10px] text-muted-foreground mt-2.5 text-center">
                     By using our site, you agree to our{' '}
-                    <Link to="/privacy" className="text-primary hover:underline">
+                    <Link to="/privacy" className="text-amber-500 hover:underline">
                       Privacy Policy
                     </Link>
                   </p>
