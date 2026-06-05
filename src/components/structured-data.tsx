@@ -247,6 +247,100 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       };
     }
 
+    // Affiliate page
+    if (currentPath === '/affiliate') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Best Prop Firm Deals & Discounts (2026)",
+        "description": "Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Affiliate Partners", "item": `${baseUrl}${currentPath}` }
+          ]
+        }
+      };
+    }
+
+    // Day Trading Journal page
+    if (currentPath === '/day-trading-journal') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Free Day Trading Journal - Scalp & Intraday Tracker",
+        "description": "Free day trading journal for scalpers and intraday traders. Track daily P&L, catch overtrading, and analyze your best sessions.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Day Trading Journal", "item": `${baseUrl}${currentPath}` }
+          ]
+        },
+        "mainEntity": {
+          "@type": "SoftwareApplication",
+          "name": "FreeTradeJournal Day Trading Module",
+          "applicationCategory": "FinanceApplication",
+          "applicationSubCategory": "Day Trading Journal",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "Session-based P&L tracking for morning, midday, and afternoon",
+            "Daily trade count limits to catch overtrading",
+            "Calendar heatmap with daily P&L color coding",
+            "AI trade review with entry/exit analysis",
+            "CSV import from Tradovate, MetaTrader 5, NinjaTrader",
+            "Win rate, profit factor, expectancy, and drawdown analytics"
+          ]
+        }
+      };
+    }
+
+    // Online Trading Journal page
+    if (currentPath === '/online-trading-journal') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Free Online Trading Journal - No Download Required",
+        "description": "Free online trading journal that works in your browser. No download, no spreadsheet. Log trades, track P&L, and get AI coaching.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Online Trading Journal", "item": `${baseUrl}${currentPath}` }
+          ]
+        },
+        "mainEntity": {
+          "@type": "SoftwareApplication",
+          "name": "FreeTradeJournal Online",
+          "applicationCategory": "FinanceApplication",
+          "applicationSubCategory": "Online Trading Journal",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "featureList": [
+            "No download — works entirely in your browser",
+            "Responsive design for desktop, tablet, and mobile",
+            "Cloud sync across devices for Pro users",
+            "CSV import from any broker",
+            "AI-powered trade coaching and risk alerts",
+            "Full analytics with equity curve and calendar heatmap"
+          ]
+        }
+      };
+    }
+
     // Default WebPage schema
     return {
       ...baseData,

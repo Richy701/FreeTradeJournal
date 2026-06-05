@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/ui/footer-7';
+import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { ArrowRight, X, DollarSign, Calculator, BarChart3, Building2, Infinity, FileDown } from 'lucide-react';
@@ -232,49 +233,7 @@ export default function ForexTradingJournal() {
           </div>
         </section>
 
-        <Footer7
-          logo={{ url: "/", src: "", alt: "FreeTradeJournal Logo", title: "FreeTradeJournal" }}
-          description="Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. Free forever, no credit card required."
-          sections={[
-            {
-              title: "Product",
-              links: [
-                { name: "Features", href: "/#features" },
-                { name: "Pricing", href: "/pricing" },
-                { name: "Documentation", href: "/documentation" },
-                { name: "Changelog", href: "/changelog" },
-                { name: "Blog", href: "https://blog.freetradejournal.com" },
-              ],
-            },
-            {
-              title: "Trading Tools",
-              links: [
-                { name: "Forex Trading Journal", href: "/forex-trading-journal" },
-                { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
-                { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
-                { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
-                { name: "Affiliate", href: "/affiliate" },
-              ],
-            },
-            {
-              title: "Legal",
-              links: [
-                { name: "Privacy Policy", href: "/privacy" },
-                { name: "Terms & Conditions", href: "/terms" },
-                { name: "Cookie Policy", href: "/cookie-policy" },
-              ],
-            },
-          ]}
-          socialLinks={[
-            {
-              icon: <svg className="size-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
-              href: "https://x.com/richytiup",
-              label: "Follow on X",
-            },
-          ]}
-          copyright="&copy; 2026 FreeTradeJournal. All rights reserved."
-          legalLinks={[]}
-        />
+        <Footer7 {...footerConfig} />
       </div>
     </>
   );

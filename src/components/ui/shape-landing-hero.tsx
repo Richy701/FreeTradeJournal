@@ -278,7 +278,6 @@ function HeroGeometric({
 
             <div className="absolute inset-0 pointer-events-none z-[2]">
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/80" />
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-background" />
             </div>
         </div>
     );

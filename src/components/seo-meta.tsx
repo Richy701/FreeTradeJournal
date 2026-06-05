@@ -110,6 +110,11 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Free Online Trading Journal (2026) | No Download Required | FreeTradeJournal',
     description: 'The best free online trading journal. Works in your browser with no download. Log trades, track P&L, get AI coaching, and import CSV from any broker. Free forever.',
     keywords: 'online trading journal, free online trading journal, trading journal online, trading journal website, best free trading journal, online trade journal, web trading journal, browser trading journal, trading journal online free, free trading journal website, trading journal software free'
+  },
+  '/affiliate': {
+    title: 'Best Prop Firm Deals & Discounts (2026) | Exclusive Codes | FreeTradeJournal',
+    description: 'Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges. Verified discount codes updated for 2026.',
+    keywords: 'prop firm discount, prop firm coupon code, FTMO discount, The5ers discount, Apex trader funding deal, TopStep promo code, FundedNext coupon, prop firm affiliate, prop trading deals, best prop firm deals 2026, prop firm challenge discount, funded trader discount, prop firm promo codes'
   }
 };
 

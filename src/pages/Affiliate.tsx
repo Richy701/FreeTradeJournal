@@ -5,9 +5,46 @@ import { Badge } from '@/components/ui/badge';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/ui/footer-7';
+import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
+import { FAQSection } from '@/components/blocks/faq-section';
 import { ExternalLink, Copy, Check } from 'lucide-react';
+
+const AFFILIATE_FAQS = [
+  {
+    question: 'Are these prop firm discount codes legit?',
+    answer: 'Yes. Every code on this page is an official affiliate partnership negotiated directly with the prop firm. The discounts are verified and updated regularly. You pay less, and FreeTradeJournal earns a small commission at no extra cost to you.',
+  },
+  {
+    question: 'Which prop firm is best for beginners?',
+    answer: 'The5%ers is a great starting point with instant funding options and flexible evaluation programs. FTMO is another solid choice with a well-structured two-step evaluation. Both have clear rules and strong reputations that make them easier to trust while you build consistency.',
+  },
+  {
+    question: 'What is the cheapest prop firm challenge?',
+    answer: 'Prices vary by account size and evaluation type. The5%ers offers challenges starting around $39, and Apex frequently runs promotions with 50-80% off. Use the discount codes on this page to save even more on your first challenge.',
+  },
+  {
+    question: 'Can I use FreeTradeJournal to track my prop firm challenge?',
+    answer: 'Yes. FreeTradeJournal has a dedicated Prop Firm Dashboard that tracks your evaluation progress, daily loss limits, max drawdown, and payout history. The PropTracker tool also calculates your true net P&L after fees, resets, and payouts across all your accounts.',
+  },
+  {
+    question: 'Do I need a Pro subscription to track prop firm trades?',
+    answer: 'No. Trade logging, analytics, the prop firm dashboard, and PropTracker are all free. Pro adds AI-powered trade coaching, automated reviews, cloud sync, and advanced exports starting at $12.99/mo with a 14-day free trial.',
+  },
+  {
+    question: 'What markets do these prop firms support?',
+    answer: 'It depends on the firm. FTMO and FundedNext support forex, indices, commodities, stocks, and crypto. Apex and Top One Futures focus exclusively on CME futures (ES, NQ, CL, GC). The5%ers covers forex, metals, and indices. Check each firm\'s page for the full instrument list.',
+  },
+  {
+    question: 'How do prop firm payouts work?',
+    answer: 'After passing your evaluation and trading a funded account profitably, you request a payout. Most firms pay via bank transfer, crypto, or Rise. Profit splits range from 70% to 90% depending on the firm and account level. Payout schedules vary from bi-weekly to monthly.',
+  },
+  {
+    question: 'Will more prop firms be added?',
+    answer: 'Yes. We are actively negotiating partnerships with additional firms. If there is a specific prop firm you would like to see listed, let us know via the Telegram community.',
+  },
+];
 
 type Market = 'Futures' | 'Forex' | 'Forex + Futures';
 
@@ -210,7 +247,7 @@ export default function Affiliate() {
           showCTA={false}
         />
 
-        <section className="px-4 sm:px-6 -mt-6 relative z-10">
+        <section className="px-4 sm:px-6 -mt-16 relative z-10">
           <div className="container mx-auto max-w-4xl">
             <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm px-5 py-4 text-sm text-muted-foreground leading-relaxed flex items-start gap-3">
               <span className="text-amber-500/70 text-base leading-none mt-0.5 shrink-0">*</span>
@@ -245,49 +282,14 @@ export default function Affiliate() {
           </div>
         </section>
 
-        <Footer7
-          logo={{ url: "/", src: "", alt: "FreeTradeJournal Logo", title: "FreeTradeJournal" }}
-          description="Track every trade, spot what's working, and build consistency with professional analytics, journaling, and performance tools. Free forever, no credit card required."
-          sections={[
-            {
-              title: "Product",
-              links: [
-                { name: "Features", href: "/#features" },
-                { name: "Pricing", href: "/pricing" },
-                { name: "Documentation", href: "/documentation" },
-                { name: "Changelog", href: "/changelog" },
-                { name: "Blog", href: "https://blog.freetradejournal.com" },
-              ],
-            },
-            {
-              title: "Trading Tools",
-              links: [
-                { name: "Forex Trading Journal", href: "/forex-trading-journal" },
-                { name: "Futures Trading Tracker", href: "/futures-trading-tracker" },
-                { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
-                { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
-                { name: "Affiliate", href: "/affiliate" },
-              ],
-            },
-            {
-              title: "Legal",
-              links: [
-                { name: "Privacy Policy", href: "/privacy" },
-                { name: "Terms & Conditions", href: "/terms" },
-                { name: "Cookie Policy", href: "/cookie-policy" },
-              ],
-            },
-          ]}
-          socialLinks={[
-            {
-              icon: <svg className="size-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
-              href: "https://x.com/richytiup",
-              label: "Follow on X",
-            },
-          ]}
-          copyright="&copy; 2026 FreeTradeJournal. All rights reserved."
-          legalLinks={[]}
+        <FAQSection
+          faqs={AFFILIATE_FAQS}
+          title="Prop Firm"
+          subtitle="Common questions about prop firm challenges, discounts, and how to track your funded accounts"
+          id="faq-structured-data-affiliate"
         />
+
+        <Footer7 {...footerConfig} />
       </div>
     </>
   );

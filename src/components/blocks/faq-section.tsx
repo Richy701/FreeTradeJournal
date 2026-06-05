@@ -8,8 +8,19 @@ import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 
-export function FAQSection() {
-  const faqs = [
+interface FAQ {
+  question: string;
+  answer: string;
+}
+
+interface FAQSectionProps {
+  faqs?: FAQ[];
+  title?: string;
+  subtitle?: string;
+  id?: string;
+}
+
+const DEFAULT_FAQS: FAQ[] = [
     {
       question: "What markets and instruments can I track?",
       answer: "Forex pairs, futures contracts, stocks, and major indices. Each market type has dedicated fields — lot sizes and swap costs for forex, contract specs and tick values for futures, share count for stocks — so your logs stay precise no matter what you trade."
@@ -46,10 +57,10 @@ export function FAQSection() {
       question: "Can I cancel or change my Pro plan anytime?",
       answer: "Yes. Switch between Monthly and Yearly or cancel anytime from the Subscription tab in your settings. There's no lock-in — your Pro access stays active until the end of your current billing period."
     }
-  ];
+];
 
+export function FAQSection({ faqs = DEFAULT_FAQS, title = 'Frequently Asked', subtitle = 'Everything you need to know about FreeTradeJournal and how it can transform your trading journey', id = 'faq-structured-data' }: FAQSectionProps) {
   useEffect(() => {
-    // Add FAQ structured data
     const faqStructuredData = {
       "@context": "https://schema.org",
       "@type": "FAQPage",
@@ -66,23 +77,13 @@ export function FAQSection() {
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.text = JSON.stringify(faqStructuredData);
-    script.id = 'faq-structured-data';
+    script.id = id;
 
-    // Remove existing script if present
-    const existingScript = document.getElementById('faq-structured-data');
-    if (existingScript) {
-      document.head.removeChild(existingScript);
-    }
-
+    document.getElementById(id)?.remove();
     document.head.appendChild(script);
 
-    return () => {
-      const scriptToRemove = document.getElementById('faq-structured-data');
-      if (scriptToRemove) {
-        document.head.removeChild(scriptToRemove);
-      }
-    };
-  }, []);
+    return () => { document.getElementById(id)?.remove(); };
+  }, [faqs, id]);
 
   return (
     <section className="py-14 sm:py-16 px-6">
@@ -95,10 +96,10 @@ export function FAQSection() {
           viewport={{ once: true }}
         >
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
-            Frequently Asked <span className="text-amber-500">Questions</span>
+            {title} <span className="text-amber-500">Questions</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to know about FreeTradeJournal and how it can transform your trading journey
+            {subtitle}
           </p>
         </motion.div>
 

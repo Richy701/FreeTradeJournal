@@ -141,9 +141,7 @@ export default function Signup() {
           {/* Logo & tagline */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
-                <LineChart className="h-6 w-6 text-white" />
-              </div>
+              <img src="/favicon.svg" alt="FTJ" className="h-10 w-10 rounded-xl flex-shrink-0" />
               <span className="font-display text-xl font-bold text-white">FreeTradeJournal</span>
             </div>
             <div className="space-y-2 mt-8">
@@ -183,9 +181,7 @@ export default function Signup() {
           {/* Mobile-only branded header */}
           <div className="lg:hidden -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 px-6 py-6 sm:px-8 sm:py-8 bg-gradient-to-br from-amber-600 to-amber-500 rounded-t-2xl">
             <div className="flex items-center gap-2.5 mb-4">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
-                <LineChart className="h-5 w-5 text-white" />
-              </div>
+              <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 rounded-xl flex-shrink-0" />
               <span className="font-display text-lg font-bold text-white">FreeTradeJournal</span>
             </div>
             <h1 className="font-display text-2xl font-bold text-white leading-tight">Your trading edge starts here.</h1>
