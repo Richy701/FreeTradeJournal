@@ -4,7 +4,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     name: 'Monthly',
     interval: 'monthly',
-    price: 5.99,
+    price: 12.99,
     priceId: import.meta.env.VITE_STRIPE_PRICE_MONTHLY || '',
     features: [
       'Everything in Free',
@@ -18,7 +18,7 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     name: 'Yearly',
     interval: 'yearly',
-    price: 49.99,
+    price: 99.99,
     priceId: import.meta.env.VITE_STRIPE_PRICE_YEARLY || '',
     features: [
       'Everything in Free',
@@ -27,13 +27,13 @@ export const PRICING_PLANS: PricingPlan[] = [
       'AI trade insights',
       'Unlimited trade exports',
       'Priority support',
-      'Save 30% vs monthly',
+      'Save 36% vs monthly',
     ],
   },
   {
     name: 'Lifetime',
     interval: 'lifetime',
-    price: 149.99,
+    price: 249,
     priceId: import.meta.env.VITE_STRIPE_PRICE_LIFETIME || '',
     features: [
       'Everything in Free',

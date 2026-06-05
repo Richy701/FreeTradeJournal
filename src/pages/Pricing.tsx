@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS } from '@/constants/pricing';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
+import { useThemePresets } from '@/contexts/theme-presets';
 
 const FREQUENCIES = ['monthly', 'yearly'] as const;
 type Frequency = typeof FREQUENCIES[number];
@@ -54,7 +55,7 @@ function FrequencyTab({
               : 'bg-muted text-muted-foreground hover:bg-muted',
           )}
         >
-          Save 30%
+          Save 36%
         </Badge>
       )}
     </button>
@@ -262,6 +263,7 @@ export default function Pricing() {
   const { user } = useAuth();
   const { isPro, subscription, openCheckout } = useProStatus();
   const navigate = useNavigate();
+  const { themeColors, alpha } = useThemePresets();
   const [frequency, setFrequency] = useState<Frequency>('yearly');
 
   const handleUpgrade = (priceId: string, plan: string) => {
@@ -363,7 +365,7 @@ export default function Pricing() {
           <PricingCard
             name={`Pro ${activePlan.name}`}
             price={activePlan.price}
-            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · Save $21.89 vs monthly · 14-day free trial'}
+            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · Save $55.89 vs monthly · 14-day free trial'}
             description="For traders who want an edge"
             features={activePlan.features}
             cta="Start free trial"
@@ -393,7 +395,7 @@ export default function Pricing() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2">Free vs <span className="text-amber-500">Pro</span></h2>
-            <p className="text-foreground/80 text-base">Everything in Free, plus powerful tools to level up</p>
+            <p className="text-muted-foreground text-base">Everything in Free, plus powerful tools to level up</p>
           </div>
 
           <div className="rounded-2xl border bg-background p-6 sm:p-8">
@@ -453,58 +455,73 @@ export default function Pricing() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2">How we compare</h2>
-            <p className="text-foreground/80 text-base">Same features, fraction of the price</p>
+            <p className="text-muted-foreground text-base">Same features, fraction of the price</p>
           </div>
 
-          <div className="rounded-2xl border bg-background p-6 sm:p-8">
-            <div className="space-y-0 divide-y divide-border/50">
-              {[
-                { name: 'FreeTradeJournal', price: '$5.99/mo', yearly: '$49.99/yr', highlight: true },
-                { name: 'TraderSync', price: '$29.95/mo', yearly: '$359.40/yr', highlight: false },
-                { name: 'TradeZella', price: '$29/mo', yearly: '$348/yr', highlight: false },
-                { name: 'Tradervue', price: '$49/mo', yearly: '$588/yr', highlight: false },
-                { name: 'Edgewonk', price: '$169/yr', yearly: '$169/yr', highlight: false },
-              ].map((comp) => (
-                <div
-                  key={comp.name}
-                  className={cn(
-                    'flex items-center justify-between py-3.5 px-2 rounded-lg',
-                    comp.highlight && 'bg-amber-500/[0.06] -mx-2 px-4'
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    {comp.highlight && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    )}
-                    <span className={cn(
-                      'text-sm font-medium',
-                      comp.highlight ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/80'
-                    )}>
-                      {comp.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-6 sm:gap-10">
-                    <span className={cn(
-                      'text-sm font-semibold tabular-nums',
-                      comp.highlight ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/60'
-                    )}>
-                      {comp.price}
-                    </span>
-                    <span className={cn(
-                      'text-xs tabular-nums hidden sm:block w-20 text-right',
-                      comp.highlight ? 'text-amber-600/70 dark:text-amber-400/70' : 'text-foreground/50'
-                    )}>
-                      {comp.yearly}
-                    </span>
-                  </div>
+          <div className="rounded-2xl border bg-background overflow-hidden">
+            {/* FTJ Row */}
+            <div className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-4 bg-amber-500/[0.06] border-b-2 border-amber-500/20">
+              <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 rounded-lg shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground text-sm sm:text-base truncate">FreeTradeJournal</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                    You
+                  </span>
                 </div>
-              ))}
+                <div className="mt-1.5 h-2 rounded-full bg-amber-500/10 max-w-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-amber-500"
+                    initial={{width: 0}}
+                    whileInView={{width: '17%'}}
+                    viewport={{once: true}}
+                    transition={{duration: 0.8, ease: 'easeOut'}}
+                  />
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-xl sm:text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">$12.99</span>
+                <span className="text-xs text-muted-foreground">/mo</span>
+              </div>
             </div>
 
-            <div className="mt-6 pt-5 border-t border-border/70 text-center">
-              <p className="text-sm text-muted-foreground">
-                Save up to <span className="font-semibold text-amber-600 dark:text-amber-400">$538/year</span> compared to Tradervue
-                {' '} — with AI features they don't even offer.
+            {/* Competitor Rows */}
+            {[
+              {name: 'Tradervue', logo: '/logos/tradervue.png', price: '$49', unit: '/mo', bar: '100%', multiplier: '3.8x', delay: 0.1},
+              {name: 'TraderSync', logo: '/logos/tradersync.png', price: '$29.95', unit: '/mo', bar: '61%', multiplier: '2.3x', delay: 0.2},
+              {name: 'TradeZella', logo: '/logos/tradezella.png', price: '$29', unit: '/mo', bar: '59%', multiplier: '2.2x', delay: 0.3},
+              {name: 'Edgewonk', logo: '/logos/edgewonk.png', price: '$169', unit: '/yr', bar: '29%', multiplier: '1.7x', delay: 0.4},
+            ].map((comp) => (
+              <div key={comp.name} className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 border-b border-border/50 last:border-0">
+                <img src={comp.logo} alt={comp.name} className="h-7 w-7 rounded-md shrink-0 bg-muted/50 p-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground/80 truncate">{comp.name}</span>
+                    <span className="text-[9px] font-semibold tabular-nums px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                      {comp.multiplier}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 rounded-full bg-muted/60 max-w-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-muted-foreground/20"
+                      initial={{width: 0}}
+                      whileInView={{width: comp.bar}}
+                      viewport={{once: true}}
+                      transition={{duration: 0.8, delay: comp.delay, ease: 'easeOut'}}
+                    />
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-sm font-semibold tabular-nums text-foreground/60">{comp.price}</span>
+                  <span className="text-xs text-muted-foreground">{comp.unit}</span>
+                </div>
+              </div>
+            ))}
+
+            {/* Savings Footer */}
+            <div className="px-5 sm:px-6 py-4 bg-amber-500/[0.04] border-t border-amber-500/10">
+              <p className="text-sm text-center text-foreground/70">
+                Save up to <span className="font-bold text-amber-600 dark:text-amber-400">$488/year</span> compared to Tradervue — with AI features they don't even offer.
               </p>
             </div>
           </div>
@@ -516,7 +533,7 @@ export default function Pricing() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2">Common questions</h2>
-            <p className="text-foreground/80 text-base">Everything you need to know before upgrading</p>
+            <p className="text-muted-foreground text-base">Everything you need to know before upgrading</p>
           </div>
           <div className="rounded-2xl border bg-background px-6 sm:px-8 py-2">
             {FAQS.map((faq) => (
