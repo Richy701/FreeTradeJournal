@@ -260,6 +260,7 @@ export default function Pricing() {
       navigate('/login', { state: { from: '/pricing' } });
       return;
     }
+    trackEvent('checkout_started', { plan, priceId });
     openCheckout(priceId);
   };
 

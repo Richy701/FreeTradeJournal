@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
+import { trackEvent } from '@/lib/analytics';
 import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -228,6 +229,9 @@ export default function OnboardingSimplified() {
   }, [user, isPro, isProLoading, userStorage, addAccount, navigate]);
 
   const goToStep = (step: number) => {
+    if (step > currentStep) {
+      trackEvent('onboarding_step_completed', { step: currentStep, stepName: STEPS[currentStep - 1]?.title });
+    }
     setDirection(step > currentStep ? 1 : -1);
     setCurrentStep(step);
   };
@@ -254,6 +258,7 @@ export default function OnboardingSimplified() {
       }));
       persistOnboardingToFirestore();
 
+      trackEvent('onboarding_completed', { skipped: true });
       toast.success('Welcome to FreeTradeJournal! You can update your settings anytime.');
       navigate('/dashboard');
     } catch (error) {
@@ -286,6 +291,7 @@ export default function OnboardingSimplified() {
       userStorage.setItem('onboardingCompleted', 'true');
       persistOnboardingToFirestore();
 
+      trackEvent('onboarding_completed', { skipped: false, experienceLevel: data.experienceLevel, accountType: data.accountType });
       toast.success('Setup complete! Welcome to FreeTradeJournal!');
       navigate('/dashboard');
     } catch (error) {

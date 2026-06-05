@@ -3,6 +3,7 @@
 import { type LucideIcon } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { useThemePresets } from "@/contexts/theme-presets"
+import { trackEvent } from "@/lib/analytics"
 import {
   SidebarGroup,
   SidebarMenu,
@@ -49,7 +50,10 @@ export function NavMain({
               >
                 <Link
                   to={item.url}
-                  onClick={() => isMobile && setOpenMobile(false)}
+                  onClick={() => {
+                    trackEvent('sidebar_nav_clicked', { item: item.title, url: item.url })
+                    isMobile && setOpenMobile(false)
+                  }}
                 >
                   <div
                     className="flex items-center justify-center size-6 rounded-md"

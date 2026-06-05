@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { SlidersHorizontal, Wallet, BarChart2, Shield, Database, CreditCard, Check, Download, Upload, Sun, Moon, Monitor, Crown, TrendingUp, TrendingDown, Bell } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useProStatus } from '@/contexts/pro-context';
@@ -78,6 +79,7 @@ export default function Settings() {
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setActiveSection(id);
+    trackEvent('settings_tab_viewed', { tab: id });
   };
 
   useEffect(() => {
