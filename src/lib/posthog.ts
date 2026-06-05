@@ -11,7 +11,7 @@ export function initPostHog() {
 
   posthog.init(key, {
     api_host: host,
-    ui_host: 'https://us.posthog.com',
+    ui_host: 'https://eu.posthog.com',
     capture_pageview: false,
     capture_pageleave: true,
     persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
