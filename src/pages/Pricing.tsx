@@ -353,7 +353,7 @@ export default function Pricing() {
           <PricingCard
             name={`Pro ${activePlan.name}`}
             price={activePlan.price}
-            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · Save $55.89 vs monthly · 14-day free trial'}
+            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · Save 36% · 14-day free trial'}
             description="For traders who want an edge"
             features={activePlan.features}
             cta="Start free trial"
