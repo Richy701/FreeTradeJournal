@@ -247,6 +247,63 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       };
     }
 
+    // FTMO Review page
+    if (currentPath === '/ftmo-review') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "FTMO Review (2026) - Honest Pros, Cons & Challenge Breakdown",
+        "description": "In-depth FTMO review with pros, cons, pricing, profit splits, and payout details.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Affiliate", "item": `${baseUrl}/affiliate` },
+            { "@type": "ListItem", "position": 3, "name": "FTMO Review", "item": `${baseUrl}${currentPath}` }
+          ]
+        }
+      };
+    }
+
+    // The5%ers Review page
+    if (currentPath === '/the5ers-review') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "The5%ers Review (2026) - Instant Funding & Scaling to $4M",
+        "description": "Honest The5%ers review with instant funding details, evaluation options, profit splits, and exclusive discount code.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Affiliate", "item": `${baseUrl}/affiliate` },
+            { "@type": "ListItem", "position": 3, "name": "The5%ers Review", "item": `${baseUrl}${currentPath}` }
+          ]
+        }
+      };
+    }
+
+    // Top One Futures Review page
+    if (currentPath === '/top-one-futures-review') {
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Top One Futures Review (2026) - Best Futures Prop Firm?",
+        "description": "Top One Futures review with evaluation details, supported contracts, profit splits, and honest pros & cons.",
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": "Affiliate", "item": `${baseUrl}/affiliate` },
+            { "@type": "ListItem", "position": 3, "name": "Top One Futures Review", "item": `${baseUrl}${currentPath}` }
+          ]
+        }
+      };
+    }
+
     // Affiliate page
     if (currentPath === '/affiliate') {
       return {

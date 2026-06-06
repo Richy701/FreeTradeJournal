@@ -57,6 +57,7 @@ interface PropFirm {
   discount: string;
   code?: string;
   url: string;
+  reviewUrl?: string;
 }
 
 const FIRMS: PropFirm[] = [
@@ -69,6 +70,7 @@ const FIRMS: PropFirm[] = [
     discount: '5% off your first challenge',
     code: 'ZBY34',
     url: 'https://www.the5ers.com/?afmc=1buq',
+    reviewUrl: '/the5ers-review',
   },
   {
     id: 'ftmo',
@@ -78,6 +80,7 @@ const FIRMS: PropFirm[] = [
     blurb: 'Industry-leading prop firm with a two-step evaluation. Trade forex, indices, commodities, stocks, and crypto with up to $200K funding.',
     discount: '',
     url: 'https://trader.ftmo.com/?affiliates=PYpnfPHLxoLexQHIwIhm',
+    reviewUrl: '/ftmo-review',
   },
   {
     id: 'fundednext',
@@ -96,6 +99,7 @@ const FIRMS: PropFirm[] = [
     blurb: 'Futures-focused prop firm with straightforward evaluations and no scaling requirements. Trade CME, CBOT, NYMEX, and COMEX products.',
     discount: '',
     url: 'https://toponefutures.com/?linkId=lp_707970&sourceId=richmond-lamptey&tenantId=toponefutures',
+    reviewUrl: '/top-one-futures-review',
   },
   {
     id: 'apex',
@@ -172,6 +176,11 @@ function FirmRow({ firm }: { firm: PropFirm }) {
             <p className="text-sm text-muted-foreground leading-relaxed">
               {firm.blurb}
             </p>
+            {firm.reviewUrl && (
+              <Link to={firm.reviewUrl} className="text-xs text-amber-500 hover:underline font-medium mt-1.5 inline-block">
+                Read full review →
+              </Link>
+            )}
           </div>
 
           {/* Deal + CTA */}
@@ -279,6 +288,75 @@ export default function Affiliate() {
                 <FirmRow key={firm.id} firm={firm} />
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 sm:px-6 bg-background">
+          <div className="container mx-auto max-w-4xl">
+            <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">At a glance</p>
+                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                  Compare prop<br />
+                  <span className="text-amber-500">firms.</span>
+                </h2>
+              </div>
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                Side-by-side comparison of evaluation rules, profit splits, and pricing.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-border/40">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40 bg-muted/30">
+                    <th className="text-left py-3.5 px-4 font-semibold text-foreground">Firm</th>
+                    <th className="text-left py-3.5 px-4 font-semibold text-foreground">Market</th>
+                    <th className="text-left py-3.5 px-4 font-semibold text-foreground">Eval Type</th>
+                    <th className="text-left py-3.5 px-4 font-semibold text-foreground">Max Funding</th>
+                    <th className="text-left py-3.5 px-4 font-semibold text-foreground">Profit Split</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/30">
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-4"><img src="/images/partners/the5ers.svg" alt="The5%ers" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4 text-muted-foreground">Forex, Metals, Indices, Crypto</td>
+                    <td className="py-3 px-4 text-muted-foreground">Instant / 1-step / 2-step / 3-step</td>
+                    <td className="py-3 px-4 text-muted-foreground">$4M (scaling)</td>
+                    <td className="py-3 px-4 text-muted-foreground">50% –100%</td>
+                  </tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-4"><img src="/images/partners/ftmo.png" alt="FTMO" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4 text-muted-foreground">Forex, Indices, Commodities, Crypto</td>
+                    <td className="py-3 px-4 text-muted-foreground">1-step / 2-step</td>
+                    <td className="py-3 px-4 text-muted-foreground">$2M (scaling)</td>
+                    <td className="py-3 px-4 text-muted-foreground">80% –90%</td>
+                  </tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-4"><img src="/images/partners/fundednext.svg" alt="FundedNext" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4 text-muted-foreground">Forex, Indices, Commodities, Crypto</td>
+                    <td className="py-3 px-4 text-muted-foreground">1-step / 2-step</td>
+                    <td className="py-3 px-4 text-muted-foreground">$4M (scaling)</td>
+                    <td className="py-3 px-4 text-muted-foreground">80% –95%</td>
+                  </tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-4"><img src="/images/partners/toponetrader.svg" alt="Top One Futures" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4 text-muted-foreground">CME Futures</td>
+                    <td className="py-3 px-4 text-muted-foreground">1-step / 2-step / 3-step / Instant</td>
+                    <td className="py-3 px-4 text-muted-foreground">$500K</td>
+                    <td className="py-3 px-4 text-muted-foreground">90%</td>
+                  </tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-4"><img src="/images/partners/apex.webp" alt="Apex Trader Funding" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4 text-muted-foreground">CME Futures</td>
+                    <td className="py-3 px-4 text-muted-foreground">1-step (no time limit)</td>
+                    <td className="py-3 px-4 text-muted-foreground">$150K (x20 accounts)</td>
+                    <td className="py-3 px-4 text-muted-foreground">100% first $25K, then 90%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">Use code <span className="font-mono font-medium text-amber-500">ZBY34</span> for 5% off The5%ers challenges.</p>
           </div>
         </section>
 

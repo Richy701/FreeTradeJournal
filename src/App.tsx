@@ -53,6 +53,9 @@ const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('@/pages/VerifyEmail'));
 const Affiliate = lazy(() => import('@/pages/Affiliate'));
+const FTMOReview = lazy(() => import('@/pages/FTMOReview'));
+const The5ersReview = lazy(() => import('@/pages/The5ersReview'));
+const TopOneFuturesReview = lazy(() => import('@/pages/TopOneFuturesReview'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const toastOptions = {
@@ -127,6 +130,9 @@ function App() {
                 <Route path="/day-trading-journal" element={<DayTradingJournal />} />
                 <Route path="/online-trading-journal" element={<OnlineTradingJournal />} />
                 <Route path="/affiliate" element={<Affiliate />} />
+                <Route path="/ftmo-review" element={<FTMOReview />} />
+                <Route path="/the5ers-review" element={<The5ersReview />} />
+                <Route path="/top-one-futures-review" element={<TopOneFuturesReview />} />
                 
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
                 <Route path="/prop-tracker" element={<PropTrackerRoute />} />

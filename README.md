@@ -409,14 +409,18 @@ All public routes are pre-rendered at build time using Puppeteer for search engi
 - Documentation
 - Release notes / changelog
 - Legal pages (privacy policy, terms, cookie policy)
-- SEO landing pages for Forex, Futures, and Prop Firm traders
+- SEO landing pages for Forex, Futures, Day Trading, and Online Trading journals
+- Prop firm affiliate page with comparison table and discount codes
+- Individual prop firm review pages (FTMO, The5%ers, Top One Futures)
 
 Each route includes:
 
 - Unique `<title>` and `<meta description>` via a centralized `SEOMeta` component
 - Dynamic `<link rel="canonical">` for every route
 - Open Graph and Twitter Card tags
-- JSON-LD structured data (SoftwareApplication, WebPage, FAQPage)
+- JSON-LD structured data (SoftwareApplication, WebPage, FAQPage, BreadcrumbList)
+- FAQ structured data auto-injected on all pages with FAQ sections
+- Centralized footer config shared across all marketing pages
 - Consistent `www.freetradejournal.com` domain across all URLs
 
 ## Contributing

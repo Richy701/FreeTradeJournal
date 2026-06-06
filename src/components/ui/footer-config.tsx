@@ -33,6 +33,9 @@ export const footerConfig = {
         { name: "Online Trading Journal", href: "/online-trading-journal" },
         { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
         { name: "Affiliate", href: "/affiliate" },
+        { name: "FTMO Review", href: "/ftmo-review" },
+        { name: "The5%ers Review", href: "/the5ers-review" },
+        { name: "Top One Futures Review", href: "/top-one-futures-review" },
       ]
     },
     {

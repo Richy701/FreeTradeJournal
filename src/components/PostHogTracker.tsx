@@ -22,6 +22,9 @@ const PAGE_NAMES: Record<string, string> = {
   '/profile': 'Profile',
   '/day-trading-journal': 'Day Trading Journal',
   '/online-trading-journal': 'Online Trading Journal',
+  '/ftmo-review': 'FTMO Review',
+  '/the5ers-review': 'The5ers Review',
+  '/top-one-futures-review': 'Top One Futures Review',
 };
 
 export function PostHogTracker() {

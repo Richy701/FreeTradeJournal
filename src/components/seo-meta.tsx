@@ -115,6 +115,21 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Best Prop Firm Deals & Discounts (2026) | Exclusive Codes | FreeTradeJournal',
     description: 'Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges. Verified discount codes updated for 2026.',
     keywords: 'prop firm discount, prop firm coupon code, FTMO discount, The5ers discount, Apex trader funding deal, TopStep promo code, FundedNext coupon, prop firm affiliate, prop trading deals, best prop firm deals 2026, prop firm challenge discount, funded trader discount, prop firm promo codes'
+  },
+  '/ftmo-review': {
+    title: 'FTMO Review (2026) | Honest Pros, Cons & Challenge Breakdown | FreeTradeJournal',
+    description: 'In-depth FTMO review for 2026. Two-step evaluation breakdown, profit splits up to 90%, payout process, pricing, and how to track your FTMO challenge with FreeTradeJournal.',
+    keywords: 'FTMO review, FTMO review 2026, is FTMO legit, FTMO challenge review, FTMO pros and cons, FTMO profit split, FTMO payout, FTMO evaluation, FTMO cost, FTMO funded account, FTMO trading journal'
+  },
+  '/the5ers-review': {
+    title: 'The5%ers Review (2026) | Instant Funding & Scaling to $4M | FreeTradeJournal',
+    description: 'Honest The5%ers review for 2026. Instant funding, one-step and two-step evaluations, scaling to $4M, profit splits, and exclusive 5% discount code ZBY34.',
+    keywords: 'The5ers review, The5ers review 2026, is The5ers legit, The5ers instant funding, The5ers discount code, The5ers pros and cons, The5ers profit split, The5ers payout, The5ers evaluation, The5ers scaling plan'
+  },
+  '/top-one-futures-review': {
+    title: 'Top One Futures Review (2026) | Best Futures Prop Firm? | FreeTradeJournal',
+    description: 'Top One Futures review for 2026. One-step evaluation for ES, NQ, CL, GC futures traders. No scaling requirements, up to 90% profit split, and honest pros & cons.',
+    keywords: 'Top One Futures review, Top One Futures review 2026, Top One Trader review, futures prop firm review, best futures prop firm, Top One Futures evaluation, Top One Futures payout, futures trading prop firm'
   }
 };
 
