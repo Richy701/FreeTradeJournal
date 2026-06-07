@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Copy, Check, Share2, Users, Crown, X, Gift } from 'lucide-react'
+import { Copy, Check, ShareNetwork, Users, X, Gift } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useThemePresets } from '@/contexts/theme-presets'
@@ -21,7 +21,16 @@ export function ReferralBanner() {
   const { themeColors, alpha } = useThemePresets()
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [copied, setCopied] = useState(false)
-  const [dismissed, setDismissed] = useState(() => !!localStorage.getItem(DISMISS_KEY))
+  const [dismissed, setDismissed] = useState(() => {
+    const dismissedAt = localStorage.getItem(DISMISS_KEY)
+    if (!dismissedAt) return false
+    const daysSince = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24)
+    if (daysSince > 7) {
+      localStorage.removeItem(DISMISS_KEY)
+      return false
+    }
+    return true
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -36,7 +45,7 @@ export function ReferralBanner() {
         const result = await getStats()
         if (!cancelled) setStats(result.data as ReferralStats)
       } catch {
-        if (!cancelled) setStats({ referralCount: 0, referralCode: user.uid, rewardThreshold: 5, referralProExpiresAt: null, rewardEarned: false })
+        if (!cancelled) setStats({ referralCount: 0, referralCode: user.uid, rewardThreshold: 3, referralProExpiresAt: null, rewardEarned: false })
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -78,7 +87,7 @@ export function ReferralBanner() {
   }, [referralLink, handleCopy])
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISS_KEY, '1')
+    localStorage.setItem(DISMISS_KEY, String(Date.now()))
     setDismissed(true)
   }
 
@@ -86,7 +95,7 @@ export function ReferralBanner() {
   if (stats.rewardEarned) return null
 
   const count = stats.referralCount
-  const threshold = stats.rewardThreshold
+  const threshold = 3
   const remaining = Math.max(0, threshold - count)
   const progress = Math.min(count / threshold, 1)
 
@@ -162,7 +171,7 @@ export function ReferralBanner() {
                 </Button>
                 {typeof navigator !== 'undefined' && 'share' in navigator && (
                   <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={handleShare}>
-                    <Share2 className="h-3.5 w-3.5" />
+                    <ShareNetwork className="h-3.5 w-3.5" />
                     Share
                   </Button>
                 )}

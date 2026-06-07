@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Share2, Download, Copy, Check } from 'lucide-react';
+import { ShareNetwork, DownloadSimple, Copy, Check } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
 import { useLoggingStreak } from '@/hooks/use-logging-streak';
@@ -314,7 +314,7 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
       <DialogTrigger asChild>
         {children || (
           <Button variant="outline" className="gap-2 h-11 touch-manipulation">
-            <Share2 className="h-4 w-4" />
+            <ShareNetwork className="h-4 w-4" />
             Share Stats
           </Button>
         )}
@@ -342,12 +342,12 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
             {copied ? 'Copied' : 'Copy'}
           </Button>
           <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
-            <Download className="h-4 w-4" />
+            <DownloadSimple className="h-4 w-4" />
             Download
           </Button>
           {typeof navigator !== 'undefined' && 'share' in navigator && (
             <Button size="sm" onClick={handleShare} className="gap-2">
-              <Share2 className="h-4 w-4" />
+              <ShareNetwork className="h-4 w-4" />
               Share
             </Button>
           )}

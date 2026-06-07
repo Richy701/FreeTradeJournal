@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, Loader2, Check, X, Tags } from 'lucide-react';
+import { Brain, SpinnerGap, Check, X, Tag } from '@phosphor-icons/react';
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useProStatus } from '@/contexts/pro-context';
 
 interface Trade {
   id: string;
@@ -50,6 +51,7 @@ const STRATEGY_COLORS: Record<string, string> = {
 
 export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: AIStrategyTaggerProps) {
   const { themeColors, alpha } = useThemePresets();
+  const { updateFreeAiQuota } = useProStatus();
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [results, setResults] = useState<TagResult[]>([]);
@@ -133,6 +135,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
           });
 
           rawResponse = response.result;
+          if (response.freeUsage) updateFreeAiQuota(response.freeUsage);
 
           // Clean the response - remove markdown code blocks if present
           let cleanedResult = response.result.trim();
@@ -214,7 +217,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
         <ProGate featureName="AI Strategy Tagger">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Tags className="h-5 w-5" style={{ color: themeColors.primary }} />
+              <Tag className="h-5 w-5" style={{ color: themeColors.primary }} />
               AI Strategy Tagger
             </DialogTitle>
             <DialogDescription>
@@ -346,7 +349,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                     Classifying...
                   </>
                 ) : (

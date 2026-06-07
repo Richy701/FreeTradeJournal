@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, CaretUpDown } from '@phosphor-icons/react'
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -73,7 +73,7 @@ export function InstrumentCombobox({
           className="w-full min-w-0 justify-between text-lg font-normal whitespace-normal h-9 px-3"
         >
           <span className="truncate text-left">{value ? displayLabel : <span className="text-muted-foreground">{placeholder}</span>}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <CaretUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

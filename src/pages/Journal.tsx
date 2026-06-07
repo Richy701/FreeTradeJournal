@@ -6,31 +6,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { trackEvent } from '@/lib/analytics';
 import { Badge } from '@/components/ui/badge';
 import { 
-  TrendingUp, 
-  TrendingDown, 
+  TrendUp, 
+  TrendDown, 
   Minus, 
   Clock, 
-  BarChart3, 
-  Loader2, 
-  AlertCircle, 
+  ChartBar, 
+  SpinnerGap, 
+  WarningCircle, 
   Heart, 
-  Upload, 
+  UploadSimple, 
   X, 
-  Edit3, 
-  Trash2,
-  Filter,
-  SlidersHorizontal,
+  PencilSimple,
+  Trash,
+  Funnel,
+  Sliders,
   Calendar,
-  DollarSign,
-  ArrowUpDown,
-  ChevronDown,
+  CurrencyDollar,
+  ArrowsDownUp,
+  CaretDown,
   BookOpen,
   Plus,
-  Search,
+  MagnifyingGlass,
   Tag,
-  Link2,
-  PenLine
-} from 'lucide-react';
+  LinkSimple,
+  PenNib
+} from '@phosphor-icons/react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
@@ -469,7 +469,7 @@ export default function Journal() {
         }
       }
       
-      // Tags filter
+      // Tag filter
       if (selectedTags.length > 0) {
         const hasAllTags = selectedTags.every(tag => entry.tags.includes(tag));
         if (!hasAllTags) return false;
@@ -594,8 +594,8 @@ export default function Journal() {
 
   const getMoodIcon = (mood: string) => {
     switch (mood) {
-      case 'bullish': return <TrendingUp className="h-3 w-3" />;
-      case 'bearish': return <TrendingDown className="h-3 w-3" />;
+      case 'bullish': return <TrendUp className="h-3 w-3" />;
+      case 'bearish': return <TrendDown className="h-3 w-3" />;
       default: return <Minus className="h-3 w-3" />;
     }
   };
@@ -652,7 +652,7 @@ export default function Journal() {
                       onClick={() => quickStartEntry('post-trade')}
                       className="gap-2 border-2"
                     >
-                      <BarChart3 className="h-4 w-4" />
+                      <ChartBar className="h-4 w-4" />
                       Post-Trade
                     </Button>
                   </div>
@@ -686,21 +686,21 @@ export default function Journal() {
                 subtitle: 'All time'
               },
               {
-                Icon: TrendingUp,
+                Icon: TrendUp,
                 value: entries.filter(e => e.mood === 'bullish').length,
                 label: 'Bullish',
                 color: themeColors.profit,
                 subtitle: `${entries.length > 0 ? Math.round((entries.filter(e => e.mood === 'bullish').length / entries.length) * 100) : 0}% of entries`
               },
               {
-                Icon: TrendingDown,
+                Icon: TrendDown,
                 value: entries.filter(e => e.mood === 'bearish').length,
                 label: 'Bearish',
                 color: themeColors.loss,
                 subtitle: `${entries.length > 0 ? Math.round((entries.filter(e => e.mood === 'bearish').length / entries.length) * 100) : 0}% of entries`
               },
               {
-                Icon: Link2,
+                Icon: LinkSimple,
                 value: entries.filter(e => e.tradeId).length,
                 label: 'Linked Trades',
                 color: themeColors.primary,
@@ -808,7 +808,7 @@ export default function Journal() {
               {([
                 { value: 'general', label: 'General', icon: <Minus className="h-3.5 w-3.5" /> },
                 { value: 'pre-trade', label: 'Pre-Trade', icon: <Clock className="h-3.5 w-3.5" /> },
-                { value: 'post-trade', label: 'Post-Trade', icon: <BarChart3 className="h-3.5 w-3.5" /> }
+                { value: 'post-trade', label: 'Post-Trade', icon: <ChartBar className="h-3.5 w-3.5" /> }
               ] as const).map((type) => (
                 <Button
                   key={type.value}
@@ -898,9 +898,9 @@ export default function Journal() {
                   <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Market Sentiment</label>
                   <div className="grid grid-cols-3 gap-3">
                     {([
-                      { value: 'bullish', label: 'Bullish', icon: <TrendingUp className="h-5 w-5" />, color: themeColors.profit },
+                      { value: 'bullish', label: 'Bullish', icon: <TrendUp className="h-5 w-5" />, color: themeColors.profit },
                       { value: 'neutral', label: 'Neutral', icon: <Minus className="h-5 w-5" />, color: themeColors.primary },
-                      { value: 'bearish', label: 'Bearish', icon: <TrendingDown className="h-5 w-5" />, color: themeColors.loss }
+                      { value: 'bearish', label: 'Bearish', icon: <TrendDown className="h-5 w-5" />, color: themeColors.loss }
                     ] as const).map((mood) => (
                       <Button
                         key={mood.value}
@@ -922,24 +922,24 @@ export default function Journal() {
               </CardContent>
             </Card>
 
-            {/* Trade Link & Tags Card */}
+            {/* Trade Link & Tag Card */}
             <Card className="">
               <CardContent className="p-5 sm:p-6 space-y-5">
                 {/* Trade Link */}
                 <div className="space-y-1.5">
                   <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
-                    <BarChart3 className="h-3 w-3" />
+                    <ChartBar className="h-3 w-3" />
                     Link to Trade
-                    {isLoadingTrades && <Loader2 className="h-3 w-3 animate-spin" />}
+                    {isLoadingTrades && <SpinnerGap className="h-3 w-3 animate-spin" />}
                   </label>
                   {isLoadingTrades ? (
                     <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/50 flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <SpinnerGap className="h-4 w-4 animate-spin" />
                       <span className="text-sm text-muted-foreground">Loading trades...</span>
                     </div>
                   ) : trades.length === 0 ? (
                     <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/50 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-orange-500" />
+                      <WarningCircle className="h-4 w-4 text-orange-500" />
                       <span className="text-sm text-muted-foreground">No trades found. Upload trades in Trade Log first.</span>
                     </div>
                   ) : (
@@ -1000,11 +1000,11 @@ export default function Journal() {
                   </div>
                 )}
 
-                {/* Tags */}
+                {/* Tag */}
                 <div className="space-y-1.5">
                   <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
                     <Tag className="h-3 w-3" />
-                    Tags
+                    Tag
                   </label>
                   <Input
                     placeholder="e.g., EUR/USD, analysis, strategy"
@@ -1058,7 +1058,7 @@ export default function Journal() {
             <Card className="">
               <CardContent className="p-5 sm:p-6 space-y-3">
                 <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
-                  <Upload className="h-3 w-3" />
+                  <UploadSimple className="h-3 w-3" />
                   Screenshots & Charts
                 </label>
 
@@ -1077,7 +1077,7 @@ export default function Journal() {
                       className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center"
                       style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
                     >
-                      <Upload className="h-5 w-5" style={{ color: themeColors.primary }} />
+                      <UploadSimple className="h-5 w-5" style={{ color: themeColors.primary }} />
                     </div>
                     <div>
                       <p className="text-sm font-medium">Drop chart screenshots here</p>
@@ -1146,7 +1146,7 @@ export default function Journal() {
                   style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   disabled={isSubmitting || !newEntry.title.trim() || !newEntry.content.trim()}
                 >
-                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isSubmitting && <SpinnerGap className="h-4 w-4 animate-spin" />}
                   {isSubmitting
                     ? (editingEntry ? 'Updating...' : 'Saving...')
                     : (editingEntry ? 'Update Entry' : 'Save Entry')
@@ -1161,7 +1161,7 @@ export default function Journal() {
           {/* Search and Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search entries..."
                 value={searchTerm}
@@ -1176,7 +1176,7 @@ export default function Journal() {
                 onClick={() => setShowFilters(!showFilters)}
                 className="gap-2 flex-1 sm:flex-initial"
               >
-                <Filter className="h-4 w-4" />
+                <Funnel className="h-4 w-4" />
                 <span className="sm:inline">Filters</span>
                 {activeFilterCount > 0 && (
                   <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5 text-xs">
@@ -1188,9 +1188,9 @@ export default function Journal() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="gap-2 flex-1 sm:flex-initial">
-                    <ArrowUpDown className="h-4 w-4" />
+                    <ArrowsDownUp className="h-4 w-4" />
                     <span className="sm:inline">Sort</span>
-                    <ChevronDown className="h-3 w-3" />
+                    <CaretDown className="h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56" align="end" sideOffset={5}>
@@ -1268,7 +1268,7 @@ export default function Journal() {
                   {/* Market Filter */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-2">
-                      <BarChart3 className="h-3 w-3" />
+                      <ChartBar className="h-3 w-3" />
                       Market
                     </label>
                     <Select value={selectedMarket} onValueChange={setSelectedMarket}>
@@ -1319,7 +1319,7 @@ export default function Journal() {
                   {/* P&L Range Filter */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-2">
-                      <DollarSign className="h-3 w-3" />
+                      <CurrencyDollar className="h-3 w-3" />
                       P&L Range
                     </label>
                     <div className="flex gap-2">
@@ -1340,11 +1340,11 @@ export default function Journal() {
                     </div>
                   </div>
                   
-                  {/* Tags Filter */}
+                  {/* Tag Filter */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium flex items-center gap-2">
                       <Tag className="h-3 w-3" />
-                      Tags
+                      Tag
                     </label>
                     <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-background/50 border-muted-foreground/20 min-h-[40px] max-h-24 overflow-y-auto">
                       {allTags.length === 0 ? (
@@ -1424,8 +1424,8 @@ export default function Journal() {
                     </Button>
                     <div className="grid grid-cols-3 gap-2 w-full text-left">
                       {([
-                        { Icon: PenLine, label: 'Pre-trade', desc: 'Plan before you enter' },
-                        { Icon: BarChart3, label: 'Post-trade', desc: 'Review after you exit' },
+                        { Icon: PenNib, label: 'Pre-trade', desc: 'Plan before you enter' },
+                        { Icon: ChartBar, label: 'Post-trade', desc: 'Review after you exit' },
                         { Icon: Calendar, label: 'Daily review', desc: 'End-of-day reflection' },
                       ] as const).map((t) => (
                         <div key={t.label} className="rounded-xl border border-border/40 bg-muted/30 p-3 space-y-1.5">
@@ -1452,7 +1452,7 @@ export default function Journal() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
                         <div className="p-2 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: `${alpha(getMoodColor(entry.mood), '15')}` }}>
-                          <PenLine className="h-4 w-4" style={{ color: getMoodColor(entry.mood) }} />
+                          <PenNib className="h-4 w-4" style={{ color: getMoodColor(entry.mood) }} />
                         </div>
                         <div className="min-w-0">
                           <CardTitle className="text-base sm:text-lg font-semibold leading-tight text-foreground break-words">
@@ -1500,7 +1500,7 @@ export default function Journal() {
                           className="h-9 w-9 p-0 hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                           aria-label="Edit entry"
                         >
-                          <Edit3 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <PencilSimple className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -1509,7 +1509,7 @@ export default function Journal() {
                           className="h-9 w-9 p-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
                           aria-label="Delete entry"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -1533,7 +1533,7 @@ export default function Journal() {
                     {linkedTrade && (
                       <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${alpha(linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '20')}`, backgroundColor: `${alpha(linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '05')}` }}>
                         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                          <Link2 className="h-3 w-3" />
+                          <LinkSimple className="h-3 w-3" />
                           Linked Trade
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">

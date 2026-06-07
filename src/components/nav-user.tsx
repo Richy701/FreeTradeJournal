@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  Settings,
-  User,
-  LogOut,
-} from "lucide-react"
+import { User, SignOut, CaretUpDown } from '@phosphor-icons/react'
 
 import {
   Avatar,
@@ -22,7 +18,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { CaretSortIcon } from "@radix-ui/react-icons"
 import { useAuth } from "@/contexts/auth-context"
 import { useNavigate } from "react-router-dom"
 import { useThemePresets } from "@/contexts/theme-presets"
@@ -65,7 +60,7 @@ export function NavUser({
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium text-xs">{user.name}</span>
               </div>
-              <CaretSortIcon className="ml-auto size-4" />
+              <CaretUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -79,7 +74,7 @@ export function NavUser({
               Profile
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-              <LogOut />
+              <SignOut />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

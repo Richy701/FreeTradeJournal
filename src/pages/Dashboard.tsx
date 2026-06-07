@@ -1,4 +1,5 @@
 import { useThemePresets } from '@/contexts/theme-presets'
+import { trackEvent } from '@/lib/analytics'
 import { useAuth } from '@/contexts/auth-context'
 import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
@@ -13,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Upload, FileText, Calendar, CheckCircle2, AlertCircle, TrendingUp, UserPlus, Tag, Building2 } from "lucide-react"
+import { Plus, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -29,9 +30,11 @@ import { ReferralBanner } from '@/components/referral-banner'
 import { GettingStartedChecklist } from '@/components/getting-started-checklist'
 import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
 import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
+import { SatisfactionPulse } from '@/components/satisfaction-pulse'
+import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
 import { ShareStatsCard } from '@/components/share-stats-card'
 import { ProUpgradeCard } from '@/components/pro-upgrade-card'
-import { Brain, CloudUpload, BarChart3 as BarChart3Icon } from 'lucide-react'
+import { Brain, CloudArrowUp, ChartBar as BarChart3Icon } from '@phosphor-icons/react'
 
 // Lazy load chart components to reduce initial bundle size
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
@@ -55,6 +58,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+function FreeAIBanner() {
+  const { user, isDemo } = useAuth()
+  const { isPro, isLoading, hasAIAccess, freeAiQuota } = useProStatus()
+  const [visible, setVisible] = useState(false)
+
+  const dismissKey = user ? `free-ai-banner-v1-${user.uid}` : null
+
+  useEffect(() => {
+    if (!user || isDemo || isPro || isLoading || !dismissKey) return
+    if (!hasAIAccess || !freeAiQuota || freeAiQuota.remaining === 0) return
+    const dismissed = localStorage.getItem(dismissKey)
+    if (!dismissed) setVisible(true)
+  }, [user, isDemo, isPro, isLoading, hasAIAccess, freeAiQuota, dismissKey])
+
+  if (!visible) return null
+
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3 relative">
+      <Brain className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground">You have {freeAiQuota!.remaining} free AI queries this month</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+          Try Coach FTJ below -- ask it anything about your trading. Your free queries reset monthly.
+        </p>
+      </div>
+      <button
+        onClick={() => { setVisible(false); if (dismissKey) localStorage.setItem(dismissKey, '1') }}
+        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1"
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
@@ -185,7 +224,32 @@ export default function Dashboard() {
     
     trades.unshift(newTrade)
     userStorage.setItem('trades', JSON.stringify(trades))
-    
+
+    // Referral nudge after a winning trade (max once per 7 days)
+    if (pnl > 0 && user && !isDemo) {
+      const NUDGE_KEY = 'ftj-referral-nudge-at';
+      const lastNudge = localStorage.getItem(NUDGE_KEY);
+      const daysSinceNudge = lastNudge ? (Date.now() - Number(lastNudge)) / (1000 * 60 * 60 * 24) : Infinity;
+      if (daysSinceNudge > 7) {
+        localStorage.setItem(NUDGE_KEY, String(Date.now()));
+        const link = `https://www.freetradejournal.com/signup?ref=${user.uid}`;
+        setTimeout(() => {
+          toast('Nice win! Know a trader who could use a free journal?', {
+            duration: 8000,
+            action: {
+              label: 'Copy referral link',
+              onClick: () => {
+                navigator.clipboard.writeText(link);
+                toast.success('Referral link copied');
+                trackEvent('referral_nudge_copied');
+              },
+            },
+          });
+          trackEvent('referral_nudge_shown');
+        }, 1500);
+      }
+    }
+
     // Reset form
     setTradeForm({
       symbol: "",
@@ -318,6 +382,20 @@ export default function Dashboard() {
             duration: 5000
           }
         );
+
+        // Prompt for feedback after importing 5+ trades
+        if (newTrades.length >= 5) {
+          setTimeout(() => {
+            toast('How was the import experience?', {
+              description: 'Help us improve CSV imports for your broker.',
+              duration: 8000,
+              action: {
+                label: 'Give feedback',
+                onClick: () => triggerFeedbackDialog('CSV Import'),
+              },
+            });
+          }, 2000);
+        }
 
       } else {
         toast.error('Failed to import file', {
@@ -542,7 +620,7 @@ export default function Dashboard() {
             </div>
             <span className="hidden sm:block w-px h-4 bg-border/60 shrink-0" />
             <div className="flex items-center gap-2">
-              <Building2 className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
+              <Buildings className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
               <span className="text-sm">
                 <span className="font-medium text-foreground">PropTracker</span>
                 <span className="text-muted-foreground hidden sm:inline"> · Track P&L across every firm</span>
@@ -805,7 +883,7 @@ export default function Dashboard() {
                           onClick={() => document.getElementById('dashboard-csv-import')?.click()}
                           disabled={csvUploadState.isUploading}
                         >
-                          <Upload className="h-4 w-4" />
+                          <UploadSimple className="h-4 w-4" />
                           {csvUploadState.isUploading ? 'Importing...' : 'Import CSV'}
                         </Button>
                         <input
@@ -853,7 +931,8 @@ export default function Dashboard() {
           </Suspense>
         </div>
 
-        {/* AI Trading Coach */}
+        {/* Coach FTJ */}
+        <FreeAIBanner />
         <div>
           <TradingCoach />
         </div>
@@ -896,7 +975,7 @@ export default function Dashboard() {
         {/* Cloud sync nudge — after all data-heavy sections */}
         {tradeCount >= 10 && (
           <ProUpgradeCard
-            icon={CloudUpload}
+            icon={CloudArrowUp}
             title="Your trades live only in this browser"
             description="Switch device or clear data and it's gone. Pro syncs your journal across all devices automatically."
             cta="Enable cloud sync"
@@ -1007,7 +1086,7 @@ export default function Dashboard() {
                     style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
                   >
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      <TrendUp className="h-4 w-4" style={{ color: themeColors.primary }} />
                       <h3 className="font-semibold text-foreground text-sm">
                         Trade Preview <span className="font-normal text-muted-foreground">(First 5 rows)</span>
                       </h3>
@@ -1150,7 +1229,7 @@ export default function Dashboard() {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
+                      <WarningCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
                       <h3 className="font-semibold text-sm" style={{ color: themeColors.loss }}>
                         Import Warnings ({csvPreview.parseResult.errors.length})
                       </h3>
@@ -1180,12 +1259,12 @@ export default function Dashboard() {
                 <div className="text-sm text-muted-foreground">
                   {csvPreview.parseResult.trades.length > 0 ? (
                     <span className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" style={{ color: themeColors.profit }} />
+                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
                       Ready to import {csvPreview.parseResult.trades.length} trades
                     </span>
                   ) : (
                     <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
-                      <AlertCircle className="h-4 w-4" />
+                      <WarningCircle className="h-4 w-4" />
                       No valid trades to import
                     </span>
                   )}
@@ -1216,7 +1295,7 @@ export default function Dashboard() {
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                         Import {csvPreview.parseResult.trades.length} Trades
                       </span>
                     )}
@@ -1249,6 +1328,7 @@ export default function Dashboard() {
 
       </div>
       <AppFooter />
+      <SatisfactionPulse tradeCount={tradeCount} />
       <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} />
     </>
   )

@@ -16,7 +16,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { SlidersHorizontal, Wallet, BarChart2, Shield, Database, CreditCard, Check, Download, Upload, Sun, Moon, Monitor, Crown, TrendingUp, TrendingDown, Bell } from 'lucide-react';
+import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -26,6 +26,7 @@ import { ProBadge } from '@/components/pro-badge';
 import { PRO_FEATURES } from '@/constants/pricing';
 import { ReferralCard } from '@/components/referral-card';
 import { PushNotificationPrompt } from '@/components/push-notification-prompt';
+import { ExitSurveyDialog } from '@/components/exit-survey-dialog';
 
 const BROKERS = [
   'OANDA','IC Markets','MetaTrader 4','MetaTrader 5','Pepperstone','IG',
@@ -45,9 +46,9 @@ const CURRENCIES = [
 ] as const;
 
 const NAV = [
-  { id: 'general',       label: 'General',       Icon: SlidersHorizontal },
+  { id: 'general',       label: 'General',       Icon: Sliders },
   { id: 'accounts',      label: 'Accounts',      Icon: Wallet },
-  { id: 'performance',   label: 'Performance',   Icon: BarChart2 },
+  { id: 'performance',   label: 'Performance',   Icon: ChartBar },
   { id: 'risk',          label: 'Risk',          Icon: Shield },
   { id: 'data',          label: 'Data',          Icon: Database },
   { id: 'notifications', label: 'Notifications', Icon: Bell },
@@ -236,62 +237,29 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Mobile nav */}
-        <div className="md:hidden border-b border-border/60 overflow-x-auto">
-          <div className="flex gap-0 px-4 min-w-max">
-            {NAV.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                onClick={() => scrollTo(id)}
-                className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  activeSection === id ? 'border-current' : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-                style={activeSection === id ? { color: themeColors.primary, borderColor: themeColors.primary } : {}}
-              >
-                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                {label}
-              </button>
-            ))}
+        {/* Tab bar */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60">
+          <div className="w-full max-w-5xl mx-auto overflow-x-auto">
+            <div className="flex gap-0 px-4 sm:px-6 lg:px-8 min-w-max">
+              {NAV.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => scrollTo(id)}
+                  className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    activeSection === id ? 'border-current' : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                  style={activeSection === id ? { color: themeColors.primary, borderColor: themeColors.primary } : {}}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex gap-10 items-start">
-
-            {/* ── Sidebar nav ─────────────────────────────────────────── */}
-            <nav className="hidden md:block w-44 shrink-0 sticky top-6 self-start">
-              <ul className="space-y-px">
-                {NAV.map(({ id, label, Icon }) => {
-                  const isActive = activeSection === id;
-                  return (
-                    <li key={id} className="relative">
-                      <span
-                        className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-r-full transition-opacity"
-                        style={{ backgroundColor: themeColors.primary, opacity: isActive ? 1 : 0 }}
-                      />
-                      <button
-                        onClick={() => scrollTo(id)}
-                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm rounded-lg text-left transition-colors ${
-                          isActive
-                            ? 'text-foreground bg-muted/60 font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                        }`}
-                      >
-                        <Icon
-                          className="h-4 w-4 shrink-0 transition-colors"
-                          style={isActive ? { color: themeColors.primary } : {}}
-                          aria-hidden="true"
-                        />
-                        {label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            {/* ── Scrollable content ───────────────────────────────────── */}
-            <div className="flex-1 min-w-0 space-y-12 pb-16">
+            <div className="space-y-12 pb-16">
 
               {/* ── GENERAL ─────────────────────────────────────────────── */}
               <section
@@ -469,7 +437,7 @@ export default function Settings() {
                     <div key={account.id}>
                       {editForm?.id === account.id ? (
                         <div className="p-5 space-y-4">
-                          <p className="text-sm font-semibold">Edit Account</p>
+                          <p className="text-sm font-semibold flex items-center gap-1.5"><PencilSimple className="h-4 w-4" /> Edit Account</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                               <Label className="text-xs">Account Name</Label>
@@ -530,7 +498,7 @@ export default function Settings() {
                             {!account.isDefault && (
                               <button onClick={() => updateAccount(account.id, { isDefault: true })} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-colors">Set default</button>
                             )}
-                            <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-colors">Edit</button>
+                            <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-colors flex items-center gap-1"><PencilSimple className="h-3.5 w-3.5" /> Edit</button>
                             <button onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1} className="text-xs text-destructive hover:text-destructive/80 px-2 py-1 rounded hover:bg-destructive/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Delete</button>
                           </div>
                         </div>
@@ -616,7 +584,7 @@ export default function Settings() {
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
-                    { label: 'Total P&L', value: formatCurrency(stats.totalPnL, true), color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, icon: stats.totalPnL >= 0 ? TrendingUp : TrendingDown },
+                    { label: 'Total P&L', value: formatCurrency(stats.totalPnL, true), color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, icon: stats.totalPnL >= 0 ? TrendUp : TrendDown },
                     { label: 'Win Rate', value: `${stats.winRate.toFixed(1)}%`, sub: `${stats.wins}W / ${stats.losses}L`, color: stats.winRate >= 50 ? themeColors.profit : themeColors.loss },
                     { label: 'Profit Factor', value: stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2), sub: stats.profitFactor > 1 ? 'Profitable' : stats.profitFactor === 0 ? 'No data' : 'Unprofitable', color: stats.profitFactor > 1 ? themeColors.profit : themeColors.loss },
                     { label: 'Streak', value: `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? 'Wins' : stats.currentStreak < 0 ? 'Losses' : 'N/A'}`, sub: `Max: ${stats.maxWinStreak}W / ${stats.maxLossStreak}L`, color: stats.currentStreak > 0 ? themeColors.profit : stats.currentStreak < 0 ? themeColors.loss : undefined },
@@ -782,11 +750,11 @@ export default function Settings() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" onClick={exportData}>
-                        <Download className="mr-2 h-3.5 w-3.5" />
+                        <DownloadSimple className="mr-2 h-3.5 w-3.5" />
                         Export Data
                       </Button>
 <Button variant="outline" size="sm" onClick={() => document.getElementById('import-data')?.click()}>
-                        <Upload className="mr-2 h-3.5 w-3.5" />
+                        <UploadSimple className="mr-2 h-3.5 w-3.5" />
                         Import Data
                       </Button>
                       <input id="import-data" type="file" accept=".json" className="hidden" onChange={importData} />
@@ -930,8 +898,8 @@ export default function Settings() {
                         <p className="text-sm font-medium">Cloud Sync</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Your trades sync automatically across all devices</p>
                       </div>
-                      <div className="flex items-center gap-2.5">
-                        <div className={`h-2 w-2 rounded-full shrink-0${syncStatus === 'syncing' ? ' animate-pulse' : ''}`} style={{ backgroundColor: syncStatus === 'synced' ? '#22c55e' : syncStatus === 'syncing' ? '#f59e0b' : syncStatus === 'error' ? '#ef4444' : 'hsl(var(--muted-foreground) / 0.4)' }} />
+                      <div className="flex items-start gap-2.5">
+                        <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0${syncStatus === 'syncing' ? ' animate-pulse' : ''}`} style={{ backgroundColor: syncStatus === 'synced' ? '#22c55e' : syncStatus === 'syncing' ? '#f59e0b' : syncStatus === 'error' ? '#ef4444' : 'hsl(var(--muted-foreground) / 0.4)' }} />
                         <div>
                           <p className="text-sm font-medium capitalize">{syncStatus === 'idle' ? 'Not connected' : syncStatus}</p>
                           {lastSyncTime && <p className="text-xs text-muted-foreground">Last synced {new Date(lastSyncTime).toLocaleTimeString()}</p>}
@@ -949,8 +917,7 @@ export default function Settings() {
                 </div>
               </section>
 
-            </div>{/* end scrollable content */}
-          </div>
+            </div>
         </div>
 
         <AppFooter />
@@ -971,20 +938,12 @@ export default function Settings() {
       </Dialog>
 
       {/* Delete My Account Confirmation Dialog */}
-      <Dialog open={showDeleteAccountConfirm} onOpenChange={(open) => { if (!deletingAccount) setShowDeleteAccountConfirm(open); }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Delete Your Account?</DialogTitle>
-            <DialogDescription>This will permanently delete your account, all local and cloud data, and cancel any active subscription. You will be signed out and this cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 mt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowDeleteAccountConfirm(false)} disabled={deletingAccount}>Cancel</Button>
-            <Button variant="destructive" className="flex-1" onClick={deleteMyAccount} disabled={deletingAccount}>
-              {deletingAccount ? 'Deleting...' : 'Delete My Account'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ExitSurveyDialog
+        open={showDeleteAccountConfirm}
+        onOpenChange={(open) => { if (!deletingAccount) setShowDeleteAccountConfirm(open); }}
+        onConfirmDelete={deleteMyAccount}
+        deleting={deletingAccount}
+      />
 
       {/* Delete Account Confirmation Dialog */}
       <Dialog open={!!deleteAccountId} onOpenChange={(open) => { if (!open) setDeleteAccountId(null); }}>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cookie, X, Shield, ChartBar, Settings2 } from 'lucide-react';
+import { Cookie, X, Shield, ChartBar, GearSix } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -88,7 +88,7 @@ export const CookieConsent = () => {
                           <span className="text-muted-foreground">Usage insights</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Settings2 className="w-3.5 h-3.5 text-purple-500" />
+                          <GearSix className="w-3.5 h-3.5 text-purple-500" />
                           <span className="font-medium">Functional</span>
                           <span className="text-muted-foreground">Enhanced features</span>
                         </div>

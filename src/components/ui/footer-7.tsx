@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { XIcon } from './brand-icons';
-import { ArrowUp } from "lucide-react";
+import { ArrowUp } from '@phosphor-icons/react';
 import { FeedbackButton } from './feedback-button';
 import { motion } from "framer-motion";
 

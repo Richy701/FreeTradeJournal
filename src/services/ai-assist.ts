@@ -16,6 +16,7 @@ export interface AIAssistRequest {
 export interface AIAssistResponse {
   result: string;
   usage: { used: number; limit: number; remaining: number };
+  freeUsage?: { used: number; limit: number; remaining: number };
 }
 
 export async function requestAIAssist(request: AIAssistRequest): Promise<AIAssistResponse> {

@@ -3,7 +3,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendUp, TrendDown } from '@phosphor-icons/react'
 import { Link } from "react-router-dom"
 import {
   Tooltip,
@@ -141,7 +141,7 @@ export function SectionCards() {
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                   style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}
                 >
-                  {pnlPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {pnlPositive ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                   {pnlPositive ? '+' : '-'}{formatPercentage(pnlPct)}
                 </div>
               </TooltipTrigger>
@@ -318,7 +318,7 @@ export function SectionCards() {
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                   style={{ color: pfGood ? themeColors.profit : themeColors.loss }}
                 >
-                  {pfGood ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {pfGood ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                   {pfLabel}
                 </div>
               </TooltipTrigger>

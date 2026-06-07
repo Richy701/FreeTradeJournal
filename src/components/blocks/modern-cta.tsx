@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { 
   ArrowRight, 
-  TrendingUp, 
+  TrendUp, 
   Star,
   Users,
-  CheckCircle2,
-  Sparkles 
-} from 'lucide-react';
+  CheckCircle,
+  Sparkle 
+} from '@phosphor-icons/react';
 
 export default function ModernCTA() {
   const floatingVariants = {
@@ -23,7 +23,7 @@ export default function ModernCTA() {
 
   const stats = [
     { icon: Users, value: "10K+", label: "Active Traders" },
-    { icon: TrendingUp, value: "94%", label: "Success Rate" },
+    { icon: TrendUp, value: "94%", label: "Success Rate" },
     { icon: Star, value: "4.9", label: "User Rating" },
   ];
 
@@ -45,7 +45,7 @@ export default function ModernCTA() {
             transition={{ duration: 0.6 }}
           >
             <Badge variant="outline" className="mb-6 text-sm px-4 py-2 bg-amber-500/10 border-amber-500/20">
-              <Sparkles className="w-4 h-4 mr-2" />
+              <Sparkle className="w-4 h-4 mr-2" />
               Always Free
             </Badge>
             <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-foreground to-amber-500 bg-clip-text text-transparent">
@@ -109,19 +109,19 @@ export default function ModernCTA() {
           transition={{ duration: 0.6, delay: 0.6 }}
         >
           <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
-            <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
+            <CheckCircle className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">No Setup Required</h3>
             <p className="text-muted-foreground">Start logging trades immediately with our intuitive interface</p>
           </Card>
           
           <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
-            <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
+            <CheckCircle className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">100% Free Forever</h3>
             <p className="text-muted-foreground">All core features available at no cost, no premium tiers or hidden fees</p>
           </Card>
           
           <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-amber-500/20 hover:border-amber-500/40 transition-[transform,box-shadow,opacity] duration-300 hover:shadow-lg">
-            <CheckCircle2 className="w-8 h-8 text-green-500 mb-4" />
+            <CheckCircle className="w-8 h-8 text-green-500 mb-4" />
             <h3 className="font-bold text-lg mb-2">Bank-Level Security</h3>
             <p className="text-muted-foreground">Your trading data is encrypted and stored securely</p>
           </Card>
@@ -133,7 +133,7 @@ export default function ModernCTA() {
           animate="animate"
           className="absolute top-10 right-10 opacity-20"
         >
-          <TrendingUp className="w-16 h-16 text-amber-500" />
+          <TrendUp className="w-16 h-16 text-amber-500" />
         </motion.div>
         
         <motion.div 

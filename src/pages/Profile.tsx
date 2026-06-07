@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Check, Mail, Calendar, Shield, Pencil, LogOut } from 'lucide-react';
+import { Camera, Check, Envelope, Calendar, Shield, Pencil, SignOut } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -140,7 +140,7 @@ export default function Profile() {
 
   const infoRows = [
     {
-      icon: Mail,
+      icon: Envelope,
       label: 'Email',
       value: user.email || '—',
       badge: user.emailVerified ? { text: 'Verified', className: 'text-emerald-600 bg-emerald-500/10' } : { text: 'Unverified', className: 'text-red-500 bg-red-500/10' },
@@ -271,7 +271,7 @@ export default function Profile() {
 
                   {/* Upload */}
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Upload photo</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">UploadSimple photo</p>
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors w-full"
@@ -428,7 +428,7 @@ export default function Profile() {
               className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-destructive/5 transition-colors group"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
-                <LogOut className="h-4 w-4 text-destructive" aria-hidden="true" />
+                <SignOut className="h-4 w-4 text-destructive" aria-hidden="true" />
               </div>
               <span className="flex-1 text-sm font-medium text-destructive">Sign out</span>
             </button>

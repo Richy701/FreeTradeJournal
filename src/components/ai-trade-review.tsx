@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Brain, Loader2, X } from 'lucide-react';
+import { Brain, SpinnerGap, X } from '@phosphor-icons/react';
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
+import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
+import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import { getAICache, setAICache } from '@/utils/ai-cache';
 import DOMPurify from 'dompurify';
 
@@ -21,6 +23,7 @@ interface Trade {
   strategy?: string;
   riskReward?: number;
   notes?: string;
+  emotions?: string;
 }
 
 interface AITradeReviewProps {
@@ -49,8 +52,8 @@ function renderReviewMarkdown(md: string): string {
 
 export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeReviewProps) {
   const { themeColors, alpha } = useThemePresets();
-  const { isPro } = useProStatus();
-  const [loading, setLoading] = useState(false);
+  const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const [review, setReview] = useState<string | null>(null);
 
   const cacheKey = `ftj-ai-review-${trade.id}`;
@@ -59,16 +62,18 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
     const cached = getAICache<string>(cacheKey, CACHE_TTL);
     if (cached) {
       setReview(cached);
-    } else if (isPro) {
+    } else if (hasAIAccess) {
       fetchReview();
     }
   }, [trade.id]);
 
+  useEffect(() => {
+    if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
+  }, [meta]);
+
   const fetchReview = async () => {
-    setLoading(true);
     try {
-      const { requestAIAssist } = await import('@/services/ai-assist');
-      const response = await requestAIAssist({
+      const result = await startStream('assist', {
         type: 'trade_review',
         payload: {
           symbol: trade.symbol,
@@ -82,6 +87,7 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
           strategy: trade.strategy,
           riskReward: trade.riskReward,
           notes: trade.notes,
+          emotions: trade.emotions,
           recentTrades: (surroundingTrades || []).slice(0, 5).map(t => ({
             symbol: t.symbol,
             side: t.side,
@@ -91,17 +97,15 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
         },
       });
 
-      setReview(response.result);
-      setAICache(cacheKey, response.result);
+      setReview(result);
+      setAICache(cacheKey, result);
       trackEvent('ai_trade_review_used');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to review trade');
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (!isPro) {
+  if (!hasAIAccess) {
     return (
       <div className="p-4 text-center text-sm text-muted-foreground">
         AI Trade Review is a Pro feature.{' '}
@@ -109,6 +113,8 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
       </div>
     );
   }
+
+  const displayText = isStreaming ? streamText : review;
 
   return (
     <div
@@ -123,22 +129,34 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             AI Review
           </span>
+          {isStreaming && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            </span>
+          )}
         </div>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
           <X className="h-3.5 w-3.5" />
         </Button>
       </div>
 
-      {loading ? (
+      {isStreaming && !streamText ? (
         <div className="flex items-center gap-2 py-6 justify-center">
-          <Loader2 className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
+          <SpinnerGap className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
           <span className="text-sm text-muted-foreground">Reviewing trade...</span>
         </div>
-      ) : review ? (
-        <div
-          className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h4]:text-foreground"
-          dangerouslySetInnerHTML={{ __html: renderReviewMarkdown(review) }}
-        />
+      ) : displayText ? (
+        <>
+          <div
+            className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h4]:text-foreground"
+            dangerouslySetInnerHTML={{ __html: renderReviewMarkdown(displayText) }}
+          />
+          {!isStreaming && (
+            <div className="mt-3 pt-2 border-t border-border/50">
+              <AIFeedback feature="AI Trade Review" responseId={trade?.id} />
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-4">
           <Button size="sm" onClick={fetchReview} style={{ backgroundColor: themeColors.primary }}>

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Brain, Loader2, PenLine, X } from 'lucide-react';
+import { Brain, SpinnerGap, PenNib, X } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { AIFeedback } from '@/components/ui/ai-feedback';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
@@ -30,14 +31,14 @@ const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
   const { themeColors, alpha } = useThemePresets();
-  const { isPro } = useProStatus();
+  const { hasAIAccess, updateFreeAiQuota } = useProStatus();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [prompts, setPrompts] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!trade || !isPro) return;
+    if (!trade || !hasAIAccess) return;
 
     const cacheKey = `ftj-ai-prompts-${trade.id}`;
     const cached = getAICache<string>(cacheKey, CACHE_TTL);
@@ -46,7 +47,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
     } else {
       fetchPrompts();
     }
-  }, [trade?.id, isPro]);
+  }, [trade?.id, hasAIAccess]);
 
   const fetchPrompts = async () => {
     if (!trade) return;
@@ -69,6 +70,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
         },
       });
 
+      if (response.freeUsage) updateFreeAiQuota(response.freeUsage);
       setPrompts(response.result);
       setAICache(`ftj-ai-prompts-${trade.id}`, response.result);
       setError(null);
@@ -111,7 +113,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
           </span>
         </div>
 
-        {!isPro ? (
+        {!hasAIAccess ? (
           <div className="text-center py-4 space-y-2">
             <p className="text-sm text-muted-foreground">AI journal prompts are a Pro feature.</p>
             <Button variant="outline" size="sm" onClick={() => navigate('/pricing')}>
@@ -120,7 +122,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
           </div>
         ) : loading ? (
           <div className="flex flex-col items-center py-8 gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" style={{ color: themeColors.primary }} />
+            <SpinnerGap className="h-5 w-5 animate-spin" style={{ color: themeColors.primary }} />
             <p className="text-sm text-muted-foreground">Generating prompts...</p>
           </div>
         ) : error ? (
@@ -149,6 +151,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
                 </div>
               ))}
             </div>
+            <AIFeedback feature="AI Journal Prompts" className="pt-1" />
           </div>
         ) : null}
 
@@ -162,7 +165,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
             className="flex-1"
             style={{ backgroundColor: themeColors.primary }}
           >
-            <PenLine className="mr-2 h-4 w-4" />
+            <PenNib className="mr-2 h-4 w-4" />
             Write Entry
           </Button>
         </div>

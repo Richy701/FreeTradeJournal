@@ -47,7 +47,7 @@ const DEFAULT_FAQS: FAQ[] = [
     },
     {
       question: "What's included in the Pro plan?",
-      answer: "AI Trading Coach, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, cloud sync across devices, unlimited data exports, priority email support, and early access to new features. Choose Monthly ($12.99/mo), Yearly ($99.99/yr — save 36%), or Lifetime ($249 one-time)."
+      answer: "Coach FTJ, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, cloud sync across devices, unlimited data exports, priority email support, and early access to new features. Choose Monthly ($12.99/mo), Yearly ($99.99/yr — save 36%), or Lifetime ($249 one-time)."
     },
     {
       question: "Can I see what the app looks like before signing up?",

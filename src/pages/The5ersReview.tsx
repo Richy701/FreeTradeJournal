@@ -7,7 +7,7 @@ import { footerConfig } from '@/components/ui/footer-config';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowRight, ArrowSquareOut } from '@phosphor-icons/react';
 
 const PROS = [
   { title: 'Instant funding', desc: 'Skip the evaluation entirely and start trading a live funded account from day one.' },
@@ -142,7 +142,7 @@ export default function The5ersReview() {
               <a href="https://www.the5ers.com/?afmc=1buq" target="_blank" rel="noopener noreferrer sponsored">
                 <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-8 py-2.5 rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
                   Visit The5%ers
-                  <ExternalLink className="ml-2 h-4 w-4" />
+                  <ArrowSquareOut className="ml-2 h-4 w-4" />
                 </Button>
               </a>
             </div>

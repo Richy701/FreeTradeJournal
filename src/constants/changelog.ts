@@ -15,6 +15,43 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.14.0',
+    date: '2026-06-08',
+    summary: 'Full visual redesign of PropTracker, Trade Ideas, and Settings pages. Referral threshold lowered to 3 with smart nudges after winning trades. Icon migration cleanup.',
+    items: [
+      {
+        type: 'improved',
+        text: 'PropTracker visual redesign',
+        description: 'Stat cards now use tinted backgrounds with watermark icons. Success Rate Dashboard uses individual bordered cards with progress bars. Charts are bigger and easier to read. Account cards have a cleaner look with tinted stat cells.',
+      },
+      {
+        type: 'improved',
+        text: 'Trade Ideas page redesign',
+        description: 'Direction Split card now centers the donut chart with stat panels and progress bars below. Trader Profile card has a centered radar chart with labeled stat panels. Both cards use equal-height layouts with no dead space.',
+      },
+      {
+        type: 'improved',
+        text: 'Settings page navigation',
+        description: 'Replaced the sidebar navigation with a single horizontal sticky tab bar that works the same on mobile and desktop. Wider layout to make better use of screen space.',
+      },
+      {
+        type: 'improved',
+        text: 'AI Trade Analysis empty state',
+        description: 'The empty state now shows feature preview pills so you know what to expect before logging enough trades.',
+      },
+      {
+        type: 'improved',
+        text: 'Referral program',
+        description: 'Lowered the threshold from 5 to 3 friends. After logging a winning trade, you now get a contextual nudge to share your referral link. Dismissing the banner hides it for 7 days instead of permanently.',
+      },
+      {
+        type: 'fixed',
+        text: 'Icon rendering bugs',
+        description: 'Fixed several places where icon component names appeared as literal text instead of rendering as icons, including the Settings edit button, PropTracker account dialog, feedback button, and Journal page.',
+      },
+    ],
+  },
+  {
     version: '2.13.0',
     date: '2026-06-05',
     summary: 'Smarter PropTracker AI with score cards, redesigned Goals page, referral program on the dashboard, and critical bug fixes.',
@@ -22,7 +59,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Referral banner on Dashboard',
-        description: 'Invite 5 friends who sign up and log a trade to earn 14 days of Pro free. Your referral link, progress bar, and share buttons are now front and center on the dashboard.',
+        description: 'Invite 3 friends who sign up and log a trade to earn 14 days of Pro free. Your referral link, progress bar, and share buttons are now front and center on the dashboard.',
       },
       {
         type: 'improved',
@@ -349,8 +386,8 @@ export const changelog: ChangelogEntry[] = [
     items: [
       {
         type: 'new',
-        text: 'AI Trading Coach',
-        description: 'Personalised coaching tips based on your trading patterns, win rate, streaks, and performance metrics. Updates daily with fresh insights.',
+        text: 'Coach FTJ',
+        description: 'Your personal AI trading coach. Personalised coaching tips based on your trading patterns, win rate, streaks, and performance metrics. Updates daily with fresh insights.',
       },
       {
         type: 'new',
@@ -597,8 +634,8 @@ export const changelog: ChangelogEntry[] = [
     items: [
       {
         type: 'new',
-        text: 'Trading Coach AI for personalized insights',
-        description: 'The Trading Coach analyzes your trade history and provides actionable feedback — identifying patterns in your wins and losses, suggesting risk adjustments, and highlighting your best setups.',
+        text: 'Coach FTJ for personalized insights',
+        description: 'Coach FTJ analyzes your trade history and provides actionable feedback — identifying patterns in your wins and losses, suggesting risk adjustments, and highlighting your best setups.',
       },
       {
         type: 'new',

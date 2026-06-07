@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
-import { FileDown, Loader2 } from 'lucide-react';
+import { FileArrowDown, SpinnerGap } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -204,12 +204,12 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
             >
               {generating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <FileDown className="mr-2 h-4 w-4" />
+                  <FileArrowDown className="mr-2 h-4 w-4" />
                   Download PDF
                 </>
               )}

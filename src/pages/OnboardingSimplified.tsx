@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, Check, Rocket, ChevronLeft, Wallet, Monitor, Building2, FileText, Sprout, BarChart2, Zap, Trophy, BarChart3, BookOpen, Target } from 'lucide-react';
+import { ArrowRight, Check, Rocket, CaretLeft, Wallet, Monitor, Buildings, FileText, Plant, ChartBar, Lightning, Trophy, BookOpen, Target } from '@phosphor-icons/react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,16 +33,16 @@ const STEPS = [
 ];
 
 const EXPERIENCE_OPTIONS = [
-  { value: 'beginner', icon: Sprout, label: 'Just Starting Out', sub: 'Under 1 year' },
-  { value: 'developing', icon: BarChart2, label: 'Building Skills', sub: '1-3 years' },
-  { value: 'experienced', icon: Zap, label: 'Battle Tested', sub: '3-5 years' },
+  { value: 'beginner', icon: Plant, label: 'Just Starting Out', sub: 'Under 1 year' },
+  { value: 'developing', icon: ChartBar, label: 'Building Skills', sub: '1-3 years' },
+  { value: 'experienced', icon: Lightning, label: 'Battle Tested', sub: '3-5 years' },
   { value: 'veteran', icon: Trophy, label: 'Veteran Trader', sub: '5+ years' },
 ];
 
 const ACCOUNT_TYPE_OPTIONS = [
   { value: 'live' as TradingAccount['type'], icon: Wallet, label: 'Live Account', sub: 'Real money' },
   { value: 'demo' as TradingAccount['type'], icon: Monitor, label: 'Demo Account', sub: 'Practice mode' },
-  { value: 'prop-firm' as TradingAccount['type'], icon: Building2, label: 'Prop Firm', sub: 'Funded account' },
+  { value: 'prop-firm' as TradingAccount['type'], icon: Buildings, label: 'Prop Firm', sub: 'Funded account' },
   { value: 'paper' as TradingAccount['type'], icon: FileText, label: 'Paper Trading', sub: 'Simulation' },
 ];
 
@@ -365,7 +365,7 @@ export default function OnboardingSimplified() {
 
               <motion.div variants={activeFadeUpItem} className="flex flex-col gap-2.5 max-w-xs mx-auto text-left">
                 {[
-                  { icon: BarChart3, text: 'Log trades and track performance' },
+                  { icon: ChartBar, text: 'Log trades and track performance' },
                   { icon: BookOpen, text: 'Journal your process and mindset' },
                   { icon: Target, text: 'Set goals and manage risk' },
                 ].map((item) => (
@@ -760,7 +760,7 @@ export default function OnboardingSimplified() {
               className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
               aria-label="Go back"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <CaretLeft className="h-5 w-5" />
             </button>
           )}
           {currentStep > 1 && currentStep < 5 && (

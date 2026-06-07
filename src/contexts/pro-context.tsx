@@ -5,11 +5,20 @@ import { redirectToCheckout } from '@/lib/stripe';
 import { UserStorage } from '@/utils/user-storage';
 import type { SubscriptionInfo } from '@/types/subscription';
 
+export interface FreeAIQuota {
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
 interface ProContextType {
   isPro: boolean;
   isLoading: boolean;
   subscription: SubscriptionInfo | null;
   openCheckout: (priceId: string) => void;
+  hasAIAccess: boolean;
+  freeAiQuota: FreeAIQuota | null;
+  updateFreeAiQuota: (quota: FreeAIQuota) => void;
 }
 
 const ProContext = createContext<ProContextType | undefined>(undefined);
@@ -23,6 +32,8 @@ export function useProStatus() {
 }
 
 const PRO_CACHE_KEY = 'proStatus';
+const FREE_AI_CACHE_KEY = 'freeAiQuota';
+const FREE_AI_MONTHLY_LIMIT = 3;
 
 function isActivePro(sub: SubscriptionInfo | null): boolean {
   if (!sub) return false;
@@ -54,6 +65,30 @@ export function ProProvider({ children }: ProProviderProps) {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedSub);
   const [referralProExpiresAt, setReferralProExpiresAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(!cachedSub && !!uid && !isDemo);
+
+  const [freeAiQuota, setFreeAiQuota] = useState<FreeAIQuota | null>(() => {
+    if (!uid) return null;
+    const cached = UserStorage.getItem(uid, FREE_AI_CACHE_KEY);
+    if (!cached) return { used: 0, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT };
+    try {
+      const parsed = JSON.parse(cached);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      if (parsed.month !== currentMonth) {
+        return { used: 0, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT };
+      }
+      return parsed.quota as FreeAIQuota;
+    } catch {
+      return { used: 0, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT };
+    }
+  });
+
+  const updateFreeAiQuota = useCallback((quota: FreeAIQuota) => {
+    setFreeAiQuota(quota);
+    if (uid) {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      UserStorage.setItem(uid, FREE_AI_CACHE_KEY, JSON.stringify({ month: currentMonth, quota }));
+    }
+  }, [uid]);
 
   // Firestore real-time listener
   useEffect(() => {
@@ -126,12 +161,18 @@ export function ProProvider({ children }: ProProviderProps) {
 
   const hasReferralPro = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
 
+  const isPro = isDemo || isActivePro(subscription) || hasReferralPro;
+  const hasAIAccess = isPro || (freeAiQuota !== null && freeAiQuota.remaining > 0);
+
   const value: ProContextType = useMemo(() => ({
-    isPro: isDemo || isActivePro(subscription) || hasReferralPro,
+    isPro,
     isLoading,
     subscription,
     openCheckout: handleOpenCheckout,
-  }), [isDemo, subscription, isLoading, handleOpenCheckout, hasReferralPro]);
+    hasAIAccess,
+    freeAiQuota: isPro ? null : freeAiQuota,
+    updateFreeAiQuota,
+  }), [isPro, isLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

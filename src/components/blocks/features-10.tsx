@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { BarChart3, TrendingUp } from 'lucide-react'
+import { ChartBar, TrendUp } from '@phosphor-icons/react'
 import { type ReactNode } from 'react'
-import type { LucideIcon } from 'lucide-react'
+import type { Icon } from '@phosphor-icons/react'
 import { motion } from 'framer-motion'
 
 const containerVariants = {
@@ -55,7 +55,7 @@ export function Features() {
                         <FeatureCard>
                             <CardHeader className="pb-3">
                                 <CardHeading
-                                    icon={TrendingUp}
+                                    icon={TrendUp}
                                     title="Multi-Market Trade Logging"
                                     description="Log trades across forex, futures, and indices with automatic P&L calculations, spread tracking, and commission accounting."
                                 />
@@ -84,7 +84,7 @@ export function Features() {
                         <FeatureCard>
                             <CardHeader className="pb-3">
                                 <CardHeading
-                                    icon={BarChart3}
+                                    icon={ChartBar}
                                     title="Performance Metrics Dashboard"
                                     description="Real-time win rate, profit factor, and equity curve visualization with calendar heatmaps showing daily performance."
                                 />
@@ -148,7 +148,7 @@ const CardDecorator = () => (
 )
 
 interface CardHeadingProps {
-    icon: LucideIcon
+    icon: Icon
     title: string
     description: string
 }

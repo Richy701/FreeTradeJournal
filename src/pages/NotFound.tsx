@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home } from 'lucide-react';
+import { House } from '@phosphor-icons/react';
 
 export default function NotFound() {
   return (
@@ -13,8 +13,8 @@ export default function NotFound() {
         </p>
         <Button asChild size="lg">
           <Link to="/">
-            <Home className="mr-2 h-4 w-4" />
-            Back to Home
+            <House className="mr-2 h-4 w-4" />
+            Back to House
           </Link>
         </Button>
       </div>

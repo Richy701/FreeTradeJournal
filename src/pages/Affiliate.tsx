@@ -9,7 +9,7 @@ import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { FAQSection } from '@/components/blocks/faq-section';
-import { ExternalLink, Copy, Check } from 'lucide-react';
+import { ArrowSquareOut, Copy, Check } from '@phosphor-icons/react';
 
 const AFFILIATE_FAQS = [
   {
@@ -208,7 +208,7 @@ function FirmRow({ firm }: { firm: PropFirm }) {
               >
                 <Button className="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
                   Visit {firm.name}
-                  <ExternalLink className="ml-2 h-4 w-4" />
+                  <ArrowSquareOut className="ml-2 h-4 w-4" />
                 </Button>
               </a>
             ) : (

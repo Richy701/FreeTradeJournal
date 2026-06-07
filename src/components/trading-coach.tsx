@@ -1,13 +1,17 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AIFeedback } from '@/components/ui/ai-feedback'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { Briefcase, Lightbulb, LineChart, AlertTriangle, Trophy, TrendingUp, TrendingDown, Brain, HeartPulse, Clock, Scale, Flame, Snowflake, GraduationCap, PieChart, Check, type LucideIcon } from 'lucide-react'
+import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Heartbeat, Clock, Scales, Fire, Snowflake, GraduationCap, ChartPie, Check, ChatCircle, PaperPlaneTilt, X, type Icon } from '@phosphor-icons/react'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useProStatus } from '@/contexts/pro-context'
+import { useStreamingAI } from '@/hooks/use-streaming-ai'
+import { useUserStorage } from '@/utils/user-storage'
 import { getAICache, setAICache } from '@/utils/ai-cache'
-import { Loader2 } from 'lucide-react'
+import { SpinnerGap } from '@phosphor-icons/react'
+import DOMPurify from 'dompurify'
 
 interface Trade {
   pnl: number
@@ -21,6 +25,196 @@ interface Trade {
   entryPrice?: number
   exitPrice?: number
   notes?: string
+  emotions?: string
+}
+
+const NEGATIVE_EMOTIONS = new Set(['Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'])
+const POSITIVE_EMOTIONS = new Set(['Confident', 'Disciplined', 'Patient'])
+
+interface TiltScore {
+  score: number
+  label: string
+  color: string
+  factors: string[]
+}
+
+function computeTiltScore(trades: Trade[], themeColors: { profit: string; loss: string; primary: string }): TiltScore {
+  const factors: string[] = []
+  let score = 0
+
+  if (trades.length < 3) {
+    return { score: 0, label: 'Insufficient data', color: themeColors.primary, factors: [] }
+  }
+
+  const sorted = [...trades]
+    .filter(t => t.exitTime)
+    .sort((a, b) => new Date(b.exitTime!).getTime() - new Date(a.exitTime!).getTime())
+
+  if (sorted.length < 3) {
+    return { score: 0, label: 'Insufficient data', color: themeColors.primary, factors: [] }
+  }
+
+  // Factor 1: Consecutive recent losses (0-30 pts)
+  let streak = 0
+  for (const t of sorted) {
+    if (t.pnl < 0) streak++
+    else break
+  }
+  if (streak >= 2) {
+    const pts = Math.min(30, streak * 8)
+    score += pts
+    factors.push(`${streak} consecutive losses`)
+  }
+
+  // Factor 2: Negative emotions on recent trades (0-25 pts)
+  const recent = sorted.slice(0, 8)
+  let negCount = 0
+  let posCount = 0
+  for (const t of recent) {
+    if (t.emotions) {
+      const tags = t.emotions.split(',').map(e => e.trim())
+      for (const tag of tags) {
+        if (NEGATIVE_EMOTIONS.has(tag)) negCount++
+        if (POSITIVE_EMOTIONS.has(tag)) posCount++
+      }
+    }
+  }
+  if (negCount > 0) {
+    const pts = Math.min(25, negCount * 5)
+    score += pts
+    factors.push(`${negCount} negative emotion tags recently`)
+  }
+  if (posCount > 0) {
+    score = Math.max(0, score - posCount * 3)
+  }
+
+  // Factor 3: Rapid entries after losses - revenge trading signal (0-25 pts)
+  let rapidAfterLoss = 0
+  for (let i = 0; i < Math.min(sorted.length - 1, 6); i++) {
+    const curr = sorted[i]
+    const prev = sorted[i + 1]
+    if (prev.pnl < 0 && curr.entryTime && prev.exitTime) {
+      const gap = (new Date(curr.entryTime).getTime() - new Date(prev.exitTime!).getTime()) / 60000
+      if (gap >= 0 && gap < 10) {
+        rapidAfterLoss++
+      }
+    }
+  }
+  if (rapidAfterLoss > 0) {
+    const pts = Math.min(25, rapidAfterLoss * 10)
+    score += pts
+    factors.push(`${rapidAfterLoss} rapid entries after losses`)
+  }
+
+  // Factor 4: Increasing size after losses (0-20 pts)
+  let sizeEscalations = 0
+  for (let i = 0; i < Math.min(sorted.length - 1, 6); i++) {
+    const curr = sorted[i]
+    const prev = sorted[i + 1]
+    if (prev.pnl < 0 && curr.lotSize && prev.lotSize && curr.lotSize > prev.lotSize * 1.3) {
+      sizeEscalations++
+    }
+  }
+  if (sizeEscalations > 0) {
+    const pts = Math.min(20, sizeEscalations * 10)
+    score += pts
+    factors.push(`Position size increased after ${sizeEscalations} loss(es)`)
+  }
+
+  score = Math.min(100, Math.max(0, score))
+
+  let label: string
+  let color: string
+  if (score <= 20) {
+    label = 'Focused'
+    color = themeColors.profit
+  } else if (score <= 45) {
+    label = 'Steady'
+    color = themeColors.primary
+  } else if (score <= 65) {
+    label = 'Caution'
+    color = '#f59e0b'
+  } else {
+    label = 'On Tilt'
+    color = themeColors.loss
+  }
+
+  return { score, label, color, factors }
+}
+
+function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, opacity: string) => string }) {
+  const [showFactors, setShowFactors] = useState(false)
+  const pct = Math.max(2, tilt.score)
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Heartbeat className="h-4 w-4" style={{ color: tilt.color }} />
+          <span className="text-sm font-semibold">Tilt Meter</span>
+        </div>
+        <button
+          onClick={() => setShowFactors(!showFactors)}
+          className="flex items-center gap-1.5"
+        >
+          <span
+            className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={{
+              backgroundColor: alpha(tilt.color, '18'),
+              color: tilt.color,
+            }}
+          >
+            {tilt.label}
+          </span>
+        </button>
+      </div>
+      <div className="h-2 rounded-full bg-muted/50 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{
+            width: `${pct}%`,
+            backgroundColor: tilt.color,
+          }}
+        />
+      </div>
+      {showFactors && tilt.factors.length > 0 && (
+        <ul className="text-xs text-muted-foreground space-y-0.5 pt-1">
+          {tilt.factors.map((f, i) => (
+            <li key={i} className="flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full shrink-0" style={{ backgroundColor: tilt.color }} />
+              {f}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+const CHAT_CACHE_KEY = 'ftj-coach-chat-history'
+const CHAT_SUGGESTIONS = [
+  "Why am I losing money?",
+  "What's my best setup?",
+  "Should I stop trading today?",
+  "How can I improve my win rate?",
+]
+
+function renderChatMarkdown(md: string): string {
+  const html = md
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc">$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal">$2</li>')
+    .replace(/\n\n/g, '<br/>')
+    .replace(/\n/g, ' ')
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['strong', 'li', 'br'],
+    ALLOWED_ATTR: ['class'],
+  })
 }
 
 const TIP_SEVERITY_ORDER: Record<string, number> = {
@@ -38,7 +232,7 @@ const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
 export function TradingCoach() {
   const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
-  const { isPro } = useProStatus()
+  const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus()
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
@@ -54,6 +248,20 @@ export function TradingCoach() {
   })
   const cardRef = useRef<HTMLDivElement>(null)
 
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const stored = localStorage.getItem(CHAT_CACHE_KEY)
+      return stored ? JSON.parse(stored) : []
+    } catch { return [] }
+  })
+  const [chatInput, setChatInput] = useState('')
+  const { streamText, isStreaming: chatStreaming, startStream, meta: chatMeta } = useStreamingAI()
+  const chatEndRef = useRef<HTMLDivElement>(null)
+  const chatInputRef = useRef<HTMLInputElement>(null)
+  const userStorage = useUserStorage()
+
   // Get trades from demo data or localStorage
   const trades = useMemo(() => {
     const tradesData = getTrades()
@@ -63,6 +271,99 @@ export function TradingCoach() {
       entryTime: trade.entryTime ? new Date(trade.entryTime) : undefined
     }))
   }, [getTrades])
+
+  const tiltScore = useMemo(() => computeTiltScore(trades, themeColors), [trades, themeColors])
+
+  // Persist chat history
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      try {
+        localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify(chatMessages.slice(-20)))
+      } catch {}
+    }
+  }, [chatMessages])
+
+  // Scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages, streamText])
+
+  // Update free quota from chat responses
+  useEffect(() => {
+    if (chatMeta?.freeUsage) updateFreeAiQuota(chatMeta.freeUsage)
+  }, [chatMeta])
+
+  const buildChatContext = useCallback(() => {
+    const wins = trades.filter((t: Trade) => t.pnl > 0).length
+    const totalPnl = trades.reduce((s: number, t: Trade) => s + t.pnl, 0)
+    const avgPnl = trades.length > 0 ? totalPnl / trades.length : 0
+
+    let consLosses = 0
+    for (const t of [...trades].reverse()) {
+      if (t.pnl < 0) consLosses++
+      else break
+    }
+
+    const goalsRaw = userStorage.getItem('tradingGoals')
+    const rulesRaw = userStorage.getItem('riskRules')
+    let goals: any[] = []
+    let rules: any[] = []
+    try { goals = goalsRaw ? JSON.parse(goalsRaw) : [] } catch {}
+    try { rules = rulesRaw ? JSON.parse(rulesRaw) : [] } catch {}
+
+    return {
+      stats: {
+        winRate: trades.length > 0 ? (wins / trades.length) * 100 : 0,
+        totalPnl,
+        avgPnl,
+        tradeCount: trades.length,
+        consecutiveLosses: consLosses,
+      },
+      recentTrades: trades.slice(-10).map((t: Trade) => ({
+        symbol: t.symbol,
+        side: t.side || 'long',
+        pnl: t.pnl,
+        holdMinutes: t.entryTime && t.exitTime
+          ? Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000)
+          : null,
+        emotions: t.emotions || null,
+      })),
+      goals: goals.map((g: any) => ({ type: g.type, period: g.period, target: g.target, current: g.current })),
+      rules: rules.map((r: any) => ({ type: r.type, value: r.value })),
+      tiltFactors: tiltScore.factors,
+    }
+  }, [trades, userStorage, tiltScore.factors])
+
+  const sendChatMessage = useCallback(async (message: string) => {
+    if (!message.trim() || chatStreaming) return
+
+    const userMsg: ChatMessage = { role: 'user', content: message.trim() }
+    setChatMessages(prev => [...prev, userMsg])
+    setChatInput('')
+
+    try {
+      const context = buildChatContext()
+      const result = await startStream('assist', {
+        type: 'coach_chat',
+        payload: {
+          message: userMsg.content,
+          history: chatMessages.slice(-6),
+          ...context,
+        },
+      })
+
+      if (result) {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: result }])
+      }
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I could not respond right now. Try again.' }])
+    }
+  }, [chatStreaming, chatMessages, buildChatContext, startStream])
+
+  const clearChat = useCallback(() => {
+    setChatMessages([])
+    localStorage.removeItem(CHAT_CACHE_KEY)
+  }, [])
 
   // Advanced pattern detection
   const detectTradingPatterns = (trades: Trade[]) => {
@@ -339,7 +640,7 @@ export function TradingCoach() {
   // Fetch AI coaching tips for Pro users
   const aiFetchedRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!isPro || trades.length < 3 || !metrics) return
+    if (!hasAIAccess || trades.length < 3 || !metrics) return
 
     // Check cache first
     const cached = getAICache<any[]>(AI_COACH_CACHE_KEY, AI_COACH_TTL)
@@ -398,6 +699,7 @@ export function TradingCoach() {
               holdMinutes: t.entryTime && t.exitTime
                 ? Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000)
                 : null,
+              emotions: t.emotions || null,
             })),
             winRate: (wins / trades.length) * 100,
             avgPnl,
@@ -410,6 +712,7 @@ export function TradingCoach() {
           },
         })
 
+        if (response.freeUsage) updateFreeAiQuota(response.freeUsage)
         const parsed = JSON.parse(response.result)
         if (Array.isArray(parsed)) {
           const tipsWithKeys = parsed.map((tip: any, i: number) => ({
@@ -430,7 +733,7 @@ export function TradingCoach() {
     }
 
     fetchAITips()
-  }, [isPro, trades.length, tradeFingerprint, metrics])
+  }, [hasAIAccess, trades.length, tradeFingerprint, metrics])
 
   // Generate smarter coaching tips based on advanced analysis
   const coachingTips = useMemo(() => {
@@ -442,7 +745,7 @@ export function TradingCoach() {
         {
           icon: Lightbulb,
           type: 'tip',
-          title: "Welcome to FreeTradeJournal!",
+          title: "Meet Coach FTJ",
           message: "Start logging your trades to unlock AI-powered insights about your trading psychology and patterns.",
           key: "welcome"
         },
@@ -450,11 +753,11 @@ export function TradingCoach() {
           icon: Brain,
           type: 'info',
           title: "Track Everything",
-          message: "Log entry/exit times, emotions, and notes. The AI coach learns from your patterns to provide personalized guidance.",
+          message: "Log entry/exit times, emotions, and notes. Coach FTJ learns from your patterns to provide personalized guidance.",
           key: "track"
         },
         {
-          icon: LineChart,
+          icon: ChartLineUp,
           type: 'tip',
           title: "Set Clear Goals",
           message: "Define your risk management rules. Professional traders typically risk 1-2% per trade with a minimum 1.5:1 R:R.",
@@ -466,7 +769,7 @@ export function TradingCoach() {
     // Pattern-based insights
     if (metrics.patterns.overtrading) {
       tips.push({
-        icon: Flame,
+        icon: Fire,
         type: 'critical',
         title: "Overtrading Detected!",
         message: "You're taking too many trades per day. Quality over quantity. Set a daily trade limit and stick to it.",
@@ -476,7 +779,7 @@ export function TradingCoach() {
 
     if (metrics.patterns.revengeTrading) {
       tips.push({
-        icon: HeartPulse,
+        icon: Heartbeat,
         type: 'critical',
         title: "Revenge Trading Pattern",
         message: "You're increasing position sizes after losses. Take a 30-minute break after any loss to reset emotionally.",
@@ -486,7 +789,7 @@ export function TradingCoach() {
 
     if (metrics.patterns.fomo) {
       tips.push({
-        icon: AlertTriangle,
+        icon: Warning,
         type: 'warning',
         title: "FOMO Trading Detected",
         message: "You're entering trades at extreme prices. Wait for pullbacks and use limit orders instead of market orders.",
@@ -496,7 +799,7 @@ export function TradingCoach() {
 
     if (metrics.patterns.positionSizingIssues) {
       tips.push({
-        icon: Scale,
+        icon: Scales,
         type: 'warning',
         title: "Inconsistent Position Sizing",
         message: "Your trade sizes vary too much. Use a fixed percentage risk model (e.g., 1% per trade) for consistency.",
@@ -506,7 +809,7 @@ export function TradingCoach() {
 
     if (metrics.patterns.emotionalTrading) {
       tips.push({
-        icon: HeartPulse,
+        icon: Heartbeat,
         type: 'critical',
         title: "Emotional Trading Detected",
         message: "Your performance drops after losses. Consider reducing position size by 50% after 2 consecutive losses.",
@@ -556,7 +859,7 @@ export function TradingCoach() {
       })
     } else if (metrics.profitFactor < 1.2) {
       tips.push({
-        icon: PieChart,
+        icon: ChartPie,
         type: 'warning',
         title: `Low Profit Factor: ${metrics.profitFactor.toFixed(2)}`,
         message: "Aim for a profit factor above 1.5. Focus on cutting losses quickly and letting winners run.",
@@ -566,7 +869,7 @@ export function TradingCoach() {
 
     if (metrics.maxDrawdown > Math.abs(metrics.totalPnL * 0.5)) {
       tips.push({
-        icon: TrendingDown,
+        icon: TrendDown,
         type: 'critical',
         title: "High Drawdown Risk",
         message: `Your max drawdown is ${metrics.maxDrawdown.toFixed(2)}. This is too high relative to profits. Reduce position sizes.`,
@@ -595,7 +898,7 @@ export function TradingCoach() {
     // Direction bias insights
     if (metrics.longWinRate > metrics.shortWinRate + 20) {
       tips.push({
-        icon: TrendingUp,
+        icon: TrendUp,
         type: 'info',
         title: "Long Bias Detected",
         message: `You're ${metrics.longWinRate.toFixed(0)}% profitable on longs vs ${metrics.shortWinRate.toFixed(0)}% on shorts. Consider focusing on long setups.`,
@@ -606,7 +909,7 @@ export function TradingCoach() {
     // Performance-based tips
     if (metrics.winRate < 40 && metrics.riskReward < 1.5) {
       tips.push({
-        icon: AlertTriangle,
+        icon: Warning,
         type: 'critical',
         title: "Unsustainable Strategy",
         message: `Low win rate (${metrics.winRate.toFixed(1)}%) with poor R:R (${metrics.riskReward.toFixed(2)}). You need either higher win rate OR better R:R to be profitable.`,
@@ -625,7 +928,7 @@ export function TradingCoach() {
     // Streak-based psychological insights
     if (metrics.streak.type === 'winning' && metrics.streak.count >= 5) {
       tips.push({
-        icon: Flame,
+        icon: Fire,
         type: 'warning',
         title: `Hot Streak: ${metrics.streak.count} Wins`,
         message: "Don't increase position size! Most traders blow up accounts after win streaks due to overconfidence.",
@@ -656,7 +959,7 @@ export function TradingCoach() {
     const lastThreeTrades = trades.slice(-3)
     if (lastThreeTrades.length === 3 && lastThreeTrades.every((t: Trade) => t.pnl < 0)) {
       tips.push({
-        icon: HeartPulse,
+        icon: Heartbeat,
         type: 'critical',
         title: "Tilt Warning",
         message: "3 losses in a row often lead to emotional decisions. Take a break, review your process, not the outcome.",
@@ -673,7 +976,7 @@ export function TradingCoach() {
       })
       if (volatileTrades.length / metrics.totalTrades > 0.6) {
         tips.push({
-          icon: LineChart,
+          icon: ChartLineUp,
           type: 'info',
           title: "High Volatility Trading",
           message: "You're trading in volatile conditions. Consider reducing position size by 30% to manage risk.",
@@ -729,7 +1032,7 @@ export function TradingCoach() {
   }, [metrics, trades])
 
   // Use AI tips for Pro users, client-side tips for free users
-  const baseTips = isPro && aiTips ? aiTips : coachingTips
+  const baseTips = hasAIAccess && aiTips ? aiTips : coachingTips
 
   // Filter out dismissed tips
   const visibleTips = useMemo(() => {
@@ -792,11 +1095,11 @@ export function TradingCoach() {
     }
   }
 
-  const getTipIcon = (type: string): LucideIcon => {
+  const getTipIcon = (type: string): Icon => {
     switch (type) {
       case 'success': return Trophy
-      case 'warning': return AlertTriangle
-      case 'critical': return Flame
+      case 'warning': return Warning
+      case 'critical': return Fire
       case 'action': return Brain
       case 'info': return Lightbulb
       default: return currentTip.icon || Lightbulb
@@ -833,7 +1136,7 @@ export function TradingCoach() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3 text-lg font-semibold">
-            <span>AI Trading Coach</span>
+            <span>Coach FTJ</span>
             {currentTip.type === 'critical' && (
               <span
                 className="px-2 py-1 text-xs font-bold rounded animate-pulse"
@@ -874,9 +1177,14 @@ export function TradingCoach() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
+        {trades.length >= 3 && (
+          <div className="mb-4 pb-4 border-b border-border/50">
+            <TiltMeter tilt={tiltScore} alpha={alpha} />
+          </div>
+        )}
         {aiLoading ? (
           <div className="flex items-center justify-center gap-2 py-6">
-            <Loader2 className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
+            <SpinnerGap className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
             <span className="text-sm text-muted-foreground">Loading AI coaching...</span>
           </div>
         ) : (
@@ -937,13 +1245,147 @@ export function TradingCoach() {
           </div>
         )}
 
+        {/* AI Feedback */}
+        {aiTips && (
+          <div className="mt-3 pt-3 border-t border-border/50 flex justify-center">
+            <AIFeedback feature="Coach FTJ" responseId={currentTip?.title} />
+          </div>
+        )}
+
         {/* Severity indicator for critical alerts */}
         {currentTip.type === 'critical' && (
           <div className="mt-3 pt-3 border-t" style={{ borderColor: alpha(themeColors.loss, '20') }}>
             <div className="flex items-center gap-2 text-xs" style={{ color: themeColors.loss }}>
-              <AlertTriangle className="h-3 w-3" />
+              <Warning className="h-3 w-3" />
               <span>Immediate action recommended</span>
             </div>
+          </div>
+        )}
+
+        {/* Ask Coach FTJ */}
+        {hasAIAccess && (
+          <div className="mt-4 pt-4 border-t border-border/50">
+            {!chatOpen ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => { setChatOpen(true); setTimeout(() => chatInputRef.current?.focus(), 100) }}
+              >
+                <ChatCircle className="mr-2 h-3.5 w-3.5" />
+                Ask Coach FTJ
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Chat</span>
+                  <div className="flex items-center gap-1">
+                    {chatMessages.length > 0 && (
+                      <button
+                        onClick={clearChat}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setChatOpen(false)}
+                      className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                      aria-label="Close chat"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages */}
+                <div className="max-h-64 overflow-y-auto space-y-2.5 scroll-smooth">
+                  {chatMessages.length === 0 && !chatStreaming && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground text-center">Ask anything about your trading</p>
+                      <div className="flex flex-wrap gap-1.5 justify-center">
+                        {CHAT_SUGGESTIONS.map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => sendChatMessage(s)}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {chatMessages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "text-sm leading-relaxed",
+                        msg.role === 'user'
+                          ? "text-right"
+                          : "[&_strong]:text-foreground [&_li]:py-0.5"
+                      )}
+                    >
+                      {msg.role === 'user' ? (
+                        <span
+                          className="inline-block px-3 py-1.5 rounded-lg text-sm"
+                          style={{
+                            backgroundColor: alpha(themeColors.primary, '15'),
+                            color: themeColors.primary,
+                          }}
+                        >
+                          {msg.content}
+                        </span>
+                      ) : (
+                        <div
+                          className="text-sm text-muted-foreground leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                  {chatStreaming && streamText && (
+                    <div className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_li]:py-0.5">
+                      <div dangerouslySetInnerHTML={{ __html: renderChatMarkdown(streamText) }} />
+                      <span className="inline-block h-3 w-0.5 ml-0.5 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+                    </div>
+                  )}
+                  {chatStreaming && !streamText && (
+                    <div className="flex items-center gap-2 py-2">
+                      <SpinnerGap className="h-3.5 w-3.5 animate-spin" style={{ color: themeColors.primary }} />
+                      <span className="text-xs text-muted-foreground">Coach FTJ is thinking...</span>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Input */}
+                <form
+                  onSubmit={(e) => { e.preventDefault(); sendChatMessage(chatInput) }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    ref={chatInputRef}
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask Coach FTJ..."
+                    disabled={chatStreaming}
+                    className="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 disabled:opacity-50"
+                    style={{ focusRingColor: themeColors.primary } as React.CSSProperties}
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!chatInput.trim() || chatStreaming}
+                    className="h-9 w-9 p-0 shrink-0"
+                    style={{ backgroundColor: themeColors.primary }}
+                  >
+                    <PaperPlaneTilt className="h-3.5 w-3.5" />
+                  </Button>
+                </form>
+              </div>
+            )}
           </div>
         )}
         </>

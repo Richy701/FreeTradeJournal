@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { Mail, Loader2, Check, RotateCcw } from 'lucide-react';
+import { Envelope, SpinnerGap, Check, ArrowCounterClockwise } from '@phosphor-icons/react';
 
 export default function VerifyEmail() {
   const { user, logout } = useAuth();
@@ -88,7 +88,7 @@ export default function VerifyEmail() {
         ) : (
           <>
             <div className="mx-auto w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <Mail className="h-7 w-7 text-amber-500" />
+              <Envelope className="h-7 w-7 text-amber-500" />
             </div>
 
             <div className="space-y-2">
@@ -111,14 +111,14 @@ export default function VerifyEmail() {
               >
                 {resending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                     Sending...
                   </>
                 ) : resendCooldown > 0 ? (
                   `Resend in ${resendCooldown}s`
                 ) : (
                   <>
-                    <RotateCcw className="mr-2 h-4 w-4" />
+                    <ArrowCounterClockwise className="mr-2 h-4 w-4" />
                     Resend verification email
                   </>
                 )}

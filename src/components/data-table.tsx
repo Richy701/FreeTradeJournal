@@ -2,10 +2,10 @@ import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { List, ArrowUp, ArrowDown } from 'lucide-react'
+import { List, ArrowUp, ArrowDown } from '@phosphor-icons/react'
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, Upload } from "lucide-react"
+import { Plus, UploadSimple } from '@phosphor-icons/react'
 import {
   Table,
   TableBody,
@@ -144,7 +144,7 @@ export function DataTable({ data }: DataTableProps) {
                   className="gap-1.5"
                   onClick={() => document.getElementById('dashboard-csv-import')?.click()}
                 >
-                  <Upload className="h-3.5 w-3.5" />
+                  <UploadSimple className="h-3.5 w-3.5" />
                   Import CSV
                 </Button>
               </div>

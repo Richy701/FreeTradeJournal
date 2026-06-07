@@ -8,7 +8,7 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, Receipt, Building2, BarChart3, Trophy, TrendingUp, Infinity } from 'lucide-react';
+import { ArrowRight, X, Receipt, Buildings, ChartBar, Trophy, TrendUp, Infinity } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
@@ -17,12 +17,12 @@ const FEATURES = [
     desc: 'Every eval fee, monthly sub, and reset logged per account — so the total cost is never a mystery.',
   },
   {
-    icon: <Building2 className="h-5 w-5" />,
+    icon: <Buildings className="h-5 w-5" />,
     title: 'Multi-Firm',
     desc: 'FTMO, Apex, TopStep, and 10+ firms in a single view. No more spreadsheets.',
   },
   {
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: <ChartBar className="h-5 w-5" />,
     title: 'True Net P&L',
     desc: 'Real profit after every cost. One number that tells you whether prop trading is working.',
   },
@@ -32,7 +32,7 @@ const FEATURES = [
     desc: 'Track every challenge — active, passed, failed, withdrawn. Full history, nothing lost.',
   },
   {
-    icon: <TrendingUp className="h-5 w-5" />,
+    icon: <TrendUp className="h-5 w-5" />,
     title: 'Payout History',
     desc: 'Every withdrawal visualised by month. See what you\'ve actually taken home.',
   },

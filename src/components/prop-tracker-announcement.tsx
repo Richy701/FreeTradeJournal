@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { X, TrendingUp, ArrowRight } from 'lucide-react';
+import { X, TrendUp, ArrowRight } from '@phosphor-icons/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -96,7 +96,7 @@ export function PropTrackerAnnouncement() {
           <div className="flex items-center gap-3 min-w-0">
             {/* NEW pill */}
             <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 border border-white/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
-              <TrendingUp className="h-2.5 w-2.5" aria-hidden="true" />
+              <TrendUp className="h-2.5 w-2.5" aria-hidden="true" />
               New
             </span>
             <p className="text-xs sm:text-sm font-medium text-white">

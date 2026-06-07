@@ -51,7 +51,7 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
               "CSV/Excel import for MetaTrader and broker data",
               "Multi-account support with user-scoped data",
               "Trading psychology journal with mood tracking",
-              "AI Trading Coach with personalised coaching tips",
+              "Coach FTJ with personalised coaching tips",
               "AI Trade Analysis with pattern detection",
               "AI Trade Review with entry/exit assessment",
               "AI Journal Prompts for self-reflection",

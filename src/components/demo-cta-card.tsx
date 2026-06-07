@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
-import { User, TrendingUp, Lock, Sparkles } from 'lucide-react';
+import { User, TrendUp, Lock, Sparkle } from '@phosphor-icons/react';
 
 export function DemoCtaCard() {
   const { isDemo, exitDemoMode } = useAuth();
@@ -23,7 +23,7 @@ export function DemoCtaCard() {
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-start gap-3">
-            <TrendingUp className="h-5 w-5 text-amber-500 mt-0.5" />
+            <TrendUp className="h-5 w-5 text-amber-500 mt-0.5" />
             <div className="flex-1">
               <p className="font-medium text-sm">Save Your Trading History</p>
               <p className="text-sm text-muted-foreground">Track all your trades permanently in the cloud</p>
@@ -37,7 +37,7 @@ export function DemoCtaCard() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <Sparkles className="h-5 w-5 text-amber-500 mt-0.5" />
+            <Sparkle className="h-5 w-5 text-amber-500 mt-0.5" />
             <div className="flex-1">
               <p className="font-medium text-sm">AI-Powered Insights</p>
               <p className="text-sm text-muted-foreground">Get intelligent analysis of your trading patterns and performance</p>

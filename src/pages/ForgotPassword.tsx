@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LineChart, Loader2, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { ChartLineUp, SpinnerGap, Envelope, ArrowLeft, CheckCircle } from '@phosphor-icons/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function ForgotPassword() {
@@ -38,7 +38,7 @@ export default function ForgotPassword() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
-                <LineChart className="h-6 w-6 text-white" />
+                <ChartLineUp className="h-6 w-6 text-white" />
               </div>
               <span className="font-display text-xl font-bold text-white">FreeTradeJournal</span>
             </div>
@@ -64,7 +64,7 @@ export default function ForgotPassword() {
           <div className="lg:hidden -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 px-6 py-6 sm:px-8 sm:py-8 bg-gradient-to-br from-amber-600 to-amber-500 rounded-t-2xl">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
-                <LineChart className="h-5 w-5 text-white" />
+                <ChartLineUp className="h-5 w-5 text-white" />
               </div>
               <span className="font-display text-lg font-bold text-white">FreeTradeJournal</span>
             </div>
@@ -110,7 +110,7 @@ export default function ForgotPassword() {
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -128,7 +128,7 @@ export default function ForgotPassword() {
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                     Sending...
                   </>
                 ) : (

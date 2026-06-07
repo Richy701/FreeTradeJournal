@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, Bug, Sparkles, Star, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Chat, Bug, Sparkle, Star, CheckCircle, CaretRight, ArrowLeft, Envelope } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,12 +12,16 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
 
+export type FeedbackType = 'bug' | 'feature' | 'general';
+
 interface FeedbackButtonProps {
   variant?: 'default' | 'outline' | 'ghost' | 'floating';
   className?: string;
   buttonText?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  context?: string;
+  defaultType?: FeedbackType;
 }
 
 export function FeedbackButton({
@@ -26,6 +30,8 @@ export function FeedbackButton({
   buttonText,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  context,
+  defaultType,
 }: FeedbackButtonProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -33,7 +39,7 @@ export function FeedbackButton({
 
   // Controlled mode — just render the dialog, no trigger button
   if (controlledOpen !== undefined) {
-    return <FeedbackDialog open={open} onOpenChange={setOpen} />;
+    return <FeedbackDialog open={open} onOpenChange={setOpen} context={context} defaultType={defaultType} />;
   }
 
   if (variant === 'floating') {
@@ -51,9 +57,9 @@ export function FeedbackButton({
           )}
           aria-label="Send feedback"
         >
-          <MessageSquare className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+          <Chat className="h-5 w-5 group-hover:rotate-12 transition-transform" />
         </button>
-        <FeedbackDialog open={open} onOpenChange={setOpen} />
+        <FeedbackDialog open={open} onOpenChange={setOpen} context={context} defaultType={defaultType} />
       </>
     );
   }
@@ -65,10 +71,10 @@ export function FeedbackButton({
         onClick={() => setOpen(true)}
         className={cn("gap-2 group", className)}
       >
-        <MessageSquare className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
+        <Chat className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
         <span>{buttonText || 'Feedback'}</span>
       </Button>
-      <FeedbackDialog open={open} onOpenChange={setOpen} />
+      <FeedbackDialog open={open} onOpenChange={setOpen} context={context} defaultType={defaultType} />
     </>
   );
 }
@@ -86,7 +92,7 @@ const FEEDBACK_TYPES = [
     value: 'feature',
     label: 'Feature request',
     description: 'Suggest an improvement',
-    icon: Sparkles,
+    icon: Sparkle,
     color: 'text-amber-500',
     activeBg: 'bg-amber-500/15 border-amber-500/40',
   },
@@ -94,13 +100,12 @@ const FEEDBACK_TYPES = [
     value: 'general',
     label: 'General feedback',
     description: 'Share your thoughts',
-    icon: MessageSquare,
+    icon: Chat,
     color: 'text-blue-500',
     activeBg: 'bg-blue-500/15 border-blue-500/40',
   },
 ] as const;
 
-type FeedbackType = typeof FEEDBACK_TYPES[number]['value'];
 type Step = 'feedback' | 'testimonial' | 'done';
 
 const PLACEHOLDERS: Record<FeedbackType, string> = {
@@ -122,20 +127,40 @@ const TRADER_ROLES = [
   'Other',
 ];
 
+function getPageContext(): string {
+  const path = window.location.pathname;
+  const labels: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/trade-log': 'Trade Log',
+    '/settings': 'Settings',
+    '/trade-ideas': 'Trade Ideas',
+    '/prop-tracker': 'Prop Tracker',
+    '/pricing': 'Pricing',
+    '/documentation': 'Documentation',
+    '/profile': 'Profile',
+  };
+  return labels[path] || path;
+}
+
 function FeedbackDialog({
   open,
   onOpenChange,
+  context,
+  defaultType,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  context?: string;
+  defaultType?: FeedbackType;
 }) {
   const { user } = useAuth();
   const [step, setStep] = useState<Step>('feedback');
-  const [type, setType] = useState<FeedbackType>('general');
+  const [type, setType] = useState<FeedbackType>(defaultType || 'general');
   const [message, setMessage] = useState('');
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [wantFollowUp, setWantFollowUp] = useState(false);
 
   // Testimonial fields
   const [testimonialName, setTestimonialName] = useState(user?.displayName || '');
@@ -149,9 +174,10 @@ function FeedbackDialog({
       setTimeout(() => {
         setStep('feedback');
         setMessage('');
-        setType('general');
+        setType(defaultType || 'general');
         setRating(0);
         setHoverRating(0);
+        setWantFollowUp(false);
         setTestimonialName(user?.displayName || '');
         setTestimonialRole('');
         setTestimonialQuote('');
@@ -168,7 +194,13 @@ function FeedbackDialog({
     try {
       const { getFunctions, httpsCallable } = await import('firebase/functions');
       const fn = httpsCallable(getFunctions(), 'sendFeedback');
-      await fn({ type, message: message.trim(), rating });
+      await fn({
+        type,
+        message: message.trim(),
+        rating,
+        page: context || getPageContext(),
+        wantFollowUp,
+      });
 
       // If they loved it, invite them to leave a testimonial
       if (rating >= 4) {
@@ -221,11 +253,16 @@ function FeedbackDialog({
 
         {step === 'feedback' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/70">
+            <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-primary/[0.03] to-transparent">
               <DialogHeader>
-                <DialogTitle className="text-lg">Share your feedback</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                <DialogTitle className="text-lg font-semibold">Share your feedback</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
                   Help us make FreeTradeJournal better for you.
+                  {context && (
+                    <span className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground/80 align-middle">
+                      {context}
+                    </span>
+                  )}
                 </DialogDescription>
               </DialogHeader>
             </div>
@@ -307,6 +344,25 @@ function FeedbackDialog({
                 </span>
               </div>
 
+              {/* Follow-up toggle */}
+              <label className="flex items-center gap-2.5 cursor-pointer group">
+                <div className={cn(
+                  "h-4 w-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors",
+                  wantFollowUp ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
+                )}>
+                  {wantFollowUp && (
+                    <svg className="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  <input type="checkbox" className="sr-only" checked={wantFollowUp} onChange={(e) => setWantFollowUp(e.target.checked)} />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Envelope className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">I'd like a follow-up reply</span>
+                </div>
+              </label>
+
               <div className="flex items-center gap-3 pt-1">
                 <Button type="button" variant="ghost" size="sm" onClick={() => handleClose(false)} disabled={loading} className="text-muted-foreground">
                   Cancel
@@ -315,7 +371,7 @@ function FeedbackDialog({
                   {loading ? (
                     <><span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />Sending...</>
                   ) : (
-                    <>Send feedback <ChevronRight className="h-3.5 w-3.5" /></>
+                    <>Send feedback <CaretRight className="h-3.5 w-3.5" /></>
                   )}
                 </Button>
               </div>
@@ -325,17 +381,15 @@ function FeedbackDialog({
 
         {step === 'testimonial' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/70">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex">
-                  {[1,2,3,4,5].map((s) => (
-                    <Star key={s} className={cn("h-4 w-4", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
-                  ))}
-                </div>
+            <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-amber-500/[0.04] to-transparent">
+              <div className="flex items-center gap-1.5 mb-3">
+                {[1,2,3,4,5].map((s) => (
+                  <Star key={s} className={cn("h-5 w-5 transition-transform", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
+                ))}
               </div>
               <DialogHeader>
-                <DialogTitle className="text-lg">Would you share your story?</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                <DialogTitle className="text-lg font-semibold">Would you share your story?</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground mt-1 leading-relaxed">
                   You loved it — we'd love to feature you on our homepage to help other traders discover FreeTradeJournal.
                 </DialogDescription>
               </DialogHeader>
@@ -427,7 +481,7 @@ function FeedbackDialog({
                   {loading ? (
                     <><span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />Submitting...</>
                   ) : (
-                    <>Submit testimonial <ChevronRight className="h-3.5 w-3.5" /></>
+                    <>Submit testimonial <CaretRight className="h-3.5 w-3.5" /></>
                   )}
                 </Button>
               </div>
@@ -441,17 +495,20 @@ function FeedbackDialog({
 
 function SuccessScreen({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 px-8 py-12 text-center">
-      <div className="flex items-center justify-center h-14 w-14 rounded-full bg-green-500/10 border border-green-500/20">
-        <CheckCircle2 className="h-7 w-7 text-green-500" />
+    <div className="flex flex-col items-center justify-center gap-5 px-8 py-14 text-center bg-gradient-to-b from-green-500/[0.04] via-transparent to-transparent">
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-green-500/20 animate-ping opacity-20" />
+        <div className="relative flex items-center justify-center h-16 w-16 rounded-full bg-green-500/10 border border-green-500/20 shadow-sm shadow-green-500/10">
+          <CheckCircle className="h-8 w-8 text-green-500" />
+        </div>
       </div>
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-base font-semibold">Thanks — you're the best!</h3>
-        <p className="text-sm text-muted-foreground max-w-[280px]">
+        <h3 className="text-lg font-semibold">Thanks — you're the best!</h3>
+        <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
           We read every message and use it to make FreeTradeJournal better for traders like you.
         </p>
       </div>
-      <Button size="sm" variant="outline" onClick={onClose} className="mt-2">
+      <Button size="sm" variant="outline" onClick={onClose} className="mt-1">
         Done
       </Button>
     </div>

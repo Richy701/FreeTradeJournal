@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
-import { X, Info } from 'lucide-react';
+import { X, Info } from '@phosphor-icons/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const DISMISS_KEY = 'demo-banner-dismissed';

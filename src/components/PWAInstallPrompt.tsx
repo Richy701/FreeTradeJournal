@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, Smartphone } from 'lucide-react';
+import { DownloadSimple, X, DeviceMobile } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -63,7 +63,7 @@ export function PWAInstallPrompt() {
             <Card className="border-border shadow-lg">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex items-start gap-3">
-                  <Smartphone className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                  <DeviceMobile className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div>
@@ -84,7 +84,7 @@ export function PWAInstallPrompt() {
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={handleInstall} size="sm" className="h-8 px-4 text-xs">
-                        <Download className="w-3.5 h-3.5 mr-1" />
+                        <DownloadSimple className="w-3.5 h-3.5 mr-1" />
                         Install
                       </Button>
                       <Button onClick={handleDismiss} variant="secondary" size="sm" className="h-8 px-4 text-xs">

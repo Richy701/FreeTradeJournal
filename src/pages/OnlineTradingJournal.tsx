@@ -8,7 +8,7 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, Globe, Cloud, BarChart3, Brain, FileDown, Infinity } from 'lucide-react';
+import { ArrowRight, X, Globe, Cloud, ChartBar, Brain, FileArrowDown, Infinity } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
@@ -22,12 +22,12 @@ const FEATURES = [
     desc: 'Your journal works on desktop, tablet, and mobile. Pro users get cloud sync so trades stay in sync across every device automatically.',
   },
   {
-    icon: <FileDown className="h-5 w-5" />,
+    icon: <FileArrowDown className="h-5 w-5" />,
     title: 'CSV Import',
     desc: 'Export your trade history from MetaTrader 5, Tradovate, NinjaTrader, or any broker and import it. Entries, exits, lot sizes, and commissions mapped automatically.',
   },
   {
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: <ChartBar className="h-5 w-5" />,
     title: 'Full Analytics',
     desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve — all calculated automatically.',
   },

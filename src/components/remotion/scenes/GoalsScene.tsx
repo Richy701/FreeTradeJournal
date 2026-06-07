@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from '@phosphor-icons/react';
 import SceneContainer from '../shared/SceneContainer';
 import { staggeredOpacity, staggeredTranslateY, iconScale } from '../shared/animations';
 

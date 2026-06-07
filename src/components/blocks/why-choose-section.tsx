@@ -5,14 +5,14 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Shield,
-  Zap,
+  Lightning,
   Target,
-  TrendingUp,
+  TrendUp,
   Users,
-  Award,
-  CheckCircle2,
+  Trophy,
+  CheckCircle,
   Star
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 
 export default function WhyChooseSection() {
   const containerVariants = {
@@ -46,7 +46,7 @@ export default function WhyChooseSection() {
       iconBg: "bg-blue-500/10"
     },
     {
-      icon: Zap,
+      icon: Lightning,
       title: "Lightning Fast Performance",
       description: "Optimized for speed with sub-second loading times. Focus on trading decisions, not waiting for data to load.",
       gradient: "from-yellow-500/20 to-orange-500/20",
@@ -64,9 +64,9 @@ export default function WhyChooseSection() {
   ];
 
   const stats = [
-    { icon: TrendingUp, value: "92%", label: "Performance Improvement", sublabel: "within 30 days" },
+    { icon: TrendUp, value: "92%", label: "Performance Improvement", sublabel: "within 30 days" },
     { icon: Users, value: "10K+", label: "Active Traders", sublabel: "trust FreeTradeJournal" },
-    { icon: Award, value: "4.9★", label: "User Rating", sublabel: "from 3,000+ reviews" }
+    { icon: Trophy, value: "4.9★", label: "User Rating", sublabel: "from 3,000+ reviews" }
   ];
 
   return (
@@ -141,7 +141,7 @@ export default function WhyChooseSection() {
               
               <div className="relative text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/10 rounded-2xl mb-6">
-                  <TrendingUp className="w-8 h-8 text-amber-500" />
+                  <TrendUp className="w-8 h-8 text-amber-500" />
                 </div>
                 <div className="text-6xl font-bold text-amber-500 mb-2">92%</div>
                 <h3 className="text-2xl font-bold mb-2">Performance Boost</h3>
@@ -183,15 +183,15 @@ export default function WhyChooseSection() {
               transition={{ duration: 0.6, delay: 0.4 }}
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
                 SOC 2 Compliant
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
                 256-bit Encryption
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
                 99.9% Uptime
               </div>
             </motion.div>

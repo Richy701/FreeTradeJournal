@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Brain, Loader2, RotateCcw, Target, Trophy, TrendingUp, Lightbulb } from 'lucide-react';
+import { Brain, SpinnerGap, ArrowCounterClockwise, Target, Trophy, TrendUp, Lightbulb } from '@phosphor-icons/react';
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AIFeedback } from '@/components/ui/ai-feedback';
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
+import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import { useUserStorage } from '@/utils/user-storage';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { getAICache, setAICache, clearAICache } from '@/utils/ai-cache';
@@ -49,8 +51,8 @@ function renderContent(content: string): string {
 }
 
 const sectionIcons: Record<string, typeof Brain> = {
-  progress: TrendingUp,
-  overview: TrendingUp,
+  progress: TrendUp,
+  overview: TrendUp,
   goal: Target,
   insight: Target,
   adjust: Lightbulb,
@@ -135,16 +137,20 @@ function GoalCoachSamplePreview() {
 
 export function AIGoalCoach() {
   const { themeColors, alpha } = useThemePresets();
-  const { isPro } = useProStatus();
+  const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const userStorage = useUserStorage();
   const { getTrades } = useDemoData();
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
     const cached = getAICache<string>(CACHE_KEY, CACHE_TTL);
     if (cached) setResult(cached);
   }, []);
+
+  useEffect(() => {
+    if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
+  }, [meta]);
 
   const goalData = useMemo(() => {
     const trades = getTrades();
@@ -198,28 +204,24 @@ export function AIGoalCoach() {
   }, [getTrades, userStorage]);
 
   const handleCoach = async () => {
-    setLoading(true);
     try {
-      const { requestAIAssist } = await import('@/services/ai-assist');
-      const response = await requestAIAssist({
+      const coachResult = await startStream('assist', {
         type: 'goal_coach',
         payload: goalData,
       });
 
-      setResult(response.result);
-      setAICache(CACHE_KEY, response.result);
+      setResult(coachResult);
+      setAICache(CACHE_KEY, coachResult);
       trackEvent('ai_goal_coach_used');
-      toast.success('Coaching ready');
     } catch (err: any) {
       toast.error(err?.message || 'Failed to get coaching');
-    } finally {
-      setLoading(false);
     }
   };
 
-  const sections = result ? parseSections(result) : [];
+  const displayText = isStreaming ? streamText : result;
+  const sections = displayText ? parseSections(displayText) : [];
 
-  if (!isPro) {
+  if (!hasAIAccess) {
     return (
       <Card>
         <ProGate featureName="AI Goal Coach">
@@ -242,21 +244,27 @@ export function AIGoalCoach() {
                 <Brain className="h-4.5 w-4.5" style={{ color: themeColors.primary }} />
               </div>
               AI Goal Coach
+              {isStreaming && (
+                <span className="ml-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                  Live
+                </span>
+              )}
             </CardTitle>
-            {result && (
+            {result && !isStreaming && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => { setResult(null); clearAICache(CACHE_KEY); }}
               >
-                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                <ArrowCounterClockwise className="mr-1.5 h-3.5 w-3.5" />
                 Refresh
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent>
-          {!result && !loading ? (
+          {!result && !isStreaming && !streamText ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Get personalised coaching on your trading goals — what's working, what to adjust, and how to stay on track.
@@ -275,9 +283,9 @@ export function AIGoalCoach() {
                 </p>
               )}
             </div>
-          ) : loading ? (
+          ) : isStreaming && !streamText ? (
             <div className="flex flex-col items-center py-8 gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" style={{ color: themeColors.primary }} />
+              <SpinnerGap className="h-5 w-5 animate-spin" style={{ color: themeColors.primary }} />
               <p className="text-sm text-muted-foreground">Analysing your goals...</p>
             </div>
           ) : (
@@ -301,6 +309,11 @@ export function AIGoalCoach() {
                   </div>
                 );
               })}
+              {!isStreaming && result && (
+                <div className="pt-3 border-t border-border/50">
+                  <AIFeedback feature="AI Goal Coach" />
+                </div>
+              )}
             </div>
           )}
         </CardContent>

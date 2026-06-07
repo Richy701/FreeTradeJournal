@@ -12,6 +12,7 @@ interface TradeInput {
   pnl: number;
   strategy?: string;
   riskReward?: number;
+  emotions?: string;
 }
 
 export interface AIAnalysisRequest {
@@ -22,6 +23,11 @@ export interface AIAnalysisRequest {
 export interface AIAnalysisResponse {
   analysis: string;
   usage: {
+    used: number;
+    limit: number;
+    remaining: number;
+  };
+  freeUsage?: {
     used: number;
     limit: number;
     remaining: number;

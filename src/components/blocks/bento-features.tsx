@@ -4,13 +4,13 @@ import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  TrendingUp,
-  BarChart3,
+  TrendUp,
+  ChartBar,
   FileText,
   Shield,
   Target,
   Camera,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 
 export default function BentoFeatures() {
   const containerVariants = {
@@ -63,7 +63,7 @@ export default function BentoFeatures() {
             <Card className="p-8 h-full min-h-[280px] bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20 hover:border-amber-500/40 transition-colors">
               <div className="flex items-start gap-6 h-full">
                 <div className="p-4 rounded-2xl bg-amber-500/10">
-                  <TrendingUp className="h-10 w-10 text-amber-500" />
+                  <TrendUp className="h-10 w-10 text-amber-500" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-3xl font-bold mb-4">Comprehensive Trade Logging</h3>
@@ -85,7 +85,7 @@ export default function BentoFeatures() {
           <motion.div variants={itemVariants} className="md:col-span-2">
             <Card className="p-6 h-full min-h-[200px] hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors group">
               <div className="p-3 rounded-xl bg-green-500/10 mb-6 w-fit group-hover:scale-110 transition-transform">
-                <BarChart3 className="h-8 w-8 text-green-500" />
+                <ChartBar className="h-8 w-8 text-green-500" />
               </div>
               <h3 className="text-2xl font-bold mb-3">Real-Time P&L</h3>
               <p className="text-muted-foreground text-lg leading-relaxed">

@@ -5,13 +5,13 @@ import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
-import { CalendarDays, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom"
-import { Plus, DollarSign, Target, TrendingUp, BarChart3, Activity, ArrowUp, ArrowDown } from "lucide-react"
+import { Plus, CurrencyDollar, Target, TrendUp, ChartBar, Pulse, ArrowUp, ArrowDown } from '@phosphor-icons/react'
 import { Separator } from "@/components/ui/separator"
 import {
   Popover,
@@ -618,7 +618,7 @@ export function CalendarHeatmap() {
                 title="Previous month (←)"
                 aria-label="Previous month"
               >
-                <ChevronLeft className="h-3 w-3 text-muted-foreground" />
+                <CaretLeft className="h-3 w-3 text-muted-foreground" />
               </button>
 
               <div className="flex items-center gap-1 px-1">
@@ -651,7 +651,7 @@ export function CalendarHeatmap() {
                 title="Next month (→)"
                 aria-label="Next month"
               >
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                <CaretRight className="h-3 w-3 text-muted-foreground" />
               </button>
             </div>
 
@@ -672,7 +672,7 @@ export function CalendarHeatmap() {
         <div className="grid grid-cols-3 md:flex md:items-center gap-2 md:gap-0 p-3 md:p-4 md:px-6">
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <DollarSign className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <CurrencyDollar className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
               <div className="text-[10px] md:text-sm text-muted-foreground">Monthly P&L</div>
             </div>
             <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
@@ -696,7 +696,7 @@ export function CalendarHeatmap() {
 
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <BarChart3 className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <ChartBar className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
               <div className="text-[10px] md:text-sm text-muted-foreground">W/L</div>
             </div>
             <div className="text-base md:text-3xl lg:text-4xl font-bold">
@@ -710,7 +710,7 @@ export function CalendarHeatmap() {
 
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <Activity className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <Pulse className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
               <div className="text-[10px] md:text-sm text-muted-foreground">Trades</div>
             </div>
             <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
@@ -722,7 +722,7 @@ export function CalendarHeatmap() {
 
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <CalendarDays className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <CalendarDots className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
               <div className="text-[10px] md:text-sm text-muted-foreground">Trading Days</div>
             </div>
             <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
@@ -734,7 +734,7 @@ export function CalendarHeatmap() {
 
           <div className="text-center md:text-left md:flex-1">
             <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
-              <TrendingUp className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
+              <TrendUp className="h-3 w-3 md:h-4 md:w-4" style={{color: themeColors.primary}} />
               <div className="text-[10px] md:text-sm text-muted-foreground">R:R</div>
             </div>
             <div className="text-base md:text-3xl lg:text-4xl font-bold" style={{color: themeColors.primary}}>
@@ -1012,7 +1012,7 @@ export function CalendarHeatmap() {
                 <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">←</kbd>
                 <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">→</kbd>
                 <span>navigate</span>
-                <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">Home</kbd>
+                <kbd className="px-1.5 py-0.5 bg-muted/40 rounded text-[9px]">House</kbd>
                 <span>today</span>
               </div>
             </div>
@@ -1137,7 +1137,7 @@ export function CalendarHeatmap() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="journal-tags" className="text-xs sm:text-sm">Tags</Label>
+                      <Label htmlFor="journal-tags" className="text-xs sm:text-sm">Tag</Label>
                       <Input
                         id="journal-tags"
                         placeholder="strategy, analysis..."

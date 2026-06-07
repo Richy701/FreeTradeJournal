@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, X } from 'lucide-react';
+import { ArrowsClockwise, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -43,7 +43,7 @@ export function PWAUpdateNotification() {
             <Card className="border-primary/30 shadow-lg bg-background/95 backdrop-blur-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <RefreshCw className="w-5 h-5 text-primary shrink-0" />
+                  <ArrowsClockwise className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">Update available</p>
                     <p className="text-xs text-muted-foreground">

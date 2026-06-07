@@ -3,25 +3,25 @@ import { Link, useLocation } from "react-router-dom"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import {
-  BarChart3,
-  TrendingUp,
+  ChartBar,
+  TrendUp,
   Target,
   BookOpen,
   Lightbulb,
-  Building2,
-  Settings2,
+  Buildings,
+  GearSix,
   Megaphone,
   UserPlus,
-  LogOut,
+  SignOut,
   Eye,
   Rocket,
-  Rss,
+  RssSimple,
   Tag,
-  Flame,
-  Zap,
-  CheckCircle2,
+  Fire,
+  Lightning,
+  CheckCircle,
   Gift,
-} from "lucide-react"
+} from '@phosphor-icons/react'
 import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProBadge } from '@/components/pro-badge'
@@ -45,12 +45,12 @@ const navMain = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: BarChart3,
+    icon: ChartBar,
   },
   {
     title: "Trade Log",
     url: "/trades",
-    icon: TrendingUp,
+    icon: TrendUp,
   },
   {
     title: "Goals & Risk Management",
@@ -70,7 +70,7 @@ const navMain = [
   {
     title: "PropTracker",
     url: "/prop-tracker",
-    icon: Building2,
+    icon: Buildings,
   },
 ]
 
@@ -135,11 +135,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             style={{ backgroundColor: alpha(streak >= 3 ? '#f59e0b' : themeColors.primary, '10') }}
           >
             {streak >= 7 ? (
-              <Flame className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
+              <Fire className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
             ) : streak >= 3 ? (
-              <Zap className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
+              <Lightning className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
             ) : (
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
+              <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
             )}
             <span className="font-semibold tabular-nums" style={{ color: streak >= 3 ? '#f59e0b' : themeColors.primary }}>
               {streak}-day streak
@@ -181,7 +181,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   size="sm"
                   onClick={() => { exitDemoMode(); isMobile && setOpenMobile(false); }}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <SignOut className="h-4 w-4" />
                   <span>Exit Demo</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -214,7 +214,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuItem>
                 <SidebarMenuButton size="sm" asChild>
                   <a href="https://blog.freetradejournal.com" target="_blank" rel="noopener noreferrer">
-                    <Rss className="h-4 w-4" />
+                    <RssSimple className="h-4 w-4" />
                     <span>Blog</span>
                   </a>
                 </SidebarMenuButton>
@@ -255,7 +255,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     to="/settings"
                     onClick={() => isMobile && setOpenMobile(false)}
                   >
-                    <Settings2 className="h-4 w-4" />
+                    <GearSix className="h-4 w-4" />
                     <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>

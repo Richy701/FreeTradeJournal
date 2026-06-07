@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Brain, Loader2, RotateCcw, TrendingUp, Search, Trophy, AlertTriangle, Target } from 'lucide-react';
+import { Brain, ArrowCounterClockwise, TrendUp, MagnifyingGlass, Trophy, Warning, Target } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProGate } from '@/components/pro-gate';
+import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
+import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import type { AIAnalysisResponse } from '@/services/ai-analysis';
 import DOMPurify from 'dompurify';
 
@@ -22,6 +24,7 @@ interface Trade {
   pnl: number;
   strategy?: string;
   riskReward?: number;
+  emotions?: string;
 }
 
 interface AIAnalysisProps {
@@ -118,10 +121,10 @@ function renderSectionContent(content: string): string {
 }
 
 const sectionConfig: Record<string, { icon: typeof Brain; color: string }> = {
-  'Performance Snapshot': { icon: TrendingUp, color: 'hsl(var(--chart-1, 220 70% 50%))' },
-  'Key Patterns Detected': { icon: Search, color: 'hsl(var(--chart-2, 160 60% 45%))' },
+  'Performance Snapshot': { icon: TrendUp, color: 'hsl(var(--chart-1, 220 70% 50%))' },
+  'Key Patterns Detected': { icon: MagnifyingGlass, color: 'hsl(var(--chart-2, 160 60% 45%))' },
   'Strengths to Double Down On': { icon: Trophy, color: 'hsl(var(--chart-3, 30 80% 55%))' },
-  'Critical Improvements': { icon: AlertTriangle, color: 'hsl(var(--chart-4, 280 65% 60%))' },
+  'Critical Improvements': { icon: Warning, color: 'hsl(var(--chart-4, 280 65% 60%))' },
   'Action Plan': { icon: Target, color: 'hsl(var(--chart-5, 340 75% 55%))' },
 };
 
@@ -213,9 +216,9 @@ function SampleAnalysisPreview() {
 
 export function AIAnalysis({ trades }: AIAnalysisProps) {
   const { themeColors, alpha } = useThemePresets();
-  const { isPro } = useProStatus();
+  const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const [period, setPeriod] = useState<Period>('last30');
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CachedAnalysis | null>(null);
 
   useEffect(() => {
@@ -226,7 +229,11 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
     }
   }, []);
 
-  if (!isPro) {
+  useEffect(() => {
+    if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
+  }, [meta]);
+
+  if (!hasAIAccess) {
     return (
       <Card>
         <ProGate featureName="AI Trade Analysis">
@@ -244,10 +251,8 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
       return;
     }
 
-    setLoading(true);
     try {
-      const { requestAIAnalysis } = await import('@/services/ai-analysis');
-      const response = await requestAIAnalysis({
+      const analysis = await startStream('analysis', {
         trades: filteredTrades.map(t => ({
           symbol: t.symbol,
           side: t.side,
@@ -259,33 +264,32 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
           pnl: t.pnl,
           strategy: t.strategy,
           riskReward: t.riskReward,
+          emotions: t.emotions,
         })),
         analysisType: period === 'recent' ? 'recent' : 'period',
       });
 
       const cached: CachedAnalysis = {
-        analysis: response.analysis,
-        usage: response.usage,
+        analysis,
+        usage: meta?.usage || { used: 0, limit: 10, remaining: 10 },
         timestamp: Date.now(),
         period,
         tradeCount: filteredTrades.length,
       };
       setCachedAnalysis(cached);
       setResult(cached);
-      toast.success('Analysis complete');
     } catch (err: any) {
       const msg = err?.message || 'Failed to analyze trades';
-      if (msg.includes('Daily AI analysis limit')) {
+      if (msg.includes('Daily') && msg.includes('limit')) {
         toast.error('Daily limit reached. Resets at midnight UTC.');
       } else {
         toast.error(msg);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  const sections = result ? parseAnalysis(result.analysis) : [];
+  const displayText = isStreaming ? streamText : result?.analysis || '';
+  const sections = displayText ? parseAnalysis(displayText) : [];
 
   return (
     <Card>
@@ -300,8 +304,14 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 <Brain className="h-4.5 w-4.5" style={{ color: themeColors.primary }} />
               </div>
               AI Trade Analysis
+              {isStreaming && (
+                <span className="ml-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                  Live
+                </span>
+              )}
             </CardTitle>
-            {result && (
+            {result && !isStreaming && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted">
                   {result.usage.remaining}/{result.usage.limit} remaining
@@ -311,7 +321,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                   size="sm"
                   onClick={() => { setResult(null); localStorage.removeItem(CACHE_KEY); }}
                 >
-                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  <ArrowCounterClockwise className="mr-1.5 h-3.5 w-3.5" />
                   New
                 </Button>
               </div>
@@ -319,12 +329,30 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
           </div>
         </CardHeader>
         <CardContent>
-          {!result ? (
-            <div className="space-y-4">
+          {!result && !isStreaming && !streamText ? (
+            <div className="space-y-5">
               <p className="text-sm text-muted-foreground">
                 Get personalised feedback on your trading patterns, strengths, and areas to improve — powered by AI.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {[
+                  { icon: TrendUp, label: 'Performance' },
+                  { icon: MagnifyingGlass, label: 'Patterns' },
+                  { icon: Trophy, label: 'Strengths' },
+                  { icon: Warning, label: 'Weaknesses' },
+                  { icon: Target, label: 'Action Plan' },
+                ].map(({ icon: Icon, label }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2 rounded-lg border px-3 py-2"
+                    style={{ borderColor: alpha(themeColors.primary, '15'), backgroundColor: alpha(themeColors.primary, '05') }}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: themeColors.primary }} />
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
                   <SelectTrigger className="w-full sm:w-48">
                     <SelectValue />
@@ -337,40 +365,34 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 </Select>
                 <Button
                   onClick={handleAnalyze}
-                  disabled={loading || filteredTrades.length < 3}
+                  disabled={filteredTrades.length < 3}
                   style={{ backgroundColor: themeColors.primary }}
                   className="text-primary-foreground"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Analysing...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="mr-2 h-4 w-4" />
-                      Analyse My Trades
-                    </>
-                  )}
+                  <Brain className="mr-2 h-4 w-4" />
+                  Analyse My Trades
                 </Button>
+                <span className="text-xs text-muted-foreground sm:ml-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {filteredTrades.length} trade{filteredTrades.length !== 1 ? 's' : ''} in this period
+                  {filteredTrades.length < 3 && ' — need at least 3'}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {filteredTrades.length} trade{filteredTrades.length !== 1 ? 's' : ''} in this period
-                {filteredTrades.length < 3 && ' — need at least 3'}
-              </p>
             </div>
-          ) : (
+          ) : sections.length > 0 ? (
             <div className="space-y-3">
               {sections.map((section, i) => (
                 <AnalysisSection key={i} section={section} />
               ))}
-              <p className="text-xs text-muted-foreground pt-2 text-right">
-                Based on {result.tradeCount} trades · {new Date(result.timestamp).toLocaleDateString()}
-              </p>
+              {!isStreaming && result && (
+                <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <AIFeedback feature="AI Trade Analysis" responseId={String(result.timestamp)} />
+                  <p className="text-xs text-muted-foreground">
+                    Based on {result.tradeCount} trades · {new Date(result.timestamp).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-
-          {loading && !result && (
+          ) : isStreaming ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <div
                 className="flex items-center justify-center w-12 h-12 rounded-full animate-pulse"
@@ -380,10 +402,10 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium">Analysing your trades...</p>
-                <p className="text-xs text-muted-foreground mt-1">This usually takes 5-10 seconds</p>
+                <p className="text-xs text-muted-foreground mt-1">Results will appear as they're generated</p>
               </div>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </ProGate>
     </Card>

@@ -145,7 +145,7 @@ export default function Documentation() {
                 <p className="mb-5">Pro users unlock AI-powered tools that analyse your trading data and deliver personalised feedback:</p>
                 <dl className="space-y-3">
                   {[
-                    ['AI Trading Coach', 'Personalised tips based on your patterns, streaks, and performance. Updates daily.'],
+                    ['Coach FTJ', 'Your personal AI trading coach. Personalised tips based on your patterns, streaks, and performance. Updates daily.'],
                     ['AI Trade Analysis', 'A full review of your overall performance — strengths, patterns, and an action plan.'],
                     ['AI Trade Review', 'Per-trade assessment with entry/exit analysis and specific improvement suggestions.'],
                     ['AI Journal Prompts', 'Reflective questions generated after each trade to sharpen self-awareness.'],

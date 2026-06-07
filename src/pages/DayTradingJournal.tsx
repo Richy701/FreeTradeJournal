@@ -8,7 +8,7 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, Clock, Brain, BarChart3, AlertTriangle, FileDown, Infinity } from 'lucide-react';
+import { ArrowRight, X, Clock, Brain, ChartBar, Warning, FileArrowDown, Infinity } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
@@ -17,7 +17,7 @@ const FEATURES = [
     desc: 'Log every scalp and intraday trade with timestamps. See your P&L broken down by morning, midday, and afternoon sessions to find your best trading hours.',
   },
   {
-    icon: <AlertTriangle className="h-5 w-5" />,
+    icon: <Warning className="h-5 w-5" />,
     title: 'Overtrading Detection',
     desc: 'Track your trade count per day. Set a daily max trade limit as a goal and see at a glance when you are exceeding it. Break the revenge-trading cycle.',
   },
@@ -27,12 +27,12 @@ const FEATURES = [
     desc: 'Get AI-powered feedback on each trade — entry timing, risk/reward, and whether the setup matched your strategy. Pro feature with 14-day free trial.',
   },
   {
-    icon: <FileDown className="h-5 w-5" />,
+    icon: <FileArrowDown className="h-5 w-5" />,
     title: 'CSV Import',
     desc: 'Export your trade history from any broker — Tradovate, MetaTrader 5, NinjaTrader, or TradingView — and import it. Entries, exits, and commissions mapped automatically.',
   },
   {
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: <ChartBar className="h-5 w-5" />,
     title: 'Daily P&L Analytics',
     desc: 'Calendar heatmap shows your daily P&L at a glance. Win rate, profit factor, expectancy, max drawdown, equity curve, and consecutive loss streaks.',
   },

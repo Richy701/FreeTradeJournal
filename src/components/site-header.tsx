@@ -9,7 +9,7 @@ import {
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useLocation, useNavigate } from "react-router-dom"
-import { User, LogOut, UserPlus, Eye, ArrowLeft } from "lucide-react"
+import { User, SignOut, UserPlus, Eye, ArrowLeft } from '@phosphor-icons/react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useUserStorage } from "@/utils/user-storage"
 import {
@@ -70,7 +70,7 @@ function UserAvatar() {
             Sign Up Free
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => { exitDemoMode(); navigate('/'); }}>
-            <LogOut className="h-4 w-4 mr-2" />
+            <SignOut className="h-4 w-4 mr-2" />
             Exit Demo
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -96,7 +96,7 @@ function UserAvatar() {
           Profile
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-          <LogOut className="h-4 w-4 mr-2" />
+          <SignOut className="h-4 w-4 mr-2" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

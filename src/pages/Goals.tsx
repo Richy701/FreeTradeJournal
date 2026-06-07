@@ -3,7 +3,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useUserStorage } from '@/utils/user-storage'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { Trophy, Shield, Flame, Target, CheckCircle2 } from 'lucide-react'
+import { Trophy, Shield, Fire, Target, CheckCircle } from '@phosphor-icons/react'
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
 import { useMemo } from 'react'
@@ -105,7 +105,7 @@ export default function Goals() {
       detail: stats.activeRules > 0 ? 'Risk protection on' : 'No protection active',
     },
     {
-      icon: stats.violations === 0 ? CheckCircle2 : Flame,
+      icon: stats.violations === 0 ? CheckCircle : Fire,
       value: stats.violations === 0 ? 'Clear' : `${stats.violations}`,
       label: stats.violations === 0 ? 'Risk Status' : 'Violations',
       color: stats.violations === 0 ? themeColors.profit : themeColors.loss,

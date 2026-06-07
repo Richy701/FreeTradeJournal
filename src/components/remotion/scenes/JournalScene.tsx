@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
-import { BookOpen } from 'lucide-react';
+import { BookOpen } from '@phosphor-icons/react';
 import SceneContainer from '../shared/SceneContainer';
 import { staggeredOpacity, staggeredTranslateY, iconScale } from '../shared/animations';
 

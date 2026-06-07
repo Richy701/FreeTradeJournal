@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Check, Share2, Users, Crown } from 'lucide-react';
+import { Copy, Check, ShareNetwork, Users, Crown } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
@@ -32,7 +32,7 @@ export function ReferralCard() {
         const result = await getStats();
         if (!cancelled) setStats(result.data as ReferralStats);
       } catch {
-        if (!cancelled) setStats({ referralCount: 0, referralCode: user.uid, rewardThreshold: 5, referralProExpiresAt: null, rewardEarned: false });
+        if (!cancelled) setStats({ referralCount: 0, referralCode: user.uid, rewardThreshold: 3, referralProExpiresAt: null, rewardEarned: false });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -76,7 +76,7 @@ export function ReferralCard() {
   if (!user || isDemo || loading) return null;
 
   const count = stats?.referralCount || 0;
-  const threshold = stats?.rewardThreshold || 5;
+  const threshold = 3;
   const remaining = Math.max(0, threshold - count);
   const progress = Math.min(count / threshold, 1);
 
@@ -136,7 +136,7 @@ export function ReferralCard() {
         </Button>
         {typeof navigator !== 'undefined' && 'share' in navigator && (
           <Button variant="outline" size="sm" className="shrink-0 h-9 gap-1.5" onClick={handleShare}>
-            <Share2 className="h-3.5 w-3.5" />
+            <ShareNetwork className="h-3.5 w-3.5" />
             Share
           </Button>
         )}

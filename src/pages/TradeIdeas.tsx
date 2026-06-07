@@ -1,5 +1,5 @@
 import { useId, useMemo } from 'react'
-import { Lightbulb, ArrowRight } from 'lucide-react'
+import { Lightbulb, ArrowRight } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
@@ -27,7 +27,7 @@ import {
   RadarChart,
   PolarAngleAxis,
   PolarGrid,
-} from 'recharts'
+} from "recharts"
 import {
   ChartContainer,
   ChartTooltip,
@@ -273,13 +273,13 @@ export default function TradeIdeas() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Trader Profile — Radar */}
           {summary != null && summary.traderProfile.length > 0 && (
-            <Card>
+            <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle>Trader Profile</CardTitle>
                 <CardDescription>Your trading style at a glance</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <ChartContainer config={profileConfig} className="mx-auto aspect-square h-[280px]">
+              <CardContent className="flex flex-1 flex-col items-center gap-6">
+                <ChartContainer config={profileConfig} className="mx-auto aspect-square h-[220px]">
                   <RadarChart data={summary.traderProfile} cx="50%" cy="50%" outerRadius="65%">
                     <ChartTooltip
                       cursor={false}
@@ -303,16 +303,20 @@ export default function TradeIdeas() {
                     />
                   </RadarChart>
                 </ChartContainer>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-3 w-full mt-auto">
                   {summary.traderProfile.map((p) => {
                     const label = p.value >= 70 ? 'Strong' : p.value >= 40 ? 'Average' : 'Weak'
                     const color = p.value >= 70 ? themeColors.profit : p.value >= 40 ? themeColors.primary : themeColors.loss
                     return (
-                      <div key={p.metric} className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground">{p.metric}</span>
-                        <span className="font-medium" style={{ color, fontVariantNumeric: 'tabular-nums' }}>
-                          {p.value} — {label}
-                        </span>
+                      <div key={p.metric} className="rounded-lg border p-2.5 space-y-1.5" style={{ borderColor: `${color}20` }}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">{p.metric}</span>
+                          <span className="text-xs font-semibold" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{label}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full overflow-hidden bg-muted/60">
+                          <div className="h-full rounded-full" style={{ width: `${p.value}%`, backgroundColor: color }} />
+                        </div>
+                        <p className="text-right text-[11px] font-medium text-muted-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.value}/100</p>
                       </div>
                     )
                   })}
@@ -323,13 +327,13 @@ export default function TradeIdeas() {
 
           {/* Direction Split - Donut */}
           {charts != null && charts.direction.length > 0 && (
-            <Card>
+            <Card className="flex flex-col">
               <CardHeader>
                 <CardTitle>Direction Split</CardTitle>
                 <CardDescription>Long vs Short performance</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <ChartContainer config={directionConfig} className="h-[250px] w-full max-w-[300px]">
+              <CardContent className="flex flex-1 flex-col items-center gap-6">
+                <ChartContainer config={directionConfig} className="h-[200px] w-full max-w-[240px]">
                   <PieChart>
                     <ChartTooltip
                       cursor={false}
@@ -345,8 +349,8 @@ export default function TradeIdeas() {
                       data={charts.direction}
                       dataKey="count"
                       nameKey="name"
-                      innerRadius={60}
-                      outerRadius={90}
+                      innerRadius={55}
+                      outerRadius={80}
                       strokeWidth={2}
                       stroke="hsl(var(--background))"
                     >
@@ -376,23 +380,45 @@ export default function TradeIdeas() {
                     </Pie>
                   </PieChart>
                 </ChartContainer>
-                {/* Legend */}
-                <div className="flex flex-row sm:flex-col gap-4 sm:gap-3">
-                  {charts.direction.map((d) => (
-                    <div key={d.name} className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full shrink-0"
-                          aria-hidden="true"
-                          style={{ backgroundColor: d.name === 'Long' ? themeColors.profit : themeColors.loss }}
-                        />
-                        <span className="text-sm font-medium">{d.name}</span>
+                <div className="grid grid-cols-2 gap-3 w-full mt-auto">
+                  {charts.direction.map((d) => {
+                    const color = d.name === 'Long' ? themeColors.profit : themeColors.loss
+                    return (
+                      <div key={d.name} className="rounded-lg border p-3 space-y-2.5" style={{ borderColor: `${color}20` }}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-sm font-semibold">{d.name}</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Win Rate</span>
+                            <span className="font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>{d.winRate}%</span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden bg-muted/60">
+                            <div className="h-full rounded-full" style={{ width: `${d.winRate}%`, backgroundColor: color }} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          <div>
+                            <p className="text-muted-foreground">Trades</p>
+                            <p className="font-medium">{d.count}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">P&L</p>
+                            <p className="font-medium" style={{ color: d.pnl >= 0 ? themeColors.profit : themeColors.loss }}>{formatCurrency(d.pnl, true)}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Wins</p>
+                            <p className="font-medium">{d.wins}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Losses</p>
+                            <p className="font-medium">{d.losses}</p>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground pl-5" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {d.winRate}% WR · {d.count} trades · {formatCurrency(d.pnl, true)}
-                      </p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>

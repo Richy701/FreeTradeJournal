@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { type LucideIcon } from 'lucide-react';
+import { type Icon } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 
 interface ProUpgradeCardProps {
-  icon: LucideIcon;
+  icon: Icon;
   title: string;
   description: string;
   cta?: string;

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { SpinnerGap } from '@phosphor-icons/react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -16,6 +16,7 @@ import { ScrollToTop } from '@/components/scroll-to-top';
 import { CookieConsent } from '@/components/CookieConsent';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
+import { FeedbackListener } from '@/components/feedback-listener';
 import { Toaster } from 'sonner';
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
@@ -103,9 +104,10 @@ function App() {
             <CookieConsent />
             <PWAInstallPrompt />
             <PWAUpdateNotification />
+            <FeedbackListener />
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center" role="status">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <SpinnerGap className="h-8 w-8 animate-spin text-primary" />
               </div>
             }>
               <Routes>

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Menu, X, User, LogOut, UserPlus, Eye } from 'lucide-react';
+import { List, X, User, SignOut, UserPlus, Eye } from '@phosphor-icons/react';
 import { AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -66,7 +66,7 @@ export function MobileHeader({ title }: { title?: string }) {
           {openMobile ? (
             <X className="h-4 w-4" />
           ) : (
-            <Menu className="h-4 w-4" />
+            <List className="h-4 w-4" />
           )}
         </Button>
 
@@ -105,7 +105,7 @@ export function MobileHeader({ title }: { title?: string }) {
               <DropdownMenuItem
                 onClick={() => { exitDemoMode(); navigate('/'); }}
               >
-                <LogOut className="h-4 w-4 mr-2" />
+                <SignOut className="h-4 w-4 mr-2" />
                 Exit Demo
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -133,7 +133,7 @@ export function MobileHeader({ title }: { title?: string }) {
                 }}
                 className="text-destructive focus:text-destructive"
               >
-                <LogOut className="h-4 w-4 mr-2" />
+                <SignOut className="h-4 w-4 mr-2" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

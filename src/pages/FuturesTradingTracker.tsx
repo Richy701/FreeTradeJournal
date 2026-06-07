@@ -8,11 +8,11 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, BarChart3, Calculator, FileDown, LineChart, Building2, Infinity } from 'lucide-react';
+import { ArrowRight, X, ChartBar, Calculator, FileArrowDown, ChartLineUp, Buildings, Infinity } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: <ChartBar className="h-5 w-5" />,
     title: 'Contract Logging',
     desc: 'Log ES, NQ, CL, GC, and any futures contract — direction, entry and exit price, number of contracts, commission, and timestamps.',
   },
@@ -22,17 +22,17 @@ const FEATURES = [
     desc: 'Dollar P&L calculated from your entry, exit, quantity, and commissions. Results feed into your dashboard metrics automatically.',
   },
   {
-    icon: <FileDown className="h-5 w-5" />,
+    icon: <FileArrowDown className="h-5 w-5" />,
     title: 'CSV Import',
     desc: 'Export your order history from Tradovate or MetaTrader 5 as CSV and import it. The parser matches fills and calculates P&L per round trip.',
   },
   {
-    icon: <LineChart className="h-5 w-5" />,
+    icon: <ChartLineUp className="h-5 w-5" />,
     title: 'Full Analytics',
     desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.',
   },
   {
-    icon: <Building2 className="h-5 w-5" />,
+    icon: <Buildings className="h-5 w-5" />,
     title: 'Multi-Account',
     desc: 'Separate accounts for each broker or account type — live, demo, funded. Each has its own trade log, starting balance, and performance metrics.',
   },

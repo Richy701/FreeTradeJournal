@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react'
-import { Activity, Brain, CalendarDays, Globe } from 'lucide-react'
+import { Pulse, Brain, CalendarDots, Globe } from '@phosphor-icons/react'
 
 const ShowcasePlayer = lazy(() => import('@/components/remotion/ShowcasePlayer'))
 
@@ -50,7 +50,7 @@ export function FreeTradeJournalFeatures() {
                     <div className="col-span-2 lg:col-span-5 lg:row-span-2 space-y-5 p-8 rounded-2xl bg-gradient-to-br from-amber-500/[0.06] to-transparent border border-amber-500/10 hover:border-amber-500/20 hover:shadow-lg transition-all duration-300 flex flex-col relative overflow-hidden">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-xl bg-amber-500/10">
-                                <Activity className="size-6 text-amber-500" />
+                                <Pulse className="size-6 text-amber-500" />
                             </div>
                             <h3 className="font-display text-lg font-semibold">Real-Time Metrics</h3>
                         </div>
@@ -70,14 +70,14 @@ export function FreeTradeJournalFeatures() {
                     <div className="lg:col-span-3 space-y-4 p-6 rounded-xl border border-border/70 hover:bg-muted/60 hover:shadow-md transition-all duration-200 flex flex-col">
                         <div className="flex items-center gap-3">
                             <Brain className="size-5 text-amber-300" />
-                            <h3 className="text-base font-semibold">AI Trading Coach</h3>
+                            <h3 className="text-base font-semibold">Coach FTJ</h3>
                         </div>
                         <p className="text-muted-foreground text-sm leading-relaxed font-medium flex-1">Personalised coaching, trade reviews, and risk alerts — powered by AI. Pro feature.</p>
                     </div>
                     {/* Bottom-right card — spans remaining cols */}
                     <div className="col-span-2 lg:col-span-7 space-y-4 p-6 rounded-xl border border-border/70 hover:bg-muted/60 hover:shadow-md transition-all duration-200 flex flex-col">
                         <div className="flex items-center gap-3">
-                            <CalendarDays className="size-5 text-amber-500" />
+                            <CalendarDots className="size-5 text-amber-500" />
                             <h3 className="text-base font-semibold">Calendar Heatmap</h3>
                         </div>
                         <p className="text-muted-foreground text-sm leading-relaxed font-medium flex-1">Visual calendar showing daily P&L performance with color-coded profit/loss days. Spot patterns and track consistency at a glance.</p>

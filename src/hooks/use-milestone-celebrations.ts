@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
+import { triggerFeedbackDialog } from '@/lib/feedback-trigger';
 
 const MILESTONES = [
   { count: 10, title: 'Double digits', message: '10 trades logged. Your data is starting to tell a story.' },
@@ -46,6 +47,20 @@ export function useMilestoneCelebrations(tradeCount: number) {
           description: milestone.message,
           duration: 6000,
         });
+
+        // After a short delay, prompt for feedback at key milestones
+        if (milestone.count >= 25) {
+          setTimeout(() => {
+            toast('How are you finding FreeTradeJournal?', {
+              description: 'Your feedback helps us build a better tool for traders.',
+              duration: 10000,
+              action: {
+                label: 'Share feedback',
+                onClick: () => triggerFeedbackDialog(`Milestone: ${milestone.count} trades`),
+              },
+            });
+          }, 3000);
+        }
 
         localStorage.setItem(flagKey, '1');
         break;

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Eye, EyeOff, Loader2, LineChart, Brain, ShieldCheck, PieChart, BookOpen, ArrowRight } from 'lucide-react';
+import { Eye, EyeSlash, SpinnerGap, ChartLineUp, Brain, ShieldCheck, ChartPie, BookOpen, ArrowRight } from '@phosphor-icons/react';
 import { GoogleIcon } from '@/components/ui/brand-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -88,7 +88,7 @@ export default function Login() {
 
 
   const features = [
-    { icon: PieChart, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
+    { icon: ChartPie, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
     { icon: Brain, title: 'AI Trade Coaching', desc: 'Get personalized insights on your trades' },
     { icon: BookOpen, title: 'Trading Journal', desc: 'Document setups, emotions, and lessons' },
     { icon: ShieldCheck, title: 'Risk Management', desc: 'Set rules and monitor your discipline' },
@@ -199,7 +199,7 @@ export default function Login() {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -217,7 +217,7 @@ export default function Login() {
             >
               {loading ? (
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <SpinnerGap className="h-4 w-4 animate-spin" />
                   Signing in...
                 </div>
               ) : (
@@ -247,7 +247,7 @@ export default function Login() {
             >
               {googleLoading ? (
                 <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <SpinnerGap className="h-4 w-4 animate-spin" />
                   Connecting...
                 </div>
               ) : (

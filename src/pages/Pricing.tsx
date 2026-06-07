@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
-import { ArrowRight, BadgeCheck, Check, X } from 'lucide-react';
+import { ArrowRight, SealCheck, Check, X } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
@@ -153,7 +153,7 @@ function PricingCard({
                 'text-foreground/60',
               )}
             >
-              <BadgeCheck strokeWidth={1.5} size={16} className="flex-shrink-0" />
+              <SealCheck strokeWidth={1.5} size={16} className="flex-shrink-0" />
               {feature}
             </li>
           ))}
@@ -239,7 +239,7 @@ const FAQS = [
   },
   {
     q: 'What AI features does Pro include?',
-    a: 'AI Trading Coach, AI Trade Analysis, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, and AI Goal Coach — all powered by GPT-4.',
+    a: 'Coach FTJ, AI Trade Analysis, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, and AI Goal Coach — all powered by GPT-4.',
   },
   {
     q: 'Is the lifetime deal really one payment?',

@@ -71,7 +71,7 @@ export default defineConfig({
           'vendor-date': ['date-fns', 'date-fns-tz', 'react-day-picker'],
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           'vendor-animation': ['framer-motion'],
-          'vendor-icons': ['lucide-react', '@radix-ui/react-icons'],
+          'vendor-icons': ['@phosphor-icons/react'],
           'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
           'vendor-remotion': ['remotion', '@remotion/player']
         },

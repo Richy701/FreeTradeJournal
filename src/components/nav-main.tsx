@@ -1,6 +1,6 @@
 "use client"
 
-import { type LucideIcon } from "lucide-react"
+import { type Icon } from '@phosphor-icons/react'
 import { Link, useLocation } from "react-router-dom"
 import { useThemePresets } from "@/contexts/theme-presets"
 import { trackEvent } from "@/lib/analytics"
@@ -23,7 +23,7 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon: LucideIcon
+    icon: Icon
   }[]
 }) {
   const { pathname } = useLocation()

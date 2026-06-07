@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
-import { CandlestickChart } from 'lucide-react';
+import { ChartLineUp } from '@phosphor-icons/react';
 import SceneContainer from '../shared/SceneContainer';
 import { staggeredOpacity, staggeredTranslateY, iconScale } from '../shared/animations';
 
@@ -32,7 +32,7 @@ const TradeTrackingScene: React.FC<TradeTrackingSceneProps> = ({
           transform: `scale(${iconScale(frame, fps)})`,
         }}
       >
-        <CandlestickChart
+        <ChartLineUp
           size={64}
           color={primaryColor}
           strokeWidth={1.5}

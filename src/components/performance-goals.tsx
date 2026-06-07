@@ -4,7 +4,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
-import { Target, Trophy, LineChart, ShieldCheck, AlertTriangle, Medal, Flame, Star, DollarSign, Percent, Zap, Scale, Shield, AreaChart, Calendar, CalendarDays, RotateCcw, Pen, Check, Trash2, type LucideIcon } from 'lucide-react'
+import { Target, Trophy, ChartLineUp, ShieldCheck, Warning, Medal, Fire, Star, CurrencyDollar, Percent, Lightning, Scales, Shield, ChartLine, Calendar, CalendarDots, ArrowCounterClockwise, Pen, Check, Trash, type Icon } from '@phosphor-icons/react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -81,12 +81,12 @@ function formatCurrentValue(goal: { type: string; current?: number }): string {
 }
 
 // Helper: icon for risk rule type
-function getRuleIcon(type: string): LucideIcon {
-  const icons: Record<string, LucideIcon> = {
-    maxLossPerDay: Flame,
-    maxLossPerTrade: AlertTriangle,
+function getRuleIcon(type: string): Icon {
+  const icons: Record<string, Icon> = {
+    maxLossPerDay: Fire,
+    maxLossPerTrade: Warning,
     maxRiskPerTrade: Percent,
-    maxOpenTrades: LineChart
+    maxOpenTrades: ChartLineUp
   }
   return icons[type] || ShieldCheck
 }
@@ -526,10 +526,10 @@ export function PerformanceGoals() {
     })
   }
 
-  const getPeriodIcon = (period: string): LucideIcon => {
+  const getPeriodIcon = (period: string): Icon => {
     switch (period) {
       case 'daily': return Calendar
-      case 'weekly': return CalendarDays
+      case 'weekly': return CalendarDots
       case 'monthly': return Calendar
       default: return Calendar
     }
@@ -578,11 +578,11 @@ export function PerformanceGoals() {
                       <Label className="text-sm font-semibold">Popular Goals</Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {[
-                          { type: 'profit', period: 'monthly', target: 1000, label: 'Make $1,000 this month', icon: DollarSign },
+                          { type: 'profit', period: 'monthly', target: 1000, label: 'Make $1,000 this month', icon: CurrencyDollar },
                           { type: 'winRate', period: 'weekly', target: 70, label: '70% win rate this week', icon: Target },
-                          { type: 'profit', period: 'daily', target: 100, label: '$100 daily profit goal', icon: LineChart },
-                          { type: 'trades', period: 'weekly', target: 20, label: '20 trades this week', icon: Zap },
-                          { type: 'riskReward', period: 'monthly', target: 2, label: '2:1 risk/reward ratio', icon: Scale },
+                          { type: 'profit', period: 'daily', target: 100, label: '$100 daily profit goal', icon: ChartLineUp },
+                          { type: 'trades', period: 'weekly', target: 20, label: '20 trades this week', icon: Lightning },
+                          { type: 'riskReward', period: 'monthly', target: 2, label: '2:1 risk/reward ratio', icon: Scales },
                           { type: 'maxLoss', period: 'daily', target: 200, label: 'Max $200 daily loss', icon: Shield }
                         ].map((preset, index) => (
                           <Button
@@ -645,7 +645,7 @@ export function PerformanceGoals() {
                           <SelectContent>
                             <SelectItem value="profit">
                               <div className="flex items-center gap-2">
-                                <DollarSign className="h-3 w-3" />
+                                <CurrencyDollar className="h-3 w-3" />
                                 Profit Target
                               </div>
                             </SelectItem>
@@ -657,13 +657,13 @@ export function PerformanceGoals() {
                             </SelectItem>
                             <SelectItem value="trades">
                               <div className="flex items-center gap-2">
-                                <Zap className="h-3 w-3" />
+                                <Lightning className="h-3 w-3" />
                                 Trade Count
                               </div>
                             </SelectItem>
                             <SelectItem value="riskReward">
                               <div className="flex items-center gap-2">
-                                <Scale className="h-3 w-3" />
+                                <Scales className="h-3 w-3" />
                                 Risk/Reward
                               </div>
                             </SelectItem>
@@ -675,7 +675,7 @@ export function PerformanceGoals() {
                             </SelectItem>
                             <SelectItem value="maxDrawdown">
                               <div className="flex items-center gap-2">
-                                <AreaChart className="h-3 w-3" />
+                                <ChartLine className="h-3 w-3" />
                                 Max Drawdown
                               </div>
                             </SelectItem>
@@ -697,7 +697,7 @@ export function PerformanceGoals() {
                             </SelectItem>
                             <SelectItem value="weekly">
                               <div className="flex items-center gap-2">
-                                <CalendarDays className="h-3 w-3" />
+                                <CalendarDots className="h-3 w-3" />
                                 Weekly
                               </div>
                             </SelectItem>
@@ -827,7 +827,7 @@ export function PerformanceGoals() {
                             title="Reset progress"
                             aria-label="Reset goal"
                           >
-                            <RotateCcw className="h-3 w-3" />
+                            <ArrowCounterClockwise className="h-3 w-3" />
                           </Button>
                         )}
                         <Button
@@ -838,7 +838,7 @@ export function PerformanceGoals() {
                           title="Delete goal"
                           aria-label="Delete goal"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
@@ -1114,9 +1114,9 @@ export function PerformanceGoals() {
           <CardContent className="pt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {achievedGoals.map(goal => {
-                const GoalIcon = goal.type === 'profit' ? DollarSign
+                const GoalIcon = goal.type === 'profit' ? CurrencyDollar
                   : goal.type === 'winRate' ? Star
-                  : goal.type === 'trades' ? Zap
+                  : goal.type === 'trades' ? Lightning
                   : goal.type === 'maxLoss' ? Shield
                   : goal.type === 'maxDrawdown' ? ShieldCheck
                   : Medal

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, BellOff, Loader2 } from 'lucide-react';
+import { Bell, BellSlash, SpinnerGap } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { isPushSupported, subscribeToPush, getExistingSubscription } from '@/lib/push-notifications';
@@ -98,9 +98,9 @@ export function PushNotificationPrompt() {
           className="h-7 text-xs"
         >
           {loading ? (
-            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+            <SpinnerGap className="mr-1.5 h-3 w-3 animate-spin" />
           ) : (
-            <BellOff className="mr-1.5 h-3 w-3" />
+            <BellSlash className="mr-1.5 h-3 w-3" />
           )}
           Disable notifications
         </Button>
@@ -126,7 +126,7 @@ export function PushNotificationPrompt() {
         className="h-7 text-xs"
       >
         {loading ? (
-          <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+          <SpinnerGap className="mr-1.5 h-3 w-3 animate-spin" />
         ) : (
           <Bell className="mr-1.5 h-3 w-3" />
         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AlertTriangle, Brain, Loader2, X } from 'lucide-react';
+import { Warning, SpinnerGap, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useAuth } from '@/contexts/auth-context';
@@ -58,7 +59,7 @@ function SampleRiskAlert() {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
+          <Warning className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
           <span className="text-sm font-semibold">3 consecutive losing trades detected</span>
         </div>
         <button
@@ -88,7 +89,7 @@ function SampleRiskAlert() {
 
 export function AIRiskAlertMonitor() {
   const { themeColors, alpha } = useThemePresets();
-  const { isPro } = useProStatus();
+  const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { user, isDemo } = useAuth();
   const userStorage = useUserStorage();
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -96,7 +97,7 @@ export function AIRiskAlertMonitor() {
   const [loading, setLoading] = useState<Set<string>>(new Set());
 
   const detectPatterns = useCallback(() => {
-    if (!user || isDemo || !isPro) return;
+    if (!user || isDemo || !hasAIAccess) return;
 
     const tradesRaw = userStorage.getItem('trades');
     if (!tradesRaw) return;
@@ -184,7 +185,7 @@ export function AIRiskAlertMonitor() {
       // Auto-fetch AI advice for the first alert
       fetchAdvice(detected[0], sorted.slice(0, 10));
     }
-  }, [user, isDemo, isPro, userStorage]);
+  }, [user, isDemo, hasAIAccess, userStorage]);
 
   useEffect(() => {
     detectPatterns();
@@ -224,6 +225,7 @@ export function AIRiskAlertMonitor() {
       const cacheKey = `ftj-risk-alert-${alert.type}-${today}`;
       setAICache(cacheKey, true);
 
+      if (response.freeUsage) updateFreeAiQuota(response.freeUsage);
       trackEvent('ai_risk_alert_used');
       setAlerts(prev =>
         prev.map(a => a.type === alert.type ? { ...a, advice: response.result } : a)
@@ -247,7 +249,7 @@ export function AIRiskAlertMonitor() {
 
   const visibleAlerts = alerts.filter(a => !dismissed.has(a.type));
 
-  if (!isPro && !isDemo) return <SampleRiskAlert />;
+  if (!hasAIAccess && !isDemo) return <SampleRiskAlert />;
 
   if (visibleAlerts.length === 0) return null;
 
@@ -264,7 +266,7 @@ export function AIRiskAlertMonitor() {
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
+              <Warning className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
               <span className="text-sm font-semibold">{alert.title}</span>
             </div>
             <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => dismiss(alert.type)}>
@@ -274,14 +276,19 @@ export function AIRiskAlertMonitor() {
 
           {loading.has(alert.type) ? (
             <div className="flex items-center gap-2 mt-3 ml-6">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: themeColors.primary }} />
+              <SpinnerGap className="h-3.5 w-3.5 animate-spin" style={{ color: themeColors.primary }} />
               <span className="text-xs text-muted-foreground">Getting AI advice...</span>
             </div>
           ) : alert.advice ? (
-            <div
-              className="mt-3 ml-6 text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h4]:text-foreground [&_li]:py-0.5"
-              dangerouslySetInnerHTML={{ __html: renderAlertMarkdown(alert.advice) }}
-            />
+            <>
+              <div
+                className="mt-3 ml-6 text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h4]:text-foreground [&_li]:py-0.5"
+                dangerouslySetInnerHTML={{ __html: renderAlertMarkdown(alert.advice) }}
+              />
+              <div className="mt-2 ml-6">
+                <AIFeedback feature="AI Risk Alert" responseId={alert.type} />
+              </div>
+            </>
           ) : null}
         </div>
       ))}

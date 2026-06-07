@@ -3,6 +3,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
+import { triggerFeedbackDialog } from '@/lib/feedback-trigger';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -23,10 +24,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Edit, Trash2, Upload, Download, BarChart3, FileText, FileDown, Calendar, Brain, Tags } from 'lucide-react';
+import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
-import { DollarSign, Target, Trophy, Scale, CheckCircle, AlertTriangle, TrendingUp, TrendingDown, LineChart, Clock, Coins, SlidersHorizontal, StickyNote, ArrowRight } from 'lucide-react';
+import { CurrencyDollar, Target, Trophy, Scales, CheckCircle, Warning, TrendUp, TrendDown, ChartLineUp, Clock, Coins, Sliders, Note, ArrowRight } from '@phosphor-icons/react';
 import {
   Tooltip,
   TooltipContent,
@@ -123,7 +124,7 @@ const forexPairsSet = new Set([
 export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
   const { settings } = useSettings();
-  const { isDemo } = useAuth();
+  const { user, isDemo } = useAuth();
   const { isPro } = useProStatus();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
@@ -513,6 +514,31 @@ export default function TradeLog() {
       setJournalPromptTrade(newTrade);
       // Check risk rules after saving (warn only, never block)
       if (pnl < 0) checkRiskRules(pnl, newTrade.exitTime);
+
+      // Referral nudge after a winning trade (max once per 7 days)
+      if (pnl > 0 && user && !isDemo) {
+        const NUDGE_KEY = 'ftj-referral-nudge-at';
+        const lastNudge = localStorage.getItem(NUDGE_KEY);
+        const daysSinceNudge = lastNudge ? (Date.now() - Number(lastNudge)) / (1000 * 60 * 60 * 24) : Infinity;
+        if (daysSinceNudge > 7) {
+          localStorage.setItem(NUDGE_KEY, String(Date.now()));
+          const link = `https://www.freetradejournal.com/signup?ref=${user.uid}`;
+          setTimeout(() => {
+            toast('Nice win! Know a trader who could use a free journal?', {
+              duration: 8000,
+              action: {
+                label: 'Copy referral link',
+                onClick: () => {
+                  navigator.clipboard.writeText(link);
+                  toast.success('Referral link copied');
+                  trackEvent('referral_nudge_copied');
+                },
+              },
+            });
+            trackEvent('referral_nudge_shown');
+          }, 1500);
+        }
+      }
     }
 
     form.reset();
@@ -742,7 +768,20 @@ export default function TradeLog() {
             duration: 6000
           }
         );
-        
+
+        if (newTrades.length >= 5) {
+          setTimeout(() => {
+            toast('How was the import experience?', {
+              description: 'Help us improve CSV imports for your broker.',
+              duration: 8000,
+              action: {
+                label: 'Give feedback',
+                onClick: () => triggerFeedbackDialog('CSV Import'),
+              },
+            });
+          }, 2000);
+        }
+
         // Dialog already closed at start of function
         
       } else {
@@ -1108,7 +1147,7 @@ export default function TradeLog() {
                 onClick={() => document.getElementById('csv-import')?.click()}
                 disabled={csvUploadState.isUploading}
               >
-                <Upload className="mr-2 h-4 w-4" />
+                <UploadSimple className="mr-2 h-4 w-4" />
                 {csvUploadState.isUploading ? 'Processing...' : 'Import'}
               </Button>
               <input
@@ -1124,7 +1163,7 @@ export default function TradeLog() {
               <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" disabled={trades.length === 0}>
-                    <Download className="mr-2 h-4 w-4" />
+                    <DownloadSimple className="mr-2 h-4 w-4" />
                     Export
                   </Button>
                 </PopoverTrigger>
@@ -1172,7 +1211,7 @@ export default function TradeLog() {
                 onClick={() => setIsPdfDialogOpen(true)}
                 disabled={trades.length === 0}
               >
-                <FileDown className="mr-2 h-4 w-4" />
+                <FileArrowDown className="mr-2 h-4 w-4" />
                 PDF
               </Button>
 
@@ -1183,7 +1222,7 @@ export default function TradeLog() {
                 onClick={() => setIsStrategyTaggerOpen(true)}
                 disabled={trades.length === 0}
               >
-                <Tags className="mr-2 h-4 w-4" />
+                <Tag className="mr-2 h-4 w-4" />
                 Auto-Tag
               </Button>
               )}
@@ -1201,7 +1240,7 @@ export default function TradeLog() {
       {!isPro && !isDemo && trades.length >= 5 && (
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <ProUpgradeCard
-            icon={FileDown}
+            icon={FileArrowDown}
             title="Generate professional PDF reports"
             description={`Export your ${trades.length} trades as a detailed performance report — perfect for prop firm applications or tracking progress.`}
             cta="Unlock with Pro"
@@ -1226,7 +1265,7 @@ export default function TradeLog() {
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold flex items-center gap-2.5">
                       <div className="p-1.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                        <LineChart className="h-4 w-4" style={{ color: themeColors.primary }} />
+                        <ChartLineUp className="h-4 w-4" style={{ color: themeColors.primary }} />
                       </div>
                       {editingTrade ? 'Edit Trade' : 'Add New Trade'}
                     </DialogTitle>
@@ -1239,7 +1278,7 @@ export default function TradeLog() {
                       {/* Trade Info */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <LineChart className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <ChartLineUp className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Trade Info
                         </div>
                         <Separator />
@@ -1352,7 +1391,7 @@ export default function TradeLog() {
                       {/* Pricing */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <DollarSign className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <CurrencyDollar className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Pricing
                         </div>
                         <Separator />
@@ -1544,7 +1583,7 @@ export default function TradeLog() {
                       {/* Advanced */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <SlidersHorizontal className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <Sliders className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Advanced
                         </div>
                         <Separator />
@@ -1663,7 +1702,7 @@ export default function TradeLog() {
                       {/* Notes & Strategy */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <StickyNote className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <Note className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                           Notes & Strategy
                         </div>
                         <Separator />
@@ -1776,7 +1815,7 @@ export default function TradeLog() {
                       className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                     >
-                      {quickStats.totalPnL >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {quickStats.totalPnL >= 0 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                       {quickStats.totalPnL >= 0 ? '+' : '-'}{quickStats.pnlPct.toFixed(1)}%
                     </div>
                   </TooltipTrigger>
@@ -1899,7 +1938,7 @@ export default function TradeLog() {
                       className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
                       style={{ color: quickStats.avgRR >= 1.5 ? themeColors.profit : quickStats.avgRR >= 1 ? themeColors.primary : themeColors.loss }}
                     >
-                      {quickStats.avgRR >= 1 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      {quickStats.avgRR >= 1 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                       {quickStats.avgRR >= 2 ? 'Excellent' : quickStats.avgRR >= 1.5 ? 'Good' : quickStats.avgRR >= 1 ? 'Okay' : 'Low'}
                     </div>
                   </TooltipTrigger>
@@ -2007,7 +2046,7 @@ export default function TradeLog() {
               <div className="px-6 py-14 flex flex-col items-center text-center gap-8">
                 {/* Icon */}
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}15` }}>
-                  <BarChart3 className="h-8 w-8" style={{ color: themeColors.primary }} />
+                  <ChartBar className="h-8 w-8" style={{ color: themeColors.primary }} />
                 </div>
 
                 <div className="space-y-2 max-w-xs">
@@ -2027,7 +2066,7 @@ export default function TradeLog() {
                     Add Trade
                   </Button>
                   <Button variant="outline" onClick={() => document.getElementById('csv-import')?.click()}>
-                    <Upload className="mr-2 h-4 w-4" />
+                    <UploadSimple className="mr-2 h-4 w-4" />
                     Import CSV
                   </Button>
                 </div>
@@ -2035,8 +2074,8 @@ export default function TradeLog() {
                 {/* Tips */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left">
                   {([
-                    { Icon: Upload, title: 'Import from broker', body: 'Export a CSV from MT4/MT5, IBKR, or Tradovate and import it in one click.' },
-                    { Icon: Edit, title: 'Log manually', body: 'Record entry/exit prices, lot size, spread, commission and let us calculate your P&L.' },
+                    { Icon: UploadSimple, title: 'Import from broker', body: 'Export a CSV from MT4/MT5, IBKR, or Tradovate and import it in one click.' },
+                    { Icon: PencilSimple, title: 'Log manually', body: 'Record entry/exit prices, lot size, spread, commission and let us calculate your P&L.' },
                     { Icon: Brain, title: 'AI insights unlock', body: 'Once you have trades, AI analysis, coaching, and strategy tagging become available.' },
                   ] as const).map((tip) => (
                     <div key={tip.title} className="rounded-xl border border-border/60 bg-muted/50 p-4 space-y-2">
@@ -2061,7 +2100,7 @@ export default function TradeLog() {
                     onClick={handleBulkDelete}
                     className="h-7 text-xs px-3"
                   >
-                    <Trash2 className="h-3 w-3 mr-1" />
+                    <Trash className="h-3 w-3 mr-1" />
                     Delete selected
                   </Button>
                   <button
@@ -2177,7 +2216,7 @@ export default function TradeLog() {
                               className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-shadow duration-200 hover:shadow-md"
                               aria-label="Edit trade"
                             >
-                              <Edit className="h-4 w-4" />
+                              <PencilSimple className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -2186,7 +2225,7 @@ export default function TradeLog() {
                               className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-shadow duration-200 hover:shadow-md"
                               aria-label="Delete trade"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -2299,7 +2338,7 @@ export default function TradeLog() {
                           }}
                           className="flex-1"
                         >
-                          <Edit className="mr-2 h-3 w-3" />
+                          <PencilSimple className="mr-2 h-3 w-3" />
                           Edit
                         </Button>
                         <Button
@@ -2308,7 +2347,7 @@ export default function TradeLog() {
                           onClick={() => handleDelete(trade.id)}
                           className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
                         >
-                          <Trash2 className="mr-2 h-3 w-3" />
+                          <Trash className="mr-2 h-3 w-3" />
                           Delete
                         </Button>
                       </div>
@@ -2571,7 +2610,7 @@ export default function TradeLog() {
                     style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
                   >
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      <ChartBar className="h-4 w-4" style={{ color: themeColors.primary }} />
                       <h3 className="font-semibold text-foreground text-sm">
                         Trade Preview <span className="font-normal text-muted-foreground">(First 5 rows)</span>
                       </h3>
@@ -2720,7 +2759,7 @@ export default function TradeLog() {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" style={{ color: themeColors.loss }} />
+                      <Warning className="h-4 w-4" style={{ color: themeColors.loss }} />
                       <h3 className="font-semibold text-sm" style={{ color: themeColors.loss }}>
                         Import Warnings ({csvPreview.parseResult.errors.length})
                       </h3>
@@ -2755,7 +2794,7 @@ export default function TradeLog() {
                     </span>
                   ) : (
                     <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
-                      <AlertTriangle className="h-4 w-4" />
+                      <Warning className="h-4 w-4" />
                       No valid trades found
                     </span>
                   )}

@@ -9,12 +9,12 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Megaphone, Plus, Zap, Bug, ChevronRight, ExternalLink } from 'lucide-react'
+import { Plus, Lightning, Bug, CaretRight, ArrowSquareOut } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 
 const typeConfig: Record<ChangelogItemType, { label: string; icon: typeof Plus; color: string; bg: string }> = {
   new: { label: 'New', icon: Plus, color: '#22c55e', bg: '#22c55e15' },
-  improved: { label: 'Improved', icon: Zap, color: '#3b82f6', bg: '#3b82f615' },
+  improved: { label: 'Improved', icon: Lightning, color: '#3b82f6', bg: '#3b82f615' },
   fixed: { label: 'Fixed', icon: Bug, color: '#f59e0b', bg: '#f59e0b15' },
 }
 
@@ -124,7 +124,7 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
             className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
           >
             View all release notes
-            <ExternalLink className="h-3 w-3" />
+            <ArrowSquareOut className="h-3 w-3" />
           </Link>
           <Button
             onClick={() => onOpenChange(false)}
@@ -135,7 +135,7 @@ export function WhatsNewDialog({ open, onOpenChange }: WhatsNewDialogProps) {
             }}
           >
             Got it
-            <ChevronRight className="h-3.5 w-3.5" />
+            <CaretRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </DialogContent>

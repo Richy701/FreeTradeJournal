@@ -8,11 +8,11 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, Building2, Receipt, Target, Trophy, BarChart3, Infinity } from 'lucide-react';
+import { ArrowRight, X, Buildings, Receipt, Target, Trophy, ChartBar, Infinity } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
-    icon: <Building2 className="h-5 w-5" />,
+    icon: <Buildings className="h-5 w-5" />,
     title: 'Account Tracking',
     desc: 'Create a separate account for each evaluation or funded seat. Name it after your firm and challenge, set the type, and log trades against it.',
   },
@@ -32,7 +32,7 @@ const FEATURES = [
     desc: 'Works with FTMO, Apex, TopStep, Tradeify, E8 Markets, The5ers, and any other firm. You create the accounts and enter your details.',
   },
   {
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: <ChartBar className="h-5 w-5" />,
     title: 'Full Analytics',
     desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.',
   },

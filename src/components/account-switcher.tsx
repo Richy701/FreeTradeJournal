@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronsUpDown, Check } from "lucide-react"
+import { CaretUpDown, Check } from '@phosphor-icons/react'
 import { cn } from "@/lib/utils"
 import { useAccounts, type TradingAccount } from "@/contexts/account-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -38,7 +38,7 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
           className="w-full h-9 justify-between px-2.5 text-sm font-medium"
         >
           <span className="truncate">{activeAccount.name}</span>
-          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <CaretUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

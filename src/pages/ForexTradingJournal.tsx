@@ -8,11 +8,11 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, DollarSign, Calculator, BarChart3, Building2, Infinity, FileDown } from 'lucide-react';
+import { ArrowRight, X, CurrencyDollar, Calculator, ChartBar, Buildings, Infinity, FileArrowDown } from '@phosphor-icons/react';
 
 const FEATURES = [
   {
-    icon: <DollarSign className="h-5 w-5" />,
+    icon: <CurrencyDollar className="h-5 w-5" />,
     title: 'Pair Logging',
     desc: 'Log every forex trade — symbol, direction, entry and exit price, lot size, commission, and timestamps. Add notes, tag a strategy, attach chart screenshots.',
   },
@@ -22,17 +22,17 @@ const FEATURES = [
     desc: 'Standard pairs and yen pairs detected automatically. Pip P&L calculated from your lot size — no manual math.',
   },
   {
-    icon: <FileDown className="h-5 w-5" />,
+    icon: <FileArrowDown className="h-5 w-5" />,
     title: 'CSV Import',
     desc: 'Export your trade history from MetaTrader 5 or Tradovate and import it. Entry/exit prices, lot sizes, commissions, and dates mapped automatically.',
   },
   {
-    icon: <BarChart3 className="h-5 w-5" />,
+    icon: <ChartBar className="h-5 w-5" />,
     title: 'Full Analytics',
     desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.',
   },
   {
-    icon: <Building2 className="h-5 w-5" />,
+    icon: <Buildings className="h-5 w-5" />,
     title: 'Multi-Account',
     desc: 'Separate accounts for different brokers or account types — live, demo, funded. Each one tracks its own trades, balance, and metrics.',
   },

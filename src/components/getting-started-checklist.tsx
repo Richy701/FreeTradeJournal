@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, ChevronDown, ChevronUp, BookOpen, Target, TrendingUp, Bot } from 'lucide-react';
+import { Check, X, CaretDown, CaretUp, BookOpen, Target, TrendUp, Robot } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
@@ -49,7 +49,7 @@ function getDescription(id: string, level: ExperienceLevel | null): string {
 
 export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: number }) {
   const { user, isDemo } = useAuth();
-  const { isPro } = useProStatus();
+  const { isPro, hasAIAccess } = useProStatus();
   const userStorage = useUserStorage();
   const [dismissed, setDismissed] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -96,7 +96,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         id: 'trade',
         label: 'Log your first trade',
         description: getDescription('trade', level),
-        icon: TrendingUp,
+        icon: TrendUp,
         href: '/trades',
         done: hasTrades,
       },
@@ -116,11 +116,13 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         href: '/goals',
         done: hasGoals,
       },
-      ...(isPro ? [{
+      ...(hasAIAccess ? [{
         id: 'ai',
-        label: 'Check your AI coach',
-        description: 'Get personalised coaching based on your trading patterns.',
-        icon: Bot,
+        label: 'Ask Coach FTJ',
+        description: isPro
+          ? 'Get personalised coaching based on your trading patterns.'
+          : 'You have 3 free AI queries this month -- try your AI trading coach.',
+        icon: Robot,
         href: '/dashboard',
         done: hasUsedAiCoach,
       }] : []),
@@ -172,7 +174,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
             className="p-1 text-muted-foreground hover:text-foreground transition-colors"
             aria-label={collapsed ? 'Expand' : 'Collapse'}
           >
-            {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            {collapsed ? <CaretDown className="h-4 w-4" /> : <CaretUp className="h-4 w-4" />}
           </button>
           <button
             onClick={dismiss}

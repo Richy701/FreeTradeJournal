@@ -1,9 +1,4 @@
-import {
-  Folder,
-  Share,
-  Trash2,
-  type LucideIcon,
-} from "lucide-react"
+import { Folder, Share, Trash, type Icon, DotsThree } from '@phosphor-icons/react'
 
 import {
   DropdownMenu,
@@ -21,7 +16,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { DotsHorizontalIcon } from "@radix-ui/react-icons"
 
 export function NavProjects({
   projects,
@@ -29,7 +23,7 @@ export function NavProjects({
   projects: {
     name: string
     url: string
-    icon: LucideIcon
+    icon: Icon
   }[]
 }) {
   const { isMobile } = useSidebar()
@@ -49,7 +43,7 @@ export function NavProjects({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction showOnHover>
-                  <DotsHorizontalIcon />
+                  <DotsThree />
                   <span className="sr-only">More</span>
                 </SidebarMenuAction>
               </DropdownMenuTrigger>
@@ -68,7 +62,7 @@ export function NavProjects({
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => { if (!window.confirm('Are you sure you want to delete this project?')) return; }}>
-                  <Trash2 className="text-muted-foreground" />
+                  <Trash className="text-muted-foreground" />
                   <span>Delete Project</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -77,7 +71,7 @@ export function NavProjects({
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton>
-            <DotsHorizontalIcon />
+            <DotsThree />
             <span>More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>

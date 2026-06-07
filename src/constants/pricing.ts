@@ -61,7 +61,7 @@ export const FREE_FEATURES = [
 export const PRO_FEATURES = [
   'PropTracker — unlimited prop accounts',
   'Advanced analytics & charts',
-  'AI Trading Coach & risk alerts',
+  'Coach FTJ & AI risk alerts',
   'AI trade review & strategy tagger',
   'Cloud sync across devices',
   'Unlimited data exports',
