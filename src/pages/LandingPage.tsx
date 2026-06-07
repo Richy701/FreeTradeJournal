@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
@@ -12,8 +13,46 @@ import { LogoCloud } from '@/components/blocks/logo-cloud';
 import { SEOMeta } from '@/components/seo-meta';
 
 
+const HOME_FAQS = [
+  {
+    q: 'Is FreeTradeJournal really free?',
+    a: 'Yes. FreeTradeJournal is free forever with no credit card required to sign up. The free plan includes unlimited trade logging, performance analytics, a calendar heatmap, CSV import and export, and an AI trading coach. A paid Pro tier is available for advanced features like prop firm account tracking and priority support, but the core journal is completely free.',
+  },
+  {
+    q: 'What markets can I track in this trading journal?',
+    a: 'FreeTradeJournal supports forex, futures, stocks, options, crypto, and indices. You can log trades across any market and track performance metrics such as win rate, profit factor, and average risk-to-reward for each instrument or asset class.',
+  },
+  {
+    q: 'Can I import trades from my broker?',
+    a: 'Yes. You can import trades via CSV from popular platforms including MetaTrader 4, MetaTrader 5, Tradovate, NinjaTrader, and most brokers that export to CSV. The import wizard maps columns automatically so you can get started in seconds.',
+  },
+  {
+    q: 'Does FreeTradeJournal work as a prop firm trading journal?',
+    a: 'Absolutely. FreeTradeJournal includes a dedicated prop firm dashboard where you can track multiple funded accounts, monitor daily and overall drawdown limits, view payout history, and compare your performance across different prop firms like FTMO, MyFundedFX, and TopStep.',
+  },
+  {
+    q: 'Is there an AI trading coach?',
+    a: 'Yes. The built-in AI trading coach analyzes your journal entries and trading patterns to surface actionable insights. It identifies recurring mistakes, highlights your strongest setups, and suggests improvements based on your actual trade data.',
+  },
+  {
+    q: 'Can I use this as a day trading journal?',
+    a: 'FreeTradeJournal is an excellent free day trading journal. It is built for active traders who need to log multiple trades per day, review intraday performance on a calendar heatmap, and analyze metrics like average hold time, win rate by session, and daily P&L. The fast trade entry form and real-time dashboard are designed for the speed day traders need.',
+  },
+];
+
 export default function LandingPage() {
   const { user } = useAuth();
+
+  useEffect(() => {
+    const sd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: HOME_FAQS.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(sd);
+    script.id = 'faq-structured-data-home';
+    document.getElementById('faq-structured-data-home')?.remove();
+    document.head.appendChild(script);
+    return () => { document.getElementById('faq-structured-data-home')?.remove(); };
+  }, []);
 
   // If user is signed in, redirect to dashboard
   // Don't block rendering while auth loads — show landing page immediately
