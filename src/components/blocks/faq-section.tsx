@@ -35,7 +35,7 @@ const DEFAULT_FAQS: FAQ[] = [
     },
     {
       question: "Is my trading data secure?",
-      answer: "Your data is encrypted in transit and at rest using Firebase. Only your authenticated account can access your trades — no one else, including the FreeTradeJournal team, can view your information."
+      answer: "Your data is encrypted in transit using TLS and at rest using AES-256 encryption in your browser. Pro users also get encrypted cloud sync via Firebase. Only your authenticated account can access your trades."
     },
     {
       question: "How much does it cost?",

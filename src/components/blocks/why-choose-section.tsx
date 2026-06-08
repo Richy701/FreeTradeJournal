@@ -40,7 +40,7 @@ export default function WhyChooseSection() {
     {
       icon: Shield,
       title: "Bank-Level Security",
-      description: "Your trading data is encrypted with enterprise-grade security. We never share your information and comply with industry standards.",
+      description: "Your trading data is encrypted with AES-256-GCM, the same standard used by banks and financial institutions. We never share your information.",
       gradient: "from-blue-500/20 to-cyan-500/20",
       iconColor: "text-blue-500",
       iconBg: "bg-blue-500/10"

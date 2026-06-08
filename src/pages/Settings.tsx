@@ -148,7 +148,7 @@ export default function Settings() {
   const stats = getTradeStats();
 
   const exportData = () => {
-    const keys = ['trades','accounts','journalEntries','goals','riskRules','settings','onboarding','onboardingCompleted'];
+    const keys = ['trades','accounts','journalEntries','goals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions'];
     const raw: Record<string, any> = {};
     keys.forEach(k => { const v = userStorage.getItem(k); if (v) try { raw[k] = JSON.parse(v); } catch { raw[k] = v; } });
     const blob = new Blob([JSON.stringify({ ...raw, exportDate: new Date().toISOString(), version: '2.0' }, null, 2)], { type: 'application/json' });
@@ -176,7 +176,9 @@ export default function Settings() {
         if (data.settings) userStorage.setItem('settings', JSON.stringify(data.settings));
         if (data.onboarding) userStorage.setItem('onboarding', JSON.stringify(data.onboarding));
         if (data.onboardingCompleted !== undefined) userStorage.setItem('onboardingCompleted', String(data.onboardingCompleted));
-        const count = [data.trades?.length||0, data.accounts?.length||0, data.journalEntries?.length||0, data.goals?.length||0].reduce((a,b)=>a+b,0);
+        if (data.propFirmAccounts) userStorage.setItem('propFirmAccounts', JSON.stringify(data.propFirmAccounts));
+        if (data.propFirmTransactions) userStorage.setItem('propFirmTransactions', JSON.stringify(data.propFirmTransactions));
+        const count = [data.trades?.length||0, data.accounts?.length||0, data.journalEntries?.length||0, data.goals?.length||0, data.propFirmAccounts?.length||0].reduce((a,b)=>a+b,0);
         toast.success(`Imported ${count} items!`);
         setTimeout(() => window.location.reload(), 2000);
       } catch { toast.error('Error importing data. Check the file format.'); }

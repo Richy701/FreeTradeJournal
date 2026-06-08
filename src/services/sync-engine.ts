@@ -101,9 +101,9 @@ export class SyncEngine {
             continue;
           }
 
-          // Update local data
-          const scopedKey = `user_${this.uid}_${key}`;
-          localStorage.setItem(scopedKey, remoteValue);
+          // Update local data (go through UserStorage to keep cache & encryption in sync)
+          // skipSync=true to avoid pushing the same data back to remote
+          UserStorage.setItem(this.uid, key, remoteValue, true);
           this.notifyChange(key);
           console.log(`[Sync] Pulled ${key} from remote`);
         }
@@ -166,8 +166,9 @@ export class SyncEngine {
             continue;
           }
 
-          const scopedKey = `user_${this.uid}_${key}`;
-          localStorage.setItem(scopedKey, remoteValue);
+          // Go through UserStorage to keep cache & encryption in sync
+          // skipSync=true to avoid pushing the same data back to remote
+          UserStorage.setItem(this.uid, key, remoteValue, true);
           this.notifyChange(key);
           console.log(`[Sync] Pulled ${key} from remote (poll)`);
         }

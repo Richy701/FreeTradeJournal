@@ -1,7 +1,5 @@
-/**
- * User-scoped localStorage utilities
- * Ensures each user's data is completely isolated
- */
+// User-scoped localStorage with transparent encryption for logged-in users
+import { deriveEncryptionKey, encrypt, decrypt, isEncrypted, isCryptoAvailable } from '@/utils/crypto';
 
 // Module-level sync reference (set by SyncProvider, avoids circular deps)
 let syncRef: { syncKey: (key: string, data: string) => void } | null = null;
@@ -11,6 +9,41 @@ export function setSyncRef(ref: typeof syncRef) {
 }
 
 export class UserStorage {
+  private static cache = new Map<string, string>();
+  private static encryptionKeys = new Map<string, CryptoKey>();
+  private static readyUsers = new Set<string>();
+
+  static async initEncryption(userId: string): Promise<void> {
+    if (!isCryptoAvailable()) return;
+    const key = await deriveEncryptionKey(userId);
+    this.encryptionKeys.set(userId, key);
+    const prefix = `user_${userId}_`;
+    for (let i = 0; i < localStorage.length; i++) {
+      const scopedKey = localStorage.key(i);
+      if (!scopedKey || !scopedKey.startsWith(prefix)) continue;
+      const raw = localStorage.getItem(scopedKey);
+      if (raw === null) continue;
+      if (isEncrypted(raw)) {
+        try {
+          const plaintext = await decrypt(raw, key);
+          this.cache.set(scopedKey, plaintext);
+        } catch {
+          this.cache.set(scopedKey, raw);
+        }
+      } else {
+        this.cache.set(scopedKey, raw);
+        encrypt(raw, key)
+          .then(encrypted => localStorage.setItem(scopedKey, encrypted))
+          .catch(() => {});
+      }
+    }
+    this.readyUsers.add(userId);
+  }
+
+  static isReady(userId: string): boolean {
+    return this.readyUsers.has(userId);
+  }
+
   private static getScopedKey(userId: string | null, key: string): string {
     if (!userId) {
       return `guest_${key}`;
@@ -20,20 +53,31 @@ export class UserStorage {
 
   static getItem(userId: string | null, key: string): string | null {
     const scopedKey = this.getScopedKey(userId, key);
+    if (this.cache.has(scopedKey)) {
+      return this.cache.get(scopedKey)!;
+    }
     return localStorage.getItem(scopedKey);
   }
 
-  static setItem(userId: string | null, key: string, value: string): void {
+  static setItem(userId: string | null, key: string, value: string, skipSync = false): void {
     const scopedKey = this.getScopedKey(userId, key);
-    localStorage.setItem(scopedKey, value);
-    // Fire-and-forget sync to Firestore for logged-in users
-    if (syncRef && userId) {
+    const cryptoKey = userId ? this.encryptionKeys.get(userId) : undefined;
+    if (cryptoKey && isCryptoAvailable()) {
+      this.cache.set(scopedKey, value);
+      encrypt(value, cryptoKey)
+        .then(encrypted => localStorage.setItem(scopedKey, encrypted))
+        .catch(() => localStorage.setItem(scopedKey, value));
+    } else {
+      localStorage.setItem(scopedKey, value);
+    }
+    if (syncRef && userId && !skipSync) {
       syncRef.syncKey(key, value);
     }
   }
 
   static removeItem(userId: string | null, key: string): void {
     const scopedKey = this.getScopedKey(userId, key);
+    this.cache.delete(scopedKey);
     localStorage.removeItem(scopedKey);
   }
 
@@ -48,7 +92,12 @@ export class UserStorage {
       }
     }
 
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    keysToRemove.forEach(key => {
+      this.cache.delete(key);
+      localStorage.removeItem(key);
+    });
+    this.encryptionKeys.delete(userId);
+    this.readyUsers.delete(userId);
   }
 
   static migrateUserData(userId: string): void {

@@ -50,8 +50,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAuth(authInstance);
       
       const { onAuthStateChanged } = await import('firebase/auth');
-      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+      const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
         if (user) {
+          // Derive encryption key and decrypt cached data before any reads/writes
+          await UserStorage.initEncryption(user.uid);
           // Migrate existing unscoped data to user-scoped data
           if (!UserStorage.hasUserData(user.uid)) {
             UserStorage.migrateUserData(user.uid);
