@@ -23,10 +23,9 @@ export function updatePostHogConsent(analyticsAllowed: boolean) {
   if (!posthog.__loaded) return;
 
   if (analyticsAllowed) {
-    posthog.opt_in_capturing();
     posthog.set_config({ persistence: 'localStorage+cookie', autocapture: true });
   } else {
-    posthog.opt_out_capturing();
+    posthog.set_config({ persistence: 'memory', autocapture: false });
   }
 }
 

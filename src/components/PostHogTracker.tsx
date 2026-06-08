@@ -52,17 +52,22 @@ export function PostHogTracker() {
     trackEvent('page_viewed', { page: pageName, path: location.pathname });
   }, [location.pathname, posthog]);
 
-  // Identify user on login, reset on logout; set pro segmentation properties
+  // Identify user on login (only with analytics consent), reset on logout
   useEffect(() => {
     if (!posthog) return;
 
     if (user && !isDemo) {
-      posthog.identify(user.uid, {
-        email: user.email ?? undefined,
-        name: user.displayName ?? undefined,
-        is_pro: isPro,
-        plan_type: subscription?.planType ?? 'free',
-      });
+      const consent = localStorage.getItem('cookieConsent');
+      const analyticsAllowed = consent ? JSON.parse(consent).analytics === true : false;
+
+      if (analyticsAllowed) {
+        posthog.identify(user.uid, {
+          email: user.email ?? undefined,
+          name: user.displayName ?? undefined,
+          is_pro: isPro,
+          plan_type: subscription?.planType ?? 'free',
+        });
+      }
     } else {
       posthog.reset();
     }

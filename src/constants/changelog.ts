@@ -17,17 +17,27 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.14.0',
     date: '2026-06-08',
-    summary: 'Full visual redesign of PropTracker, Trade Ideas, and Settings pages. Referral threshold lowered to 3 with smart nudges after winning trades. Icon migration cleanup.',
+    summary: 'Free AI access for all users. Full visual redesign of PropTracker, Trade Ideas, and Settings. Onboarding overhaul. Prop firm review pages.',
     items: [
+      {
+        type: 'new',
+        text: 'Free AI access for all users',
+        description: 'Every user now gets 3 free AI queries per month. Use them on any AI feature — Coach FTJ, Trade Review, Strategy Tagger, Risk Alerts, Journal Prompts, or Goal Coach. No credit card required. Resets monthly.',
+      },
+      {
+        type: 'improved',
+        text: 'Coach FTJ',
+        description: 'Now with tilt detection that scores how tilted you are based on recent losses, trade emotions, and trading speed. Plus a streaming AI chat so you can ask follow-up questions.',
+      },
       {
         type: 'improved',
         text: 'PropTracker visual redesign',
-        description: 'Stat cards now use tinted backgrounds with watermark icons. Success Rate Dashboard uses individual bordered cards with progress bars. Charts are bigger and easier to read. Account cards have a cleaner look with tinted stat cells.',
+        description: 'Cleaner stat cards, bigger charts, and a refreshed Success Rate Dashboard. Everything is easier to read at a glance.',
       },
       {
         type: 'improved',
         text: 'Trade Ideas page redesign',
-        description: 'Direction Split card now centers the donut chart with stat panels and progress bars below. Trader Profile card has a centered radar chart with labeled stat panels. Both cards use equal-height layouts with no dead space.',
+        description: 'Direction Split and Trader Profile cards are redesigned with centered charts, cleaner stat panels, and better use of space.',
       },
       {
         type: 'improved',
@@ -37,12 +47,22 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'AI Trade Analysis empty state',
-        description: 'The empty state now shows feature preview pills so you know what to expect before logging enough trades.',
+        description: 'Before you have enough trades for a full analysis, the page now previews exactly what AI insights you will get.',
       },
       {
         type: 'improved',
         text: 'Referral program',
         description: 'Lowered the threshold from 5 to 3 friends. After logging a winning trade, you now get a contextual nudge to share your referral link. Dismissing the banner hides it for 7 days instead of permanently.',
+      },
+      {
+        type: 'improved',
+        text: 'Onboarding redesign',
+        description: 'New users now see the real FreeTradeJournal logo, cleaner copy, and a working experience level selector during setup.',
+      },
+      {
+        type: 'new',
+        text: 'Prop firm review pages',
+        description: 'In-depth reviews for FTMO, The5ers, and Top One Futures with pricing breakdowns, pros and cons, and comparison tables. Available from the affiliate page.',
       },
       {
         type: 'fixed',
@@ -54,7 +74,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.13.0',
     date: '2026-06-05',
-    summary: 'Smarter PropTracker AI with score cards, redesigned Goals page, referral program on the dashboard, and critical bug fixes.',
+    summary: 'Smarter PropTracker AI with score cards, redesigned Goals page, referral program on the dashboard, and an AI usage fix.',
     items: [
       {
         type: 'new',
@@ -76,11 +96,6 @@ export const changelog: ChangelogEntry[] = [
         text: 'AI daily usage limits not resetting',
         description: 'Using one AI feature on a new day could leave other features stuck at their previous day\'s count, showing "limit reached" even with no usage. Counters now reset correctly across all features.',
       },
-      {
-        type: 'fixed',
-        text: 'PostHog analytics errors in production',
-        description: 'PostHog requests were hitting the SPA fallback and returning HTML instead of proxying correctly, causing 405 and MIME type errors. Added reverse proxy rewrites through Vercel.',
-      },
     ],
   },
   {
@@ -90,7 +105,7 @@ export const changelog: ChangelogEntry[] = [
     items: [
       {
         type: 'new',
-        text: 'PropTracker Challenge Rules Engine',
+        text: 'PropTracker Challenge Rules',
         description: 'Set and track drawdown limits, profit targets, daily loss caps, and other challenge rules for each prop firm account. Rules are checked automatically so you always know where you stand.',
       },
       {
@@ -120,8 +135,8 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'fixed',
-        text: 'Cloud sync race condition on new devices',
-        description: 'Signing in on a new device could trigger a race condition that wiped existing user data. Cloud data is now restored safely before any local writes.',
+        text: 'Data loss when signing in on a new device',
+        description: 'Signing in on a new device could accidentally wipe your existing data. Your cloud data is now restored safely before anything else happens.',
       },
     ],
   },
@@ -133,7 +148,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Tradovate import support',
-        description: 'Import your Tradovate Orders CSV and have trades automatically paired and P&L calculated. The parser detects the Tradovate format, filters for filled orders, and matches entries to exits using FIFO. All standard futures contracts are supported.',
+        description: 'Import your Tradovate Orders CSV and have trades automatically paired and P&L calculated. All standard futures contracts are supported.',
       },
     ],
   },
@@ -145,7 +160,12 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Self-serve account deletion',
-        description: 'You can now permanently delete your account from Settings > Data > Danger Zone. This removes your Firebase Auth account, all Firestore data, cloud-synced data, and cancels any active Stripe subscription.',
+        description: 'You can now permanently delete your account from Settings > Data > Danger Zone. This removes your account, all your data, cloud-synced data, and cancels any active subscription.',
+      },
+      {
+        type: 'fixed',
+        text: 'Mobile Chrome bottom cropping',
+        description: 'Fixed a layout issue on mobile Chrome where the bottom of the app was cut off or hidden behind the browser navigation bar.',
       },
     ],
   },
@@ -656,4 +676,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.13.0'
+export const LATEST_CHANGELOG_VERSION = '2.14.0'
