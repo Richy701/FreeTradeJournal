@@ -53,6 +53,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/api/ingest': {
+        target: 'https://eu.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/ingest/, ''),
+      },
+    },
+  },
   esbuild: {
     target: 'es2022',
     format: 'esm'
