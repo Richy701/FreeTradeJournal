@@ -21,7 +21,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 - Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
 - CSV import with live preview, validation, and smart column mapping
-- Support for MetaTrader 5, TopStep, standard CSV, and other broker formats
+- Support for Tradovate, Interactive Brokers (IBKR), MetaTrader 5, TopStep, standard CSV, and Excel (.xlsx/.xls)
+- Tradovate: auto-detects format, pairs Buy/Sell fills by product, handles Opening/Closing positions with FIFO matching
+- IBKR: supports both Closed Positions and Trades/Executions formats with automatic opening/closing execution matching
 - TopStep FIFO order pairing with side-aware queues and futures contract multipliers
 - Interactive column mapping UI for unknown/custom CSV formats
 - Duplicate detection on re-import — same CSV won't create duplicate trades, even across Dashboard and Trade Log imports
@@ -164,6 +166,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Security & Data Protection
 
+- **AES-256-GCM Encryption at Rest** — All user data in localStorage is encrypted using AES-256-GCM with PBKDF2-derived keys (100,000 iterations). Per-device random salt, unique key per user. Existing unencrypted data migrates automatically on first login
 - **XSS Protection** — All AI-generated content sanitized with DOMPurify before rendering
 - **Content Security Policy** — Strict CSP headers via Vercel with no `unsafe-eval`, no wildcard origins
 - **HSTS** — HTTP Strict Transport Security with preload enabled
@@ -203,6 +206,30 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Mobile touch targets scoped to action buttons only — inline links and tabs unaffected
 - SPA navigation (`<Link>`) for all internal routes including auth page legal links
 
+### Onboarding
+
+- Getting started checklist guiding new users through their first trades
+- First trade celebration animation
+- Experience level selection wired into the onboarding flow
+- Day-3 nudge email for users who haven't returned
+
+### Affiliate Page
+
+- Dedicated partner deals page with prop firm comparison table and discount codes
+- Individual review pages for FTMO, The5%ers, Top One Futures
+- PostHog tracking on affiliate link clicks
+- Linked from sidebar and site footer
+
+### Email System (Resend)
+
+- Welcome email on signup
+- Email verification flow
+- Pro upgrade and cancellation confirmation emails
+- Day 7 and Day 14 retention campaigns with bad email filtering
+- Trial started, trial ending (2-day reminder), and trial conversion emails
+- Referral credited and reward earned notifications
+- Hosted PNG banner, List-Unsubscribe headers, and unsubscribe link in all emails
+
 ### Demo Mode
 
 - Instant access without signup via "Try Demo"
@@ -216,7 +243,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm or yarn
 
 ### Installation
@@ -264,7 +291,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 
 ## How to Use
 
-1. **Sign Up / Login** — Create an account with email, sign in with Google, or use Apple Sign-In
+1. **Sign Up / Login** — Create an account with email (with verification), sign in with Google, or use Apple Sign-In. Includes forgot/reset password flow
 2. **Setup** — Name your first trading account, pick a type (Live, Demo, Prop Firm), and set your starting balance
 3. **Dashboard** — View your trading performance at a glance
 4. **Add Trades** — Manual entry or CSV import from your broker
@@ -274,11 +301,12 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 
 ### Data Management
 
-- **Local-First Storage** — Trade data stored in browser localStorage, scoped per user
+- **Local-First Storage** — Trade data stored in browser localStorage, encrypted at rest with AES-256-GCM, scoped per user
 - **Cloud Sync (Pro)** — Real-time Firestore sync via Cloud Functions proxy keeps data safe across devices for logged-in Pro users, with automatic restore on new devices
 - **localStorage Protection (Free)** — Storage usage monitor, backup reminders after 30 days, incognito mode detection, and data warning banners
+- **Self-Serve Account Deletion** — Users can permanently delete their account and all associated data from Settings
 - **User-Scoped Isolation** — Complete data separation between accounts
-- **Complete Backup & Restore** — Export all data (trades, journal entries, goals, risk rules, settings) as JSON and import from backup with item count preview
+- **Complete Backup & Restore** — Export all data (trades, journal entries, goals, risk rules, accounts, prop firm accounts, prop firm transactions, and settings) as JSON and import from backup with item count preview
 - **CSV/Excel Import** — Bring in existing trading history from any broker
 - **Clear All Data** — Full reset of trades, journal entries, goals, and accounts
 
@@ -297,8 +325,8 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 | **Routing** | React Router DOM v7 |
 | **Date Handling** | date-fns |
 | **Email** | Resend |
-| **Icons** | Lucide React + FontAwesome |
-| **Analytics** | Vercel Analytics + Google Analytics |
+| **Icons** | Phosphor Icons + Lucide React |
+| **Analytics** | Vercel Analytics + PostHog + Google Analytics |
 | **Video** | Remotion |
 | **SEO** | Build-time prerendering with Puppeteer |
 | **Virtualization** | react-window |
@@ -307,7 +335,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 | **AI** | OpenAI (via Firebase Cloud Functions) |
 | **Payments** | Stripe |
 | **Cloud Database** | Firestore |
-| **Security** | DOMPurify (XSS prevention) |
+| **Security** | Web Crypto API (AES-256-GCM) + DOMPurify (XSS prevention) |
 
 ## CSV Import
 
@@ -316,6 +344,14 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 The system auto-detects and maps common broker CSV formats:
 
 ```csv
+# Tradovate (Orders Export)
+Auto-detected by B/S, Product, Avg Fill Price columns. Pairs Buy/Sell fills
+by product using FIFO matching, handles Opening/Closing position disposition.
+
+# Interactive Brokers (IBKR)
+Supports both "Closed Positions" format (FifoPnlRealized) and "Trades/Executions"
+format (Open/CloseIndicator). Auto-detects and matches opening/closing executions.
+
 # MetaTrader 5
 Symbol,Side,Open Price,Close Price,Lots,Open Time,Close Time,PnL
 EURUSD,buy,1.1000,1.1050,0.1,28/08/2024 09:30:00,28/08/2024 15:30:00,50.00
@@ -327,6 +363,9 @@ AAPL,long,150.00,155.00,100,2024-01-15,500.00
 # TopStep (Orders Export)
 Auto-detected by "PositionDisposition" column. Uses FIFO order pairing with
 side-aware queues and futures contract multipliers for accurate dollar P&L.
+
+# Excel (.xlsx/.xls)
+Auto-converted to CSV via SheetJS. All formats above are supported.
 ```
 
 ### Column Mapping
@@ -376,7 +415,7 @@ src/
   contexts/         # React context providers (auth, account, settings, theme)
   hooks/            # Custom hooks (demo data, email notifications, mobile)
   services/         # Data, demo, AI assist, PDF report, and sync services
-  utils/            # CSV parser, storage, migration utilities
+  utils/            # CSV parser, storage, encryption, migration utilities
   lib/              # Firebase, analytics, Resend, utility functions
   types/            # TypeScript type definitions
   constants/        # Trading instruments, changelog data
