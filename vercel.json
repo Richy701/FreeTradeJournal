@@ -13,7 +13,7 @@
       "destination": "https://eu.i.posthog.com/:path*"
     },
     {
-      "source": "/((?!sitemap\\.xml|robots\\.txt|.*\\.xml|.*\\.txt).*)",
+      "source": "/((?!ingest|sitemap\\.xml|robots\\.txt|.*\\.xml|.*\\.txt).*)",
       "destination": "/index.html"
     }
   ],
