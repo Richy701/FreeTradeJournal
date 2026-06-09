@@ -625,15 +625,20 @@ export default function Journal() {
         <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1 min-w-0 text-center sm:text-left">
-                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
-                  Trading Journal
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {entries.length > 0
-                    ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · ${entries.filter(e => e.mood === 'bullish').length} bullish · ${entries.filter(e => e.mood === 'bearish').length} bearish`
-                    : 'Document your trading thoughts and observations'}
-                </p>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                  <BookOpen className="h-5 w-5" style={{ color: themeColors.primary }} />
+                </div>
+                <div className="space-y-0.5 min-w-0 text-left">
+                  <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
+                    Trading Journal
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {entries.length > 0
+                      ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · ${entries.filter(e => e.mood === 'bullish').length} bullish · ${entries.filter(e => e.mood === 'bearish').length} bearish`
+                      : 'Document your trading thoughts and observations'}
+                  </p>
+                </div>
               </div>
               {!isDemo && (
               <div className="hidden sm:flex gap-3 shrink-0">
@@ -828,110 +833,83 @@ export default function Journal() {
               ))}
             </div>
 
-            {/* Main Content Card */}
-            <Card className="">
-              <CardContent className="p-5 sm:p-6 space-y-5">
-                {/* Title */}
-                <div className="space-y-1.5">
-                  <label htmlFor="journal-title" className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Title</label>
-                  <Input
-                    id="journal-title"
-                    placeholder="What's on your mind about the markets?"
-                    value={newEntry.title}
-                    onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
-                    className="bg-background/60 border-border/50 focus:border-primary/50 h-11 text-base"
-                  />
-                </div>
-
-                {/* Content */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <label htmlFor="journal-content" className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Content</label>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide font-medium">Templates:</span>
-                      {([
-                        {
-                          label: 'Pre-trade',
-                          type: 'pre-trade',
-                          text: 'Pre-Trade Analysis\n\nSetup: \n\nBias: Bullish / Bearish / Neutral\n\nEntry trigger: \n\nStop loss: \n\nTake profit: \n\nRisk (% of account): \n\nWhat could invalidate this trade: ',
-                        },
-                        {
-                          label: 'Post-trade',
-                          type: 'post-trade',
-                          text: 'Post-Trade Review\n\nWhat was the plan:\n\nWhat actually happened:\n\nDid I follow my rules? Yes / No\nIf not, why:\n\nEmotional state during trade:\n\nKey lesson:\n\nWhat I\'d do differently: ',
-                        },
-                        {
-                          label: 'Daily review',
-                          type: 'general',
-                          text: 'Daily Review\n\nMarket conditions:\n\nKey levels watched:\n\nHow I felt: Focused / Distracted / Confident / Cautious\n\nWhat went well:\n\nWhat to improve:\n\nTomorrow\'s focus: ',
-                        },
-                      ] as const).map((tpl) => (
-                        <button
-                          key={tpl.type}
-                          type="button"
-                          onClick={() => {
-                            const content = newEntry.content.trim();
-                            setNewEntry({
-                              ...newEntry,
-                              content: content ? `${content}\n\n${tpl.text}` : tpl.text,
-                              entryType: tpl.type === 'general' ? 'general' : tpl.type === 'pre-trade' ? 'pre-trade' : 'post-trade',
-                            });
-                          }}
-                          className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
-                        >
-                          {tpl.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <Textarea
-                    id="journal-content"
-                    placeholder="Share your thoughts, analysis, market observations, lessons learned..."
-                    value={newEntry.content}
-                    onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-                    className="min-h-36 sm:min-h-44 bg-background/60 border-border/50 focus:border-primary/50 resize-none text-sm leading-relaxed"
-                  />
-                </div>
-
-                {/* Mood Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Market Sentiment</label>
-                  <div className="grid grid-cols-3 gap-3">
+            {/* Writing */}
+            <div className="rounded-xl border bg-card/50 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <PenNib className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Writing</span>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="journal-title" className="text-xs text-muted-foreground">Title</label>
+                <Input
+                  id="journal-title"
+                  placeholder="What's on your mind about the markets?"
+                  value={newEntry.title}
+                  onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                  className="bg-background/60 border-border/50 h-11 text-base"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <label htmlFor="journal-content" className="text-xs text-muted-foreground">Content</label>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {([
-                      { value: 'bullish', label: 'Bullish', icon: <TrendUp className="h-5 w-5" />, color: themeColors.profit },
-                      { value: 'neutral', label: 'Neutral', icon: <Minus className="h-5 w-5" />, color: themeColors.primary },
-                      { value: 'bearish', label: 'Bearish', icon: <TrendDown className="h-5 w-5" />, color: themeColors.loss }
-                    ] as const).map((mood) => (
-                      <Button
-                        key={mood.value}
-                        variant="outline"
+                      {
+                        label: 'Pre-trade',
+                        type: 'pre-trade',
+                        text: 'Pre-Trade Analysis\n\nSetup: \n\nBias: Bullish / Bearish / Neutral\n\nEntry trigger: \n\nStop loss: \n\nTake profit: \n\nRisk (% of account): \n\nWhat could invalidate this trade: ',
+                      },
+                      {
+                        label: 'Post-trade',
+                        type: 'post-trade',
+                        text: 'Post-Trade Review\n\nWhat was the plan:\n\nWhat actually happened:\n\nDid I follow my rules? Yes / No\nIf not, why:\n\nEmotional state during trade:\n\nKey lesson:\n\nWhat I\'d do differently: ',
+                      },
+                      {
+                        label: 'Daily review',
+                        type: 'general',
+                        text: 'Daily Review\n\nMarket conditions:\n\nKey levels watched:\n\nHow I felt: Focused / Distracted / Confident / Cautious\n\nWhat went well:\n\nWhat to improve:\n\nTomorrow\'s focus: ',
+                      },
+                    ] as const).map((tpl) => (
+                      <button
+                        key={tpl.type}
                         type="button"
-                        onClick={() => setNewEntry({ ...newEntry, mood: mood.value })}
-                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl h-auto border-2 transition-shadow duration-200"
-                        style={newEntry.mood === mood.value
-                          ? { backgroundColor: `${alpha(mood.color, '15')}`, borderColor: `${alpha(mood.color, '40')}`, color: mood.color }
-                          : {}
-                        }
+                        onClick={() => {
+                          const content = newEntry.content.trim();
+                          setNewEntry({
+                            ...newEntry,
+                            content: content ? `${content}\n\n${tpl.text}` : tpl.text,
+                            entryType: tpl.type === 'general' ? 'general' : tpl.type === 'pre-trade' ? 'pre-trade' : 'post-trade',
+                          });
+                        }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
                       >
-                        {mood.icon}
-                        <span className="text-xs font-medium">{mood.label}</span>
-                      </Button>
+                        {tpl.label}
+                      </button>
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <Textarea
+                  id="journal-content"
+                  placeholder="Share your thoughts, analysis, market observations, lessons learned..."
+                  value={newEntry.content}
+                  onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
+                  className="min-h-36 sm:min-h-44 bg-background/60 border-border/50 resize-none text-sm leading-relaxed"
+                />
+              </div>
+            </div>
 
-            {/* Trade Link & Tag Card */}
-            <Card className="">
-              <CardContent className="p-5 sm:p-6 space-y-5">
-                {/* Trade Link */}
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
-                    <ChartBar className="h-3 w-3" />
-                    Link to Trade
-                    {isLoadingTrades && <SpinnerGap className="h-3 w-3 animate-spin" />}
-                  </label>
+            {/* Context */}
+            <div className="rounded-xl border bg-card/50 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <LinkSimple className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Context</span>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <ChartBar className="h-3 w-3" />
+                  Link to Trade
+                  {isLoadingTrades && <SpinnerGap className="h-3 w-3 animate-spin" />}
+                </label>
                   {isLoadingTrades ? (
                     <div className="h-11 px-3 rounded-lg bg-background/60 border border-border/50 flex items-center gap-2">
                       <SpinnerGap className="h-4 w-4 animate-spin" />
@@ -1000,70 +978,93 @@ export default function Journal() {
                   </div>
                 )}
 
-                {/* Tag */}
                 <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Tag className="h-3 w-3" />
-                    Tag
+                    Tags
                   </label>
                   <Input
                     placeholder="e.g., EUR/USD, analysis, strategy"
                     value={newEntry.tags}
                     onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-                    className="bg-background/60 border-border/50 focus:border-primary/50 h-11"
+                    className="bg-background/60 border-border/50 h-11"
                   />
                 </div>
-              </CardContent>
-            </Card>
+            </div>
 
-            {/* Emotions Card */}
-            <Card className="">
-              <CardContent className="p-5 sm:p-6 space-y-3">
+            {/* Mindset */}
+            <div className="rounded-xl border bg-card/50 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Heart className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Mindset</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">Market Sentiment</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: 'bullish', label: 'Bullish', icon: <TrendUp className="h-4 w-4" />, color: themeColors.profit },
+                    { value: 'neutral', label: 'Neutral', icon: <Minus className="h-4 w-4" />, color: themeColors.primary },
+                    { value: 'bearish', label: 'Bearish', icon: <TrendDown className="h-4 w-4" />, color: themeColors.loss }
+                  ] as const).map((mood) => (
+                    <button
+                      key={mood.value}
+                      type="button"
+                      onClick={() => setNewEntry({ ...newEntry, mood: mood.value })}
+                      className="flex items-center justify-center gap-2 p-2.5 rounded-lg border-2 text-xs font-medium transition-colors duration-150"
+                      style={newEntry.mood === mood.value
+                        ? { backgroundColor: alpha(mood.color, '15'), borderColor: alpha(mood.color, '40'), color: mood.color }
+                        : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }
+                      }
+                    >
+                      {mood.icon}
+                      {mood.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
-                    <Heart className="h-3 w-3" />
-                    Emotions
-                  </label>
+                  <label className="text-xs text-muted-foreground">Emotions</label>
                   {newEntry.emotions.length > 0 && (
                     <span className="text-[10px] font-medium" style={{ color: themeColors.primary }}>
                       {newEntry.emotions.length} selected
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {availableEmotions.map((emotion) => {
                     const isSelected = newEntry.emotions.includes(emotion);
                     return (
-                      <Button
+                      <button
                         key={emotion}
-                        variant="outline"
-                        size="sm"
                         type="button"
                         onClick={() => toggleEmotion(emotion)}
-                        className="px-3 py-1.5 text-xs h-auto rounded-full transition-colors duration-150"
-                        style={isSelected
-                          ? { backgroundColor: `${alpha(themeColors.primary, '15')}`, color: themeColors.primary, borderColor: `${alpha(themeColors.primary, '40')}` }
-                          : {}
-                        }
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-150 ${
+                          isSelected
+                            ? ''
+                            : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
+                        }`}
+                        style={isSelected ? { backgroundColor: alpha(themeColors.primary, '15'), borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary } : undefined}
                       >
                         {emotion}
-                      </Button>
+                      </button>
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            {/* Screenshots Card */}
-            <Card className="">
-              <CardContent className="p-5 sm:p-6 space-y-3">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground flex items-center gap-2">
-                  <UploadSimple className="h-3 w-3" />
-                  Screenshots & Charts
-                </label>
+            {/* Screenshots */}
+            <div className="rounded-xl border bg-card/50 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <UploadSimple className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Screenshots</span>
+              </div>
 
-                <div
-                  className="border-2 border-dashed rounded-xl p-8 text-center transition-shadow duration-200"
+              <div
+                className="border-2 border-dashed rounded-xl p-8 text-center transition-shadow duration-200"
                   style={isDragOver
                     ? { borderColor: `${alpha(themeColors.primary, '50')}`, backgroundColor: `${alpha(themeColors.primary, '05')}` }
                     : { borderColor: 'hsl(var(--border))', backgroundColor: 'transparent' }
@@ -1121,8 +1122,7 @@ export default function Journal() {
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+            </div>
 
             {/* Action Bar */}
             <div className="flex items-center justify-between pt-2">
@@ -1400,45 +1400,99 @@ export default function Journal() {
 
         <div className="grid gap-6">
           {filteredAndSortedEntries.length === 0 ? (
-            <Card className="">
-              <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-                <div
-                  className="p-5 rounded-2xl mb-6 shadow-sm"
-                  style={{ backgroundColor: `${alpha(themeColors.primary, '15')}` }}
-                >
-                  <BookOpen className="h-10 w-10" style={{ color: themeColors.primary }} />
+            searchTerm || activeFilterCount > 0 ? (
+              <div className="flex flex-col items-center py-16 text-center">
+                <div className="p-3 rounded-xl mb-4 bg-muted/40">
+                  <MagnifyingGlass className="h-6 w-6 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{searchTerm ? 'No entries found' : 'Start your trading journal'}</h3>
-                <p className="text-muted-foreground mb-8 max-w-md">
-                  {searchTerm ? 'Try adjusting your search terms or create a new entry' : 'Document your setups, track your psychology, and review your decisions. Traders who journal consistently improve faster.'}
+                <h3 className="text-lg font-semibold mb-1">No entries found</h3>
+                <p className="text-sm text-muted-foreground mb-4">Try adjusting your search or filters.</p>
+                <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2">
+                  <X className="h-3 w-3" />
+                  Clear filters
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center py-12 sm:py-16 text-center">
+                <div
+                  className="p-4 rounded-2xl mb-6"
+                  style={{ backgroundColor: alpha(themeColors.primary, '12') }}
+                >
+                  <BookOpen className="h-8 w-8" style={{ color: themeColors.primary }} />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Start your trading journal</h3>
+                <p className="text-sm text-muted-foreground mb-10 max-w-md leading-relaxed">
+                  Document your setups, track your psychology, and review your decisions. Traders who journal consistently improve faster.
                 </p>
-                {!searchTerm && (
-                  <div className="flex flex-col items-center gap-6 w-full max-w-sm">
-                    <Button
-                      onClick={() => setShowNewEntry(true)}
-                      className="gap-2 shadow-lg w-full sm:w-auto"
-                      style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl mb-8">
+                  {([
+                    {
+                      Icon: PenNib,
+                      label: 'Pre-trade plan',
+                      desc: 'Document your setup and reasoning before you enter.',
+                      color: themeColors.profit,
+                      onClick: () => quickStartEntry('pre-trade'),
+                    },
+                    {
+                      Icon: ChartBar,
+                      label: 'Post-trade review',
+                      desc: 'Analyze your execution and what you learned.',
+                      color: themeColors.loss,
+                      onClick: () => quickStartEntry('post-trade'),
+                    },
+                    {
+                      Icon: Calendar,
+                      label: 'Daily reflection',
+                      desc: 'End-of-day review of conditions and emotions.',
+                      color: themeColors.primary,
+                      onClick: () => {
+                        setNewEntry({
+                          title: 'Daily Review',
+                          content: 'Market conditions:\n\nKey levels watched:\n\nHow I felt:\n\nWhat went well:\n\nWhat to improve:\n\nTomorrow\'s focus:',
+                          tags: '',
+                          emotions: [],
+                          mood: 'neutral' as const,
+                          tradeId: '',
+                          entryType: 'general' as const,
+                        });
+                        setUploadedImages([]);
+                        setSelectedTrade(null);
+                        setShowNewEntry(true);
+                      },
+                    },
+                  ] as const).map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={t.onClick}
+                      className="rounded-xl border border-border/50 bg-card/50 p-4 text-left space-y-3 hover:border-border hover:bg-card transition-colors group"
                     >
-                      <Plus className="h-4 w-4" />
-                      Write First Entry
-                    </Button>
-                    <div className="grid grid-cols-3 gap-2 w-full text-left">
-                      {([
-                        { Icon: PenNib, label: 'Pre-trade', desc: 'Plan before you enter' },
-                        { Icon: ChartBar, label: 'Post-trade', desc: 'Review after you exit' },
-                        { Icon: Calendar, label: 'Daily review', desc: 'End-of-day reflection' },
-                      ] as const).map((t) => (
-                        <div key={t.label} className="rounded-xl border border-border/40 bg-muted/30 p-3 space-y-1.5">
-                          <t.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                          <p className="text-xs font-semibold">{t.label}</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">{t.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <div
+                        className="p-2 rounded-lg w-fit"
+                        style={{ backgroundColor: alpha(t.color, '12') }}
+                      >
+                        <t.Icon className="h-4 w-4" style={{ color: t.color }} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">{t.label}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{t.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-xs text-muted-foreground mb-3">or start from scratch</p>
+                <Button
+                  onClick={() => setShowNewEntry(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Blank entry
+                </Button>
+              </div>
+            )
           ) : (
             filteredAndSortedEntries.map((entry) => {
               const linkedTrade = getLinkedTrade(entry.tradeId);
@@ -1446,7 +1500,8 @@ export default function Journal() {
               return (
                 <Card
                   key={entry.id}
-                  className="overflow-hidden"
+                  className="overflow-hidden border-l-[3px]"
+                  style={{ borderLeftColor: getMoodColor(entry.mood) }}
                 >
                   <CardHeader className="pb-2 pt-5 px-5">
                     <div className="flex items-start justify-between gap-3">

@@ -35,7 +35,7 @@ export function useFirstTradeCelebration(tradeCount: number) {
       });
 
       // Toast
-      toast.success('First trade logged! 🎉', {
+      toast.success('First trade logged!', {
         description: 'Your dashboard is now live. Keep building that edge.',
         duration: 6000,
       });

@@ -121,7 +121,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 - Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage, Clean, Wine
 - Custom color picker with hex input — create your own theme with any primary, profit, and loss colors
-- Dark/Light/System mode with polished light mode — visible decorative shapes, badges, and overlays
+- Dark/Light/System mode — warm white light mode with amber-tinted backgrounds and hover states, deep warm dark mode
 - Instant theme switching via useLayoutEffect — no staggered color transitions or delayed button fades
 - Consistent 0.85rem border radius across all themes for a premium rounded feel
 - Improved Mono theme with grayscale contrast — distinct profit/loss values in both light and dark modes

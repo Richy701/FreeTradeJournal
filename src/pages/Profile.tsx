@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Check, Envelope, Calendar, Shield, Pencil, SignOut } from '@phosphor-icons/react';
+import { Camera, Check, Envelope, Calendar, Shield, Pencil, SignOut, UserCircle, ChartLineUp, Target } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -167,13 +167,31 @@ export default function Profile() {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+              <UserCircle className="h-5 w-5" style={{ color: themeColors.primary }} />
+            </div>
+            <div className="space-y-0.5">
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Profile</h1>
+              <p className="text-sm text-muted-foreground">Manage your account details and preferences.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="max-w-4xl mx-auto space-y-4">
 
 <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-4 items-start">
 
-          {/* ── Hero card ─────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-border/50 overflow-hidden">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Camera className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account</span>
+            </div>
+            <div className="rounded-2xl border border-border/50 overflow-hidden">
             {/* Gradient banner */}
             <div
               className="h-24 sm:h-32"
@@ -320,12 +338,16 @@ export default function Profile() {
               )}
             </div>
           </div>
+          </div>
 
-          {/* ── Right column ──────────────────────────────────────── */}
           <div className="space-y-4">
 
-          {/* ── Account details ───────────────────────────────────── */}
-          <div className="rounded-2xl border border-border/50 divide-y divide-border/50 overflow-hidden">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account Details</span>
+            </div>
+            <div className="rounded-2xl border border-border/50 divide-y divide-border/50 overflow-hidden">
             {infoRows.map(({ icon: Icon, label, value, badge, mono }) => (
               <div key={label} className="flex items-center gap-4 px-5 py-4">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
@@ -343,16 +365,17 @@ export default function Profile() {
               </div>
             ))}
           </div>
+          </div>
 
-          {/* ── Recent Trades ─────────────────────────────────── */}
-          <div className="rounded-2xl border border-border/50 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-4 w-0.5 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                <h3 className="text-sm font-semibold">Recent Trades</h3>
+                <ChartLineUp className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Recent Trades</span>
               </div>
-              <a href="/trades" className="text-xs text-muted-foreground hover:text-foreground transition-colors">View all →</a>
+              <a href="/trades" className="text-xs text-muted-foreground hover:text-foreground transition-colors">View all</a>
             </div>
+            <div className="rounded-2xl border border-border/50 overflow-hidden">
             {recentTrades.length === 0 ? (
               <p className="px-5 py-4 text-sm text-muted-foreground">No trades yet.</p>
             ) : (
@@ -382,16 +405,17 @@ export default function Profile() {
               </div>
             )}
           </div>
+          </div>
 
-          {/* ── Active Goals ───────────────────────────────────── */}
-          <div className="rounded-2xl border border-border/50 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-4 w-0.5 rounded-full" style={{ backgroundColor: themeColors.primary }} />
-                <h3 className="text-sm font-semibold">Active Goals</h3>
+                <Target className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Active Goals</span>
               </div>
-              <a href="/goals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">View all →</a>
+              <a href="/goals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">View all</a>
             </div>
+            <div className="rounded-2xl border border-border/50 overflow-hidden">
             {activeGoals.length === 0 ? (
               <p className="px-5 py-4 text-sm text-muted-foreground">No active goals.</p>
             ) : (
@@ -417,15 +441,19 @@ export default function Profile() {
               </div>
             )}
           </div>
+          </div>
 
-          </div> {/* end right column */}
-          </div> {/* end grid */}
+          </div>
+          </div>
 
-          {/* ── Sign out ──────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-border/50 overflow-hidden">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <SignOut className="h-4 w-4 text-destructive" />
+              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Session</span>
+            </div>
             <button
               onClick={async () => { await logout(); navigate('/login'); }}
-              className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-destructive/5 transition-colors group"
+              className="flex w-full items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-left hover:bg-destructive/10 transition-colors"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
                 <SignOut className="h-4 w-4 text-destructive" aria-hidden="true" />

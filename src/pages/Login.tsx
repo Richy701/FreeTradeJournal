@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { getOnboardingRedirect } from '@/utils/onboarding';
+
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,16 +25,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Only use the 'from' path if it's not a protected route, otherwise check onboarding
-  const isFromProtectedRoute = location.state?.from?.pathname &&
-    ['/dashboard', '/trades', '/settings'].includes(location.state.from.pathname);
-
-  const getRedirectPath = (userId: string | null = null) => {
-    if (isFromProtectedRoute) {
-      return getOnboardingRedirect(userId);
-    }
-    return location.state?.from?.pathname || getOnboardingRedirect(userId);
-  };
+  const redirectPath = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +38,7 @@ export default function Login() {
       trackEvent('login_completed');
       setFormAnimation('animate-bounce');
       setTimeout(() => {
-        navigate(getRedirectPath(user.uid), { replace: true });
+        navigate(redirectPath, { replace: true });
       }, 300);
     } catch (error: any) {
       let errorMessage = 'Failed to sign in';
@@ -78,7 +69,7 @@ export default function Login() {
 
     try {
       const user = await signInWithGoogle();
-      navigate(getRedirectPath(user.uid), { replace: true });
+      navigate(redirectPath, { replace: true });
     } catch (error: any) {
       setError(error.message || 'Failed to sign in with Google');
     } finally {
@@ -122,12 +113,12 @@ export default function Login() {
           <div className="space-y-5 my-8">
             {features.map((feature, i) => (
               <div key={i} className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-white/15 backdrop-blur-sm shrink-0 mt-0.5">
+                <div className="p-2 rounded-lg bg-black/10 shrink-0">
                   {(() => { const FeatureIcon = feature.icon; return <FeatureIcon className="h-4 w-4 text-white" />; })()}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">{feature.title}</p>
-                  <p className="text-xs text-white/70">{feature.desc}</p>
+                  <p className="font-medium text-sm text-white">{feature.title}</p>
+                  <p className="text-xs opacity-80">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -176,7 +167,7 @@ export default function Login() {
                 required
                 spellCheck={false}
                 autoComplete="email"
-                className="h-11"
+                className="h-11 bg-background/60 border-border/50"
               />
             </div>
 
@@ -191,7 +182,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="h-11 pr-10"
+                  className="h-11 pr-10 bg-background/60 border-border/50"
                 />
                 <button
                   type="button"

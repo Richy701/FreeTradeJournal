@@ -234,7 +234,7 @@ export function AIRiskAlertMonitor() {
       // Show error message instead of silently failing
       setAlerts(prev =>
         prev.map(a => a.type === alert.type
-          ? { ...a, advice: `⚠️ Unable to load AI advice: ${err?.message || 'Please try again later'}` }
+          ? { ...a, advice: `Unable to load AI advice: ${err?.message || 'Please try again later'}` }
           : a
         )
       );

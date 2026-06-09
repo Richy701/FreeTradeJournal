@@ -123,24 +123,39 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   rr(ctx, 0.5, 0.5, W - 1, H - 1, 20);
   ctx.stroke();
 
-  // -- Header: brand + period --
+  // -- Header: logo + brand + period --
+  const logoSize = 22;
+  const logoX = 36;
+  const logoY = 26;
+  const logoR = 5;
+
+  ctx.fillStyle = '#FFC000';
+  rr(ctx, logoX, logoY, logoSize, logoSize, logoR);
+  ctx.fill();
+
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold 10px ${F}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FTJ', logoX + logoSize / 2, logoY + logoSize / 2 + 1);
+
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(245,158,11,0.9)';
   ctx.font = `bold 12px ${F}`;
-  ctx.fillText('FREETRADEJOURNAL', 36, 40);
+  ctx.fillText('FreeTradeJournal', logoX + logoSize + 8, 42);
 
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.font = `400 12px ${F}`;
   ctx.textAlign = 'right';
-  ctx.fillText('All Time', W - 36, 40);
+  ctx.fillText('All Time', W - 36, 42);
   ctx.textAlign = 'left';
 
   // -- Hero: P&L --
   const pnlColor = s.totalPnl >= 0 ? tc.profit : tc.loss;
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.font = `500 14px ${F}`;
-  ctx.fillText('Total P&L', 36, 82);
+  ctx.fillText('Net P&L', 36, 82);
 
   ctx.fillStyle = pnlColor;
   ctx.font = `bold 48px ${F}`;
@@ -148,7 +163,7 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
 
   // -- Subtitle stats row --
   const pills = [
-    { text: `${s.totalTrades} trades`, color: 'rgba(255,255,255,0.5)' },
+    { text: `${s.totalTrades} trades logged`, color: 'rgba(255,255,255,0.5)' },
     { text: `${s.winRate}% win rate`, color: s.winRate >= 50 ? tc.profit : tc.loss },
     { text: `${s.winStreak} win streak`, color: s.winStreak >= 3 ? tc.profit : 'rgba(255,255,255,0.5)' },
   ];
@@ -183,8 +198,8 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   const cards = [
     { label: 'Best Trade', value: fmt(s.bestTrade, s.currency), color: tc.profit },
     { label: 'Win Rate', value: `${s.winRate}%`, color: s.winRate >= 50 ? tc.profit : tc.loss },
-    { label: 'Trades', value: s.totalTrades.toLocaleString(), color: '#ffffff' },
-    { label: 'Streak', value: `${s.loggingStreak}d`, color: s.loggingStreak >= 3 ? '#f59e0b' : '#ffffff' },
+    { label: 'Total Trades', value: s.totalTrades.toLocaleString(), color: '#ffffff' },
+    { label: 'Log Streak', value: `${s.loggingStreak}d`, color: s.loggingStreak >= 3 ? '#f59e0b' : '#ffffff' },
   ];
   const cardGap = 14;
   const cardPad = 36;
@@ -206,16 +221,6 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
     ctx.lineWidth = 0.5;
     rr(ctx, cx, cardY, cardW, cardH, 14);
     ctx.stroke();
-
-    // Top accent line
-    ctx.strokeStyle = c.color;
-    ctx.globalAlpha = 0.4;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx + 20, cardY + 1);
-    ctx.lineTo(cx + cardW - 20, cardY + 1);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
 
     // Value
     ctx.fillStyle = c.color;
@@ -240,7 +245,7 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
 
   ctx.textAlign = 'right';
   ctx.fillStyle = 'rgba(245,158,11,0.5)';
-  ctx.fillText('Track yours free  →', W - 36, footY);
+  ctx.fillText('Start journaling free →', W - 36, footY);
   ctx.textAlign = 'left';
 }
 
@@ -280,7 +285,7 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
     a.download = 'my-trading-stats.png';
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Image downloaded');
+    toast.success('Stats card saved');
   }, [getBlob]);
 
   const handleCopy = useCallback(async () => {
@@ -293,7 +298,7 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
         setTimeout(() => setCopied(false), 2000);
       }
     } catch {
-      toast.error('Failed to copy -- try downloading instead');
+      toast.error('Something went wrong. Try again.');
     }
   }, [getBlob]);
 
@@ -302,7 +307,7 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
       const blob = await getBlob();
       if (blob && navigator.share) {
         const file = new File([blob], 'my-trading-stats.png', { type: 'image/png' });
-        await navigator.share({ title: 'My Trading Stats', text: 'Check out my trading stats on FreeTradeJournal', files: [file] });
+        await navigator.share({ title: 'My Trading Stats', text: 'Tracked with FreeTradeJournal', files: [file] });
       } else {
         handleDownload();
       }
@@ -321,9 +326,9 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Share your stats</DialogTitle>
+          <DialogTitle>Share Your Edge</DialogTitle>
           <DialogDescription>
-            Download or share your trading performance card
+            Your performance, one card. Save it or show it off.
           </DialogDescription>
         </DialogHeader>
 

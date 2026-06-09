@@ -27,7 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
-import { CurrencyDollar, Target, Trophy, Scales, CheckCircle, Warning, TrendUp, TrendDown, ChartLineUp, Clock, Coins, Sliders, Note, ArrowRight } from '@phosphor-icons/react';
+import { CurrencyDollar, Target, Trophy, Scales, CheckCircle, Warning, TrendUp, TrendDown, ChartLineUp, Clock, Coins, Sliders, Note, ArrowRight, Crosshair, ArrowsLeftRight, Lightbulb } from '@phosphor-icons/react';
 import {
   Tooltip,
   TooltipContent,
@@ -1115,16 +1115,17 @@ export default function TradeLog() {
       <div className="min-h-screen flex flex-col w-full bg-background">
       <SiteHeader />
       {/* Header */}
-      <div className="border-b bg-background">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
-            <div className="space-y-1">
-              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
-                Trade Log
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {trades.length} trades recorded
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                <ChartLineUp className="h-5 w-5" style={{ color: themeColors.primary }} />
+              </div>
+              <div className="space-y-0.5">
+                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Log</h1>
+                <p className="text-sm text-muted-foreground">Record, review, and analyze every trade.</p>
+              </div>
             </div>
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
               {!isDemo && (
@@ -1274,98 +1275,95 @@ export default function TradeLog() {
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                      {/* Trade Info */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <ChartLineUp className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          Trade Info
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setup</span>
                         </div>
-                        <Separator />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="symbol"
-                          rules={{ required: 'Symbol is required' }}
-                          render={({ field }) => {
-                            const marketInstruments = getInstrumentsByMarket(watchedMarket || 'forex');
-                            return (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="market"
+                            render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-semibold">Instrument *</FormLabel>
-                                <FormControl>
-                                  <InstrumentCombobox
-                                    value={field.value}
-                                    onChange={(value) => {
-                                      field.onChange(value);
-                                      const detectedMarket = detectMarketFromSymbol(value);
-                                      form.setValue('market', detectedMarket);
-                                    }}
-                                    categories={marketInstruments}
-                                    placeholder={`Select ${watchedMarket || 'forex'} instrument`}
-                                  />
-                                </FormControl>
+                                <FormLabel className="text-sm font-medium">Market Type</FormLabel>
+                                <Select onValueChange={(value) => {
+                                  field.onChange(value);
+                                  form.setValue('symbol', '');
+                                }} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-background/60 border-border/50">
+                                      <SelectValue placeholder="Select market" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="forex">Forex</SelectItem>
+                                    <SelectItem value="futures">Futures</SelectItem>
+                                    <SelectItem value="indices">Indices</SelectItem>
+                                  </SelectContent>
+                                </Select>
                                 <FormMessage />
                               </FormItem>
-                            );
-                          }}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="side"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Direction *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="text-lg">
-                                    <SelectValue placeholder="Select side" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="long">Long (Buy)</SelectItem>
-                                  <SelectItem value="short">Short (Sell)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="market"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Market Type</FormLabel>
-                              <Select onValueChange={(value) => {
-                                field.onChange(value);
-                                // Clear symbol when market type changes
-                                form.setValue('symbol', '');
-                              }} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="text-lg">
-                                    <SelectValue placeholder="Select market" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="forex">Forex</SelectItem>
-                                  <SelectItem value="futures">Futures</SelectItem>
-                                  <SelectItem value="indices">Indices</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="symbol"
+                            rules={{ required: 'Symbol is required' }}
+                            render={({ field }) => {
+                              const marketInstruments = getInstrumentsByMarket(watchedMarket || 'forex');
+                              return (
+                                <FormItem>
+                                  <FormLabel className="text-sm font-medium">Instrument *</FormLabel>
+                                  <FormControl>
+                                    <InstrumentCombobox
+                                      value={field.value}
+                                      onChange={(value) => {
+                                        field.onChange(value);
+                                        const detectedMarket = detectMarketFromSymbol(value);
+                                        form.setValue('market', detectedMarket);
+                                      }}
+                                      categories={marketInstruments}
+                                      placeholder={`Select ${watchedMarket || 'forex'} instrument`}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              );
+                            }}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="side"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Direction *</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-background/60 border-border/50">
+                                      <SelectValue placeholder="Select side" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="long">Long (Buy)</SelectItem>
+                                    <SelectItem value="short">Short (Sell)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         <FormField
                           control={form.control}
                           name="propFirm"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-base font-semibold">Prop Firm</FormLabel>
+                              <FormLabel className="text-sm font-medium">Prop Firm</FormLabel>
                               <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="text-lg">
+                                  <SelectTrigger className="bg-background/60 border-border/50">
                                     <SelectValue placeholder="Select prop firm" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -1386,102 +1384,200 @@ export default function TradeLog() {
                           )}
                         />
                       </div>
+
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <ArrowsLeftRight className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Execution</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="entryPrice"
+                            rules={{ required: 'Entry price is required', min: 0 }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Entry Price *</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="exitPrice"
+                            rules={{ required: 'Exit price is required', min: 0 }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Exit Price *</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="lotSize"
+                            rules={{ required: 'Lot size is required', min: 0 }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Lot Size *</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="1.0"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="entryTime"
+                            rules={{ required: 'Entry time is required' }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Entry Time *</FormLabel>
+                                <FormControl>
+                                  <DateTimePicker
+                                    date={field.value ? new Date(field.value) : undefined}
+                                    onDateChange={(date) => field.onChange(date)}
+                                    placeholder="Select entry date and time"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="exitTime"
+                            rules={{ required: 'Exit time is required' }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Exit Time *</FormLabel>
+                                <FormControl>
+                                  <DateTimePicker
+                                    date={field.value ? new Date(field.value) : undefined}
+                                    onDateChange={(date) => field.onChange(date)}
+                                    placeholder="Select exit date and time"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
 
-                      {/* Pricing */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <CurrencyDollar className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          Pricing
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Coins className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Costs</span>
                         </div>
-                        <Separator />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="entryPrice"
-                          rules={{ required: 'Entry price is required', min: 0 }}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Entry Price *</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.00001" 
-                                  className="text-lg font-semibold"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value))} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="exitPrice"
-                          rules={{ required: 'Exit price is required', min: 0 }}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Exit Price *</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.00001" 
-                                  className="text-lg font-semibold"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value))} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="lotSize"
-                          rules={{ required: 'Lot size is required', min: 0 }}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Lot Size *</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01" 
-                                  placeholder="1.0…" 
-                                  className="text-lg font-semibold"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value))} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="spread"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Spread</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.0001"
+                                    placeholder="0.0002"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="commission"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Commission</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="7.00"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="swap"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Swap/Rollover</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="-2.50"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
 
-                      {/* Costs */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <Coins className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          Costs
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Context</span>
                         </div>
-                        <Separator />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <FormField
                           control={form.control}
-                          name="spread"
+                          name="strategy"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-base font-semibold">Spread</FormLabel>
+                              <FormLabel className="text-sm font-medium">Strategy</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.0001" 
-                                  placeholder="0.0002…" 
-                                  className="text-lg font-semibold"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                                <Input
+                                  placeholder="e.g., Trend Following, Mean Reversion, Breakout"
+                                  className="bg-background/60 border-border/50"
+                                  {...field}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1490,121 +1586,77 @@ export default function TradeLog() {
                         />
                         <FormField
                           control={form.control}
-                          name="commission"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Commission</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01" 
-                                  placeholder="7.00…" 
-                                  className="text-lg font-semibold"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                          name="emotions"
+                          render={({ field }) => {
+                            const selected = field.value ? field.value.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                            const toggle = (emotion: string) => {
+                              const next = selected.includes(emotion) ? selected.filter((e: string) => e !== emotion) : [...selected, emotion];
+                              field.onChange(next.join(', '));
+                            };
+                            return (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Emotions</FormLabel>
+                                <div className="flex flex-wrap gap-2">
+                                  {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => (
+                                    <button
+                                      key={e}
+                                      type="button"
+                                      onClick={() => toggle(e)}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150 ${
+                                        selected.includes(e)
+                                          ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                                          : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
+                                      }`}
+                                    >
+                                      {e}
+                                    </button>
+                                  ))}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            );
+                          }}
                         />
                         <FormField
                           control={form.control}
-                          name="swap"
+                          name="notes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-base font-semibold">Swap/Rollover</FormLabel>
+                              <FormLabel className="text-sm font-medium">Notes</FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01" 
-                                  placeholder="-2.50…" 
-                                  className="text-lg font-semibold"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                                <Textarea
+                                  className="min-h-[100px] px-4 py-3 text-sm bg-background/60 border-border/50"
+                                  placeholder="Trade analysis, market conditions, lessons learned..."
+                                  {...field}
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </div>
                       </div>
 
-                      {/* Timing */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <Clock className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          Timing
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Sliders className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Advanced</span>
                         </div>
-                        <Separator />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <FormField
-                          control={form.control}
-                          name="entryTime"
-                          rules={{ required: 'Entry time is required' }}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Entry Time *</FormLabel>
-                              <FormControl>
-                                <DateTimePicker
-                                  date={field.value ? new Date(field.value) : undefined}
-                                  onDateChange={(date) => field.onChange(date)}
-                                  placeholder="Select entry date and time"
-                                  className="text-lg"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="exitTime"
-                          rules={{ required: 'Exit time is required' }}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Exit Time *</FormLabel>
-                              <FormControl>
-                                <DateTimePicker
-                                  date={field.value ? new Date(field.value) : undefined}
-                                  onDateChange={(date) => field.onChange(date)}
-                                  placeholder="Select exit date and time"
-                                  className="text-lg"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      </div>
-
-                      {/* Advanced */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <Sliders className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          Advanced
-                        </div>
-                        <Separator />
-                      {/* Custom Multiplier Field */}
-                      <div className="space-y-2">
                         <FormField
                           control={form.control}
                           name="customMultiplier"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-base font-semibold">
+                              <FormLabel className="text-sm font-medium">
                                 Custom Multiplier (Optional)
                               </FormLabel>
                               <FormControl>
-                                <Input 
-                                  type="number" 
-                                  step="0.01" 
+                                <Input
+                                  type="number"
+                                  step="0.01"
                                   placeholder="Leave blank to use default multiplier"
-                                  className="text-lg"
-                                  {...field} 
-                                  onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} 
+                                  className="bg-background/60 border-border/50"
+                                  {...field}
+                                  onChange={e => field.onChange(parseFloat(e.target.value) || undefined)}
                                 />
                               </FormControl>
                               <p className="text-sm text-muted-foreground">
@@ -1614,44 +1666,38 @@ export default function TradeLog() {
                             </FormItem>
                           )}
                         />
-                      </div>
-
-                      {/* Contract Info Display for Futures */}
-                      {watchedMarket === 'futures' && form.watch('symbol') && (
-                        <div className="p-4 bg-muted/50 rounded-lg border border-border/70">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-muted-foreground">Contract Details</p>
-                              <p className="text-lg font-bold">
-                                {(() => {
-                                  const symbol = form.watch('symbol')?.toUpperCase() || '';
-                                  if (symbol.includes('MES')) return 'Micro E-mini S&P 500 - $5 per point';
-                                  if (symbol.includes('MNQ')) return 'Micro E-mini Nasdaq - $2 per point';
-                                  if (symbol.includes('MYM')) return 'Micro E-mini Dow - $0.50 per point';
-                                  if (symbol.includes('M2K')) return 'Micro Russell 2000 - $5 per point';
-                                  if (symbol.includes('MGC')) return 'Micro Gold - $10 per oz';
-                                  if (symbol.includes('MCL')) return 'Micro Crude Oil - $100 per barrel';
-                                  if (symbol.includes('ES')) return 'E-mini S&P 500 - $50 per point';
-                                  if (symbol.includes('NQ')) return 'E-mini Nasdaq - $20 per point';
-                                  if (symbol.includes('YM')) return 'E-mini Dow - $5 per point';
-                                  if (symbol.includes('RTY')) return 'Russell 2000 - $50 per point';
-                                  if (symbol.includes('GC')) return 'Gold - $100 per oz';
-                                  if (symbol.includes('CL')) return 'Crude Oil - $1,000 per barrel';
-                                  return 'Custom Contract - $1 per point';
-                                })()}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">
-                                {form.watch('lotSize') || 1} contract{(form.watch('lotSize') || 1) !== 1 ? 's' : ''}
-                              </p>
+                        {watchedMarket === 'futures' && form.watch('symbol') && (
+                          <div className="p-4 bg-muted/50 rounded-lg border border-border/70">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-muted-foreground">Contract Details</p>
+                                <p className="text-lg font-bold">
+                                  {(() => {
+                                    const symbol = form.watch('symbol')?.toUpperCase() || '';
+                                    if (symbol.includes('MES')) return 'Micro E-mini S&P 500 - $5 per point';
+                                    if (symbol.includes('MNQ')) return 'Micro E-mini Nasdaq - $2 per point';
+                                    if (symbol.includes('MYM')) return 'Micro E-mini Dow - $0.50 per point';
+                                    if (symbol.includes('M2K')) return 'Micro Russell 2000 - $5 per point';
+                                    if (symbol.includes('MGC')) return 'Micro Gold - $10 per oz';
+                                    if (symbol.includes('MCL')) return 'Micro Crude Oil - $100 per barrel';
+                                    if (symbol.includes('ES')) return 'E-mini S&P 500 - $50 per point';
+                                    if (symbol.includes('NQ')) return 'E-mini Nasdaq - $20 per point';
+                                    if (symbol.includes('YM')) return 'E-mini Dow - $5 per point';
+                                    if (symbol.includes('RTY')) return 'Russell 2000 - $50 per point';
+                                    if (symbol.includes('GC')) return 'Gold - $100 per oz';
+                                    if (symbol.includes('CL')) return 'Crude Oil - $1,000 per barrel';
+                                    return 'Custom Contract - $1 per point';
+                                  })()}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-muted-foreground">
+                                  {form.watch('lotSize') || 1} contract{(form.watch('lotSize') || 1) !== 1 ? 's' : ''}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-
-                      {/* Manual P&L Override */}
-                      <div className="space-y-4">
+                        )}
                         <FormField
                           control={form.control}
                           name="useManualPnL"
@@ -1663,13 +1709,12 @@ export default function TradeLog() {
                                   onCheckedChange={field.onChange}
                                 />
                               </FormControl>
-                              <FormLabel className="text-base font-semibold cursor-pointer">
+                              <FormLabel className="text-sm font-medium cursor-pointer">
                                 Use Manual P&L (Override Auto-Calculation)
                               </FormLabel>
                             </FormItem>
                           )}
                         />
-                        
                         {form.watch('useManualPnL') && (
                           <FormField
                             control={form.control}
@@ -1677,15 +1722,15 @@ export default function TradeLog() {
                             rules={{ required: form.watch('useManualPnL') ? 'Manual P&L is required when override is enabled' : false }}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-semibold">Manual P&L *</FormLabel>
+                                <FormLabel className="text-sm font-medium">Manual P&L *</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    type="number" 
-                                    step="0.01" 
+                                  <Input
+                                    type="number"
+                                    step="0.01"
                                     placeholder="Enter exact P&L (e.g., -50.00 for loss, 100.00 for profit)"
-                                    className="text-lg font-semibold"
-                                    {...field} 
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1697,87 +1742,6 @@ export default function TradeLog() {
                           />
                         )}
                       </div>
-                      </div>
-
-                      {/* Notes & Strategy */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                          <Note className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          Notes & Strategy
-                        </div>
-                        <Separator />
-                      <FormField
-                        control={form.control}
-                        name="strategy"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-semibold">Strategy</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="e.g., Trend Following, Mean Reversion, Breakout…" 
-                                className="text-lg"
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="emotions"
-                        render={({ field }) => {
-                          const selected = field.value ? field.value.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-                          const toggle = (emotion: string) => {
-                            const next = selected.includes(emotion) ? selected.filter((e: string) => e !== emotion) : [...selected, emotion];
-                            field.onChange(next.join(', '));
-                          };
-                          return (
-                            <FormItem>
-                              <FormLabel className="text-base font-semibold">Emotions</FormLabel>
-                              <div className="flex flex-wrap gap-2">
-                                {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => (
-                                  <button
-                                    key={e}
-                                    type="button"
-                                    onClick={() => toggle(e)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150 ${
-                                      selected.includes(e)
-                                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
-                                        : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
-                                    }`}
-                                  >
-                                    {e}
-                                  </button>
-                                ))}
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-semibold">Notes</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                className="min-h-[120px] px-4 py-3 text-base"
-                                placeholder="Trade analysis, market conditions, lessons learned..."
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      </div>
-
-                      <Separator />
 
                       <div className="flex justify-end gap-4 pt-2">
                         <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="px-8">
@@ -2045,7 +2009,7 @@ export default function TradeLog() {
             {trades.length === 0 ? (
               <div className="px-6 py-14 flex flex-col items-center text-center gap-8">
                 {/* Icon */}
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primary}15` }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                   <ChartBar className="h-8 w-8" style={{ color: themeColors.primary }} />
                 </div>
 

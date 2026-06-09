@@ -1,9 +1,8 @@
 import { useId, useMemo } from 'react'
-import { Lightbulb, ArrowRight } from '@phosphor-icons/react'
+import { Lightbulb, ArrowRight, ChartBar, UserCircle, ArrowsSplit, Crosshair, TrendUp, CalendarDots } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
 import { useThemePresets } from '@/contexts/theme-presets'
@@ -37,7 +36,7 @@ import type { ChartConfig } from '@/components/ui/chart'
 
 export default function TradeIdeas() {
   const { ideas, charts, summary, totalTrades, hasEnoughData } = useTradeIdeas()
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { formatCurrency } = useSettings()
   const { getTrades } = useDemoData()
   const trades = useMemo(() => getTrades(), [getTrades])
@@ -47,30 +46,36 @@ export default function TradeIdeas() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <SiteHeader />
-        <div className="border-b">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-6 text-center sm:text-left">
-            <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
+        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
+              </div>
+              <div className="space-y-0.5">
+                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
+                <p className="text-sm text-muted-foreground">AI-powered patterns and analytics from your trading data.</p>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-              <div className="p-4 rounded-2xl" style={{ backgroundColor: `${themeColors.primary}10` }}>
-                <Lightbulb className="h-8 w-8" style={{ color: themeColors.primary }} aria-hidden="true" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Not Enough Data Yet</h2>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Log at least 5 trades to unlock data-driven trade insights.
-                </p>
-              </div>
-              <Button asChild className="mt-2">
-                <Link to="/trades">
-                  Log Trades <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-dashed bg-card/50 flex flex-col items-center justify-center py-16 text-center space-y-4">
+            <div className="p-4 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+              <Lightbulb className="h-8 w-8" style={{ color: themeColors.primary }} aria-hidden="true" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">Not Enough Data Yet</h2>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Log at least 5 trades to unlock data-driven trade insights.
+              </p>
+            </div>
+            <Button asChild className="mt-2" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+              <Link to="/trades">
+                Log Trades <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
         </div>
         <AppFooter />
       </div>
@@ -106,13 +111,15 @@ export default function TradeIdeas() {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
-      {/* Header */}
-      <div className="border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-center sm:text-left">
-            <div>
+      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+              <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
+            </div>
+            <div className="space-y-0.5">
               <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground">
                 {ideas.length} insights from{' '}
                 <span className="font-medium text-foreground">{totalTrades} trades</span>
                 {summary && (
@@ -222,13 +229,13 @@ export default function TradeIdeas() {
 
         {/* Symbol Performance Chart */}
         {charts != null && charts.symbolPnl.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Symbol Performance</CardTitle>
-              <CardDescription>P&L breakdown by instrument</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={symbolConfig} className="h-[300px] w-full">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <ChartBar className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Symbol Performance</span>
+            </div>
+            <p className="text-sm text-muted-foreground">P&L breakdown by instrument</p>
+            <ChartContainer config={symbolConfig} className="h-[300px] w-full">
                 <BarChart
                   accessibilityLayer
                   data={charts.symbolPnl}
@@ -265,20 +272,19 @@ export default function TradeIdeas() {
                   </Bar>
                 </BarChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
+          </div>
         )}
 
-        {/* Two-column: Hourly + Direction */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Trader Profile — Radar */}
           {summary != null && summary.traderProfile.length > 0 && (
-            <Card className="flex flex-col">
-              <CardHeader>
-                <CardTitle>Trader Profile</CardTitle>
-                <CardDescription>Your trading style at a glance</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col items-center gap-6">
+            <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Trader Profile</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Your trading style at a glance</p>
+              <div className="flex flex-1 flex-col items-center gap-6">
                 <ChartContainer config={profileConfig} className="mx-auto aspect-square h-[220px]">
                   <RadarChart data={summary.traderProfile} cx="50%" cy="50%" outerRadius="65%">
                     <ChartTooltip
@@ -321,18 +327,19 @@ export default function TradeIdeas() {
                     )
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Direction Split - Donut */}
           {charts != null && charts.direction.length > 0 && (
-            <Card className="flex flex-col">
-              <CardHeader>
-                <CardTitle>Direction Split</CardTitle>
-                <CardDescription>Long vs Short performance</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-1 flex-col items-center gap-6">
+            <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+              <div className="flex items-center gap-2">
+                <ArrowsSplit className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Direction Split</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Long vs Short performance</p>
+              <div className="flex flex-1 flex-col items-center gap-6">
                 <ChartContainer config={directionConfig} className="h-[200px] w-full max-w-[240px]">
                   <PieChart>
                     <ChartTooltip
@@ -420,19 +427,18 @@ export default function TradeIdeas() {
                     )
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Strategy Performance */}
         {charts != null && charts.strategyPnl.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Strategy Breakdown</CardTitle>
-              <CardDescription>Which strategies are working</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Strategy Breakdown</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Which strategies are working</p>
               <ChartContainer config={strategyConfig} className="h-[250px] w-full">
                 <BarChart data={charts.strategyPnl} layout="vertical" margin={{ left: 30, right: 20 }}>
                   <CartesianGrid horizontal={false} strokeOpacity={0.1} />
@@ -461,20 +467,17 @@ export default function TradeIdeas() {
                   </Bar>
                 </BarChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
+          </div>
         )}
 
-        {/* Two-column: Weekly Trend + Day of Week */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Weekly Trend */}
           {charts != null && charts.weeklyPnl.length > 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Weekly P&L Trend</CardTitle>
-                <CardDescription>Your performance over time</CardDescription>
-              </CardHeader>
-              <CardContent>
+            <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <TrendUp className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Weekly P&L Trend</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Your performance over time</p>
                 <ChartContainer config={weeklyConfig} className="h-[200px] w-full">
                   <AreaChart data={charts.weeklyPnl} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
                     <defs>
@@ -511,18 +514,16 @@ export default function TradeIdeas() {
                     />
                   </AreaChart>
                 </ChartContainer>
-              </CardContent>
-            </Card>
+            </div>
           )}
 
-          {/* Day of Week */}
           {charts != null && charts.dayOfWeek.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Day of Week</CardTitle>
-                <CardDescription>P&L by trading day</CardDescription>
-              </CardHeader>
-              <CardContent>
+            <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <CalendarDots className="h-4 w-4" style={{ color: themeColors.primary }} />
+                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Day of Week</span>
+              </div>
+              <p className="text-sm text-muted-foreground">P&L by trading day</p>
                 <ChartContainer config={hourlyConfig} className="h-[200px] w-full">
                   <BarChart data={charts.dayOfWeek} maxBarSize={24} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                     <CartesianGrid vertical={false} strokeOpacity={0.1} />
@@ -551,22 +552,18 @@ export default function TradeIdeas() {
                     </Bar>
                   </BarChart>
                 </ChartContainer>
-              </CardContent>
-            </Card>
+            </div>
           )}
         </div>
 
-        {/* Actionable Ideas */}
         {ideas.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} aria-hidden="true" />
-                Actionable Ideas
-              </CardTitle>
-              <CardDescription>Suggestions based on your trading data</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
+              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Actionable Ideas</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Suggestions based on your trading data</p>
+            <div className="space-y-3">
               {ideas.map((idea) => {
                 const accentColor = idea.sentiment === 'positive'
                   ? themeColors.profit
@@ -591,8 +588,8 @@ export default function TradeIdeas() {
                   </div>
                 )
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
 

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom"
-import { Plus, CurrencyDollar, Target, TrendUp, ChartBar, Pulse, ArrowUp, ArrowDown } from '@phosphor-icons/react'
+import { Plus, CurrencyDollar, Target, TrendUp, ChartBar, Pulse, ArrowUp, ArrowDown, PencilSimple, Crosshair, ArrowsLeftRight, Lightbulb, Tag, Heart, Note } from '@phosphor-icons/react'
 import { Separator } from "@/components/ui/separator"
 import {
   Popover,
@@ -1052,182 +1052,193 @@ export function CalendarHeatmap() {
       
       {/* Trade Entry & Journal Modal */}
       <Dialog open={isTradeDialogOpen} onOpenChange={setIsTradeDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="space-y-2 pb-4">
-            <DialogTitle className="text-base sm:text-lg">
-              {selectedDateForTrade?.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              {isDemo ? 'View demo journal entries for this trading day' : 'Add trades or journal notes for this trading day'}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                <CalendarDots className="h-4 w-4" style={{ color: themeColors.primary }} />
+              </div>
+              <div>
+                <DialogHeader className="text-left space-y-0.5">
+                  <DialogTitle className="text-base sm:text-lg">
+                    {selectedDateForTrade?.toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm">
+                    {isDemo ? 'View demo entries for this trading day' : 'Log trades or journal notes for this day'}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+            </div>
+          </div>
 
+          <div className="px-5 pb-5 sm:px-6 sm:pb-6 mt-4">
           <Tabs defaultValue="journal" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-7 sm:h-9 p-0.5 sm:p-1 mb-4 sm:mb-5">
+            <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
               <TabsTrigger
                 value="journal"
-                className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
+                className="text-xs sm:text-sm gap-1.5 flex items-center justify-center"
               >
+                <BookOpen className="h-3.5 w-3.5" />
                 Journal
               </TabsTrigger>
               <TabsTrigger
                 value="trade"
-                className="text-xs sm:text-sm py-1 sm:py-1.5 px-2 sm:px-3 h-6 sm:h-8 flex items-center justify-center"
+                className="text-xs sm:text-sm gap-1.5 flex items-center justify-center"
               >
+                <ChartBar className="h-3.5 w-3.5" />
                 Add Trade
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="journal" className="space-y-3 sm:space-y-4 mt-6 sm:mt-8">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Add New Journal Entry
-                </div>
 
-                {/* Compact form fields */}
+            <TabsContent value="journal" className="space-y-4 mt-0">
+              {/* -- Entry Card -- */}
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <PencilSimple className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Entry</span>
+                </div>
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="journal-title" className="text-xs sm:text-sm">Entry Title</Label>
+                    <Label htmlFor="journal-title" className="text-xs text-muted-foreground">Title</Label>
                     <Input
                       id="journal-title"
-                      placeholder="Focus for this trading day"
+                      placeholder="What's the focus for today?"
                       value={journalTitle}
                       onChange={(e) => setJournalTitle(e.target.value)}
-                      className="h-8 sm:h-9 text-sm"
+                      className="h-10 text-sm bg-background/60 border-border/50"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs sm:text-sm">Link to Trade (Optional)</Label>
-                    <Select value={selectedTradeId} onValueChange={setSelectedTradeId}>
-                      <SelectTrigger className="h-8 sm:h-9 text-sm">
-                        <SelectValue placeholder="No trade linked" />
+                    <Label htmlFor="journal-content" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Note className="h-3 w-3" />
+                      Notes
+                    </Label>
+                    <Textarea
+                      id="journal-content"
+                      placeholder="Thoughts, observations, lessons learned..."
+                      value={journalNote}
+                      onChange={(e) => setJournalNote(e.target.value)}
+                      className="min-h-[80px] sm:min-h-[100px] resize-none text-sm bg-background/60 border-border/50"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* -- Details Card -- */}
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Details</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <ChartBar className="h-3 w-3" />
+                    Link to Trade
+                  </Label>
+                  <Select value={selectedTradeId} onValueChange={setSelectedTradeId}>
+                    <SelectTrigger className="h-10 text-sm bg-background/60 border-border/50">
+                      <SelectValue placeholder="No trade linked" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No trade linked</SelectItem>
+                      {trades.map((trade: any) => (
+                        <SelectItem key={trade.id} value={trade.id} className="text-xs">
+                          {trade.symbol} {trade.side.toUpperCase()} • {trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Heart className="h-3 w-3" />
+                      Sentiment
+                    </Label>
+                    <Select value={journalMood} onValueChange={(value: 'bullish' | 'bearish' | 'neutral') => setJournalMood(value)}>
+                      <SelectTrigger className="h-10 text-sm bg-background/60 border-border/50">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">No trade linked</SelectItem>
-                        {trades.map((trade: any) => (
-                          <SelectItem key={trade.id} value={trade.id} className="text-xs">
-                            {trade.symbol} {trade.side.toUpperCase()} • {trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="neutral">Neutral</SelectItem>
+                        <SelectItem value="bullish">Bullish</SelectItem>
+                        <SelectItem value="bearish">Bearish</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* Compact grid layout */}
-                  <div className="grid grid-cols-2 gap-3 dialog-form-field">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs sm:text-sm">Sentiment</Label>
-                      <Select value={journalMood} onValueChange={(value: 'bullish' | 'bearish' | 'neutral') => setJournalMood(value)}>
-                        <SelectTrigger className="h-8 sm:h-9 text-sm !py-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="neutral">😐 Neutral</SelectItem>
-                          <SelectItem value="bullish">📈 Bullish</SelectItem>
-                          <SelectItem value="bearish">📉 Bearish</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="journal-tags" className="text-xs sm:text-sm">Tag</Label>
-                      <Input
-                        id="journal-tags"
-                        placeholder="strategy, analysis..."
-                        value={journalTags}
-                        onChange={(e) => setJournalTags(e.target.value)}
-                        className="h-8 sm:h-9 text-sm"
-                      />
-                    </div>
-                  </div>
-
                   <div className="space-y-1.5">
-                    <Label htmlFor="journal-content" className="text-xs sm:text-sm">Trading Notes</Label>
-                    <Textarea
-                      id="journal-content"
-                      placeholder="Record thoughts, observations, lessons learned..."
-                      value={journalNote}
-                      onChange={(e) => setJournalNote(e.target.value)}
-                      className="min-h-[60px] sm:min-h-[80px] md:min-h-[120px] resize-none text-sm"
+                    <Label htmlFor="journal-tags" className="text-xs text-muted-foreground">Tag</Label>
+                    <Input
+                      id="journal-tags"
+                      placeholder="strategy, analysis..."
+                      value={journalTags}
+                      onChange={(e) => setJournalTags(e.target.value)}
+                      className="h-10 text-sm bg-background/60 border-border/50"
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Mobile-optimized button layout */}
-                <div className="flex flex-col gap-2 pt-3 border-t border-border/70">
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsTradeDialogOpen(false)} 
-                      className="flex-1 h-9 text-sm"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSaveJournal} 
-                      disabled={!journalNote.trim() || !journalTitle.trim()} 
-                      className="flex-1 h-9 text-sm"
-                    >
-                      Save Entry
-                    </Button>
-                  </div>
-                  
-                  <Link to="/journal" onClick={() => setIsTradeDialogOpen(false)}>
-                    <Button variant="outline" className="w-full h-8 text-xs gap-1.5">
-                      <Plus className="h-3 w-3" />
-                      Full Journal Features
-                    </Button>
-                  </Link>
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-2">
+                <Link to="/journal" onClick={() => setIsTradeDialogOpen(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                  <BookOpen className="h-3 w-3" />
+                  Full journal
+                </Link>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setIsTradeDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveJournal}
+                    disabled={!journalNote.trim() || !journalTitle.trim()}
+                    className="shadow-sm gap-2 px-5"
+                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                  >
+                    Save Entry
+                  </Button>
                 </div>
               </div>
             </TabsContent>
-            
-            <TabsContent value="trade" className="space-y-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Market</Label>
+
+            <TabsContent value="trade" className="space-y-4 mt-0">
+              {/* -- Setup Card -- */}
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Crosshair className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setup</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Market</Label>
                     <Select value={tradeForm.market} onValueChange={(value: "forex" | "futures" | "indices") => {
                       setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
                     }}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="forex">💱 Forex</SelectItem>
-                        <SelectItem value="futures">📊 Futures</SelectItem>
-                        <SelectItem value="indices">📈 Indices</SelectItem>
+                        <SelectItem value="forex">Forex</SelectItem>
+                        <SelectItem value="futures">Futures</SelectItem>
+                        <SelectItem value="indices">Indices</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Side</Label>
-                    <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="long">📈 Long (Buy)</SelectItem>
-                        <SelectItem value="short">📉 Short (Sell)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="trade-symbol">Symbol</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Symbol</Label>
                     <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select instrument" />
+                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
+                        <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
                         {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
@@ -1238,12 +1249,23 @@ export function CalendarHeatmap() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Prop Firm</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Side</Label>
+                    <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
+                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="long">Long</SelectItem>
+                        <SelectItem value="short">Short</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Prop Firm</Label>
                     <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Optional" />
+                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
+                        <SelectValue placeholder="None" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
@@ -1256,123 +1278,143 @@ export function CalendarHeatmap() {
                     </Select>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="trade-entry">Entry Price</Label>
+              {/* -- Execution Card -- */}
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ArrowsLeftRight className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Execution</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trade-entry" className="text-xs text-muted-foreground">Entry Price</Label>
                     <Input
                       id="trade-entry"
                       type="number"
                       step="0.00001"
                       placeholder="1.08450"
+                      className="h-10 bg-background/60 border-border/50"
                       value={tradeForm.entryPrice}
                       onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="trade-exit">Exit Price</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trade-exit" className="text-xs text-muted-foreground">Exit Price</Label>
                     <Input
                       id="trade-exit"
                       type="number"
                       step="0.00001"
                       placeholder="1.08650"
+                      className="h-10 bg-background/60 border-border/50"
                       value={tradeForm.exitPrice}
                       onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="trade-size">Lot Size</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trade-size" className="text-xs text-muted-foreground">Lot Size</Label>
                     <Input
                       id="trade-size"
                       type="number"
                       step="0.01"
                       placeholder="1.00"
+                      className="h-10 bg-background/60 border-border/50"
                       value={tradeForm.lotSize}
                       onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="trade-pnl">P&L (optional)</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trade-pnl" className="text-xs text-muted-foreground">P&L</Label>
                     <Input
                       id="trade-pnl"
                       type="number"
                       step="0.01"
                       placeholder="Auto-calculated"
+                      className="h-10 bg-background/60 border-border/50"
                       value={tradeForm.pnl}
                       onChange={(e) => setTradeForm(prev => ({ ...prev, pnl: e.target.value }))}
                     />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="trade-strategy">Strategy</Label>
+              {/* -- Context Card -- */}
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Context</span>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="trade-strategy" className="text-xs text-muted-foreground">Strategy</Label>
                   <Input
                     id="trade-strategy"
-                    placeholder="Breakout, Support/Resistance, etc."
+                    placeholder="Breakout, S/R, trend follow..."
+                    className="h-10 bg-background/60 border-border/50"
                     value={tradeForm.strategy}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="trade-notes">Notes</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="trade-notes" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Note className="h-3 w-3" />
+                    Notes
+                  </Label>
                   <Textarea
                     id="trade-notes"
-                    placeholder="Trade reasoning, market conditions, etc."
+                    placeholder="What was your reasoning?"
                     value={tradeForm.notes}
                     onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
-                    className="min-h-[80px]"
+                    className="min-h-[72px] resize-none text-sm bg-background/60 border-border/50"
                   />
                 </div>
-                
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <Button 
-                    variant="outline" 
-                    className="gap-2"
-                    onClick={() => {
-                      // Save form data to pre-fill Trade Log
-                      const prefilledData = {
-                        symbol: tradeForm.symbol,
-                        side: tradeForm.side,
-                        market: tradeForm.market,
-                        entryPrice: tradeForm.entryPrice,
-                        exitPrice: tradeForm.exitPrice,
-                        lotSize: tradeForm.lotSize,
-                        strategy: tradeForm.strategy,
-                        notes: tradeForm.notes,
-                        propFirm: tradeForm.propFirm,
-                        entryTime: selectedDateForTrade,
-                        exitTime: selectedDateForTrade
-                      };
-                      userStorage.setItem('prefilledTradeForm', JSON.stringify(prefilledData));
-                      setIsTradeDialogOpen(false);
-                      window.location.href = '/trades';
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Full Trade Journal
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                  onClick={() => {
+                    const prefilledData = {
+                      symbol: tradeForm.symbol,
+                      side: tradeForm.side,
+                      market: tradeForm.market,
+                      entryPrice: tradeForm.entryPrice,
+                      exitPrice: tradeForm.exitPrice,
+                      lotSize: tradeForm.lotSize,
+                      strategy: tradeForm.strategy,
+                      notes: tradeForm.notes,
+                      propFirm: tradeForm.propFirm,
+                      entryTime: selectedDateForTrade,
+                      exitTime: selectedDateForTrade
+                    };
+                    userStorage.setItem('prefilledTradeForm', JSON.stringify(prefilledData));
+                    setIsTradeDialogOpen(false);
+                    window.location.href = '/trades';
+                  }}
+                >
+                  <ChartBar className="h-3 w-3" />
+                  Full trade log
+                </button>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setIsTradeDialogOpen(false)}>
+                    Cancel
                   </Button>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" onClick={() => setIsTradeDialogOpen(false)} className="w-full sm:w-auto">
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSaveTrade} 
-                      disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
-                      className="w-full sm:w-auto"
-                    >
-                      Save Trade
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveTrade}
+                    disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                    className="shadow-sm gap-2 px-5"
+                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                  >
+                    <CurrencyDollar className="h-3.5 w-3.5" />
+                    Save Trade
+                  </Button>
                 </div>
               </div>
             </TabsContent>
           </Tabs>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

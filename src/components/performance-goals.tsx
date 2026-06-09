@@ -195,12 +195,12 @@ export function PerformanceGoals() {
   // Celebrate achievement with toast notification
   const celebrateAchievement = (goal: Goal) => {
     const messages = {
-      profit: '🎉 Profit target achieved!',
-      winRate: '🏆 Win rate goal reached!',
-      trades: '📈 Trade count target hit!',
-      riskReward: '⚖️ Risk/Reward goal achieved!',
-      maxLoss: '🛡️ Stayed within loss limits!',
-      maxDrawdown: '💪 Drawdown controlled successfully!'
+      profit: 'Profit target achieved!',
+      winRate: 'Win rate goal reached!',
+      trades: 'Trade count target hit!',
+      riskReward: 'Risk/Reward goal achieved!',
+      maxLoss: 'Stayed within loss limits!',
+      maxDrawdown: 'Drawdown controlled successfully!'
     }
 
     toast.success(messages[goal.type], {
@@ -544,27 +544,31 @@ export function PerformanceGoals() {
 
   return (
     <div className="space-y-6">
-      {/* ── Goals Card ── */}
-      <Card className="">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Target className="h-4 w-4 text-muted-foreground" />
-              Active Goals
-            </CardTitle>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">
-                {achievedGoals.length}/{goalProgress.length} achieved
-              </span>
-              <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
-                  >
-                    Add Goal
-                  </Button>
-                </DialogTrigger>
+      {/* ── Goals Section ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+              <Target className="h-4 w-4" style={{ color: themeColors.primary }} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Performance Goals</h2>
+              <p className="text-xs text-muted-foreground">
+                {goalProgress.length === 0
+                  ? 'Define what you want to achieve as a trader'
+                  : `${achievedGoals.length} of ${goalProgress.length} achieved`}
+              </p>
+            </div>
+          </div>
+          <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
+              >
+                Add Goal
+              </Button>
+            </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Set Your Trading Goal</DialogTitle>
@@ -740,14 +744,25 @@ export function PerformanceGoals() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-2">
+        </div>
+
+        <div>
           {goalProgress.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              <Target className="h-10 w-10 mb-3 opacity-40" />
-              <p className="text-sm">No goals set. Add your first goal to start tracking!</p>
+            <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-12 px-6 text-center">
+              <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
+                <Target className="h-6 w-6" style={{ color: themeColors.primary }} />
+              </div>
+              <h3 className="text-sm font-semibold mb-1">No goals set yet</h3>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">
+                Goals give your trading direction. Set a profit target, win rate, or loss limit and track your progress over time.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => setShowGoalDialog(true)}
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
+              >
+                Set your first goal
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -854,37 +869,43 @@ export function PerformanceGoals() {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* ── Risk Rules Card ── */}
-      <Card className="">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-              Risk Management Rules
-            </CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const newRule: RiskRule = {
-                  id: Date.now().toString(),
-                  type: 'maxLossPerDay',
-                  value: 100,
-                  enabled: true,
-                  violations: 0
-                }
-                setEditingRule(newRule)
-                setShowRuleDialog(true)
-              }}
-            >
-              Add Rule
-            </Button>
+      {/* ── Risk Management Section ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+              <ShieldCheck className="h-4 w-4" style={{ color: themeColors.primary }} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Risk Management</h2>
+              <p className="text-xs text-muted-foreground">
+                Rules that protect your capital and flag when you break them.
+              </p>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-2 space-y-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const newRule: RiskRule = {
+                id: Date.now().toString(),
+                type: 'maxLossPerDay',
+                value: 100,
+                enabled: true,
+                violations: 0
+              }
+              setEditingRule(newRule)
+              setShowRuleDialog(true)
+            }}
+          >
+            Add Rule
+          </Button>
+        </div>
+
+        <div className="space-y-2">
           {(() => {
             const now = new Date()
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -945,10 +966,30 @@ export function PerformanceGoals() {
                 )}
 
                 {riskRules.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <ShieldCheck className="h-8 w-8 mb-2 opacity-40 mx-auto" />
-                    <p className="text-sm font-medium">No risk rules configured</p>
-                    <p className="text-xs mt-1">Add rules to protect your capital and track violations</p>
+                  <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-10 px-6 text-center">
+                    <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
+                      <ShieldCheck className="h-6 w-6" style={{ color: themeColors.primary }} />
+                    </div>
+                    <h3 className="text-sm font-semibold mb-1">No risk rules configured</h3>
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">
+                      Risk rules set limits on daily losses, per-trade risk, and open positions. When you break a rule, you get notified.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingRule({
+                          id: Date.now().toString(),
+                          type: 'maxLossPerDay',
+                          value: 100,
+                          enabled: true,
+                          violations: 0
+                        })
+                        setShowRuleDialog(true)
+                      }}
+                    >
+                      Create your first rule
+                    </Button>
                   </div>
                 ) : riskRules.map(rule => {
                   const current = getRuleCurrent(rule)
@@ -1029,8 +1070,8 @@ export function PerformanceGoals() {
               </>
             )
           })()}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Risk Rule Edit Dialog */}
       <Dialog open={showRuleDialog} onOpenChange={setShowRuleDialog}>
@@ -1094,24 +1135,20 @@ export function PerformanceGoals() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Achievements Card ── */}
+      {/* ── Achievements Section ── */}
       {achievedGoals.length > 0 && (
-        <Card className="">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Trophy className="h-4 w-4 text-muted-foreground" />
-                Achievements
-              </CardTitle>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                backgroundColor: alpha(themeColors.profit, '15'),
-                color: themeColors.profit,
-              }}>
-                {achievedGoals.length} earned
-              </span>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: alpha(themeColors.profit, '12') }}>
+                <Trophy className="h-4 w-4" style={{ color: themeColors.profit }} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Achievements</h2>
+                <p className="text-xs text-muted-foreground">{achievedGoals.length} goal{achievedGoals.length !== 1 ? 's' : ''} earned</p>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="pt-2">
+          </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {achievedGoals.map(goal => {
                 const GoalIcon = goal.type === 'profit' ? CurrencyDollar
@@ -1150,8 +1187,7 @@ export function PerformanceGoals() {
                 )
               })}
             </div>
-          </CardContent>
-        </Card>
+        </div>
       )}
     </div>
   )

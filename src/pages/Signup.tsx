@@ -158,12 +158,12 @@ export default function Signup() {
           <div className="space-y-5 my-8">
             {features.map((feature, i) => (
               <div key={i} className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-white/15 backdrop-blur-sm shrink-0 mt-0.5">
+                <div className="p-2 rounded-lg bg-black/10 shrink-0">
                   {(() => { const FeatureIcon = feature.icon; return <FeatureIcon className="h-4 w-4 text-white" />; })()}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">{feature.title}</p>
-                  <p className="text-xs text-white/70">{feature.desc}</p>
+                  <p className="font-medium text-sm text-white">{feature.title}</p>
+                  <p className="text-xs opacity-80">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -212,7 +212,7 @@ export default function Signup() {
                   onChange={handleChange}
                   required
                   autoComplete="given-name"
-                  className="h-11"
+                  className="h-11 bg-background/60 border-border/50"
                 />
               </div>
               <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function Signup() {
                   onChange={handleChange}
                   required
                   autoComplete="family-name"
-                  className="h-11"
+                  className="h-11 bg-background/60 border-border/50"
                 />
               </div>
             </div>
@@ -242,7 +242,7 @@ export default function Signup() {
                 required
                 autoComplete="email"
                 spellCheck={false}
-                className="h-11"
+                className="h-11 bg-background/60 border-border/50"
               />
             </div>
 
@@ -258,7 +258,7 @@ export default function Signup() {
                   onChange={handleChange}
                   required
                   autoComplete="new-password"
-                  className="h-11 pr-10"
+                  className="h-11 pr-10 bg-background/60 border-border/50"
                 />
                 <button
                   type="button"
@@ -308,7 +308,7 @@ export default function Signup() {
                   onChange={handleChange}
                   required
                   autoComplete="new-password"
-                  className="h-11 pr-10"
+                  className="h-11 pr-10 bg-background/60 border-border/50"
                 />
                 <button
                   type="button"

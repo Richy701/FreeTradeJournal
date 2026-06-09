@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <!-- Solid yellow background -->
-  <rect width="512" height="512" rx="96" fill="#FFC000" />
+  <rect width="512" height="512" fill="#FFC000" />
 
   <!-- Black text for contrast on yellow -->
   <text x="256" y="300"

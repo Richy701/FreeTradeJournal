@@ -101,7 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/dashboard">
-                <img src="/favicon.svg" alt="FTJ" className="size-8 rounded-lg flex-shrink-0" />
+                <div className="size-8 rounded-lg shrink-0 overflow-hidden"><img src="/favicon.svg" alt="FTJ" className="w-full h-full object-cover" /></div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold flex items-center gap-1.5">
                     FreeTradeJournal

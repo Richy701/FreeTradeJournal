@@ -15,6 +15,69 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.15.0',
+    date: '2026-06-09',
+    summary: 'Major UI polish across every page. Warm white light mode, amber-tinted hovers, redesigned forms, and a login reliability fix.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Journal page',
+        description: 'New entry form reorganized into Writing, Mindset, Context, and Screenshots sections with icon headers. Mood and emotions are now grouped together. Journal entries show a colored accent by sentiment for quick visual scanning.',
+      },
+      {
+        type: 'improved',
+        text: 'Goals & Risk Management page',
+        description: 'Clearer layout with separate sections for Goals, Risk Management, and Achievements. Each section has its own header, description, and improved empty states that explain what to do and why.',
+      },
+      {
+        type: 'improved',
+        text: 'Calendar trade and journal forms',
+        description: 'The forms you see when clicking a date on the calendar heatmap have been completely redesigned with organized card sections, icons, and cleaner layout.',
+      },
+      {
+        type: 'improved',
+        text: 'Share stats card',
+        description: 'Refreshed copy, added the FTJ logo, and removed visual clutter from the downloadable performance card.',
+      },
+      {
+        type: 'improved',
+        text: 'Dashboard trade form',
+        description: 'Redesigned with Manual and Import tabs. CSV import is now front and center with a full upload panel and supported broker list. Manual entry fields are reorganized into logical sections: Setup, Execution, Context, and Mindset.',
+      },
+      {
+        type: 'fixed',
+        text: 'Cleaned up UI text across the app',
+        description: 'Removed stray symbols from dropdowns, toasts, and labels for a more polished look.',
+      },
+      {
+        type: 'improved',
+        text: 'Polished Trade Log page with improved form sections and page header',
+      },
+      {
+        type: 'improved',
+        text: 'Updated Settings, Profile, and Trade Ideas pages with consistent styling',
+      },
+      {
+        type: 'improved',
+        text: 'Warm white light mode theme and amber-tinted hover states',
+      },
+      {
+        type: 'fixed',
+        text: 'Fixed prop firm logo rendering in dark mode',
+      },
+      {
+        type: 'fixed',
+        text: 'FTJ logo outline removed',
+        description: 'The dark outline around the FTJ logo in the sidebar and mobile header has been fixed.',
+      },
+      {
+        type: 'fixed',
+        text: 'Returning users no longer hit onboarding after logging back in',
+        description: 'A race condition between login and data decryption could send existing users through onboarding again. Fixed by letting the protected route handle the check after decryption completes.',
+      },
+    ],
+  },
+  {
     version: '2.14.0',
     date: '2026-06-08',
     summary: 'Free AI access for all users. Full visual redesign of PropTracker, Trade Ideas, and Settings. Onboarding overhaul. Prop firm review pages.',
@@ -676,4 +739,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.14.0'
+export const LATEST_CHANGELOG_VERSION = '2.15.0'

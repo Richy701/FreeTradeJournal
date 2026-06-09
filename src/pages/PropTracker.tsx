@@ -1823,7 +1823,7 @@ export default function PropTracker() {
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3 mb-4">
                           {FIRM_LOGOS[g.firm] ? (
-                            <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm overflow-hidden bg-white"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
+                            <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm overflow-hidden"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
                           ) : (
                             <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm" style={{ backgroundColor: g.color }}>{g.initials}</div>
                           )}
@@ -1870,7 +1870,7 @@ export default function PropTracker() {
                     {/* Account header */}
                     <div className="flex items-start gap-3 mb-4">
                       {FIRM_LOGOS[account.firmName] ? (
-                        <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm bg-white overflow-hidden">
+                        <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm overflow-hidden">
                           <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" />
                         </div>
                       ) : (

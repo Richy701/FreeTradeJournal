@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X } from '@phosphor-icons/react'
+import { Plus, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -58,6 +58,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 function FreeAIBanner() {
   const { user, isDemo } = useAuth()
@@ -114,7 +115,7 @@ export default function Dashboard() {
       isIncognitoMode().then(isIncognito => {
         if (isIncognito) {
           toast.warning(
-            '⚠️ Incognito mode detected! Your data will be lost when you close this window. Use normal browsing or upgrade to Pro for cloud sync.',
+            'Incognito mode detected. Your data will be lost when you close this window. Use normal browsing or upgrade to Pro for cloud sync.',
             { duration: 10000 }
           );
         }
@@ -582,7 +583,7 @@ export default function Dashboard() {
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (
         <div className="mx-4 mb-4 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ backgroundColor: 'hsl(var(--amber-500) / 0.05)', borderColor: 'hsl(var(--amber-500) / 0.3)' }}>
-              <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
+              <WarningCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-500" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium mb-1">
                   Your data is stored locally on this device only
@@ -707,132 +708,184 @@ export default function Dashboard() {
                     <span>Add Trade</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add Trade</DialogTitle>
-                    <DialogDescription>
-                      Quick trade entry for your dashboard
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="trade-market">Market</Label>
-                        <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
-                          setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
-                        }}>
-                          <SelectTrigger id="trade-market">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="forex">💱 Forex</SelectItem>
-                            <SelectItem value="futures">📊 Futures</SelectItem>
-                            <SelectItem value="indices">📈 Indices</SelectItem>
-                          </SelectContent>
-                        </Select>
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+                  <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                        <ChartLineUp className="h-4 w-4" style={{ color: themeColors.primary }} />
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="trade-side">Side</Label>
-                        <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
-                          <SelectTrigger id="trade-side">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="long">📈 Long (Buy)</SelectItem>
-                            <SelectItem value="short">📉 Short (Sell)</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div>
+                        <DialogHeader className="text-left space-y-0.5">
+                          <DialogTitle>Log a Trade</DialogTitle>
+                          <DialogDescription>
+                            Add trades manually or import from your broker.
+                          </DialogDescription>
+                        </DialogHeader>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-5 sm:px-6 sm:pb-6 mt-4">
+                  <Tabs defaultValue="manual" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
+                      <TabsTrigger value="manual" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
+                        <Plus className="h-3.5 w-3.5" />
+                        Manual
+                      </TabsTrigger>
+                      <TabsTrigger value="import" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
+                        <UploadSimple className="h-3.5 w-3.5" />
+                        Import
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="manual" className="space-y-4 mt-0">
+                    {/* -- Setup Card -- */}
+                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Crosshair className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                        <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setup</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="trade-market" className="text-xs text-muted-foreground">Market</Label>
+                          <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
+                            setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
+                          }}>
+                            <SelectTrigger id="trade-market" className="h-10 bg-background/60 border-border/50">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="forex">Forex</SelectItem>
+                              <SelectItem value="futures">Futures</SelectItem>
+                              <SelectItem value="indices">Indices</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="trade-symbol" className="text-xs text-muted-foreground">Symbol</Label>
+                          <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
+                            <SelectTrigger id="trade-symbol" className="h-10 bg-background/60 border-border/50">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
+                                <SelectItem key={instrument} value={instrument}>
+                                  {instrument}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="trade-side" className="text-xs text-muted-foreground">Side</Label>
+                          <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
+                            <SelectTrigger id="trade-side" className="h-10 bg-background/60 border-border/50">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="long">Long</SelectItem>
+                              <SelectItem value="short">Short</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="trade-symbol">Symbol</Label>
-                        <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
-                          <SelectTrigger id="trade-symbol">
-                            <SelectValue placeholder="Select instrument" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
-                              <SelectItem key={instrument} value={instrument}>
-                                {instrument}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    {/* -- Execution Card -- */}
+                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <ArrowsLeftRight className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                        <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Execution</span>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="trade-prop-firm">Prop Firm</Label>
-                        <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
-                          <SelectTrigger id="trade-prop-firm">
-                            <SelectValue placeholder="Optional" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {PROP_FIRMS.map((firm) => (
-                              <SelectItem key={firm} value={firm}>
-                                {firm}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="entry-price">Entry Price</Label>
-                        <Input
-                          id="entry-price"
-                          type="number"
-                          step="0.00001"
-                          placeholder="1.08450…"
-                          value={tradeForm.entryPrice}
-                          onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="exit-price">Exit Price</Label>
-                        <Input
-                          id="exit-price"
-                          type="number"
-                          step="0.00001"
-                          placeholder="1.08650…"
-                          value={tradeForm.exitPrice}
-                          onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
-                        />
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="entry-price" className="text-xs text-muted-foreground">Entry Price</Label>
+                          <Input
+                            id="entry-price"
+                            type="number"
+                            step="0.00001"
+                            placeholder="1.08450"
+                            className="h-10 bg-background/60 border-border/50"
+                            value={tradeForm.entryPrice}
+                            onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="exit-price" className="text-xs text-muted-foreground">Exit Price</Label>
+                          <Input
+                            id="exit-price"
+                            type="number"
+                            step="0.00001"
+                            placeholder="1.08650"
+                            className="h-10 bg-background/60 border-border/50"
+                            value={tradeForm.exitPrice}
+                            onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="lot-size" className="text-xs text-muted-foreground">Lot Size</Label>
+                          <Input
+                            id="lot-size"
+                            type="number"
+                            step="0.01"
+                            placeholder="1.00"
+                            className="h-10 bg-background/60 border-border/50"
+                            value={tradeForm.lotSize}
+                            onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="lot-size">Lot Size</Label>
-                        <Input
-                          id="lot-size"
-                          type="number"
-                          step="0.01"
-                          placeholder="1.00…"
-                          value={tradeForm.lotSize}
-                          onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
-                        />
+                    {/* -- Context Card -- */}
+                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                        <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Context</span>
                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="trade-strategy">Strategy</Label>
-                        <Input
-                          id="trade-strategy"
-                          placeholder="Breakout, Support/Resistance, etc.…"
-                          value={tradeForm.strategy}
-                          onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="trade-strategy" className="text-xs text-muted-foreground">Strategy</Label>
+                          <Input
+                            id="trade-strategy"
+                            placeholder="Breakout, S/R..."
+                            className="h-10 bg-background/60 border-border/50"
+                            value={tradeForm.strategy}
+                            onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="trade-prop-firm" className="text-xs text-muted-foreground">Prop Firm</Label>
+                          <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
+                            <SelectTrigger id="trade-prop-firm" className="h-10 bg-background/60 border-border/50">
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {PROP_FIRMS.map((firm) => (
+                                <SelectItem key={firm} value={firm}>
+                                  {firm}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Emotions</Label>
+                    {/* -- Mindset Card -- */}
+                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Mindset</span>
+                        </div>
+                        {tradeForm.emotions.split(',').filter(s => s.trim()).length > 0 && (
+                          <span className="text-[10px] font-medium" style={{ color: themeColors.primary }}>
+                            {tradeForm.emotions.split(',').filter(s => s.trim()).length} selected
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-1.5">
                         {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => {
                           const selected = tradeForm.emotions.split(',').map(s => s.trim()).filter(Boolean);
@@ -845,47 +898,77 @@ export default function Dashboard() {
                                 const next = isActive ? selected.filter(s => s !== e) : [...selected, e];
                                 setTradeForm(prev => ({ ...prev, emotions: next.join(', ') }));
                               }}
-                              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors duration-150 ${
+                              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-150 ${
                                 isActive
-                                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                                  ? ''
                                   : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
                               }`}
+                              style={isActive ? { backgroundColor: alpha(themeColors.primary, '15'), borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary } : undefined}
                             >
                               {e}
                             </button>
                           );
                         })}
                       </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="trade-notes" className="text-xs text-muted-foreground">Notes</Label>
+                        <Textarea
+                          id="trade-notes"
+                          placeholder="What was your reasoning? What did you notice?"
+                          value={tradeForm.notes}
+                          onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
+                          className="min-h-[72px] resize-none text-sm bg-background/60 border-border/50"
+                        />
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="trade-notes">Notes</Label>
-                      <Textarea
-                        id="trade-notes"
-                        placeholder="Trade reasoning, market conditions, etc.…"
-                        value={tradeForm.notes}
-                        onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
-                        className="min-h-[80px]"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t gap-3 sm:gap-0">
+                    {/* -- Footer -- */}
+                    <div className="flex items-center justify-between pt-2">
+                      <Link to="/trades" onClick={() => setIsTradeModalOpen(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                        <FileText className="h-3 w-3" />
+                        Full trade log
+                      </Link>
                       <div className="flex gap-2">
-                        <Link to="/trades" onClick={() => setIsTradeModalOpen(false)}>
-                          <Button variant="outline" className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Full Trade Journal
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="outline" 
-                          className="gap-2"
-                          onClick={() => document.getElementById('dashboard-csv-import')?.click()}
-                          disabled={csvUploadState.isUploading}
-                        >
-                          <UploadSimple className="h-4 w-4" />
-                          {csvUploadState.isUploading ? 'Importing...' : 'Import CSV'}
+                        <Button variant="ghost" size="sm" onClick={() => setIsTradeModalOpen(false)}>
+                          Cancel
                         </Button>
+                        <Button
+                          size="sm"
+                          className="shadow-sm gap-2 px-5"
+                          onClick={handleSaveTrade}
+                          disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                          style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                        >
+                          <CurrencyDollar className="h-3.5 w-3.5" />
+                          Save Trade
+                        </Button>
+                      </div>
+                    </div>
+                    </TabsContent>
+
+                    <TabsContent value="import" className="space-y-4 mt-0">
+                      <div
+                        className="rounded-xl border-2 border-dashed p-8 text-center space-y-4 transition-colors hover:border-primary/50 cursor-pointer"
+                        style={{ borderColor: alpha(themeColors.primary, '30') }}
+                        onClick={() => document.getElementById('dashboard-csv-import')?.click()}
+                      >
+                        <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+                          <UploadSimple className="h-6 w-6" style={{ color: themeColors.primary }} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">Import trades from CSV</p>
+                          <p className="text-xs text-muted-foreground">
+                            Drag and drop or click to browse
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {['MT4 / MT5', 'Tradovate', 'IBKR', 'NinjaTrader', 'TradeStation'].map(broker => (
+                            <span key={broker} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-muted/60 text-muted-foreground border border-border/50">
+                              {broker}
+                            </span>
+                          ))}
+                        </div>
                         <input
                           id="dashboard-csv-import"
                           type="file"
@@ -895,18 +978,33 @@ export default function Dashboard() {
                           onChange={handleCSVImport}
                         />
                       </div>
-                      <div className="flex gap-2 w-full sm:w-auto justify-end">
-                        <Button variant="outline" onClick={() => setIsTradeModalOpen(false)}>
+
+                      {csvUploadState.isUploading && (
+                        <div className="rounded-xl border bg-card/50 p-4 text-center">
+                          <p className="text-sm text-muted-foreground">Processing file...</p>
+                        </div>
+                      )}
+
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">How it works</p>
+                        <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                          <li>Export your trade history as CSV from your broker</li>
+                          <li>Upload the file here -- we auto-detect the format</li>
+                          <li>Review the preview, then confirm the import</li>
+                        </ol>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <Link to="/trades" onClick={() => setIsTradeModalOpen(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                          <FileText className="h-3 w-3" />
+                          Full trade log
+                        </Link>
+                        <Button variant="ghost" size="sm" onClick={() => setIsTradeModalOpen(false)}>
                           Cancel
                         </Button>
-                        <Button 
-                          onClick={handleSaveTrade} 
-                          disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
-                        >
-                          Save Trade
-                        </Button>
                       </div>
-                    </div>
+                    </TabsContent>
+                  </Tabs>
                   </div>
                 </DialogContent>
               </Dialog>
