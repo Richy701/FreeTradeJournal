@@ -94,7 +94,7 @@ export function Day14UpgradeEmail({ firstName, tradeCount }: Day14UpgradeEmailPr
           {/* CTA */}
           <Section style={content}>
             <Text style={body1}>
-              Pro is <strong style={{ color: '#ededed' }}>$5.99/month</strong>. Cancel anytime. Everything you've logged stays exactly as it is.
+              Pro is <strong style={{ color: '#ededed' }}>$12.99/month</strong>. Cancel anytime. Everything you've logged stays exactly as it is.
             </Text>
             <Link href="https://www.freetradejournal.com/pricing" style={button}>
               See Pro features

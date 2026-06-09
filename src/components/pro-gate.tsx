@@ -95,7 +95,7 @@ export function ProGate({ children, featureName, featureDescription }: ProGatePr
                 <Sparkle className="h-3.5 w-3.5" />
                 View Pro Plans
               </Link>
-              <p className="text-[10px] text-muted-foreground/60">From $5.99/mo · Cancel anytime</p>
+              <p className="text-[10px] text-muted-foreground/60">From $12.99/mo · Cancel anytime</p>
             </>
           )}
         </div>

@@ -73,7 +73,7 @@ export function Day21BackupEmail({ firstName }: Day21BackupEmailProps) {
           {/* CTA */}
           <Section style={content}>
             <Text style={body1}>
-              Cloud sync is included in all Pro plans, starting at $5.99/mo with a <strong style={{ color: '#ededed' }}>14-day free trial</strong>.
+              Cloud sync is included in all Pro plans, starting at $12.99/mo with a <strong style={{ color: '#ededed' }}>14-day free trial</strong>.
             </Text>
             <Link href="https://www.freetradejournal.com/settings" style={buttonOutline}>
               Export a backup
