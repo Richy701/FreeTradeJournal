@@ -21,6 +21,7 @@ dist-ssr
 .env.production.local
 functions/.env
 functions/service-account.json
+.mcp.json
 
 # Editor directories and files
 .vscode/*

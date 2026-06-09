@@ -53,6 +53,43 @@ function getResend(): Resend {
 
 const FROM_EMAIL = "FreeTradeJournal <hello@freetradejournal.com>";
 
+// ─── Resend Contact Sync (for Automations) ─────────────────
+
+async function createResendContact(email: string, firstName: string, uid: string) {
+  try {
+    const { data } = await getResend().contacts.create({
+      email,
+      firstName,
+      properties: { is_pro: "false", has_logged_trade: "false" },
+    });
+    if (data?.id) {
+      await db.collection("users").doc(uid).set(
+        { resendContactId: data.id },
+        { merge: true }
+      );
+    }
+  } catch (err) {
+    console.error("Resend: failed to create contact:", err);
+  }
+}
+
+async function updateResendContact(contactId: string | undefined, updates: { firstName?: string; unsubscribed?: boolean; properties?: Record<string, string> }) {
+  if (!contactId) return;
+  try {
+    await getResend().contacts.update({ id: contactId, ...updates });
+  } catch (err) {
+    console.error("Resend: failed to update contact:", err);
+  }
+}
+
+async function fireResendEvent(event: string, email: string, payload?: Record<string, any>) {
+  try {
+    await getResend().events.send({ event, email, payload });
+  } catch (err) {
+    console.error(`Resend: failed to fire event '${event}':`, err);
+  }
+}
+
 async function sendWelcomeEmail(email: string, name?: string) {
   const firstName = name?.split(" ")[0] || "trader";
   const html = await render(React.createElement(WelcomeEmail, { firstName }));
@@ -290,6 +327,15 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   } catch (err) {
     console.error("Failed to send welcome email:", err);
   }
+
+  // Create Resend contact + fire signup event for automation drip sequences
+  const firstName = (user.displayName || user.email).split(" ")[0];
+  await createResendContact(user.email, firstName, user.uid);
+  await fireResendEvent("user.signed_up", user.email, { firstName });
+  await db.collection("users").doc(user.uid).set(
+    { resendAutomationEnrolled: true },
+    { merge: true }
+  );
 });
 
 // ─── Day-3 Nudge Email (Scheduled) ─────────────────────────
@@ -313,7 +359,7 @@ export const sendDay3NudgeEmails = functions.pubsub
     for (const doc of allSnapshot.docs) {
       if (sent >= MAX_SENDS) break;
       const data = doc.data();
-      if (data.emailOptOut || data.firstTradeLoggedAt || data.day3NudgeSentAt) continue;
+      if (data.resendAutomationEnrolled || data.emailOptOut || data.firstTradeLoggedAt || data.day3NudgeSentAt) continue;
 
       const email = data.email;
       if (!email) continue;
@@ -401,7 +447,7 @@ export const sendDay7NudgeEmails = functions.pubsub
     for (const doc of allSnapshot.docs) {
       if (sent >= MAX_SENDS) break;
       const data = doc.data();
-      if (data.emailOptOut || data.firstTradeLoggedAt || data.day7NudgeSentAt) continue;
+      if (data.resendAutomationEnrolled || data.emailOptOut || data.firstTradeLoggedAt || data.day7NudgeSentAt) continue;
 
       const email = data.email;
       if (!email) continue;
@@ -449,7 +495,7 @@ export const sendDay14UpgradeEmails = functions.pubsub
       if (sent >= MAX_SENDS) break;
       const data = doc.data();
       // Only target free users who have logged at least one trade
-      if (data.emailOptOut || data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt) continue;
+      if (data.resendAutomationEnrolled || data.emailOptOut || data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt) continue;
 
       const email = data.email;
       if (!email) continue;
@@ -496,7 +542,7 @@ export const sendDay21BackupEmails = functions.pubsub
     for (const doc of allSnapshot.docs) {
       if (sent >= MAX_SENDS) break;
       const data = doc.data();
-      if (data.emailOptOut || data.isPro || data.day21BackupSentAt || !data.firstTradeLoggedAt) continue;
+      if (data.resendAutomationEnrolled || data.emailOptOut || data.isPro || data.day21BackupSentAt || !data.firstTradeLoggedAt) continue;
 
       const email = data.email;
       if (!email) continue;
@@ -957,10 +1003,19 @@ export const markFirstTrade = functions.https.onCall(async (_data, context) => {
     console.error("PostHog: failed to track first trade:", err);
   }
 
-  // ── Referral credit: only counts when referred user has verified email + first trade ──
+  // ── Sync to Resend: mark trade logged + fire event for automations ──
   try {
     const userDoc = await db.collection("users").doc(uid).get();
     const userData = userDoc.data();
+
+    await updateResendContact(userData?.resendContactId, {
+      properties: { has_logged_trade: "true" },
+    });
+    if (userData?.email) {
+      await fireResendEvent("trade.logged", userData.email);
+    }
+
+    // ── Referral credit: only counts when referred user has verified email + first trade ──
     const referrerUid = userData?.referredBy;
 
     if (referrerUid && !userData?.referralCounted) {
@@ -1361,6 +1416,14 @@ export const unsubscribe = functions.https.onRequest(async (req, res) => {
 
   await db.collection("users").doc(uid).set({ emailOptOut: true }, { merge: true });
 
+  // Sync unsubscribe to Resend contact so automations stop
+  try {
+    const userSnap = await db.collection("users").doc(uid).get();
+    await updateResendContact(userSnap.data()?.resendContactId, { unsubscribed: true });
+  } catch (syncErr) {
+    console.error("Resend: failed to sync unsubscribe:", syncErr);
+  }
+
   res.status(200).send(`
     <html><body style="font-family:sans-serif;max-width:500px;margin:80px auto;text-align:center;color:#999;background:#0a0a0a">
       <h2 style="color:#ededed">You've been unsubscribed</h2>
@@ -1368,6 +1431,31 @@ export const unsubscribe = functions.https.onRequest(async (req, res) => {
       <a href="https://www.freetradejournal.com" style="display:inline-block;margin-top:16px;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">Back to FreeTradeJournal</a>
     </body></html>
   `);
+});
+
+// ─── Resend Contact Properties Setup (run once) ───────────
+
+export const initResendContactProperties = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+
+  const resend = getResend();
+  const results: Array<{ key: string; status: string; error?: string }> = [];
+
+  for (const prop of [
+    { key: "is_pro", type: "string" as const, fallbackValue: "false" },
+    { key: "has_logged_trade", type: "string" as const, fallbackValue: "false" },
+  ]) {
+    try {
+      await resend.contactProperties.create(prop);
+      results.push({ key: prop.key, status: "created" });
+    } catch (err: any) {
+      results.push({ key: prop.key, status: "error", error: err?.message });
+    }
+  }
+
+  return { results };
 });
 
 // ─── Stripe Integration ────────────────────────────────────
@@ -1596,6 +1684,17 @@ export const stripeWebhook = functions.https.onRequest(
           );
           console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
 
+          // Sync Pro status to Resend contact for automations
+          try {
+            const userSnap = await db.collection("users").doc(firebaseUid).get();
+            const resendContactId = userSnap.data()?.resendContactId;
+            await updateResendContact(resendContactId, {
+              properties: { is_pro: String(isProStatus) },
+            });
+          } catch (syncErr) {
+            console.error("Resend: failed to sync Pro status:", syncErr);
+          }
+
           // Send trial started or pro upgrade email
           try {
             const userRecord = await admin.auth().getUser(firebaseUid);
@@ -1655,6 +1754,16 @@ export const stripeWebhook = functions.https.onRequest(
           );
           console.log(`subscription.updated for ${firebaseUid}: ${status}`);
 
+          // Sync Pro status to Resend contact for automations
+          try {
+            const userSnap = await db.collection("users").doc(firebaseUid).get();
+            await updateResendContact(userSnap.data()?.resendContactId, {
+              properties: { is_pro: String(isPro) },
+            });
+          } catch (syncErr) {
+            console.error("Resend: failed to sync Pro status:", syncErr);
+          }
+
           // Send Pro upgrade email when trial converts to paid
           const prevStatus = (event.data as any).previous_attributes?.status;
           if (prevStatus === "trialing" && sub.status === "active") {
@@ -1703,6 +1812,16 @@ export const stripeWebhook = functions.https.onRequest(
             { merge: true },
           );
           console.log(`subscription.deleted for ${firebaseUid}`);
+
+          // Sync Pro status to Resend contact for automations
+          try {
+            const userSnap = await db.collection("users").doc(firebaseUid).get();
+            await updateResendContact(userSnap.data()?.resendContactId, {
+              properties: { is_pro: "false" },
+            });
+          } catch (syncErr) {
+            console.error("Resend: failed to sync Pro status:", syncErr);
+          }
 
           // Send cancellation email
           try {
