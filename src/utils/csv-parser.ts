@@ -7,6 +7,8 @@ export interface ParsedTrade {
   quantity: string;
   pnl: string;
   date: string;
+  entryDate?: string;
+  exitDate?: string;
 }
 
 export interface CSVParseResult {
@@ -78,6 +80,16 @@ function parseCurrency(value: string): number {
   return parseFloat(cleaned) || 0;
 }
 
+function formatLocalDateTime(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${y}-${m}-${d}T${h}:${min}:${s}`;
+}
+
 function parseDateString(dateStr: string): string {
   try {
     // Strip timezone offset suffix like "+00:00" or "-06:00"
@@ -85,31 +97,48 @@ function parseDateString(dateStr: string): string {
 
     let date: Date;
 
-    // Format with slashes: could be DD/MM/YYYY or MM/DD/YYYY
+    // Format with slashes: could be DD/MM/YYYY or MM/DD/YYYY, optionally with time
     if (cleaned.includes('/')) {
-      const [datePart] = cleaned.split(' ');
+      const spaceIdx = cleaned.indexOf(' ');
+      const datePart = spaceIdx >= 0 ? cleaned.slice(0, spaceIdx) : cleaned;
+      const timePart = spaceIdx >= 0 ? cleaned.slice(spaceIdx + 1).trim() : '';
       const parts = datePart.split('/');
       const a = parseInt(parts[0]);
       const b = parseInt(parts[1]);
       const year = parseInt(parts[2]);
 
+      let month: number, day: number;
       // If second part > 12, it must be MM/DD/YYYY (e.g. 01/28/2026 from Topstep)
       // If first part > 12, it must be DD/MM/YYYY (e.g. 28/08/2025 from MT5)
       // If both <= 12, try MM/DD/YYYY first (US format, more common in prop firm exports)
       if (b > 12) {
-        // MM/DD/YYYY
-        date = new Date(year, a - 1, b);
+        month = a - 1; day = b;
       } else if (a > 12) {
-        // DD/MM/YYYY
-        date = new Date(year, b - 1, a);
+        month = b - 1; day = a;
       } else {
-        // Ambiguous — try MM/DD/YYYY first (US format)
-        date = new Date(year, a - 1, b);
+        month = a - 1; day = b;
+      }
+
+      if (timePart) {
+        const tp = timePart.split(':').map(Number);
+        date = new Date(year, month, day, tp[0] || 0, tp[1] || 0, tp[2] || 0);
+      } else {
+        date = new Date(year, month, day);
       }
     }
-    // Format: "2025-08-28" or "2025-08-28 00:37:54"
+    // Format: "2025-08-28" or "2025-08-28 00:37:54" or "2025-08-28T14:30:00"
     else if (cleaned.includes('-')) {
-      date = new Date(cleaned.split(' ')[0]);
+      if (cleaned.includes('T') || cleaned.includes(' ')) {
+        const normalized = cleaned.replace(' ', 'T');
+        date = new Date(normalized);
+      } else {
+        const [y, m, d] = cleaned.split('-').map(Number);
+        date = new Date(y, m - 1, d);
+      }
+      if (isNaN(date.getTime())) {
+        const [y, m, d] = cleaned.split(/[\sT]/)[0].split('-').map(Number);
+        date = new Date(y, m - 1, d);
+      }
     }
     // Fallback
     else {
@@ -117,12 +146,12 @@ function parseDateString(dateStr: string): string {
     }
 
     if (isNaN(date.getTime())) {
-      return new Date().toISOString().split('T')[0];
+      return formatLocalDateTime(new Date());
     }
 
-    return date.toISOString().split('T')[0];
+    return formatLocalDateTime(date);
   } catch {
-    return new Date().toISOString().split('T')[0];
+    return formatLocalDateTime(new Date());
   }
 }
 
@@ -138,14 +167,19 @@ function normalizeSide(side: string): 'long' | 'short' {
 
 // IBKR FlexQuery date format: "20241128" or "20241128;10:30:45" or "2024-11-28 10:30:45"
 function parseIBKRDate(dateStr: string): string {
-  if (!dateStr) return new Date().toISOString().split('T')[0];
+  if (!dateStr) return formatLocalDateTime(new Date());
   const cleaned = dateStr.trim().replace(';', ' ');
-  // YYYYMMDD format
+  // YYYYMMDD or YYYYMMDD HH:MM:SS format
   if (/^\d{8}/.test(cleaned)) {
     const y = cleaned.slice(0, 4);
     const m = cleaned.slice(4, 6);
     const d = cleaned.slice(6, 8);
-    return `${y}-${m}-${d}`;
+    const timePart = cleaned.slice(8).trim();
+    if (timePart) {
+      const tp = timePart.split(':').map(Number);
+      return formatLocalDateTime(new Date(+y, +m - 1, +d, tp[0] || 0, tp[1] || 0, tp[2] || 0));
+    }
+    return `${y}-${m}-${d}T00:00:00`;
   }
   return parseDateString(cleaned);
 }
@@ -202,7 +236,9 @@ function parseIBKRClosedPositions(lines: string[], headers: string[]): CSVParseR
       const openPrice = col.openPrice >= 0 ? parseFloat(fields[col.openPrice]) : NaN;
       const closePrice = col.closePrice >= 0 ? parseFloat(fields[col.closePrice]) : NaN;
       const pnl = col.pnl >= 0 ? parseFloat(fields[col.pnl]) : NaN;
-      const date = parseIBKRDate(col.closeDate >= 0 ? fields[col.closeDate] : (col.openDate >= 0 ? fields[col.openDate] : ''));
+      const openDateStr = col.openDate >= 0 ? parseIBKRDate(fields[col.openDate] || '') : '';
+      const closeDateStr = col.closeDate >= 0 ? parseIBKRDate(fields[col.closeDate] || '') : '';
+      const date = closeDateStr || openDateStr || formatLocalDateTime(new Date());
 
       if (!symbol || !buySell || !quantity || isNaN(pnl)) {
         result.errors.push(`Row ${i + 1}: Missing required fields`);
@@ -236,6 +272,8 @@ function parseIBKRClosedPositions(lines: string[], headers: string[]): CSVParseR
         quantity: quantity.toString(),
         pnl: pnl.toFixed(2),
         date,
+        entryDate: openDateStr || date,
+        exitDate: closeDateStr || date,
       });
       result.summary.successfulParsed++;
     } catch {
@@ -326,6 +364,8 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
             quantity: matched.toString(),
             pnl: pnl.toFixed(2),
             date,
+            entryDate: open.date,
+            exitDate: date,
           });
           result.summary.successfulParsed++;
 
@@ -350,6 +390,8 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
           quantity: quantity.toString(),
           pnl: pnlRaw.toFixed(2),
           date,
+          entryDate: date,
+          exitDate: date,
         });
         result.summary.successfulParsed++;
       }
@@ -521,7 +563,9 @@ function parseTradovateOrders(lines: string[], headers: string[]): CSVParseResul
             ? (exitPrice - open.price) * matched * multiplier
             : (open.price - exitPrice) * matched * multiplier;
 
-          const tradeDate = parseDateString(fill.date || fill.fillTime || open.date);
+          const entryDateStr = parseDateString(open.fillTime || open.date);
+          const exitDateStr = parseDateString(fill.fillTime || fill.date);
+          const tradeDate = exitDateStr;
           dates.push(tradeDate);
 
           result.trades.push({
@@ -532,6 +576,8 @@ function parseTradovateOrders(lines: string[], headers: string[]): CSVParseResul
             quantity: matched.toString(),
             pnl: pnl.toFixed(2),
             date: tradeDate,
+            entryDate: entryDateStr,
+            exitDate: exitDateStr,
           });
           result.summary.successfulParsed++;
 
@@ -780,7 +826,9 @@ function parseTopStepOrders(lines: string[], headers: string[]): CSVParseResult 
             ? (exitPrice - open.price) * matched * multiplier
             : (open.price - exitPrice) * matched * multiplier;
 
-          const tradeDate = parseDateString(order.tradeDay || open.tradeDay || order.filledAt);
+          const entryDateStr = parseDateString(open.time || open.tradeDay);
+          const exitDateStr = parseDateString(order.filledAt || order.tradeDay);
+          const tradeDate = exitDateStr;
           dates.push(tradeDate);
 
           result.trades.push({
@@ -791,6 +839,8 @@ function parseTopStepOrders(lines: string[], headers: string[]): CSVParseResult 
             quantity: matched.toString(),
             pnl: pnlRaw.toFixed(2),
             date: tradeDate,
+            entryDate: entryDateStr,
+            exitDate: exitDateStr,
           });
           result.summary.successfulParsed++;
 
@@ -925,8 +975,9 @@ export function parseCSV(csvContent: string): CSVParseResult {
         const pnl = fields[columnIndices.pnl] || '';
 
         // Use open time if available, otherwise close time, otherwise current date
-        const dateField = columnIndices.openTime !== -1 ? fields[columnIndices.openTime] :
-                         columnIndices.closeTime !== -1 ? fields[columnIndices.closeTime] : '';
+        const openTimeField = columnIndices.openTime !== -1 ? fields[columnIndices.openTime] : '';
+        const closeTimeField = columnIndices.closeTime !== -1 ? fields[columnIndices.closeTime] : '';
+        const dateField = openTimeField || closeTimeField;
 
         // Validate required fields
         if (!symbol || !side || !openPrice || !closePrice) {
@@ -936,6 +987,8 @@ export function parseCSV(csvContent: string): CSVParseResult {
         }
 
         const parsedDate = parseDateString(dateField);
+        const entryDate = openTimeField ? parseDateString(openTimeField) : parsedDate;
+        const exitDate = closeTimeField ? parseDateString(closeTimeField) : parsedDate;
         dates.push(parsedDate);
 
         const trade: ParsedTrade = {
@@ -945,7 +998,9 @@ export function parseCSV(csvContent: string): CSVParseResult {
           exitPrice: closePrice.replace(/[^0-9.-]/g, ''),
           quantity: quantity.replace(/[^0-9.-]/g, '') || '1',
           pnl: parseCurrency(pnl).toString(),
-          date: parsedDate
+          date: parsedDate,
+          entryDate,
+          exitDate,
         };
 
         result.trades.push(trade);
@@ -1024,8 +1079,9 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
         const quantity = mappings.quantity >= 0 ? (fields[mappings.quantity] || '') : '';
         const pnl = mappings.pnl >= 0 ? (fields[mappings.pnl] || '') : '';
 
-        const dateField = mappings.openTime >= 0 ? (fields[mappings.openTime] || '') :
-                          mappings.closeTime >= 0 ? (fields[mappings.closeTime] || '') : '';
+        const openTimeField = mappings.openTime >= 0 ? (fields[mappings.openTime] || '') : '';
+        const closeTimeField = mappings.closeTime >= 0 ? (fields[mappings.closeTime] || '') : '';
+        const dateField = openTimeField || closeTimeField;
 
         if (!symbol || !side || !openPrice || !closePrice) {
           result.errors.push(`Row ${i + 1}: Missing required data (symbol: ${symbol}, side: ${side}, openPrice: ${openPrice}, closePrice: ${closePrice})`);
@@ -1034,6 +1090,8 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
         }
 
         const parsedDate = parseDateString(dateField);
+        const entryDate = openTimeField ? parseDateString(openTimeField) : parsedDate;
+        const exitDate = closeTimeField ? parseDateString(closeTimeField) : parsedDate;
         dates.push(parsedDate);
 
         const trade: ParsedTrade = {
@@ -1043,7 +1101,9 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
           exitPrice: closePrice.replace(/[^0-9.-]/g, ''),
           quantity: quantity.replace(/[^0-9.-]/g, '') || '1',
           pnl: parseCurrency(pnl).toString(),
-          date: parsedDate
+          date: parsedDate,
+          entryDate,
+          exitDate,
         };
 
         result.trades.push(trade);

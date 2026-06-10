@@ -103,6 +103,7 @@ interface TradeFormData {
   tags?: string[]
   useManualPnL?: boolean
   manualPnL?: number
+  manualRR?: number
   customMultiplier?: number
   propFirm?: string
 }
@@ -468,14 +469,10 @@ export default function TradeLog() {
     let riskReward: number = 0;
 
     if (data.useManualPnL && data.manualPnL !== undefined) {
-      // Use manual P&L
       pnl = data.manualPnL;
-
-      // Calculate percentage based on manual P&L
       const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
       pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
 
-      // Calculate risk-reward based on manual P&L
       if (data.stopLoss) {
         const risk = data.side === 'long'
           ? data.entryPrice - data.stopLoss
@@ -483,13 +480,15 @@ export default function TradeLog() {
         const actualMove = Math.abs(data.exitPrice - data.entryPrice);
         riskReward = risk > 0 ? actualMove / risk : 0;
       }
-      // Without stop loss we can't determine R:R
     } else {
-      // Use auto-calculated P&L
       const calculated = calculatePnL(data);
       pnl = calculated.pnl;
       pnlPercentage = calculated.pnlPercentage;
       riskReward = calculated.riskReward;
+    }
+
+    if (data.manualRR && data.manualRR > 0) {
+      riskReward = data.manualRR;
     }
     
     const newTrade: Trade = {
@@ -551,12 +550,14 @@ export default function TradeLog() {
       return;
     }
     setEditingTrade(trade);
+    const hasAutoRR = trade.stopLoss && trade.takeProfit;
     form.reset({
       ...trade,
       entryTime: trade.entryTime as any,
       exitTime: trade.exitTime as any,
       useManualPnL: trade.useManualPnL || false,
       manualPnL: trade.manualPnL,
+      manualRR: !hasAutoRR && trade.riskReward ? trade.riskReward : undefined,
     });
     setIsDialogOpen(true);
   };
@@ -729,8 +730,8 @@ export default function TradeLog() {
             commission: 0,
             spread: 0,
             swap: 0,
-            entryTime: new Date(`${trade.date}T00:00:00`),
-            exitTime: new Date(`${trade.date}T00:00:00`),
+            entryTime: new Date(trade.entryDate || trade.date),
+            exitTime: new Date(trade.exitDate || trade.date),
             notes: `Imported from ${file.name}`,
             strategy: '',
             market: detectMarketFromSymbol(trade.symbol),
@@ -1495,6 +1496,95 @@ export default function TradeLog() {
 
                       <div className="rounded-xl border bg-card/50 p-4 space-y-3">
                         <div className="flex items-center gap-2">
+                          <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
+                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Risk Management</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="stopLoss"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Stop Loss</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    placeholder="e.g. 1.0850"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="takeProfit"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Take Profit</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    placeholder="e.g. 1.0950"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    value={field.value ?? ''}
+                                    onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="manualRR"
+                            render={({ field }) => {
+                              const sl = form.watch('stopLoss');
+                              const tp = form.watch('takeProfit');
+                              const entry = form.watch('entryPrice');
+                              const side = form.watch('side');
+                              let autoRR = '';
+                              if (sl && tp && entry) {
+                                const risk = side === 'long' ? entry - sl : sl - entry;
+                                const reward = side === 'long' ? tp - entry : entry - tp;
+                                if (risk > 0 && reward > 0) autoRR = (reward / risk).toFixed(2);
+                              }
+                              return (
+                                <FormItem>
+                                  <FormLabel className="text-sm font-medium">R:R Ratio</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder={autoRR ? `Auto: ${autoRR}` : 'e.g. 2.5'}
+                                      className="bg-background/60 border-border/50 font-semibold"
+                                      {...field}
+                                      value={field.value ?? ''}
+                                      onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                                    />
+                                  </FormControl>
+                                  {autoRR && !field.value && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Calculated from SL/TP: {autoRR}
+                                    </p>
+                                  )}
+                                  <FormMessage />
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
                           <Coins className="h-4 w-4" style={{ color: themeColors.primary }} />
                           <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Costs</span>
                         </div>
@@ -2112,7 +2202,15 @@ export default function TradeLog() {
                             aria-label="Select trade"
                           />
                         </TableCell>
-                        <TableCell className="font-medium py-6 text-sm text-muted-foreground">{format(new Date(trade.exitTime), 'MM/dd/yy')}</TableCell>
+                        <TableCell className="font-medium py-6 text-sm text-muted-foreground">
+                          <div>{format(new Date(trade.exitTime), 'MM/dd/yy')}</div>
+                          {(() => {
+                            const d = new Date(trade.exitTime);
+                            return (d.getHours() !== 0 || d.getMinutes() !== 0) ? (
+                              <div className="text-xs text-muted-foreground/60">{format(d, 'h:mm a')}</div>
+                            ) : null;
+                          })()}
+                        </TableCell>
                         <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
                         <TableCell>
                           <Badge 
@@ -2233,6 +2331,10 @@ export default function TradeLog() {
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {format(new Date(trade.exitTime), 'MMM dd, yyyy')}
+                            {(() => {
+                              const d = new Date(trade.exitTime);
+                              return (d.getHours() !== 0 || d.getMinutes() !== 0) ? ` ${format(d, 'h:mm a')}` : '';
+                            })()}
                           </p>
                         </div>
                         <div 
@@ -2262,6 +2364,18 @@ export default function TradeLog() {
                             {trade.riskReward ? `${trade.riskReward.toFixed(2)}:1` : '-'}
                           </span>
                         </div>
+                        {trade.stopLoss && (
+                          <div>
+                            <span className="text-muted-foreground">SL:</span>
+                            <span className="ml-2 font-medium">{formatPrice(trade.stopLoss)}</span>
+                          </div>
+                        )}
+                        {trade.takeProfit && (
+                          <div>
+                            <span className="text-muted-foreground">TP:</span>
+                            <span className="ml-2 font-medium">{formatPrice(trade.takeProfit)}</span>
+                          </div>
+                        )}
                       </div>
                       
                       {(trade.strategy || trade.emotions) && (

@@ -15,6 +15,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.16.0',
+    date: '2026-06-10',
+    summary: 'CSV imports now preserve actual trade times, and a new Risk Management section lets you log Stop Loss, Take Profit, and R:R ratio on every trade.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'CSV imports now keep the real trade time',
+        description: 'Previously, all imported trades showed as 12:00 AM regardless of the actual time in your broker export. Now the correct timestamps are preserved from TopStep, Tradovate, IBKR, MetaTrader, and standard CSV files.',
+      },
+      {
+        type: 'new',
+        text: 'Stop Loss and Take Profit fields on the trade form',
+        description: 'Log your planned SL and TP levels on every trade. Values are shown in the expanded trade detail view.',
+      },
+      {
+        type: 'new',
+        text: 'Risk:Reward ratio input',
+        description: 'Enter your R:R manually, or let it auto-calculate from your Stop Loss and Take Profit. The calculated value shows in the placeholder so you always know what the math says.',
+      },
+      {
+        type: 'improved',
+        text: 'Trade times shown in the trade table',
+        description: 'The date column now displays the time alongside the date when a trade has a non-midnight timestamp.',
+      },
+    ],
+  },
+  {
     version: '2.15.0',
     date: '2026-06-09',
     summary: 'Major UI polish across every page. Warm white light mode, amber-tinted hovers, redesigned forms, and a login reliability fix.',
@@ -739,4 +766,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.15.0'
+export const LATEST_CHANGELOG_VERSION = '2.16.0'

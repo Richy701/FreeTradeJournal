@@ -22,6 +22,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
 - CSV import with live preview, validation, and smart column mapping
 - Support for Tradovate, Interactive Brokers (IBKR), MetaTrader 5, TopStep, standard CSV, and Excel (.xlsx/.xls)
+- Full timestamp preservation on import — entry and exit times carry over from your broker export instead of defaulting to midnight
 - Tradovate: auto-detects format, pairs Buy/Sell fills by product, handles Opening/Closing positions with FIFO matching
 - IBKR: supports both Closed Positions and Trades/Executions formats with automatic opening/closing execution matching
 - TopStep FIFO order pairing with side-aware queues and futures contract multipliers
@@ -31,6 +32,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - CSV export with date range filter — quick-select This Month, This Quarter, This Year, or pick a custom range
 - Bulk trade delete — select multiple trades across the current page and delete in one action
 - Risk rule warnings when a new trade breaches your daily or per-trade loss limits
+- Stop Loss, Take Profit, and Risk:Reward ratio fields — enter manually or let R:R auto-calculate from SL/TP
 - Automatic P&L calculations with market-specific futures multipliers (MNQ, MES, MGC, CL, etc.)
 - Multi-account support with per-account data isolation
 - Prop firm assignment per trade
