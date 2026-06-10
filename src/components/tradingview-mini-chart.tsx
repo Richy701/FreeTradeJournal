@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, memo } from 'react'
+import { useEffect, useRef, memo } from 'react'
+import { useIsDarkTheme } from '@/hooks/use-is-dark-theme'
 
 const TV_SYMBOL_MAP: Record<string, string> = {
   'EURUSD': 'FX:EURUSD', 'GBPUSD': 'FX:GBPUSD', 'USDJPY': 'FX:USDJPY',
@@ -29,15 +30,7 @@ export const TradingViewMiniChart = memo(function TradingViewMiniChart({
   height = 220,
 }: TradingViewMiniChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'))
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
+  const isDark = useIsDarkTheme()
 
   const tvSymbol = TV_SYMBOL_MAP[symbol] || symbol
   const theme = isDark ? 'dark' : 'light'

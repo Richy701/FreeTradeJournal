@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useIsDarkTheme } from '@/hooks/use-is-dark-theme'
 import { CalendarBlank } from '@phosphor-icons/react'
 
 // Economic calendar via TradingView's free embed widget. No API key required —
@@ -7,16 +8,7 @@ import { CalendarBlank } from '@phosphor-icons/react'
 export function EconomicCalendarWidget() {
   const { themeColors } = useThemePresets()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'))
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
-
+  const isDark = useIsDarkTheme()
   const theme = isDark ? 'dark' : 'light'
 
   useEffect(() => {
@@ -34,7 +26,7 @@ export function EconomicCalendarWidget() {
     script.async = true
     script.textContent = JSON.stringify({
       colorTheme: theme,
-      isTransparent: true,
+      isTransparent: false, // transparent lets the iframe's white doc bg show through → washed out
       width: '100%',
       height: '440',
       locale: 'en',

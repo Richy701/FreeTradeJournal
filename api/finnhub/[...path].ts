@@ -9,7 +9,6 @@ const ROUTES: Record<string, string> = {
   quote: 'quote',
   news: 'news',
   'company-news': 'company-news',
-  'economic-calendar': 'calendar/economic',
 };
 
 // Longer edge cache for slower-moving data, short for quotes.
@@ -17,7 +16,6 @@ const CACHE_SECONDS: Record<string, number> = {
   quote: 60,
   news: 900,
   'company-news': 900,
-  'economic-calendar': 1800,
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

@@ -5,9 +5,7 @@ import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
-import { CalendarDots, CaretLeft, CaretRight, BookOpen, Lightning } from '@phosphor-icons/react'
-import { useDayEvents } from '@/hooks/use-economic-calendar'
-import { MARKET_DATA_ENABLED } from '@/config/market-data'
+import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -80,28 +78,6 @@ const MONTHS = [
 ]
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-function DayEconomicEvents({ date }: { date: string }) {
-  const { events, isLoading } = useDayEvents(date)
-  if (!MARKET_DATA_ENABLED || isLoading || events.length === 0) return null
-
-  return (
-    <div className="pt-2 border-t border-border/70">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Lightning className="h-3 w-3 text-amber-500" weight="fill" />
-        <span className="text-[11px] font-medium text-muted-foreground">Economic Events</span>
-      </div>
-      <div className="space-y-1">
-        {events.slice(0, 3).map((e, i) => (
-          <div key={i} className="flex items-center gap-2 text-[11px]">
-            <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${e.impact === 'high' ? 'bg-red-500' : 'bg-amber-500'}`} />
-            <span className="text-muted-foreground truncate">{e.event}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export function CalendarHeatmap() {
   // Get theme colors
@@ -1024,9 +1000,6 @@ export function CalendarHeatmap() {
                                 </div>
                               </div>
                             )}
-
-                            {/* Economic events for this day */}
-                            <DayEconomicEvents date={day.date.toISOString().slice(0, 10)} />
                           </div>
                         </PopoverContent>
                       )}
