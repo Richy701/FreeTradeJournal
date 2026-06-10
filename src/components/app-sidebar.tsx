@@ -132,16 +132,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="px-4 pb-2 space-y-1.5">
           <div
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
-            style={{ backgroundColor: alpha(streak >= 3 ? '#f59e0b' : themeColors.primary, '10') }}
+            style={{ backgroundColor: alpha(themeColors.primary, '10') }}
           >
             {streak >= 7 ? (
-              <Fire className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
+              <Fire className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
             ) : streak >= 3 ? (
-              <Lightning className="h-4 w-4 flex-shrink-0" style={{ color: '#f59e0b' }} />
+              <Lightning className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
             ) : (
               <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: themeColors.primary }} />
             )}
-            <span className="font-semibold tabular-nums" style={{ color: streak >= 3 ? '#f59e0b' : themeColors.primary }}>
+            <span className="font-semibold tabular-nums" style={{ color: themeColors.primary }}>
               {streak}-day streak
             </span>
             {!loggedToday && (
@@ -152,7 +152,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Link
               to="/pricing"
               className="block rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              style={{ backgroundColor: alpha('#f59e0b', '5') }}
+              style={{ backgroundColor: alpha(themeColors.primary, '5') }}
             >
               <span className="font-medium text-amber-500">{streak} days strong.</span>{' '}
               Pro's AI coach can help you keep improving.

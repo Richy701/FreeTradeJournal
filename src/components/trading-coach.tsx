@@ -133,7 +133,7 @@ function computeTiltScore(trades: Trade[], themeColors: { profit: string; loss: 
     color = themeColors.primary
   } else if (score <= 65) {
     label = 'Caution'
-    color = '#f59e0b'
+    color = themeColors.primary
   } else {
     label = 'On Tilt'
     color = themeColors.loss

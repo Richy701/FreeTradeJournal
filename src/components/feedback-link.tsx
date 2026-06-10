@@ -17,7 +17,7 @@ export function FeedbackLink({ children, className = '' }: FeedbackLinkProps) {
           e.preventDefault();
           setOpen(true);
         }}
-        className={className || 'text-amber-500 hover:underline transition-colors'}
+        className={className || 'text-primary hover:underline transition-colors'}
       >
         {children}
       </button>

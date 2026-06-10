@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Copy, Check, ShareNetwork, Users, Crown } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
+import { useThemePresets } from '@/contexts/theme-presets';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
 
@@ -15,6 +16,7 @@ interface ReferralStats {
 
 export function ReferralCard() {
   const { user, isDemo } = useAuth();
+  const { themeColors } = useThemePresets();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -120,7 +122,7 @@ export function ReferralCard() {
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${progress * 100}%`, backgroundColor: '#f59e0b' }}
+              style={{ width: `${progress * 100}%`, backgroundColor: themeColors.primary }}
             />
           </div>
         </div>

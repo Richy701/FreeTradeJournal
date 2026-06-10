@@ -1588,8 +1588,8 @@ export default function PropTracker() {
                     <Brain className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">AI Analysis</p>
-                    <p className="text-xs text-muted-foreground">Honest breakdown of your prop trading across all firms</p>
+                    <p className="text-sm font-semibold">AI Coach</p>
+                    <p className="text-xs text-muted-foreground">Your prop trading, reviewed honestly</p>
                   </div>
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-1">
@@ -1627,12 +1627,12 @@ export default function PropTracker() {
                   : themeColors.primary
 
                 const sections = [
-                  { key: 'verdict',   heading: 'Overall Verdict',   icon: CheckCircle,   color: themeColors.profit },
-                  { key: 'roi',       heading: 'ROI Breakdown',     icon: ChartBar,       color: themeColors.primary },
-                  { key: 'challenge', heading: 'Challenge Progress', icon: Target,          color: themeColors.primary },
-                  { key: 'firms',     heading: 'Firm-by-Firm',      icon: Buildings,       color: themeColors.primary },
-                  { key: 'warnings',  heading: 'Warning Signs',     icon: Warning,   color: themeColors.loss },
-                  { key: 'next',      heading: 'What to Do Next',   icon: ListChecks,      color: themeColors.profit },
+                  { key: 'verdict',   heading: 'The Big Picture',   icon: CheckCircle,   color: themeColors.profit },
+                  { key: 'roi',       heading: 'Your Money',        icon: ChartBar,       color: themeColors.primary },
+                  { key: 'challenge', heading: 'Where You Stand',   icon: Target,          color: themeColors.primary },
+                  { key: 'firms',     heading: 'Which Firms Work',  icon: Buildings,       color: themeColors.primary },
+                  { key: 'warnings',  heading: 'Watch Out For',     icon: Warning,   color: themeColors.loss },
+                  { key: 'next',      heading: 'Your Game Plan',    icon: ListChecks,      color: themeColors.profit },
                 ]
 
                 const parsed: Record<string, string> = {}
@@ -1650,19 +1650,19 @@ export default function PropTracker() {
                   <div className="divide-y divide-border/60">
                     {/* Score card */}
                     {score !== null && (
-                      <div className="px-5 py-4 flex items-center gap-4">
+                      <div className="px-5 py-5 flex items-center gap-4">
                         <div
-                          className="flex items-center justify-center w-14 h-14 rounded-xl text-white font-bold text-lg shrink-0"
+                          className="flex items-center justify-center w-12 h-12 rounded-lg text-white font-bold text-base shrink-0"
                           style={{ backgroundColor: scoreColor }}
                         >
                           {score}/10
                         </div>
                         <div>
-                          <p className="text-sm font-semibold">
-                            {score >= 8 ? 'Strong Performance' : score >= 6 ? 'On Track' : score >= 4 ? 'Needs Improvement' : 'At Risk'}
+                          <p className="text-base font-semibold">
+                            {score >= 8 ? 'Looking strong' : score >= 6 ? 'Getting there' : score >= 4 ? 'Room to grow' : 'Needs attention'}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {score >= 8 ? 'Your prop trading is profitable and sustainable.' : score >= 6 ? 'Profitable direction, but room to optimize.' : score >= 4 ? 'Costs are eating into returns. Review your approach.' : 'Spending more than you\'re making. Action needed.'}
+                          <p className="text-sm text-muted-foreground">
+                            {score >= 8 ? 'Your prop trading is paying off.' : score >= 6 ? 'Heading in the right direction.' : score >= 4 ? 'Some things to tighten up.' : 'Worth rethinking your approach.'}
                           </p>
                         </div>
                       </div>
@@ -1674,20 +1674,36 @@ export default function PropTracker() {
                       const Icon = s.icon
                       const lines = content.split('\n').filter(Boolean)
                       return (
-                        <div key={s.key} className="px-5 py-4 space-y-2">
-                          <div className="flex items-center gap-2 mb-2">
+                        <div key={s.key} className="px-5 py-5">
+                          <div className="flex items-center gap-2 mb-3">
                             <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: s.color }} aria-hidden="true" />
-                            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: s.color }}>{s.heading}</p>
+                            <p className="text-sm font-semibold" style={{ color: s.color }}>{s.heading}</p>
                           </div>
-                          <div className="space-y-1.5 text-sm text-foreground leading-relaxed">
+                          <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
                             {lines.map((line, i) => {
-                              const formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                               const isBullet = line.startsWith('-') || /^\d+\./.test(line)
+                              const cleaned = isBullet ? line.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '') : line
+
+                              const headingMatch = cleaned.match(/^\*\*(.+?)\*\*[:.]\s*(.*)/)
+                              if (headingMatch) {
+                                return (
+                                  <div key={i} className="space-y-1">
+                                    <p className="text-sm font-medium text-foreground">{headingMatch[1]}</p>
+                                    {headingMatch[2] && (
+                                      <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(
+                                        headingMatch[2].replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>'),
+                                        { ALLOWED_TAGS: ['strong', 'em', 'br'], ALLOWED_ATTR: ['class'] }
+                                      ) }} />
+                                    )}
+                                  </div>
+                                )
+                              }
+
+                              const formatted = cleaned.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>')
                               return (
                                 <p
                                   key={i}
-                                  className={isBullet ? 'pl-3 border-l-2 border-border/60' : ''}
-                                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted.replace(/^[-•]\s*/, ''), { ALLOWED_TAGS: ['strong', 'em', 'br'] }) }}
+                                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted, { ALLOWED_TAGS: ['strong', 'em', 'br'], ALLOWED_ATTR: ['class'] }) }}
                                 />
                               )
                             })}

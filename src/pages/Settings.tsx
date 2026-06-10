@@ -233,8 +233,8 @@ export default function Settings() {
 
         <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                 <Sliders className="h-5 w-5" style={{ color: themeColors.primary }} />
               </div>
               <div className="space-y-0.5">
@@ -891,7 +891,7 @@ export default function Settings() {
                             ))}
                           </ul>
                         </div>
-                        <Button size="sm" className="font-semibold" style={{ backgroundColor: '#f59e0b' }} onClick={() => navigate('/pricing')}>
+                        <Button size="sm" className="font-semibold" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }} onClick={() => navigate('/pricing')}>
                           <Crown className="mr-2 h-3.5 w-3.5" />
                           Upgrade to Pro
                         </Button>

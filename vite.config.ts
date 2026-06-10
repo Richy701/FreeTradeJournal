@@ -1,11 +1,18 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from "path"
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const twelveDataKey = env.TWELVEDATA_API_KEY || env.VITE_TWELVEDATA_API_KEY || ''
+  const finnhubKey = env.FINNHUB_API_KEY || env.VITE_FINNHUB_API_KEY || ''
+  const appendKey = (path: string, param: string, key: string) =>
+    path + (path.includes('?') ? '&' : '?') + `${param}=${key}`
+
+  return {
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
@@ -60,6 +67,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/ingest/, ''),
       },
+      '/api/twelvedata': {
+        target: 'https://api.twelvedata.com',
+        changeOrigin: true,
+        rewrite: (path) => appendKey(path.replace(/^\/api\/twelvedata/, ''), 'apikey', twelveDataKey),
+      },
+      '/api/finnhub': {
+        target: 'https://finnhub.io/api/v1',
+        changeOrigin: true,
+        rewrite: (path) => appendKey(path.replace(/^\/api\/finnhub/, ''), 'token', finnhubKey),
+      },
     },
   },
   esbuild: {
@@ -104,4 +121,5 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
   },
+  }
 })

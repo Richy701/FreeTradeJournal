@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -85,6 +85,40 @@ function getResend() {
     return _resend;
 }
 const FROM_EMAIL = "FreeTradeJournal <hello@freetradejournal.com>";
+// ─── Resend Contact Sync (for Automations) ─────────────────
+async function createResendContact(email, firstName, uid) {
+    try {
+        const { data } = await getResend().contacts.create({
+            email,
+            firstName,
+            properties: { is_pro: "false", has_logged_trade: "false" },
+        });
+        if (data?.id) {
+            await db.collection("users").doc(uid).set({ resendContactId: data.id }, { merge: true });
+        }
+    }
+    catch (err) {
+        console.error("Resend: failed to create contact:", err);
+    }
+}
+async function updateResendContact(contactId, updates) {
+    if (!contactId)
+        return;
+    try {
+        await getResend().contacts.update({ id: contactId, ...updates });
+    }
+    catch (err) {
+        console.error("Resend: failed to update contact:", err);
+    }
+}
+async function fireResendEvent(event, email, payload) {
+    try {
+        await getResend().events.send({ event, email, payload });
+    }
+    catch (err) {
+        console.error(`Resend: failed to fire event '${event}':`, err);
+    }
+}
 async function sendWelcomeEmail(email, name) {
     const firstName = name?.split(" ")[0] || "trader";
     const html = await (0, components_1.render)(React.createElement(WelcomeEmail_1.WelcomeEmail, { firstName }));
@@ -297,6 +331,11 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     catch (err) {
         console.error("Failed to send welcome email:", err);
     }
+    // Create Resend contact + fire signup event for automation drip sequences
+    const firstName = (user.displayName || user.email).split(" ")[0];
+    await createResendContact(user.email, firstName, user.uid);
+    await fireResendEvent("user.signed_up", user.email, { firstName });
+    await db.collection("users").doc(user.uid).set({ resendAutomationEnrolled: true }, { merge: true });
 });
 // ─── Day-3 Nudge Email (Scheduled) ─────────────────────────
 exports.sendDay3NudgeEmails = functions.pubsub
@@ -317,7 +356,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        if (data.emailOptOut || data.firstTradeLoggedAt || data.day3NudgeSentAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || data.firstTradeLoggedAt || data.day3NudgeSentAt)
             continue;
         const email = data.email;
         if (!email)
@@ -400,7 +439,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        if (data.emailOptOut || data.firstTradeLoggedAt || data.day7NudgeSentAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || data.firstTradeLoggedAt || data.day7NudgeSentAt)
             continue;
         const email = data.email;
         if (!email)
@@ -445,7 +484,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
             break;
         const data = doc.data();
         // Only target free users who have logged at least one trade
-        if (data.emailOptOut || data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
             continue;
         const email = data.email;
         if (!email)
@@ -489,7 +528,7 @@ exports.sendDay21BackupEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        if (data.emailOptOut || data.isPro || data.day21BackupSentAt || !data.firstTradeLoggedAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || data.isPro || data.day21BackupSentAt || !data.firstTradeLoggedAt)
             continue;
         const email = data.email;
         if (!email)
@@ -894,10 +933,17 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
     catch (err) {
         console.error("PostHog: failed to track first trade:", err);
     }
-    // ── Referral credit: only counts when referred user has verified email + first trade ──
+    // ── Sync to Resend: mark trade logged + fire event for automations ──
     try {
         const userDoc = await db.collection("users").doc(uid).get();
         const userData = userDoc.data();
+        await updateResendContact(userData?.resendContactId, {
+            properties: { has_logged_trade: "true" },
+        });
+        if (userData?.email) {
+            await fireResendEvent("trade.logged", userData.email);
+        }
+        // ── Referral credit: only counts when referred user has verified email + first trade ──
         const referrerUid = userData?.referredBy;
         if (referrerUid && !userData?.referralCounted) {
             // 1. Email must be verified
@@ -1228,6 +1274,14 @@ exports.unsubscribe = functions.https.onRequest(async (req, res) => {
         return;
     }
     await db.collection("users").doc(uid).set({ emailOptOut: true }, { merge: true });
+    // Sync unsubscribe to Resend contact so automations stop
+    try {
+        const userSnap = await db.collection("users").doc(uid).get();
+        await updateResendContact(userSnap.data()?.resendContactId, { unsubscribed: true });
+    }
+    catch (syncErr) {
+        console.error("Resend: failed to sync unsubscribe:", syncErr);
+    }
     res.status(200).send(`
     <html><body style="font-family:sans-serif;max-width:500px;margin:80px auto;text-align:center;color:#999;background:#0a0a0a">
       <h2 style="color:#ededed">You've been unsubscribed</h2>
@@ -1235,6 +1289,27 @@ exports.unsubscribe = functions.https.onRequest(async (req, res) => {
       <a href="https://www.freetradejournal.com" style="display:inline-block;margin-top:16px;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">Back to FreeTradeJournal</a>
     </body></html>
   `);
+});
+// ─── Resend Contact Properties Setup (run once) ───────────
+exports.initResendContactProperties = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const resend = getResend();
+    const results = [];
+    for (const prop of [
+        { key: "is_pro", type: "string", fallbackValue: "false" },
+        { key: "has_logged_trade", type: "string", fallbackValue: "false" },
+    ]) {
+        try {
+            await resend.contactProperties.create(prop);
+            results.push({ key: prop.key, status: "created" });
+        }
+        catch (err) {
+            results.push({ key: prop.key, status: "error", error: err?.message });
+        }
+    }
+    return { results };
 });
 // ─── Stripe Integration ────────────────────────────────────
 let _stripe;
@@ -1420,6 +1495,17 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
+                // Sync Pro status to Resend contact for automations
+                try {
+                    const userSnap = await db.collection("users").doc(firebaseUid).get();
+                    const resendContactId = userSnap.data()?.resendContactId;
+                    await updateResendContact(resendContactId, {
+                        properties: { is_pro: String(isProStatus) },
+                    });
+                }
+                catch (syncErr) {
+                    console.error("Resend: failed to sync Pro status:", syncErr);
+                }
                 // Send trial started or pro upgrade email
                 try {
                     const userRecord = await admin.auth().getUser(firebaseUid);
@@ -1474,6 +1560,16 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`subscription.updated for ${firebaseUid}: ${status}`);
+                // Sync Pro status to Resend contact for automations
+                try {
+                    const userSnap = await db.collection("users").doc(firebaseUid).get();
+                    await updateResendContact(userSnap.data()?.resendContactId, {
+                        properties: { is_pro: String(isPro) },
+                    });
+                }
+                catch (syncErr) {
+                    console.error("Resend: failed to sync Pro status:", syncErr);
+                }
                 // Send Pro upgrade email when trial converts to paid
                 const prevStatus = event.data.previous_attributes?.status;
                 if (prevStatus === "trialing" && sub.status === "active") {
@@ -1519,6 +1615,16 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`subscription.deleted for ${firebaseUid}`);
+                // Sync Pro status to Resend contact for automations
+                try {
+                    const userSnap = await db.collection("users").doc(firebaseUid).get();
+                    await updateResendContact(userSnap.data()?.resendContactId, {
+                        properties: { is_pro: "false" },
+                    });
+                }
+                catch (syncErr) {
+                    console.error("Resend: failed to sync Pro status:", syncErr);
+                }
                 // Send cancellation email
                 try {
                     const userRecord = await admin.auth().getUser(firebaseUid);
@@ -1988,13 +2094,20 @@ Return ONLY a valid JSON array. No markdown, no explanation. Example:
     };
 }
 function buildCoachChatPrompt(payload) {
-    const { message, history, stats, recentTrades, goals, rules, tiltFactors } = payload;
+    const { stats, recentTrades, goals, rules, tiltFactors } = payload;
+    const message = typeof payload.message === "string" ? payload.message.slice(0, 500) : "";
+    const history = Array.isArray(payload.history)
+        ? payload.history.slice(-6).map((m) => ({
+            role: m.role === "user" ? "user" : "assistant",
+            content: typeof m.content === "string" ? m.content.slice(0, 600) : "",
+        }))
+        : [];
     const tradesSummary = (recentTrades || []).slice(0, 10).map((t, i) => {
         return `${i + 1}. ${t.symbol || "?"} ${t.side || "?"} P&L: $${t.pnl?.toFixed(2) || "0"} Hold: ${t.holdMinutes || "?"}m${t.emotions ? ` Emotions: ${t.emotions}` : ""}`;
     }).join("\n");
-    const goalsSummary = (goals || []).map((g) => `- ${g.type} (${g.period}): target ${g.target}, current ${g.current ?? "N/A"}`).join("\n");
-    const rulesSummary = (rules || []).map((r) => `- ${r.type}: limit ${r.value}`).join("\n");
-    const chatHistory = (history || []).slice(-6).map((m) => `${m.role === "user" ? "Trader" : "Coach"}: ${m.content}`).join("\n");
+    const goalsSummary = (goals || []).slice(0, 10).map((g) => `- ${g.type} (${g.period}): target ${g.target}, current ${g.current ?? "N/A"}`).join("\n");
+    const rulesSummary = (rules || []).slice(0, 10).map((r) => `- ${r.type}: limit ${r.value}`).join("\n");
+    const chatHistory = history.map((m) => `${m.role === "user" ? "Trader" : "Coach"}: ${m.content}`).join("\n");
     const statsBlock = stats
         ? `Win rate: ${stats.winRate?.toFixed(1) || "N/A"}%, total P&L: $${stats.totalPnl?.toFixed(2) || "0"}, avg P&L: $${stats.avgPnl?.toFixed(2) || "0"}, trades: ${stats.tradeCount || 0}, losing streak: ${stats.consecutiveLosses || 0}`
         : "No stats available";
@@ -2084,21 +2197,21 @@ function buildPropTrackerPrompt(payload) {
     const failedAccounts = accounts.filter(a => a.status === "failed").length;
     const overallPassRate = (passedAccounts + failedAccounts) > 0 ? ((passedAccounts / (passedAccounts + failedAccounts)) * 100).toFixed(0) : "N/A";
     return {
-        system: `You are a prop trading analyst. Analyze a trader's prop firm account data and give them an honest, data-driven assessment. Be direct — reference their actual numbers, never give generic advice.
+        system: `You are a trading coach reviewing a trader's prop firm journey. Talk to them like a sharp mentor who genuinely wants them to succeed. Be honest and direct, but human. Use their actual numbers to back up what you say.
 
-Start your response with exactly this format on the first line (score 1-10 based on overall financial health, profitability, and trajectory):
+Start your response with exactly this format on the first line (score 1-10 based on how well their prop trading is going overall):
 SCORE: X/10
 
 Then structure the rest with these sections:
 
-**Overall Verdict** — 1-2 sentences on whether prop trading is working for them financially. Reference their net P&L and ROI.
-**ROI Breakdown** — fees paid vs payouts, net P&L, cost per attempt, and break-even analysis. How many more payouts do they need to become profitable?
-**Challenge Progress** — for any active accounts with challenge data: how close to profit target, drawdown risk level, and whether they're on pace. Skip this section if no active challenges have progress data.
-**Firm-by-Firm** — which firms are profitable vs draining money. Compare pass rates and cost per attempt across firms. Recommend which firms to stick with or drop.
-**Warning Signs** — red flags: excessive resets, low pass rates, high fees relative to payouts, accounts near drawdown limits, failed streaks.
-**What to Do Next** — 3 specific, actionable steps based on the data. Prioritize by financial impact.
+**The Big Picture** — Are they making money or bleeding it? 1-2 sentences, straight up. Use their actual net P&L.
+**Your Money** — Where the money is going. What they have spent on fees, what has come back as payouts, and what that means. Keep it plain. If they need more payouts to break even, say how many.
+**Where You Stand** — For any active challenges: how close they are to passing, whether the pace looks good, and if drawdown is getting tight. Skip this section entirely if there are no active challenges with progress data.
+**Which Firms Work** — Which firms are paying off and which are draining money. If one firm has a much better track record, say so. If they should drop one, say that too.
+**Watch Out For** — Patterns that could hurt them: too many resets, low pass rates, spending more than they are making back, accounts close to blowing. Only mention what actually applies.
+**Your Game Plan** — 3 clear next steps they can act on this week, ordered by what matters most.
 
-Keep it under 600 words. Use $ amounts and percentages from their data.`,
+Write like you are talking to them, not writing a report. Keep it under 500 words. No jargon unless you explain it. Reference their dollar amounts and percentages naturally, not in a list of stats.`,
         user: `Here is my prop firm tracker data:
 
 Summary: ${totalAccounts} accounts (${activeAccounts} active, ${passedAccounts} passed, ${failedAccounts} failed) | Pass rate: ${overallPassRate}% | Total fees: $${totalExpenses} | Total payouts: $${totalPayouts} | Net P&L: ${netPnl >= 0 ? "+" : ""}$${netPnl} | ROI: ${roi}%
@@ -2109,7 +2222,7 @@ ${patternSummary}
 Accounts:
 ${accountSummaries}
 
-Give me an honest analysis with a score.`,
+Give me an honest coaching breakdown with a score.`,
         maxTokens: 900,
         temperature: 0.4,
     };

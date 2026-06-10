@@ -40,6 +40,10 @@ import { Brain, CloudArrowUp, ChartBar as BarChart3Icon } from '@phosphor-icons/
 const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
 const ChartAreaInteractive = lazy(() => import("@/components/chart-area-interactive").then(m => ({ default: m.ChartAreaInteractive })))
 const ChartRadarDefault = lazy(() => import("@/components/chart-radar-default").then(m => ({ default: m.ChartRadarDefault })))
+const MarketTicker = lazy(() => import("@/components/market-ticker").then(m => ({ default: m.MarketTicker })))
+const EconomicCalendarWidget = lazy(() => import("@/components/economic-calendar-widget").then(m => ({ default: m.EconomicCalendarWidget })))
+const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })))
+const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })))
 import {
   Dialog,
   DialogContent,
@@ -435,9 +439,9 @@ export default function Dashboard() {
     const tradesData = getTrades()
     if (!tradesData || tradesData.length === 0) {
       return (
-        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+        <div className="flex flex-wrap items-center justify-start gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground/70">
-            No trades yet — log your first trade to see live stats
+            No trades yet -- log your first trade to see live stats
           </span>
         </div>
       )
@@ -452,7 +456,6 @@ export default function Dashboard() {
     const wins = trades.filter((t: { pnl: number }) => t.pnl > 0).length
     const winRate = Math.round((wins / trades.length) * 100)
 
-    // Calculate current win/loss streak
     const sorted = [...trades].sort((a: { exitTime: Date }, b: { exitTime: Date }) => b.exitTime.getTime() - a.exitTime.getTime())
     let streak = 0
     const streakPositive = sorted[0]?.pnl > 0
@@ -461,7 +464,6 @@ export default function Dashboard() {
       else break
     }
 
-    // Trades this week
     const now = new Date()
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - now.getDay())
@@ -473,21 +475,56 @@ export default function Dashboard() {
     const weekPnlColor = weekPnl >= 0 ? themeColors.profit : themeColors.loss
     const winRateColor = winRate >= 50 ? themeColors.profit : themeColors.loss
 
-    // Pick the most interesting insight
+    const chips: React.ReactNode[] = []
+
+    chips.push(
+      <span key="count" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
+        <ChartLineUp className="h-3 w-3" weight="bold" />
+        {trades.length} trades
+      </span>
+    )
+
     if (streak >= 3 && streakPositive) {
-      return <>{trades.length} trades · <span style={{ color: themeColors.profit }}>{streak}-trade win streak</span></>
+      chips.push(
+        <span key="streak" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '10'), color: themeColors.profit }}>
+          <TrendUp className="h-3 w-3" weight="bold" />
+          {streak}-trade win streak
+        </span>
+      )
     }
+
     if (thisWeek.length > 0) {
       const sign = weekPnl >= 0 ? '+' : ''
-      return <>{thisWeek.length} trade{thisWeek.length === 1 ? '' : 's'} this week · <span style={{ color: weekPnlColor }}>{sign}${weekPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> P&L</>
-    }
-    if (trades.length > 0) {
+      chips.push(
+        <span key="week" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(weekPnlColor, '10'), color: weekPnlColor }}>
+          <CurrencyDollar className="h-3 w-3" weight="bold" />
+          {sign}${weekPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this week
+        </span>
+      )
+    } else {
       const sign = totalPnl >= 0 ? '+' : ''
-      return <>{trades.length} trades · <span style={{ color: pnlColor }}>{sign}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> P&L · <span style={{ color: winRateColor }}>{winRate}%</span> win rate</>
+      chips.push(
+        <span key="pnl" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(pnlColor, '10'), color: pnlColor }}>
+          <CurrencyDollar className="h-3 w-3" weight="bold" />
+          {sign}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} P&L
+        </span>
+      )
     }
-    return 'Track your performance and analyze your trades'
+
+    chips.push(
+      <span key="wr" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(winRateColor, '10'), color: winRateColor }}>
+        <Crosshair className="h-3 w-3" weight="bold" />
+        {winRate}% win rate
+      </span>
+    )
+
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {chips}
+      </div>
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getTrades, themeColors.profit, themeColors.loss, dataVersion])
+  }, [getTrades, themeColors.profit, themeColors.loss, themeColors.primary, alpha, dataVersion])
 
   // No loading state needed - render content immediately
 
@@ -660,29 +697,34 @@ export default function Dashboard() {
       {/* Mobile-optimized Header Section */}
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {/* Greeting + Date */}
-            <div className="text-center sm:text-left">
+            <div className="flex items-baseline gap-3 flex-wrap">
               <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
                 {getGreeting()}
               </h1>
-              <div className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
                 })}
-              </div>
+              </span>
             </div>
 
+            {/* Live Market Prices */}
+            <Suspense fallback={null}>
+              <MarketTicker />
+            </Suspense>
+
             {/* Insight + action button */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <p className="text-muted-foreground text-sm font-medium max-w-2xl text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="max-w-2xl">
                 {headerInsight}
-              </p>
+              </div>
 
               {/* Quick Actions - inline with title on desktop */}
-              <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
               {isDemo ? (
                 <Link to="/signup" onClick={() => exitDemoMode()}>
                   <Button
@@ -750,6 +792,7 @@ export default function Dashboard() {
                           <Label htmlFor="trade-market" className="text-xs text-muted-foreground">Market</Label>
                           <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
                             setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
+                            userStorage.setItem('preferredMarket', value)
                           }}>
                             <SelectTrigger id="trade-market" className="h-10 bg-background/60 border-border/50">
                               <SelectValue />
@@ -790,6 +833,15 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
+
+                    {/* -- Mini Chart (shows when symbol is selected) -- */}
+                    {tradeForm.symbol && (
+                      <Suspense fallback={null}>
+                        <div className="rounded-xl border bg-card/50 overflow-hidden">
+                          <TradingViewMiniChart symbol={tradeForm.symbol} height={180} />
+                        </div>
+                      </Suspense>
+                    )}
 
                     {/* -- Execution Card -- */}
                     <div className="rounded-xl border bg-card/50 p-4 space-y-3">
@@ -1052,6 +1104,16 @@ export default function Dashboard() {
             dismissKey="dashboard-ai"
           />
         )}
+
+        {/* Economic Calendar + Market News */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+            <EconomicCalendarWidget />
+          </Suspense>
+          <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+            <MarketNewsFeed />
+          </Suspense>
+        </div>
 
         {/* Recent trades — full width below */}
         <div>

@@ -625,8 +625,8 @@ export default function Journal() {
         <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                   <BookOpen className="h-5 w-5" style={{ color: themeColors.primary }} />
                 </div>
                 <div className="space-y-0.5 min-w-0 text-left">

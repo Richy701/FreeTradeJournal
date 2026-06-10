@@ -438,6 +438,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       // Reset to CSS-defined defaults (remove inline overrides)
       cleanupOverrides()
       root.style.removeProperty('--primary')
+      root.style.removeProperty('--accent')
       root.style.removeProperty('--ring')
       root.style.removeProperty('--primary-foreground')
       return
@@ -460,8 +461,10 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     cleanupOverrides()
 
     // Update CSS variables for dashboard pages
-    root.style.setProperty('--primary', hexToHsl(colors.primary))
-    root.style.setProperty('--ring', hexToHsl(colors.primary))
+    const primaryHsl = hexToHsl(colors.primary)
+    root.style.setProperty('--primary', primaryHsl)
+    root.style.setProperty('--accent', primaryHsl)
+    root.style.setProperty('--ring', primaryHsl)
     // Set primary-foreground for contrast (buttons, badges)
     const r = parseInt(colors.primary.slice(1, 3), 16)
     const g = parseInt(colors.primary.slice(3, 5), 16)

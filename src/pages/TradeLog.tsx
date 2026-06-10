@@ -52,6 +52,9 @@ import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
 import { ProUpgradeCard } from '@/components/pro-upgrade-card';
 import { useProStatus } from '@/contexts/pro-context';
+import { lazy, Suspense } from 'react';
+const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })));
+const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })));
 
 interface Trade {
   id: string
@@ -1119,8 +1122,8 @@ export default function TradeLog() {
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                 <ChartLineUp className="h-5 w-5" style={{ color: themeColors.primary }} />
               </div>
               <div className="space-y-0.5">
@@ -1832,6 +1835,18 @@ export default function TradeLog() {
                           />
                         )}
                       </div>
+
+                      {/* Chart + News context for the selected symbol */}
+                      {editingTrade && form.watch('symbol') && (
+                        <Suspense fallback={null}>
+                          <div className="space-y-3 pt-2">
+                            <div className="rounded-xl border bg-card/50 overflow-hidden">
+                              <TradingViewMiniChart symbol={form.watch('symbol')} height={180} />
+                            </div>
+                            <MarketNewsFeed symbol={form.watch('symbol')} maxItems={3} />
+                          </div>
+                        </Suspense>
+                      )}
 
                       <div className="flex justify-end gap-4 pt-2">
                         <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="px-8">

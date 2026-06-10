@@ -2,22 +2,12 @@ import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { List, ArrowUp, ArrowDown } from '@phosphor-icons/react'
-import { Link } from "react-router-dom"
+import { List, ArrowUp, ArrowDown, Plus, UploadSimple, CaretRight } from '@phosphor-icons/react'
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, UploadSimple } from '@phosphor-icons/react'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { format, isToday, isYesterday } from "date-fns"
 
-// Define interfaces
 interface Trade {
   id: string
   symbol: string
@@ -36,94 +26,117 @@ interface Trade {
 }
 
 interface DataTableProps {
-  data?: any // We'll ignore the passed data and use localStorage instead
+  data?: any
+}
+
+function formatTradeDate(date: Date): string {
+  if (isToday(date)) return 'Today'
+  if (isYesterday(date)) return 'Yesterday'
+  return format(date, 'MMM d')
+}
+
+function formatTradeTime(date: Date): string {
+  return format(date, 'h:mm a')
 }
 
 export function DataTable({ data }: DataTableProps) {
-  // Get theme colors and demo data
   const { themeColors, alpha } = useThemePresets()
   const { formatCurrency } = useSettings()
   const { getTrades } = useDemoData()
-  
-  // Get trades from demo data or localStorage
+  const navigate = useNavigate()
+
   const trades = useMemo(() => {
     const tradesData = getTrades()
     return tradesData.map((trade: any) => ({
       ...trade,
       entryTime: new Date(trade.entryTime),
-        exitTime: new Date(trade.exitTime)
-      })).sort((a: Trade, b: Trade) => b.exitTime.getTime() - a.exitTime.getTime()) // Sort by most recent first
+      exitTime: new Date(trade.exitTime)
+    })).sort((a: Trade, b: Trade) => b.exitTime.getTime() - a.exitTime.getTime())
   }, [getTrades])
 
-  // Remove local formatCurrency - using from settings context
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
+  const visibleTrades = trades.slice(0, 10)
+  const lastIndex = visibleTrades.length - 1
 
   return (
     <Card className="h-[400px] flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
-        <CardDescription className="text-muted-foreground font-medium">
-          Your latest trading activity and performance
-        </CardDescription>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
+          {trades.length > 0 && (
+            <Link
+              to="/trades"
+              className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View all
+              <CaretRight className="h-3 w-3" />
+            </Link>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
+      <CardContent className="flex-1 overflow-hidden pt-0">
         {trades.length > 0 ? (
-          <div className="h-full overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/70">
-                  <TableHead className="font-semibold text-foreground/80">Symbol</TableHead>
-                  <TableHead className="font-semibold text-foreground/80">Side</TableHead>
-                  <TableHead className="font-semibold text-foreground/80 text-right">P&L</TableHead>
-                  <TableHead className="font-semibold text-foreground/80">Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {trades.slice(0, 10).map((trade: Trade, index: number) => (
-                  <TableRow 
-                    key={trade.id} 
-                    className={`hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border-border/50 ${
-                      index % 2 === 1 ? 'bg-muted/40' : ''
-                    }`}
-                  >
-                    <TableCell className="font-semibold">{trade.symbol}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline"
-                        className="font-medium"
-                        style={{
-                          backgroundColor: `${alpha(trade.side === 'long' ? themeColors.profit : themeColors.loss, '10')}`,
-                          borderColor: trade.side === 'long' ? themeColors.profit : themeColors.loss,
-                          color: trade.side === 'long' ? themeColors.profit : themeColors.loss
-                        }}
-                      >
-                        {trade.side === 'long'
-                          ? <ArrowUp className="h-2 w-2 mr-1" style={{color: themeColors.profit}} />
-                          : <ArrowDown className="h-2 w-2 mr-1" style={{color: themeColors.loss}} />
-                        }
-                        {trade.side.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span 
-                        className="font-semibold"
-                        style={{color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss}}
-                      >
-                        {formatCurrency(trade.pnl, true)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground font-medium">{formatDate(trade.exitTime)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div className="h-full overflow-y-auto -mx-1 px-1">
+            <div className="flex flex-col">
+              {visibleTrades.map((trade: Trade, index: number) => {
+                const isLong = trade.side === 'long'
+                const isProfit = trade.pnl >= 0
+                const sideColor = isLong ? themeColors.profit : themeColors.loss
+                const pnlColor = isProfit ? themeColors.profit : themeColors.loss
+                const pctValue = Number.isFinite(trade.pnlPercentage) ? trade.pnlPercentage : 0
+
+                return (
+                  <div key={trade.id}>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/trades')}
+                      className="w-full flex items-center gap-3 py-3 px-2 rounded-md hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                    >
+                      {/* Left: arrow */}
+                      <div className="w-4 flex items-center justify-center shrink-0">
+                        {isLong ? (
+                          <ArrowUp className="h-3.5 w-3.5" weight="bold" style={{ color: sideColor }} />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5" weight="bold" style={{ color: sideColor }} />
+                        )}
+                      </div>
+
+                      {/* Center: symbol + date */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground truncate">
+                            {trade.symbol}
+                          </span>
+                          {trade.strategy && (
+                            <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">
+                              {trade.strategy}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {formatTradeDate(trade.exitTime)} · {formatTradeTime(trade.exitTime)}
+                        </p>
+                      </div>
+
+                      {/* Right: P&L + percentage */}
+                      <div className="flex flex-col items-end">
+                        <span
+                          className="text-sm font-semibold tabular-nums"
+                          style={{ color: pnlColor }}
+                        >
+                          {formatCurrency(trade.pnl, true)}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums">
+                          {isProfit ? '+' : ''}{pctValue.toFixed(2)}%
+                        </span>
+                      </div>
+                    </button>
+                    {index < lastIndex && (
+                      <div className="mx-2 border-b border-border/40" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -132,7 +145,7 @@ export function DataTable({ data }: DataTableProps) {
               <p className="text-lg font-medium">No trades found</p>
               <p className="text-sm">Add your first trade or import a CSV to get started</p>
               <div className="flex items-center justify-center gap-2 pt-2">
-                <Link to="/trade-log">
+                <Link to="/trades">
                   <Button size="sm" className="gap-1.5">
                     <Plus className="h-3.5 w-3.5" />
                     Add Trade

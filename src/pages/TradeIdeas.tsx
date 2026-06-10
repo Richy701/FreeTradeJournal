@@ -48,8 +48,8 @@ export default function TradeIdeas() {
         <SiteHeader />
         <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                 <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
               </div>
               <div className="space-y-0.5">
@@ -113,8 +113,8 @@ export default function TradeIdeas() {
 
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
               <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
             </div>
             <div className="space-y-0.5">
@@ -567,9 +567,7 @@ export default function TradeIdeas() {
               {ideas.map((idea) => {
                 const accentColor = idea.sentiment === 'positive'
                   ? themeColors.profit
-                  : idea.sentiment === 'opportunity'
-                    ? '#f59e0b'
-                    : themeColors.primary
+                  : themeColors.primary
                 return (
                   <div
                     key={idea.id}

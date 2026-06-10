@@ -96,15 +96,16 @@ const GOAL_COACH_SAMPLE_SECTIONS = [
 ];
 
 function GoalCoachSamplePreview() {
+  const { themeColors, alpha } = useThemePresets();
   return (
     <div>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10">
-            <Brain className="h-4.5 w-4.5 text-amber-500" />
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+            <Brain className="h-4.5 w-4.5" style={{ color: themeColors.primary }} />
           </div>
           AI Goal Coach
-          <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 rounded-full">
+          <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ color: themeColors.primary, borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '10'), borderWidth: 1 }}>
             Sample
           </span>
         </CardTitle>

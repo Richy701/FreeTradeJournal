@@ -21,7 +21,7 @@ function getThemeColors(): Omit<ShowcaseVideoProps, 'isMobile'> {
   return {
     backgroundColor: getCSSVar('--background') || (isDark ? '#030303' : '#f1f3f5'),
     foregroundColor: getCSSVar('--foreground') || (isDark ? '#e1e7ef' : '#09090b'),
-    primaryColor: '#f59e0b',
+    primaryColor: getCSSVar('--primary') || '#f59e0b',
     mutedColor: getCSSVar('--muted-foreground') || (isDark ? '#a1a1aa' : '#71717a'),
   };
 }
@@ -44,21 +44,13 @@ const ShowcasePlayer: React.FC = () => {
   useEffect(() => {
     updateColors();
 
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (
-          mutation.type === 'attributes' &&
-          mutation.attributeName === 'class'
-        ) {
-          updateColors();
-          break;
-        }
-      }
+    const observer = new MutationObserver(() => {
+      updateColors();
     });
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ['class', 'style'],
     });
 
     return () => observer.disconnect();

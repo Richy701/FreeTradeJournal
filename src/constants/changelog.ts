@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.18.0',
+    date: '2026-06-10',
+    summary: 'Live market context comes to your dashboard: a real-time price ticker, an economic calendar, a market news feed, and mini price charts right where you log trades. Plus a friendlier AI Coach for prop accounts.',
+    items: [
+      {
+        type: 'new',
+        text: 'Live market price ticker',
+        description: 'A real-time ticker at the top of your dashboard shows prices and daily change for the instruments you trade most, adapting to your forex, futures, or index history.',
+      },
+      {
+        type: 'new',
+        text: 'Economic calendar',
+        description: 'See upcoming medium and high impact economic events with countdowns, currency filters, and a high-impact-only toggle so you know what is moving the markets.',
+      },
+      {
+        type: 'new',
+        text: 'Market news feed',
+        description: 'Stay on top of the latest general, forex, and crypto headlines from your dashboard, with symbol-specific news shown when you open a trade.',
+      },
+      {
+        type: 'new',
+        text: 'Mini price charts when logging trades',
+        description: 'A live mini chart now appears as you pick a symbol in the add and edit trade dialogs, giving you instant context on price action.',
+      },
+      {
+        type: 'improved',
+        text: 'AI Coach for prop accounts',
+        description: 'The prop firm analysis now reads like a coaching session with a sharp mentor instead of a clinical report, with clearer sections and plain-language next steps.',
+      },
+    ],
+  },
+  {
     version: '2.17.0',
     date: '2026-06-10',
     summary: 'Redesigned Share Stats card with personalization, equity curve, and a polished sharing dialog. Plus smarter onboarding that stays out of your way.',
@@ -793,4 +825,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.17.0'
+export const LATEST_CHANGELOG_VERSION = '2.18.0'
