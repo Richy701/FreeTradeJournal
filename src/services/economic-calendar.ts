@@ -36,7 +36,7 @@ export async function getEconomicCalendar(
 
   return cachedFetch<EconomicEvent[]>(
     `ftj-econ-cal-${from}-${to}`,
-    `${BASE_URL}/calendar/economic?from=${from}&to=${to}`,
+    `${BASE_URL}/economic-calendar?from=${from}&to=${to}`,
     CACHE_TTL,
     (raw: any) => {
       const events = raw?.economicCalendar || []

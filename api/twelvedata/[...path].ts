@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const UPSTREAM = 'https://api.twelvedata.com';
+const PREFIX = '/api/twelvedata/';
 
 // Only these upstream endpoints may be proxied — prevents the function being
 // used as a general-purpose gateway for our API key.
@@ -13,16 +14,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const segments = req.query.path;
-  const subPath = Array.isArray(segments) ? segments.join('/') : (segments || '');
+  // Derive the sub-path from the URL directly. Vercel exposes the [...path]
+  // catch-all param under an unstable key, so we don't rely on req.query.
+  const rawUrl = req.url || '';
+  const [pathname, rawQuery = ''] = rawUrl.split('?');
+  const subPath = (pathname.split(PREFIX)[1] || '').replace(/^\/+|\/+$/g, '');
+
   if (!ALLOWED_PATHS.has(subPath)) {
     res.status(404).json({ error: 'Not found' });
     return;
   }
 
-  const qs = req.url?.includes('?') ? req.url.split('?').slice(1).join('?') : '';
-  const base = `${UPSTREAM}/${subPath}`;
-  const url = qs ? `${base}?${qs}&apikey=${apiKey}` : `${base}?apikey=${apiKey}`;
+  // Forward the original query params (minus Vercel's catch-all param) plus the key.
+  const params = new URLSearchParams(rawQuery);
+  params.delete('...path');
+  params.delete('path');
+  params.set('apikey', apiKey);
+
+  const url = `${UPSTREAM}/${subPath}?${params.toString()}`;
 
   try {
     const upstream = await fetch(url);

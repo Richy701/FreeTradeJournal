@@ -1,17 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const UPSTREAM = 'https://finnhub.io/api/v1';
+const PREFIX = '/api/finnhub/';
 
-// Only these upstream endpoints may be proxied — prevents the function being
-// used as a general-purpose gateway for our API key.
-const ALLOWED_PATHS = new Set(['quote', 'news', 'company-news', 'calendar/economic']);
+// Map the (single-segment) client path -> the real Finnhub endpoint. Keeping the
+// client path single-segment avoids Vercel's flaky multi-segment catch-all routing.
+const ROUTES: Record<string, string> = {
+  quote: 'quote',
+  news: 'news',
+  'company-news': 'company-news',
+  'economic-calendar': 'calendar/economic',
+};
 
 // Longer edge cache for slower-moving data, short for quotes.
 const CACHE_SECONDS: Record<string, number> = {
   quote: 60,
   news: 900,
   'company-news': 900,
-  'calendar/economic': 1800,
+  'economic-calendar': 1800,
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -21,17 +27,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const segments = req.query.path;
-  const subPath = Array.isArray(segments) ? segments.join('/') : (segments || '');
-  if (!ALLOWED_PATHS.has(subPath)) {
+  // Derive the sub-path from the URL directly. Vercel exposes the [...path]
+  // catch-all param under an unstable key, so we don't rely on req.query.
+  const rawUrl = req.url || '';
+  const [pathname, rawQuery = ''] = rawUrl.split('?');
+  const subPath = (pathname.split(PREFIX)[1] || '').replace(/^\/+|\/+$/g, '');
+
+  const upstreamPath = ROUTES[subPath];
+  if (!upstreamPath) {
     res.status(404).json({ error: 'Not found' });
     return;
   }
 
-  const qs = req.url?.includes('?') ? req.url.split('?').slice(1).join('?') : '';
-  const base = `${UPSTREAM}/${subPath}`;
-  const url = qs ? `${base}?${qs}&token=${apiKey}` : `${base}?token=${apiKey}`;
+  // Forward the original query params (minus Vercel's catch-all param) plus the key.
+  const params = new URLSearchParams(rawQuery);
+  params.delete('...path');
+  params.delete('path');
+  params.set('token', apiKey);
 
+  const url = `${UPSTREAM}/${upstreamPath}?${params.toString()}`;
   const maxAge = CACHE_SECONDS[subPath] ?? 60;
 
   try {

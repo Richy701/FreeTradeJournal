@@ -75,7 +75,12 @@ export default defineConfig(({ mode }) => {
       '/api/finnhub': {
         target: 'https://finnhub.io/api/v1',
         changeOrigin: true,
-        rewrite: (path) => appendKey(path.replace(/^\/api\/finnhub/, ''), 'token', finnhubKey),
+        rewrite: (path) => {
+          const stripped = path
+            .replace(/^\/api\/finnhub/, '')
+            .replace('/economic-calendar', '/calendar/economic')
+          return appendKey(stripped, 'token', finnhubKey)
+        },
       },
     },
   },
