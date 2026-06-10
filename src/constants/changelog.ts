@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.21.0',
+    date: '2026-06-10',
+    summary: 'A new Navy theme arrives — a deep, immersive blue look for the whole app.',
+    items: [
+      {
+        type: 'new',
+        text: 'Navy color theme',
+        description: 'A new immersive Navy theme with deep navy backgrounds, a navy sidebar, and a bright azure accent across light and dark mode. Pick it under Settings, Color Theme.',
+      },
+    ],
+  },
+  {
     version: '2.20.0',
     date: '2026-06-10',
     summary: 'Smarter CSV imports and a fix for editing trades: Topstep exports import directly without column edits, commissions and fees come in automatically, and you can now search and change the instrument on a trade.',
@@ -874,4 +886,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.20.0'
+export const LATEST_CHANGELOG_VERSION = '2.21.0'
