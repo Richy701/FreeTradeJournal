@@ -11,7 +11,28 @@ import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, extname } from "node:path";
-import puppeteer from "puppeteer";
+
+// On Vercel/CI the build container has no system Chrome and Puppeteer's managed
+// download is skipped by the cached install, so we drive a serverless Chromium
+// binary (@sparticuz/chromium) via puppeteer-core. Locally we use the full
+// puppeteer package, which finds the developer's installed Chrome.
+async function launchBrowser() {
+  if (process.env.VERCEL || process.env.CI) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    const puppeteer = (await import("puppeteer-core")).default;
+    return puppeteer.launch({
+      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+  const puppeteer = (await import("puppeteer")).default;
+  return puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    timeout: 120_000, // 2 min for browser startup (Rosetta on Apple Silicon)
+  });
+}
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -98,11 +119,15 @@ async function prerender() {
   console.log("\n🔍 Prerendering public routes…\n");
 
   const server = await startServer();
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    timeout: 120_000, // 2 min for browser startup (Rosetta on Apple Silicon)
-  });
+
+  let browser;
+  try {
+    browser = await launchBrowser();
+  } catch (err) {
+    console.warn(`  ⚠  Skipping prerender — could not launch Chromium: ${err.message}`);
+    server.close();
+    return;
+  }
 
   const results = { success: [], failed: [] };
 
