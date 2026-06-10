@@ -77,9 +77,9 @@ export function InstrumentCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        portalled={false}
         className="z-[200] w-[--radix-popover-trigger-width] max-w-[calc(100vw-2rem)] p-0"
         align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <Command shouldFilter={true}>
           <CommandInput

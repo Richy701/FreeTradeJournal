@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.20.0',
+    date: '2026-06-10',
+    summary: 'Smarter CSV imports and a fix for editing trades: Topstep exports import directly without column edits, commissions and fees come in automatically, and you can now search and change the instrument on a trade.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Topstep CSV imports work out of the box',
+        description: 'Topstep trade exports now import correctly as-is, with entry and exit prices, times, and direction all mapped automatically. No need to rename or reformat columns first.',
+      },
+      {
+        type: 'new',
+        text: 'Commissions and fees pulled from your CSV',
+        description: 'When your broker export includes a commission or fees column, those values are now imported and filled in for you instead of having to enter them by hand on each trade.',
+      },
+      {
+        type: 'fixed',
+        text: 'Change the instrument when editing a trade',
+        description: 'The instrument picker inside the edit and add trade dialog can now be searched and selected properly, so you can switch a trade from one symbol to another (for example NQ to MNQ).',
+      },
+    ],
+  },
+  {
     version: '2.19.0',
     date: '2026-06-10',
     summary: 'Fixes and improvements to the trade form: imported P&L stays accurate when you edit, Stop Loss and Take Profit can be entered as pips or points, R:R fills in for you, and trade times are easier to edit.',
@@ -852,4 +874,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.19.0'
+export const LATEST_CHANGELOG_VERSION = '2.20.0'

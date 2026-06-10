@@ -11,7 +11,8 @@
     "screenshots": "npx tsx scripts/take-screenshots.ts",
     "publish:post": "node scripts/publish-post.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "node e2e/harness/run.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

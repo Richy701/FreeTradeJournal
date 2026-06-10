@@ -9,6 +9,7 @@ export interface ParsedTrade {
   date: string;
   entryDate?: string;
   exitDate?: string;
+  commission?: string;
 }
 
 export interface CSVParseResult {
@@ -38,6 +39,7 @@ const COLUMN_MAPPINGS = {
     pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L'],
     openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
     closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
+    commission: ['Commission', 'Commissions', 'Fees', 'Fee', 'Total Fees', 'Net Fees'],
   }
 };
 
@@ -64,13 +66,26 @@ function parseCSVLine(line: string): string[] {
 }
 
 export function findColumnIndex(headers: string[], possibleNames: string[]): number {
+  const normalized = headers.map(h => h.trim().toLowerCase());
+
+  // Pass 1: exact (case-insensitive) match. This is the most reliable and avoids
+  // substring collisions — e.g. a "Close Price" candidate of "Exit" must not match
+  // the "ExitedAt" timestamp column that some brokers (Topstep) place before the
+  // real "ExitPrice" column.
   for (const name of possibleNames) {
-    const index = headers.findIndex(h =>
-      h.toLowerCase().includes(name.toLowerCase()) ||
-      name.toLowerCase().includes(h.toLowerCase())
-    );
+    const target = name.trim().toLowerCase();
+    const exact = normalized.indexOf(target);
+    if (exact !== -1) return exact;
+  }
+
+  // Pass 2: substring match as a fallback for headers that aren't exact (e.g. a
+  // "P/L" header matching a "Net P/L" candidate).
+  for (const name of possibleNames) {
+    const target = name.trim().toLowerCase();
+    const index = normalized.findIndex(h => h.includes(target) || target.includes(h));
     if (index !== -1) return index;
   }
+
   return -1;
 }
 
@@ -938,6 +953,7 @@ export function parseCSV(csvContent: string): CSVParseResult {
       pnl: findColumnIndex(headers, COLUMN_MAPPINGS.standard.pnl),
       openTime: findColumnIndex(headers, COLUMN_MAPPINGS.standard.openTime),
       closeTime: findColumnIndex(headers, COLUMN_MAPPINGS.standard.closeTime),
+      commission: findColumnIndex(headers, COLUMN_MAPPINGS.standard.commission),
     };
 
 
@@ -977,6 +993,7 @@ export function parseCSV(csvContent: string): CSVParseResult {
         // Use open time if available, otherwise close time, otherwise current date
         const openTimeField = columnIndices.openTime !== -1 ? fields[columnIndices.openTime] : '';
         const closeTimeField = columnIndices.closeTime !== -1 ? fields[columnIndices.closeTime] : '';
+        const commissionField = columnIndices.commission !== -1 ? fields[columnIndices.commission] : '';
         const dateField = openTimeField || closeTimeField;
 
         // Validate required fields
@@ -1001,6 +1018,7 @@ export function parseCSV(csvContent: string): CSVParseResult {
           date: parsedDate,
           entryDate,
           exitDate,
+          commission: commissionField ? Math.abs(parseCurrency(commissionField)).toString() : undefined,
         };
 
         result.trades.push(trade);
@@ -1081,6 +1099,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
 
         const openTimeField = mappings.openTime >= 0 ? (fields[mappings.openTime] || '') : '';
         const closeTimeField = mappings.closeTime >= 0 ? (fields[mappings.closeTime] || '') : '';
+        const commissionField = mappings.commission >= 0 ? (fields[mappings.commission] || '') : '';
         const dateField = openTimeField || closeTimeField;
 
         if (!symbol || !side || !openPrice || !closePrice) {
@@ -1104,6 +1123,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
           date: parsedDate,
           entryDate,
           exitDate,
+          commission: commissionField ? Math.abs(parseCurrency(commissionField)).toString() : undefined,
         };
 
         result.trades.push(trade);

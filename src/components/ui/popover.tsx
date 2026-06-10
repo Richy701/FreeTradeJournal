@@ -9,9 +9,9 @@ const PopoverTrigger = PopoverPrimitive.Trigger
 
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & { portalled?: boolean }
+>(({ className, align = "center", sideOffset = 4, portalled = true, ...props }, ref) => {
+  const content = (
     <PopoverPrimitive.Content
       ref={ref}
       align={align}
@@ -22,8 +22,18 @@ const PopoverContent = React.forwardRef<
       )}
       {...props}
     />
-  </PopoverPrimitive.Portal>
-))
+  )
+  // When `portalled` is false the content renders inline (within the trigger's
+  // DOM subtree) instead of being portaled to <body>. This is required when the
+  // popover lives inside a modal Dialog: a portaled popover sits outside the
+  // Dialog's focus scope, so the Dialog traps focus and the search box can't be
+  // typed in. Rendering inline keeps it within the Dialog's focus scope.
+  return portalled ? (
+    <PopoverPrimitive.Portal>{content}</PopoverPrimitive.Portal>
+  ) : (
+    content
+  )
+})
 PopoverContent.displayName = PopoverPrimitive.Content.displayName
 
 export { Popover, PopoverTrigger, PopoverContent }

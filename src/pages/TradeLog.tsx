@@ -779,7 +779,7 @@ export default function TradeLog() {
             entryPrice: parseFloat(trade.entryPrice),
             exitPrice: parseFloat(trade.exitPrice),
             lotSize: parseFloat(trade.quantity) || 1,
-            commission: 0,
+            commission: trade.commission ? parseFloat(trade.commission) || 0 : 0,
             spread: 0,
             swap: 0,
             entryTime: new Date(trade.entryDate || trade.date),
