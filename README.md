@@ -15,6 +15,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Actionable empty states with "Add Trade" and "Import CSV" buttons
 - Quick trade entry directly from the dashboard
 - CSV import with progress overlay and in-place data refresh (no page reload)
+- Shareable stats card with personalized name, equity curve sparkline, win/loss bar, and period selector
 - Remotion-powered animated dashboard intro scene
 
 ### Advanced Trade Logging

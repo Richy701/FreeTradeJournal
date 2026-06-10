@@ -15,6 +15,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.17.0',
+    date: '2026-06-10',
+    summary: 'Redesigned Share Stats card with personalization, equity curve, and a polished sharing dialog. Plus smarter onboarding that stays out of your way.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Share Stats card redesign',
+        description: 'Your name, initials avatar, win/loss bar, equity curve sparkline, and theme-colored accents. Period selector lets you share This Month, Quarter, Year, or All Time stats.',
+      },
+      {
+        type: 'fixed',
+        text: 'Share Stats copy, download, and share buttons now work',
+        description: 'The action buttons were broken due to a canvas API issue. All three now function correctly.',
+      },
+      {
+        type: 'improved',
+        text: 'Premium sharing dialog',
+        description: 'Dark frosted glass design with backdrop blur, period selector pills, and styled action buttons that match the card aesthetic.',
+      },
+      {
+        type: 'improved',
+        text: 'Onboarding checklist auto-collapses',
+        description: 'Once you have completed 3 or more steps, the Get Started checklist collapses to a slim progress bar. Your preference is remembered across sessions.',
+      },
+    ],
+  },
+  {
     version: '2.16.0',
     date: '2026-06-10',
     summary: 'CSV imports now preserve actual trade times, and a new Risk Management section lets you log Stop Loss, Take Profit, and R:R ratio on every trade.',
@@ -766,4 +793,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.16.0'
+export const LATEST_CHANGELOG_VERSION = '2.17.0'

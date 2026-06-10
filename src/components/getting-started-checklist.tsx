@@ -16,6 +16,7 @@ interface ChecklistItem {
 }
 
 const DISMISS_KEY_PREFIX = 'getting-started-dismissed-v1-';
+const COLLAPSE_KEY_PREFIX = 'getting-started-collapsed-v1-';
 
 const DESCRIPTIONS: Record<string, Record<ExperienceLevel | 'default', string>> = {
   trade: {
@@ -52,7 +53,12 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
   const { isPro, hasAIAccess } = useProStatus();
   const userStorage = useUserStorage();
   const [dismissed, setDismissed] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (!user) return false;
+    const stored = localStorage.getItem(`${COLLAPSE_KEY_PREFIX}${user.uid}`);
+    if (stored !== null) return stored === '1';
+    return false;
+  });
   const [items, setItems] = useState<ChecklistItem[]>([]);
 
   useEffect(() => {
@@ -130,6 +136,16 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
 
     setItems(checklist);
 
+    // Auto-collapse when 3+ items done (only if user hasn't manually set a preference)
+    const collapseKey = `${COLLAPSE_KEY_PREFIX}${user.uid}`;
+    if (localStorage.getItem(collapseKey) === null) {
+      const done = checklist.filter(i => i.done).length;
+      if (done >= 3) {
+        setCollapsed(true);
+        localStorage.setItem(collapseKey, '1');
+      }
+    }
+
     // Auto-dismiss once all items are done
     if (checklist.every(i => i.done)) {
       localStorage.setItem(dismissKey, '1');
@@ -170,7 +186,13 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
-            onClick={() => setCollapsed(c => !c)}
+            onClick={() => {
+              setCollapsed(c => {
+                const next = !c;
+                if (user) localStorage.setItem(`${COLLAPSE_KEY_PREFIX}${user.uid}`, next ? '1' : '0');
+                return next;
+              });
+            }}
             className="p-1 text-muted-foreground hover:text-foreground transition-colors"
             aria-label={collapsed ? 'Expand' : 'Collapse'}
           >

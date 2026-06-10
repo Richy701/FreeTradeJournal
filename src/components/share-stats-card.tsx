@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -11,46 +10,74 @@ import { Button } from '@/components/ui/button';
 import { ShareNetwork, DownloadSimple, Copy, Check } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useLoggingStreak } from '@/hooks/use-logging-streak';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { toast } from 'sonner';
+import { startOfMonth, startOfQuarter, startOfYear } from 'date-fns';
+
+type Period = 'all' | 'month' | 'quarter' | 'year';
+
+const PERIOD_LABELS: Record<Period, string> = {
+  all: 'All Time',
+  month: 'This Month',
+  quarter: 'This Quarter',
+  year: 'This Year',
+};
 
 interface StatsSnapshot {
   totalTrades: number;
+  wins: number;
+  losses: number;
   winRate: number;
   totalPnl: number;
   bestTrade: number;
-  winStreak: number;
-  loggingStreak: number;
+  profitFactor: number;
+  avgWin: number;
   currency: string;
+  equityCurve: number[];
 }
 
-function useStatsSnapshot(): StatsSnapshot {
+function useStatsSnapshot(period: Period): StatsSnapshot {
   const { getTrades } = useDemoData();
   const { settings } = useSettings();
-  const { streak: loggingStreak } = useLoggingStreak();
 
-  const trades = getTrades();
+  let trades = getTrades();
+
+  if (period !== 'all') {
+    const now = new Date();
+    const cutoff = period === 'month' ? startOfMonth(now)
+      : period === 'quarter' ? startOfQuarter(now)
+      : startOfYear(now);
+    trades = trades.filter((t: any) => new Date(t.exitTime) >= cutoff);
+  }
+
   const totalTrades = trades.length;
-  const wins = trades.filter((t: any) => Number(t.pnl) > 0).length;
+  const winsList = trades.filter((t: any) => Number(t.pnl) > 0);
+  const lossesList = trades.filter((t: any) => Number(t.pnl) < 0);
+  const wins = winsList.length;
+  const losses = lossesList.length;
   const winRate = totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0;
   const totalPnl = trades.reduce((s: number, t: any) => s + (Number(t.pnl) || 0), 0);
   const bestTrade = trades.reduce((best: number, t: any) => Math.max(best, Number(t.pnl) || 0), 0);
 
-  const sorted = [...trades]
-    .sort((a: any, b: any) => new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime());
-  let winStreak = 0;
-  for (const t of sorted) {
-    if (Number(t.pnl) > 0) winStreak++;
-    else break;
-  }
+  const totalWinPnl = winsList.reduce((s: number, t: any) => s + (Number(t.pnl) || 0), 0);
+  const totalLossPnl = Math.abs(lossesList.reduce((s: number, t: any) => s + (Number(t.pnl) || 0), 0));
+  const profitFactor = totalLossPnl > 0 ? totalWinPnl / totalLossPnl : totalWinPnl > 0 ? Infinity : 0;
+  const avgWin = wins > 0 ? totalWinPnl / wins : 0;
 
-  return { totalTrades, winRate, totalPnl, bestTrade, winStreak, loggingStreak, currency: settings.currency || 'USD' };
+  const sorted = [...trades]
+    .sort((a: any, b: any) => new Date(a.exitTime).getTime() - new Date(b.exitTime).getTime());
+  let cum = 0;
+  const equityCurve = sorted.map((t: any) => { cum += Number(t.pnl) || 0; return cum; });
+
+  return { totalTrades, wins, losses, winRate, totalPnl, bestTrade, profitFactor, avgWin, currency: settings.currency || 'USD', equityCurve };
 }
 
 const W = 640;
-const H = 440;
+const H = 640;
 const DPR = 2;
+const PAD = 36;
 const F = 'system-ui, Helvetica, Arial, sans-serif';
 
 function fmt(value: number, currency: string): string {
@@ -73,7 +100,24 @@ function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
   ctx.closePath();
 }
 
-function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string; loss: string }) {
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const c = hex.replace('#', '');
+  return {
+    r: parseInt(c.slice(0, 2), 16),
+    g: parseInt(c.slice(2, 4), 16),
+    b: parseInt(c.slice(4, 6), 16),
+  };
+}
+
+interface DrawOptions {
+  stats: StatsSnapshot;
+  colors: { profit: string; loss: string; primary: string };
+  userName: string;
+  periodLabel: string;
+}
+
+function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
+  const { stats: s, colors: tc, userName, periodLabel } = opts;
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width = `${W}px`;
@@ -83,6 +127,11 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   if (!ctx) return;
   ctx.scale(DPR, DPR);
 
+  const accent = tc.primary;
+  const accentRgb = hexToRgb(accent);
+  const profitRgb = hexToRgb(tc.profit);
+  const lossRgb = hexToRgb(tc.loss);
+
   // -- Background --
   const bg = ctx.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, '#0c0e16');
@@ -91,11 +140,11 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   rr(ctx, 0, 0, W, H, 20);
   ctx.fill();
 
-  // -- Top amber glow --
+  // -- Top accent glow --
   const glow = ctx.createRadialGradient(W * 0.5, 0, 0, W * 0.5, 0, 320);
-  glow.addColorStop(0, 'rgba(245,158,11,0.10)');
-  glow.addColorStop(0.6, 'rgba(245,158,11,0.02)');
-  glow.addColorStop(1, 'rgba(245,158,11,0)');
+  glow.addColorStop(0, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.10)`);
+  glow.addColorStop(0.6, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.02)`);
+  glow.addColorStop(1, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0)`);
   ctx.save();
   rr(ctx, 0, 0, W, H, 20);
   ctx.clip();
@@ -106,9 +155,9 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   // -- Top edge highlight --
   ctx.save();
   const edgeGrad = ctx.createLinearGradient(100, 0, W - 100, 0);
-  edgeGrad.addColorStop(0, 'rgba(245,158,11,0)');
-  edgeGrad.addColorStop(0.5, 'rgba(245,158,11,0.3)');
-  edgeGrad.addColorStop(1, 'rgba(245,158,11,0)');
+  edgeGrad.addColorStop(0, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0)`);
+  edgeGrad.addColorStop(0.5, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.3)`);
+  edgeGrad.addColorStop(1, `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0)`);
   ctx.strokeStyle = edgeGrad;
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -125,12 +174,11 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
 
   // -- Header: logo + brand + period --
   const logoSize = 22;
-  const logoX = 36;
+  const logoX = PAD;
   const logoY = 26;
-  const logoR = 5;
 
   ctx.fillStyle = '#FFC000';
-  rr(ctx, logoX, logoY, logoSize, logoSize, logoR);
+  rr(ctx, logoX, logoY, logoSize, logoSize, 5);
   ctx.fill();
 
   ctx.fillStyle = '#000000';
@@ -145,44 +193,183 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   ctx.font = `bold 12px ${F}`;
   ctx.fillText('FreeTradeJournal', logoX + logoSize + 8, 42);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = `400 12px ${F}`;
   ctx.textAlign = 'right';
-  ctx.fillText('All Time', W - 36, 42);
+  ctx.fillText(periodLabel, W - PAD, 42);
   ctx.textAlign = 'left';
 
-  // -- Hero: P&L --
+  // -- User identity: initials circle + name --
+  let nameBottom = 52;
+  if (userName) {
+    const circleR = 17;
+    const circleX = PAD + circleR;
+    const circleY = 80;
+
+    ctx.beginPath();
+    ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.15)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.4)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const initials = userName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    ctx.fillStyle = accent;
+    ctx.font = `bold 14px ${F}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(initials, circleX, circleY);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `600 15px ${F}`;
+    ctx.letterSpacing = '1.5px';
+    ctx.fillText(userName.toUpperCase(), PAD + circleR * 2 + 12, 86);
+    ctx.letterSpacing = '0px';
+
+    nameBottom = 112;
+  }
+
+  // -- Hero P&L --
   const pnlColor = s.totalPnl >= 0 ? tc.profit : tc.loss;
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = `500 14px ${F}`;
-  ctx.fillText('Net P&L', 36, 82);
 
   ctx.fillStyle = pnlColor;
-  ctx.font = `bold 48px ${F}`;
-  ctx.fillText(fmt(s.totalPnl, s.currency), 36, 132);
+  ctx.font = `bold 46px ${F}`;
+  ctx.fillText(fmt(s.totalPnl, s.currency), PAD, nameBottom + 40);
 
-  // -- Subtitle stats row --
-  const pills = [
-    { text: `${s.totalTrades} trades logged`, color: 'rgba(255,255,255,0.5)' },
-    { text: `${s.winRate}% win rate`, color: s.winRate >= 50 ? tc.profit : tc.loss },
-    { text: `${s.winStreak} win streak`, color: s.winStreak >= 3 ? tc.profit : 'rgba(255,255,255,0.5)' },
-  ];
-  let pillX = 36;
-  const pillY = 158;
-  ctx.font = `500 13px ${F}`;
-  for (const pill of pills) {
-    const tw = ctx.measureText(pill.text).width;
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    rr(ctx, pillX, pillY, tw + 20, 26, 13);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = `500 12px ${F}`;
+  ctx.fillText(`${s.totalTrades} trades`, W - PAD, nameBottom + 40);
+  ctx.textAlign = 'left';
+
+  const heroBottom = nameBottom + 58;
+
+  // -- Win/Loss bar --
+  const barY = heroBottom + 14;
+  const barH = 8;
+  const barW = W - PAD * 2;
+  const barR = 4;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  rr(ctx, PAD, barY, barW, barH, barR);
+  ctx.fill();
+
+  if (s.totalTrades > 0) {
+    const winFrac = s.wins / (s.wins + s.losses || 1);
+    const winW = Math.round(barW * winFrac);
+    const lossW = barW - winW;
+
+    ctx.save();
+    rr(ctx, PAD, barY, barW, barH, barR);
+    ctx.clip();
+    if (winW > 0) {
+      ctx.fillStyle = tc.profit;
+      ctx.fillRect(PAD, barY, winW, barH);
+    }
+    if (lossW > 0) {
+      ctx.fillStyle = tc.loss;
+      ctx.fillRect(PAD + winW, barY, lossW, barH);
+    }
+    ctx.restore();
+  }
+
+  // Bar labels
+  const labelY = barY + barH + 16;
+  ctx.font = `500 11px ${F}`;
+  if (s.wins > 0) {
+    ctx.fillStyle = tc.profit;
+    ctx.textAlign = 'left';
+    ctx.fillText(`${s.winRate}% wins`, PAD, labelY);
+  }
+  if (s.losses > 0) {
+    ctx.fillStyle = tc.loss;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${100 - s.winRate}% losses`, W - PAD, labelY);
+  }
+  ctx.textAlign = 'left';
+
+  const barBottom = labelY + 12;
+
+  // -- Equity curve --
+  const curveTop = barBottom + 8;
+  const curveH = 90;
+  const curveW = W - PAD * 2;
+  const curveBottom = curveTop + curveH;
+
+  if (s.equityCurve.length >= 2) {
+    const pts = s.equityCurve;
+    const minVal = Math.min(0, ...pts);
+    const maxVal = Math.max(0, ...pts);
+    const range = maxVal - minVal || 1;
+
+    const toX = (i: number) => PAD + (i / (pts.length - 1)) * curveW;
+    const toY = (v: number) => curveBottom - ((v - minVal) / range) * (curveH - 4) - 2;
+
+    // Zero line
+    const zeroY = toY(0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(PAD, zeroY);
+    ctx.lineTo(W - PAD, zeroY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Area fill
+    const lastPnl = pts[pts.length - 1];
+    const areaColor = lastPnl >= 0 ? profitRgb : lossRgb;
+    const areaGrad = ctx.createLinearGradient(0, curveTop, 0, curveBottom);
+    areaGrad.addColorStop(0, `rgba(${areaColor.r},${areaColor.g},${areaColor.b},0.12)`);
+    areaGrad.addColorStop(1, `rgba(${areaColor.r},${areaColor.g},${areaColor.b},0.01)`);
+
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(pts[0]));
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(toX(i), toY(pts[i]));
+    }
+    ctx.lineTo(toX(pts.length - 1), curveBottom);
+    ctx.lineTo(toX(0), curveBottom);
+    ctx.closePath();
+    ctx.fillStyle = areaGrad;
     ctx.fill();
-    ctx.fillStyle = pill.color;
-    ctx.fillText(pill.text, pillX + 10, pillY + 17);
-    pillX += tw + 20 + 8;
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(pts[0]));
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(toX(i), toY(pts[i]));
+    }
+    ctx.strokeStyle = lastPnl >= 0 ? tc.profit : tc.loss;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // End dot
+    const lastX = toX(pts.length - 1);
+    const lastY = toY(lastPnl);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = lastPnl >= 0 ? tc.profit : tc.loss;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#0c0e16';
+    ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.font = `400 12px ${F}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Equity curve builds with more trades', W / 2, curveTop + curveH / 2);
+    ctx.textAlign = 'left';
   }
 
   // -- Divider --
-  const divY = 206;
-  const divGrad = ctx.createLinearGradient(36, 0, W - 36, 0);
+  const divY = curveBottom + 18;
+  const divGrad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
   divGrad.addColorStop(0, 'rgba(255,255,255,0)');
   divGrad.addColorStop(0.3, 'rgba(255,255,255,0.06)');
   divGrad.addColorStop(0.7, 'rgba(255,255,255,0.06)');
@@ -190,79 +377,81 @@ function draw(canvas: HTMLCanvasElement, s: StatsSnapshot, tc: { profit: string;
   ctx.strokeStyle = divGrad;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(36, divY);
-  ctx.lineTo(W - 36, divY);
+  ctx.moveTo(PAD, divY);
+  ctx.lineTo(W - PAD, divY);
   ctx.stroke();
 
-  // -- Bottom stat cards --
+  // -- Stat cards (3) --
+  const pf = s.profitFactor === Infinity ? '99+' : s.profitFactor.toFixed(1);
   const cards = [
     { label: 'Best Trade', value: fmt(s.bestTrade, s.currency), color: tc.profit },
-    { label: 'Win Rate', value: `${s.winRate}%`, color: s.winRate >= 50 ? tc.profit : tc.loss },
-    { label: 'Total Trades', value: s.totalTrades.toLocaleString(), color: '#ffffff' },
-    { label: 'Log Streak', value: `${s.loggingStreak}d`, color: s.loggingStreak >= 3 ? '#f59e0b' : '#ffffff' },
+    { label: 'Profit Factor', value: pf, color: s.profitFactor >= 1.5 ? tc.profit : s.profitFactor >= 1 ? accent : tc.loss },
+    { label: 'Avg Win', value: fmt(s.avgWin, s.currency), color: tc.profit },
   ];
   const cardGap = 14;
-  const cardPad = 36;
-  const cardW = (W - cardPad * 2 - cardGap * (cards.length - 1)) / cards.length;
-  const cardH = 120;
-  const cardY = 228;
+  const cardW = (W - PAD * 2 - cardGap * (cards.length - 1)) / cards.length;
+  const cardH = 110;
+  const cardY = divY + 20;
 
   for (let i = 0; i < cards.length; i++) {
     const c = cards[i];
-    const cx = cardPad + i * (cardW + cardGap);
+    const cx = PAD + i * (cardW + cardGap);
 
-    // Card bg
     ctx.fillStyle = 'rgba(255,255,255,0.025)';
     rr(ctx, cx, cardY, cardW, cardH, 14);
     ctx.fill();
 
-    // Card border
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 0.5;
     rr(ctx, cx, cardY, cardW, cardH, 14);
     ctx.stroke();
 
-    // Value
     ctx.fillStyle = c.color;
-    ctx.font = `bold 24px ${F}`;
+    ctx.font = `bold 22px ${F}`;
     ctx.textAlign = 'center';
-    ctx.fillText(c.value, cx + cardW / 2, cardY + 58);
+    ctx.fillText(c.value, cx + cardW / 2, cardY + 50);
 
-    // Label
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.font = `400 12px ${F}`;
-    ctx.fillText(c.label, cx + cardW / 2, cardY + 82);
+    ctx.fillText(c.label, cx + cardW / 2, cardY + 78);
 
     ctx.textAlign = 'left';
   }
 
   // -- Footer --
-  const footY = H - 28;
-  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  const footY = H - 26;
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.font = `500 11px ${F}`;
-  ctx.textAlign = 'left';
-  ctx.fillText('freetradejournal.com', 36, footY);
-
-  ctx.textAlign = 'right';
-  ctx.fillStyle = 'rgba(245,158,11,0.5)';
-  ctx.fillText('Start journaling free →', W - 36, footY);
+  ctx.textAlign = 'center';
+  ctx.fillText('freetradejournal.com', W / 2, footY);
   ctx.textAlign = 'left';
 }
 
 export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
-  const stats = useStatsSnapshot();
+  const { user } = useAuth();
   const { themeColors } = useThemePresets();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   const [drawn, setDrawn] = useState(false);
+  const [period, setPeriod] = useState<Period>('all');
+
+  const stats = useStatsSnapshot(period);
+
+  const userName = user?.displayName
+    || (user?.email ? user.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '');
 
   const redraw = useCallback(() => {
     if (canvasRef.current) {
-      draw(canvasRef.current, stats, themeColors);
+      draw(canvasRef.current, {
+        stats,
+        colors: themeColors,
+        userName,
+        periodLabel: PERIOD_LABELS[period],
+      });
       setDrawn(true);
     }
-  }, [stats, themeColors]);
+  }, [stats, themeColors, userName, period]);
 
   useEffect(() => {
     if (!open) { setDrawn(false); return; }
@@ -271,9 +460,10 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
   }, [open, redraw]);
 
   const getBlob = useCallback((): Promise<Blob | null> => {
-    return new Promise((resolve) =>
-      canvasRef.current?.toBlob(resolve, 'image/png') ?? resolve(null)
-    );
+    return new Promise((resolve) => {
+      if (!canvasRef.current) { resolve(null); return; }
+      canvasRef.current.toBlob(resolve, 'image/png');
+    });
   }, []);
 
   const handleDownload = useCallback(async () => {
@@ -314,6 +504,8 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
     } catch { /* user cancelled */ }
   }, [getBlob, handleDownload]);
 
+  const accent = themeColors.primary;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -324,37 +516,63 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle>Share Your Edge</DialogTitle>
-          <DialogDescription>
-            Your performance, one card. Save it or show it off.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="w-[95vw] max-w-[700px] bg-[#0c0e16] border-white/[0.06] p-0 overflow-hidden gap-0 [&>button]:text-white/70 [&>button:hover]:text-white" overlayClassName="backdrop-blur-sm">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 pr-12">
+          <DialogHeader className="space-y-0">
+            <DialogTitle className="text-white/90 text-base font-semibold">Share Your Edge</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-1">
+            {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className="text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors"
+                style={period === p
+                  ? { backgroundColor: `${accent}20`, color: accent }
+                  : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.4)' }
+                }
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <div className="flex justify-center rounded-xl bg-black/40 p-3 sm:p-5 overflow-hidden">
+        <div className="flex justify-center px-4 pb-3 overflow-hidden">
           <canvas
             ref={canvasRef}
             width={W * DPR}
             height={H * DPR}
-            style={{ width: W, height: H, maxWidth: '100%', borderRadius: 16 }}
+            style={{ width: W, height: H, maxWidth: '100%', borderRadius: 14 }}
           />
         </div>
 
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={handleCopy} className="gap-2">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        <div className="flex gap-2 justify-end px-5 pb-5 pt-1">
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition-colors"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? 'Copied' : 'Copy'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
-            <DownloadSimple className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition-colors"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)' }}
+          >
+            <DownloadSimple className="h-3.5 w-3.5" />
             Download
-          </Button>
+          </button>
           {typeof navigator !== 'undefined' && 'share' in navigator && (
-            <Button size="sm" onClick={handleShare} className="gap-2">
-              <ShareNetwork className="h-4 w-4" />
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition-colors"
+              style={{ backgroundColor: `${accent}20`, color: accent }}
+            >
+              <ShareNetwork className="h-3.5 w-3.5" />
               Share
-            </Button>
+            </button>
           )}
         </div>
       </DialogContent>

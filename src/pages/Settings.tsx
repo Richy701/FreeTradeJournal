@@ -714,8 +714,7 @@ export default function Settings() {
                         { label: 'Dangerous', range: '5%+', color: themeColors.loss, desc: 'High blow-up risk', pulse: true },
                       ].map(({ label, range, color, desc, pulse }) => (
                         <div key={label} className="rounded-lg p-3 bg-muted/40">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <div className={`w-2 h-2 rounded-full shrink-0${pulse ? ' animate-pulse' : ''}`} style={{ backgroundColor: color }} />
+                          <div className="mb-1.5">
                             <span className="text-xs font-semibold" style={{ color }}>{label}</span>
                           </div>
                           <p className="text-base font-bold">{range}</p>
