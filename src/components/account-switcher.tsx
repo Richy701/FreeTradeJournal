@@ -35,10 +35,10 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="w-full h-9 justify-between px-2.5 text-sm font-medium"
+          className="w-full h-9 justify-between px-2.5 text-sm font-medium bg-sidebar-accent/40 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <span className="truncate">{activeAccount.name}</span>
-          <CaretUpDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <CaretUpDown className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/60" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

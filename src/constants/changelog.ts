@@ -17,12 +17,12 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.21.0',
     date: '2026-06-10',
-    summary: 'A new Navy theme arrives — a deep, immersive blue look for the whole app.',
+    summary: 'A new Navy Gold theme arrives — deep navy with a warm gold accent for a premium look across the whole app.',
     items: [
       {
         type: 'new',
-        text: 'Navy color theme',
-        description: 'A new immersive Navy theme with deep navy backgrounds, a navy sidebar, and a bright azure accent across light and dark mode. Pick it under Settings, Color Theme.',
+        text: 'Navy Gold color theme',
+        description: 'A new theme pairing rich navy backgrounds and a navy sidebar with a warm gold accent, across both light and dark mode. Pick it under Settings, Color Theme.',
       },
     ],
   },

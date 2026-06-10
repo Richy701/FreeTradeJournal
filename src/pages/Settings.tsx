@@ -369,19 +369,21 @@ export default function Settings() {
                             style={{ borderColor: isSelected ? preset.colors.primary : 'hsl(var(--border))', backgroundColor: isSelected ? `${preset.colors.primary}08` : 'transparent' }}
                           >
                             <div className="flex rounded-md overflow-hidden h-2.5 mb-2.5">
-                              <div className="flex-1" style={{ backgroundColor: preset.colors.profit }} />
-                              <div className="flex-1" style={{ backgroundColor: preset.colors.primary }} />
-                              <div className="flex-1" style={{ backgroundColor: preset.colors.loss }} />
+                              {(preset.swatch ?? [preset.colors.profit, preset.colors.primary, preset.colors.loss]).map((c, i) => (
+                                <div key={i} className="flex-1" style={{ backgroundColor: c }} />
+                              ))}
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm font-medium truncate">{preset.name}</span>
                               {isSelected && <Check aria-hidden="true" className="h-3 w-3 shrink-0" style={{ color: preset.colors.primary }} />}
                             </div>
-                            <div className="flex mt-1 text-[10px] text-muted-foreground">
-                              <span className="flex-1">Profit</span>
-                              <span className="flex-1 text-center">Accent</span>
-                              <span className="flex-1 text-right">Loss</span>
-                            </div>
+                            {!preset.swatch && (
+                              <div className="flex mt-1 text-[10px] text-muted-foreground">
+                                <span className="flex-1">Profit</span>
+                                <span className="flex-1 text-center">Accent</span>
+                                <span className="flex-1 text-right">Loss</span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}

@@ -27,7 +27,7 @@ export function NavMain({
   }[]
 }) {
   const { pathname } = useLocation()
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const { isMobile, setOpenMobile } = useSidebar()
 
   return (
@@ -42,11 +42,6 @@ export function NavMain({
                 tooltip={item.title}
                 isActive={active}
                 className="relative"
-                style={
-                  active
-                    ? { backgroundColor: alpha(themeColors.primary, '15') }
-                    : undefined
-                }
               >
                 <Link
                   to={item.url}
@@ -57,10 +52,7 @@ export function NavMain({
                 >
                   <div
                     className="flex items-center justify-center size-6 rounded-md"
-                    style={{
-                      backgroundColor: active ? alpha(themeColors.primary, '20') : 'transparent',
-                      color: active ? themeColors.primary : undefined,
-                    }}
+                    style={{ color: active ? themeColors.primary : undefined }}
                   >
                     <item.icon className="size-4" />
                   </div>

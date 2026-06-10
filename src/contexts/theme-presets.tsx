@@ -13,6 +13,10 @@ interface ThemePreset {
     light: Record<string, string>
     dark: Record<string, string>
   }
+  // Optional: representative colors for the Settings swatch (overrides the
+  // profit/accent/loss bars). Use for full themes whose identity is the
+  // background/surfaces rather than the profit/loss colors.
+  swatch?: string[]
 }
 
 const DEFAULT_CUSTOM_COLORS = {
@@ -293,81 +297,82 @@ const themePresets: Record<string, ThemePreset> = {
   },
 
   navy: {
-    name: 'Navy',
+    name: 'Navy Gold',
     colors: {
-      profit: '#10b981', // emerald-500 - clear positive
-      loss: '#ef4444',   // red-500 - familiar loss color
-      primary: '#2563eb' // royal navy blue
+      profit: '#f59e0b', // gold = up (refined per-mode in getAdjustedColors)
+      loss: '#8b97ac',   // muted slate = down — no red, stays on the navy palette
+      primary: '#f59e0b' // gold accent on navy
     },
+    swatch: ['#0e1c3a', '#1f3057', '#f59e0b'], // deep navy, navy, gold
     cssOverrides: {
       light: {
-        '--background': '214 38% 97%',
-        '--foreground': '222 47% 11%',
+        '--background': '217 44% 95%',
+        '--foreground': '222 47% 12%',
         '--card': '0 0% 100%',
-        '--card-foreground': '222 47% 11%',
+        '--card-foreground': '222 47% 12%',
         '--popover': '0 0% 100%',
-        '--popover-foreground': '222 47% 11%',
-        '--primary': '221 76% 46%',
-        '--primary-foreground': '0 0% 100%',
-        '--secondary': '214 32% 92%',
-        '--secondary-foreground': '222 47% 20%',
-        '--muted': '214 30% 93%',
-        '--muted-foreground': '215 18% 40%',
-        '--accent': '214 42% 90%',
-        '--accent-foreground': '222 47% 20%',
+        '--popover-foreground': '222 47% 12%',
+        '--primary': '40 94% 47%',
+        '--primary-foreground': '222 60% 12%',
+        '--secondary': '217 40% 89%',
+        '--secondary-foreground': '222 47% 18%',
+        '--muted': '217 38% 90%',
+        '--muted-foreground': '219 30% 36%',
+        '--accent': '217 44% 87%',
+        '--accent-foreground': '222 47% 18%',
         '--destructive': '0 76% 50%',
         '--destructive-foreground': '0 0% 100%',
-        '--border': '214 24% 85%',
-        '--input': '214 24% 85%',
-        '--ring': '221 76% 46%',
-        '--chart-1': '221 76% 46%',
-        '--chart-2': '199 89% 42%',
-        '--chart-3': '258 68% 56%',
-        '--chart-4': '160 76% 36%',
-        '--chart-5': '35 92% 47%',
-        '--sidebar-background': '224 47% 13%',
-        '--sidebar-foreground': '214 30% 96%',
-        '--sidebar-primary': '217 92% 62%',
-        '--sidebar-primary-foreground': '0 0% 100%',
-        '--sidebar-accent': '222 38% 20%',
-        '--sidebar-accent-foreground': '214 30% 96%',
-        '--sidebar-border': '222 34% 20%',
-        '--sidebar-ring': '217 92% 62%',
+        '--border': '216 34% 83%',
+        '--input': '216 34% 83%',
+        '--ring': '40 94% 47%',
+        '--chart-1': '38 92% 48%',
+        '--chart-2': '24 88% 50%',
+        '--chart-3': '210 80% 48%',
+        '--chart-4': '192 80% 42%',
+        '--chart-5': '250 55% 58%',
+        '--sidebar-background': '223 50% 11%',
+        '--sidebar-foreground': '214 30% 92%',
+        '--sidebar-primary': '42 96% 60%',
+        '--sidebar-primary-foreground': '222 60% 12%',
+        '--sidebar-accent': '221 38% 21%',
+        '--sidebar-accent-foreground': '214 32% 96%',
+        '--sidebar-border': '221 35% 18%',
+        '--sidebar-ring': '42 96% 60%',
         '--radius': '0.85rem',
       },
       dark: {
-        '--background': '224 47% 7%',
-        '--foreground': '214 32% 95%',
-        '--card': '222 44% 9%',
-        '--card-foreground': '214 32% 95%',
-        '--popover': '222 44% 9%',
-        '--popover-foreground': '214 32% 95%',
-        '--primary': '217 92% 60%',
-        '--primary-foreground': '0 0% 100%',
-        '--secondary': '222 38% 14%',
-        '--secondary-foreground': '214 32% 95%',
-        '--muted': '222 30% 12%',
-        '--muted-foreground': '215 22% 62%',
-        '--accent': '217 48% 18%',
-        '--accent-foreground': '214 32% 96%',
+        '--background': '221 56% 10%',
+        '--foreground': '213 40% 96%',
+        '--card': '220 48% 14%',
+        '--card-foreground': '213 40% 96%',
+        '--popover': '220 48% 14%',
+        '--popover-foreground': '213 40% 96%',
+        '--primary': '42 96% 58%',
+        '--primary-foreground': '222 60% 12%',
+        '--secondary': '220 40% 17%',
+        '--secondary-foreground': '213 40% 96%',
+        '--muted': '220 35% 15%',
+        '--muted-foreground': '214 25% 68%',
+        '--accent': '220 42% 18%',
+        '--accent-foreground': '213 40% 96%',
         '--destructive': '0 76% 50%',
         '--destructive-foreground': '0 0% 100%',
-        '--border': '220 30% 16%',
-        '--input': '220 30% 18%',
-        '--ring': '217 92% 60%',
-        '--chart-1': '217 92% 60%',
-        '--chart-2': '190 88% 50%',
-        '--chart-3': '258 88% 71%',
-        '--chart-4': '160 80% 45%',
-        '--chart-5': '38 95% 56%',
-        '--sidebar-background': '225 48% 6%',
-        '--sidebar-foreground': '214 26% 90%',
-        '--sidebar-primary': '217 92% 60%',
-        '--sidebar-primary-foreground': '0 0% 100%',
-        '--sidebar-accent': '222 38% 12%',
-        '--sidebar-accent-foreground': '214 26% 92%',
-        '--sidebar-border': '222 32% 12%',
-        '--sidebar-ring': '217 92% 60%',
+        '--border': '218 38% 24%',
+        '--input': '218 38% 24%',
+        '--ring': '42 96% 58%',
+        '--chart-1': '42 96% 58%',
+        '--chart-2': '28 90% 56%',
+        '--chart-3': '210 85% 62%',
+        '--chart-4': '192 85% 55%',
+        '--chart-5': '250 70% 72%',
+        '--sidebar-background': '223 60% 8%',
+        '--sidebar-foreground': '213 30% 90%',
+        '--sidebar-primary': '42 96% 58%',
+        '--sidebar-primary-foreground': '222 60% 12%',
+        '--sidebar-accent': '220 45% 16%',
+        '--sidebar-accent-foreground': '213 30% 92%',
+        '--sidebar-border': '220 40% 14%',
+        '--sidebar-ring': '42 96% 58%',
         '--radius': '0.85rem',
       }
     }
@@ -587,6 +592,15 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
           primary: '#d1d5db' // gray-300 - light charcoal primary
         }
       }
+
+      if (currentTheme === 'navy') {
+        // Navy Gold - gold for wins, navy-slate for losses (no red/green/grey)
+        return {
+          ...baseColors,
+          profit: '#fbbf24', // amber-400 - bright gold on navy
+          loss: '#8ea2cc',   // navy-tinted slate - "down" without red or neutral grey
+        }
+      }
       
       // Check for other themes that might have dark colors that become invisible
       const adjustedColors = { ...baseColors }
@@ -641,7 +655,16 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
           primary: '#374151' // darker gray primary for light mode
         }
       }
-      
+
+      if (currentTheme === 'navy') {
+        // Navy Gold - rich gold for wins, navy-slate for losses (readable on light bg)
+        return {
+          ...baseColors,
+          profit: '#c2820a', // amber-700 - gold readable on light background
+          loss: '#465980',   // navy-slate - "down" tone that stays on the navy palette
+        }
+      }
+
       return baseColors
     }
   }
