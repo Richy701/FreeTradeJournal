@@ -15,6 +15,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.19.0',
+    date: '2026-06-10',
+    summary: 'Fixes and improvements to the trade form: imported P&L stays accurate when you edit, Stop Loss and Take Profit can be entered as pips or points, R:R fills in for you, and trade times are easier to edit.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Imported P&L stays correct when editing',
+        description: 'Editing an imported trade no longer recalculates and changes its P&L to a wrong value. Your broker P&L is kept as-is, and any commission or swap you add is simply subtracted from it.',
+      },
+      {
+        type: 'new',
+        text: 'Enter Stop Loss and Take Profit in pips or points',
+        description: 'A new unit selector lets you type your stop and target as a price level, or as a distance in pips (forex) or points (futures and indices) from your entry.',
+      },
+      {
+        type: 'improved',
+        text: 'Risk-to-reward fills in automatically',
+        description: 'The R:R ratio now shows its calculated value directly in the field as soon as you enter a stop and target. You can still type your own value to override it.',
+      },
+      {
+        type: 'fixed',
+        text: 'Edit entry and exit times directly',
+        description: 'Trade times now have an always-visible time field next to the date, so you can adjust the exact hour and minute without digging through a calendar pop-up.',
+      },
+    ],
+  },
+  {
     version: '2.18.0',
     date: '2026-06-10',
     summary: 'Live market context comes to your dashboard: a real-time price ticker, an economic calendar, a market news feed, and mini price charts right where you log trades. Plus a friendlier AI Coach for prop accounts.',
@@ -825,4 +852,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.18.0'
+export const LATEST_CHANGELOG_VERSION = '2.19.0'

@@ -7,7 +7,7 @@ import { Calendar as CalendarIcon } from '@phosphor-icons/react'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -82,7 +82,10 @@ export function DateTimePicker({
   React.useEffect(() => {
     setSelectedDate(date)
     if (date) {
-      setTimeValue(format(date, "HH:mm:ss"))
+      // Only resync the time field when the incoming value genuinely differs,
+      // so we never clobber a time the user is actively typing.
+      const incoming = format(date, "HH:mm:ss")
+      setTimeValue((prev) => (prev === incoming ? prev : incoming))
     }
   }, [date])
 
@@ -115,50 +118,52 @@ export function DateTimePicker({
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "justify-start text-left font-normal w-full",
-            !selectedDate && "text-muted-foreground",
-            className
-          )}
-          disabled={disabled}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 -translate-y-1" />
-          {selectedDate ? format(selectedDate, "PPP p") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="center">
-        <Card className="w-fit py-4 border-0 shadow-none">
-          <CardContent className="px-4">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              initialFocus
-              className="bg-transparent p-0 [--cell-size:--spacing(10.5)]"
-            />
-          </CardContent>
-          <CardFooter className="flex justify-center gap-2 border-t px-4 !pt-4">
-            <div className="w-32">
-              <Label htmlFor="time-picker" className="sr-only">
-                Time
-              </Label>
-              <Input
-                id="time-picker"
-                type="time"
-                step="1"
-                value={timeValue}
-                onChange={(e) => handleTimeChange(e.target.value)}
-                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                disabled={disabled}
+    <div className={cn("flex gap-2", className)}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant={"outline"}
+            className={cn(
+              "justify-start text-left font-normal flex-1 min-w-0",
+              !selectedDate && "text-muted-foreground"
+            )}
+            disabled={disabled}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4 -translate-y-1 shrink-0" />
+            <span className="truncate">
+              {selectedDate ? format(selectedDate, "PPP") : placeholder}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Card className="w-fit py-4 border-0 shadow-none">
+            <CardContent className="px-4">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDateSelect}
+                initialFocus
+                className="bg-transparent p-0 [--cell-size:--spacing(10.5)]"
               />
-            </div>
-          </CardFooter>
-        </Card>
-      </PopoverContent>
-    </Popover>
+            </CardContent>
+          </Card>
+        </PopoverContent>
+      </Popover>
+      {/* Always-visible time field so the time can be edited directly */}
+      <div className="w-[120px] shrink-0">
+        <Label htmlFor="time-picker" className="sr-only">
+          Time
+        </Label>
+        <Input
+          id="time-picker"
+          type="time"
+          step="1"
+          value={timeValue}
+          onChange={(e) => handleTimeChange(e.target.value)}
+          className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+          disabled={disabled}
+        />
+      </div>
+    </div>
   )
 }

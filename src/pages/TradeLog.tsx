@@ -80,6 +80,8 @@ interface Trade {
   market?: 'forex' | 'futures' | 'indices'
   useManualPnL?: boolean
   manualPnL?: number
+  /** Original P&L from a broker CSV import — treated as the gross source of truth. */
+  brokerPnL?: number
   customMultiplier?: number
   propFirm?: string
   accountId?: string
@@ -107,6 +109,8 @@ interface TradeFormData {
   useManualPnL?: boolean
   manualPnL?: number
   manualRR?: number
+  /** How Stop Loss / Take Profit are entered: absolute price, pips (forex), or points (futures/indices). */
+  slTpUnit?: 'price' | 'pips' | 'points'
   customMultiplier?: number
   propFirm?: string
 }
@@ -199,6 +203,7 @@ export default function TradeLog() {
       market: 'forex',
       tags: [],
       propFirm: '',
+      slTpUnit: 'price',
     },
     mode: 'onChange',
   });
@@ -344,6 +349,32 @@ export default function TradeLog() {
     }
   };
 
+  // Size of one pip/point for converting SL/TP distances into a price move.
+  const pipSizeFor = (market?: string, symbol?: string): number => {
+    if (market === 'forex') {
+      const s = (symbol || '').toUpperCase();
+      return /JPY|HUF|THB/.test(s) ? 0.01 : 0.0001;
+    }
+    return 1; // futures/indices are entered in points
+  };
+
+  // Convert a Stop Loss / Take Profit entered as pips or points into an absolute
+  // price level. Values entered as 'price' (the default) pass through unchanged.
+  const resolveSlTpPrice = (
+    value: number | undefined,
+    kind: 'sl' | 'tp',
+    data: TradeFormData
+  ): number | undefined => {
+    if (value === undefined || value === null || isNaN(value)) return undefined;
+    const unit = data.slTpUnit || 'price';
+    if (unit === 'price') return value;
+    const distance = unit === 'pips' ? value * pipSizeFor(data.market, data.symbol) : value;
+    const entry = data.entryPrice || 0;
+    const isLong = data.side === 'long';
+    if (kind === 'sl') return isLong ? entry - distance : entry + distance;
+    return isLong ? entry + distance : entry - distance;
+  };
+
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
     const { side, entryPrice, exitPrice, stopLoss, takeProfit, lotSize, commission, swap, spread, market = 'forex', customMultiplier } = data;
     let grossPnL = 0;
@@ -467,6 +498,11 @@ export default function TradeLog() {
       return;
     }
 
+    // Normalize SL/TP to absolute price levels (they may be entered as pips/points)
+    const stopLoss = resolveSlTpPrice(data.stopLoss, 'sl', data);
+    const takeProfit = resolveSlTpPrice(data.takeProfit, 'tp', data);
+    const calcData: TradeFormData = { ...data, stopLoss, takeProfit };
+
     let pnl: number;
     let pnlPercentage: number;
     let riskReward: number = 0;
@@ -476,15 +512,24 @@ export default function TradeLog() {
       const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
       pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
 
-      if (data.stopLoss) {
+      if (stopLoss) {
         const risk = data.side === 'long'
-          ? data.entryPrice - data.stopLoss
-          : data.stopLoss - data.entryPrice;
+          ? data.entryPrice - stopLoss
+          : stopLoss - data.entryPrice;
         const actualMove = Math.abs(data.exitPrice - data.entryPrice);
         riskReward = risk > 0 ? actualMove / risk : 0;
       }
+    } else if (editingTrade?.brokerPnL !== undefined) {
+      // Imported trade: the broker's P&L is the source of truth (gross of fees).
+      // Editing other fields should NOT re-derive it from prices — only subtract
+      // any commission/swap the user adds. This prevents the P&L from jumping to
+      // a wrong value on edit.
+      pnl = editingTrade.brokerPnL - (data.commission || 0) - (data.swap || 0);
+      const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
+      pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
+      riskReward = calculatePnL(calcData).riskReward;
     } else {
-      const calculated = calculatePnL(data);
+      const calculated = calculatePnL(calcData);
       pnl = calculated.pnl;
       pnlPercentage = calculated.pnlPercentage;
       riskReward = calculated.riskReward;
@@ -493,10 +538,13 @@ export default function TradeLog() {
     if (data.manualRR && data.manualRR > 0) {
       riskReward = data.manualRR;
     }
-    
+
     const newTrade: Trade = {
       id: editingTrade?.id || Date.now().toString(),
       ...data,
+      stopLoss,
+      takeProfit,
+      brokerPnL: editingTrade?.brokerPnL,
       pnl,
       pnlPercentage,
       riskReward,
@@ -558,6 +606,7 @@ export default function TradeLog() {
       ...trade,
       entryTime: trade.entryTime as any,
       exitTime: trade.exitTime as any,
+      slTpUnit: 'price', // stored SL/TP are always absolute price levels
       useManualPnL: trade.useManualPnL || false,
       manualPnL: trade.manualPnL,
       manualRR: !hasAutoRR && trade.riskReward ? trade.riskReward : undefined,
@@ -739,6 +788,7 @@ export default function TradeLog() {
             strategy: '',
             market: detectMarketFromSymbol(trade.symbol),
             pnl: pnl,
+            brokerPnL: pnl, // Preserve broker's P&L as the source of truth on later edits
             pnlPercentage: 0, // Will be calculated
             riskReward: 0, // Will be calculated
             accountId: activeAccount?.id || 'default-main-account'
@@ -1498,22 +1548,53 @@ export default function TradeLog() {
                       </div>
 
                       <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Risk Management</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
+                            <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Risk Management</span>
+                          </div>
+                          <FormField
+                            control={form.control}
+                            name="slTpUnit"
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <Select value={field.value ?? 'price'} onValueChange={field.onChange}>
+                                  <FormControl>
+                                    <SelectTrigger className="h-8 w-[150px] bg-background/60 border-border/50 text-xs">
+                                      <SelectValue placeholder="Units" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="price">Price level</SelectItem>
+                                    {watchedMarket === 'forex'
+                                      ? <SelectItem value="pips">Pips from entry</SelectItem>
+                                      : <SelectItem value="points">Points from entry</SelectItem>}
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
                         </div>
+                        {(() => {
+                          const unit = form.watch('slTpUnit') || 'price';
+                          const isPrice = unit === 'price';
+                          const unitLabel = unit === 'pips' ? ' (pips)' : unit === 'points' ? ' (points)' : '';
+                          const slStep = isPrice ? '0.00001' : '0.1';
+                          const slPlaceholder = isPrice ? 'e.g. 1.0850' : unit === 'pips' ? 'e.g. 20' : 'e.g. 10';
+                          const tpPlaceholder = isPrice ? 'e.g. 1.0950' : unit === 'pips' ? 'e.g. 40' : 'e.g. 20';
+                          return (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <FormField
                             control={form.control}
                             name="stopLoss"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium">Stop Loss</FormLabel>
+                                <FormLabel className="text-sm font-medium">Stop Loss{unitLabel}</FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
-                                    step="0.00001"
-                                    placeholder="e.g. 1.0850"
+                                    step={slStep}
+                                    placeholder={slPlaceholder}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
                                     value={field.value ?? ''}
@@ -1529,12 +1610,12 @@ export default function TradeLog() {
                             name="takeProfit"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium">Take Profit</FormLabel>
+                                <FormLabel className="text-sm font-medium">Take Profit{unitLabel}</FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
-                                    step="0.00001"
-                                    placeholder="e.g. 1.0950"
+                                    step={slStep}
+                                    placeholder={tpPlaceholder}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
                                     value={field.value ?? ''}
@@ -1549,16 +1630,24 @@ export default function TradeLog() {
                             control={form.control}
                             name="manualRR"
                             render={({ field }) => {
-                              const sl = form.watch('stopLoss');
-                              const tp = form.watch('takeProfit');
-                              const entry = form.watch('entryPrice');
                               const side = form.watch('side');
+                              const entry = form.watch('entryPrice');
+                              const partial = {
+                                entryPrice: entry,
+                                side,
+                                market: form.watch('market'),
+                                symbol: form.watch('symbol'),
+                                slTpUnit: form.watch('slTpUnit'),
+                              } as TradeFormData;
+                              const sl = resolveSlTpPrice(form.watch('stopLoss'), 'sl', partial);
+                              const tp = resolveSlTpPrice(form.watch('takeProfit'), 'tp', partial);
                               let autoRR = '';
                               if (sl && tp && entry) {
                                 const risk = side === 'long' ? entry - sl : sl - entry;
                                 const reward = side === 'long' ? tp - entry : entry - tp;
                                 if (risk > 0 && reward > 0) autoRR = (reward / risk).toFixed(2);
                               }
+                              const isAuto = (field.value === undefined || field.value === null) && !!autoRR;
                               return (
                                 <FormItem>
                                   <FormLabel className="text-sm font-medium">R:R Ratio</FormLabel>
@@ -1566,16 +1655,16 @@ export default function TradeLog() {
                                     <Input
                                       type="number"
                                       step="0.01"
-                                      placeholder={autoRR ? `Auto: ${autoRR}` : 'e.g. 2.5'}
+                                      placeholder="e.g. 2.5"
                                       className="bg-background/60 border-border/50 font-semibold"
                                       {...field}
-                                      value={field.value ?? ''}
+                                      value={field.value ?? (autoRR || '')}
                                       onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                                     />
                                   </FormControl>
-                                  {autoRR && !field.value && (
+                                  {isAuto && (
                                     <p className="text-xs text-muted-foreground">
-                                      Calculated from SL/TP: {autoRR}
+                                      Auto-calculated from SL/TP — type to override
                                     </p>
                                   )}
                                   <FormMessage />
@@ -1584,6 +1673,8 @@ export default function TradeLog() {
                             }}
                           />
                         </div>
+                          );
+                        })()}
                       </div>
 
                       <div className="rounded-xl border bg-card/50 p-4 space-y-3">
@@ -2426,6 +2517,7 @@ export default function TradeLog() {
                               ...trade,
                               entryTime: trade.entryTime,
                               exitTime: trade.exitTime,
+                              slTpUnit: 'price', // stored SL/TP are always absolute price levels
                             });
                             setIsDialogOpen(true);
                           }}
