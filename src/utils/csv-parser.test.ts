@@ -39,17 +39,43 @@ describe('parseCSV — Topstep Trades export', () => {
     expect(b.exitPrice).toBe('21480.00');
   });
 
-  it('normalizes side and pulls commission from the Fees column', () => {
+  it('normalizes side and pulls the Fees column into the fees field', () => {
     const [a, b] = parseCSV(csv).trades;
     expect(a.side).toBe('long');
     expect(b.side).toBe('short');
-    expect(a.commission).toBe('1.34');
-    expect(b.commission).toBe('2.68');
+    expect(a.fees).toBe('1.34');
+    expect(b.fees).toBe('2.68');
   });
 
   it('keeps separate entry and exit timestamps', () => {
     const [a] = parseCSV(csv).trades;
     expect(a.entryDate).toBe('2026-01-28T14:30:00');
     expect(a.exitDate).toBe('2026-01-28T15:05:00');
+  });
+});
+
+describe('parseCSV — Topstep Trades export with separate Fees and Commissions', () => {
+  // Real Topstep "Trades Export" layout: GROSS PnL plus distinct Fees and
+  // Commissions columns. Both must be captured separately so net = PnL − both.
+  const csv = [
+    'Id,ContractName,Entry Time,Exit Time,Entry,Exit,Fees,PnL,Size,Type,TradeDay,TradeDuration,Commissions',
+    '1,NQM6,06/03/2026 08:51:06 -05:00,06/03/2026 08:51:37 -05:00,"$30,562.25 ","$30,578.25 ",14,1600,5,Long,06/03/2026 08:51:06 -05:00,00:30.4,5',
+    '2,NQM6,06/05/2026 08:44:14 -05:00,06/05/2026 08:44:22 -05:00,"$29,946.00 ","$29,956.00 ",14,-1000,5,Short,06/05/2026 08:44:14 -05:00,00:08.2,5',
+  ].join('\n');
+
+  it('reads Fees and Commissions as distinct fields without dropping either', () => {
+    const [a, b] = parseCSV(csv).trades;
+    expect(a.commission).toBe('5');
+    expect(a.fees).toBe('14');
+    expect(b.commission).toBe('5');
+    expect(b.fees).toBe('14');
+  });
+
+  it('parses gross PnL and prices through currency formatting', () => {
+    const [a] = parseCSV(csv).trades;
+    expect(a.pnl).toBe('1600');
+    expect(a.side).toBe('long');
+    expect(a.entryPrice).toBe('30562.25');
+    expect(a.exitPrice).toBe('30578.25');
   });
 });

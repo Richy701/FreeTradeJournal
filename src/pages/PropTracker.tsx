@@ -109,7 +109,7 @@ const PROP_FIRMS = [
   'Custom...',
 ] as const
 
-const FREE_ACCOUNT_LIMIT = 3
+const FREE_ACCOUNT_LIMIT = 2
 
 const ACCOUNT_SIZES = [10000, 25000, 50000, 75000, 80000, 100000, 150000, 200000, 300000]
 
@@ -1756,7 +1756,7 @@ export default function PropTracker() {
                 Add your first account
               </Button>
 
-              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · 3 accounts on free plan</p>}
+              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · {FREE_ACCOUNT_LIMIT} accounts on free plan</p>}
             </div>
 
             {/* Divider */}

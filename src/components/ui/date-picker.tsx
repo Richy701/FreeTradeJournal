@@ -47,7 +47,7 @@ export function DatePicker({
           {date ? format(date, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-popover text-popover-foreground border shadow-md">
+      <PopoverContent portalled={false} className="w-auto p-0 bg-popover text-popover-foreground border shadow-md">
         <Calendar
           mode="single"
           selected={date}
@@ -135,7 +135,7 @@ export function DateTimePicker({
             </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent portalled={false} className="w-auto p-0" align="start">
           <Card className="w-fit py-4 border-0 shadow-none">
             <CardContent className="px-4">
               <Calendar

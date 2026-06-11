@@ -8,6 +8,7 @@ export interface Trade {
   entryTime: Date
   exitTime: Date
   commission: number
+  fees?: number
   pnl: number
   pnlPercentage: number
   notes?: string
@@ -25,6 +26,7 @@ export interface TradeFormData {
   entryTime: Date
   exitTime: Date
   commission: number
+  fees?: number
   notes?: string
   strategy?: string
   tags?: string[]

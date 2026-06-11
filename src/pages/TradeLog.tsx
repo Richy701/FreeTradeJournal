@@ -69,6 +69,7 @@ interface Trade {
   exitTime: Date
   spread: number
   commission: number
+  fees: number
   swap: number
   pnl: number
   pnlPercentage: number
@@ -100,6 +101,7 @@ interface TradeFormData {
   exitTime: Date
   spread: number
   commission: number
+  fees: number
   swap: number
   notes?: string
   strategy?: string
@@ -196,6 +198,7 @@ export default function TradeLog() {
       lotSize: 1,
       spread: 0,
       commission: 0,
+      fees: 0,
       swap: 0,
       notes: '',
       strategy: '',
@@ -376,7 +379,7 @@ export default function TradeLog() {
   };
 
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
-    const { side, entryPrice, exitPrice, stopLoss, takeProfit, lotSize, commission, swap, spread, market = 'forex', customMultiplier } = data;
+    const { side, entryPrice, exitPrice, stopLoss, takeProfit, lotSize, commission, fees, swap, spread, market = 'forex', customMultiplier } = data;
     let grossPnL = 0;
     let multiplier = 1;
     let spreadCost = 0;
@@ -459,7 +462,7 @@ export default function TradeLog() {
     }
     
     // Use calculated spreadCost instead of spread * lotSize
-    const pnl = grossPnL - commission - swap - spreadCost;
+    const pnl = grossPnL - commission - (fees || 0) - swap - spreadCost;
     const investment = entryPrice * (market === 'forex' ? 100000 * lotSize : lotSize * multiplier);
     const pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
     
@@ -522,9 +525,9 @@ export default function TradeLog() {
     } else if (editingTrade?.brokerPnL !== undefined) {
       // Imported trade: the broker's P&L is the source of truth (gross of fees).
       // Editing other fields should NOT re-derive it from prices — only subtract
-      // any commission/swap the user adds. This prevents the P&L from jumping to
-      // a wrong value on edit.
-      pnl = editingTrade.brokerPnL - (data.commission || 0) - (data.swap || 0);
+      // the commission/fees/swap the user adds. This prevents the P&L from jumping
+      // to a wrong value on edit.
+      pnl = editingTrade.brokerPnL - (data.commission || 0) - (data.fees || 0) - (data.swap || 0);
       const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
       pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
       riskReward = calculatePnL(calcData).riskReward;
@@ -771,7 +774,12 @@ export default function TradeLog() {
       if (result.success) {
         // Convert parsed trades to Trade format
         const importedTrades: Trade[] = result.trades.map((trade, index) => {
-          const pnl = parseFloat(trade.pnl) || 0;
+          // Broker P&L is gross (before costs). Subtract the imported commission and
+          // fees so the dashboard shows true net immediately, while keeping the gross
+          // value as brokerPnL — the source of truth for later edits.
+          const grossPnl = parseFloat(trade.pnl) || 0;
+          const commission = trade.commission ? parseFloat(trade.commission) || 0 : 0;
+          const fees = trade.fees ? parseFloat(trade.fees) || 0 : 0;
           return {
             id: `csv-${Date.now()}-${index}`,
             symbol: trade.symbol,
@@ -779,7 +787,8 @@ export default function TradeLog() {
             entryPrice: parseFloat(trade.entryPrice),
             exitPrice: parseFloat(trade.exitPrice),
             lotSize: parseFloat(trade.quantity) || 1,
-            commission: trade.commission ? parseFloat(trade.commission) || 0 : 0,
+            commission,
+            fees,
             spread: 0,
             swap: 0,
             entryTime: new Date(trade.entryDate || trade.date),
@@ -787,8 +796,8 @@ export default function TradeLog() {
             notes: `Imported from ${file.name}`,
             strategy: '',
             market: detectMarketFromSymbol(trade.symbol),
-            pnl: pnl,
-            brokerPnL: pnl, // Preserve broker's P&L as the source of truth on later edits
+            pnl: grossPnl - commission - fees,
+            brokerPnL: grossPnl, // Preserve broker's gross P&L as the source of truth on later edits
             pnlPercentage: 0, // Will be calculated
             riskReward: 0, // Will be calculated
             accountId: activeAccount?.id || 'default-main-account'
@@ -810,7 +819,7 @@ export default function TradeLog() {
           ? `${skippedCount} duplicate trade${skippedCount > 1 ? 's' : ''} skipped`
           : result.errors.length > 0
             ? `${result.summary.failed} rows had errors and were skipped`
-            : 'P&L shown is gross (before broker commissions/fees)';
+            : 'P&L is net — broker commissions and fees subtracted automatically';
 
         if (newTrades.length > 0) trackEvent('csv_imported', { count: newTrades.length });
         toast.success(
@@ -896,7 +905,7 @@ export default function TradeLog() {
         return true;
       });
     }
-    const headers = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes'];
+    const headers = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'fees', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes'];
     const csvContent = [
       headers.join(','),
       ...exportTrades.map(trade =>
@@ -1069,6 +1078,7 @@ export default function TradeLog() {
             exitTime: formData.exitTime ? new Date(formData.exitTime) : new Date(),
             spread: formData.spread || 0,
             commission: formData.commission || 0,
+            fees: formData.fees || 0,
             swap: formData.swap || 0,
             notes: formData.notes || '',
             strategy: formData.strategy || '',
@@ -1682,7 +1692,7 @@ export default function TradeLog() {
                           <Coins className="h-4 w-4" style={{ color: themeColors.primary }} />
                           <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Costs</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                           <FormField
                             control={form.control}
                             name="spread"
@@ -1716,6 +1726,27 @@ export default function TradeLog() {
                                     placeholder="7.00"
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="fees"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">Fees</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="1.34"
+                                    className="bg-background/60 border-border/50 font-semibold"
+                                    {...field}
+                                    value={field.value ?? ''}
                                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                   />
                                 </FormControl>

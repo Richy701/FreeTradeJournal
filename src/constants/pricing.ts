@@ -52,13 +52,14 @@ export const FREE_FEATURES = [
   'Dashboard analytics',
   'Trade journal',
   'Goals & risk management',
-  'Multi-account support',
+  'Up to 2 trading accounts',
   'CSV/Excel import & export',
   'Calendar heatmap',
   'Dark mode & themes',
 ];
 
 export const PRO_FEATURES = [
+  'Unlimited trading accounts',
   'PropTracker — unlimited prop accounts',
   'Advanced analytics & charts',
   'Coach FTJ & AI risk alerts',

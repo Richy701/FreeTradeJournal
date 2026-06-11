@@ -1913,17 +1913,18 @@ interface AnalysisRequest {
   analysisType: "recent" | "period";
 }
 
-// Rate limits per feature type
+// Daily rate limits per feature type (Pro users; free tier is gated by monthly quota).
+// Tuned to feel effectively unlimited for normal use while still capping runaway/abuse.
 const RATE_LIMITS = {
-  ai_analysis: 10,      // Heavy - uses GPT-4o
-  goal_coach: 10,       // Heavy - uses GPT-4o
-  trade_review: 25,     // Heavy - uses GPT-4o
-  prop_tracker: 5,      // Heavy - uses GPT-4o
-  coaching_tips: 15,    // Light - uses GPT-4o-mini
-  coach_chat: 30,       // Light - uses GPT-4o-mini
-  journal_prompts: 50,  // Light - uses GPT-4o-mini
-  risk_alert: 25,       // Light - uses GPT-4o-mini
-  strategy_tagger: 25,  // Light - uses GPT-4o-mini (375 trades/day with batches of 15)
+  ai_analysis: 30,      // Heavy - uses GPT-4o
+  goal_coach: 30,       // Heavy - uses GPT-4o
+  trade_review: 50,     // Heavy - uses GPT-4o
+  prop_tracker: 30,     // Heavy - uses GPT-4o
+  coaching_tips: 75,    // Light - uses GPT-4o-mini
+  coach_chat: 150,      // Light - uses GPT-4o-mini
+  journal_prompts: 150, // Light - uses GPT-4o-mini
+  risk_alert: 75,       // Light - uses GPT-4o-mini
+  strategy_tagger: 75,  // Light - uses GPT-4o-mini (1125 trades/day with batches of 15)
 } as const;
 
 // Model selection per feature type

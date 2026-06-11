@@ -10,6 +10,7 @@ export interface ParsedTrade {
   entryDate?: string;
   exitDate?: string;
   commission?: string;
+  fees?: string;
 }
 
 export interface CSVParseResult {
@@ -39,7 +40,8 @@ const COLUMN_MAPPINGS = {
     pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L'],
     openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
     closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
-    commission: ['Commission', 'Commissions', 'Fees', 'Fee', 'Total Fees', 'Net Fees'],
+    commission: ['Commission', 'Commissions'],
+    fees: ['Fees', 'Fee', 'Total Fees', 'Net Fees', 'Exchange Fees'],
   }
 };
 
@@ -954,6 +956,7 @@ export function parseCSV(csvContent: string): CSVParseResult {
       openTime: findColumnIndex(headers, COLUMN_MAPPINGS.standard.openTime),
       closeTime: findColumnIndex(headers, COLUMN_MAPPINGS.standard.closeTime),
       commission: findColumnIndex(headers, COLUMN_MAPPINGS.standard.commission),
+      fees: findColumnIndex(headers, COLUMN_MAPPINGS.standard.fees),
     };
 
 
@@ -994,6 +997,7 @@ export function parseCSV(csvContent: string): CSVParseResult {
         const openTimeField = columnIndices.openTime !== -1 ? fields[columnIndices.openTime] : '';
         const closeTimeField = columnIndices.closeTime !== -1 ? fields[columnIndices.closeTime] : '';
         const commissionField = columnIndices.commission !== -1 ? fields[columnIndices.commission] : '';
+        const feesField = columnIndices.fees !== -1 ? fields[columnIndices.fees] : '';
         const dateField = openTimeField || closeTimeField;
 
         // Validate required fields
@@ -1019,6 +1023,7 @@ export function parseCSV(csvContent: string): CSVParseResult {
           entryDate,
           exitDate,
           commission: commissionField ? Math.abs(parseCurrency(commissionField)).toString() : undefined,
+          fees: feesField ? Math.abs(parseCurrency(feesField)).toString() : undefined,
         };
 
         result.trades.push(trade);
@@ -1100,6 +1105,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
         const openTimeField = mappings.openTime >= 0 ? (fields[mappings.openTime] || '') : '';
         const closeTimeField = mappings.closeTime >= 0 ? (fields[mappings.closeTime] || '') : '';
         const commissionField = mappings.commission >= 0 ? (fields[mappings.commission] || '') : '';
+        const feesField = mappings.fees >= 0 ? (fields[mappings.fees] || '') : '';
         const dateField = openTimeField || closeTimeField;
 
         if (!symbol || !side || !openPrice || !closePrice) {
@@ -1124,6 +1130,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
           entryDate,
           exitDate,
           commission: commissionField ? Math.abs(parseCurrency(commissionField)).toString() : undefined,
+          fees: feesField ? Math.abs(parseCurrency(feesField)).toString() : undefined,
         };
 
         result.trades.push(trade);

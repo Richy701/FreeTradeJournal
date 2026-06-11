@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.22.0',
+    date: '2026-06-11',
+    summary: 'Fixes for date selection when logging trades, and Topstep imports now subtract both commissions and fees so your P&L is net automatically.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Pick dates when logging a trade',
+        description: 'Choosing an entry or exit date from the calendar now works inside the add and edit trade dialog, as well as the prop tracker and export date pickers. Previously the calendar would close without saving your selection.',
+      },
+      {
+        type: 'improved',
+        text: 'Topstep fees subtracted automatically',
+        description: 'Topstep exports list commissions and fees in separate columns. Both are now imported and subtracted from your P&L automatically, so the dashboard shows your true net result with no manual entry. Trades also have a dedicated Fees field alongside Commission.',
+      },
+    ],
+  },
+  {
     version: '2.21.0',
     date: '2026-06-10',
     summary: 'A new Navy Gold theme arrives — deep navy with a warm gold accent for a premium look across the whole app.',
@@ -886,4 +903,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.21.0'
+export const LATEST_CHANGELOG_VERSION = '2.22.0'

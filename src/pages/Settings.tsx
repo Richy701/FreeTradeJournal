@@ -16,7 +16,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple } from '@phosphor-icons/react';
+import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -44,6 +44,11 @@ const CURRENCIES = [
   { value: 'CAD', symbol: 'C$', label: 'CAD' },
   { value: 'AUD', symbol: 'A$', label: 'AUD' },
 ] as const;
+
+// Free plan is capped at this many trading accounts; Pro is unlimited.
+// Existing accounts above the cap are grandfathered — the guard only blocks
+// adding new ones, it never removes accounts a user already created.
+const FREE_TRADING_ACCOUNT_LIMIT = 2;
 
 const NAV = [
   { id: 'general',       label: 'General',       Icon: Sliders },
@@ -567,13 +572,24 @@ export default function Settings() {
                   )}
 
                   {!showAddAccount && !editForm && (
-                    <button
-                      onClick={() => setShowAddAccount(true)}
-                      className="flex w-full items-center justify-center gap-2 px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                    >
-                      <span className="text-lg leading-none">+</span>
-                      Add Account
-                    </button>
+                    !isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT ? (
+                      <Link
+                        to="/pricing"
+                        onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Multiple Accounts' })}
+                        className="flex w-full items-center justify-center gap-2 px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                      >
+                        <Lock className="h-4 w-4" />
+                        Upgrade to Pro for unlimited accounts
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => setShowAddAccount(true)}
+                        className="flex w-full items-center justify-center gap-2 px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                      >
+                        <span className="text-lg leading-none">+</span>
+                        Add Account
+                      </button>
+                    )
                   )}
                 </div>
               </section>
