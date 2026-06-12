@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.25.0',
+    date: '2026-06-12',
+    summary: 'The AI Coach page is redesigned to show all your insights at once, with the standard navigation restored, a more detailed Tilt Meter, and smarter coaching advice.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Redesigned AI Coach page',
+        description: 'The AI Coach page now fills the full width of the screen and shows all of Coach FTJ’s insights at once as a grid, with a tilt and key-numbers overview at the top and a wider AI trade analysis below, instead of rotating through one tip at a time.',
+      },
+      {
+        type: 'fixed',
+        text: 'AI Coach navigation restored',
+        description: 'The AI Coach page now has the same top header, sidebar toggle, and breadcrumbs as the rest of the app.',
+      },
+      {
+        type: 'improved',
+        text: 'More detailed Tilt Meter',
+        description: 'The Tilt Meter now shows your numeric score out of 100 and a short, situation-specific recommendation for what to do next.',
+      },
+      {
+        type: 'improved',
+        text: 'Smarter coaching advice',
+        description: 'Coach FTJ no longer suggests forcing a set number or direction of trades; its tips focus on process, risk management, and discipline.',
+      },
+      {
+        type: 'fixed',
+        text: 'Clearer risk-reward on the calendar',
+        description: 'Days with no losing trades now show an infinity symbol with a “No losing trades” note, so the risk-reward figure is easy to understand.',
+      },
+    ],
+  },
+  {
     version: '2.24.0',
     date: '2026-06-12',
     summary: 'The AI features are easier to find and far more usable on the free plan, with a dedicated AI Coach page and clearer labels.',
@@ -952,4 +984,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.24.0'
+export const LATEST_CHANGELOG_VERSION = '2.25.0'

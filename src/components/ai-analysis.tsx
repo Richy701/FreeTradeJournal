@@ -385,9 +385,16 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
             </div>
           ) : sections.length > 0 ? (
             <div className="space-y-3">
-              {sections.map((section, i) => (
-                <AnalysisSection key={i} section={section} />
-              ))}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {sections.map((section, i) => {
+                  const wide = /snapshot|performance|action/i.test(section.title)
+                  return (
+                    <div key={i} className={wide ? 'sm:col-span-2' : ''}>
+                      <AnalysisSection section={section} />
+                    </div>
+                  )
+                })}
+              </div>
               {!isStreaming && result && (
                 <div className="flex items-center justify-between pt-3 border-t border-border/50">
                   <AIFeedback feature="AI Trade Analysis" responseId={String(result.timestamp)} />

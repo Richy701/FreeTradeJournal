@@ -2124,7 +2124,7 @@ ${hasEmotions ? `
 Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses? Give specific, actionable advice for managing destructive emotional states.
 ` : ""}
 ## Action Plan
-3 specific, measurable goals for their next 20 trades (e.g., "Only take EUR/USD longs during London session" or "Cap max loss per trade at $X").
+3 specific, measurable goals for their next 20 trades, framed around process and risk (e.g., "Cap max loss per trade at $X" or "Only enter after your checklist confirms the setup"). Never set quotas for trade count or direction (e.g. "take 5 short trades") — a trader can't force the market to provide setups.
 
 Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough — this analysis is a premium Pro feature that traders are paying for.`;
 
@@ -2382,7 +2382,9 @@ function buildCoachingTipsPrompt(payload: Record<string, any>) {
 - "title": short title (3-6 words)
 - "message": one sentence of specific, actionable advice referencing their actual data
 
-Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.${emotionSummary ? `
+Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.
+
+Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured — every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.${emotionSummary ? `
 
 If the trader has logged emotions, include at least one tip about their emotional patterns — e.g., which emotions correlate with wins/losses, and what to do about it.` : ""}
 
@@ -3189,7 +3191,7 @@ ${hasEmotions ? `
 Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses?
 ` : ""}
 ## Action Plan
-3 specific, measurable goals for their next 20 trades.
+3 specific, measurable goals for their next 20 trades, framed around process and risk — never quotas for trade count or direction (e.g. "take 5 short trades"), since a trader can't force the market to provide setups.
 
 Keep the tone like a knowledgeable mentor who genuinely wants to help.`;
 

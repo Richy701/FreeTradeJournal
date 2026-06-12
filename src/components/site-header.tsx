@@ -125,7 +125,8 @@ export function SiteHeader({ className }: { className?: string }) {
     // Map segments to better labels
     const segmentLabels: Record<string, string> = {
       'dashboard': 'Dashboard',
-      'trades': 'Trade Log', 
+      'coach': 'AI Coach',
+      'trades': 'Trade Log',
       'goals': 'Goals & Risk Management',
       'journal': 'Journal',
       'settings': 'Settings',

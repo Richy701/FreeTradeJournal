@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AIFeedback } from '@/components/ui/ai-feedback'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Heartbeat, Clock, Scales, Fire, Snowflake, GraduationCap, ChartPie, Check, ChatCircle, PaperPlaneTilt, X, type Icon } from '@phosphor-icons/react'
+import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Heartbeat, Clock, Scales, Fire, Snowflake, GraduationCap, ChartPie, ChatCircle, PaperPlaneTilt, X, type Icon } from '@phosphor-icons/react'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useProStatus } from '@/contexts/pro-context'
@@ -145,48 +145,112 @@ function computeTiltScore(trades: Trade[], themeColors: { profit: string; loss: 
 function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, opacity: string) => string }) {
   const [showFactors, setShowFactors] = useState(false)
   const pct = Math.max(2, tilt.score)
+  const hasData = tilt.label !== 'Insufficient data'
+
+  const recommendation = !hasData
+    ? null
+    : tilt.score <= 20
+      ? 'Composed — keep following your plan.'
+      : tilt.score <= 45
+        ? 'Slightly elevated — stick to your rules and usual size.'
+        : tilt.score <= 65
+          ? 'Caution — size down and slow your entries.'
+          : 'High tilt — step away for 30 minutes before trading again.'
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Heartbeat className="h-4 w-4" style={{ color: tilt.color }} />
           <span className="text-sm font-semibold">Tilt Meter</span>
         </div>
-        <button
-          onClick={() => setShowFactors(!showFactors)}
-          className="flex items-center gap-1.5"
-        >
+        <div className="flex items-baseline gap-1.5">
           <span
             className="text-xs font-bold px-2 py-0.5 rounded-full"
-            style={{
-              backgroundColor: alpha(tilt.color, '18'),
-              color: tilt.color,
-            }}
+            style={{ backgroundColor: alpha(tilt.color, '18'), color: tilt.color }}
           >
             {tilt.label}
           </span>
-        </button>
+          {hasData && (
+            <span className="text-sm font-semibold font-display tabular-nums" style={{ color: tilt.color }}>
+              {tilt.score}<span className="text-xs text-muted-foreground">/100</span>
+            </span>
+          )}
+        </div>
       </div>
+
       <div className="h-2 rounded-full bg-muted/50 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700 ease-out"
-          style={{
-            width: `${pct}%`,
-            backgroundColor: tilt.color,
-          }}
+          style={{ width: `${pct}%`, backgroundColor: tilt.color }}
         />
       </div>
-      {showFactors && tilt.factors.length > 0 && (
-        <ul className="text-xs text-muted-foreground space-y-0.5 pt-1">
-          {tilt.factors.map((f, i) => (
-            <li key={i} className="flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full shrink-0" style={{ backgroundColor: tilt.color }} />
-              {f}
-            </li>
-          ))}
-        </ul>
+
+      {recommendation && (
+        <div className="flex items-start gap-2 text-xs">
+          <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-px" style={{ color: tilt.color }} />
+          <span className="text-muted-foreground">
+            <span className="font-medium text-foreground">What to do:</span> {recommendation}
+          </span>
+        </div>
       )}
+
+      {hasData && tilt.factors.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowFactors(!showFactors)}
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showFactors ? 'Hide' : 'Show'} {tilt.factors.length} contributing signal{tilt.factors.length !== 1 ? 's' : ''}
+          </button>
+          {showFactors && (
+            <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+              {tilt.factors.map((f, i) => (
+                <li key={i} className="flex items-start gap-1.5">
+                  <span className="text-muted-foreground/60 shrink-0">–</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CoachStats({ metrics, themeColors }: { metrics: any; themeColors: { primary: string; profit: string; loss: string } }) {
+  const streakLabel = metrics.streak.count === 1
+    ? (metrics.streak.type === 'winning' ? 'win' : 'loss')
+    : (metrics.streak.type === 'winning' ? 'wins' : 'losses')
+  const stats: { label: string; value: string; color?: string }[] = [
+    { label: 'Win rate', value: `${metrics.winRate.toFixed(0)}%` },
+    { label: 'Profit factor', value: metrics.profitFactor.toFixed(2) },
+    { label: 'Avg R:R', value: `${metrics.riskReward.toFixed(2)}:1` },
+    { label: 'Recent win rate', value: `${metrics.recentWinRate.toFixed(0)}%` },
+    { label: 'Total trades', value: String(metrics.totalTrades) },
+    {
+      label: 'Current streak',
+      value: `${metrics.streak.count} ${streakLabel}`,
+      color: metrics.streak.count === 0
+        ? undefined
+        : (metrics.streak.type === 'winning' ? themeColors.profit : themeColors.loss),
+    },
+  ]
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <ChartPie className="h-4 w-4" style={{ color: themeColors.primary }} />
+        <span className="text-sm font-semibold">Your numbers</span>
+      </div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-4">
+        {stats.map((s) => (
+          <div key={s.label}>
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className="text-lg font-semibold font-display" style={s.color ? { color: s.color } : undefined}>{s.value}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -233,9 +297,6 @@ export function TradingCoach() {
   const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
   const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus()
-  const [currentTipIndex, setCurrentTipIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
   const [aiTips, setAiTips] = useState<any[] | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => {
@@ -246,7 +307,6 @@ export function TradingCoach() {
       return new Set()
     }
   })
-  const cardRef = useRef<HTMLDivElement>(null)
 
   // Chat state
   const [chatOpen, setChatOpen] = useState(false)
@@ -1040,49 +1100,16 @@ export function TradingCoach() {
     return filtered.length > 0 ? filtered : baseTips
   }, [baseTips, dismissedTips])
 
-  const dismissCurrentTip = useCallback(() => {
-    const tip = visibleTips[currentTipIndex]
-    if (!tip) return
+  const dismissTip = useCallback((key: string) => {
     const next = new Set(dismissedTips)
-    next.add(tip.key)
+    next.add(key)
     setDismissedTips(next)
     try {
       localStorage.setItem('dismissedCoachTips', JSON.stringify([...next]))
     } catch {}
-    // adjust index so we don't jump past the end
-    if (currentTipIndex >= visibleTips.length - 1) {
-      setCurrentTipIndex(0)
-    }
-  }, [visibleTips, currentTipIndex, dismissedTips])
+  }, [dismissedTips])
 
-  // Rotate through tips — pauses on hover and on critical tips
-  useEffect(() => {
-    if (visibleTips.length <= 1) return
-
-    const currentTip = visibleTips[currentTipIndex]
-    const isCritical = currentTip?.type === 'critical'
-
-    if (isPaused || isCritical) return
-
-    const interval = setInterval(() => {
-      setIsAnimating(true)
-      setTimeout(() => {
-        setCurrentTipIndex((prev) => (prev + 1) % visibleTips.length)
-        setIsAnimating(false)
-      }, 150)
-    }, 15000)
-
-    return () => clearInterval(interval)
-  }, [visibleTips.length, isPaused, currentTipIndex, visibleTips])
-
-  // Keep index in bounds when tips change
-  useEffect(() => {
-    if (currentTipIndex >= visibleTips.length) {
-      setCurrentTipIndex(0)
-    }
-  }, [visibleTips.length, currentTipIndex])
-
-  const currentTip = visibleTips[currentTipIndex] || visibleTips[0]
+  const hasCritical = visibleTips.some((t) => t.type === 'critical')
 
   const getTipColor = (type: string) => {
     switch (type) {
@@ -1095,49 +1122,45 @@ export function TradingCoach() {
     }
   }
 
-  const getTipIcon = (type: string): Icon => {
+  const getTipIcon = (type: string, tip?: { icon?: Icon }): Icon => {
     switch (type) {
       case 'success': return Trophy
       case 'warning': return Warning
       case 'critical': return Fire
       case 'action': return Brain
       case 'info': return Lightbulb
-      default: return currentTip.icon || Lightbulb
+      default: return tip?.icon || Lightbulb
     }
   }
 
-  const goToTip = useCallback((index: number) => {
-    setIsAnimating(true)
-    setTimeout(() => {
-      setCurrentTipIndex(index)
-      setIsAnimating(false)
-    }, 150)
-  }, [])
-
-  const nextTip = useCallback(() => {
-    goToTip((currentTipIndex + 1) % visibleTips.length)
-  }, [currentTipIndex, visibleTips.length, goToTip])
-
-  const prevTip = useCallback(() => {
-    goToTip((currentTipIndex - 1 + visibleTips.length) % visibleTips.length)
-  }, [currentTipIndex, visibleTips.length, goToTip])
-
-  if (!currentTip) return null
+  if (visibleTips.length === 0 && !aiLoading) return null
 
   return (
-    <Card
-      ref={cardRef}
-      className=""
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={() => setIsPaused(true)}
-      onTouchEnd={() => setIsPaused(false)}
-    >
+    <div className="space-y-6">
+      {(trades.length >= 3 || metrics) && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {trades.length >= 3 && (
+            <Card>
+              <CardContent className="pt-6">
+                <TiltMeter tilt={tiltScore} alpha={alpha} />
+              </CardContent>
+            </Card>
+          )}
+          {metrics && (
+            <Card className={trades.length < 3 ? 'md:col-span-2' : ''}>
+              <CardContent className="pt-6">
+                <CoachStats metrics={metrics} themeColors={themeColors} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+      <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-lg font-semibold">
             <span>Coach FTJ</span>
-            {currentTip.type === 'critical' && (
+            {hasCritical && (
               <span
                 className="px-2 py-1 text-xs font-bold rounded animate-pulse"
                 style={{
@@ -1149,116 +1172,45 @@ export function TradingCoach() {
               </span>
             )}
           </div>
-          {visibleTips.length > 1 && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={prevTip}
-                className="h-8 w-8 p-0"
-                aria-label="Previous tip"
-              >
-                ←
-              </Button>
-              <span className="text-xs text-muted-foreground min-w-[3ch] text-center">
-                {currentTipIndex + 1} / {visibleTips.length}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={nextTip}
-                className="h-8 w-8 p-0"
-                aria-label="Next tip"
-              >
-                →
-              </Button>
-            </div>
-          )}
+          {aiTips && <AIFeedback feature="Coach FTJ" responseId={visibleTips[0]?.title} />}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
-        {trades.length >= 3 && (
-          <div className="mb-4 pb-4 border-b border-border/50">
-            <TiltMeter tilt={tiltScore} alpha={alpha} />
-          </div>
-        )}
+      <CardContent>
         {aiLoading ? (
-          <div className="flex items-center justify-center gap-2 py-6">
+          <div className="flex items-center justify-center gap-2 py-10">
             <SpinnerGap className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
             <span className="text-sm text-muted-foreground">Loading AI coaching...</span>
           </div>
         ) : (
-        <>
-        <div className={cn(
-          "transition-shadow duration-200",
-          isAnimating ? "opacity-0 scale-95" : "opacity-100 scale-100"
-        )}>
-          <div className="text-center space-y-3">
-            <div className="flex flex-col items-center gap-3">
-              <div
-                className="p-2 rounded-lg"
-                style={{backgroundColor: alpha(getTipColor(currentTip.type), '20')}}
-              >
-                {(() => { const TipIcon = getTipIcon(currentTip.type); return <TipIcon className="h-5 w-5" style={{color: getTipColor(currentTip.type)}} />; })()}
-              </div>
-              <div>
-                <h3 className="font-semibold text-base mb-2" style={{color: getTipColor(currentTip.type)}}>
-                  {currentTip.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                  {currentTip.message}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress dots + dismiss */}
-        {visibleTips.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 mt-4">
-            {visibleTips.map((_, index) => (
-              <button
-                key={index}
-                className={cn(
-                  "indicator-dot rounded-full transition-shadow duration-200 box-content p-1",
-                  index === currentTipIndex
-                    ? "h-1.5 w-4"
-                    : "h-1.5 w-1.5 opacity-40 hover:opacity-70"
-                )}
-                style={{
-                  backgroundColor: index === currentTipIndex
-                    ? getTipColor(currentTip.type)
-                    : themeColors.primary
-                }}
-                onClick={() => goToTip(index)}
-                aria-label={`Go to tip ${index + 1}`}
-              />
-            ))}
-            <button
-              onClick={dismissCurrentTip}
-              className="indicator-dot ml-1.5 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors"
-              aria-label="Dismiss this tip"
-              title="Got it, dismiss"
-            >
-              <Check className="h-3 w-3" />
-            </button>
-          </div>
-        )}
-
-        {/* AI Feedback */}
-        {aiTips && (
-          <div className="mt-3 pt-3 border-t border-border/50 flex justify-center">
-            <AIFeedback feature="Coach FTJ" responseId={currentTip?.title} />
-          </div>
-        )}
-
-        {/* Severity indicator for critical alerts */}
-        {currentTip.type === 'critical' && (
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: alpha(themeColors.loss, '20') }}>
-            <div className="flex items-center gap-2 text-xs" style={{ color: themeColors.loss }}>
-              <Warning className="h-3 w-3" />
-              <span>Immediate action recommended</span>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleTips.map((tip) => {
+              const color = getTipColor(tip.type)
+              const TipIcon = getTipIcon(tip.type, tip)
+              return (
+                <div
+                  key={tip.key}
+                  className="relative rounded-lg border border-border bg-card p-4 flex flex-col gap-2"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-1.5 rounded-md shrink-0" style={{ backgroundColor: alpha(color, '15') }}>
+                      <TipIcon className="h-4 w-4" style={{ color }} />
+                    </div>
+                    <h3 className="font-semibold text-sm leading-snug pt-0.5" style={{ color }}>
+                      {tip.title}
+                    </h3>
+                    <button
+                      onClick={() => dismissTip(tip.key)}
+                      className="ml-auto shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors"
+                      aria-label="Dismiss this insight"
+                      title="Dismiss"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{tip.message}</p>
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -1388,9 +1340,8 @@ export function TradingCoach() {
             )}
           </div>
         )}
-        </>
-        )}
       </CardContent>
     </Card>
+    </div>
   )
 }

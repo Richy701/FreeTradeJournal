@@ -975,7 +975,10 @@ export function CalendarHeatmap() {
                               </div>
                               <div className="space-y-1">
                                 <div className="text-muted-foreground text-xs font-medium">R:R</div>
-                                <div className="font-bold text-lg">
+                                <div
+                                  className={`font-bold text-lg${day.rr === Infinity ? ' cursor-help' : ''}`}
+                                  title={day.rr === Infinity ? 'No losing trades' : undefined}
+                                >
                                   {day.rr === 0 ? '-' : day.rr === Infinity ? '∞' : day.rr.toFixed(2)}
                                 </div>
                               </div>

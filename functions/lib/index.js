@@ -1688,17 +1688,18 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     }
     res.status(200).json({ received: true });
 });
-// Rate limits per feature type
+// Daily rate limits per feature type (Pro users; free tier is gated by monthly quota).
+// Tuned to feel effectively unlimited for normal use while still capping runaway/abuse.
 const RATE_LIMITS = {
-    ai_analysis: 10, // Heavy - uses GPT-4o
-    goal_coach: 10, // Heavy - uses GPT-4o
-    trade_review: 25, // Heavy - uses GPT-4o
-    prop_tracker: 5, // Heavy - uses GPT-4o
-    coaching_tips: 15, // Light - uses GPT-4o-mini
-    coach_chat: 30, // Light - uses GPT-4o-mini
-    journal_prompts: 50, // Light - uses GPT-4o-mini
-    risk_alert: 25, // Light - uses GPT-4o-mini
-    strategy_tagger: 25, // Light - uses GPT-4o-mini (375 trades/day with batches of 15)
+    ai_analysis: 30, // Heavy - uses GPT-4o
+    goal_coach: 30, // Heavy - uses GPT-4o
+    trade_review: 50, // Heavy - uses GPT-4o
+    prop_tracker: 30, // Heavy - uses GPT-4o
+    coaching_tips: 75, // Light - uses GPT-4o-mini
+    coach_chat: 150, // Light - uses GPT-4o-mini
+    journal_prompts: 150, // Light - uses GPT-4o-mini
+    risk_alert: 75, // Light - uses GPT-4o-mini
+    strategy_tagger: 75, // Light - uses GPT-4o-mini (1125 trades/day with batches of 15)
 };
 // Model selection per feature type
 const FEATURE_MODELS = {
@@ -1713,7 +1714,7 @@ const FEATURE_MODELS = {
     strategy_tagger: "gpt-4o-mini",
 };
 // ─── Free-Tier AI Quota ───────────────────────────────────────
-const FREE_AI_MONTHLY_LIMIT = 3;
+const FREE_AI_MONTHLY_LIMIT = 20;
 async function checkAndIncrementFreeAI(uid) {
     const monthStr = new Date().toISOString().slice(0, 7);
     const freeUsageRef = db.collection("users").doc(uid).collection("meta").doc("freeAiUsage");
@@ -1874,7 +1875,7 @@ ${hasEmotions ? `
 Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses? Give specific, actionable advice for managing destructive emotional states.
 ` : ""}
 ## Action Plan
-3 specific, measurable goals for their next 20 trades (e.g., "Only take EUR/USD longs during London session" or "Cap max loss per trade at $X").
+3 specific, measurable goals for their next 20 trades, framed around process and risk (e.g., "Cap max loss per trade at $X" or "Only enter after your checklist confirms the setup"). Never set quotas for trade count or direction (e.g. "take 5 short trades") — a trader can't force the market to provide setups.
 
 Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough — this analysis is a premium Pro feature that traders are paying for.`;
     const userPrompt = `Here are my ${trades.length} trades to analyse:
@@ -2082,7 +2083,9 @@ function buildCoachingTipsPrompt(payload) {
 - "title": short title (3-6 words)
 - "message": one sentence of specific, actionable advice referencing their actual data
 
-Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.${emotionSummary ? `
+Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.
+
+Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured — every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.${emotionSummary ? `
 
 If the trader has logged emotions, include at least one tip about their emotional patterns — e.g., which emotions correlate with wins/losses, and what to do about it.` : ""}
 
@@ -2794,7 +2797,7 @@ ${hasEmotions ? `
 Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses?
 ` : ""}
 ## Action Plan
-3 specific, measurable goals for their next 20 trades.
+3 specific, measurable goals for their next 20 trades, framed around process and risk — never quotas for trade count or direction (e.g. "take 5 short trades"), since a trader can't force the market to provide setups.
 
 Keep the tone like a knowledgeable mentor who genuinely wants to help.`;
         userPrompt = `Here are my ${trades.length} trades to analyse:
