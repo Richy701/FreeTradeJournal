@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import OpenAI from "openai";
 import Stripe from "stripe";
 import { Resend } from "resend";
+import { Webhook } from "svix";
 import { PostHog } from "posthog-node";
 import { render } from "@react-email/components";
 import * as React from "react";
@@ -343,7 +344,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
 export const sendDay3NudgeEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
     const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
@@ -392,7 +393,7 @@ export const sendDay3NudgeEmails = functions.pubsub
 export const sendTrialEndingEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = Date.now();
     // Query for trial end dates 1–3 days from now (48-hour window, daily run)
     const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
@@ -432,7 +433,7 @@ export const sendTrialEndingEmails = functions.pubsub
 export const sendDay7NudgeEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const sevenDaysAgo = new Date(now.toMillis() - 7 * 24 * 60 * 60 * 1000);
     const eightDaysAgo = new Date(now.toMillis() - 8 * 24 * 60 * 60 * 1000);
@@ -479,7 +480,7 @@ export const sendDay7NudgeEmails = functions.pubsub
 export const sendDay14UpgradeEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const fourteenDaysAgo = new Date(now.toMillis() - 14 * 24 * 60 * 60 * 1000);
     const fifteenDaysAgo = new Date(now.toMillis() - 15 * 24 * 60 * 60 * 1000);
@@ -527,7 +528,7 @@ export const sendDay14UpgradeEmails = functions.pubsub
 export const sendDay21BackupEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const twentyOneDaysAgo = new Date(now.toMillis() - 21 * 24 * 60 * 60 * 1000);
     const twentyTwoDaysAgo = new Date(now.toMillis() - 22 * 24 * 60 * 60 * 1000);
@@ -575,7 +576,7 @@ export const sendWeeklyDigestEmails = functions.pubsub
   .schedule("every monday 08:00")
   .timeZone("UTC")
   .onRun(async () => {
-    const MAX_SENDS = 30;
+    const MAX_SENDS = 500;
     const now = Date.now();
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const weekLabel = `Week of ${weekAgo.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(now).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
@@ -1305,7 +1306,7 @@ export const sendStreakReminders = functions.pubsub
       return null;
     }
 
-    const MAX_SENDS = 50;
+    const MAX_SENDS = 500;
     const todayStr = new Date().toISOString().split("T")[0];
 
     const usersSnapshot = await db.collection("users")
@@ -1431,6 +1432,76 @@ export const unsubscribe = functions.https.onRequest(async (req, res) => {
       <a href="https://www.freetradejournal.com" style="display:inline-block;margin-top:16px;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">Back to FreeTradeJournal</a>
     </body></html>
   `);
+});
+
+// ─── Resend Webhook (bounce / complaint → auto opt-out) ────
+
+export const resendWebhook = functions.https.onRequest(async (req, res) => {
+  if (req.method !== "POST") {
+    res.status(405).send("Method Not Allowed");
+    return;
+  }
+
+  const secret = process.env.RESEND_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("RESEND_WEBHOOK_SECRET not configured");
+    res.status(500).send("Webhook secret not configured");
+    return;
+  }
+
+  // Resend signs webhooks with Svix — verify against the raw body
+  let event: { type: string; data: any };
+  try {
+    const wh = new Webhook(secret);
+    event = wh.verify(req.rawBody, {
+      "svix-id": req.header("svix-id") || "",
+      "svix-timestamp": req.header("svix-timestamp") || "",
+      "svix-signature": req.header("svix-signature") || "",
+    }) as { type: string; data: any };
+  } catch (err: any) {
+    console.error("Resend webhook signature verification failed:", err.message);
+    res.status(400).send("Invalid signature");
+    return;
+  }
+
+  try {
+    const { type, data } = event;
+    const to: string | undefined = Array.isArray(data?.to) ? data.to[0] : data?.to;
+
+    // Hard bounce or spam complaint → stop emailing this person everywhere
+    if ((type === "email.bounced" || type === "email.complained") && to) {
+      const reason = type === "email.complained" ? "spam_complaint" : "bounce";
+      const snap = await db
+        .collection("users")
+        .where("normalizedEmail", "==", normalizeEmail(to))
+        .limit(1)
+        .get();
+
+      if (!snap.empty) {
+        const doc = snap.docs[0];
+        await doc.ref.set(
+          {
+            emailOptOut: true,
+            emailOptOutReason: reason,
+            emailOptOutAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+        // Stop the Resend automations for this contact too
+        try {
+          await updateResendContact(doc.data()?.resendContactId, { unsubscribed: true });
+        } catch (e) {
+          console.error(`Resend: failed to unsubscribe contact after ${reason}:`, e);
+        }
+      }
+      console.log(`Resend webhook: ${type} → opted out ${to}`);
+    }
+
+    res.status(200).send("ok");
+  } catch (err: any) {
+    console.error("Resend webhook handler error:", err.message);
+    res.status(500).send("Webhook handler error");
+  }
 });
 
 // ─── Resend Contact Properties Setup (run once) ───────────

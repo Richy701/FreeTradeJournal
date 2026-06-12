@@ -36,12 +36,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
 const stripe_1 = __importDefault(require("stripe"));
 const resend_1 = require("resend");
+const svix_1 = require("svix");
 const posthog_node_1 = require("posthog-node");
 const components_1 = require("@react-email/components");
 const React = __importStar(require("react"));
@@ -341,7 +342,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
 exports.sendDay3NudgeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
     const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
@@ -387,7 +388,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
 exports.sendTrialEndingEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = Date.now();
     // Query for trial end dates 1–3 days from now (48-hour window, daily run)
     const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
@@ -425,7 +426,7 @@ exports.sendTrialEndingEmails = functions.pubsub
 exports.sendDay7NudgeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const sevenDaysAgo = new Date(now.toMillis() - 7 * 24 * 60 * 60 * 1000);
     const eightDaysAgo = new Date(now.toMillis() - 8 * 24 * 60 * 60 * 1000);
@@ -469,7 +470,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
 exports.sendDay14UpgradeEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const fourteenDaysAgo = new Date(now.toMillis() - 14 * 24 * 60 * 60 * 1000);
     const fifteenDaysAgo = new Date(now.toMillis() - 15 * 24 * 60 * 60 * 1000);
@@ -514,7 +515,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
 exports.sendDay21BackupEmails = functions.pubsub
     .schedule("every 24 hours")
     .onRun(async () => {
-    const MAX_SENDS = 10;
+    const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
     const twentyOneDaysAgo = new Date(now.toMillis() - 21 * 24 * 60 * 60 * 1000);
     const twentyTwoDaysAgo = new Date(now.toMillis() - 22 * 24 * 60 * 60 * 1000);
@@ -559,7 +560,7 @@ exports.sendWeeklyDigestEmails = functions.pubsub
     .schedule("every monday 08:00")
     .timeZone("UTC")
     .onRun(async () => {
-    const MAX_SENDS = 30;
+    const MAX_SENDS = 500;
     const now = Date.now();
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const weekLabel = `Week of ${weekAgo.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(now).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
@@ -1177,7 +1178,7 @@ exports.sendStreakReminders = functions.pubsub
         console.error("VAPID keys not configured, skipping push reminders");
         return null;
     }
-    const MAX_SENDS = 50;
+    const MAX_SENDS = 500;
     const todayStr = new Date().toISOString().split("T")[0];
     const usersSnapshot = await db.collection("users")
         .where("hasPushSubscription", "==", true)
@@ -1289,6 +1290,68 @@ exports.unsubscribe = functions.https.onRequest(async (req, res) => {
       <a href="https://www.freetradejournal.com" style="display:inline-block;margin-top:16px;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">Back to FreeTradeJournal</a>
     </body></html>
   `);
+});
+// ─── Resend Webhook (bounce / complaint → auto opt-out) ────
+exports.resendWebhook = functions.https.onRequest(async (req, res) => {
+    if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+    }
+    const secret = process.env.RESEND_WEBHOOK_SECRET;
+    if (!secret) {
+        console.error("RESEND_WEBHOOK_SECRET not configured");
+        res.status(500).send("Webhook secret not configured");
+        return;
+    }
+    // Resend signs webhooks with Svix — verify against the raw body
+    let event;
+    try {
+        const wh = new svix_1.Webhook(secret);
+        event = wh.verify(req.rawBody, {
+            "svix-id": req.header("svix-id") || "",
+            "svix-timestamp": req.header("svix-timestamp") || "",
+            "svix-signature": req.header("svix-signature") || "",
+        });
+    }
+    catch (err) {
+        console.error("Resend webhook signature verification failed:", err.message);
+        res.status(400).send("Invalid signature");
+        return;
+    }
+    try {
+        const { type, data } = event;
+        const to = Array.isArray(data?.to) ? data.to[0] : data?.to;
+        // Hard bounce or spam complaint → stop emailing this person everywhere
+        if ((type === "email.bounced" || type === "email.complained") && to) {
+            const reason = type === "email.complained" ? "spam_complaint" : "bounce";
+            const snap = await db
+                .collection("users")
+                .where("normalizedEmail", "==", normalizeEmail(to))
+                .limit(1)
+                .get();
+            if (!snap.empty) {
+                const doc = snap.docs[0];
+                await doc.ref.set({
+                    emailOptOut: true,
+                    emailOptOutReason: reason,
+                    emailOptOutAt: admin.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true });
+                // Stop the Resend automations for this contact too
+                try {
+                    await updateResendContact(doc.data()?.resendContactId, { unsubscribed: true });
+                }
+                catch (e) {
+                    console.error(`Resend: failed to unsubscribe contact after ${reason}:`, e);
+                }
+            }
+            console.log(`Resend webhook: ${type} → opted out ${to}`);
+        }
+        res.status(200).send("ok");
+    }
+    catch (err) {
+        console.error("Resend webhook handler error:", err.message);
+        res.status(500).send("Webhook handler error");
+    }
 });
 // ─── Resend Contact Properties Setup (run once) ───────────
 exports.initResendContactProperties = functions.https.onCall(async (_data, context) => {
@@ -1877,7 +1940,7 @@ Analyse the trader's self-reported emotional patterns. Which emotions lead to pr
 ## Action Plan
 3 specific, measurable goals for their next 20 trades, framed around process and risk (e.g., "Cap max loss per trade at $X" or "Only enter after your checklist confirms the setup"). Never set quotas for trade count or direction (e.g. "take 5 short trades") — a trader can't force the market to provide setups.
 
-Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough — this analysis is a premium Pro feature that traders are paying for.`;
+Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough; this analysis is a premium Pro feature that traders are paying for. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.`;
     const userPrompt = `Here are my ${trades.length} trades to analyse:
 
 TRADES:
@@ -2085,7 +2148,9 @@ function buildCoachingTipsPrompt(payload) {
 
 Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.
 
-Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured — every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.${emotionSummary ? `
+Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured, so every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.
+
+Write in plain prose. Do not use em-dashes or en-dashes (the long dash characters); use commas, periods, or hyphens instead.${emotionSummary ? `
 
 If the trader has logged emotions, include at least one tip about their emotional patterns — e.g., which emotions correlate with wins/losses, and what to do about it.` : ""}
 
@@ -2799,7 +2864,7 @@ Analyse the trader's self-reported emotional patterns. Which emotions lead to pr
 ## Action Plan
 3 specific, measurable goals for their next 20 trades, framed around process and risk — never quotas for trade count or direction (e.g. "take 5 short trades"), since a trader can't force the market to provide setups.
 
-Keep the tone like a knowledgeable mentor who genuinely wants to help.`;
+Keep the tone like a knowledgeable mentor who genuinely wants to help. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.`;
         userPrompt = `Here are my ${trades.length} trades to analyse:
 
 TRADES:

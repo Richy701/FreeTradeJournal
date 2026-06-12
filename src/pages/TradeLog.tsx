@@ -11,6 +11,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
+import { recordFirstTradeIfNeeded } from '@/lib/first-trade';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -334,6 +335,14 @@ export default function TradeLog() {
   const saveTrades = (updatedTrades: Trade[]) => {
     setTrades(updatedTrades);
     calculateQuickStats(updatedTrades);
+
+    // Record the user's first trade for activation tracking the moment it is
+    // logged here (the real logging point), instead of relying on a Dashboard
+    // remount catching a 0 -> positive transition. Idempotent + non-blocking;
+    // the localStorage guard inside makes this safe to call on every save.
+    if (user && !isDemo && updatedTrades.length >= 1) {
+      recordFirstTradeIfNeeded(user.uid);
+    }
 
     // Merge with other accounts' trades to avoid overwriting them
     const currentAccountId = activeAccount?.id || 'default-main-account';

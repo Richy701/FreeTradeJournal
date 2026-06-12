@@ -2,8 +2,7 @@ import { useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
-
-const FLAG_PREFIX = 'first-trade-celebrated-';
+import { firstTradeFlagKey, recordFirstTradeIfNeeded } from '@/lib/first-trade';
 
 export function useFirstTradeCelebration(tradeCount: number) {
   const { user, isDemo } = useAuth();
@@ -15,50 +14,32 @@ export function useFirstTradeCelebration(tradeCount: number) {
       return;
     }
 
-    const flagKey = `${FLAG_PREFIX}${user.uid}`;
-    const alreadyCelebrated = localStorage.getItem(flagKey);
-    if (alreadyCelebrated) {
-      prevCountRef.current = tradeCount;
-      return;
-    }
-
+    // Confetti + toast only on a genuine live 0 -> positive transition observed
+    // within this mount. Returning users who already had trades get nothing.
     const wasZero = prevCountRef.current === 0;
-    const isNowPositive = tradeCount > 0;
+    if (wasZero && tradeCount > 0) {
+      const flagKey = firstTradeFlagKey(user.uid);
+      if (!localStorage.getItem(flagKey)) {
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff', '#10b981'],
+        });
 
-    if (wasZero && isNowPositive) {
-      // Fire confetti
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#ffffff', '#10b981'],
-      });
-
-      // Toast
-      toast.success('First trade logged!', {
-        description: 'Your dashboard is now live. Keep building that edge.',
-        duration: 6000,
-      });
-
-      // Mark celebrated
-      localStorage.setItem(flagKey, '1');
-
-      // Write flag to Firestore via Cloud Function (client can't write users doc directly)
-      markFirstTradeInFirestore();
+        toast.success('First trade logged!', {
+          description: 'Your dashboard is now live. Keep building that edge.',
+          duration: 6000,
+        });
+      }
     }
+
+    // Tracking fires whenever a signed-in, non-demo user has trades and the flag
+    // is not yet set -- regardless of whether a live transition was observed.
+    // This back-fills existing activated-but-untracked users. The helper guards
+    // on the localStorage flag, so this is idempotent and non-blocking.
+    recordFirstTradeIfNeeded(user.uid);
 
     prevCountRef.current = tradeCount;
   }, [tradeCount, user, isDemo]);
-}
-
-async function markFirstTradeInFirestore() {
-  try {
-    const { httpsCallable } = await import('firebase/functions');
-    const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
-    const fns = await getFirebaseFunctions();
-    const fn = httpsCallable(fns, 'markFirstTrade');
-    await fn({});
-  } catch {
-    // Non-critical
-  }
 }

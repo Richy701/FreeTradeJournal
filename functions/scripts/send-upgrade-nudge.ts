@@ -16,12 +16,22 @@ import * as fs from 'fs'
 
 // ── Config ────────────────────────────────────────────────
 const DRY_RUN = process.env.DRY_RUN !== 'false'
-const MAX_SENDS = 46  // 50 total - 4 already sent
+// No Resend volume cap anymore — send to the whole eligible list by default.
+// Set MAX_SENDS env to throttle a single run if you want.
+const MAX_SENDS = process.env.MAX_SENDS ? parseInt(process.env.MAX_SENDS, 10) : Number.MAX_SAFE_INTEGER
+// Users created on/after this date are already enrolled in the live Resend
+// onboarding + conversion automations (created 2026-06-09), so a manual nudge
+// would double up. Skip them by default; set BACKLOG_ONLY=false to send to all free users.
+const BACKLOG_ONLY = process.env.BACKLOG_ONLY !== 'false'
+const AUTOMATION_START = new Date('2026-06-09T00:00:00Z')
+// Mark candidates as already-sent WITHOUT emailing — used once to backfill the
+// first batch that went out before dedup existed. MARK_ONLY=true.
+const MARK_ONLY = process.env.MARK_ONLY === 'true'
 const FROM = 'Richy at FreeTradeJournal <richy@freetradejournal.com>'
 const subject = (firstName: string) =>
   firstName
-    ? `${firstName}, here's what your trades are missing`
-    : "Here's what your trades are missing"
+    ? `${firstName}, get more out of your trading journal`
+    : "Get more out of your trading journal"
 
 // Emails already sent + owner to skip
 const SKIP_EMAILS = new Set([
@@ -95,17 +105,32 @@ async function main() {
   const proUids = new Set(proSnap.docs.map(d => d.id))
   console.log(`Pro users to skip: ${proUids.size}`)
 
+  // Build set of UIDs already emailed in this campaign, so batches never overlap
+  const sentSnap = await db.collection('users').where('upgradeNudgeSentAt', '!=', null).get()
+  const sentUids = new Set(sentSnap.docs.map(d => d.id))
+  console.log(`Already sent this campaign: ${sentUids.size}`)
+
   // List all Auth users
   const allUsers = await auth.listUsers(1000)
   console.log(`Total Auth users: ${allUsers.users.length}`)
 
   const candidates: { uid: string; email: string; name: string }[] = []
   const rejected: { email: string; reason: string }[] = []
+  let inAutomation = 0
 
   for (const user of allUsers.users) {
     if (!user.email) continue
     if (SKIP_EMAILS.has(user.email)) continue
     if (proUids.has(user.uid)) continue
+    if (sentUids.has(user.uid)) continue
+
+    // Skip users already covered by the live onboarding/conversion automations
+    if (BACKLOG_ONLY && user.metadata?.creationTime) {
+      if (new Date(user.metadata.creationTime) >= AUTOMATION_START) {
+        inAutomation++
+        continue
+      }
+    }
 
     const badReason = isBadEmail(user.email)
     if (badReason) {
@@ -124,6 +149,10 @@ async function main() {
     rejected.forEach(r => console.log(`  ✗ ${r.email} — ${r.reason}`))
   }
 
+  console.log(`\nMode: ${BACKLOG_ONLY ? 'BACKLOG ONLY (pre-2026-06-09 signups; newer users covered by live automations)' : 'ALL free users'}`)
+  if (BACKLOG_ONLY) console.log(`Skipped ${inAutomation} users already enrolled in the live automations`)
+  console.log(`Send cap this run: ${MAX_SENDS === Number.MAX_SAFE_INTEGER ? 'uncapped' : MAX_SENDS}`)
+
   console.log(`\nTargeting ${candidates.length} free users:\n`)
   candidates.forEach((c, i) => {
     console.log(`  ${String(i + 1).padStart(2)}. ${c.email}${c.name ? ` (${c.name})` : ''}`)
@@ -131,6 +160,19 @@ async function main() {
 
   if (DRY_RUN) {
     console.log('\nDry run complete. Run with DRY_RUN=false to send for real.')
+    process.exit(0)
+  }
+
+  if (MARK_ONLY) {
+    console.log('\nMARK_ONLY: marking these as already-sent WITHOUT emailing...\n')
+    for (const user of candidates) {
+      await db.collection('users').doc(user.uid).set(
+        { upgradeNudgeSentAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      )
+      console.log(`  • marked ${user.email}`)
+    }
+    console.log(`\nMarked ${candidates.length} as sent.`)
     process.exit(0)
   }
 
@@ -155,6 +197,11 @@ async function main() {
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       })
+
+      await db.collection('users').doc(user.uid).set(
+        { upgradeNudgeSentAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      )
 
       console.log(`  ✓ ${user.email}`)
       sent++
