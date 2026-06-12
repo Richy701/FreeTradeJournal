@@ -205,6 +205,7 @@ export function AIGoalCoach() {
   }, [getTrades, userStorage]);
 
   const handleCoach = async () => {
+    trackEvent('ai_goal_coach_started');
     try {
       const coachResult = await startStream('assist', {
         type: 'goal_coach',
@@ -215,6 +216,7 @@ export function AIGoalCoach() {
       setAICache(CACHE_KEY, coachResult);
       trackEvent('ai_goal_coach_used');
     } catch (err: any) {
+      trackEvent('ai_goal_coach_error', { message: err?.message });
       toast.error(err?.message || 'Failed to get coaching');
     }
   };

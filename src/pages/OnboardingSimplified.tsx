@@ -627,7 +627,7 @@ export default function OnboardingSimplified() {
                   You're all set!
                 </motion.h2>
                 <motion.p variants={activeFadeUpItem} className="text-muted-foreground">
-                  Your account is ready. Start tracking trades and improving your edge.
+                  Your account is ready. Start logging trades, and your AI Coach is in the sidebar whenever you want feedback.
                 </motion.p>
               </div>
 

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { getAICache, setAICache } from '@/utils/ai-cache';
+import { trackEvent } from '@/lib/analytics';
 
 interface Trade {
   id: string;
@@ -53,6 +54,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
     if (!trade) return;
     setLoading(true);
     setError(null);
+    trackEvent('ai_journal_prompts_started');
     try {
       const holdMins = (new Date(trade.exitTime).getTime() - new Date(trade.entryTime).getTime()) / 60000;
       const { requestAIAssist } = await import('@/services/ai-assist');
@@ -74,9 +76,11 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
       setPrompts(response.result);
       setAICache(`ftj-ai-prompts-${trade.id}`, response.result);
       setError(null);
+      trackEvent('ai_journal_prompts_succeeded');
     } catch (err: any) {
       const errorMsg = err?.message || 'Failed to generate prompts';
       setError(errorMsg);
+      trackEvent('ai_journal_prompts_error', { message: errorMsg });
       toast.error(errorMsg);
     } finally {
       setLoading(false);

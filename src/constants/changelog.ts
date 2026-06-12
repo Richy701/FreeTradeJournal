@@ -34,6 +34,11 @@ export const changelog: ChangelogEntry[] = [
         text: 'Clearer AI labels',
         description: 'The per-trade review and tagging buttons now clearly say AI, and the Trade Insights description was corrected, so it is obvious which features are powered by AI.',
       },
+      {
+        type: 'improved',
+        text: 'AI Coach feedback sooner',
+        description: 'Coach FTJ now starts giving AI feedback after your first logged trade instead of three, and onboarding and empty screens point you to the AI Coach so it is easy to find from day one.',
+      },
     ],
   },
   {

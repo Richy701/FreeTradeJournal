@@ -98,6 +98,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
     const BATCH_SIZE = 15; // Reduced to fit within response size limit
     const allResults: TagResult[] = [];
 
+    trackEvent('ai_strategy_tagger_started', { count: selectedTrades.length });
     try {
       const { requestAIAssist } = await import('@/services/ai-assist');
 
@@ -160,6 +161,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
       toast.success(`Tagged ${allResults.length} trade${allResults.length !== 1 ? 's' : ''}`);
     } catch (err: any) {
       toast.dismiss('batch-progress');
+      trackEvent('ai_strategy_tagger_error', { message: err?.message });
       console.error('Strategy tagger error:', err);
 
       if (err instanceof SyntaxError) {

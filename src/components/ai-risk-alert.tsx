@@ -193,6 +193,7 @@ export function AIRiskAlertMonitor() {
 
   const fetchAdvice = async (alert: Alert, recentTrades: Trade[]) => {
     setLoading(prev => new Set(prev).add(alert.type));
+    trackEvent('ai_risk_alert_started', { violationType: alert.type });
     try {
       const today = new Date().toISOString().split('T')[0];
       const todayTrades = recentTrades.filter(t =>
@@ -231,6 +232,7 @@ export function AIRiskAlertMonitor() {
         prev.map(a => a.type === alert.type ? { ...a, advice: response.result } : a)
       );
     } catch (err: any) {
+      trackEvent('ai_risk_alert_error', { message: err?.message });
       // Show error message instead of silently failing
       setAlerts(prev =>
         prev.map(a => a.type === alert.type

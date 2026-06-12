@@ -2267,7 +2267,7 @@ export default function TradeLog() {
                   {([
                     { Icon: UploadSimple, title: 'Import from broker', body: 'Export a CSV from MT4/MT5, IBKR, or Tradovate and import it in one click.' },
                     { Icon: PencilSimple, title: 'Log manually', body: 'Record entry/exit prices, lot size, spread, commission and let us calculate your P&L.' },
-                    { Icon: Brain, title: 'AI insights unlock', body: 'Once you have trades, AI analysis, coaching, and strategy tagging become available.' },
+                    { Icon: Brain, title: 'AI insights unlock', body: 'Your AI Coach is in the sidebar already; deeper trade analysis and strategy tagging unlock once you log trades.' },
                   ] as const).map((tip) => (
                     <div key={tip.title} className="rounded-xl border border-border/60 bg-muted/50 p-4 space-y-2">
                       <tip.Icon className="h-4 w-4 text-muted-foreground" />

@@ -69,7 +69,10 @@ function FreeAIBanner() {
   const { isPro, isLoading, hasAIAccess, freeAiQuota } = useProStatus()
   const [visible, setVisible] = useState(false)
 
-  const dismissKey = user ? `free-ai-banner-v1-${user.uid}` : null
+  // Month-scoped so the banner reappears when free AI quota resets, rather than
+  // vanishing forever after one dismiss.
+  const monthStr = new Date().toISOString().slice(0, 7)
+  const dismissKey = user ? `free-ai-banner-${monthStr}-${user.uid}` : null
 
   useEffect(() => {
     if (!user || isDemo || isPro || isLoading || !dismissKey) return

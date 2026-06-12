@@ -72,6 +72,7 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
   }, [meta]);
 
   const fetchReview = async () => {
+    trackEvent('ai_trade_review_started');
     try {
       const result = await startStream('assist', {
         type: 'trade_review',
@@ -101,6 +102,7 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
       setAICache(cacheKey, result);
       trackEvent('ai_trade_review_used');
     } catch (err: any) {
+      trackEvent('ai_trade_review_error', { message: err?.message });
       toast.error(err?.message || 'Failed to review trade');
     }
   };

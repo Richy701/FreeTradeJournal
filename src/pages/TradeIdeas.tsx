@@ -75,6 +75,9 @@ export default function TradeIdeas() {
                 Log Trades <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
+            <Link to="/coach" className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+              Or meet your AI Coach
+            </Link>
           </div>
         </div>
         <AppFooter />

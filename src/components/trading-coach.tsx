@@ -640,7 +640,7 @@ export function TradingCoach() {
   // Fetch AI coaching tips for Pro users
   const aiFetchedRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!hasAIAccess || trades.length < 3 || !metrics) return
+    if (!hasAIAccess || trades.length < 1 || !metrics) return
 
     // Check cache first
     const cached = getAICache<any[]>(AI_COACH_CACHE_KEY, AI_COACH_TTL)
