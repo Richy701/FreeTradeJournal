@@ -712,7 +712,7 @@ export default function Dashboard() {
               </span>
             </div>
 
-            {/* Live Market Prices */}
+            {/* Live Market Prices + macro context */}
             <Suspense fallback={null}>
               <MarketTicker />
             </Suspense>

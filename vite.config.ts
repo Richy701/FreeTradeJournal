@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const twelveDataKey = env.TWELVEDATA_API_KEY || env.VITE_TWELVEDATA_API_KEY || ''
   const finnhubKey = env.FINNHUB_API_KEY || env.VITE_FINNHUB_API_KEY || ''
+  const fredKey = env.FRED_API_KEY || env.VITE_FRED_API_KEY || ''
   const appendKey = (path: string, param: string, key: string) =>
     path + (path.includes('?') ? '&' : '?') + `${param}=${key}`
 
@@ -80,6 +81,19 @@ export default defineConfig(({ mode }) => {
             .replace(/^\/api\/finnhub/, '')
             .replace('/economic-calendar', '/calendar/economic')
           return appendKey(stripped, 'token', finnhubKey)
+        },
+      },
+      '/api/fred': {
+        target: 'https://api.stlouisfed.org/fred',
+        changeOrigin: true,
+        rewrite: (path) => {
+          // Mirror api/fred/[...path].ts: single-segment client path ->
+          // real FRED endpoint, plus the key and JSON file_type.
+          const stripped = path
+            .replace(/^\/api\/fred/, '')
+            .replace(/^\/observations/, '/series/observations')
+          const withKey = appendKey(stripped, 'api_key', fredKey)
+          return appendKey(withKey, 'file_type', 'json')
         },
       },
     },

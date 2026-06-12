@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.23.0',
+    date: '2026-06-12',
+    summary: 'A new macro snapshot on the dashboard shows where rates and inflation stand at a glance — useful context if you trade index or rate futures — plus settings to hide the market strip for a cleaner dashboard.',
+    items: [
+      {
+        type: 'new',
+        text: 'Macro snapshot on the dashboard',
+        description: 'A compact strip near the top of the dashboard now shows the latest Fed funds rate, 10-year and 2-year Treasury yields, the yield curve spread, year-over-year CPI inflation, and the unemployment rate, each with a small arrow for its latest move. It gives quick economic context alongside your live market prices.',
+      },
+      {
+        type: 'new',
+        text: 'Hide the dashboard market strip',
+        description: 'Settings, General, Dashboard now has switches to turn off the live market prices and the macro snapshot independently, so you can keep a cleaner dashboard if you prefer.',
+      },
+      {
+        type: 'improved',
+        text: 'Redesigned performance charts',
+        description: 'The equity curve now shows green above your break-even line and red below it, with quick Net, Peak, and deepest-dip figures and a clearer hover that breaks down each trade and your running total. The daily P&L view gets the same polish, with best day, worst day, and average-per-day figures and a cleaner tooltip.',
+      },
+    ],
+  },
+  {
     version: '2.22.0',
     date: '2026-06-11',
     summary: 'Fixes for date selection when logging trades, and Topstep imports now subtract both commissions and fees so your P&L is net automatically.',
@@ -903,4 +925,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.22.0'
+export const LATEST_CHANGELOG_VERSION = '2.23.0'

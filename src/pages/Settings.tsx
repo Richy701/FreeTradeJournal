@@ -4,6 +4,7 @@ import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
+import { MARKET_DATA_ENABLED } from '@/config/market-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -431,6 +432,38 @@ export default function Settings() {
                     )}
                   </div>
                 </div>
+
+                {/* Dashboard */}
+                {MARKET_DATA_ENABLED && (
+                  <div className="rounded-xl border border-border/70 overflow-hidden">
+                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dashboard</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">What appears in the strip at the top of your dashboard</p>
+                    </div>
+                    <div className="divide-y divide-border/50">
+                      <div className="px-5 py-5 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium">Live market prices</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">A ticker of the symbols you trade</p>
+                        </div>
+                        <Switch
+                          checked={settings.showMarketPrices}
+                          onCheckedChange={(c) => updateSettings({ showMarketPrices: c })}
+                        />
+                      </div>
+                      <div className="px-5 py-5 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium">Macro snapshot</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Fed funds rate, Treasury yields, CPI, and unemployment</p>
+                        </div>
+                        <Switch
+                          checked={settings.showMacroSnapshot}
+                          onCheckedChange={(c) => updateSettings({ showMacroSnapshot: c })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* ── ACCOUNTS ────────────────────────────────────────────── */}

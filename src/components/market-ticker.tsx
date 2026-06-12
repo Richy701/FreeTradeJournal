@@ -2,11 +2,28 @@ import { useMemo } from 'react'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useMarketData } from '@/hooks/use-market-data'
+import { useMacroData } from '@/hooks/use-macro-data'
+import { useSettings } from '@/contexts/settings-context'
 import { useUserStorage } from '@/utils/user-storage'
 import { resolveDisplaySymbol } from '@/services/market-data'
+import type { MacroIndicator } from '@/services/macro-data'
 import { MARKET_DATA_ENABLED } from '@/config/market-data'
-import { TrendUp, TrendDown } from '@phosphor-icons/react'
+import { TrendUp, TrendDown, Minus } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton'
+
+function formatMacro(ind: MacroIndicator): string {
+  const sign = ind.unit === 'pp' && ind.value > 0 ? '+' : ''
+  return `${sign}${ind.value.toFixed(2)}%`
+}
+
+// Macro direction is shown neutrally — for these series "up" is not inherently
+// good or bad, so we avoid the profit/loss coloring used for price changes.
+function MacroArrow({ change }: { change: number }) {
+  if (Math.abs(change) < 0.005) return <Minus className="h-3 w-3 text-muted-foreground/60" weight="bold" />
+  return change > 0
+    ? <TrendUp className="h-3 w-3 text-muted-foreground" weight="bold" />
+    : <TrendDown className="h-3 w-3 text-muted-foreground" weight="bold" />
+}
 
 const MARKET_DEFAULTS: Record<string, string[]> = {
   forex:   ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD'],
@@ -20,6 +37,7 @@ export function MarketTicker() {
   const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
   const userStorage = useUserStorage()
+  const { settings } = useSettings()
 
   const topSymbols = useMemo(() => {
     const trades = getTrades()
@@ -79,11 +97,12 @@ export function MarketTicker() {
     return fromTrades
   }, [getTrades, userStorage])
 
-  const { quotes, isLoading } = useMarketData(topSymbols)
+  const { quotes, isLoading } = useMarketData(settings.showMarketPrices ? topSymbols : [])
+  const { indicators } = useMacroData(settings.showMacroSnapshot)
 
   if (!MARKET_DATA_ENABLED) return null
 
-  if (isLoading && quotes.length === 0) {
+  if (isLoading && quotes.length === 0 && indicators.length === 0) {
     return (
       <div className="flex items-center gap-4 py-1">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -93,10 +112,10 @@ export function MarketTicker() {
     )
   }
 
-  if (quotes.length === 0) return null
+  if (quotes.length === 0 && indicators.length === 0) return null
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-1">
+    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
       {quotes.map((q) => {
         const isUp = q.change >= 0
         const color = isUp ? themeColors.profit : themeColors.loss
@@ -136,6 +155,29 @@ export function MarketTicker() {
           </div>
         )
       })}
+
+      {indicators.length > 0 && (
+        <>
+          {quotes.length > 0 && (
+            <span className="shrink-0 self-stretch w-px my-1 bg-border mx-1.5" aria-hidden />
+          )}
+          {indicators.map((ind) => (
+            <div
+              key={ind.id}
+              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors hover:bg-muted/50"
+              title={`As of ${ind.date}`}
+            >
+              <span className="text-[11px] font-medium text-muted-foreground tracking-wide">
+                {ind.label}
+              </span>
+              <span className="text-[11px] font-semibold text-foreground tabular-nums font-mono">
+                {formatMacro(ind)}
+              </span>
+              <MacroArrow change={ind.change} />
+            </div>
+          ))}
+        </>
+      )}
     </div>
   )
 }

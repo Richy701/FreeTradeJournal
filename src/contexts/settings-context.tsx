@@ -7,6 +7,8 @@ export interface AppSettings {
   currency: string;
   riskPerTrade: number;
   accountSize: number;
+  showMarketPrices: boolean;
+  showMacroSnapshot: boolean;
 }
 
 interface SettingsContextType {
@@ -21,6 +23,8 @@ const defaultSettings: AppSettings = {
   currency: DEFAULT_VALUES.CURRENCY,
   riskPerTrade: DEFAULT_VALUES.RISK_PER_TRADE,
   accountSize: DEFAULT_VALUES.STARTING_BALANCE,
+  showMarketPrices: true,
+  showMacroSnapshot: true,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
