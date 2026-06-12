@@ -21,41 +21,41 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        // react-day-picker v9 class keys
+        months: "relative flex flex-col sm:flex-row gap-4",
         month: "space-y-4",
-        caption: "flex justify-between items-center pt-1 relative mb-2",
+        month_caption: "flex items-center h-9 px-1",
         caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
-        nav_button: cn(
+        nav: "absolute top-0 right-1 flex items-center gap-1 h-9",
+        button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 bg-background p-0 opacity-100 border-border"
+          "h-7 w-7 bg-background p-0 opacity-100 border-border"
         ),
-        nav_button_previous: "relative",
-        nav_button_next: "relative",
-        table: "w-full border-collapse space-y-1",
-        head_row: "flex",
-        head_cell:
-          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex items-center justify-center h-9",
-        row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative first:rounded-l-md last:rounded-r-md focus-within:relative focus-within:z-20",
-        day: cn(
+        button_next: cn(
+          buttonVariants({ variant: "outline" }),
+          "h-7 w-7 bg-background p-0 opacity-100 border-border"
+        ),
+        month_grid: "w-full border-collapse",
+        weekdays: "flex",
+        weekday:
+          "text-muted-foreground rounded-md w-7 font-normal text-[0.7rem] flex items-center justify-center h-7",
+        week: "flex w-full mt-1",
+        day: "h-7 w-7 text-center text-sm p-0 relative first:rounded-l-md last:rounded-r-md focus-within:relative focus-within:z-20",
+        day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+          "h-7 w-7 p-0 font-normal aria-selected:opacity-100"
         ),
-        day_range_end: "day-range-end",
-        day_selected:
+        range_end: "day-range-end",
+        selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside:
+        today: "bg-accent text-accent-foreground",
+        outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_range_middle:
+        disabled: "text-muted-foreground opacity-50",
+        range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        day_hidden: "invisible",
+        hidden: "invisible",
         ...classNames,
-      }}
-      components={{
-        // Custom icons removed to fix TypeScript compatibility
       }}
       {...props}
     />
