@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/ingest/static/(.*)",
+      "destination": "https://eu-assets.i.posthog.com/static/$1"
+    },
+    {
+      "source": "/api/ingest/(.*)",
+      "destination": "https://eu.i.posthog.com/$1"
+    },
+    {
       "source": "/((?!api/|sitemap\\.xml|robots\\.txt|.*\\.xml|.*\\.txt).*)",
       "destination": "/index.html"
     }

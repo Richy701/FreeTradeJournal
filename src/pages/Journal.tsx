@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,6 +97,7 @@ export default function Journal() {
   const { isDemo } = useAuth();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
@@ -199,6 +201,21 @@ export default function Journal() {
 
     loadTrades();
   }, []);
+
+  // Deep link: /journal?trade=<id> opens a new entry pre-linked to that trade
+  useEffect(() => {
+    if (isLoadingTrades) return;
+    const tradeId = searchParams.get('trade');
+    if (!tradeId) return;
+    const trade = trades.find(t => t.id === tradeId);
+    if (trade) {
+      handleTradeSelection(tradeId);
+      setShowNewEntry(true);
+    }
+    searchParams.delete('trade');
+    setSearchParams(searchParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoadingTrades, trades, searchParams]);
 
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;

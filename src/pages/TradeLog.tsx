@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag } from '@phosphor-icons/react';
+import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
 import { CurrencyDollar, Target, Trophy, Scales, CheckCircle, Warning, TrendUp, TrendDown, ChartLineUp, Clock, Coins, Sliders, Note, ArrowRight, Crosshair, ArrowsLeftRight, Lightbulb } from '@phosphor-icons/react';
@@ -47,6 +48,7 @@ import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findC
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { TradeLogFilters, EMPTY_FILTERS, countActiveFilters, type TradeFilters } from '@/components/trade-log-filters';
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
@@ -122,6 +124,38 @@ function formatPrice(price: number): string {
   return price.toFixed(2);
 }
 
+function detectMarketFromSymbol(symbol: string): 'forex' | 'futures' | 'indices' {
+  const upperSymbol = symbol.toUpperCase();
+
+  // Futures symbols (base symbols without month/year codes)
+  const futuresSymbols = [
+    'ES', 'NQ', 'YM', 'RTY', 'MES', 'MNQ', 'MYM', 'M2K',
+    'CL', 'MCL', 'NG', 'RB', 'GC', 'MGC', 'SI', 'HG',
+    'ZC', 'ZS', 'ZW', 'ZN', 'ZB', 'M6E', 'M6B',
+    'NAS100', 'SPX500', 'US30', 'US100', 'GER40', 'UK100',
+    'XAUUSD', 'XAGUSD', 'XPTUSD', 'XPDUSD',  // Metals futures
+    'USOIL', 'UKOIL', 'NATGAS'  // Energy futures
+  ];
+
+  // Check if it's a futures symbol (handle month/year codes like MNQU5, ESU24, etc.)
+  if (futuresSymbols.some(fut => upperSymbol.startsWith(fut))) {
+    return 'futures';
+  }
+
+  // Index ETF symbols
+  if (indexSymbolsSet.has(upperSymbol)) {
+    return 'indices';
+  }
+
+  // Known forex pairs for auto-detection
+  if (forexPairsSet.has(upperSymbol)) {
+    return 'forex';
+  }
+
+  // Default to forex for currency pairs
+  return 'forex';
+}
+
 const indexSymbolsSet = new Set(['SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK']);
 
 const forexPairsSet = new Set([
@@ -178,18 +212,86 @@ export default function TradeLog() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const itemsPerPage = 10;
 
-  // Calculate pagination
-  const totalPages = Math.ceil(trades.length / itemsPerPage);
+  // Filter state (persisted per user)
+  const [filters, setFilters] = useState<TradeFilters>(() => {
+    try {
+      const saved = userStorage.getItem('tradeLogFilters');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...EMPTY_FILTERS,
+          ...parsed,
+          dateFrom: parsed.dateFrom ? new Date(parsed.dateFrom) : undefined,
+          dateTo: parsed.dateTo ? new Date(parsed.dateTo) : undefined,
+        } as TradeFilters;
+      }
+    } catch { /* ignore corrupt filter state */ }
+    return { ...EMPTY_FILTERS };
+  });
+
+  // Persist filters whenever they change
+  useEffect(() => {
+    userStorage.setItem('tradeLogFilters', JSON.stringify(filters));
+  }, [filters]);
+
+  // Apply active filters to the account-scoped trade list
+  const displayedTrades = useMemo(() => {
+    return trades.filter((trade) => {
+      if (filters.symbols.length > 0 && !filters.symbols.includes(trade.symbol)) return false;
+      if (filters.sides.length > 0 && !filters.sides.includes(trade.side)) return false;
+      if (filters.markets.length > 0 && !filters.markets.includes(detectMarketFromSymbol(trade.symbol))) return false;
+      if (filters.strategies.length > 0 && !filters.strategies.includes(trade.strategy || '')) return false;
+      if (filters.outcome === 'win' && !(trade.pnl > 0)) return false;
+      if (filters.outcome === 'loss' && !(trade.pnl < 0)) return false;
+      if (filters.outcome === 'breakeven' && trade.pnl !== 0) return false;
+      if (filters.dateFrom || filters.dateTo) {
+        const d = trade.exitTime instanceof Date ? trade.exitTime : new Date(trade.exitTime);
+        if (filters.dateFrom && d < filters.dateFrom) return false;
+        if (filters.dateTo) {
+          const end = new Date(filters.dateTo);
+          end.setHours(23, 59, 59, 999);
+          if (d > end) return false;
+        }
+      }
+      return true;
+    });
+  }, [trades, filters]);
+
+  // Filter option lists derived from the loaded trades
+  const symbolOptions = useMemo(
+    () => Array.from(new Set(trades.map((t) => t.symbol))).sort(),
+    [trades],
+  );
+  const marketOptions = useMemo(
+    () => Array.from(new Set(trades.map((t) => detectMarketFromSymbol(t.symbol)))).sort(),
+    [trades],
+  );
+  const strategyOptions = useMemo(
+    () => Array.from(new Set(trades.map((t) => t.strategy).filter((s): s is string => !!s))).sort(),
+    [trades],
+  );
+
+  const activeFilterCount = countActiveFilters(filters);
+
+  // Calculate pagination over the filtered list
+  const totalPages = Math.ceil(displayedTrades.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedTrades = trades.slice(startIndex, endIndex);
+  const paginatedTrades = displayedTrades.slice(startIndex, endIndex);
 
-  // Reset to first page when trades change
+  // Reset to first page when the result set changes (load or filter change)
   useEffect(() => {
     setCurrentPage(1);
-  }, [trades.length]);
+  }, [displayedTrades.length]);
+
+  // Keep quick stats in sync with the currently displayed (filtered) trades
+  useEffect(() => {
+    calculateQuickStats(displayedTrades);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedTrades]);
 
   const form = useForm<TradeFormData>({
     defaultValues: {
@@ -217,38 +319,6 @@ export default function TradeLog() {
   const watchedMarket = form.watch('market');
 
   // Function to detect market type based on symbol
-  const detectMarketFromSymbol = (symbol: string): 'forex' | 'futures' | 'indices' => {
-    const upperSymbol = symbol.toUpperCase();
-    
-    // Futures symbols (base symbols without month/year codes)
-    const futuresSymbols = [
-      'ES', 'NQ', 'YM', 'RTY', 'MES', 'MNQ', 'MYM', 'M2K',
-      'CL', 'MCL', 'NG', 'RB', 'GC', 'MGC', 'SI', 'HG',
-      'ZC', 'ZS', 'ZW', 'ZN', 'ZB', 'M6E', 'M6B',
-      'NAS100', 'SPX500', 'US30', 'US100', 'GER40', 'UK100',
-      'XAUUSD', 'XAGUSD', 'XPTUSD', 'XPDUSD',  // Metals futures
-      'USOIL', 'UKOIL', 'NATGAS'  // Energy futures
-    ];
-    
-    // Check if it's a futures symbol (handle month/year codes like MNQU5, ESU24, etc.)
-    if (futuresSymbols.some(fut => upperSymbol.startsWith(fut))) {
-      return 'futures';
-    }
-    
-    // Index ETF symbols
-    if (indexSymbolsSet.has(upperSymbol)) {
-      return 'indices';
-    }
-
-    // Known forex pairs for auto-detection
-    if (forexPairsSet.has(upperSymbol)) {
-      return 'forex';
-    }
-
-    // Default to forex for currency pairs
-    return 'forex';
-  };
-
   const getInstrumentsByMarket = (market: string) => {
     switch (market) {
       case 'forex':
@@ -2260,16 +2330,29 @@ export default function TradeLog() {
         {/* Trades Table */}
         <Card className="">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
               <div>
                 <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
                 <CardDescription>
-                  {trades.length} {trades.length === 1 ? 'trade' : 'trades'} recorded
+                  {activeFilterCount > 0
+                    ? `${displayedTrades.length} of ${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}`
+                    : `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'} recorded`}
                 </CardDescription>
               </div>
+              {trades.length > 0 && (
+                <div className="lg:flex lg:justify-end">
+                  <TradeLogFilters
+                    filters={filters}
+                    onChange={setFilters}
+                    symbolOptions={symbolOptions}
+                    marketOptions={marketOptions}
+                    strategyOptions={strategyOptions}
+                  />
+                </div>
+              )}
             </div>
           </CardHeader>
-          
+
           <CardContent className="p-0">
             {trades.length === 0 ? (
               <div className="px-6 py-14 flex flex-col items-center text-center gap-8">
@@ -2314,6 +2397,19 @@ export default function TradeLog() {
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : displayedTrades.length === 0 ? (
+              <div className="px-6 py-14 flex flex-col items-center text-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                  <ChartBar className="h-6 w-6" style={{ color: themeColors.primary }} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold">No trades match your filters</h3>
+                  <p className="text-sm text-muted-foreground">Try removing a filter to see more trades.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setFilters({ ...EMPTY_FILTERS })}>
+                  Clear all filters
+                </Button>
               </div>
             ) : (
               <>
@@ -2445,6 +2541,15 @@ export default function TradeLog() {
                               aria-label="AI review"
                             >
                               <Brain className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/journal?trade=${trade.id}`)}
+                              className="transition-shadow duration-200 hover:shadow-md"
+                              aria-label="Journal this trade"
+                            >
+                              <BookOpen className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -2582,6 +2687,15 @@ export default function TradeLog() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => navigate(`/journal?trade=${trade.id}`)}
+                          className="flex-1"
+                        >
+                          <BookOpen className="mr-2 h-3 w-3" />
+                          Journal
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => {
                             setEditingTrade(trade);
                             form.reset({
@@ -2625,7 +2739,7 @@ export default function TradeLog() {
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/70">
                 <div className="text-sm text-muted-foreground text-center sm:text-left">
-                  Showing {startIndex + 1} to {Math.min(endIndex, trades.length)} of {trades.length} trades
+                  Showing {startIndex + 1} to {Math.min(endIndex, displayedTrades.length)} of {displayedTrades.length} trades
                 </div>
 
                 <div className="flex items-center gap-2">

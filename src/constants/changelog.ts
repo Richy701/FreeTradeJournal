@@ -15,6 +15,30 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.30.0',
+    date: '2026-06-12',
+    summary: 'You can now start a journal entry for any trade straight from the Trade Log.',
+    items: [
+      {
+        type: 'new',
+        text: 'Journal a trade from the Trade Log',
+        description: 'Each trade in the Trade Log now has a journal button in its actions. Tapping it opens the Journal with a new entry already linked to that trade, with the title, mood, and tags pre-filled from the trade.',
+      },
+    ],
+  },
+  {
+    version: '2.29.0',
+    date: '2026-06-12',
+    summary: 'You can now filter your trade log by symbol, side, market, outcome, strategy, and date range.',
+    items: [
+      {
+        type: 'new',
+        text: 'Trade Log filters',
+        description: 'A filter bar above your trade log lets you narrow trades by symbol, side, market, outcome (winners, losers, breakeven), strategy, and date range. Active filters show as removable pills, your stats and totals update to match, and your filter choices are remembered between visits.',
+      },
+    ],
+  },
+  {
     version: '2.28.0',
     date: '2026-06-12',
     summary: 'The Pairs Performance and Trade Distribution cards on the dashboard have a cleaner, more readable design.',
@@ -1025,4 +1049,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.28.0'
+export const LATEST_CHANGELOG_VERSION = '2.30.0'
