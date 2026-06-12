@@ -15,6 +15,35 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.27.0',
+    date: '2026-06-12',
+    summary: 'You can now drag and drop a CSV file to import your trades.',
+    items: [
+      {
+        type: 'new',
+        text: 'Drag and drop CSV import',
+        description: 'Drop a CSV or Excel file straight onto the import box on the dashboard, or anywhere on the Trade Log page, to import your trades — no need to click and browse for the file.',
+      },
+    ],
+  },
+  {
+    version: '2.26.0',
+    date: '2026-06-12',
+    summary: 'AI Trade Analysis now numbers its points correctly and reads more cleanly.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Correct numbering in AI analysis',
+        description: 'Numbered points in AI Trade Analysis now count up 1, 2, 3 instead of every item showing as 1.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner AI writing',
+        description: 'Coach FTJ and AI Trade Analysis no longer use long dashes; the text now reads with normal commas and hyphens.',
+      },
+    ],
+  },
+  {
     version: '2.25.0',
     date: '2026-06-12',
     summary: 'The AI Coach page is redesigned to show all your insights at once, with the standard navigation restored, a more detailed Tilt Meter, and smarter coaching advice.',
@@ -984,4 +1013,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.25.0'
+export const LATEST_CHANGELOG_VERSION = '2.27.0'

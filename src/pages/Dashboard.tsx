@@ -146,6 +146,7 @@ export default function Dashboard() {
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
   })
+  const [isCsvDragging, setIsCsvDragging] = useState(false)
   const [csvPreview, setCsvPreview] = useState<{
     show: boolean;
     file: File | null;
@@ -276,11 +277,7 @@ export default function Dashboard() {
     setIsTradeModalOpen(false)
   }
 
-  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-
-    const file = files[0];
+  const processCsvFile = async (file: File) => {
     setCsvUploadState({ isUploading: true });
 
     try {
@@ -302,9 +299,23 @@ export default function Dashboard() {
       });
     } finally {
       setCsvUploadState({ isUploading: false });
-      // Reset the file input
-      event.target.value = '';
     }
+  };
+
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    await processCsvFile(files[0]);
+    // Reset the file input so selecting the same file again re-triggers onChange
+    event.target.value = '';
+  };
+
+  const handleCsvDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsCsvDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) await processCsvFile(file);
   };
 
   // New function to actually perform the import after confirmation
@@ -1005,8 +1016,14 @@ export default function Dashboard() {
                     <TabsContent value="import" className="space-y-4 mt-0">
                       <div
                         className="rounded-xl border-2 border-dashed p-8 text-center space-y-4 transition-colors hover:border-primary/50 cursor-pointer"
-                        style={{ borderColor: alpha(themeColors.primary, '30') }}
+                        style={{
+                          borderColor: isCsvDragging ? themeColors.primary : alpha(themeColors.primary, '30'),
+                          backgroundColor: isCsvDragging ? alpha(themeColors.primary, '08') : undefined,
+                        }}
                         onClick={() => document.getElementById('dashboard-csv-import')?.click()}
+                        onDragOver={(e) => { e.preventDefault(); setIsCsvDragging(true); }}
+                        onDragLeave={(e) => { e.preventDefault(); setIsCsvDragging(false); }}
+                        onDrop={handleCsvDrop}
                       >
                         <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
                           <UploadSimple className="h-6 w-6" style={{ color: themeColors.primary }} />

@@ -100,23 +100,49 @@ function parseAnalysis(md: string): ParsedSection[] {
   return sections;
 }
 
+// Replace the em/en dashes the model favours with plain punctuation.
+function cleanDashes(s: string): string {
+  return s.replace(/ +[—–] +/g, ', ').replace(/[—–]/g, '-');
+}
+
 function renderSectionContent(content: string): string {
-  const html = content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-muted text-xs font-mono">$1</code>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g, (match) => {
-      const isOrdered = /^\d+\./.test(content);
-      const tag = isOrdered ? 'ol' : 'ul';
-      return `<${tag} class="space-y-1.5 my-2">${match}</${tag}>`;
-    })
-    .replace(/\n\n/g, '</p><p class="mt-2">')
-    .replace(/\n/g, ' ');
+  const inline = (s: string) =>
+    s
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-muted text-xs font-mono">$1</code>');
+
+  const out: string[] = [];
+  let listBuf: string[] = [];
+  let counter = 0; // number ordered items sequentially so they never restart at 1
+
+  const flushList = () => {
+    if (listBuf.length) {
+      out.push(`<ul class="space-y-1.5 my-2">${listBuf.join('')}</ul>`);
+      listBuf = [];
+    }
+  };
+
+  for (const raw of cleanDashes(content).split('\n')) {
+    const line = raw.trim();
+    if (!line) { flushList(); continue; }
+    const bullet = line.match(/^- (.+)$/);
+    const numbered = line.match(/^\d+\. (.+)$/);
+    if (bullet) {
+      listBuf.push(`<li>${inline(bullet[1])}</li>`);
+    } else if (numbered) {
+      flushList();
+      counter += 1;
+      out.push(`<p class="mt-2">${counter}. ${inline(numbered[1])}</p>`);
+    } else {
+      flushList();
+      out.push(`<p class="mt-2">${inline(line)}</p>`);
+    }
+  }
+  flushList();
 
   // Sanitize HTML to prevent XSS attacks from AI-generated content
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['strong', 'code', 'li', 'ul', 'ol', 'p'],
+  return DOMPurify.sanitize(out.join(''), {
+    ALLOWED_TAGS: ['strong', 'code', 'li', 'ul', 'p'],
     ALLOWED_ATTR: ['class']
   });
 }

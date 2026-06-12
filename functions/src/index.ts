@@ -2126,7 +2126,7 @@ Analyse the trader's self-reported emotional patterns. Which emotions lead to pr
 ## Action Plan
 3 specific, measurable goals for their next 20 trades, framed around process and risk (e.g., "Cap max loss per trade at $X" or "Only enter after your checklist confirms the setup"). Never set quotas for trade count or direction (e.g. "take 5 short trades") — a trader can't force the market to provide setups.
 
-Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough — this analysis is a premium Pro feature that traders are paying for.`;
+Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough; this analysis is a premium Pro feature that traders are paying for. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.`;
 
   const userPrompt = `Here are my ${trades.length} trades to analyse:
 
@@ -2384,7 +2384,9 @@ function buildCoachingTipsPrompt(payload: Record<string, any>) {
 
 Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.
 
-Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured — every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.${emotionSummary ? `
+Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured, so every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.
+
+Write in plain prose. Do not use em-dashes or en-dashes (the long dash characters); use commas, periods, or hyphens instead.${emotionSummary ? `
 
 If the trader has logged emotions, include at least one tip about their emotional patterns — e.g., which emotions correlate with wins/losses, and what to do about it.` : ""}
 
@@ -3193,7 +3195,7 @@ Analyse the trader's self-reported emotional patterns. Which emotions lead to pr
 ## Action Plan
 3 specific, measurable goals for their next 20 trades, framed around process and risk — never quotas for trade count or direction (e.g. "take 5 short trades"), since a trader can't force the market to provide setups.
 
-Keep the tone like a knowledgeable mentor who genuinely wants to help.`;
+Keep the tone like a knowledgeable mentor who genuinely wants to help. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.`;
 
     userPrompt = `Here are my ${trades.length} trades to analyse:
 

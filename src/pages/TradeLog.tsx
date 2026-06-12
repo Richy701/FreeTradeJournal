@@ -146,6 +146,7 @@ export default function TradeLog() {
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
   });
+  const [isCsvDragging, setIsCsvDragging] = useState(false);
   const [csvPreview, setCsvPreview] = useState<{
     show: boolean;
     file: File | null;
@@ -703,12 +704,7 @@ export default function TradeLog() {
     }
   };
 
-  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-
-    // For now, only handle single file preview
-    const file = files[0];
+  const processCsvFile = async (file: File) => {
     setCsvUploadState({ isUploading: true });
 
     try {
@@ -755,9 +751,23 @@ export default function TradeLog() {
       });
     } finally {
       setCsvUploadState({ isUploading: false });
-      // Clear file input
-      event.target.value = '';
     }
+  };
+
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    await processCsvFile(files[0]);
+    // Clear file input so re-selecting the same file re-triggers onChange
+    event.target.value = '';
+  };
+
+  const handleCsvDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsCsvDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) await processCsvFile(file);
   };
 
   // New function to actually perform the import after confirmation
@@ -1176,7 +1186,26 @@ export default function TradeLog() {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col w-full bg-background">
+      <div
+        className="min-h-screen flex flex-col w-full bg-background relative"
+        onDragOver={(e) => { e.preventDefault(); if (!isCsvDragging) setIsCsvDragging(true); }}
+        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsCsvDragging(false); }}
+        onDrop={handleCsvDrop}
+      >
+      {isCsvDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <div
+            className="rounded-2xl border-2 border-dashed px-10 py-8 text-center space-y-3 bg-card shadow-xl"
+            style={{ borderColor: themeColors.primary }}
+          >
+            <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+              <UploadSimple className="h-6 w-6" style={{ color: themeColors.primary }} />
+            </div>
+            <p className="text-sm font-medium">Drop CSV to import</p>
+            <p className="text-xs text-muted-foreground">MT4 / MT5, Tradovate, IBKR, NinjaTrader, TradeStation</p>
+          </div>
+        </div>
+      )}
       <SiteHeader />
       {/* Header */}
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">

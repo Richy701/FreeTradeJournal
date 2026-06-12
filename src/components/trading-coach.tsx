@@ -268,8 +268,13 @@ const CHAT_SUGGESTIONS = [
   "How can I improve my win rate?",
 ]
 
+// Replace the em/en dashes the model favours with plain punctuation.
+function cleanDashes(s: string): string {
+  return s.replace(/ +[—–] +/g, ', ').replace(/[—–]/g, '-')
+}
+
 function renderChatMarkdown(md: string): string {
-  const html = md
+  const html = cleanDashes(md)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc">$1</li>')
     .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal">$2</li>')
@@ -1196,7 +1201,7 @@ export function TradingCoach() {
                       <TipIcon className="h-4 w-4" style={{ color }} />
                     </div>
                     <h3 className="font-semibold text-sm leading-snug pt-0.5" style={{ color }}>
-                      {tip.title}
+                      {cleanDashes(tip.title)}
                     </h3>
                     <button
                       onClick={() => dismissTip(tip.key)}
@@ -1207,7 +1212,7 @@ export function TradingCoach() {
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{tip.message}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{cleanDashes(tip.message)}</p>
                 </div>
               )
             })}
