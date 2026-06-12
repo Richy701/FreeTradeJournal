@@ -15,6 +15,47 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.33.0',
+    date: '2026-06-12',
+    summary: 'You can now sort your trade log, and the filter bar is cleaner and easier to use.',
+    items: [
+      {
+        type: 'new',
+        text: 'Sort your trade log',
+        description: 'A new Sort control in the trade log filter bar lets you order your trades by date, P&L, or symbol, ascending or descending.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner trade log filters',
+        description: 'The filter bar now sits neatly alongside the All Trades heading, and the date range filter uses a single calendar that is easier to pick a range with.',
+      },
+    ],
+  },
+  {
+    version: '2.32.0',
+    date: '2026-06-12',
+    summary: 'Switching the Stop Loss / Take Profit unit now keeps your levels correct.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Stop Loss / Take Profit unit switching',
+        description: 'When you switch the Stop Loss / Take Profit input between price level and pips/points, the values you already entered are now re-expressed in the new unit so they keep pointing at the same level — instead of the number staying put and silently changing meaning. If no entry price is set yet, the fields clear with a reminder to add one first.',
+      },
+    ],
+  },
+  {
+    version: '2.31.0',
+    date: '2026-06-12',
+    summary: 'You can now paste a screenshot straight into a journal entry.',
+    items: [
+      {
+        type: 'new',
+        text: 'Paste screenshots into journal entries',
+        description: 'While writing a journal entry, paste a chart screenshot directly from your clipboard with Cmd+V (or Ctrl+V) — no need to save the image first. Dragging and dropping or browsing for files still works too.',
+      },
+    ],
+  },
+  {
     version: '2.30.0',
     date: '2026-06-12',
     summary: 'You can now start a journal entry for any trade straight from the Trade Log.',
@@ -1049,4 +1090,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.30.0'
+export const LATEST_CHANGELOG_VERSION = '2.33.0'

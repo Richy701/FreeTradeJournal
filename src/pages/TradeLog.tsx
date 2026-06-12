@@ -48,7 +48,7 @@ import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findC
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
-import { TradeLogFilters, EMPTY_FILTERS, countActiveFilters, type TradeFilters } from '@/components/trade-log-filters';
+import { TradeLogFilters, TradeLogFilterPills, EMPTY_FILTERS, countActiveFilters, type TradeFilters } from '@/components/trade-log-filters';
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
@@ -239,7 +239,7 @@ export default function TradeLog() {
 
   // Apply active filters to the account-scoped trade list
   const displayedTrades = useMemo(() => {
-    return trades.filter((trade) => {
+    const filtered = trades.filter((trade) => {
       if (filters.symbols.length > 0 && !filters.symbols.includes(trade.symbol)) return false;
       if (filters.sides.length > 0 && !filters.sides.includes(trade.side)) return false;
       if (filters.markets.length > 0 && !filters.markets.includes(detectMarketFromSymbol(trade.symbol))) return false;
@@ -257,6 +257,21 @@ export default function TradeLog() {
         }
       }
       return true;
+    });
+
+    const dir = filters.sortDir === 'asc' ? 1 : -1;
+    return filtered.sort((a, b) => {
+      let cmp = 0;
+      if (filters.sortBy === 'pnl') {
+        cmp = a.pnl - b.pnl;
+      } else if (filters.sortBy === 'symbol') {
+        cmp = a.symbol.localeCompare(b.symbol);
+      } else {
+        const da = (a.exitTime instanceof Date ? a.exitTime : new Date(a.exitTime)).getTime();
+        const db = (b.exitTime instanceof Date ? b.exitTime : new Date(b.exitTime)).getTime();
+        cmp = da - db;
+      }
+      return cmp * dir;
     });
   }, [trades, filters]);
 
@@ -281,6 +296,12 @@ export default function TradeLog() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedTrades = displayedTrades.slice(startIndex, endIndex);
+
+  // Selection state derived for the current page (the header checkbox acts on the page,
+  // while a banner lets the user extend selection to every matching trade).
+  const pageSelectedCount = paginatedTrades.reduce((n, t) => n + (selectedTradeIds.has(t.id) ? 1 : 0), 0);
+  const allPageSelected = paginatedTrades.length > 0 && pageSelectedCount === paginatedTrades.length;
+  const somePageSelected = pageSelectedCount > 0 && !allPageSelected;
 
   // Reset to first page when the result set changes (load or filter change)
   useEffect(() => {
@@ -456,6 +477,27 @@ export default function TradeLog() {
     const isLong = data.side === 'long';
     if (kind === 'sl') return isLong ? entry - distance : entry + distance;
     return isLong ? entry + distance : entry - distance;
+  };
+
+  // Inverse of resolveSlTpPrice: express an absolute price level as the value
+  // shown in the chosen unit (price / pips / points), relative to entry + side.
+  // Used when the user switches the SL/TP unit so the displayed number keeps
+  // meaning the same price level instead of being silently reinterpreted.
+  const priceToUnit = (
+    price: number | undefined,
+    kind: 'sl' | 'tp',
+    unit: 'price' | 'pips' | 'points',
+    data: TradeFormData
+  ): number | undefined => {
+    if (price === undefined || price === null || isNaN(price)) return undefined;
+    if (unit === 'price') return Math.round(price * 1e8) / 1e8;
+    const entry = data.entryPrice || 0;
+    const isLong = data.side === 'long';
+    const distance = kind === 'sl'
+      ? (isLong ? entry - price : price - entry)
+      : (isLong ? price - entry : entry - price);
+    const value = unit === 'pips' ? distance / pipSizeFor(data.market, data.symbol) : distance;
+    return unit === 'pips' ? Math.round(value * 10) / 10 : Math.round(value * 100) / 100;
   };
 
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
@@ -729,12 +771,21 @@ export default function TradeLog() {
     });
   };
 
-  const toggleSelectAll = () => {
-    if (selectedTradeIds.size === paginatedTrades.length) {
-      setSelectedTradeIds(new Set());
-    } else {
-      setSelectedTradeIds(new Set(paginatedTrades.map(t => t.id)));
-    }
+  // Header checkbox: select/deselect every row on the current page, keeping any
+  // selections made on other pages intact.
+  const toggleSelectPage = () => {
+    const pageIds = paginatedTrades.map(t => t.id);
+    const everyPageRowSelected = pageIds.length > 0 && pageIds.every(id => selectedTradeIds.has(id));
+    setSelectedTradeIds(prev => {
+      const next = new Set(prev);
+      pageIds.forEach(id => (everyPageRowSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  };
+
+  // Banner action: select every trade that matches the current filters, across all pages.
+  const selectAllMatching = () => {
+    setSelectedTradeIds(new Set(displayedTrades.map(t => t.id)));
   };
 
   const checkRiskRules = (newPnl: number, tradeDate: Date): void => {
@@ -1676,7 +1727,34 @@ export default function TradeLog() {
                             name="slTpUnit"
                             render={({ field }) => (
                               <FormItem className="space-y-0">
-                                <Select value={field.value ?? 'price'} onValueChange={field.onChange}>
+                                <Select value={field.value ?? 'price'} onValueChange={(newUnit) => {
+                                  const oldUnit = (field.value ?? 'price') as 'price' | 'pips' | 'points';
+                                  if (newUnit === oldUnit) return;
+                                  const ctx = {
+                                    entryPrice: form.getValues('entryPrice'),
+                                    side: form.getValues('side'),
+                                    market: form.getValues('market'),
+                                    symbol: form.getValues('symbol'),
+                                  } as TradeFormData;
+                                  const slRaw = form.getValues('stopLoss');
+                                  const tpRaw = form.getValues('takeProfit');
+                                  field.onChange(newUnit);
+                                  // Nothing entered yet — just switch the unit.
+                                  if (slRaw === undefined && tpRaw === undefined) return;
+                                  // Converting to/from pips/points needs an entry price as the
+                                  // reference. Without one, any prior value is meaningless — clear it.
+                                  if (!ctx.entryPrice || isNaN(ctx.entryPrice)) {
+                                    form.setValue('stopLoss', undefined);
+                                    form.setValue('takeProfit', undefined);
+                                    toast.info('Enter an entry price first, then set SL/TP.');
+                                    return;
+                                  }
+                                  // Re-express the same price level in the new unit.
+                                  const slPrice = resolveSlTpPrice(slRaw, 'sl', { ...ctx, slTpUnit: oldUnit });
+                                  const tpPrice = resolveSlTpPrice(tpRaw, 'tp', { ...ctx, slTpUnit: oldUnit });
+                                  form.setValue('stopLoss', priceToUnit(slPrice, 'sl', newUnit as 'price' | 'pips' | 'points', ctx));
+                                  form.setValue('takeProfit', priceToUnit(tpPrice, 'tp', newUnit as 'price' | 'pips' | 'points', ctx));
+                                }}>
                                   <FormControl>
                                     <SelectTrigger className="h-8 w-[150px] bg-background/60 border-border/50 text-xs">
                                       <SelectValue placeholder="Units" />
@@ -2330,7 +2408,7 @@ export default function TradeLog() {
         {/* Trades Table */}
         <Card className="">
           <CardHeader>
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
                 <CardDescription>
@@ -2340,17 +2418,20 @@ export default function TradeLog() {
                 </CardDescription>
               </div>
               {trades.length > 0 && (
-                <div className="lg:flex lg:justify-end">
-                  <TradeLogFilters
-                    filters={filters}
-                    onChange={setFilters}
-                    symbolOptions={symbolOptions}
-                    marketOptions={marketOptions}
-                    strategyOptions={strategyOptions}
-                  />
-                </div>
+                <TradeLogFilters
+                  filters={filters}
+                  onChange={setFilters}
+                  symbolOptions={symbolOptions}
+                  marketOptions={marketOptions}
+                  strategyOptions={strategyOptions}
+                />
               )}
             </div>
+            {activeFilterCount > 0 && (
+              <div className="pt-3">
+                <TradeLogFilterPills filters={filters} onChange={setFilters} />
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="p-0">
@@ -2428,6 +2509,18 @@ export default function TradeLog() {
                     <Trash className="h-3 w-3 mr-1" />
                     Delete selected
                   </Button>
+                  {allPageSelected && selectedTradeIds.size < displayedTrades.length && (
+                    <button
+                      onClick={selectAllMatching}
+                      className="text-xs font-medium hover:underline"
+                      style={{ color: themeColors.primary }}
+                    >
+                      Select all {displayedTrades.length} matching
+                    </button>
+                  )}
+                  {selectedTradeIds.size === displayedTrades.length && displayedTrades.length > paginatedTrades.length && (
+                    <span className="text-xs text-muted-foreground">All {displayedTrades.length} selected</span>
+                  )}
                   <button
                     onClick={() => setSelectedTradeIds(new Set())}
                     className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors mr-2"
@@ -2444,9 +2537,9 @@ export default function TradeLog() {
                     <TableRow className="border-b border-border/70 hover:bg-transparent">
                       <TableHead className="w-10 py-3">
                         <Checkbox
-                          checked={paginatedTrades.length > 0 && selectedTradeIds.size === paginatedTrades.length}
-                          onCheckedChange={toggleSelectAll}
-                          aria-label="Select all"
+                          checked={allPageSelected ? true : somePageSelected ? 'indeterminate' : false}
+                          onCheckedChange={toggleSelectPage}
+                          aria-label="Select all on this page"
                         />
                       </TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80 py-3">Date</TableHead>

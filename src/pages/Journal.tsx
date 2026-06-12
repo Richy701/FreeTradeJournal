@@ -399,6 +399,29 @@ export default function Journal() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Paste screenshots straight from the clipboard (Cmd/Ctrl+V) while the editor is open
+  useEffect(() => {
+    if (!showNewEntry) return;
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageFiles: File[] = [];
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        processFiles(imageFiles);
+        toast.success(imageFiles.length === 1 ? 'Screenshot pasted' : `${imageFiles.length} screenshots pasted`);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [showNewEntry]);
+
   // Edit and delete functions
   const startEdit = (entry: JournalEntry) => {
     if (isDemo) {
@@ -1113,7 +1136,7 @@ export default function Journal() {
                         </span>
                       </label>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">PNG, JPG up to 5MB each</p>
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG up to 5MB each &middot; or paste with {navigator.platform.toLowerCase().includes('mac') ? '⌘V' : 'Ctrl+V'}</p>
                   </div>
                 </div>
 
@@ -1129,11 +1152,10 @@ export default function Journal() {
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                          style={{ backgroundColor: themeColors.loss }}
+                          className="absolute top-1.5 right-1.5 rounded-full w-6 h-6 flex items-center justify-center text-white bg-black/50 hover:bg-black/70 opacity-70 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
                           aria-label="Remove image"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
