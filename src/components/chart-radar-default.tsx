@@ -167,12 +167,12 @@ export function ChartRadarDefault() {
       {/* Radar Chart */}
       <Card className="h-[450px] flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold">Pairs Performance</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium">
+          <CardTitle className="text-lg font-semibold tracking-tight">Pairs Performance</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">
             P&L breakdown by currency pairs and instruments
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 px-4 py-2">
+        <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
             <div className="h-full">
               <ChartContainer config={radarConfig} className="h-full w-full aspect-auto">
@@ -208,11 +208,17 @@ export function ChartRadarDefault() {
           )}
         </CardContent>
         <CardFooter className="border-t border-border/70 py-3">
-          <div className="flex w-full items-center justify-between text-sm">
-            <span className="text-muted-foreground">{chartData.length} pairs tracked</span>
-            <span className="font-semibold" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-              {totalPnL >= 0 ? '+' : ''}${totalPnL.toFixed(2)}
-            </span>
+          <div className="flex w-full items-end justify-between">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pairs tracked</span>
+              <span className="text-sm font-semibold tabular-nums">{chartData.length}</span>
+            </div>
+            <div className="flex flex-col gap-0.5 text-right">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Net P&L</span>
+              <span className="text-sm font-semibold tabular-nums" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+                {totalPnL >= 0 ? '+' : '-'}${Math.abs(totalPnL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
           </div>
         </CardFooter>
       </Card>
@@ -220,12 +226,12 @@ export function ChartRadarDefault() {
       {/* Pie Chart */}
       <Card className="h-[450px] flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold">Trade Distribution</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium">
+          <CardTitle className="text-lg font-semibold tracking-tight">Trade Distribution</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">
             Trade count distribution across pairs
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 px-4 py-2">
+        <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
             <div className="h-full">
               <ChartContainer config={pieConfig} className="h-full w-full aspect-auto">
@@ -286,9 +292,15 @@ export function ChartRadarDefault() {
           )}
         </CardContent>
         <CardFooter className="border-t border-border/70 py-3">
-          <div className="flex w-full items-center justify-between text-sm">
-            <span className="text-muted-foreground">{chartData.length} pairs traded</span>
-            <span className="font-semibold">{totalTrades} trades</span>
+          <div className="flex w-full items-end justify-between">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pairs traded</span>
+              <span className="text-sm font-semibold tabular-nums">{chartData.length}</span>
+            </div>
+            <div className="flex flex-col gap-0.5 text-right">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Total trades</span>
+              <span className="text-sm font-semibold tabular-nums">{totalTrades.toLocaleString()}</span>
+            </div>
           </div>
         </CardFooter>
       </Card>

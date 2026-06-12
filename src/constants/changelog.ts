@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.28.0',
+    date: '2026-06-12',
+    summary: 'The Pairs Performance and Trade Distribution cards on the dashboard have a cleaner, more readable design.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Refined dashboard chart cards',
+        description: 'The Pairs Performance and Trade Distribution cards now show their key figures as clearly labelled stats with thousands separators (for example +$10,618.19), with tidied-up titles and spacing.',
+      },
+    ],
+  },
+  {
     version: '2.27.0',
     date: '2026-06-12',
     summary: 'You can now drag and drop a CSV file to import your trades.',
@@ -1013,4 +1025,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.27.0'
+export const LATEST_CHANGELOG_VERSION = '2.28.0'
