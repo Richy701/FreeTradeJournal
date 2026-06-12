@@ -26,39 +26,41 @@ import { PostHogTracker } from '@/components/PostHogTracker';
 import { initGA } from '@/lib/analytics';
 import Layout from '@/components/Layout';
 import { useReferralTracker } from '@/hooks/use-referral-tracker';
+import { lazyWithRetry } from '@/lib/lazy-with-retry';
 
-// Lazy load all page components for smaller initial bundle
-const LandingPage = lazy(() => import('@/pages/LandingPage'));
-const Login = lazy(() => import('@/pages/Login'));
-const Dashboard = lazy(() => import('@/pages/Dashboard'));
-const TradeLog = lazy(() => import('@/pages/TradeLog'));
-const Goals = lazy(() => import('@/pages/Goals'));
-const Journal = lazy(() => import('@/pages/Journal'));
-const Settings = lazy(() => import('@/pages/Settings'));
-const Profile = lazy(() => import('@/pages/Profile'));
-const Signup = lazy(() => import('@/pages/Signup'));
-const Onboarding = lazy(() => import('@/pages/OnboardingSimplified'));
-const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
-const TermsAndConditions = lazy(() => import('@/pages/TermsAndConditions'));
-const CookiePolicy = lazy(() => import('@/pages/CookiePolicy'));
-const Documentation = lazy(() => import('@/pages/Documentation'));
-const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
-const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
-const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
-const TradeIdeas = lazy(() => import('@/pages/TradeIdeas'))
-const Coach = lazy(() => import('@/pages/Coach'));
-const DayTradingJournal = lazy(() => import('@/pages/DayTradingJournal'));
-const OnlineTradingJournal = lazy(() => import('@/pages/OnlineTradingJournal'));
-const Changelog = lazy(() => import('@/pages/Changelog'));
-const Pricing = lazy(() => import('@/pages/Pricing'));
-const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
-const VerifyEmail = lazy(() => import('@/pages/VerifyEmail'));
-const Affiliate = lazy(() => import('@/pages/Affiliate'));
-const FTMOReview = lazy(() => import('@/pages/FTMOReview'));
-const The5ersReview = lazy(() => import('@/pages/The5ersReview'));
-const TopOneFuturesReview = lazy(() => import('@/pages/TopOneFuturesReview'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
+// Lazy load all page components for smaller initial bundle.
+// lazyWithRetry self-heals stale-chunk failures after a deploy (see lazy-with-retry.ts).
+const LandingPage = lazyWithRetry(() => import('@/pages/LandingPage'));
+const Login = lazyWithRetry(() => import('@/pages/Login'));
+const Dashboard = lazyWithRetry(() => import('@/pages/Dashboard'));
+const TradeLog = lazyWithRetry(() => import('@/pages/TradeLog'));
+const Goals = lazyWithRetry(() => import('@/pages/Goals'));
+const Journal = lazyWithRetry(() => import('@/pages/Journal'));
+const Settings = lazyWithRetry(() => import('@/pages/Settings'));
+const Profile = lazyWithRetry(() => import('@/pages/Profile'));
+const Signup = lazyWithRetry(() => import('@/pages/Signup'));
+const Onboarding = lazyWithRetry(() => import('@/pages/OnboardingSimplified'));
+const PrivacyPolicy = lazyWithRetry(() => import('@/pages/PrivacyPolicy'));
+const TermsAndConditions = lazyWithRetry(() => import('@/pages/TermsAndConditions'));
+const CookiePolicy = lazyWithRetry(() => import('@/pages/CookiePolicy'));
+const Documentation = lazyWithRetry(() => import('@/pages/Documentation'));
+const ForexTradingJournal = lazyWithRetry(() => import('@/pages/ForexTradingJournal'));
+const FuturesTradingTracker = lazyWithRetry(() => import('@/pages/FuturesTradingTracker'));
+const PropFirmDashboard = lazyWithRetry(() => import('@/pages/PropFirmDashboard'));
+const TradeIdeas = lazyWithRetry(() => import('@/pages/TradeIdeas'))
+const Coach = lazyWithRetry(() => import('@/pages/Coach'));
+const DayTradingJournal = lazyWithRetry(() => import('@/pages/DayTradingJournal'));
+const OnlineTradingJournal = lazyWithRetry(() => import('@/pages/OnlineTradingJournal'));
+const Changelog = lazyWithRetry(() => import('@/pages/Changelog'));
+const Pricing = lazyWithRetry(() => import('@/pages/Pricing'));
+const ForgotPassword = lazyWithRetry(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazyWithRetry(() => import('@/pages/ResetPassword'));
+const VerifyEmail = lazyWithRetry(() => import('@/pages/VerifyEmail'));
+const Affiliate = lazyWithRetry(() => import('@/pages/Affiliate'));
+const FTMOReview = lazyWithRetry(() => import('@/pages/FTMOReview'));
+const The5ersReview = lazyWithRetry(() => import('@/pages/The5ersReview'));
+const TopOneFuturesReview = lazyWithRetry(() => import('@/pages/TopOneFuturesReview'));
+const NotFound = lazyWithRetry(() => import('@/pages/NotFound'));
 
 const toastOptions = {
   style: {
