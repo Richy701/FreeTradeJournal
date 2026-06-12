@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.24.0',
+    date: '2026-06-12',
+    summary: 'The AI features are easier to find and far more usable on the free plan, with a dedicated AI Coach page and clearer labels.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Much more free AI',
+        description: 'Free accounts now get 20 AI runs per month instead of 3, so you can actually try the AI tools — trade analysis, trade review, journal prompts, the coach, and more — before deciding on Pro.',
+      },
+      {
+        type: 'new',
+        text: 'AI Coach page',
+        description: 'A new AI Coach entry in the sidebar brings Coach FTJ and AI trade analysis together on one page, so the AI features are easy to find instead of scattered around the app.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer AI labels',
+        description: 'The per-trade review and tagging buttons now clearly say AI, and the Trade Insights description was corrected, so it is obvious which features are powered by AI.',
+      },
+    ],
+  },
+  {
     version: '2.23.0',
     date: '2026-06-12',
     summary: 'A new macro snapshot on the dashboard shows where rates and inflation stand at a glance — useful context if you trade index or rate futures — plus settings to hide the market strip for a cleaner dashboard.',
@@ -925,4 +947,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.23.0'
+export const LATEST_CHANGELOG_VERSION = '2.24.0'

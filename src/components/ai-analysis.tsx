@@ -9,6 +9,7 @@ import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
+import { trackEvent } from '@/lib/analytics';
 import type { AIAnalysisResponse } from '@/services/ai-analysis';
 import DOMPurify from 'dompurify';
 
@@ -251,6 +252,8 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
       return;
     }
 
+    trackEvent('ai_analysis_started', { period, tradeCount: filteredTrades.length });
+
     try {
       const analysis = await startStream('analysis', {
         trades: filteredTrades.map(t => ({
@@ -278,8 +281,10 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
       };
       setCachedAnalysis(cached);
       setResult(cached);
+      trackEvent('ai_analysis_succeeded', { period, tradeCount: filteredTrades.length });
     } catch (err: any) {
       const msg = err?.message || 'Failed to analyze trades';
+      trackEvent('ai_analysis_error', { period, message: msg });
       if (msg.includes('Daily') && msg.includes('limit')) {
         toast.error('Daily limit reached. Resets at midnight UTC.');
       } else {

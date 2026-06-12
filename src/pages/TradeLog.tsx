@@ -1288,7 +1288,7 @@ export default function TradeLog() {
                 disabled={trades.length === 0}
               >
                 <Tag className="mr-2 h-4 w-4" />
-                Auto-Tag
+                AI Auto-Tag
               </Button>
               )}
             </div>
@@ -2536,8 +2536,10 @@ export default function TradeLog() {
                           variant="outline"
                           onClick={() => setReviewingTradeId(reviewingTradeId === trade.id ? null : trade.id)}
                           style={{ color: reviewingTradeId === trade.id ? themeColors.primary : undefined }}
+                          aria-label="AI review"
                         >
-                          <Brain className="h-3 w-3" />
+                          <Brain className="mr-1.5 h-3 w-3" />
+                          AI
                         </Button>
                         <Button
                           size="sm"

@@ -46,6 +46,7 @@ const ForexTradingJournal = lazy(() => import('@/pages/ForexTradingJournal'));
 const FuturesTradingTracker = lazy(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazy(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazy(() => import('@/pages/TradeIdeas'))
+const Coach = lazy(() => import('@/pages/Coach'));
 const DayTradingJournal = lazy(() => import('@/pages/DayTradingJournal'));
 const OnlineTradingJournal = lazy(() => import('@/pages/OnlineTradingJournal'));
 const Changelog = lazy(() => import('@/pages/Changelog'));
@@ -144,6 +145,7 @@ function App() {
 
                 <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/coach" element={<Coach />} />
                   <Route path="/trades" element={<TradeLog />} />
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/journal" element={<Journal />} />

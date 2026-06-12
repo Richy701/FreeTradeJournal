@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Sparkle } from '@phosphor-icons/react';
 import { useProStatus } from '@/contexts/pro-context';
@@ -25,6 +25,15 @@ const isAIFeature = (name: string) => name.startsWith('AI ') || name === 'Coach 
 
 export function ProGate({ children, featureName, featureDescription }: ProGateProps) {
   const { isPro, isLoading, hasAIAccess, freeAiQuota } = useProStatus();
+
+  // Locked wall = not pro, and not in the free-AI-allowance teaser branch below.
+  const quotaExceeded = isAIFeature(featureName) && !!freeAiQuota && freeAiQuota.remaining === 0;
+  const showsWall = !isLoading && !isPro && !(isAIFeature(featureName) && hasAIAccess && freeAiQuota);
+  useEffect(() => {
+    if (showsWall) {
+      trackEvent('pro_gate_shown', { feature: featureName, quotaExceeded });
+    }
+  }, [showsWall, featureName, quotaExceeded]);
 
   if (isLoading) {
     return null;

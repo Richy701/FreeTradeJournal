@@ -1943,7 +1943,7 @@ const FEATURE_MODELS = {
 type FeatureType = keyof typeof RATE_LIMITS;
 
 // ─── Free-Tier AI Quota ───────────────────────────────────────
-const FREE_AI_MONTHLY_LIMIT = 3;
+const FREE_AI_MONTHLY_LIMIT = 20;
 
 async function checkAndIncrementFreeAI(uid: string): Promise<{ used: number; limit: number; remaining: number }> {
   const monthStr = new Date().toISOString().slice(0, 7);

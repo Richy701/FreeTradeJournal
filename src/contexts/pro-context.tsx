@@ -33,7 +33,7 @@ export function useProStatus() {
 
 const PRO_CACHE_KEY = 'proStatus';
 const FREE_AI_CACHE_KEY = 'freeAiQuota';
-const FREE_AI_MONTHLY_LIMIT = 3;
+const FREE_AI_MONTHLY_LIMIT = 20;
 
 function isActivePro(sub: SubscriptionInfo | null): boolean {
   if (!sub) return false;

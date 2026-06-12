@@ -9,6 +9,7 @@ import {
   BookOpen,
   Lightbulb,
   Buildings,
+  Brain,
   GearSix,
   Megaphone,
   UserPlus,
@@ -46,6 +47,11 @@ const navMain = [
     title: "Dashboard",
     url: "/dashboard",
     icon: ChartBar,
+  },
+  {
+    title: "AI Coach",
+    url: "/coach",
+    icon: Brain,
   },
   {
     title: "Trade Log",

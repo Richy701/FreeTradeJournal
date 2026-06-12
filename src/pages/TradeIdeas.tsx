@@ -54,7 +54,7 @@ export default function TradeIdeas() {
               </div>
               <div className="space-y-0.5">
                 <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
-                <p className="text-sm text-muted-foreground">AI-powered patterns and analytics from your trading data.</p>
+                <p className="text-sm text-muted-foreground">Data-driven patterns and analytics from your trading data.</p>
               </div>
             </div>
           </div>
