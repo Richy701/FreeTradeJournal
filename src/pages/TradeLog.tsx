@@ -291,6 +291,25 @@ export default function TradeLog() {
 
   const activeFilterCount = countActiveFilters(filters);
 
+  // The calendar span the user's trades cover, e.g. "Jan 3 – Jun 12, 2026".
+  const tradeDateSpan = useMemo(() => {
+    if (trades.length === 0) return '';
+    let min = Infinity;
+    let max = -Infinity;
+    for (const t of trades) {
+      const ms = (t.exitTime instanceof Date ? t.exitTime : new Date(t.exitTime)).getTime();
+      if (Number.isNaN(ms)) continue;
+      if (ms < min) min = ms;
+      if (ms > max) max = ms;
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return '';
+    const a = new Date(min);
+    const b = new Date(max);
+    if (format(a, 'yyyy-MM-dd') === format(b, 'yyyy-MM-dd')) return format(a, 'MMM d, yyyy');
+    if (a.getFullYear() === b.getFullYear()) return `${format(a, 'MMM d')} – ${format(b, 'MMM d, yyyy')}`;
+    return `${format(a, 'MMM d, yyyy')} – ${format(b, 'MMM d, yyyy')}`;
+  }, [trades]);
+
   // Calculate pagination over the filtered list
   const totalPages = Math.ceil(displayedTrades.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -2409,12 +2428,23 @@ export default function TradeLog() {
         <Card className="">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
+                  {trades.length > 0 && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                      {activeFilterCount > 0 ? `${displayedTrades.length} of ${trades.length}` : trades.length}
+                    </span>
+                  )}
+                </div>
                 <CardDescription>
-                  {activeFilterCount > 0
-                    ? `${displayedTrades.length} of ${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}`
-                    : `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'} recorded`}
+                  {trades.length === 0
+                    ? 'No trades logged yet'
+                    : activeFilterCount > 0
+                      ? `Showing ${displayedTrades.length} ${displayedTrades.length === 1 ? 'trade' : 'trades'} · ${activeFilterCount} ${activeFilterCount === 1 ? 'filter' : 'filters'} active`
+                      : tradeDateSpan
+                        ? `Your trades from ${tradeDateSpan}`
+                        : `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'} logged`}
                 </CardDescription>
               </div>
               {trades.length > 0 && (

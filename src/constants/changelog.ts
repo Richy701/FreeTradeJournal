@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.34.0',
+    date: '2026-06-12',
+    summary: 'The trading calendar now shows a weekly P&L total for each week.',
+    items: [
+      {
+        type: 'new',
+        text: 'Weekly P&L on the calendar',
+        description: 'Each week row on the trading calendar now ends with that week’s total profit or loss, so you can see weekly performance at a glance alongside the daily and monthly figures. Weekly totals add up to the monthly P&L shown above the calendar.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer trade log header',
+        description: 'The All Trades header now shows a count badge and the date range your trades span, and reflects how many trades match when filters are active.',
+      },
+    ],
+  },
+  {
     version: '2.33.0',
     date: '2026-06-12',
     summary: 'You can now sort your trade log, and the filter bar is cleaner and easier to use.',
@@ -28,6 +45,16 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         text: 'Cleaner trade log filters',
         description: 'The filter bar now sits neatly alongside the All Trades heading, and the date range filter uses a single calendar that is easier to pick a range with.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer trade selection',
+        description: 'The select-all checkbox now selects the trades on the current page and shows a partial state when only some are selected. When a page is fully selected, a Select all matching option lets you grab every filtered trade at once for bulk delete.',
+      },
+      {
+        type: 'improved',
+        text: 'More useful All Trades heading',
+        description: 'The All Trades heading now shows the trade count as a pill and the date range your trades span, and clearly says how many trades match when filters are active.',
       },
     ],
   },
@@ -1090,4 +1117,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.33.0'
+export const LATEST_CHANGELOG_VERSION = '2.34.0'

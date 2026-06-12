@@ -619,6 +619,14 @@ export function CalendarHeatmap() {
     }
   }
 
+  // Compact signed P&L for the slim weekly-total column (e.g. +$820, -$1.2k)
+  const formatWeekPnl = (n: number) => {
+    const sign = n > 0 ? '+' : n < 0 ? '-' : ''
+    const a = Math.abs(n)
+    if (a >= 1000) return `${sign}$${(a / 1000).toFixed(1)}k`
+    return `${sign}$${a.toFixed(0)}`
+  }
+
   const today = new Date()
   const currentMonthName = MONTHS[currentDate.getMonth()]
   const currentYear = currentDate.getFullYear()
@@ -628,6 +636,17 @@ export function CalendarHeatmap() {
   for (let i = 0; i < calendarData.length; i += 7) {
     weeks.push(calendarData.slice(i, i + 7))
   }
+
+  // Weekly P&L totals — current-month days only, so the weekly totals sum
+  // exactly to the Monthly P&L above (spillover days aren't double-counted).
+  const weekTotals = weeks.map((week) => {
+    const monthDays = week.filter((d) => d.isCurrentMonth && d.trades > 0)
+    return {
+      pnl: monthDays.reduce((s, d) => s + d.pnl, 0),
+      trades: monthDays.reduce((s, d) => s + d.trades, 0),
+      hasTrades: monthDays.length > 0,
+    }
+  })
 
   return (
     <Card>
@@ -780,13 +799,18 @@ export function CalendarHeatmap() {
       <CardContent className="pt-4 px-2 sm:px-6">
         <div className="space-y-3">
           {/* Day headers */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-3 mb-2">
-            {DAYS.map((day) => (
-              <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
-                <span className="sm:hidden">{day.slice(0, 1)}</span>
-                <span className="hidden sm:inline">{day}</span>
-              </div>
-            ))}
+          <div className="flex gap-1 sm:gap-3 mb-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-3 flex-1">
+              {DAYS.map((day) => (
+                <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
+                  <span className="sm:hidden">{day.slice(0, 1)}</span>
+                  <span className="hidden sm:inline">{day}</span>
+                </div>
+              ))}
+            </div>
+            <div className="w-11 sm:w-20 shrink-0 text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
+              Week
+            </div>
           </div>
           
           {/* Enhanced Calendar grid with better spacing and animations */}
@@ -794,14 +818,17 @@ export function CalendarHeatmap() {
             "space-y-1 sm:space-y-3 transition-[opacity,transform] duration-300",
             isAnimating ? "opacity-50 scale-95" : "opacity-100 scale-100"
           )}>
-            {weeks.map((week, weekIndex) => (
+            {weeks.map((week, weekIndex) => {
+              const wt = weekTotals[weekIndex]
+              return (
               <div
                 key={`${currentDate.getFullYear()}-${currentDate.getMonth()}-${weekIndex}`}
-                className="grid grid-cols-7 gap-1 sm:gap-3"
+                className="flex gap-1 sm:gap-3"
                 style={{
                   animationDelay: `${weekIndex * 50}ms`
                 }}
               >
+                <div className="grid grid-cols-7 gap-1 sm:gap-3 flex-1">
                 {week.map((day) => {
                   const isToday = day.date.toDateString() === today.toDateString()
                   const hasData = day.trades > 0
@@ -1009,8 +1036,28 @@ export function CalendarHeatmap() {
                     </Popover>
                   )
                 })}
+                </div>
+                {/* Weekly P&L total */}
+                <div className="w-11 sm:w-20 shrink-0 flex flex-col items-center justify-center rounded-lg sm:rounded-xl h-[72px] sm:h-24 border border-border/40 bg-muted/20">
+                  {wt.hasTrades ? (
+                    <>
+                      <span
+                        className="text-[10px] sm:text-sm font-bold tabular-nums leading-none text-center px-0.5"
+                        style={{ color: wt.pnl >= 0 ? themeColors.profit : themeColors.loss }}
+                      >
+                        {formatWeekPnl(wt.pnl)}
+                      </span>
+                      <span className="hidden sm:block text-[10px] text-muted-foreground/60 mt-1 tabular-nums">
+                        {wt.trades} trade{wt.trades !== 1 ? 's' : ''}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground/30 text-xs">–</span>
+                  )}
+                </div>
               </div>
-            ))}
+              )
+            })}
           </div>
           
           {/* Legend */}
