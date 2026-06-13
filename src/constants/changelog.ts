@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.35.0',
+    date: '2026-06-13',
+    summary: 'You can now customize your dashboard — hide widgets you do not use and drag them into the order you prefer.',
+    items: [
+      {
+        type: 'new',
+        text: 'Customize your dashboard',
+        description: 'A new Customize button on the dashboard lets you tailor it to how you trade. Your layout is remembered in this browser and stays the same across visits.',
+      },
+      {
+        type: 'new',
+        text: 'Show or hide any section',
+        description: 'Hide the sections you do not use — like market news or the economic calendar — and keep only what matters to you. Your key metrics always stay on.',
+      },
+      {
+        type: 'new',
+        text: 'Drag sections into any order',
+        description: 'Rearrange your dashboard by dragging sections into the order you prefer.',
+      },
+      {
+        type: 'new',
+        text: 'Reorder with your keyboard',
+        description: 'Pick up a section and use the arrow keys to move it, no mouse required.',
+      },
+      {
+        type: 'improved',
+        text: 'Reset to the default layout anytime',
+        description: 'Changed your mind? Reset your dashboard back to the default layout in one click.',
+      },
+    ],
+  },
+  {
     version: '2.34.0',
     date: '2026-06-12',
     summary: 'The trading calendar now shows a weekly P&L total for each week.',
@@ -1117,4 +1149,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.34.0'
+export const LATEST_CHANGELOG_VERSION = '2.35.0'

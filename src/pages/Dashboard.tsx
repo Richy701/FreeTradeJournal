@@ -5,9 +5,6 @@ import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useSettings } from '@/contexts/settings-context'
 import { Link } from 'react-router-dom'
-import { DataTable } from "@/components/data-table"
-import { CalendarHeatmap } from "@/components/calendar-heatmap"
-import { TradingCoach } from "@/components/trading-coach"
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,7 +16,6 @@ import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { DemoCtaCard } from '@/components/demo-cta-card'
 import { useUserStorage } from '@/utils/user-storage'
 import { isIncognitoMode } from '@/utils/incognito-detection'
 import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
@@ -33,16 +29,12 @@ import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
 import { SatisfactionPulse } from '@/components/satisfaction-pulse'
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
 import { ShareStatsCard } from '@/components/share-stats-card'
-import { ProUpgradeCard } from '@/components/pro-upgrade-card'
-import { Brain, CloudArrowUp, ChartBar as BarChart3Icon } from '@phosphor-icons/react'
+import { Brain, ChartBar as BarChart3Icon } from '@phosphor-icons/react'
+import { resolveDashboardLayout } from '@/components/dashboard/widget-registry'
+import { CustomizeSheet } from '@/components/dashboard/customize-sheet'
 
 // Lazy load chart components to reduce initial bundle size
-const SectionCards = lazy(() => import("@/components/section-cards").then(m => ({ default: m.SectionCards })))
-const ChartAreaInteractive = lazy(() => import("@/components/chart-area-interactive").then(m => ({ default: m.ChartAreaInteractive })))
-const ChartRadarDefault = lazy(() => import("@/components/chart-radar-default").then(m => ({ default: m.ChartRadarDefault })))
 const MarketTicker = lazy(() => import("@/components/market-ticker").then(m => ({ default: m.MarketTicker })))
-const EconomicCalendarWidget = lazy(() => import("@/components/economic-calendar-widget").then(m => ({ default: m.EconomicCalendarWidget })))
-const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })))
 const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })))
 import {
   Dialog,
@@ -140,6 +132,11 @@ export default function Dashboard() {
   const tradeCount = useMemo(() => getTrades().length, [getTrades, dataVersion])
   useFirstTradeCelebration(tradeCount)
   useMilestoneCelebrations(tradeCount)
+
+  const visibleWidgets = useMemo(
+    () => resolveDashboardLayout(settings.dashboardLayout),
+    [settings.dashboardLayout]
+  )
 
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
@@ -753,6 +750,7 @@ export default function Dashboard() {
               ) : (
               <>
               {tradeCount > 0 && <ShareStatsCard />}
+              <CustomizeSheet />
               <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -1088,87 +1086,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Mobile-optimized Main Content */}
+      {/* Mobile-optimized Main Content — registry-driven, reorderable widget stack */}
       <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
-        {/* Top metrics row */}
-        <div>
-          <Suspense fallback={<div className="grid grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
-            ))}
-          </div>}>
-            <SectionCards />
-          </Suspense>
-        </div>
-
-        {/* Coach FTJ */}
+        {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
+            reorderable stack so widget visibility/order changes never affect it. */}
         <FreeAIBanner />
-        <div>
-          <TradingCoach />
-        </div>
-
-        {/* Equity curve — full width hero */}
-        <div>
-          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-            <ChartAreaInteractive />
-          </Suspense>
-        </div>
-
-        {/* Pro nudge — contextual, after equity curve */}
-        {tradeCount >= 5 && (
-          <ProUpgradeCard
-            icon={Brain}
-            title={`You have ${tradeCount} trades — unlock AI insights`}
-            description="Pro's AI coach analyses your patterns, detects weaknesses, and gives you a personalised action plan to improve."
-            cta="Try free for 14 days"
-            dismissKey="dashboard-ai"
-          />
-        )}
-
-        {/* Economic Calendar + Market News */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-            <EconomicCalendarWidget />
-          </Suspense>
-          <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-            <MarketNewsFeed />
-          </Suspense>
-        </div>
-
-        {/* Recent trades — full width below */}
-        <div>
-          <DataTable />
-        </div>
-
-        {/* Pairs Performance Radar */}
-        <div>
-          <Suspense fallback={<Skeleton className="h-[450px] w-full" />}>
-            <ChartRadarDefault />
-          </Suspense>
-        </div>
-
-        {/* Calendar Section */}
-        <div>
-          <CalendarHeatmap />
-        </div>
-
-        {/* Cloud sync nudge — after all data-heavy sections */}
-        {tradeCount >= 10 && (
-          <ProUpgradeCard
-            icon={CloudArrowUp}
-            title="Your trades live only in this browser"
-            description="Switch device or clear data and it's gone. Pro syncs your journal across all devices automatically."
-            cta="Enable cloud sync"
-            dismissKey="dashboard-sync"
-          />
-        )}
-
-        {/* Demo CTA Card - Only show in demo mode */}
-        {isDemo && (
-          <div className="mt-8">
-            <DemoCtaCard />
-          </div>
-        )}
+        {visibleWidgets.map(w => {
+          const node = w.render({ tradeCount, isDemo })
+          return node ? <div key={w.id}>{node}</div> : null
+        })}
       </div>
       
       {/* CSV Preview Dialog */}

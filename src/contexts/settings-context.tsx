@@ -9,6 +9,7 @@ export interface AppSettings {
   accountSize: number;
   showMarketPrices: boolean;
   showMacroSnapshot: boolean;
+  dashboardLayout?: { hidden: string[]; order: string[] };
 }
 
 interface SettingsContextType {
@@ -25,6 +26,7 @@ const defaultSettings: AppSettings = {
   accountSize: DEFAULT_VALUES.STARTING_BALANCE,
   showMarketPrices: true,
   showMacroSnapshot: true,
+  dashboardLayout: { hidden: [], order: [] },
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
