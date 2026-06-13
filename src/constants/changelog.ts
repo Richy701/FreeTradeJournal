@@ -22,7 +22,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'new',
         text: 'Customize your dashboard',
-        description: 'A new Customize button on the dashboard lets you tailor it to how you trade. Your layout is remembered in this browser and stays the same across visits.',
+        description: 'A new Customize button on the dashboard lets you tailor it to how you trade. Your layout is remembered and stays the same across visits.',
       },
       {
         type: 'new',
@@ -43,6 +43,11 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         text: 'Reset to the default layout anytime',
         description: 'Changed your mind? Reset your dashboard back to the default layout in one click.',
+      },
+      {
+        type: 'new',
+        text: 'Pro: your layout syncs across devices',
+        description: 'Pro members now have their dashboard layout sync automatically across all their devices, alongside trades and journal entries.',
       },
     ],
   },

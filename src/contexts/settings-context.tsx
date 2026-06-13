@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useCallback, useState, useRef, useMemo, type ReactNode } from 'react';
 import { useUserStorage } from '@/utils/user-storage';
 import { useAccounts } from '@/contexts/account-context';
+import { onSyncChange } from '@/contexts/sync-context';
 import { DEFAULT_VALUES } from '@/constants/trading';
 
 export interface AppSettings {
@@ -51,6 +52,9 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
 
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
+  // Set when settings state is updated from a remote sync pull, so the
+  // save-on-change effect skips re-writing (and re-pushing) the same value.
+  const applyingRemoteRef = useRef(false);
 
   // Active account currency takes priority over global setting
   const effectiveCurrency = activeAccount?.currency || settings.currency;
@@ -75,9 +79,36 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   // Save settings to localStorage whenever they change
   useEffect(() => {
     if (!loading) {
+      // Skip when the change came from a remote pull — the sync engine already
+      // wrote it to storage (with skipSync), so re-writing would echo it back.
+      if (applyingRemoteRef.current) {
+        applyingRemoteRef.current = false;
+        return;
+      }
       storageRef.current.setItem('settings', JSON.stringify(settings));
     }
   }, [settings, loading]);
+
+  // Pro cloud sync: when the sync engine pulls remote changes, re-read settings
+  // so the live UI (currency, toggles, dashboard layout) reflects other devices.
+  useEffect(() => {
+    return onSyncChange(() => {
+      const saved = storageRef.current.getItem('settings');
+      if (!saved) return;
+      let parsed: Partial<AppSettings>;
+      try {
+        parsed = JSON.parse(saved);
+      } catch {
+        return;
+      }
+      setSettings(prev => {
+        const next = { ...defaultSettings, ...parsed };
+        if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+        applyingRemoteRef.current = true;
+        return next;
+      });
+    });
+  }, []);
 
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     setSettings(prev => {

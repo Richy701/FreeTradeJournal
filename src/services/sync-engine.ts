@@ -3,7 +3,7 @@ import { UserStorage } from '@/utils/user-storage';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
 // Keys we sync between localStorage and Firestore
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions'] as const;
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
 type SyncKey = typeof SYNC_KEYS[number];
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
@@ -192,6 +192,16 @@ export class SyncEngine {
     const isEmpty = data === '[]' || data === '{}' || data === '' || data === 'null';
     if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
       console.warn(`[Sync] Blocked empty ${key} from syncing to prevent data loss`);
+      return;
+    }
+
+    // CRITICAL: Never push settings before the initial pull completes.
+    // settings is a single last-write-wins blob, and a fresh device writes
+    // DEFAULT settings to storage on mount — pushing those before the pull
+    // would overwrite the user's real cloud settings on every new device.
+    // Blocked here, real settings sync from the first change after the pull.
+    if (key === 'settings' && !this._initialPullDone) {
+      console.warn('[Sync] Blocked settings push before initial pull');
       return;
     }
 
