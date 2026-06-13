@@ -6,7 +6,6 @@ import {
   SheetTitle,
   SheetDescription,
   SheetTrigger,
-  SheetFooter,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -150,7 +149,7 @@ export function CustomizeSheet() {
             and use the arrow keys to reorder without a mouse.
           </SheetDescription>
         </SheetHeader>
-        <ScrollArea className="h-[60vh] pr-2">
+        <ScrollArea className="max-h-[60vh] pr-2">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -178,11 +177,9 @@ export function CustomizeSheet() {
             </SortableContext>
           </DndContext>
         </ScrollArea>
-        <SheetFooter>
-          <Button variant="outline" onClick={reset} className="w-full">
-            Reset to default
-          </Button>
-        </SheetFooter>
+        <Button variant="outline" onClick={reset} className="w-full mt-4">
+          Reset to default
+        </Button>
       </SheetContent>
     </Sheet>
   )
