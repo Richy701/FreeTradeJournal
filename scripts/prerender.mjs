@@ -54,6 +54,15 @@ const ROUTES = [
   "/prop-tracker",
   "/changelog",
   "/pricing",
+  // SEO landing pages — must stay in sync with sitemap.xml, otherwise the
+  // Vercel SPA rewrite serves them the homepage shell (duplicate content →
+  // "crawled, currently not indexed"). The sitemap-sync guard below enforces this.
+  "/day-trading-journal",
+  "/online-trading-journal",
+  "/affiliate",
+  "/ftmo-review",
+  "/the5ers-review",
+  "/top-one-futures-review",
 ];
 
 // ── Tiny static file server ──────────────────────────────────────────────────
@@ -126,7 +135,7 @@ async function prerender() {
   } catch (err) {
     console.warn(`  ⚠  Skipping prerender — could not launch Chromium: ${err.message}`);
     server.close();
-    return;
+    return [];
   }
 
   const results = { success: [], failed: [] };
@@ -192,6 +201,55 @@ async function prerender() {
     console.log(`  Failed: ${results.failed.join(", ")}`);
   }
   console.log("");
+
+  return results.success;
+}
+
+// ── Sitemap sync guard ───────────────────────────────────────────────────────
+//
+// Every URL in sitemap.xml must have been prerendered to its own static HTML.
+// If a sitemap route isn't prerendered, the Vercel SPA rewrite serves it the
+// homepage shell — Google then sees duplicate content + a homepage canonical
+// and drops the page ("crawled, currently not indexed"). On Vercel/CI this is a
+// hard failure so a broken deploy never ships; locally it's a warning, since a
+// dev machine may not have Chromium available.
+async function assertSitemapPrerendered(prerendered) {
+  const isCI = Boolean(process.env.VERCEL || process.env.CI);
+  let xml;
+  try {
+    xml = await readFile(join(DIST, "sitemap.xml"), "utf-8");
+  } catch {
+    console.warn("  ⚠  No dist/sitemap.xml found — skipping sitemap-sync check.");
+    return;
+  }
+
+  const sitemapPaths = [...xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)]
+    .map((m) => {
+      try {
+        return new URL(m[1]).pathname.replace(/\/$/, "") || "/";
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  const done = new Set(prerendered.map((p) => p.replace(/\/$/, "") || "/"));
+  const missing = sitemapPaths.filter((p) => !done.has(p));
+
+  if (missing.length === 0) {
+    console.log(`  ✅ Sitemap sync OK — all ${sitemapPaths.length} sitemap URLs prerendered.\n`);
+    return;
+  }
+
+  const msg =
+    `Sitemap URLs not prerendered (would serve the homepage shell as duplicate ` +
+    `content): ${missing.join(", ")}`;
+  if (isCI) {
+    console.error(`\n  ❌ ${msg}\n`);
+    process.exit(1);
+  } else {
+    console.warn(`\n  ⚠  ${msg}\n     (warning only — not a CI build)\n`);
+  }
 }
 
 // ── Defer CSS ────────────────────────────────────────────────────────────────
@@ -221,13 +279,16 @@ async function deferCssInAllHtml(dir) {
   }
 }
 
+let prerenderedRoutes = [];
 prerender()
-  .then(() => {
+  .then((success) => {
+    prerenderedRoutes = success || [];
     console.log("  Deferring CSS in prerendered HTML…");
     return deferCssInAllHtml(DIST);
   })
   .then(() => {
     console.log("  ✅ CSS deferred in all HTML files.\n");
+    return assertSitemapPrerendered(prerenderedRoutes);
   })
   .catch((err) => {
     console.error("Prerender script failed:", err);
