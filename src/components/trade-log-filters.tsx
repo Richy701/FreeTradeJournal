@@ -105,7 +105,7 @@ function FacetPopover({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+        <Button variant="outline" size="sm" className="h-9 sm:h-8 gap-1.5 text-xs">
           {label}
           {selected.length > 0 && <CountBadge>{selected.length}</CountBadge>}
           <CaretDown className="h-3 w-3 opacity-60" />
@@ -213,7 +213,7 @@ export function TradeLogFilters({
         {/* Outcome */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+            <Button variant="outline" size="sm" className="h-9 sm:h-8 gap-1.5 text-xs">
               Outcome
               {filters.outcome !== 'all' && (
                 <CountBadge>{OUTCOME_OPTIONS.find((o) => o.value === filters.outcome)?.label}</CountBadge>
@@ -245,7 +245,7 @@ export function TradeLogFilters({
         {/* Date range — a single inline range calendar (no nested pickers) */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+            <Button variant="outline" size="sm" className="h-9 sm:h-8 gap-1.5 text-xs">
               Date range
               {hasDate && <CountBadge>1</CountBadge>}
               <CaretDown className="h-3 w-3 opacity-60" />
@@ -284,7 +284,7 @@ export function TradeLogFilters({
         {/* Sort */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+            <Button variant="outline" size="sm" className="h-9 sm:h-8 gap-1.5 text-xs">
               {filters.sortDir === 'asc' ? (
                 <SortAscending className="h-3.5 w-3.5" />
               ) : (

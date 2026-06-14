@@ -32,7 +32,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
           initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
           animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
           transition={shouldReduceMotion ? {} : { duration: 0.2, ease: 'easeOut' }}
-          className="flex-1 w-full"
+          className="flex-1 w-full min-w-0"
         >
           {children ?? <Outlet />}
         </motion.main>

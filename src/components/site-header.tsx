@@ -203,7 +203,7 @@ export function SiteHeader({ className }: { className?: string }) {
       </Breadcrumb>
       {/* Mobile: back arrow for standalone pages (page title comes from page's own <h1>) */}
       {!hasSidebar && (
-        <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" asChild>
+        <Button variant="ghost" size="icon" className="md:hidden h-11 w-11 -ml-2" asChild>
           <a href={breadcrumbItems[0]?.href || '/'} aria-label="Go back">
             <ArrowLeft className="h-4 w-4" />
           </a>

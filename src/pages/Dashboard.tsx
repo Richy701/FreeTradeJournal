@@ -648,7 +648,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => setShowDataWarning(false)}
-                className="text-muted-foreground hover:text-foreground flex-shrink-0 p-1"
+                className="text-muted-foreground hover:text-foreground flex-shrink-0 p-2 -m-1 flex items-center justify-center"
                 aria-label="Close warning"
               >
                 ✕
@@ -658,7 +658,7 @@ export default function Dashboard() {
 
       {/* Deals & PropTracker Banner */}
       {(showDealsBanner || showTrackerBanner) && (
-        <div className="mx-4 mb-4 rounded-xl border px-4 py-3 flex items-center gap-4" style={{borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '08')}}>
+        <div className="mx-4 mb-4 rounded-xl border px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4" style={{borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '08')}}>
           <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
             <div className="flex items-center gap-2">
               <Tag className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
@@ -676,7 +676,7 @@ export default function Dashboard() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <a href="/affiliate" target="_blank" rel="noopener noreferrer">
               <button className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150" style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}>
                 View Deals →
@@ -1158,25 +1158,25 @@ export default function Dashboard() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
-                      <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
+                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
                         {totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
-                      <p className="text-lg font-bold" style={{ color: winRate >= 50 ? themeColors.profit : themeColors.loss }}>
+                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: winRate >= 50 ? themeColors.profit : themeColors.loss }}>
                         {winRate.toFixed(1)}%
                       </p>
                     </div>
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Best Trade</p>
-                      <p className="text-lg font-bold" style={{ color: themeColors.profit }}>
+                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: themeColors.profit }}>
                         +${bestTrade.toFixed(2)}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Worst Trade</p>
-                      <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
+                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: themeColors.loss }}>
                         ${worstTrade.toFixed(2)}
                       </p>
                     </div>

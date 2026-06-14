@@ -721,7 +721,7 @@ export default function Journal() {
 
         {/* Quick Stats */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3 sm:gap-4">
             {[
               {
                 Icon: BookOpen,
@@ -766,7 +766,7 @@ export default function Journal() {
                 </CardHeader>
                 <CardContent className="px-5 pb-5">
                   <div className="space-y-1">
-                    <span className="text-3xl font-bold" style={{ color: stat.color }}>
+                    <span className="text-2xl sm:text-3xl font-bold" style={{ color: stat.color }}>
                       {stat.value}
                     </span>
                     <CardTitle className="text-sm font-medium text-foreground">{stat.label}</CardTitle>
@@ -849,7 +849,7 @@ export default function Journal() {
             </div>
 
             {/* Entry Type Tabs */}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {([
                 { value: 'general', label: 'General', icon: <Minus className="h-3.5 w-3.5" /> },
                 { value: 'pre-trade', label: 'Pre-Trade', icon: <Clock className="h-3.5 w-3.5" /> },
@@ -861,7 +861,7 @@ export default function Journal() {
                   size="sm"
                   type="button"
                   onClick={() => setNewEntry({ ...newEntry, entryType: type.value })}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-shadow duration-200"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-shadow duration-200"
                   style={newEntry.entryType === type.value
                     ? { backgroundColor: `${alpha(themeColors.primary, '15')}`, color: themeColors.primary, borderColor: `${alpha(themeColors.primary, '30')}` }
                     : {}

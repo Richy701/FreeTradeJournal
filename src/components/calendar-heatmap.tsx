@@ -808,7 +808,7 @@ export function CalendarHeatmap() {
                 </div>
               ))}
             </div>
-            <div className="w-11 sm:w-20 shrink-0 text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
+            <div className="w-12 sm:w-20 shrink-0 text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
               Week
             </div>
           </div>
@@ -896,12 +896,12 @@ export function CalendarHeatmap() {
                             {hasData && (
                               <div className="flex items-center justify-center h-full">
                                 {/* Mobile */}
-                                <div className={cn("sm:hidden text-sm font-black tracking-tighter leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
+                                <div className={cn("sm:hidden text-[10px] font-black tracking-tighter leading-none drop-shadow-sm px-0.5", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
                                   {Math.abs(day.pnl) >= 1000
-                                    ? `${day.pnl >= 0 ? '+' : '-'}$${Math.abs(day.pnl/1000).toFixed(1)}k`
+                                    ? `${day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl/1000).toFixed(1)}k`
                                     : Math.abs(day.pnl) >= 10
-                                      ? `${day.pnl >= 0 ? '+' : '-'}$${Math.abs(Math.round(day.pnl))}`
-                                      : `${day.pnl >= 0 ? '+' : '-'}$${Math.abs(day.pnl).toFixed(1)}`
+                                      ? `${day.pnl >= 0 ? '+' : '-'}${Math.abs(Math.round(day.pnl))}`
+                                      : `${day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl).toFixed(1)}`
                                   }
                                 </div>
                                 {/* Desktop */}
@@ -921,7 +921,8 @@ export function CalendarHeatmap() {
                                 getCellTextColor(day.pnl, day.trades, maxAbsPnl)
                               )}>
                                 <span className="text-[8px] sm:text-[10px] font-medium opacity-50 tabular-nums">
-                                  {day.trades} trade{day.trades !== 1 ? 's' : ''}
+                                  <span className="sm:hidden">{day.trades}t</span>
+                                  <span className="hidden sm:inline">{day.trades} trade{day.trades !== 1 ? 's' : ''}</span>
                                 </span>
                               </div>
                             )}
@@ -1038,11 +1039,11 @@ export function CalendarHeatmap() {
                 })}
                 </div>
                 {/* Weekly P&L total */}
-                <div className="w-11 sm:w-20 shrink-0 flex flex-col items-center justify-center rounded-lg sm:rounded-xl h-[72px] sm:h-24 border border-border/40 bg-muted/20">
+                <div className="w-12 sm:w-20 shrink-0 flex flex-col items-center justify-center rounded-lg sm:rounded-xl h-[72px] sm:h-24 border border-border/40 bg-muted/20">
                   {wt.hasTrades ? (
                     <>
                       <span
-                        className="text-[10px] sm:text-sm font-bold tabular-nums leading-none text-center px-0.5"
+                        className="text-[10px] sm:text-sm font-bold tabular-nums leading-none text-center px-0.5 truncate max-w-full block"
                         style={{ color: wt.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                       >
                         {formatWeekPnl(wt.pnl)}

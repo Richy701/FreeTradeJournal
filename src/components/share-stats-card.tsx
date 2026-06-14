@@ -121,7 +121,7 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   canvas.style.width = `${W}px`;
-  canvas.style.height = `${H}px`;
+  canvas.style.height = 'auto';
 
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -517,16 +517,16 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
         )}
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-[700px] bg-[#0c0e16] border-white/[0.06] p-0 overflow-hidden gap-0 [&>button]:text-white/70 [&>button:hover]:text-white" overlayClassName="backdrop-blur-sm">
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 pr-12">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-5 pt-5 pb-3 pr-12">
           <DialogHeader className="space-y-0">
             <DialogTitle className="text-white/90 text-base font-semibold">Share Your Edge</DialogTitle>
           </DialogHeader>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors"
+                className="shrink-0 whitespace-nowrap text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors"
                 style={period === p
                   ? { backgroundColor: `${accent}20`, color: accent }
                   : { backgroundColor: 'transparent', color: 'rgba(255,255,255,0.4)' }
@@ -543,7 +543,7 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
             ref={canvasRef}
             width={W * DPR}
             height={H * DPR}
-            style={{ width: W, height: H, maxWidth: '100%', borderRadius: 14 }}
+            style={{ width: W, height: 'auto', maxWidth: '100%', borderRadius: 14 }}
           />
         </div>
 

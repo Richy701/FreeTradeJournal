@@ -1775,7 +1775,7 @@ export default function TradeLog() {
                                   form.setValue('takeProfit', priceToUnit(tpPrice, 'tp', newUnit as 'price' | 'pips' | 'points', ctx));
                                 }}>
                                   <FormControl>
-                                    <SelectTrigger className="h-8 w-[150px] bg-background/60 border-border/50 text-xs">
+                                    <SelectTrigger className="h-8 w-full sm:w-[150px] bg-background/60 border-border/50 text-xs">
                                       <SelectValue placeholder="Units" />
                                     </SelectTrigger>
                                   </FormControl>
@@ -1897,7 +1897,7 @@ export default function TradeLog() {
                           <Coins className="h-4 w-4" style={{ color: themeColors.primary }} />
                           <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Costs</span>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                           <FormField
                             control={form.control}
                             name="spread"
@@ -2561,7 +2561,7 @@ export default function TradeLog() {
               )}
 
               {/* Desktop Table View */}
-              <div className="hidden md:block w-full overflow-x-auto">
+              <div className="hidden md:block w-full overflow-x-auto scrollbar-hide">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-border/70 hover:bg-transparent">
@@ -2796,13 +2796,14 @@ export default function TradeLog() {
                         </div>
                       )}
 
-                      <div className="flex gap-2 mt-4 pt-3 border-t border-border/20">
+                      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/20">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setReviewingTradeId(reviewingTradeId === trade.id ? null : trade.id)}
                           style={{ color: reviewingTradeId === trade.id ? themeColors.primary : undefined }}
                           aria-label="AI review"
+                          className="h-10 justify-center"
                         >
                           <Brain className="mr-1.5 h-3 w-3" />
                           AI
@@ -2811,7 +2812,7 @@ export default function TradeLog() {
                           size="sm"
                           variant="outline"
                           onClick={() => navigate(`/journal?trade=${trade.id}`)}
-                          className="flex-1"
+                          className="h-10 justify-center"
                         >
                           <BookOpen className="mr-2 h-3 w-3" />
                           Journal
@@ -2829,7 +2830,7 @@ export default function TradeLog() {
                             });
                             setIsDialogOpen(true);
                           }}
-                          className="flex-1"
+                          className="h-10 justify-center"
                         >
                           <PencilSimple className="mr-2 h-3 w-3" />
                           Edit
@@ -2838,7 +2839,7 @@ export default function TradeLog() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDelete(trade.id)}
-                          className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          className="h-10 justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground"
                         >
                           <Trash className="mr-2 h-3 w-3" />
                           Delete

@@ -1144,7 +1144,7 @@ export default function PropTracker() {
                     </div>
 
                     <p
-                      className={`${isPnL ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'} font-bold tabular-nums tracking-tight leading-none`}
+                      className={`${isPnL ? 'text-2xl sm:text-4xl' : 'text-2xl sm:text-3xl'} font-bold tabular-nums tracking-tight leading-none`}
                       style={{ color: card.valueColor }}
                     >
                       {card.value}
@@ -1330,9 +1330,9 @@ export default function PropTracker() {
             </button>
             {riskCalcOpen && (
               <div className="px-5 pb-4 space-y-4 border-t border-border/60 pt-4">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <label className="text-sm text-muted-foreground whitespace-nowrap">If I lose</label>
-                  <div className="relative max-w-[160px]">
+                  <div className="relative max-w-[120px] sm:max-w-[160px]">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">$</span>
                     <Input
                       type="number"
@@ -1374,8 +1374,8 @@ export default function PropTracker() {
                                 {firmInitials(r.account.firmName)}
                               </div>
                             )}
-                            <span className="text-sm font-medium truncate">{r.account.firmName}</span>
-                            <span className="text-xs text-muted-foreground">{currencySymbol(r.account.currency)}{r.account.accountSize.toLocaleString()}</span>
+                            <span className="text-sm font-medium min-w-0 truncate">{r.account.firmName}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{currencySymbol(r.account.currency)}{r.account.accountSize.toLocaleString()}</span>
                             {breached && (
                               <Badge variant="outline" className="ml-auto text-[10px] h-5 px-1.5 bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20">
                                 BREACH
@@ -1933,14 +1933,14 @@ export default function PropTracker() {
                       ].map(s => (
                         <div
                           key={s.label}
-                          className="rounded-lg px-2.5 py-2.5"
+                          className="rounded-lg px-2 sm:px-2.5 py-2.5"
                           style={{
                             backgroundColor: s.color ? s.color + '08' : 'var(--muted)',
                             border: '1px solid ' + (s.color ? s.color + '18' : 'transparent'),
                           }}
                         >
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{s.label}</p>
-                          <p className="text-sm font-bold tabular-nums mt-1" style={{ color: s.color ?? 'var(--muted-foreground)' }}>{s.value}</p>
+                          <p className="text-xs sm:text-sm font-bold tabular-nums mt-1" style={{ color: s.color ?? 'var(--muted-foreground)' }}>{s.value}</p>
                         </div>
                       ))}
                     </div>
@@ -2091,7 +2091,7 @@ export default function PropTracker() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border/40">
+                    <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 border-t border-border/40">
                       <div className="flex items-center gap-1.5">
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
                           <Plus className="h-3 w-3" />
@@ -2123,7 +2123,7 @@ export default function PropTracker() {
                           </Link>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 ml-auto">
+                      <div className="flex items-center gap-1 ml-0 sm:ml-auto">
                         {txs.length > 0 && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => toggleExpand(account.id)}>
                             {expanded ? <CaretUp className="h-3.5 w-3.5" /> : <CaretDown className="h-3.5 w-3.5" />}
@@ -2202,7 +2202,7 @@ export default function PropTracker() {
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                                          className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                                           aria-label="Delete transaction"
                                           onClick={() => setDeleteDialog({ open: true, type: 'tx', id: tx.id })}
                                         >
@@ -2729,7 +2729,7 @@ export default function PropTracker() {
                     <span className="text-sm font-medium truncate">{account.firmName}</span>
                     <span className="text-xs text-muted-foreground">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Balance</label>
                       <Input

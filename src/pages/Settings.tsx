@@ -253,7 +253,7 @@ export default function Settings() {
 
         {/* Tab bar */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60">
-          <div className="w-full max-w-5xl mx-auto overflow-x-auto">
+          <div className="w-full max-w-5xl mx-auto overflow-x-auto scrollbar-hide">
             <div className="flex gap-0 px-4 sm:px-6 lg:px-8 min-w-max">
               {NAV.map(({ id, label, Icon }) => (
                 <button
@@ -288,13 +288,13 @@ export default function Settings() {
 
                 {/* Appearance */}
                 <div className="rounded-xl border border-border/70 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
+                  <div className="px-4 sm:px-5 py-3.5 bg-muted/30 border-b border-border/70">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Appearance</p>
                   </div>
                   <div className="divide-y divide-border/50">
 
                     {/* Theme mode */}
-                    <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
+                    <div className="px-4 sm:px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
                       <div className="sm:w-44 shrink-0">
                         <p className="text-sm font-medium">Theme Mode</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Light, dark, or system</p>
@@ -322,7 +322,7 @@ export default function Settings() {
                     </div>
 
                     {/* Currency */}
-                    <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
+                    <div className="px-4 sm:px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
                       <div className="sm:w-44 shrink-0">
                         <p className="text-sm font-medium">Display Currency</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Used for P&amp;L display</p>
@@ -441,7 +441,7 @@ export default function Settings() {
                       <p className="text-xs text-muted-foreground mt-0.5">What appears in the strip at the top of your dashboard</p>
                     </div>
                     <div className="divide-y divide-border/50">
-                      <div className="px-5 py-5 flex items-center justify-between gap-4">
+                      <div className="px-4 sm:px-5 py-5 flex items-center justify-between gap-4">
                         <div>
                           <p className="text-sm font-medium">Live market prices</p>
                           <p className="text-xs text-muted-foreground mt-0.5">A ticker of the symbols you trade</p>
@@ -451,7 +451,7 @@ export default function Settings() {
                           onCheckedChange={(c) => updateSettings({ showMarketPrices: c })}
                         />
                       </div>
-                      <div className="px-5 py-5 flex items-center justify-between gap-4">
+                      <div className="px-4 sm:px-5 py-5 flex items-center justify-between gap-4">
                         <div>
                           <p className="text-sm font-medium">Macro snapshot</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Fed funds rate, Treasury yields, CPI, and unemployment</p>
@@ -532,7 +532,7 @@ export default function Settings() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-4 px-5 py-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-5 py-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-medium">{account.name}</span>
@@ -544,10 +544,10 @@ export default function Settings() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {!account.isDefault && (
-                              <button onClick={() => updateAccount(account.id, { isDefault: true })} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-colors">Set default</button>
+                              <button onClick={() => updateAccount(account.id, { isDefault: true })} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors">Set default</button>
                             )}
-                            <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-colors flex items-center gap-1"><PencilSimple className="h-3.5 w-3.5" /> Edit</button>
-                            <button onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1} className="text-xs text-destructive hover:text-destructive/80 px-2 py-1 rounded hover:bg-destructive/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Delete</button>
+                            <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors flex items-center gap-1"><PencilSimple className="h-3.5 w-3.5" /> Edit</button>
+                            <button onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1} className="text-xs text-destructive hover:text-destructive/80 px-3 py-2 rounded hover:bg-destructive/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Delete</button>
                           </div>
                         </div>
                       )}

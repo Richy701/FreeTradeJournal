@@ -797,7 +797,7 @@ export function PerformanceGoals() {
                     className="group relative rounded-lg border border-border overflow-hidden"
                     style={{ backgroundColor: bgColor }}
                   >
-                    <div className="flex items-start gap-4 p-4">
+                    <div className="flex items-start gap-3 p-3 sm:gap-4 sm:p-4">
                       {/* Circular progress ring */}
                       <CircularProgress
                         percentage={progress}
@@ -832,7 +832,7 @@ export function PerformanceGoals() {
                       </div>
 
                       {/* Hover actions */}
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         {goal.achieved && (
                           <Button
                             variant="ghost"
@@ -1011,11 +1011,11 @@ export function PerformanceGoals() {
                             onCheckedChange={() => toggleRiskRule(rule.id)}
                           />
                           {(() => { const RuleIcon = getRuleIcon(rule.type); return <RuleIcon className="h-3.5 w-3.5 text-muted-foreground" />; })()}
-                          <div>
+                          <div className="flex flex-wrap items-baseline gap-x-2 min-w-0">
                             <span className="text-sm font-medium text-foreground">
                               {getRuleLabel(rule.type)}
                             </span>
-                            <span className="ml-2 text-sm text-muted-foreground">
+                            <span className="text-sm text-muted-foreground">
                               {rule.type.includes('Percent') || rule.type === 'maxRiskPerTrade'
                                 ? `${rule.value}%`
                                 : rule.type === 'maxOpenTrades'
@@ -1023,7 +1023,7 @@ export function PerformanceGoals() {
                                   : `$${rule.value}`}
                             </span>
                             {current !== null && rule.enabled && (
-                              <span className="ml-2 text-xs" style={{ color: barColor }}>
+                              <span className="text-xs" style={{ color: barColor }}>
                                 ${current.toFixed(0)} used
                               </span>
                             )}
@@ -1045,7 +1045,7 @@ export function PerformanceGoals() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
                             onClick={() => {
                               setEditingRule(rule)
                               setShowRuleDialog(true)

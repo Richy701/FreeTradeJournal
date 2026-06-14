@@ -15,6 +15,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.36.0',
+    date: '2026-06-14',
+    summary: 'A big pass on the mobile experience — your stats, calendar, and journal now fit phone screens properly.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Stats cards fit your phone',
+        description: 'The dashboard metric cards no longer flash a cramped, squished layout while loading, and your numbers and charts now sit comfortably on small screens.',
+      },
+      {
+        type: 'improved',
+        text: 'Easier to tap on mobile',
+        description: 'Buttons, tabs, filters, and the account switcher are now larger and easier to hit on touch screens across the dashboard, trade log, settings, and more.',
+      },
+      {
+        type: 'fixed',
+        text: 'Reach every action on touch',
+        description: 'Reset, edit, and delete controls on goals, risk rules, and prop-tracker transactions used to only appear on hover — they now show on phones so you can manage everything without a mouse.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner calendar and journal on small screens',
+        description: 'Trading calendar day cells, weekly totals, the journal stats, and entry-type tabs now lay out neatly on phones instead of overlapping or overflowing.',
+      },
+      {
+        type: 'improved',
+        text: 'Tidier dialogs and cards',
+        description: 'Pop-up dialogs no longer run edge to edge, and cards use tighter spacing on phones so there is more room for your content.',
+      },
+    ],
+  },
+  {
     version: '2.35.0',
     date: '2026-06-13',
     summary: 'You can now customize your dashboard — hide widgets you do not use and drag them into the order you prefer.',
@@ -1154,4 +1186,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.35.0'
+export const LATEST_CHANGELOG_VERSION = '2.36.0'

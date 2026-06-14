@@ -128,7 +128,7 @@ export function SectionCards() {
 
   return (
     <TooltipProvider>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 overflow-visible">
+      <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-4 overflow-visible">
 
         {/* Total P&L */}
         <Link to="/trades">
@@ -152,18 +152,18 @@ export function SectionCards() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
                   {formatCurrency(metrics.totalPnL)}
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                  <p className="text-sm font-medium break-words" style={{ color: themeColors.primary }}>
                     Balance: {formatCurrencyPlain(accountBalance)}
                   </p>
-                  <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
-              <div className="w-16 h-16 relative">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 relative shrink-0">
                 <ChartContainer
                   config={{ pnl: { label: "P&L", color: pnlPositive ? themeColors.profit : themeColors.loss } }}
                   className="w-full h-full"
@@ -192,18 +192,18 @@ export function SectionCards() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-3xl font-bold tracking-tight" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
                   {formatPercentage(metrics.winRate)}
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
+                  <p className="text-sm font-medium break-words" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
                     {Math.abs(metrics.winRate - 50).toFixed(0)}pts {winRateGood ? 'above' : 'below'} 50%
                   </p>
-                  <p className="text-xs"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(metrics.avgWin)} avg win</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(metrics.avgLoss)} avg loss</span></p>
+                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(metrics.avgWin)} avg win</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(metrics.avgLoss)} avg loss</span></p>
                 </div>
               </div>
-              <div className="w-16 h-16 relative">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 relative shrink-0">
                 <ChartContainer
                   config={{
                     wins: { label: "Wins", color: themeColors.profit },
@@ -253,18 +253,18 @@ export function SectionCards() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
                   {metrics.totalTrades.toLocaleString()}
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium break-words">
                     <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
                   </p>
-                  <p className="text-xs" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
-              <div className="w-20 h-20 relative">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 relative shrink-0">
                 <ChartContainer
                   config={{ trades: { label: "Trades", color: themeColors.primary } }}
                   className="w-full h-full"
@@ -329,18 +329,18 @@ export function SectionCards() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-3xl font-bold tracking-tight" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                   {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
+                  <p className="text-sm font-medium break-words" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                     {pfGood ? `$${metrics.profitFactor.toFixed(2)} earned per $1 lost` : 'Losing more than winning'}
                   </p>
-                  <p className="text-xs"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
+                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
                 </div>
               </div>
-              <div className="w-16 h-16 relative">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 relative shrink-0">
                 <ChartContainer
                   config={{
                     wins: { label: "Wins", color: themeColors.profit },

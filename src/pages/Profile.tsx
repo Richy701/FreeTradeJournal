@@ -259,8 +259,8 @@ export default function Profile() {
               ) : (
                 <h2 className="text-xl font-bold mb-1">{user.displayName || 'No name set'}</h2>
               )}
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span>{user.email}</span>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground min-w-0">
+                <span className="truncate max-w-full">{user.email}</span>
                 <span className="text-border">·</span>
                 <span>{getAccountAge(user.metadata?.creationTime)}</span>
               </div>
@@ -304,7 +304,7 @@ export default function Profile() {
                   {/* Emoji presets */}
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Emoji avatar</p>
-                    <div className="grid grid-cols-10 gap-1.5">
+                    <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5">
                       {AVATAR_EMOJIS.map(emoji => (
                         <button
                           key={emoji}

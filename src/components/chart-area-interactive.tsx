@@ -201,8 +201,8 @@ export function ChartAreaInteractive() {
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="text-lg font-semibold">
               {view === 'equity' ? 'Equity Curve' : 'Daily P&L'}
             </CardTitle>
@@ -428,7 +428,7 @@ export function ChartAreaInteractive() {
         <div className="flex w-full items-center gap-2 sm:gap-3 text-xs sm:text-sm mt-2 min-w-0">
           {view === 'equity' ? (
             <>
-              <div className="flex items-center gap-1.5 sm:gap-2 leading-none whitespace-nowrap text-muted-foreground font-medium">
+              <div className="flex items-center gap-1.5 sm:gap-2 leading-none min-w-0 truncate text-muted-foreground font-medium">
                 {chartData[0].date} &ndash; {chartData[chartData.length - 1].date}
               </div>
             </>

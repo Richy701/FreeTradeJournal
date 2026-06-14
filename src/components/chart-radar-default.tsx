@@ -174,7 +174,7 @@ export function ChartRadarDefault() {
         </CardHeader>
         <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
-            <div className="h-full">
+            <div className="h-full px-1 sm:px-2">
               <ChartContainer config={radarConfig} className="h-full w-full aspect-auto">
                 <RadarChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <ChartTooltip

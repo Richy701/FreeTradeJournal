@@ -55,12 +55,12 @@ export function MobileHeader({ title }: { title?: string }) {
       style={{ top: 'var(--announcement-banner-height, 0px)', paddingTop: 'var(--pwa-safe-top, 0px)' }}
       ref={ref}
     >
-      <div className="flex items-center justify-between px-3 h-14">
+      <div className="flex items-center justify-between px-3 h-12">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="md:hidden h-10 w-10"
+          className="md:hidden h-11 w-11"
           aria-label="Toggle menu"
         >
           {openMobile ? (
@@ -87,7 +87,7 @@ export function MobileHeader({ title }: { title?: string }) {
         {isDemo ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="Demo menu">
+              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full" aria-label="Demo menu">
                 <Avatar className="h-7 w-7 rounded-full ring-1 ring-amber-500/50">
                   <AvatarFallback className="rounded-full text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400">
                     <Eye className="h-3.5 w-3.5" />
@@ -113,7 +113,7 @@ export function MobileHeader({ title }: { title?: string }) {
         ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" aria-label="User menu">
+              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full" aria-label="User menu">
                 <Avatar className="h-7 w-7 rounded-full ring-1 ring-border">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
                   <AvatarFallback className="rounded-full font-semibold text-white" style={{ backgroundColor: avatarColor || themeColors.primary, fontSize: avatarEmoji ? '14px' : '11px' }}>
@@ -145,7 +145,7 @@ export function MobileHeader({ title }: { title?: string }) {
       </div>
 
       {!isDemo && (
-        <div className="px-3 pb-2 border-b border-border/70 overflow-hidden min-w-0">
+        <div className="px-3 pb-1.5 border-b border-border/70 overflow-hidden min-w-0">
           <AccountSwitcher />
         </div>
       )}
