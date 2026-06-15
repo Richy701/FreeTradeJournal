@@ -391,9 +391,30 @@ interface CustomColors {
   loss: string
 }
 
+// Darken a brand color so it meets WCAG AA (~4.5:1) as TEXT on the light
+// background, preserving hue by scaling toward black. Fills/borders/charts keep
+// the bright brand color; only text uses this. Colors that already pass (grays,
+// dark primaries) are returned unchanged.
+function readableOnLight(hex: string): string {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex
+  const toRgb = (h: string): number[] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]
+  const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4) }
+  const lum = (rgb: number[]) => 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2])
+  const contrastOnWhite = (rgb: number[]) => 1.05 / (lum(rgb) + 0.05)
+  const base = toRgb(hex)
+  if (contrastOnWhite(base) >= 4.5) return hex
+  let factor = 1
+  let out = base
+  while (factor > 0.1 && contrastOnWhite(out) < 4.5) {
+    factor -= 0.04
+    out = [Math.round(base[0] * factor), Math.round(base[1] * factor), Math.round(base[2] * factor)]
+  }
+  return '#' + out.map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('')
+}
+
 interface ThemeContextType {
   currentTheme: string
-  themeColors: ThemePreset['colors'] & { primaryButtonText: string }
+  themeColors: ThemePreset['colors'] & { primaryButtonText: string; primaryText: string; profitText: string; lossText: string }
   setTheme: (theme: string) => void
   availableThemes: Record<string, ThemePreset>
   alpha: (color: string, hexOpacity: string) => string
@@ -681,9 +702,16 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
 
   const themeColors = useMemo(() => {
     const adjustedColors = getAdjustedColors()
+    // Text-safe variants: in light mode, darken brand colors that fail contrast
+    // as text on the light background. In dark mode (and for fills) keep the
+    // bright color. Lets gold text pass WCAG AA without dimming filled accents.
+    const textSafe = (hex: string) => (isDarkMode ? hex : readableOnLight(hex))
     return {
       ...adjustedColors,
       primaryButtonText: getContrastText(adjustedColors.primary),
+      primaryText: textSafe(adjustedColors.primary),
+      profitText: textSafe(adjustedColors.profit),
+      lossText: textSafe(adjustedColors.loss),
     }
   }, [currentTheme, isDarkMode, customColors])
 

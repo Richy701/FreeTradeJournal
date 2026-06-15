@@ -2363,7 +2363,7 @@ export default function TradeLog() {
 
         {/* Secondary stats strip */}
         <Card className="border-border/60 mb-2">
-          <CardContent className="py-3 px-4">
+          <CardContent className="px-4 !py-3">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
                    style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
@@ -2572,17 +2572,17 @@ export default function TradeLog() {
                           aria-label="Select all on this page"
                         />
                       </TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80 py-3">Date</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Symbol</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Market</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Side</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Entry</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Exit</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Lots</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">P&L</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">R:R</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Strategy</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground/80">Actions</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground py-3">Date</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Symbol</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Market</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Side</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Entry</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Exit</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Lots</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">P&L</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">R:R</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Strategy</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

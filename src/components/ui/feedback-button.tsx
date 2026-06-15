@@ -283,6 +283,7 @@ function FeedbackDialog({
                       aria-label={`Rate ${star} stars`}
                     >
                       <Star
+                        weight={star <= activeRating ? 'fill' : 'regular'}
                         className={cn(
                           "h-7 w-7 transition-colors duration-100",
                           star <= activeRating
@@ -384,7 +385,7 @@ function FeedbackDialog({
             <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-amber-500/[0.04] to-transparent">
               <div className="flex items-center gap-1.5 mb-3">
                 {[1,2,3,4,5].map((s) => (
-                  <Star key={s} className={cn("h-5 w-5 transition-transform", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
+                  <Star key={s} weight={s <= rating ? 'fill' : 'regular'} className={cn("h-5 w-5 transition-transform", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
                 ))}
               </div>
               <DialogHeader>

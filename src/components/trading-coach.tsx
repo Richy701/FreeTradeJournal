@@ -1145,15 +1145,15 @@ export function TradingCoach() {
       {(trades.length >= 3 || metrics) && (
         <div className="grid gap-4 md:grid-cols-2">
           {trades.length >= 3 && (
-            <Card>
-              <CardContent className="pt-6">
+            <Card className="min-h-[200px] flex flex-col">
+              <CardContent className="flex-1 flex flex-col justify-center py-6">
                 <TiltMeter tilt={tiltScore} alpha={alpha} />
               </CardContent>
             </Card>
           )}
           {metrics && (
-            <Card className={trades.length < 3 ? 'md:col-span-2' : ''}>
-              <CardContent className="pt-6">
+            <Card className={`min-h-[200px] flex flex-col ${trades.length < 3 ? 'md:col-span-2' : ''}`}>
+              <CardContent className="flex-1 flex flex-col justify-center py-6">
                 <CoachStats metrics={metrics} themeColors={themeColors} />
               </CardContent>
             </Card>
