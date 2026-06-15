@@ -139,7 +139,7 @@ export function SectionCards() {
               <TooltipTrigger asChild>
                 <div
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-                  style={{ color: pnlPositive ? themeColors.profitText : themeColors.lossText }}
+                  style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}
                 >
                   {pnlPositive ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                   {pnlPositive ? '+' : '-'}{formatPercentage(pnlPct)}
@@ -153,14 +153,14 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profitText : themeColors.lossText }}>
+                <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
                   {formatCurrency(metrics.totalPnL)}
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words" style={{ color: themeColors.primaryText }}>
+                  <p className="text-sm font-medium break-words" style={{ color: themeColors.primary }}>
                     Balance: {formatCurrencyPlain(accountBalance)}
                   </p>
-                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profitText : themeColors.lossText }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
               <div className="w-16 h-16 relative shrink-0">
@@ -185,7 +185,7 @@ export function SectionCards() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
             <div
               className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-              style={{ color: winRateGood ? themeColors.profitText : themeColors.lossText }}
+              style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}
             >
               {winCount}W / {lossCount}L
             </div>
@@ -193,14 +193,14 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: winRateGood ? themeColors.profitText : themeColors.lossText }}>
+                <div className="text-3xl font-bold tracking-tight" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
                   {formatPercentage(metrics.winRate)}
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words" style={{ color: winRateGood ? themeColors.profitText : themeColors.lossText }}>
+                  <p className="text-sm font-medium break-words" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
                     {Math.abs(metrics.winRate - 50).toFixed(0)}pts {winRateGood ? 'above' : 'below'} 50%
                   </p>
-                  <p className="text-xs break-words"><span style={{ color: themeColors.profitText }}>{formatCurrencyPlain(metrics.avgWin)} avg win</span> / <span style={{ color: themeColors.lossText }}>{formatCurrencyPlain(metrics.avgLoss)} avg loss</span></p>
+                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(metrics.avgWin)} avg win</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(metrics.avgLoss)} avg loss</span></p>
                 </div>
               </div>
               <div className="w-16 h-16 relative shrink-0">
@@ -254,14 +254,14 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primaryText }}>
+                <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
                   {metrics.totalTrades.toLocaleString()}
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium break-words">
-                    <span style={{ color: themeColors.profitText }}>{winCount} winners</span>, <span style={{ color: themeColors.lossText }}>{lossCount} losers</span>
+                    <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
                   </p>
-                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profitText : themeColors.lossText }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
               <div className="w-20 h-20 relative shrink-0">
@@ -316,7 +316,7 @@ export function SectionCards() {
               <TooltipTrigger asChild>
                 <div
                   className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-                  style={{ color: pfGood ? themeColors.profitText : themeColors.lossText }}
+                  style={{ color: pfGood ? themeColors.profit : themeColors.loss }}
                 >
                   {pfGood ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                   {pfLabel}
@@ -330,14 +330,14 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: pfGood ? themeColors.profitText : themeColors.lossText }}>
+                <div className="text-3xl font-bold tracking-tight" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                   {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words" style={{ color: pfGood ? themeColors.profitText : themeColors.lossText }}>
+                  <p className="text-sm font-medium break-words" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                     {pfGood ? `$${metrics.profitFactor.toFixed(2)} earned per $1 lost` : 'Losing more than winning'}
                   </p>
-                  <p className="text-xs break-words"><span style={{ color: themeColors.profitText }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.lossText }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
+                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
                 </div>
               </div>
               <div className="w-16 h-16 relative shrink-0">
