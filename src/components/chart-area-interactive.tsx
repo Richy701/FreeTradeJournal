@@ -424,6 +424,7 @@ export function ChartAreaInteractive() {
           </div>
         )}
       </CardContent>
+      {chartData.length > 0 && (
       <CardFooter className="border-t border-border/70 px-4 sm:px-6">
         <div className="flex w-full items-center gap-2 sm:gap-3 text-xs sm:text-sm mt-2 min-w-0">
           {view === 'equity' ? (
@@ -448,6 +449,7 @@ export function ChartAreaInteractive() {
           </div>
         </div>
       </CardFooter>
+      )}
     </Card>
   )
 }

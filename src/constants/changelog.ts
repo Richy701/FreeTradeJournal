@@ -15,6 +15,84 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.40.0',
+    date: '2026-06-17',
+    summary: 'CSV import now works with far more brokers and regions, and behaves the same from the dashboard or the trade log.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Imports work with more brokers and regions',
+        description: 'CSV import now handles European files (semicolon-separated with comma decimals), tab-separated files, 12-hour AM/PM times, day-first (DD/MM) dates, Buy/Sell shorthand, and reports with title rows above the data.',
+      },
+      {
+        type: 'fixed',
+        text: 'Unreadable files are rejected clearly',
+        description: 'Files in a format we cannot understand are now clearly rejected, instead of silently importing scrambled trades.',
+      },
+      {
+        type: 'fixed',
+        text: 'Consistent imports from the dashboard and trade log',
+        description: 'Importing the same file from the dashboard or the trade log now produces identical trades, and both offer manual column mapping when a format is not recognized automatically.',
+      },
+    ],
+  },
+  {
+    version: '2.39.0',
+    date: '2026-06-17',
+    summary: 'The free plan now includes up to 100 journal entries, and Pro unlocks unlimited journaling.',
+    items: [
+      {
+        type: 'new',
+        text: 'Unlimited journal entries on Pro',
+        description: 'The free plan includes up to 100 journal entries, and any entries you already have always stay — fully readable and editable. Upgrade to Pro for unlimited journaling.',
+      },
+    ],
+  },
+  {
+    version: '2.38.0',
+    date: '2026-06-17',
+    summary: 'CSV import now reads IC Markets and MetaTrader 5 position-history files correctly.',
+    items: [
+      {
+        type: 'new',
+        text: 'Import IC Markets / MetaTrader 5 position history',
+        description: 'MT5 position-history exports (IC Markets, Pepperstone, and similar) now import directly. Each position is paired from its open and close legs into a single trade with the right direction, entry and exit prices, size, and profit, instead of being split into duplicated half-trades.',
+      },
+      {
+        type: 'fixed',
+        text: 'Imported trades now keep their real dates and times',
+        description: 'Trades imported from the dashboard could come in with a missing or invalid date. They now carry the correct entry and exit dates and times from your file.',
+      },
+      {
+        type: 'fixed',
+        text: 'Dashboard updates immediately after importing',
+        description: 'Importing trades now refreshes your stats and charts straight away, instead of needing a page reload to show the new trades.',
+      },
+    ],
+  },
+  {
+    version: '2.37.0',
+    date: '2026-06-17',
+    summary: 'Market prices are now a dashboard section you can show, hide, and reorder like everything else.',
+    items: [
+      {
+        type: 'new',
+        text: 'Show or hide market prices from Customize',
+        description: 'The live market prices strip is now a dashboard section. Open Customize to turn it on or off and drag it into the order you prefer, just like your other sections.',
+      },
+      {
+        type: 'fixed',
+        text: 'Equity curve no longer errors with no trades',
+        description: 'The equity curve could fail to load before you had logged any trades. It now shows a friendly empty state instead.',
+      },
+      {
+        type: 'fixed',
+        text: 'Dashboard and settings changes stick on synced accounts',
+        description: 'On Pro accounts, a settings or dashboard layout change made right after opening the app could quietly revert on the next refresh. Your changes are now kept and synced reliably.',
+      },
+    ],
+  },
+  {
     version: '2.36.0',
     date: '2026-06-14',
     summary: 'A big pass on the mobile experience — your stats, calendar, and journal now fit phone screens properly.',
@@ -1186,4 +1264,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.36.0'
+export const LATEST_CHANGELOG_VERSION = '2.40.0'

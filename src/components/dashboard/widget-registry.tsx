@@ -7,6 +7,7 @@ import { DemoCtaCard } from '@/components/demo-cta-card'
 import { ProUpgradeCard } from '@/components/pro-upgrade-card'
 import { Brain, CloudArrowUp } from '@phosphor-icons/react'
 
+const MarketTicker = lazy(() => import('@/components/market-ticker').then(m => ({ default: m.MarketTicker })))
 const SectionCards = lazy(() => import('@/components/section-cards').then(m => ({ default: m.SectionCards })))
 const ChartAreaInteractive = lazy(() => import('@/components/chart-area-interactive').then(m => ({ default: m.ChartAreaInteractive })))
 const ChartRadarDefault = lazy(() => import('@/components/chart-radar-default').then(m => ({ default: m.ChartRadarDefault })))
@@ -29,6 +30,16 @@ export interface DashboardWidget {
 }
 
 export const DASHBOARD_WIDGETS: DashboardWidget[] = [
+  {
+    id: 'market-prices',
+    label: 'Market prices',
+    removable: true,
+    render: () => (
+      <Suspense fallback={null}>
+        <MarketTicker />
+      </Suspense>
+    ),
+  },
   {
     id: 'metrics',
     label: 'Key metrics',

@@ -1,5 +1,5 @@
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-lazy';
-import { UserStorage } from '@/utils/user-storage';
+import { UserStorage, isSettingsDirty, clearSettingsDirty } from '@/utils/user-storage';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
 // Keys we sync between localStorage and Firestore
@@ -101,6 +101,14 @@ export class SyncEngine {
             continue;
           }
 
+          // The user deliberately changed settings locally before this pull
+          // finished. settings is last-write-wins, so keep the local edit and
+          // flush it to remote after the pull (its earlier push was blocked).
+          if (key === 'settings' && isSettingsDirty(this.uid)) {
+            console.log('[Sync] Keeping local settings edit over remote (will flush)');
+            continue;
+          }
+
           // Update local data (go through UserStorage to keep cache & encryption in sync)
           // skipSync=true to avoid pushing the same data back to remote
           UserStorage.setItem(this.uid, key, remoteValue, true);
@@ -118,6 +126,14 @@ export class SyncEngine {
       this.setStatus('synced');
       this.markInitialPullDone();
       console.log('[Sync] Cloud Function polling enabled');
+
+      // Flush a settings change the user made before the pull finished: its
+      // push was blocked pre-pull and the pull above left it in place, so push
+      // the current local value now that pulling is done (push is unblocked).
+      if (isSettingsDirty(this.uid)) {
+        const localSettings = UserStorage.getItem(this.uid, 'settings');
+        if (localSettings) this.syncKey('settings', localSettings);
+      }
     } catch (err) {
       console.error('SyncEngine enable failed:', err);
       this.setStatus('error');
@@ -151,6 +167,10 @@ export class SyncEngine {
       for (const key of SYNC_KEYS) {
         // Skip keys we're currently writing
         if (this.writingKeys.has(key)) continue;
+
+        // Once the user has edited settings this session, treat local as
+        // authoritative so polling can't overwrite it with a stale remote.
+        if (key === 'settings' && isSettingsDirty(this.uid)) continue;
 
         const remoteValue = remoteData[key];
         if (!remoteValue) continue;
@@ -237,6 +257,9 @@ export class SyncEngine {
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');
+      // Push confirmed — the local settings edit is now safely in the cloud, so
+      // future loads can pull normally instead of forcing local to win.
+      if (key === 'settings') clearSettingsDirty(this.uid);
       console.log(`[Sync] Synced ${key} via Cloud Function`);
     } catch (err) {
       console.warn(`Sync write failed for ${key}:`, err);

@@ -8,6 +8,33 @@ export function setSyncRef(ref: typeof syncRef) {
   syncRef = ref;
 }
 
+// Marks that this device has a deliberate local `settings` edit that has NOT
+// been confirmed-synced to the cloud yet. `settings` is a single
+// last-write-wins blob whose push is blocked until the initial pull finishes,
+// so without this a change made before the pull (or refreshed before the async
+// push lands) is silently dropped and then overwritten by stale remote.
+//
+// Persisted in raw localStorage (never synced) so it survives a refresh: the
+// sync engine keeps the local edit authoritative and re-flushes it until the
+// push is CONFIRMED, then clears the flag so normal cross-device pulls resume.
+// Scoped by uid and per-browser, i.e. "this device has an unconfirmed edit."
+const SETTINGS_DIRTY_PREFIX = 'ftj_settings_dirty_';
+
+export function markSettingsDirty(uid: string | null) {
+  if (!uid) return;
+  try { localStorage.setItem(SETTINGS_DIRTY_PREFIX + uid, '1'); } catch { /* ignore */ }
+}
+
+export function clearSettingsDirty(uid: string | null) {
+  if (!uid) return;
+  try { localStorage.removeItem(SETTINGS_DIRTY_PREFIX + uid); } catch { /* ignore */ }
+}
+
+export function isSettingsDirty(uid: string | null): boolean {
+  if (!uid) return false;
+  try { return localStorage.getItem(SETTINGS_DIRTY_PREFIX + uid) === '1'; } catch { return false; }
+}
+
 export class UserStorage {
   private static cache = new Map<string, string>();
   private static encryptionKeys = new Map<string, CryptoKey>();

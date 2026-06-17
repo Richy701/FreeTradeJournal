@@ -60,7 +60,7 @@ export default function TermsAndConditions() {
           </LegalSection>
 
           <LegalSection title="Free Tier">
-            <p>The Free tier provides full access to core trading journal features at no cost, with no time limit. We reserve the right to modify Free tier features, but will provide reasonable notice of any material changes.</p>
+            <p>The Free tier provides access to core trading journal features at no cost, with no time limit. Some Free tier features carry usage limits — for example, the number of trading accounts and journal entries — which are described on the Pricing page; the Pro tier removes these. We reserve the right to modify Free tier features and limits, but will provide reasonable notice of any material changes.</p>
           </LegalSection>
 
           <LegalSection title="Not Financial Advice">

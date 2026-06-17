@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useCallback, useState, useRef, useMemo, type ReactNode } from 'react';
-import { useUserStorage } from '@/utils/user-storage';
+import { useUserStorage, markSettingsDirty } from '@/utils/user-storage';
+import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { onSyncChange } from '@/contexts/sync-context';
 import { DEFAULT_VALUES } from '@/constants/trading';
@@ -48,6 +49,10 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const userStorage = useUserStorage();
   const storageRef = useRef(userStorage);
   storageRef.current = userStorage;
+  const { user } = useAuth();
+  const userId = user?.uid ?? null;
+  const uidRef = useRef<string | null>(userId);
+  uidRef.current = userId;
   const { activeAccount } = useAccounts();
 
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
@@ -55,26 +60,35 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   // Set when settings state is updated from a remote sync pull, so the
   // save-on-change effect skips re-writing (and re-pushing) the same value.
   const applyingRemoteRef = useRef(false);
+  // Set while loading settings from storage (mount / user-scope change) so the
+  // save-on-change effect doesn't echo the just-loaded value back to storage/sync.
+  const hydratingRef = useRef(false);
 
   // Active account currency takes priority over global setting
   const effectiveCurrency = activeAccount?.currency || settings.currency;
 
-  // Load settings from localStorage on mount
+  // Load settings from per-user storage. Re-runs when the user scope (userId)
+  // changes: on first paint userId is null until Firebase auth resolves async,
+  // so the initial read hits the GUEST scope and misses the signed-in user's
+  // saved settings — which made every dashboard/Customize change reset on
+  // refresh. Re-reading once the uid is known loads the real per-user settings.
   useEffect(() => {
+    hydratingRef.current = true;
     const savedSettings = storageRef.current.getItem('settings');
     if (savedSettings) {
       try {
-        const parsed = JSON.parse(savedSettings);
-        setSettings({
-          ...defaultSettings,
-          ...parsed,
-        });
+        setSettings({ ...defaultSettings, ...JSON.parse(savedSettings) });
       } catch (error) {
         console.error('Error loading settings:', error);
+        setSettings(defaultSettings);
       }
+    } else {
+      // No saved settings in this scope — reset so a prior scope's values
+      // (e.g. guest defaults read before auth resolved) don't linger.
+      setSettings(defaultSettings);
     }
     setLoading(false);
-  }, []);
+  }, [userId]);
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
@@ -83,6 +97,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       // wrote it to storage (with skipSync), so re-writing would echo it back.
       if (applyingRemoteRef.current) {
         applyingRemoteRef.current = false;
+        return;
+      }
+      // Skip echoing a value we just loaded from storage (mount / scope change).
+      // Real user changes persist directly inside updateSettings, so skipping
+      // here can't drop a write.
+      if (hydratingRef.current) {
+        hydratingRef.current = false;
         return;
       }
       storageRef.current.setItem('settings', JSON.stringify(settings));
@@ -111,6 +132,9 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   }, []);
 
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
+    // Flag this as a deliberate local edit so the sync engine keeps it
+    // authoritative instead of letting a stale remote pull overwrite it.
+    markSettingsDirty(uidRef.current);
     setSettings(prev => {
       const next = { ...prev, ...updates };
       // Save immediately to ensure persistence

@@ -79,3 +79,145 @@ describe('parseCSV — Topstep Trades export with separate Fees and Commissions'
     expect(a.exitPrice).toBe('30578.25');
   });
 });
+
+describe('parseCSV — MT5 / IC Markets position history', () => {
+  // Real IC Markets "Mt5 Position History List" shape: two title rows above the
+  // header, each position split into an opening + closing leg sharing a Position
+  // id, both prices in the single "Open Price" column, profit on the close leg.
+  const csv = [
+    'Report,,,,,,,,',
+    'Name: Mt5 Position History List ,Produced At: 17/06/2026 19:49,,,,,,,',
+    'Symbol,Account Number,Position,Position Status,Date Time,Transaction Type,Trade Volume Lots,Open Price,Profit',
+    'XAUUSD    ,7390495,4272445503,Closed,3/2/2026 1:47:41 AM,Trade Buy In,0.01,5385.06,0',
+    'XAUUSD    ,7390495,4272445503,Closed,3/2/2026 2:01:35 AM,Trade Sell Out,0.01,5377.31,-5.78',
+    'XAUUSD    ,7390495,4299999999,Closed,5/14/2026 12:52:45 PM,Trade Sell In,0.02,5400.00,0',
+    'XAUUSD    ,7390495,4299999999,Closed,5/14/2026 1:42:02 PM,Trade Buy Out,0.02,5390.00,20.00',
+  ].join('\n');
+
+  it('skips the preamble and pairs two legs into one trade per position', () => {
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades).toHaveLength(2);
+    expect(r.summary.successfulParsed).toBe(2);
+  });
+
+  it('derives side, entry/exit price, lots and pnl from the paired legs', () => {
+    const [long, short] = parseCSV(csv).trades;
+    expect(long.symbol).toBe('XAUUSD');
+    expect(long.side).toBe('long');
+    expect(long.entryPrice).toBe('5385.060000');
+    expect(long.exitPrice).toBe('5377.310000');
+    expect(long.quantity).toBe('0.01');
+    expect(long.pnl).toBe('-5.78');
+
+    expect(short.side).toBe('short');
+    expect(short.entryPrice).toBe('5400.000000');
+    expect(short.exitPrice).toBe('5390.000000');
+    expect(short.pnl).toBe('20.00');
+  });
+
+  it('parses AM/PM timestamps without collapsing PM into the AM hour', () => {
+    const short = parseCSV(csv).trades[1];
+    expect(short.entryDate).toBe('2026-05-14T12:52:45');
+    expect(short.exitDate).toBe('2026-05-14T13:42:02');
+  });
+});
+
+describe('parseCSV — cross-broker robustness', () => {
+  it('maps B/S single-letter sides correctly (B = long, not short)', () => {
+    const csv = [
+      'Symbol,Side,Open Price,Close Price,Volume,Profit,Open Time',
+      'EURUSD,B,1.0850,1.0900,1,50,2026-01-15 10:00:00',
+      'EURUSD,S,1.0900,1.0850,1,50,2026-01-16 10:00:00',
+    ].join('\n');
+    const [a, b] = parseCSV(csv).trades;
+    expect(a.side).toBe('long');
+    expect(b.side).toBe('short');
+  });
+
+  it('parses 12-hour AM/PM times without collapsing PM into AM', () => {
+    const csv = [
+      'Symbol,Type,Entry Price,Exit Price,Qty,PnL,Open Time,Close Time',
+      'AAPL,Long,150.00,152.00,10,20,01/15/2026 09:30:00 AM,01/15/2026 03:45:00 PM',
+    ].join('\n');
+    const [t] = parseCSV(csv).trades;
+    expect(t.entryDate).toBe('2026-01-15T09:30:00');
+    expect(t.exitDate).toBe('2026-01-15T15:45:00');
+    expect(t.quantity).toBe('10'); // "Qty" synonym recognized
+  });
+
+  it('infers DD/MM (day-first) for the whole file when a value proves it', () => {
+    // 20/03 is unambiguous day-first, so 07/03 must be 7 March (not 3 July).
+    const csv = [
+      'Symbol,Side,Open Price,Close Price,Lots,Profit,Open Time',
+      'EURUSD,buy,1.085,1.090,1,50,07/03/2026 10:00:00',
+      'GBPUSD,sell,1.27,1.26,1,90,20/03/2026 11:00:00',
+    ].join('\n');
+    const [a] = parseCSV(csv).trades;
+    expect(a.entryDate).toBe('2026-03-07T10:00:00');
+  });
+
+  it('handles European semicolon-delimited files with decimal commas', () => {
+    const csv = [
+      'Symbol;Side;Open Price;Close Price;Lots;Profit;Open Time',
+      'EURUSD;buy;1,0850;1,0900;1;50,50;2026-01-15 10:00:00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    const [t] = r.trades;
+    expect(t.entryPrice).toBe('1.0850');
+    expect(t.exitPrice).toBe('1.0900');
+    expect(t.pnl).toBe('50.5');
+  });
+
+  it('handles tab-separated files', () => {
+    const csv = [
+      'Symbol\tSide\tOpen Price\tClose Price\tLots\tProfit',
+      'EURUSD\tbuy\t1.0850\t1.0900\t1\t50',
+    ].join('\n');
+    const [t] = parseCSV(csv).trades;
+    expect(t.entryPrice).toBe('1.0850');
+    expect(t.exitPrice).toBe('1.0900');
+  });
+
+  it('skips a preamble/title row above the real header (non-MT5)', () => {
+    const csv = [
+      'Account Statement - Generated 2026-01-20',
+      'Symbol,Side,Open Price,Close Price,Lots,Profit,Open Time',
+      'EURUSD,buy,1.0850,1.0900,1,50,2026-01-15 10:00:00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades).toHaveLength(1);
+  });
+
+  it('rejects unparseable files instead of importing one-field garbage', () => {
+    const csv = ['random junk line', 'another junk line'].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(false);
+    expect(r.trades).toHaveLength(0);
+  });
+
+  it('skips rows with invalid prices rather than importing entry=exit=0', () => {
+    const csv = [
+      'Symbol,Side,Open Price,Close Price,Lots,Profit',
+      'EURUSD,buy,not-a-number,also-bad,1,50',
+      'GBPUSD,sell,1.27,1.26,1,90',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.summary.successfulParsed).toBe(1);
+    expect(r.summary.failed).toBe(1);
+    expect(r.trades[0].symbol).toBe('GBPUSD');
+  });
+
+  it('still imports a normal US comma CSV unchanged', () => {
+    const csv = [
+      'Symbol,Side,Open Price,Close Price,Lots,Profit,Open Time',
+      'EURUSD,buy,1.0850,1.0900,1,50,2026-01-15 10:00:00',
+    ].join('\n');
+    const [t] = parseCSV(csv).trades;
+    expect(t.side).toBe('long');
+    expect(t.entryPrice).toBe('1.0850');
+    expect(t.pnl).toBe('50');
+  });
+});

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,8 @@ import {
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
+import { useProStatus } from '@/contexts/pro-context';
+import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing';
 import { useUserStorage } from '@/utils/user-storage';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { toast } from 'sonner';
@@ -95,6 +97,7 @@ const mockEntries: JournalEntry[] = [];
 export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
   const { isDemo } = useAuth();
+  const { isPro } = useProStatus();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,6 +140,13 @@ export default function Journal() {
     tradeId: '',
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade'
   });
+
+  // Free tier journal cap. Only NEW entries past the cap are blocked; existing
+  // entries are always kept and editable (so users already over the cap keep
+  // full access to their own data). Pro and demo are unlimited.
+  const atFreeJournalLimit = !isPro && !isDemo && entries.length >= FREE_JOURNAL_ENTRY_LIMIT;
+  const nearFreeJournalLimit =
+    !isPro && !isDemo && !atFreeJournalLimit && entries.length >= FREE_JOURNAL_ENTRY_LIMIT - 10;
 
   // Load entries from localStorage or demo data
   useEffect(() => {
@@ -222,6 +232,14 @@ export default function Journal() {
 
     if (isDemo) {
       toast.info('Sign up to save journal entries!');
+      return;
+    }
+
+    // Block creating NEW entries past the free cap (editing existing is allowed).
+    if (!editingEntry && atFreeJournalLimit) {
+      toast.error(
+        `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries. Your existing entries are safe — upgrade to Pro for unlimited journaling.`
+      );
       return;
     }
 
@@ -718,6 +736,29 @@ export default function Journal() {
       </div>
 
       <div className="flex-1 w-full px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+
+        {(nearFreeJournalLimit || atFreeJournalLimit) && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
+            <WarningCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                {atFreeJournalLimit
+                  ? `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries`
+                  : `You're approaching the free journal limit — ${entries.length} of ${FREE_JOURNAL_ENTRY_LIMIT} entries used`}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                {atFreeJournalLimit
+                  ? 'Your existing entries are safe and stay editable. Upgrade to Pro to add new entries with unlimited journaling.'
+                  : 'Upgrade to Pro for unlimited journal entries before you hit the cap.'}
+              </p>
+            </div>
+            <Link to="/pricing" className="shrink-0">
+              <Button size="sm" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+                Upgrade
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Quick Stats */}
         {entries.length > 0 && (

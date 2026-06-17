@@ -4,6 +4,9 @@ import { useAuth } from '@/contexts/auth-context'
 import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useSettings } from '@/contexts/settings-context'
+import { notifyDataChange } from '@/contexts/sync-context'
+import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades'
+import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
@@ -14,7 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
-import { parseCSV, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
+import { parseCSV, parseCSVWithMappings, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
 import { isIncognitoMode } from '@/utils/incognito-detection'
@@ -34,7 +37,6 @@ import { resolveDashboardLayout } from '@/components/dashboard/widget-registry'
 import { CustomizeSheet } from '@/components/dashboard/customize-sheet'
 
 // Lazy load chart components to reduce initial bundle size
-const MarketTicker = lazy(() => import("@/components/market-ticker").then(m => ({ default: m.MarketTicker })))
 const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })))
 import {
   Dialog,
@@ -149,6 +151,7 @@ export default function Dashboard() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null })
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null)
   const [importProgress, setImportProgress] = useState<{
     active: boolean;
     phase: string;
@@ -281,13 +284,19 @@ export default function Dashboard() {
       const content = await validateCSVFile(file);
       const result = parseCSV(content);
 
-      // Close the trade modal and show preview dialog
       setIsTradeModalOpen(false);
-      setCsvPreview({
-        show: true,
-        file: file,
-        parseResult: result
-      });
+
+      // If auto-detect failed on missing columns, offer manual mapping (same as
+      // the Trade Log importer) instead of dead-ending on an unrecognized format.
+      if (!result.success && result.errors.some(e => e.includes('Missing required columns'))) {
+        setColumnMapping(buildColumnMapping(content, file));
+      } else {
+        setCsvPreview({
+          show: true,
+          file: file,
+          parseResult: result
+        });
+      }
 
     } catch (error) {
       toast.error('File Import Error', {
@@ -297,6 +306,24 @@ export default function Dashboard() {
     } finally {
       setCsvUploadState({ isUploading: false });
     }
+  };
+
+  const handleMappingConfirm = () => {
+    if (!columnMapping) return;
+    const { csvContent, mappings, file } = columnMapping;
+
+    const requiredFields = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
+    const unmapped = requiredFields.filter(f => mappings[f] === undefined || mappings[f] < 0);
+    if (unmapped.length > 0) {
+      toast.error('Missing required mappings', {
+        description: `Please map: ${unmapped.join(', ')}`,
+      });
+      return;
+    }
+
+    const result = parseCSVWithMappings(csvContent, mappings);
+    setColumnMapping(null);
+    setCsvPreview({ show: true, file, parseResult: result });
   };
 
   const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,43 +366,26 @@ export default function Dashboard() {
 
         setImportProgress({ active: true, phase: 'Processing trades...', percent: 50 });
 
-        // Convert parsed trades to dashboard format with accountId
-        const importedTrades = result.trades.map((trade, index) => ({
-          id: `dashboard-import-${Date.now()}-${index}`,
+        // Shared converter — identical to the Trade Log import so the same file
+        // produces the same trades (correct dates, net P&L, market) either way.
+        const importedTrades = buildImportedTrades(result.trades, {
+          fileName: file.name,
           accountId: activeAccount?.id || 'default-main-account',
-          symbol: trade.symbol,
-          side: trade.side,
-          entryPrice: parseFloat(trade.entryPrice) || 0,
-          exitPrice: parseFloat(trade.exitPrice) || 0,
-          lotSize: parseFloat(trade.quantity) || 1,
-          entryTime: new Date(`${trade.date}T00:00:00`),
-          exitTime: new Date(`${trade.date}T00:00:00`),
-          spread: 0,
-          commission: 0,
-          swap: 0,
-          pnl: parseFloat(trade.pnl) || 0,
-          pnlPercentage: 0,
-          riskReward: 0,
-          notes: `Imported from ${file.name} via Dashboard`,
-          strategy: '',
-          market: 'forex',
-          propFirm: ''
-        }));
+          source: 'Dashboard',
+        });
 
         setImportProgress({ active: true, phase: 'Checking for duplicates...', percent: 70 });
 
-        // Deduplicate: fingerprint on key fields to skip already-imported trades
-        const tradeFingerprint = (t: any) =>
-          `${t.symbol}|${t.side}|${t.entryPrice}|${t.exitPrice}|${t.lotSize}|${t.pnl}|${new Date(t.entryTime).getTime()}|${new Date(t.exitTime).getTime()}`;
-
-        const existingFingerprints = new Set(existingTrades.map(tradeFingerprint));
-        const newTrades = importedTrades.filter((t: any) => !existingFingerprints.has(tradeFingerprint(t)));
-        const skippedCount = importedTrades.length - newTrades.length;
+        // Deduplicate against existing trades on key fields.
+        const { newTrades, skippedCount } = dedupeImportedTrades(existingTrades, importedTrades);
 
         setImportProgress({ active: true, phase: 'Saving trades...', percent: 90 });
 
         const updatedTrades = [...existingTrades, ...newTrades];
         userStorage.setItem('trades', JSON.stringify(updatedTrades));
+        // Notify useDemoData subscribers so all widgets re-read trades live,
+        // instead of requiring a page refresh to pick up the import.
+        notifyDataChange();
 
         // Brief pause so user sees 100%
         setImportProgress({ active: true, phase: 'Done!', percent: 100 });
@@ -722,11 +732,6 @@ export default function Dashboard() {
                 })}
               </span>
             </div>
-
-            {/* Live Market Prices + macro context */}
-            <Suspense fallback={null}>
-              <MarketTicker />
-            </Suspense>
 
             {/* Insight + action button */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1097,6 +1102,9 @@ export default function Dashboard() {
         })}
       </div>
       
+      {/* Column Mapping Dialog */}
+      <ColumnMappingDialog value={columnMapping} onChange={setColumnMapping} onConfirm={handleMappingConfirm} />
+
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">

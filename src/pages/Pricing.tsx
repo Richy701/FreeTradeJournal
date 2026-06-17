@@ -219,7 +219,7 @@ function ComparisonRow({ feature, free, pro }: { feature: string; free: boolean;
 const FAQS = [
   {
     q: 'Is the free plan really free forever?',
-    a: 'Yes. No credit card, no hidden limits. The core journal — unlimited trades, analytics, and journaling — is free for life.',
+    a: 'Yes. No credit card required. The core journal — unlimited trades, analytics, and up to 100 journal entries — is free for life. Upgrade to Pro for unlimited journal entries.',
   },
   {
     q: 'How does the 14-day free trial work?',

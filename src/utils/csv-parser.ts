@@ -32,12 +32,12 @@ export interface CSVParseResult {
 const COLUMN_MAPPINGS = {
   // Your current format (MT5-like) + Topstep + other prop firms
   standard: {
-    symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract'],
-    side: ['Side', 'Type', 'Direction', 'Action'],
-    openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice'],
-    closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice'],
-    quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units'],
-    pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L'],
+    symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract', 'Market'],
+    side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell'],
+    openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice', 'Avg Entry Price'],
+    closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice', 'Avg Exit Price'],
+    quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units', 'Qty', 'Filled Qty', 'Shares', 'Amount'],
+    pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L', 'Realized P/L', 'Realized P&L', 'Net Profit'],
     openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
     closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
     commission: ['Commission', 'Commissions'],
@@ -45,7 +45,24 @@ const COLUMN_MAPPINGS = {
   }
 };
 
-function parseCSVLine(line: string): string[] {
+// Sniff the field delimiter from the header line. European brokers export
+// semicolon-delimited CSVs (with decimal commas), and some platforms export
+// tab-separated — both produce single-column garbage if we assume a comma.
+function detectDelimiter(lines: string[]): string {
+  const sample = lines.find(l => l.trim()) || '';
+  const counts: Record<string, number> = {
+    ',': (sample.match(/,/g) || []).length,
+    ';': (sample.match(/;/g) || []).length,
+    '\t': (sample.match(/\t/g) || []).length,
+  };
+  let best = ',';
+  for (const d of [';', '\t']) {
+    if (counts[d] > counts[best]) best = d;
+  }
+  return best;
+}
+
+function parseCSVLine(line: string, delimiter: string = ','): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -55,7 +72,7 @@ function parseCSVLine(line: string): string[] {
 
     if (char === '"') {
       inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       result.push(current.trim());
       current = '';
     } else {
@@ -91,10 +108,20 @@ export function findColumnIndex(headers: string[], possibleNames: string[]): num
   return -1;
 }
 
-function parseCurrency(value: string): number {
-  // Remove currency symbols and parse
-  const cleaned = value.replace(/[$£€¥₹,\s]/g, '');
-  return parseFloat(cleaned) || 0;
+// Normalize a numeric string to a JS-parseable form. When `decimalComma` is set
+// (European exports), "1.234,56" → "1234.56"; otherwise "1,234.56" → "1234.56".
+function cleanNumeric(value: string, decimalComma: boolean = false): string {
+  let s = (value || '').replace(/[$£€¥₹\s]/g, '');
+  if (decimalComma) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    s = s.replace(/,/g, '');
+  }
+  return s.replace(/[^0-9.\-]/g, '');
+}
+
+function parseCurrency(value: string, decimalComma: boolean = false): number {
+  return parseFloat(cleanNumeric(value, decimalComma)) || 0;
 }
 
 function formatLocalDateTime(date: Date): string {
@@ -107,47 +134,68 @@ function formatLocalDateTime(date: Date): string {
   return `${y}-${m}-${d}T${h}:${min}:${s}`;
 }
 
-function parseDateString(dateStr: string): string {
+// Parse a clock string "HH:MM[:SS] [AM|PM]" into 24-hour components. Returns
+// null if it isn't a clock. Handles AM/PM, which broker exports commonly use and
+// which a naive split(':') mangles (seconds become NaN, every PM collapses to AM).
+function parseClock(timePart: string): { h: number; m: number; s: number } | null {
+  const m = timePart.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const ap = (m[4] || '').toUpperCase();
+  if (ap === 'PM' && h < 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return { h, m: parseInt(m[2], 10), s: m[3] ? parseInt(m[3], 10) : 0 };
+}
+
+// `dayFirst`: true = DD/MM, false = MM/DD, undefined = auto (per-value heuristic,
+// US default when ambiguous). Inferred for the whole file by detectDayFirst().
+function parseDateString(dateStr: string, dayFirst?: boolean): string {
   try {
     // Strip timezone offset suffix like "+00:00" or "-06:00"
     const cleaned = dateStr.replace(/\s*[+-]\d{2}:\d{2}\s*$/, '').trim();
 
     let date: Date;
 
-    // Format with slashes: could be DD/MM/YYYY or MM/DD/YYYY, optionally with time
-    if (cleaned.includes('/')) {
-      const spaceIdx = cleaned.indexOf(' ');
+    // Format with slashes or dots: DD/MM/YYYY or MM/DD/YYYY, optionally with time.
+    // (MT4/European exports use "2025.08.28" or "28.08.2025"; treat '.' like '/'.)
+    const slashDate = /^\d{1,2}[./]\d{1,2}[./]\d{2,4}/.test(cleaned);
+    if (slashDate) {
+      const spaceIdx = cleaned.search(/[ T]/);
       const datePart = spaceIdx >= 0 ? cleaned.slice(0, spaceIdx) : cleaned;
       const timePart = spaceIdx >= 0 ? cleaned.slice(spaceIdx + 1).trim() : '';
-      const parts = datePart.split('/');
+      const parts = datePart.split(/[./]/);
       const a = parseInt(parts[0]);
       const b = parseInt(parts[1]);
       const year = parseInt(parts[2]);
 
       let month: number, day: number;
-      // If second part > 12, it must be MM/DD/YYYY (e.g. 01/28/2026 from Topstep)
-      // If first part > 12, it must be DD/MM/YYYY (e.g. 28/08/2025 from MT5)
-      // If both <= 12, try MM/DD/YYYY first (US format, more common in prop firm exports)
-      if (b > 12) {
+      // A value > 12 is unambiguous. Otherwise honor the file-level dayFirst hint;
+      // fall back to MM/DD (US) when there's no hint.
+      if (a > 12) {
+        month = b - 1; day = a;
+      } else if (b > 12) {
         month = a - 1; day = b;
-      } else if (a > 12) {
+      } else if (dayFirst === true) {
         month = b - 1; day = a;
       } else {
         month = a - 1; day = b;
       }
 
-      if (timePart) {
-        const tp = timePart.split(':').map(Number);
-        date = new Date(year, month, day, tp[0] || 0, tp[1] || 0, tp[2] || 0);
-      } else {
-        date = new Date(year, month, day);
-      }
+      const clock = timePart ? parseClock(timePart) : null;
+      date = clock
+        ? new Date(year, month, day, clock.h, clock.m, clock.s)
+        : new Date(year, month, day);
     }
-    // Format: "2025-08-28" or "2025-08-28 00:37:54" or "2025-08-28T14:30:00"
+    // Format: "2025-08-28" or "2025-08-28 00:37:54" or "2025-08-28T14:30:00",
+    // optionally with an AM/PM clock.
     else if (cleaned.includes('-')) {
-      if (cleaned.includes('T') || cleaned.includes(' ')) {
-        const normalized = cleaned.replace(' ', 'T');
-        date = new Date(normalized);
+      const sep = cleaned.search(/[ T]/);
+      if (sep >= 0) {
+        const [y, m, d] = cleaned.slice(0, sep).split('-').map(Number);
+        const clock = parseClock(cleaned.slice(sep + 1));
+        date = clock
+          ? new Date(y, m - 1, d, clock.h, clock.m, clock.s)
+          : new Date(cleaned.replace(' ', 'T'));
       } else {
         const [y, m, d] = cleaned.split('-').map(Number);
         date = new Date(y, m - 1, d);
@@ -174,10 +222,32 @@ function parseDateString(dateStr: string): string {
 
 function normalizeSide(side: string): 'long' | 'short' {
   const normalized = side.toLowerCase().trim();
-  if (normalized === 'buy' || normalized === 'long' || normalized === 'l' || normalized === 'bid') {
+  // Include single-letter "B" (Buy) and bare "bought" — some brokers/cTrader use
+  // B/S, which previously fell through to 'short' and inverted every long.
+  if (['buy', 'long', 'l', 'bid', 'b', 'bought'].includes(normalized)) {
     return 'long';
   }
   return 'short';
+}
+
+// Infer whether a column of slash/dot dates is DD/MM (day-first) or MM/DD by
+// scanning every value: a first part > 12 proves day-first, a second part > 12
+// proves month-first. Returns undefined when the file is genuinely ambiguous
+// (no value exceeds 12) or self-contradictory, so the caller can fall back.
+function detectDayFirst(dateStrings: string[]): boolean | undefined {
+  let sawDayFirst = false;
+  let sawMonthFirst = false;
+  for (const s of dateStrings) {
+    const m = (s || '').trim().match(/^(\d{1,2})[./](\d{1,2})[./]\d{2,4}/);
+    if (!m) continue;
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    if (a > 12) sawDayFirst = true;
+    if (b > 12) sawMonthFirst = true;
+  }
+  if (sawDayFirst && !sawMonthFirst) return true;
+  if (sawMonthFirst && !sawDayFirst) return false;
+  return undefined;
 }
 
 // ─── IBKR Detection & Parsing ───────────────────────────────
@@ -905,7 +975,205 @@ function parseTopStepOrders(lines: string[], headers: string[]): CSVParseResult 
   return result;
 }
 
-export function parseCSV(csvContent: string): CSVParseResult {
+// ─── MT5 / IC Markets Deal-History Detection & Parsing ───────
+
+// MetaTrader 5 "Position history" exports (IC Markets, Pepperstone, etc.) are
+// shaped unlike a one-row-per-trade CSV:
+//   • 2 preamble rows ("Report", "Name: ... Produced At: ...") sit ABOVE the
+//     real "Symbol,...,Profit" header, so lines[0] is not the header.
+//   • Each closed position spans TWO rows keyed by a shared Position id: an
+//     opening leg (Trade Buy In / Trade Sell In) and a closing leg
+//     (Trade Sell Out / Trade Buy Out). Partial closes add more legs.
+//   • Entry AND exit prices both live in the single "Open Price" column — there
+//     is no separate close-price column, and no long/short side column.
+//   • Profit appears only on the closing leg(s).
+// We must group by Position, pair the legs, and synthesize a completed trade.
+
+// MT5 timestamps are "M/D/YYYY h:mm:ss AM/PM" — parseDateString has no AM/PM
+// handling and would collapse every PM into the AM hour, scrambling leg order.
+function parseMT5DateTime(s: string): string {
+  if (!s) return formatLocalDateTime(new Date());
+  const str = s.trim();
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?$/i);
+  if (m) {
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    const year = parseInt(m[3], 10);
+    // Same DD/MM vs MM/DD disambiguation as parseDateString (US default).
+    let month: number, day: number;
+    if (b > 12) { month = a - 1; day = b; }
+    else if (a > 12) { month = b - 1; day = a; }
+    else { month = a - 1; day = b; }
+    let hour = parseInt(m[4], 10);
+    const ap = (m[7] || '').toUpperCase();
+    if (ap === 'PM' && hour < 12) hour += 12;
+    if (ap === 'AM' && hour === 12) hour = 0;
+    const date = new Date(year, month, day, hour, parseInt(m[5], 10), parseInt(m[6], 10));
+    if (!isNaN(date.getTime())) return formatLocalDateTime(date);
+  }
+  return parseDateString(str);
+}
+
+// Scan the first rows for the real MT5 header (it sits below preamble rows).
+function findMT5HeaderRow(lines: string[]): number {
+  const limit = Math.min(lines.length, 15);
+  for (let i = 0; i < limit; i++) {
+    const cells = parseCSVLine(lines[i]).map(c => c.trim().toLowerCase());
+    if (
+      cells.includes('position') &&
+      cells.includes('transaction type') &&
+      cells.some(c => c === 'open price' || c === 'price') &&
+      cells.includes('profit')
+    ) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function isMT5DealHistory(lines: string[]): boolean {
+  return findMT5HeaderRow(lines) !== -1;
+}
+
+function parseMT5DealHistory(lines: string[], headerRow: number): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false, trades: [], errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const headers = parseCSVLine(lines[headerRow]).map(h => h.trim().toLowerCase());
+  const col = {
+    symbol:     headers.indexOf('symbol'),
+    position:   headers.indexOf('position'),
+    dateTime:   headers.findIndex(h => h === 'date time' || h === 'datetime' || h === 'time'),
+    txType:     headers.findIndex(h => h === 'transaction type' || h === 'type'),
+    lots:       headers.findIndex(h => h === 'trade volume lots' || h === 'volume' || h === 'lots'),
+    price:      headers.findIndex(h => h === 'open price' || h === 'price'),
+    profit:     headers.indexOf('profit'),
+    commission: headers.findIndex(h => h === 'commission' || h === 'commissions'),
+    swap:       headers.indexOf('swap'),
+  };
+
+  type Leg = {
+    isOpen: boolean; isBuy: boolean; price: number; lots: number;
+    profit: number; commission: number; swap: number; time: string;
+  };
+  const groups = new Map<string, { symbol: string; legs: Leg[] }>();
+
+  for (let i = headerRow + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    result.summary.totalRows++;
+
+    try {
+      const fields = parseCSVLine(line);
+      const positionId = col.position >= 0 ? (fields[col.position] || '').trim() : '';
+      const symbol = col.symbol >= 0 ? (fields[col.symbol] || '').trim() : '';
+      const txType = (col.txType >= 0 ? fields[col.txType] || '' : '').trim().toLowerCase();
+
+      if (!positionId || !symbol || !txType) {
+        result.errors.push(`Row ${i + 1}: Missing position id, symbol, or transaction type`);
+        result.summary.failed++;
+        continue;
+      }
+
+      // "trade buy in" / "trade sell out" → last word is in/out, buy/sell anywhere.
+      const isOpen = /\bin$/.test(txType);
+      const isBuy = /buy/.test(txType);
+      const leg: Leg = {
+        isOpen,
+        isBuy,
+        price:      col.price >= 0 ? parseFloat(fields[col.price]) || 0 : 0,
+        lots:       col.lots >= 0 ? Math.abs(parseFloat(fields[col.lots]) || 0) : 0,
+        profit:     col.profit >= 0 ? parseCurrency(fields[col.profit] || '0') : 0,
+        commission: col.commission >= 0 ? parseCurrency(fields[col.commission] || '0') : 0,
+        swap:       col.swap >= 0 ? parseCurrency(fields[col.swap] || '0') : 0,
+        time:       col.dateTime >= 0 ? parseMT5DateTime(fields[col.dateTime] || '') : '',
+      };
+
+      if (!groups.has(positionId)) groups.set(positionId, { symbol, legs: [] });
+      groups.get(positionId)!.legs.push(leg);
+    } catch {
+      result.errors.push(`Row ${i + 1}: Parse error`);
+      result.summary.failed++;
+    }
+  }
+
+  const dates: string[] = [];
+
+  for (const [positionId, { symbol, legs }] of groups) {
+    const opens = legs.filter(l => l.isOpen);
+    const closes = legs.filter(l => !l.isOpen);
+
+    if (!opens.length || !closes.length) {
+      result.errors.push(`Position ${positionId} (${symbol}): still open or missing a leg — skipped`);
+      result.summary.failed++;
+      continue;
+    }
+
+    const openLots = opens.reduce((s, l) => s + l.lots, 0);
+    const closeLots = closes.reduce((s, l) => s + l.lots, 0);
+    const wAvg = (ls: Leg[], total: number) =>
+      total > 0 ? ls.reduce((s, l) => s + l.price * l.lots, 0) / total : (ls[0]?.price || 0);
+
+    const entryPrice = wAvg(opens, openLots);
+    const exitPrice = wAvg(closes, closeLots);
+    const side: 'long' | 'short' = opens[0].isBuy ? 'long' : 'short';
+    const pnl = legs.reduce((s, l) => s + l.profit, 0);
+    const commission = legs.reduce((s, l) => s + l.commission, 0);
+    const swap = legs.reduce((s, l) => s + l.swap, 0);
+
+    const openTimes = opens.map(l => l.time).filter(Boolean).sort();
+    const closeTimes = closes.map(l => l.time).filter(Boolean).sort();
+    const entryDate = openTimes[0] || formatLocalDateTime(new Date());
+    const exitDate = closeTimes[closeTimes.length - 1] || entryDate;
+    dates.push(exitDate);
+
+    result.trades.push({
+      symbol,
+      side,
+      entryPrice: entryPrice.toFixed(6),
+      exitPrice: exitPrice.toFixed(6),
+      quantity: (openLots || closeLots).toString(),
+      pnl: pnl.toFixed(2),
+      date: exitDate,
+      entryDate,
+      exitDate,
+      commission: commission ? Math.abs(commission).toString() : undefined,
+      fees: swap ? Math.abs(swap).toString() : undefined,
+    });
+    result.summary.successfulParsed++;
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) {
+    result.errors.push('No completed positions found in the MT5 position-history export');
+  }
+  return result;
+}
+
+// Skip preamble/title rows: find the first row that parses to a header with at
+// least a symbol column and a price-or-P&L column. Falls back to row 0 (the
+// common case where the first line is already the header).
+function findStandardHeaderRow(lines: string[], delimiter: string): number {
+  const limit = Math.min(lines.length, 15);
+  for (let i = 0; i < limit; i++) {
+    const headers = parseCSVLine(lines[i], delimiter);
+    if (headers.filter(h => h.trim()).length < 2) continue;
+    const hasSymbol = findColumnIndex(headers, COLUMN_MAPPINGS.standard.symbol) !== -1;
+    const hasPriceOrPnl =
+      findColumnIndex(headers, COLUMN_MAPPINGS.standard.openPrice) !== -1 ||
+      findColumnIndex(headers, COLUMN_MAPPINGS.standard.pnl) !== -1;
+    if (hasSymbol && hasPriceOrPnl) return i;
+  }
+  return 0;
+}
+
+export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): CSVParseResult {
   // Strip BOM character that some exports (e.g. Topstep) include
   csvContent = csvContent.replace(/^\uFEFF/, '');
 
@@ -922,27 +1190,41 @@ export function parseCSV(csvContent: string): CSVParseResult {
   };
 
   try {
-    const lines = csvContent.trim().split('\n');
-    if (lines.length < 2) {
+    const rawLines = csvContent.trim().split('\n');
+    if (rawLines.length < 2) {
       result.errors.push('CSV file must contain at least a header row and one data row');
       return result;
     }
 
-    // Parse header
-    const headers = parseCSVLine(lines[0]);
+    // MT5 / IC Markets position-history: header sits below preamble rows and the
+    // layout is two legs per position, so detect it before anything else.
+    const mt5HeaderRow = findMT5HeaderRow(rawLines);
+    if (mt5HeaderRow !== -1) {
+      return parseMT5DealHistory(rawLines, mt5HeaderRow);
+    }
 
-    // Detect broker-specific formats
-    if (isIBKRClosedPositions(headers)) {
-      return parseIBKRClosedPositions(lines, headers);
+    // Sniff the delimiter (comma / semicolon / tab) and whether numbers use a
+    // decimal comma (European exports). Then skip any preamble rows.
+    const delimiter = detectDelimiter(rawLines);
+    const decimalComma = delimiter === ';';
+    const headerRow = findStandardHeaderRow(rawLines, delimiter);
+    const lines = rawLines.slice(headerRow);
+
+    const headers = parseCSVLine(lines[0], delimiter);
+
+    // Garbage guard: a single detected column means we couldn't understand the
+    // file's structure. Fail loudly instead of importing one-field junk as trades.
+    if (headers.filter(h => h.trim()).length < 2) {
+      result.errors.push('Could not detect columns \u2014 the file may use an unsupported delimiter or format.');
+      return result;
     }
-    if (isIBKRTradesFormat(headers)) {
-      return parseIBKRTrades(lines, headers);
-    }
-    if (isTopStepOrderFormat(headers)) {
-      return parseTopStepOrders(lines, headers);
-    }
-    if (isTradovateFormat(headers)) {
-      return parseTradovateOrders(lines, headers);
+
+    // Broker-specific detectors are comma-delimited US formats.
+    if (delimiter === ',') {
+      if (isIBKRClosedPositions(headers)) return parseIBKRClosedPositions(lines, headers);
+      if (isIBKRTradesFormat(headers)) return parseIBKRTrades(lines, headers);
+      if (isTopStepOrderFormat(headers)) return parseTopStepOrders(lines, headers);
+      if (isTradovateFormat(headers)) return parseTradovateOrders(lines, headers);
     }
 
     // Find column indices
@@ -970,14 +1252,31 @@ export function parseCSV(csvContent: string): CSVParseResult {
       return result;
     }
 
+    // Decide DD/MM vs MM/DD for the whole file: explicit option wins, otherwise
+    // infer from every date value, otherwise fall back to MM/DD (US default).
+    let dayFirst = options?.dayFirst;
+    if (dayFirst === undefined) {
+      const dateCol = columnIndices.openTime !== -1 ? columnIndices.openTime : columnIndices.closeTime;
+      if (dateCol !== -1) {
+        const samples: string[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          const f = parseCSVLine(lines[i], delimiter);
+          if (f[dateCol]) samples.push(f[dateCol]);
+        }
+        dayFirst = detectDayFirst(samples);
+      }
+    }
+
     // Parse data rows
     const dates: string[] = [];
 
     for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
       result.summary.totalRows++;
 
       try {
-        const fields = parseCSVLine(lines[i]);
+        const fields = parseCSVLine(lines[i], delimiter);
 
         if (fields.length < headers.length) {
           result.errors.push(`Row ${i + 1}: Insufficient columns (${fields.length} vs ${headers.length} expected)`);
@@ -1007,23 +1306,33 @@ export function parseCSV(csvContent: string): CSVParseResult {
           continue;
         }
 
-        const parsedDate = parseDateString(dateField);
-        const entryDate = openTimeField ? parseDateString(openTimeField) : parsedDate;
-        const exitDate = closeTimeField ? parseDateString(closeTimeField) : parsedDate;
+        // Garbage guard: prices must parse to finite, positive numbers. Catches
+        // mis-delimited rows that would otherwise import as entry=exit=NaN/0.
+        const entryNum = parseFloat(cleanNumeric(openPrice, decimalComma));
+        const exitNum = parseFloat(cleanNumeric(closePrice, decimalComma));
+        if (!isFinite(entryNum) || !isFinite(exitNum) || entryNum <= 0 || exitNum <= 0) {
+          result.errors.push(`Row ${i + 1}: Invalid price (entry: ${openPrice}, exit: ${closePrice})`);
+          result.summary.failed++;
+          continue;
+        }
+
+        const parsedDate = parseDateString(dateField, dayFirst);
+        const entryDate = openTimeField ? parseDateString(openTimeField, dayFirst) : parsedDate;
+        const exitDate = closeTimeField ? parseDateString(closeTimeField, dayFirst) : parsedDate;
         dates.push(parsedDate);
 
         const trade: ParsedTrade = {
           symbol: symbol.trim(),
           side: normalizeSide(side),
-          entryPrice: openPrice.replace(/[^0-9.-]/g, ''),
-          exitPrice: closePrice.replace(/[^0-9.-]/g, ''),
-          quantity: quantity.replace(/[^0-9.-]/g, '') || '1',
-          pnl: parseCurrency(pnl).toString(),
+          entryPrice: cleanNumeric(openPrice, decimalComma),
+          exitPrice: cleanNumeric(closePrice, decimalComma),
+          quantity: cleanNumeric(quantity, decimalComma) || '1',
+          pnl: parseCurrency(pnl, decimalComma).toString(),
           date: parsedDate,
           entryDate,
           exitDate,
-          commission: commissionField ? Math.abs(parseCurrency(commissionField)).toString() : undefined,
-          fees: feesField ? Math.abs(parseCurrency(feesField)).toString() : undefined,
+          commission: commissionField ? Math.abs(parseCurrency(commissionField, decimalComma)).toString() : undefined,
+          fees: feesField ? Math.abs(parseCurrency(feesField, decimalComma)).toString() : undefined,
         };
 
         result.trades.push(trade);
@@ -1059,8 +1368,11 @@ export function parseCSV(csvContent: string): CSVParseResult {
 
 export function parseCSVHeaders(csvContent: string): string[] {
   const cleaned = csvContent.replace(/^\uFEFF/, '');
-  const firstLine = cleaned.trim().split('\n')[0] || '';
-  return parseCSVLine(firstLine);
+  const lines = cleaned.trim().split('\n');
+  if (!lines.length) return [];
+  const delimiter = detectDelimiter(lines);
+  const headerRow = findStandardHeaderRow(lines, delimiter);
+  return parseCSVLine(lines[headerRow] || '', delimiter);
 }
 
 export function parseCSVWithMappings(csvContent: string, mappings: Record<string, number>): CSVParseResult {
@@ -1079,10 +1391,30 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
   };
 
   try {
-    const lines = csvContent.trim().split('\n');
-    if (lines.length < 2) {
+    const rawLines = csvContent.trim().split('\n');
+    if (rawLines.length < 2) {
       result.errors.push('CSV file must contain at least a header row and one data row');
       return result;
+    }
+
+    // Use the same delimiter + preamble detection as parseCSVHeaders so the
+    // mapped column indices line up and data starts after the real header row.
+    const delimiter = detectDelimiter(rawLines);
+    const decimalComma = delimiter === ';';
+    const headerRow = findStandardHeaderRow(rawLines, delimiter);
+    const lines = rawLines.slice(headerRow);
+
+    // Infer DD/MM vs MM/DD across the chosen date column.
+    let dayFirst: boolean | undefined;
+    const dateCol = mappings.openTime >= 0 ? mappings.openTime : mappings.closeTime;
+    if (dateCol >= 0) {
+      const samples: string[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const f = parseCSVLine(lines[i], delimiter);
+        if (f[dateCol]) samples.push(f[dateCol]);
+      }
+      dayFirst = detectDayFirst(samples);
     }
 
     const dates: string[] = [];
@@ -1093,7 +1425,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
       result.summary.totalRows++;
 
       try {
-        const fields = parseCSVLine(line);
+        const fields = parseCSVLine(line, delimiter);
 
         const symbol = mappings.symbol >= 0 ? (fields[mappings.symbol] || '') : '';
         const side = mappings.side >= 0 ? (fields[mappings.side] || '') : '';
@@ -1114,23 +1446,31 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
           continue;
         }
 
-        const parsedDate = parseDateString(dateField);
-        const entryDate = openTimeField ? parseDateString(openTimeField) : parsedDate;
-        const exitDate = closeTimeField ? parseDateString(closeTimeField) : parsedDate;
+        const entryNum = parseFloat(cleanNumeric(openPrice, decimalComma));
+        const exitNum = parseFloat(cleanNumeric(closePrice, decimalComma));
+        if (!isFinite(entryNum) || !isFinite(exitNum) || entryNum <= 0 || exitNum <= 0) {
+          result.errors.push(`Row ${i + 1}: Invalid price (entry: ${openPrice}, exit: ${closePrice})`);
+          result.summary.failed++;
+          continue;
+        }
+
+        const parsedDate = parseDateString(dateField, dayFirst);
+        const entryDate = openTimeField ? parseDateString(openTimeField, dayFirst) : parsedDate;
+        const exitDate = closeTimeField ? parseDateString(closeTimeField, dayFirst) : parsedDate;
         dates.push(parsedDate);
 
         const trade: ParsedTrade = {
           symbol: symbol.trim(),
           side: normalizeSide(side),
-          entryPrice: openPrice.replace(/[^0-9.-]/g, ''),
-          exitPrice: closePrice.replace(/[^0-9.-]/g, ''),
-          quantity: quantity.replace(/[^0-9.-]/g, '') || '1',
-          pnl: parseCurrency(pnl).toString(),
+          entryPrice: cleanNumeric(openPrice, decimalComma),
+          exitPrice: cleanNumeric(closePrice, decimalComma),
+          quantity: cleanNumeric(quantity, decimalComma) || '1',
+          pnl: parseCurrency(pnl, decimalComma).toString(),
           date: parsedDate,
           entryDate,
           exitDate,
-          commission: commissionField ? Math.abs(parseCurrency(commissionField)).toString() : undefined,
-          fees: feesField ? Math.abs(parseCurrency(feesField)).toString() : undefined,
+          commission: commissionField ? Math.abs(parseCurrency(commissionField, decimalComma)).toString() : undefined,
+          fees: feesField ? Math.abs(parseCurrency(feesField, decimalComma)).toString() : undefined,
         };
 
         result.trades.push(trade);

@@ -44,7 +44,7 @@ import {
 import { Pie, PieChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker, DatePicker } from '@/components/ui/date-picker';
-import { parseCSV, validateCSVFile, parseCSVHeaders, parseCSVWithMappings, findColumnIndex, type CSVParseResult } from '@/utils/csv-parser';
+import { parseCSV, validateCSVFile, parseCSVWithMappings, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
@@ -55,6 +55,9 @@ import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
 import { ProUpgradeCard } from '@/components/pro-upgrade-card';
 import { useProStatus } from '@/contexts/pro-context';
+import { notifyDataChange } from '@/contexts/sync-context';
+import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades';
+import { ColumnMappingDialog } from '@/components/column-mapping-dialog';
 import { lazy, Suspense } from 'react';
 const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })));
 const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })));
@@ -124,48 +127,6 @@ function formatPrice(price: number): string {
   return price.toFixed(2);
 }
 
-function detectMarketFromSymbol(symbol: string): 'forex' | 'futures' | 'indices' {
-  const upperSymbol = symbol.toUpperCase();
-
-  // Futures symbols (base symbols without month/year codes)
-  const futuresSymbols = [
-    'ES', 'NQ', 'YM', 'RTY', 'MES', 'MNQ', 'MYM', 'M2K',
-    'CL', 'MCL', 'NG', 'RB', 'GC', 'MGC', 'SI', 'HG',
-    'ZC', 'ZS', 'ZW', 'ZN', 'ZB', 'M6E', 'M6B',
-    'NAS100', 'SPX500', 'US30', 'US100', 'GER40', 'UK100',
-    'XAUUSD', 'XAGUSD', 'XPTUSD', 'XPDUSD',  // Metals futures
-    'USOIL', 'UKOIL', 'NATGAS'  // Energy futures
-  ];
-
-  // Check if it's a futures symbol (handle month/year codes like MNQU5, ESU24, etc.)
-  if (futuresSymbols.some(fut => upperSymbol.startsWith(fut))) {
-    return 'futures';
-  }
-
-  // Index ETF symbols
-  if (indexSymbolsSet.has(upperSymbol)) {
-    return 'indices';
-  }
-
-  // Known forex pairs for auto-detection
-  if (forexPairsSet.has(upperSymbol)) {
-    return 'forex';
-  }
-
-  // Default to forex for currency pairs
-  return 'forex';
-}
-
-const indexSymbolsSet = new Set(['SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK']);
-
-const forexPairsSet = new Set([
-  'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
-  'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
-  'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
-  'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD',
-  'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR',
-]);
-
 export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
   const { settings } = useSettings();
@@ -188,13 +149,7 @@ export default function TradeLog() {
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null });
 
-  const [columnMapping, setColumnMapping] = useState<{
-    show: boolean;
-    headers: string[];
-    file: File | null;
-    csvContent: string;
-    mappings: Record<string, number>;
-  } | null>(null);
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null);
 
   // AI feature state
   const [journalPromptTrade, setJournalPromptTrade] = useState<Trade | null>(null);
@@ -470,6 +425,10 @@ export default function TradeLog() {
     } catch {
       userStorage.setItem('trades', JSON.stringify(updatedTrades));
     }
+
+    // Notify useDemoData subscribers (dashboard widgets, etc.) so they re-read
+    // trades live after import/add/edit/delete instead of needing a refresh.
+    notifyDataChange();
   };
 
   // Size of one pip/point for converting SL/TP distances into a price move.
@@ -862,28 +821,7 @@ export default function TradeLog() {
 
       // If auto-detect failed due to missing columns, show column mapping dialog
       if (!result.success && result.errors.some(e => e.includes('Missing required columns'))) {
-        const headers = parseCSVHeaders(content);
-        const MAPPING_FIELDS: Record<string, string[]> = {
-          symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract'],
-          side: ['Side', 'Type', 'Direction', 'Action'],
-          openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice'],
-          closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice'],
-          quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units'],
-          pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L'],
-          openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
-          closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
-        };
-        const guessedMappings: Record<string, number> = {};
-        for (const [field, possibleNames] of Object.entries(MAPPING_FIELDS)) {
-          guessedMappings[field] = findColumnIndex(headers, possibleNames);
-        }
-        setColumnMapping({
-          show: true,
-          headers,
-          file,
-          csvContent: content,
-          mappings: guessedMappings,
-        });
+        setColumnMapping(buildColumnMapping(content, file));
       } else {
         // Show preview dialog (existing behavior)
         setCsvPreview({
@@ -931,47 +869,17 @@ export default function TradeLog() {
     
     try {
       if (result.success) {
-        // Convert parsed trades to Trade format
-        const importedTrades: Trade[] = result.trades.map((trade, index) => {
-          // Broker P&L is gross (before costs). Subtract the imported commission and
-          // fees so the dashboard shows true net immediately, while keeping the gross
-          // value as brokerPnL — the source of truth for later edits.
-          const grossPnl = parseFloat(trade.pnl) || 0;
-          const commission = trade.commission ? parseFloat(trade.commission) || 0 : 0;
-          const fees = trade.fees ? parseFloat(trade.fees) || 0 : 0;
-          return {
-            id: `csv-${Date.now()}-${index}`,
-            symbol: trade.symbol,
-            side: trade.side,
-            entryPrice: parseFloat(trade.entryPrice),
-            exitPrice: parseFloat(trade.exitPrice),
-            lotSize: parseFloat(trade.quantity) || 1,
-            commission,
-            fees,
-            spread: 0,
-            swap: 0,
-            entryTime: new Date(trade.entryDate || trade.date),
-            exitTime: new Date(trade.exitDate || trade.date),
-            notes: `Imported from ${file.name}`,
-            strategy: '',
-            market: detectMarketFromSymbol(trade.symbol),
-            pnl: grossPnl - commission - fees,
-            brokerPnL: grossPnl, // Preserve broker's gross P&L as the source of truth on later edits
-            pnlPercentage: 0, // Will be calculated
-            riskReward: 0, // Will be calculated
-            accountId: activeAccount?.id || 'default-main-account'
-          };
+        // Shared converter: gross broker P&L minus commission/fees as net, gross
+        // preserved as brokerPnL, real entry/exit dates, market auto-detected.
+        const importedTrades = buildImportedTrades(result.trades, {
+          fileName: file.name,
+          accountId: activeAccount?.id || 'default-main-account',
         });
-        
-        // Deduplicate: fingerprint on key fields to skip already-imported trades
-        const tradeFingerprint = (t: Trade) =>
-          `${t.symbol}|${t.side}|${t.entryPrice}|${t.exitPrice}|${t.lotSize}|${t.pnl}|${new Date(t.entryTime).getTime()}|${new Date(t.exitTime).getTime()}`;
 
-        const existingFingerprints = new Set(trades.map(tradeFingerprint));
-        const newTrades = importedTrades.filter(t => !existingFingerprints.has(tradeFingerprint(t)));
-        const skippedCount = importedTrades.length - newTrades.length;
+        // Deduplicate against existing trades on key fields.
+        const { newTrades, skippedCount } = dedupeImportedTrades(trades, importedTrades);
 
-        const updatedTrades = [...trades, ...newTrades];
+        const updatedTrades = [...trades, ...newTrades] as Trade[];
         saveTrades(updatedTrades);
 
         const description = skippedCount > 0
@@ -2920,96 +2828,7 @@ export default function TradeLog() {
       </div>
       
       {/* Column Mapping Dialog */}
-      <Dialog open={!!columnMapping?.show} onOpenChange={(open) => { if (!open) setColumnMapping(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-                <DialogTitle>Map Your CSV Columns</DialogTitle>
-                <DialogDescription>
-                  We couldn't auto-detect your CSV format. Please map your columns below.
-                </DialogDescription>
-          </DialogHeader>
-
-          {columnMapping && (
-            <div className="space-y-4 overflow-auto pr-1">
-              <div
-                className="flex items-center gap-3 rounded-lg px-4 py-2.5 border"
-                style={{
-                  backgroundColor: `${alpha(themeColors.primary, '08')}`,
-                  borderColor: `${alpha(themeColors.primary, '20')}`
-                }}
-              >
-                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm font-medium truncate" title={columnMapping.file?.name}>{columnMapping.file?.name}</span>
-                <span className="text-muted-foreground text-sm">—</span>
-                <span className="text-sm text-muted-foreground">{columnMapping.headers.length} columns detected</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {([
-                  { key: 'symbol', label: 'Symbol', required: true },
-                  { key: 'side', label: 'Side (Buy/Sell)', required: true },
-                  { key: 'openPrice', label: 'Entry / Open Price', required: true },
-                  { key: 'closePrice', label: 'Exit / Close Price', required: true },
-                  { key: 'quantity', label: 'Quantity / Size', required: true },
-                  { key: 'pnl', label: 'P&L', required: true },
-                  { key: 'openTime', label: 'Entry Time', required: false },
-                  { key: 'closeTime', label: 'Exit Time', required: false },
-                ] as const).map(({ key, label, required }) => (
-                  <div key={key} className="space-y-1.5">
-                    <Label className="text-sm font-medium">
-                      {label}{required && <span style={{ color: themeColors.loss }}> *</span>}
-                    </Label>
-                    <Select
-                      value={columnMapping.mappings[key] >= 0 ? String(columnMapping.mappings[key]) : '__none__'}
-                      onValueChange={(val) => {
-                        setColumnMapping(prev => prev ? {
-                          ...prev,
-                          mappings: {
-                            ...prev.mappings,
-                            [key]: val === '__none__' ? -1 : parseInt(val),
-                          }
-                        } : null);
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a column..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">-- None / Not Available --</SelectItem>
-                        {columnMapping.headers.map((header, idx) => (
-                          <SelectItem key={idx} value={String(idx)}>
-                            {header}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <Button
-                  variant="outline"
-                  onClick={() => setColumnMapping(null)}
-                  className="hover:bg-muted"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleMappingConfirm}
-                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                  className="hover:opacity-90 shadow-lg px-6 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    Parse with These Mappings
-                  </span>
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ColumnMappingDialog value={columnMapping} onChange={setColumnMapping} onConfirm={handleMappingConfirm} />
 
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>

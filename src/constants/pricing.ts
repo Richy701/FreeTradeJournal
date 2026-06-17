@@ -1,5 +1,10 @@
 import type { PricingPlan } from '@/types/subscription';
 
+// Max journal entries a free (non-Pro) account can create. Existing entries are
+// never deleted — users already over the cap keep and can edit them; only
+// creating NEW entries past the cap is blocked. Pro is unlimited.
+export const FREE_JOURNAL_ENTRY_LIMIT = 100;
+
 export const PRICING_PLANS: PricingPlan[] = [
   {
     name: 'Monthly',
@@ -50,7 +55,7 @@ export const PRICING_PLANS: PricingPlan[] = [
 export const FREE_FEATURES = [
   'Unlimited trades',
   'Dashboard analytics',
-  'Trade journal',
+  'Trade journal — up to 100 entries',
   'Goals & risk management',
   'Up to 2 trading accounts',
   'CSV/Excel import & export',
@@ -59,6 +64,7 @@ export const FREE_FEATURES = [
 ];
 
 export const PRO_FEATURES = [
+  'Unlimited journal entries',
   'Unlimited trading accounts',
   'PropTracker — unlimited prop accounts',
   'Advanced analytics & charts',
