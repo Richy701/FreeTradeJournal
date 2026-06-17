@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.41.0',
+    date: '2026-06-17',
+    summary: 'Fixed a blank dashboard caused by a single trade or journal entry with an unreadable date.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Dashboard no longer goes blank on a bad date',
+        description: 'A single trade or journal entry with an unreadable date could crash the whole dashboard to a blank page after login. The dashboard now stays up — affected dates show a dash, and the rest of your stats load normally.',
+      },
+      {
+        type: 'improved',
+        text: 'One broken section no longer takes down the page',
+        description: 'Each dashboard section is now isolated, so if one fails to load it shows a small "try again" message instead of blanking the entire screen.',
+      },
+    ],
+  },
+  {
     version: '2.40.0',
     date: '2026-06-17',
     summary: 'CSV import now works with far more brokers and regions, and behaves the same from the dashboard or the trade log.',
@@ -1264,4 +1281,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.40.0'
+export const LATEST_CHANGELOG_VERSION = '2.41.0'

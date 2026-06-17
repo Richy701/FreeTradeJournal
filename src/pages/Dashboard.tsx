@@ -7,6 +7,7 @@ import { useSettings } from '@/contexts/settings-context'
 import { notifyDataChange } from '@/contexts/sync-context'
 import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades'
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
@@ -1098,7 +1099,9 @@ export default function Dashboard() {
         <FreeAIBanner />
         {visibleWidgets.map(w => {
           const node = w.render({ tradeCount, isDemo })
-          return node ? <div key={w.id}>{node}</div> : null
+          // Isolate each widget: a single one throwing (e.g. on a bad date in
+          // saved data) must not blank the entire dashboard.
+          return node ? <ErrorBoundary key={w.id}>{node}</ErrorBoundary> : null
         })}
       </div>
       

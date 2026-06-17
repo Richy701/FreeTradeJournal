@@ -29,13 +29,22 @@ interface DataTableProps {
   data?: any
 }
 
+// Guard against unparseable saved dates: date-fns format() throws
+// "RangeError: Invalid time value" on an Invalid Date, which would otherwise
+// crash the whole dashboard render.
+function isValidDate(date: Date): boolean {
+  return date instanceof Date && !isNaN(date.getTime())
+}
+
 function formatTradeDate(date: Date): string {
+  if (!isValidDate(date)) return '—'
   if (isToday(date)) return 'Today'
   if (isYesterday(date)) return 'Yesterday'
   return format(date, 'MMM d')
 }
 
 function formatTradeTime(date: Date): string {
+  if (!isValidDate(date)) return ''
   return format(date, 'h:mm a')
 }
 

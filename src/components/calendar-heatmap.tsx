@@ -79,6 +79,14 @@ const MONTHS = [
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// Safe YYYY-MM-DD key from any stored date value. Returns null for unparseable
+// dates so a bad journal/trade record can't throw on .toISOString() and blank
+// the dashboard.
+function safeDateKey(value: unknown): string | null {
+  const d = new Date(value as any)
+  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0]
+}
+
 export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors, alpha } = useThemePresets()
@@ -171,7 +179,8 @@ export function CalendarHeatmap() {
     
     const journalByDate: Record<string, any[]> = {}
     entries.forEach((entry: any) => {
-      const dateKey = new Date(entry.date).toISOString().split('T')[0]
+      const dateKey = safeDateKey(entry.date)
+      if (!dateKey) return
       if (!journalByDate[dateKey]) {
         journalByDate[dateKey] = []
       }
@@ -239,8 +248,8 @@ export function CalendarHeatmap() {
     const entries = getJournalEntries()
     const dateKey = date.toISOString().split('T')[0]
     const dayEntries = entries.filter((entry: any) => {
-      const entryDate = new Date(entry.date).toISOString().split('T')[0]
-      return entryDate === dateKey
+      const entryDate = safeDateKey(entry.date)
+      return entryDate !== null && entryDate === dateKey
     })
     setSelectedDateEntries(dayEntries)
     
