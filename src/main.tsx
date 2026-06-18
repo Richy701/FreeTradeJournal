@@ -6,6 +6,11 @@ import './index.css'
 import App from './App.tsx'
 import './utils/emergency-recovery'
 import { initPostHog } from './lib/posthog'
+import { installThirdPartyErrorFilter } from './lib/suppress-third-party-noise'
+
+// Register before Sentry so blocked-TradingView chunk errors are filtered out
+// before Sentry's global handler sees them.
+installThirdPartyErrorFilter()
 
 Sentry.init({
   dsn: "https://34d91e7fbdbb0127f23418669c1d3eac@o4511180938543105.ingest.de.sentry.io/4511180939591760",

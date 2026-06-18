@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react'
+import { useEffect, useRef, memo, useState } from 'react'
 import { useIsDarkTheme } from '@/hooks/use-is-dark-theme'
 
 const TV_SYMBOL_MAP: Record<string, string> = {
@@ -31,6 +31,7 @@ export const TradingViewMiniChart = memo(function TradingViewMiniChart({
 }: TradingViewMiniChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const isDark = useIsDarkTheme()
+  const [failed, setFailed] = useState(false)
 
   const tvSymbol = TV_SYMBOL_MAP[symbol] || symbol
   const theme = isDark ? 'dark' : 'light'
@@ -39,6 +40,7 @@ export const TradingViewMiniChart = memo(function TradingViewMiniChart({
     const container = containerRef.current
     if (!container) return
 
+    setFailed(false)
     container.innerHTML = ''
 
     const widgetDiv = document.createElement('div')
@@ -60,16 +62,40 @@ export const TradingViewMiniChart = memo(function TradingViewMiniChart({
       largeChartUrl: '',
       noTimeScale: false,
     })
+    // An ad/privacy blocker can block the embed script or its chunks. Show a
+    // fallback rather than a blank box if it errors or never renders an iframe.
+    script.onerror = () => setFailed(true)
     container.appendChild(script)
 
-    return () => { container.innerHTML = '' }
+    const timer = window.setTimeout(() => {
+      if (!container.querySelector('iframe')) setFailed(true)
+    }, 6000)
+
+    return () => {
+      window.clearTimeout(timer)
+      container.innerHTML = ''
+    }
   }, [tvSymbol, width, height, theme])
 
   return (
     <div
-      ref={containerRef}
-      className="tradingview-widget-container rounded-lg overflow-hidden"
+      className="tradingview-widget-container rounded-lg overflow-hidden relative"
       style={{ width: typeof width === 'number' ? `${width}px` : width, height: `${height}px` }}
-    />
+    >
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {failed && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-card/50 text-center px-3">
+          <span className="text-xs text-muted-foreground">Live chart unavailable</span>
+          <a
+            href={`https://www.tradingview.com/symbols/${encodeURIComponent(tvSymbol)}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs underline text-muted-foreground hover:text-foreground"
+          >
+            Open on TradingView
+          </a>
+        </div>
+      )}
+    </div>
   )
 })
