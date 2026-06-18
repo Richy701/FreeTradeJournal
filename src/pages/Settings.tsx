@@ -46,6 +46,48 @@ const CURRENCIES = [
   { value: 'AUD', symbol: 'A$', label: 'AUD' },
 ] as const;
 
+const BROKER_CUSTOM = '__custom__';
+
+// Broker/prop-firm picker with a free-text "Custom…" option, so traders on firms
+// that aren't in the preset list (Lucid, Tradeify, etc.) can enter their own.
+function BrokerSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const isKnown = (BROKERS as readonly string[]).includes(value);
+  const customActive = !!value && !isKnown;
+  const [showCustom, setShowCustom] = useState(customActive);
+  const selectValue = isKnown ? value : showCustom || customActive ? BROKER_CUSTOM : '';
+
+  return (
+    <>
+      <Select
+        value={selectValue}
+        onValueChange={(v) => {
+          if (v === BROKER_CUSTOM) {
+            setShowCustom(true);
+            onChange('');
+          } else {
+            setShowCustom(false);
+            onChange(v);
+          }
+        }}
+      >
+        <SelectTrigger><SelectValue placeholder="Select broker…" /></SelectTrigger>
+        <SelectContent>
+          {BROKERS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+          <SelectItem value={BROKER_CUSTOM}>Custom…</SelectItem>
+        </SelectContent>
+      </Select>
+      {(showCustom || customActive) && (
+        <Input
+          className="mt-2"
+          placeholder="Enter prop firm / broker name"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </>
+  );
+}
+
 // Free plan is capped at this many trading accounts; Pro is unlimited.
 // Existing accounts above the cap are grandfathered — the guard only blocks
 // adding new ones, it never removes accounts a user already created.
@@ -505,10 +547,7 @@ export default function Settings() {
                             </div>
                             <div className="space-y-1.5">
                               <Label className="text-xs">Broker</Label>
-                              <Select value={editForm.broker} onValueChange={(v) => setEditForm(p => p ? { ...p, broker: v } : null)}>
-                                <SelectTrigger><SelectValue placeholder="Select broker…" /></SelectTrigger>
-                                <SelectContent>{BROKERS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                              </Select>
+                              <BrokerSelect value={editForm.broker} onChange={(v) => setEditForm(p => p ? { ...p, broker: v } : null)} />
                             </div>
                             <div className="space-y-1.5">
                               <Label className="text-xs">Currency</Label>
@@ -576,10 +615,7 @@ export default function Settings() {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-xs">Broker</Label>
-                          <Select value={accountForm.broker} onValueChange={(v) => setAccountForm(p => ({ ...p, broker: v }))}>
-                            <SelectTrigger><SelectValue placeholder="Select broker…" /></SelectTrigger>
-                            <SelectContent>{BROKERS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                          </Select>
+                          <BrokerSelect value={accountForm.broker} onChange={(v) => setAccountForm(p => ({ ...p, broker: v }))} />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-xs">Currency</Label>

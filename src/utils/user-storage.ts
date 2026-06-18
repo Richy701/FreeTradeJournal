@@ -86,17 +86,27 @@ export class UserStorage {
     return localStorage.getItem(scopedKey);
   }
 
-  static setItem(userId: string | null, key: string, value: string, skipSync = false): void {
+  // Returns a promise that resolves once the value has actually been written to
+  // localStorage and rejects if the write fails (e.g. QuotaExceededError). The
+  // in-memory cache is updated synchronously so reads are immediately consistent,
+  // but callers that need to know the write durably landed (before navigating or
+  // refreshing) should await this. Fire-and-forget callers can ignore the promise.
+  static async setItem(userId: string | null, key: string, value: string, skipSync = false): Promise<void> {
     const scopedKey = this.getScopedKey(userId, key);
     const cryptoKey = userId ? this.encryptionKeys.get(userId) : undefined;
+    let toWrite = value;
     if (cryptoKey && isCryptoAvailable()) {
       this.cache.set(scopedKey, value);
-      encrypt(value, cryptoKey)
-        .then(encrypted => localStorage.setItem(scopedKey, encrypted))
-        .catch(() => localStorage.setItem(scopedKey, value));
-    } else {
-      localStorage.setItem(scopedKey, value);
+      try {
+        toWrite = await encrypt(value, cryptoKey);
+      } catch {
+        // Encryption failed — fall back to writing plaintext.
+        toWrite = value;
+      }
     }
+    // Let storage-quota and other write errors propagate so awaiting callers can
+    // surface them instead of silently dropping data.
+    localStorage.setItem(scopedKey, toWrite);
     if (syncRef && userId && !skipSync) {
       syncRef.syncKey(key, value);
     }

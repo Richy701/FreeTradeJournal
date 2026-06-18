@@ -36,8 +36,22 @@ import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
+import { useAccounts } from '@/contexts/account-context';
 import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing';
 import { useUserStorage } from '@/utils/user-storage';
+import {
+  compressImage,
+  putImage,
+  getImage,
+  deleteImage,
+  newImageId,
+  isImageRef,
+  isCloudRef,
+  uploadCloudImage,
+  deleteCloudImage,
+  resolveImageRef,
+} from '@/utils/image-store';
+import { StoredImage } from '@/components/stored-image';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { toast } from 'sonner';
 import { SiteHeader } from '@/components/site-header';
@@ -90,25 +104,47 @@ interface JournalEntry {
   tradeId?: string;
   entryType: 'general' | 'pre-trade' | 'post-trade';
   screenshots?: string[];
+  accountId?: string;
 }
+
+// An image staged in the editor: `dataUrl` drives the preview, `id` is its
+// IndexedDB key. `ref` is the already-stored reference (`idb:`/`fb:`) when the
+// image was loaded from an existing entry, so re-saving doesn't re-upload it.
+type UploadedImage = { id: string; dataUrl: string; ref?: string };
 
 const mockEntries: JournalEntry[] = [];
 
+// Mirrors the trade-log account filter: an entry belongs to the active account,
+// and legacy account-less entries fall back to a "default" account.
+function matchesActiveAccount(
+  entry: { accountId?: string },
+  account: { id: string } | null
+): boolean {
+  if (!account) return true;
+  if (entry.accountId === account.id) return true;
+  if (!entry.accountId && account.id.includes('default')) return true;
+  return false;
+}
+
 export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
-  const { isDemo } = useAuth();
+  const { isDemo, user } = useAuth();
   const { isPro } = useProStatus();
+  const { accounts, activeAccount, loading: accountsLoading } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
+  const [totalEntryCount, setTotalEntryCount] = useState(0);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
   const [showNewEntry, setShowNewEntry] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [entriesLoaded, setEntriesLoaded] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -144,38 +180,96 @@ export default function Journal() {
   // Free tier journal cap. Only NEW entries past the cap are blocked; existing
   // entries are always kept and editable (so users already over the cap keep
   // full access to their own data). Pro and demo are unlimited.
-  const atFreeJournalLimit = !isPro && !isDemo && entries.length >= FREE_JOURNAL_ENTRY_LIMIT;
+  const atFreeJournalLimit = !isPro && !isDemo && totalEntryCount >= FREE_JOURNAL_ENTRY_LIMIT;
   const nearFreeJournalLimit =
-    !isPro && !isDemo && !atFreeJournalLimit && entries.length >= FREE_JOURNAL_ENTRY_LIMIT - 10;
+    !isPro && !isDemo && !atFreeJournalLimit && totalEntryCount >= FREE_JOURNAL_ENTRY_LIMIT - 10;
 
-  // Load entries from localStorage or demo data
+  // Load entries from localStorage or demo data, scoped to the active account.
+  // Re-runs when the active account changes so the journal mirrors the trade log.
   useEffect(() => {
-    const loadEntries = () => {
-      if (isDemo) {
-        const demoEntries = getDemoEntries().map((entry: any) => ({
-          ...entry,
-          date: new Date(entry.date),
-        }));
-        setEntries(demoEntries);
-        return;
-      }
+    if (isDemo) {
+      const demoEntries = getDemoEntries().map((entry: any) => ({
+        ...entry,
+        date: new Date(entry.date),
+      }));
+      setEntries(demoEntries);
+      setTotalEntryCount(demoEntries.length);
+      setEntriesLoaded(true);
+      return;
+    }
 
+    // Wait for accounts to load before scoping/migrating.
+    if (accountsLoading) return;
+
+    let cancelled = false;
+    const loadEntries = async () => {
       try {
-        const savedEntries = userStorage.getItem('journalEntries');
-        if (savedEntries) {
-          const parsedEntries = JSON.parse(savedEntries).map((entry: any) => ({
-            ...entry,
-            date: new Date(entry.date)
-          }));
-          setEntries(parsedEntries);
+        const raw = userStorage.getItem('journalEntries');
+        let all: any[] = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(all)) all = [];
+
+        // One-time, idempotent migration:
+        //  - stamp accountId on legacy account-less entries (they were shared
+        //    across every account); assign them to the default account.
+        //  - externalize inline base64 screenshots into IndexedDB so the stored
+        //    blob stays small (under the localStorage and 1MB cloud-sync caps).
+        const defaultId =
+          accounts.find(a => a.isDefault)?.id || activeAccount?.id || accounts[0]?.id;
+        let changed = false;
+        for (const e of all) {
+          if (!e.accountId && defaultId) {
+            e.accountId = defaultId;
+            changed = true;
+          }
+          if (
+            Array.isArray(e.screenshots) &&
+            e.screenshots.some((s: any) => typeof s === 'string' && s.startsWith('data:'))
+          ) {
+            const refs: string[] = [];
+            for (const s of e.screenshots) {
+              if (typeof s === 'string' && s.startsWith('data:')) {
+                const id = newImageId();
+                try {
+                  await putImage(id, s);
+                  refs.push(`idb:${id}`);
+                  changed = true;
+                } catch {
+                  refs.push(s); // keep inline if IndexedDB is unavailable
+                }
+              } else if (typeof s === 'string') {
+                refs.push(s);
+              }
+            }
+            e.screenshots = refs;
+          }
         }
+        if (changed) {
+          try {
+            await userStorage.setItem('journalEntries', JSON.stringify(all));
+          } catch (err) {
+            console.error('Journal migration save failed:', err);
+          }
+        }
+
+        if (cancelled) return;
+        setTotalEntryCount(all.length);
+        const mine = all
+          .filter((e: any) => matchesActiveAccount(e, activeAccount))
+          .map((e: any) => ({ ...e, date: new Date(e.date) }));
+        setEntries(mine);
       } catch (error) {
         console.error('Error loading journal entries:', error);
+      } finally {
+        if (!cancelled) setEntriesLoaded(true);
       }
     };
 
     loadEntries();
-  }, [isDemo]);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, activeAccount, accountsLoading]);
 
   // Load trades from localStorage or demo data with loading state
   useEffect(() => {
@@ -212,20 +306,66 @@ export default function Journal() {
     loadTrades();
   }, []);
 
-  // Deep link: /journal?trade=<id> opens a new entry pre-linked to that trade
+  // Deep link: /journal?trade=<id>. If this trade already has a journal entry,
+  // open it for editing instead of starting a blank one (which previously created
+  // a duplicate / appeared to overwrite). Otherwise open a new pre-linked entry.
   useEffect(() => {
-    if (isLoadingTrades) return;
+    if (isLoadingTrades || !entriesLoaded) return;
     const tradeId = searchParams.get('trade');
     if (!tradeId) return;
     const trade = trades.find(t => t.id === tradeId);
     if (trade) {
-      handleTradeSelection(tradeId);
-      setShowNewEntry(true);
+      const existing = entries.find(e => e.tradeId === tradeId);
+      if (existing) {
+        startEdit(existing);
+      } else {
+        handleTradeSelection(tradeId);
+        setShowNewEntry(true);
+      }
     }
     searchParams.delete('trade');
     setSearchParams(searchParams, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoadingTrades, trades, searchParams]);
+  }, [isLoadingTrades, entriesLoaded, trades, entries, searchParams]);
+
+  // Merge the active account's entries back into the full cross-account store,
+  // preserving every other account's entries (mirrors how trades are persisted).
+  // Awaits the real write so callers can trust success/failure.
+  const persistEntries = async (currentAccountEntries: JournalEntry[]) => {
+    const currentId = activeAccount?.id;
+    let all: any[] = [];
+    try {
+      const raw = userStorage.getItem('journalEntries');
+      all = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(all)) all = [];
+    } catch {
+      all = [];
+    }
+    const others = all.filter((e: any) => e.accountId !== currentId);
+    const mine = currentAccountEntries.map(e => ({ ...e, accountId: e.accountId || currentId }));
+    const merged = [...others, ...mine];
+    await userStorage.setItem('journalEntries', JSON.stringify(merged));
+    setTotalEntryCount(merged.length);
+  };
+
+  // Resolve stored screenshot refs into editable previews. Carries `ref` so an
+  // unchanged image isn't re-uploaded/re-written on save.
+  const resolveScreenshots = async (refs: string[]): Promise<UploadedImage[]> => {
+    const out: UploadedImage[] = [];
+    for (const refStr of refs) {
+      if (isImageRef(refStr)) {
+        const id = refStr.slice(4);
+        const data = await getImage(id);
+        if (data) out.push({ id, dataUrl: data, ref: refStr });
+      } else if (isCloudRef(refStr)) {
+        const url = await resolveImageRef(refStr);
+        if (url) out.push({ id: newImageId(), dataUrl: url, ref: refStr });
+      } else if (refStr && refStr.startsWith('data:')) {
+        out.push({ id: newImageId(), dataUrl: refStr });
+      }
+    }
+    return out;
+  };
 
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;
@@ -244,13 +384,33 @@ export default function Journal() {
     }
 
     setIsSubmitting(true);
-    
+
     try {
-      // Simulate API call for better UX
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Persist screenshots and keep only lightweight refs in the entry.
+      // Pro: upload to Firebase Storage (cross-device) with a local IndexedDB
+      // fallback. Free: IndexedDB only. Unchanged images keep their existing ref.
+      const screenshots: string[] = [];
+      for (const img of uploadedImages) {
+        if (img.ref) {
+          screenshots.push(img.ref);
+          continue;
+        }
+        let stored: string | null = null;
+        if (isPro && user?.uid) {
+          try {
+            stored = await uploadCloudImage(user.uid, img.dataUrl);
+          } catch {
+            stored = null; // fall back to local storage below
+          }
+        }
+        if (!stored) {
+          await putImage(img.id, img.dataUrl);
+          stored = `idb:${img.id}`;
+        }
+        screenshots.push(stored);
+      }
 
       if (editingEntry) {
-        // Update existing entry
         const updatedEntry: JournalEntry = {
           ...editingEntry,
           title: newEntry.title,
@@ -260,19 +420,28 @@ export default function Journal() {
           mood: newEntry.mood,
           tradeId: newEntry.tradeId || undefined,
           entryType: newEntry.entryType,
-          screenshots: uploadedImages.length > 0 ? uploadedImages : undefined
+          screenshots: screenshots.length > 0 ? screenshots : undefined,
+          accountId: editingEntry.accountId || activeAccount?.id,
         };
 
-        const updatedEntries = entries.map(entry => 
+        const updatedEntries = entries.map(entry =>
           entry.id === editingEntry.id ? updatedEntry : entry
         );
+        // Persist first; only update UI once the write durably lands.
+        await persistEntries(updatedEntries);
+
+        // Clean up screenshots removed during this edit.
+        const removed = (editingEntry.screenshots || []).filter(
+          r => !screenshots.includes(r)
+        );
+        for (const r of removed) {
+          if (isImageRef(r)) await deleteImage(r.slice(4));
+          else if (isCloudRef(r)) await deleteCloudImage(r);
+        }
+
         setEntries(updatedEntries);
-        
-        // Save to localStorage
-        userStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
         setEditingEntry(null);
       } else {
-        // Create new entry with unique ID
         const entry: JournalEntry = {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           title: newEntry.title,
@@ -283,14 +452,13 @@ export default function Journal() {
           mood: newEntry.mood,
           tradeId: newEntry.tradeId || undefined,
           entryType: newEntry.entryType,
-          screenshots: uploadedImages.length > 0 ? uploadedImages : undefined
+          screenshots: screenshots.length > 0 ? screenshots : undefined,
+          accountId: activeAccount?.id,
         };
 
-        setEntries([entry, ...entries]);
-        
-        // Save to localStorage
         const updatedEntries = [entry, ...entries];
-        userStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+        await persistEntries(updatedEntries);
+        setEntries(updatedEntries);
       }
 
       setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
@@ -299,6 +467,9 @@ export default function Journal() {
       setShowNewEntry(false);
       trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new' });
       toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
+    } catch (err) {
+      console.error('Failed to save journal entry:', err);
+      toast.error('Could not save your entry — your device storage may be full. Try removing a screenshot and saving again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -383,17 +554,20 @@ export default function Journal() {
     processFiles(files);
   };
 
-  const processFiles = (files: File[]) => {
-    files.forEach(file => {
-      if (file.type.startsWith('image/') && file.size < 5 * 1024 * 1024) { // 5MB limit
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUrl = e.target?.result as string;
-          setUploadedImages(prev => [...prev, dataUrl]);
-        };
-        reader.readAsDataURL(file);
+  const processFiles = async (files: File[]) => {
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue;
+      if (file.size > 15 * 1024 * 1024) { // generous source cap; we compress below
+        toast.error(`${file.name || 'Image'} is too large (max 15MB)`);
+        continue;
       }
-    });
+      try {
+        const dataUrl = await compressImage(file);
+        setUploadedImages(prev => [...prev, { id: newImageId(), dataUrl }]);
+      } catch {
+        toast.error('Could not process that image');
+      }
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -456,21 +630,39 @@ export default function Journal() {
       tradeId: entry.tradeId || '',
       entryType: entry.entryType
     });
-    setUploadedImages(entry.screenshots || []);
+    setUploadedImages([]);
     const linkedTrade = getLinkedTrade(entry.tradeId);
     setSelectedTrade(linkedTrade || null);
     setShowNewEntry(true);
+    // Resolve stored screenshot refs into editable previews. Block saving until
+    // they're loaded so a fast save can't drop the entry's existing screenshots.
+    if ((entry.screenshots || []).length > 0) {
+      setImagesLoading(true);
+      resolveScreenshots(entry.screenshots || [])
+        .then(imgs => setUploadedImages(imgs))
+        .finally(() => setImagesLoading(false));
+    }
   };
 
-  const deleteEntry = (entryId: string) => {
+  const deleteEntry = async (entryId: string) => {
     if (isDemo) {
       toast.info('Sign up to delete journal entries!');
       return;
     }
     if (confirm('Are you sure you want to delete this journal entry?')) {
+      const target = entries.find(entry => entry.id === entryId);
       const updatedEntries = entries.filter(entry => entry.id !== entryId);
       setEntries(updatedEntries);
-      userStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+      try {
+        await persistEntries(updatedEntries);
+        for (const r of target?.screenshots || []) {
+          if (isImageRef(r)) await deleteImage(r.slice(4));
+          else if (isCloudRef(r)) await deleteCloudImage(r);
+        }
+      } catch (err) {
+        console.error('Failed to delete journal entry:', err);
+        toast.error('Could not delete the entry. Please try again.');
+      }
     }
   };
 
@@ -478,6 +670,7 @@ export default function Journal() {
     setEditingEntry(null);
     setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
     setUploadedImages([]);
+    setImagesLoading(false);
     setSelectedTrade(null);
     setShowNewEntry(false);
   };
@@ -1177,16 +1370,16 @@ export default function Journal() {
                         </span>
                       </label>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">PNG, JPG up to 5MB each &middot; or paste with {navigator.platform.toLowerCase().includes('mac') ? '⌘V' : 'Ctrl+V'}</p>
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG &middot; optimized automatically &middot; or paste with {navigator.platform.toLowerCase().includes('mac') ? '⌘V' : 'Ctrl+V'}</p>
                   </div>
                 </div>
 
                 {uploadedImages.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-4 gap-3">
                     {uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
+                      <div key={image.id} className="relative group">
                         <img
-                          src={image}
+                          src={image.dataUrl}
                           alt={`Upload ${index + 1}`}
                           className="w-full h-24 sm:h-28 object-cover rounded-lg border border-border/20"
                         />
@@ -1224,10 +1417,12 @@ export default function Journal() {
                   onClick={handleAddEntry}
                   className="shadow-lg gap-2 px-6"
                   style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                  disabled={isSubmitting || !newEntry.title.trim() || !newEntry.content.trim()}
+                  disabled={isSubmitting || imagesLoading || !newEntry.title.trim() || !newEntry.content.trim()}
                 >
-                  {isSubmitting && <SpinnerGap className="h-4 w-4 animate-spin" />}
-                  {isSubmitting
+                  {(isSubmitting || imagesLoading) && <SpinnerGap className="h-4 w-4 animate-spin" />}
+                  {imagesLoading
+                    ? 'Loading images...'
+                    : isSubmitting
                     ? (editingEntry ? 'Updating...' : 'Saving...')
                     : (editingEntry ? 'Update Entry' : 'Save Entry')
                   }
@@ -1696,7 +1891,7 @@ export default function Journal() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {entry.screenshots.map((screenshot, index) => (
                           <button key={index} type="button" className="group relative cursor-pointer text-left" onClick={() => setEnlargedImage(screenshot)}>
-                            <img
+                            <StoredImage
                               src={screenshot}
                               alt={`Chart ${index + 1}`}
                               className="w-full h-40 sm:h-56 object-cover rounded-lg border border-border/20 shadow-sm hover:border-primary/30 hover:scale-[1.01] transition-[transform,border-color] duration-200"
@@ -1765,7 +1960,7 @@ export default function Journal() {
           className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
           onClick={() => setEnlargedImage(null)}
         >
-          <img
+          <StoredImage
             src={enlargedImage}
             alt="Enlarged screenshot"
             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"

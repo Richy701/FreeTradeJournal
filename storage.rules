@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Journal screenshots for Pro cross-device sync. Each user can only read/write
+// images under their own path. Writes are limited to images under 5MB. Pro
+// gating is enforced client-side (only Pro accounts upload); these rules ensure
+// a user can never touch another user's files regardless.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/journal/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

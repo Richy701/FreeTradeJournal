@@ -4,7 +4,8 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
-import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { PropFirmSelect } from '@/components/prop-firm-select'
 import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -1313,19 +1314,11 @@ export function CalendarHeatmap() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Prop Firm</Label>
-                    <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
-                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
-                        <SelectValue placeholder="None" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {PROP_FIRMS.map((firm) => (
-                          <SelectItem key={firm} value={firm}>
-                            {firm}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <PropFirmSelect
+                      triggerClassName="h-10 bg-background/60 border-border/50"
+                      value={tradeForm.propFirm}
+                      onChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}
+                    />
                   </div>
                 </div>
               </div>

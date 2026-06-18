@@ -15,6 +15,43 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.42.0',
+    date: '2026-06-18',
+    summary: 'Journal entries now save reliably, stay separate per account, and you can add your own prop firm.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Journal entries save reliably',
+        description: 'Saving a journal entry now waits until it is fully stored before confirming, so entries no longer disappear when you refresh right after saving. If your device storage is ever full, you now get a clear message instead of a silent failure.',
+      },
+      {
+        type: 'fixed',
+        text: 'Opening a journaled trade edits your existing note',
+        description: 'Clicking the journal icon on a trade you have already journaled now opens that entry for editing, instead of starting a blank new one over it.',
+      },
+      {
+        type: 'fixed',
+        text: 'Multiple screenshots attach reliably',
+        description: 'Chart screenshots are now optimized automatically and stored more efficiently, so entries with several images save without issue.',
+      },
+      {
+        type: 'fixed',
+        text: 'Journal entries stay separate per account',
+        description: 'Each trading account now keeps its own journal, matching how trades already work. Existing entries are kept and assigned to your default account.',
+      },
+      {
+        type: 'new',
+        text: 'Add your own prop firm or broker',
+        description: 'When creating an account or logging a trade, you can now choose "Custom…" and type any prop firm or broker name that is not in the list — including firms like Lucid and Tradeify.',
+      },
+      {
+        type: 'new',
+        text: 'Screenshots sync across devices on Pro',
+        description: 'Chart screenshots you attach to journal entries now follow your account across devices on Pro. Free accounts keep screenshots on the device they were added on.',
+      },
+    ],
+  },
+  {
     version: '2.41.0',
     date: '2026-06-17',
     summary: 'Fixed a blank dashboard caused by a single trade or journal entry with an unreadable date.',
@@ -1281,4 +1318,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.41.0'
+export const LATEST_CHANGELOG_VERSION = '2.42.0'

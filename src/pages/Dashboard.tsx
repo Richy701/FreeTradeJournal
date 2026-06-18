@@ -22,7 +22,8 @@ import { parseCSV, parseCSVWithMappings, validateCSVFile, type CSVParseResult } 
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useUserStorage } from '@/utils/user-storage'
 import { isIncognitoMode } from '@/utils/incognito-detection'
-import { PROP_FIRMS, MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { PropFirmSelect } from '@/components/prop-firm-select'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProNudgeBanner } from '@/components/pro-nudge-banner'
@@ -926,19 +927,12 @@ export default function Dashboard() {
                         </div>
                         <div className="space-y-1.5">
                           <Label htmlFor="trade-prop-firm" className="text-xs text-muted-foreground">Prop Firm</Label>
-                          <Select value={tradeForm.propFirm} onValueChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}>
-                            <SelectTrigger id="trade-prop-firm" className="h-10 bg-background/60 border-border/50">
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {PROP_FIRMS.map((firm) => (
-                                <SelectItem key={firm} value={firm}>
-                                  {firm}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <PropFirmSelect
+                            triggerId="trade-prop-firm"
+                            triggerClassName="h-10 bg-background/60 border-border/50"
+                            value={tradeForm.propFirm}
+                            onChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}
+                          />
                         </div>
                       </div>
                     </div>

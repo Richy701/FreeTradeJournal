@@ -1,14 +1,23 @@
 // Trading constants that can be configured
 
 export const PROP_FIRMS = [
-  "E8 Markets",
-  "Funded FX", 
-  "FundingPips",
-  "TopStep",
-  "FTMO",
   "Alpha Capital Group",
+  "Alpha Futures",
   "Apex Trader Funding",
-  "The5ers"
+  "Aqua Funded",
+  "E8 Markets",
+  "FTMO",
+  "Funded FX",
+  "Funded Trading Plus",
+  "FundedNext",
+  "Funding Pips",
+  "Lucid Trading",
+  "My Funded Futures (MFFU)",
+  "Take Profit Trader",
+  "The5ers",
+  "TopStep",
+  "Tradeday",
+  "Tradeify",
 ] as const;
 
 export const FOREX_INSTRUMENTS = [

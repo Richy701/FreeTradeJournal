@@ -1,10 +1,12 @@
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import type { Functions } from 'firebase/functions';
+import type { FirebaseStorage } from 'firebase/storage';
 
 let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
 let functionsInstance: Functions | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
 export async function getFirebaseAuth(): Promise<Auth> {
   if (authInstance) return authInstance;
@@ -96,4 +98,33 @@ export async function getFirebaseFunctions(): Promise<Functions> {
   }
 
   return functionsInstance;
+}
+
+export async function getFirebaseStorage(): Promise<FirebaseStorage> {
+  if (storageInstance) return storageInstance;
+
+  const { getApps, getApp, initializeApp } = await import('firebase/app');
+  const { getStorage, connectStorageEmulator } = await import('firebase/storage');
+
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  };
+
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  storageInstance = getStorage(app);
+
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+    try {
+      connectStorageEmulator(storageInstance, 'localhost', 9199);
+    } catch (error) {
+      // Firebase storage emulator already connected or not available
+    }
+  }
+
+  return storageInstance;
 }
