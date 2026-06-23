@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { recordFirstTradeIfNeeded } from '@/lib/first-trade';
+import { trackTradeLogged } from '@/lib/track-trade';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -664,6 +665,7 @@ export default function TradeLog() {
     } else {
       saveTrades([...trades, newTrade]);
       trackEvent('trade_created', { symbol: newTrade.symbol, side: newTrade.side, market: newTrade.market });
+      trackTradeLogged(1, 'manual');
       setJournalPromptTrade(newTrade);
       // Check risk rules after saving (warn only, never block)
       if (pnl < 0) checkRiskRules(pnl, newTrade.exitTime);
@@ -888,7 +890,10 @@ export default function TradeLog() {
             ? `${result.summary.failed} rows had errors and were skipped`
             : 'P&L is net — broker commissions and fees subtracted automatically';
 
-        if (newTrades.length > 0) trackEvent('csv_imported', { count: newTrades.length });
+        if (newTrades.length > 0) {
+          trackEvent('csv_imported', { count: newTrades.length });
+          trackTradeLogged(newTrades.length, 'csv');
+        }
         toast.success(
           newTrades.length > 0
             ? `Imported ${newTrades.length} new trade${newTrades.length > 1 ? 's' : ''} from ${file.name}`

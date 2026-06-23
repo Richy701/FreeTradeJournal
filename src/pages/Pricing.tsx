@@ -258,7 +258,8 @@ export default function Pricing() {
   const handleUpgrade = (priceId: string, plan: string) => {
     trackEvent('pricing_cta_clicked', { plan });
     if (!user) {
-      navigate('/login', { state: { from: '/pricing' } });
+      sessionStorage.setItem('pendingCheckoutPriceId', priceId);
+      navigate('/signup');
       return;
     }
     trackEvent('checkout_started', { plan, priceId });

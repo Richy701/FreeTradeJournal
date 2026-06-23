@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.44.0',
+    date: '2026-06-23',
+    summary: 'Starting a Pro trial no longer loses your place, and dashboard quick-adds update your stats instantly.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Start your Pro trial without losing your place',
+        description: 'If you pick a Pro plan while signed out, you are now taken straight to checkout right after creating your account, instead of being dropped back on the pricing page to start over.',
+      },
+      {
+        type: 'fixed',
+        text: 'Dashboard quick-add updates your stats instantly',
+        description: 'Adding a trade from the dashboard now refreshes your widgets and P&L right away, without needing a page refresh.',
+      },
+    ],
+  },
+  {
     version: '2.43.0',
     date: '2026-06-23',
     summary: 'The AI coach chat now gives sharper, safer advice based on your full trading history.',
@@ -1335,4 +1352,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.43.0'
+export const LATEST_CHANGELOG_VERSION = '2.44.0'

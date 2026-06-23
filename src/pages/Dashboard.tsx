@@ -30,6 +30,8 @@ import { ProNudgeBanner } from '@/components/pro-nudge-banner'
 import { ReferralBanner } from '@/components/referral-banner'
 import { GettingStartedChecklist } from '@/components/getting-started-checklist'
 import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
+import { recordFirstTradeIfNeeded } from '@/lib/first-trade'
+import { trackTradeLogged } from '@/lib/track-trade'
 import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
 import { SatisfactionPulse } from '@/components/satisfaction-pulse'
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
@@ -236,6 +238,15 @@ export default function Dashboard() {
     trades.unshift(newTrade)
     userStorage.setItem('trades', JSON.stringify(trades))
 
+    // Record activation + emit per-trade event the moment a trade is created
+    // here (the Dashboard quick-add is a real first-trade path), instead of
+    // relying on a later Dashboard remount catching the 0 -> positive transition.
+    if (user && !isDemo) recordFirstTradeIfNeeded(user.uid)
+    trackEvent('trade_created', { symbol: newTrade.symbol, side: newTrade.side, market: newTrade.market })
+    trackTradeLogged(1, 'dashboard_quickadd')
+    // Refresh widgets live without requiring a page refresh.
+    notifyDataChange()
+
     // Referral nudge after a winning trade (max once per 7 days)
     if (pnl > 0 && user && !isDemo) {
       const NUDGE_KEY = 'ftj-referral-nudge-at';
@@ -385,6 +396,14 @@ export default function Dashboard() {
 
         const updatedTrades = [...existingTrades, ...newTrades];
         userStorage.setItem('trades', JSON.stringify(updatedTrades));
+        // Record activation explicitly (instead of relying on the incidental
+        // celebration-hook back-fill) and restore csv_imported visibility for
+        // the Dashboard import surface.
+        if (user && !isDemo && newTrades.length > 0) recordFirstTradeIfNeeded(user.uid);
+        if (newTrades.length > 0) {
+          trackEvent('csv_imported', { count: newTrades.length, source: 'dashboard' });
+          trackTradeLogged(newTrades.length, 'csv_dashboard');
+        }
         // Notify useDemoData subscribers so all widgets re-read trades live,
         // instead of requiring a page refresh to pick up the import.
         notifyDataChange();

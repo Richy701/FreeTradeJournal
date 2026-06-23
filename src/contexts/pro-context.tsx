@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback, t
 import { useAuth } from '@/contexts/auth-context';
 import { getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { redirectToCheckout } from '@/lib/stripe';
+import { trackEvent } from '@/lib/analytics';
 import { UserStorage } from '@/utils/user-storage';
 import type { SubscriptionInfo } from '@/types/subscription';
 
@@ -158,6 +159,19 @@ export function ProProvider({ children }: ProProviderProps) {
     },
     [],
   );
+
+  // Resume a checkout the user started while logged out: Pricing stashes the
+  // priceId in sessionStorage (survives the full-page Stripe redirect, OAuth,
+  // and the /verify-email hop) before sending them to login/signup. Once the
+  // Firebase user is available, finish the checkout exactly once.
+  useEffect(() => {
+    if (!uid || isDemo) return;
+    const priceId = sessionStorage.getItem('pendingCheckoutPriceId');
+    if (!priceId) return;
+    sessionStorage.removeItem('pendingCheckoutPriceId');
+    trackEvent('checkout_started', { priceId, resumed: true });
+    handleOpenCheckout(priceId);
+  }, [uid, isDemo, handleOpenCheckout]);
 
   const hasReferralPro = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
 

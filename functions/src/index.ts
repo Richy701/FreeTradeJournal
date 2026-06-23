@@ -1132,6 +1132,43 @@ export const markFirstTrade = functions.https.onCall(async (_data, context) => {
   return { ok: true };
 });
 
+// ─── Server-side per-trade tracking ──
+// Client `trade_created` events are ~91% undeliverable (ad blockers, consent
+// memory-persistence, no identify), so per-trade volume can't be measured from
+// the browser. This authenticated callable captures a gate-independent "trade
+// logged" event in PostHog and keeps a server-truth running count, mirroring the
+// markFirstTrade pattern. Fired from every trade create/import path on the client.
+export const trackTradeLogged = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+  const uid = context.auth.uid;
+  const rawCount = Number((data as { count?: number })?.count);
+  const count = Number.isFinite(rawCount) && rawCount > 0 ? Math.min(Math.floor(rawCount), 10000) : 1;
+  const source = String((data as { source?: string })?.source || "manual").slice(0, 40);
+
+  try {
+    await db.collection("users").doc(uid).set(
+      { tradesLoggedCount: admin.firestore.FieldValue.increment(count) },
+      { merge: true }
+    );
+  } catch (err) {
+    console.error("Failed to increment tradesLoggedCount:", err);
+  }
+
+  try {
+    await getPostHog().captureImmediate({
+      distinctId: uid,
+      event: "trade logged",
+      properties: { count, source },
+    });
+  } catch (err) {
+    console.error("PostHog: failed to track trade logged:", err);
+  }
+
+  return { ok: true };
+});
+
 // ─── Process Deferred Referrals (accounts that were too new) ──
 
 export const processDeferredReferrals = functions.pubsub

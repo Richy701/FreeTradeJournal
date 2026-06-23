@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -1040,6 +1040,38 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
     }
     catch (err) {
         console.error("Failed to process referral credit:", err);
+    }
+    return { ok: true };
+});
+// ─── Server-side per-trade tracking ──
+// Client `trade_created` events are ~91% undeliverable (ad blockers, consent
+// memory-persistence, no identify), so per-trade volume can't be measured from
+// the browser. This authenticated callable captures a gate-independent "trade
+// logged" event in PostHog and keeps a server-truth running count, mirroring the
+// markFirstTrade pattern. Fired from every trade create/import path on the client.
+exports.trackTradeLogged = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    const rawCount = Number(data?.count);
+    const count = Number.isFinite(rawCount) && rawCount > 0 ? Math.min(Math.floor(rawCount), 10000) : 1;
+    const source = String(data?.source || "manual").slice(0, 40);
+    try {
+        await db.collection("users").doc(uid).set({ tradesLoggedCount: admin.firestore.FieldValue.increment(count) }, { merge: true });
+    }
+    catch (err) {
+        console.error("Failed to increment tradesLoggedCount:", err);
+    }
+    try {
+        await getPostHog().captureImmediate({
+            distinctId: uid,
+            event: "trade logged",
+            properties: { count, source },
+        });
+    }
+    catch (err) {
+        console.error("PostHog: failed to track trade logged:", err);
     }
     return { ok: true };
 });
