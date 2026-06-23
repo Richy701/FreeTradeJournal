@@ -4,6 +4,7 @@ import { usePostHog } from 'posthog-js/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
+import { isAnalyticsBlocked } from '@/lib/posthog';
 
 const PAGE_NAMES: Record<string, string> = {
   '/': 'Landing',
@@ -43,7 +44,7 @@ export function PostHogTracker() {
 
   // Track pageviews on route change
   useEffect(() => {
-    if (posthog) {
+    if (posthog && !isAnalyticsBlocked()) {
       posthog.capture('$pageview', {
         $current_url: window.location.href,
       });
@@ -60,7 +61,7 @@ export function PostHogTracker() {
       const consent = localStorage.getItem('cookieConsent');
       const analyticsAllowed = consent ? JSON.parse(consent).analytics === true : false;
 
-      if (analyticsAllowed) {
+      if (analyticsAllowed && !isAnalyticsBlocked()) {
         posthog.identify(user.uid, {
           email: user.email ?? undefined,
           name: user.displayName ?? undefined,

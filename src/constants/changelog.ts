@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.43.0',
+    date: '2026-06-23',
+    summary: 'The AI coach chat now gives sharper, safer advice based on your full trading history.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Smarter AI coach chat',
+        description: 'The coach now reads your full account history broken down by instrument, strategy, and direction, instead of just your last few trades. It ranks what you trade by how many times you have traded it, so a couple of lucky wins on one symbol no longer get called your "best setup".',
+      },
+      {
+        type: 'improved',
+        text: 'Honest answers about small samples and setups',
+        description: 'The coach now tells you when there are too few trades to draw a conclusion, judges performance by risk and consistency rather than raw dollar profit, and will not tell you to size up just because something has been working lately. If your trades are not tagged with a strategy, it says so instead of guessing.',
+      },
+    ],
+  },
+  {
     version: '2.42.0',
     date: '2026-06-18',
     summary: 'Journal entries now save reliably, stay separate per account, and you can add your own prop firm.',
@@ -1318,4 +1335,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.42.0'
+export const LATEST_CHANGELOG_VERSION = '2.43.0'

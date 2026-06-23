@@ -3,6 +3,17 @@ import posthog from 'posthog-js';
 const key = import.meta.env.VITE_POSTHOG_KEY;
 const host = '/api/ingest';
 
+// Set once we detect the analytics endpoint is blocked (ad blocker) or
+// unreachable. Funnel-critical events (signup / first trade / subscription) are
+// captured server-side via Cloud Functions, so when this trips we lose only
+// optional client product analytics — and we stop posthog-js from retry-storming
+// every blocked request into the console. Session-scoped (re-probed each load)
+// so a transient network blip self-heals instead of poisoning analytics.
+let blocked = false;
+export function isAnalyticsBlocked(): boolean {
+  return blocked;
+}
+
 export function initPostHog() {
   if (!key || typeof window === 'undefined') return;
 
@@ -16,7 +27,34 @@ export function initPostHog() {
     capture_pageleave: true,
     persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
     autocapture: analyticsAllowed,
+    // Funnel-critical events (signup / first trade / subscription) are captured
+    // server-side via Cloud Functions, so the client only needs lightweight
+    // product analytics. Session replay records screens full of financial data
+    // (privacy liability) and dead-click capture is pure overhead — both are
+    // also among the assets ad blockers reject, so we disable them outright.
+    disable_session_recording: true,
+    capture_dead_clicks: false,
   });
+
+  detectBlocking();
+}
+
+// Ad blockers (uBlock / EasyPrivacy) reject the entire /api/ingest path
+// regardless of the same-origin proxy. One HEAD probe; if it's rejected we stop
+// client capture so the SDK doesn't retry every blocked event into a wall.
+function detectBlocking(): void {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  fetch(`${host}/i/v0/e/`, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+    .catch(() => {
+      blocked = true;
+      try {
+        posthog.set_config({ autocapture: false, capture_pageleave: false });
+      } catch {
+        // noop
+      }
+    })
+    .finally(() => clearTimeout(timer));
 }
 
 export function updatePostHogConsent(analyticsAllowed: boolean) {

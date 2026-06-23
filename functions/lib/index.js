@@ -924,15 +924,23 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
     const uid = context.auth.uid;
-    await db.collection("users").doc(uid).set({ firstTradeLoggedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    try {
-        await getPostHog().captureImmediate({
-            distinctId: uid,
-            event: "first trade logged",
-        });
-    }
-    catch (err) {
-        console.error("PostHog: failed to track first trade:", err);
+    const userRef = db.collection("users").doc(uid);
+    // Read before writing so the activation side-effects (PostHog event + Resend
+    // automation) fire only the FIRST time. A user who clears storage or switches
+    // device re-calls this; without the guard, activation would double-count.
+    const beforeSnap = await userRef.get();
+    const alreadyLogged = !!beforeSnap.data()?.firstTradeLoggedAt;
+    if (!alreadyLogged) {
+        await userRef.set({ firstTradeLoggedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        try {
+            await getPostHog().captureImmediate({
+                distinctId: uid,
+                event: "first trade logged",
+            });
+        }
+        catch (err) {
+            console.error("PostHog: failed to track first trade:", err);
+        }
     }
     // ── Sync to Resend: mark trade logged + fire event for automations ──
     try {
@@ -941,7 +949,7 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
         await updateResendContact(userData?.resendContactId, {
             properties: { has_logged_trade: "true" },
         });
-        if (userData?.email) {
+        if (userData?.email && !alreadyLogged) {
             await fireResendEvent("trade.logged", userData.email);
         }
         // ── Referral credit: only counts when referred user has verified email + first trade ──
@@ -2161,6 +2169,35 @@ Return ONLY a valid JSON array. No markdown, no explanation. Example:
         temperature: 0.7,
     };
 }
+// Hardened coach_chat system prompt. Parameterized on the significance threshold
+// so the prose and the data lines can never drift out of sync.
+const COACH_CHAT_SYSTEM_PROMPT = (sigThreshold) => `You are Coach FTJ, a direct, honest trading coach inside FreeTradeJournal. You have this trader's real, account-scoped data below. Your job is to protect their capital and improve their process, not to cheerlead recent results.
+
+Your style:
+- Address the trader directly ("you", not "the trader").
+- Reference their actual numbers, never invent or estimate data. If a number is not in the data, say you do not have it.
+- Keep answers concise (under 200 words).
+- Be specific and actionable, never generic.
+- Use markdown (bold, lists) but keep it clean.
+- Write in plain prose. Do not use em-dashes or en-dashes (the long dash characters); use commas, periods, or hyphens instead.
+
+Non-negotiable coaching rules (these override everything else):
+
+1. PROCESS OVER OUTCOME. Judge performance by risk-adjusted quality (win rate together with payoff ratio and planned R:R), discipline, and consistency, never by raw dollar P&L alone. A large dollar figure on a single instrument is often just contract size or a big multiplier, not skill or edge.
+
+2. NEVER ADVISE SIZING UP OFF RESULTS. Do not tell the trader to increase position size, risk more, or "press" winners because a symbol, side, or recent run was profitable. This is pro-cyclical and dangerous. If they ask whether to size up, redirect them to fixed, rule-based risk per trade and to their own risk rules. You may discuss sizing down or normalizing risk after losses or during tilt.
+
+3. SMALL SAMPLES ARE NOT EVIDENCE. Any instrument, strategy, side, or overall record with fewer than ${sigThreshold} trades is statistically insignificant. Data lines marked "[small sample, not significant]" must be treated as noise. Never name a "best" or "worst" instrument, strategy, or direction off a small sample, and explicitly tell the trader the sample is too small to conclude anything. A 100% or 0% win rate on 1 to 3 trades means nothing.
+
+4. AN INSTRUMENT IS NOT A SETUP. Symbols (e.g. MGCJ6, EURUSD, ES) are instruments, not setups or strategies. Never call an instrument their "best setup" or "edge". A setup or strategy is only what appears in the "By strategy/setup" block. If strategies are not tagged in the data, say you cannot identify their best setup because trades are not tagged with a strategy, and suggest they start tagging.
+
+5. RISK:REWARD HONESTY. The R:R in the data is PLANNED (from stop-loss and take-profit), not realized, and is only set on a subset of trades. State the sample size when you cite it and never present planned R:R as an outcome. If it is not set on enough trades, say so. The "payoff ratio" is the realized average win divided by average loss; you may use it, but pair it with win rate, never in isolation.
+
+6. HONESTY WHEN DATA IS ABSENT. If the trader asks about something not in the data (a date range, an untagged setup, emotions they never logged, an instrument they have not traded), say plainly that you do not have that data rather than guessing.
+
+7. NO QUOTAS. Never tell the trader to take a specific count or direction of trades ("take 5 shorts", "trade more longs", "make 10 trades this week"). Setups cannot be manufactured. Every recommendation must be about process, risk management, discipline, setup quality, or psychology.
+
+When asked "what is my best setup" or similar: if strategies are tagged and at least one strategy clears ${sigThreshold} trades, answer using the strategy block and cite win rate plus payoff ratio. Otherwise tell them honestly that there is not enough tagged, statistically significant data to name a best setup yet, and tell them what to track to find out. Do not substitute the highest-dollar instrument for a setup.`;
 function buildCoachChatPrompt(payload) {
     const { stats, recentTrades, goals, rules, tiltFactors } = payload;
     const message = typeof payload.message === "string" ? payload.message.slice(0, 500) : "";
@@ -2170,32 +2207,71 @@ function buildCoachChatPrompt(payload) {
             content: typeof m.content === "string" ? m.content.slice(0, 600) : "",
         }))
         : [];
-    const tradesSummary = (recentTrades || []).slice(0, 10).map((t, i) => {
-        return `${i + 1}. ${t.symbol || "?"} ${t.side || "?"} P&L: $${t.pnl?.toFixed(2) || "0"} Hold: ${t.holdMinutes || "?"}m${t.emotions ? ` Emotions: ${t.emotions}` : ""}`;
-    }).join("\n");
-    const goalsSummary = (goals || []).slice(0, 10).map((g) => `- ${g.type} (${g.period}): target ${g.target}, current ${g.current ?? "N/A"}`).join("\n");
-    const rulesSummary = (rules || []).slice(0, 10).map((r) => `- ${r.type}: limit ${r.value}`).join("\n");
-    const chatHistory = history.map((m) => `${m.role === "user" ? "Trader" : "Coach"}: ${m.content}`).join("\n");
+    // NaN-safe formatters so no "$NaN" / "NaN%" / "Infinity:1" can reach the model.
+    const n = (v) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+    const money = (v) => `$${n(v).toFixed(2)}`;
+    const pct = (v) => `${n(v).toFixed(1)}%`;
+    const ratioOrNA = (v) => typeof v === "number" && Number.isFinite(v) ? `${v.toFixed(2)}:1` : "n/a";
+    const sigTag = (g) => g?.significant === true ? "" : ` [small sample, n=${n(g?.count)}, not significant]`;
+    // Per-group rendering helper (symbol / strategy / side), capped and pre-ranked by count.
+    const renderGroups = (label, arr) => {
+        const list = Array.isArray(arr) ? arr.slice(0, 6) : [];
+        if (list.length === 0)
+            return "";
+        const lines = list.map((g) => {
+            const rr = g?.avgPlannedRR;
+            const rrPart = typeof rr === "number" && Number.isFinite(rr)
+                ? `, avg planned R:R ${rr.toFixed(2)} (set on ${n(g?.rrSampleCount)} of ${n(g?.count)})`
+                : "";
+            return `- ${String(g?.key ?? "?")}: ${n(g?.count)} trades, win rate ${pct(g?.winRate)}, net P&L ${money(g?.netPnl)}, avg P&L ${money(g?.avgPnl)}, payoff ratio ${ratioOrNA(g?.payoffRatio)}${rrPart}${sigTag(g)}`;
+        }).join("\n");
+        return `${label} (ranked by sample size, largest first):\n${lines}`;
+    };
+    const symbolBlock = renderGroups("By instrument/symbol", payload.perSymbol);
+    const strategyBlock = payload.strategiesTagged === true
+        ? renderGroups("By strategy/setup", payload.perStrategy)
+        : "";
+    const sideBlock = renderGroups("By direction (long vs short)", payload.perSide);
+    const tradesSummary = (Array.isArray(recentTrades) ? recentTrades : [])
+        .slice(0, 10)
+        .map((t, i) => `${i + 1}. ${t.symbol || "?"} ${t.side || "?"} P&L: ${money(t.pnl)} Hold: ${t.holdMinutes ?? "?"}m${t.emotions ? ` Emotions: ${t.emotions}` : ""}`).join("\n");
+    const goalsSummary = (Array.isArray(goals) ? goals : [])
+        .slice(0, 10)
+        .map((g) => `- ${g.type} (${g.period}): target ${g.target}, current ${g.current ?? "N/A"}`)
+        .join("\n");
+    const rulesSummary = (Array.isArray(rules) ? rules : [])
+        .slice(0, 10)
+        .map((r) => `- ${r.type}: limit ${r.value}`)
+        .join("\n");
+    const chatHistory = history
+        .map((m) => `${m.role === "user" ? "Trader" : "Coach"}: ${m.content}`)
+        .join("\n");
+    // Overall stats block (risk-adjusted, sample-aware).
+    const tradeCount = n(stats?.tradeCount);
+    const sigThreshold = stats?.significanceThreshold ? n(stats.significanceThreshold) : 25;
+    const hasEnough = stats?.hasEnoughData === true;
     const statsBlock = stats
-        ? `Win rate: ${stats.winRate?.toFixed(1) || "N/A"}%, total P&L: $${stats.totalPnl?.toFixed(2) || "0"}, avg P&L: $${stats.avgPnl?.toFixed(2) || "0"}, trades: ${stats.tradeCount || 0}, losing streak: ${stats.consecutiveLosses || 0}`
+        ? [
+            `Total trades: ${tradeCount}${hasEnough ? "" : ` (below ${sigThreshold}, treat all stats as preliminary)`}`,
+            `Win rate: ${pct(stats.winRate)}`,
+            `Net P&L: ${money(stats.totalPnl)}, avg P&L/trade: ${money(stats.avgPnl)}`,
+            `Avg win: ${money(stats.avgWin)}, avg loss: ${money(stats.avgLoss)}, payoff ratio (avg win / avg loss): ${ratioOrNA(stats.payoffRatio)}`,
+            typeof stats.avgPlannedRR === "number" && Number.isFinite(stats.avgPlannedRR)
+                ? `Avg PLANNED R:R: ${stats.avgPlannedRR.toFixed(2)} (set on ${n(stats.rrSampleCount)} of ${tradeCount} trades; planned, not realized)`
+                : `Planned R:R: not set on enough trades to report`,
+            `Current losing streak: ${n(stats.consecutiveLosses)}`,
+        ].join("\n")
         : "No stats available";
-    const tiltBlock = tiltFactors && tiltFactors.length > 0
+    const tiltBlock = Array.isArray(tiltFactors) && tiltFactors.length > 0
         ? `Current tilt factors: ${tiltFactors.join("; ")}`
         : "";
+    const groupBlocks = [symbolBlock, strategyBlock, sideBlock].filter(Boolean).join("\n\n");
     return {
-        system: `You are Coach FTJ, a direct and supportive trading coach inside FreeTradeJournal. You know this trader's real data.
-
-Your style:
-- Address the trader directly ("you", not "the trader")
-- Reference their actual numbers — never make up data
-- Keep answers concise (under 200 words)
-- Be specific and actionable, not generic
-- If they ask about something not in the data, say so honestly
-- Use markdown for formatting (bold, lists) but keep it clean
+        system: COACH_CHAT_SYSTEM_PROMPT(sigThreshold) + `
 
 Trader's current data:
 ${statsBlock}
-${tiltBlock ? tiltBlock + "\n" : ""}${goalsSummary ? "Goals:\n" + goalsSummary + "\n" : ""}${rulesSummary ? "Risk rules:\n" + rulesSummary + "\n" : ""}${tradesSummary ? "Recent trades:\n" + tradesSummary : "No recent trades"}`,
+${tiltBlock ? "\n" + tiltBlock + "\n" : ""}${groupBlocks ? "\n" + groupBlocks + "\n" : ""}${goalsSummary ? "\nGoals:\n" + goalsSummary + "\n" : ""}${rulesSummary ? "\nRisk rules:\n" + rulesSummary + "\n" : ""}${tradesSummary ? "\nMost recent 10 trades (chronological tail, NOT a ranking):\n" + tradesSummary : "\nNo recent trades"}`,
         user: chatHistory ? `${chatHistory}\nTrader: ${message}` : message,
         maxTokens: 400,
         temperature: 0.7,

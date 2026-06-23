@@ -26,10 +26,75 @@ interface Trade {
   exitPrice?: number
   notes?: string
   emotions?: string
+  strategy?: string
 }
 
 const NEGATIVE_EMOTIONS = new Set(['Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'])
 const POSITIVE_EMOTIONS = new Set(['Confident', 'Disciplined', 'Patient'])
+
+// Chat aggregation tuning. Buckets are ranked by sample size (trade count),
+// never by raw dollar P&L, so a 2-trade symbol can never out-rank a 200-trade one.
+const SIGNIFICANCE_THRESHOLD = 25 // buckets/overall below this are flagged not statistically significant
+const MAX_BUCKETS = 6 // cap groups serialized into the chat payload (top N by trade count)
+const MIN_STRATEGY_TAGGED_RATIO = 0.2 // need >=20% of trades tagged before we show any strategy edge
+
+// CSV/demo/legacy pnl can be NaN/undefined; coerce to a finite number once.
+const safeNum = (v: unknown): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : 0
+
+interface GroupAcc {
+  key: string
+  count: number
+  wins: number
+  losses: number
+  netPnl: number
+  sumWinPnl: number
+  sumLossPnl: number // running NEGATIVE-or-zero sum of losing pnl
+  rrSum: number // sum of PLANNED riskReward, only over trades with riskReward > 0
+  rrCount: number // how many trades in this group have a planned R:R set
+}
+
+interface GroupStat {
+  key: string
+  count: number
+  winRate: number // 0..100
+  netPnl: number
+  avgPnl: number
+  payoffRatio: number | null // avgWin / |avgLoss|, null when not computable
+  avgPlannedRR: number | null // avg of riskReward>0 subset, null when none set
+  rrSampleCount: number // how many trades had a planned R:R (honesty)
+  significant: boolean // count >= SIGNIFICANCE_THRESHOLD
+}
+
+function makeAcc(key: string): GroupAcc {
+  return { key, count: 0, wins: 0, losses: 0, netPnl: 0, sumWinPnl: 0, sumLossPnl: 0, rrSum: 0, rrCount: 0 }
+}
+
+function pushTradeIntoAcc(acc: GroupAcc, pnl: number, rr: number) {
+  acc.count++
+  acc.netPnl += pnl
+  if (pnl > 0) { acc.wins++; acc.sumWinPnl += pnl }
+  else if (pnl < 0) { acc.losses++; acc.sumLossPnl += pnl }
+  // pnl === 0 counts toward count/netPnl but is neither win nor loss.
+  if (Number.isFinite(rr) && rr > 0) { acc.rrSum += rr; acc.rrCount++ }
+}
+
+function finalizeAcc(acc: GroupAcc): GroupStat {
+  const avgWin = acc.wins > 0 ? acc.sumWinPnl / acc.wins : 0
+  const avgLossAbs = acc.losses > 0 ? Math.abs(acc.sumLossPnl / acc.losses) : 0
+  return {
+    key: acc.key,
+    count: acc.count,
+    winRate: acc.count > 0 ? (acc.wins / acc.count) * 100 : 0,
+    netPnl: acc.netPnl,
+    avgPnl: acc.count > 0 ? acc.netPnl / acc.count : 0,
+    // payoff ratio is only meaningful with at least one win AND one loss.
+    payoffRatio: acc.wins > 0 && avgLossAbs > 0 ? avgWin / avgLossAbs : null,
+    avgPlannedRR: acc.rrCount > 0 ? acc.rrSum / acc.rrCount : null,
+    rrSampleCount: acc.rrCount,
+    significant: acc.count >= SIGNIFICANCE_THRESHOLD,
+  }
+}
 
 interface TiltScore {
   score: number
@@ -273,18 +338,63 @@ function cleanDashes(s: string): string {
   return s.replace(/ +[—–] +/g, ', ').replace(/[—–]/g, '-')
 }
 
+// Block-level markdown renderer for chat replies: turns the model's markdown
+// (headings, paragraphs, bullet/numbered lists, bold, inline code) into clean
+// semantic HTML. Styling lives in CHAT_PROSE so headings, lists and spacing are
+// applied from the JSX container rather than baked into the string.
 function renderChatMarkdown(md: string): string {
-  const html = cleanDashes(md)
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc">$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal">$2</li>')
-    .replace(/\n\n/g, '<br/>')
-    .replace(/\n/g, ' ')
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['strong', 'li', 'br'],
+  const inline = (s: string) =>
+    s
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+
+  const lines = cleanDashes(md).split('\n')
+  const out: string[] = []
+  let list: 'ul' | 'ol' | null = null
+  const closeList = () => { if (list) { out.push(`</${list}>`); list = null } }
+
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) { closeList(); continue }
+
+    const heading = line.match(/^#{1,6}\s+(.+?):?\s*$/)
+    const bullet = line.match(/^[-*]\s+(.+)$/)
+    const numbered = line.match(/^\d+\.\s+(.+)$/)
+
+    if (heading) {
+      closeList()
+      out.push(`<p class="md-h">${inline(heading[1])}</p>`)
+    } else if (bullet) {
+      if (list !== 'ul') { closeList(); out.push('<ul class="md-ul">'); list = 'ul' }
+      out.push(`<li>${inline(bullet[1])}</li>`)
+    } else if (numbered) {
+      if (list !== 'ol') { closeList(); out.push('<ol class="md-ol">'); list = 'ol' }
+      out.push(`<li>${inline(numbered[1])}</li>`)
+    } else {
+      closeList()
+      out.push(`<p>${inline(line)}</p>`)
+    }
+  }
+  closeList()
+
+  return DOMPurify.sanitize(out.join(''), {
+    ALLOWED_TAGS: ['strong', 'em', 'code', 'li', 'ul', 'ol', 'p'],
     ALLOWED_ATTR: ['class'],
   })
 }
+
+// Shared typography for rendered chat replies. Block spacing, heading style and
+// inside-positioned list markers are all applied here so the markup stays clean.
+const CHAT_PROSE = cn(
+  "text-sm text-muted-foreground leading-relaxed",
+  "[&>*]:mt-2 [&>:first-child]:mt-0",
+  "[&_strong]:font-semibold [&_strong]:text-foreground",
+  "[&_.md-h]:mt-3 [&_.md-h]:text-[13px] [&_.md-h]:font-semibold [&_.md-h]:text-foreground",
+  "[&_.md-ul]:list-disc [&_.md-ul]:list-inside [&_.md-ul]:ml-1 [&_.md-ul]:space-y-1",
+  "[&_.md-ol]:list-decimal [&_.md-ol]:list-inside [&_.md-ol]:ml-1 [&_.md-ol]:space-y-1",
+  "[&_li]:pl-0.5",
+  "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[12px] [&_code]:font-mono"
+)
 
 const TIP_SEVERITY_ORDER: Record<string, number> = {
   critical: 0,
@@ -324,6 +434,7 @@ export function TradingCoach() {
   const [chatInput, setChatInput] = useState('')
   const { streamText, isStreaming: chatStreaming, startStream, meta: chatMeta } = useStreamingAI()
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
   const chatInputRef = useRef<HTMLInputElement>(null)
   const userStorage = useUserStorage()
 
@@ -339,6 +450,80 @@ export function TradingCoach() {
 
   const tiltScore = useMemo(() => computeTiltScore(trades, themeColors), [trades, themeColors])
 
+  // Risk-adjusted, sample-sized aggregates for the coach chat. One O(n) pass over
+  // the already account-scoped `trades` array (NEVER re-reads localStorage),
+  // recomputed once per data change rather than per chat message.
+  const chatAggregates = useMemo(() => {
+    const symbolMap = new Map<string, GroupAcc>()
+    const strategyMap = new Map<string, GroupAcc>()
+    const sideMap = new Map<string, GroupAcc>()
+
+    let strategiesTaggedCount = 0 // trades with a real (non-empty) strategy
+    let sumWinPnl = 0, winCount = 0
+    let sumLossPnl = 0, lossCount = 0 // sumLossPnl kept negative
+    let rrSum = 0, rrCount = 0
+
+    for (const t of trades as Trade[]) {
+      const pnl = safeNum(t.pnl)
+      const rr = safeNum(t.riskReward) // 0 == "not computed"; only rr > 0 is counted
+
+      if (pnl > 0) { sumWinPnl += pnl; winCount++ }
+      else if (pnl < 0) { sumLossPnl += pnl; lossCount++ }
+      if (rr > 0) { rrSum += rr; rrCount++ }
+
+      const symKey = (t.symbol || 'Unknown').trim() || 'Unknown'
+      if (!symbolMap.has(symKey)) symbolMap.set(symKey, makeAcc(symKey))
+      pushTradeIntoAcc(symbolMap.get(symKey)!, pnl, rr)
+
+      const rawStrat = (t.strategy || '').trim()
+      const stratKey = rawStrat || 'Untagged'
+      if (rawStrat) strategiesTaggedCount++
+      if (!strategyMap.has(stratKey)) strategyMap.set(stratKey, makeAcc(stratKey))
+      pushTradeIntoAcc(strategyMap.get(stratKey)!, pnl, rr)
+
+      // Do NOT coerce a missing side to 'long'.
+      const sideKey = t.side === 'short' ? 'short' : t.side === 'long' ? 'long' : 'unknown'
+      if (!sideMap.has(sideKey)) sideMap.set(sideKey, makeAcc(sideKey))
+      pushTradeIntoAcc(sideMap.get(sideKey)!, pnl, rr)
+    }
+
+    // Rank by SAMPLE SIZE (trade count), never by raw dollar P&L. This is the
+    // core anti-MGCJ6 guard: a 2-trade symbol can never out-rank a 200-trade one.
+    const byCount = (a: GroupStat, b: GroupStat) => b.count - a.count
+
+    const perSymbol = Array.from(symbolMap.values())
+      .map(finalizeAcc).sort(byCount).slice(0, MAX_BUCKETS)
+
+    // Exclude 'Untagged' so the model cannot invent a "best strategy" from untagged trades.
+    const perStrategy = Array.from(strategyMap.values())
+      .map(finalizeAcc).filter(g => g.key !== 'Untagged').sort(byCount).slice(0, MAX_BUCKETS)
+
+    // Keep long/short; drop 'unknown' from any long-vs-short claim.
+    const perSide = Array.from(sideMap.values())
+      .map(finalizeAcc).filter(g => g.key !== 'unknown').sort(byCount)
+
+    const avgWin = winCount > 0 ? sumWinPnl / winCount : 0
+    const avgLossAbs = lossCount > 0 ? Math.abs(sumLossPnl / lossCount) : 0
+
+    // Only surface strategy claims when enough trades are actually tagged.
+    const strategiesTagged = trades.length > 0 &&
+      strategiesTaggedCount / trades.length >= MIN_STRATEGY_TAGGED_RATIO
+
+    return {
+      hasEnoughData: trades.length >= SIGNIFICANCE_THRESHOLD,
+      significanceThreshold: SIGNIFICANCE_THRESHOLD,
+      avgWin,
+      avgLoss: avgLossAbs, // positive magnitude
+      payoffRatio: winCount > 0 && avgLossAbs > 0 ? avgWin / avgLossAbs : null,
+      avgPlannedRR: rrCount > 0 ? rrSum / rrCount : null,
+      rrSampleCount: rrCount,
+      strategiesTagged,
+      perSymbol,
+      perStrategy,
+      perSide,
+    }
+  }, [trades])
+
   // Persist chat history
   useEffect(() => {
     if (chatMessages.length > 0) {
@@ -348,9 +533,11 @@ export function TradingCoach() {
     }
   }, [chatMessages])
 
-  // Scroll chat to bottom
+  // Keep the chat pinned to its latest message by scrolling ONLY the inner
+  // message list — never scrollIntoView, which would also scroll the page/window.
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = chatScrollRef.current
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [chatMessages, streamText])
 
   // Update free quota from chat responses
@@ -359,13 +546,13 @@ export function TradingCoach() {
   }, [chatMeta])
 
   const buildChatContext = useCallback(() => {
-    const wins = trades.filter((t: Trade) => t.pnl > 0).length
-    const totalPnl = trades.reduce((s: number, t: Trade) => s + t.pnl, 0)
+    const wins = trades.filter((t: Trade) => safeNum(t.pnl) > 0).length
+    const totalPnl = trades.reduce((s: number, t: Trade) => s + safeNum(t.pnl), 0)
     const avgPnl = trades.length > 0 ? totalPnl / trades.length : 0
 
     let consLosses = 0
     for (const t of [...trades].reverse()) {
-      if (t.pnl < 0) consLosses++
+      if (safeNum(t.pnl) < 0) consLosses++
       else break
     }
 
@@ -383,21 +570,36 @@ export function TradingCoach() {
         avgPnl,
         tradeCount: trades.length,
         consecutiveLosses: consLosses,
+        // enriched, full-set, risk-adjusted overall context:
+        avgWin: chatAggregates.avgWin,
+        avgLoss: chatAggregates.avgLoss,
+        payoffRatio: chatAggregates.payoffRatio, // number | null
+        avgPlannedRR: chatAggregates.avgPlannedRR, // number | null
+        rrSampleCount: chatAggregates.rrSampleCount,
+        hasEnoughData: chatAggregates.hasEnoughData,
+        significanceThreshold: chatAggregates.significanceThreshold,
       },
+      // NEW enriched, sample-sized aggregates over the FULL account-scoped set:
+      perSymbol: chatAggregates.perSymbol,
+      perStrategy: chatAggregates.strategiesTagged ? chatAggregates.perStrategy : [],
+      strategiesTagged: chatAggregates.strategiesTagged,
+      perSide: chatAggregates.perSide,
       recentTrades: trades.slice(-10).map((t: Trade) => ({
         symbol: t.symbol,
         side: t.side || 'long',
-        pnl: t.pnl,
-        holdMinutes: t.entryTime && t.exitTime
-          ? Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000)
-          : null,
+        pnl: safeNum(t.pnl),
+        holdMinutes: (() => {
+          const a = t.entryTime ? new Date(t.entryTime).getTime() : NaN
+          const b = t.exitTime ? new Date(t.exitTime).getTime() : NaN
+          return Number.isFinite(a) && Number.isFinite(b) ? Math.round((b - a) / 60000) : null
+        })(),
         emotions: t.emotions || null,
       })),
       goals: goals.map((g: any) => ({ type: g.type, period: g.period, target: g.target, current: g.current })),
       rules: rules.map((r: any) => ({ type: r.type, value: r.value })),
       tiltFactors: tiltScore.factors,
     }
-  }, [trades, userStorage, tiltScore.factors])
+  }, [trades, userStorage, tiltScore.factors, chatAggregates])
 
   const sendChatMessage = useCallback(async (message: string) => {
     if (!message.trim() || chatStreaming) return
@@ -1256,7 +1458,7 @@ export function TradingCoach() {
                 </div>
 
                 {/* Messages */}
-                <div className="max-h-64 overflow-y-auto space-y-2.5 scroll-smooth">
+                <div ref={chatScrollRef} className="max-h-64 overflow-y-auto space-y-2.5 scroll-smooth">
                   {chatMessages.length === 0 && !chatStreaming && (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground text-center">Ask anything about your trading</p>
@@ -1273,19 +1475,11 @@ export function TradingCoach() {
                       </div>
                     </div>
                   )}
-                  {chatMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "text-sm leading-relaxed",
-                        msg.role === 'user'
-                          ? "text-right"
-                          : "[&_strong]:text-foreground [&_li]:py-0.5"
-                      )}
-                    >
-                      {msg.role === 'user' ? (
+                  {chatMessages.map((msg, i) =>
+                    msg.role === 'user' ? (
+                      <div key={i} className="text-right">
                         <span
-                          className="inline-block px-3 py-1.5 rounded-lg text-sm"
+                          className="inline-block px-3 py-1.5 rounded-lg text-sm text-left"
                           style={{
                             backgroundColor: alpha(themeColors.primary, '15'),
                             color: themeColors.primary,
@@ -1293,18 +1487,41 @@ export function TradingCoach() {
                         >
                           {msg.content}
                         </span>
-                      ) : (
-                        <div
-                          className="text-sm text-muted-foreground leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }}
-                        />
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    ) : (
+                      <div key={i} className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: alpha(themeColors.primary, '15') }}
+                          >
+                            <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                          </div>
+                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: themeColors.primary }}>
+                            Coach FTJ
+                          </span>
+                        </div>
+                        <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }} />
+                      </div>
+                    )
+                  )}
                   {chatStreaming && streamText && (
-                    <div className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_li]:py-0.5">
-                      <div dangerouslySetInnerHTML={{ __html: renderChatMarkdown(streamText) }} />
-                      <span className="inline-block h-3 w-0.5 ml-0.5 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: alpha(themeColors.primary, '15') }}
+                        >
+                          <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                        </div>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: themeColors.primary }}>
+                          Coach FTJ
+                        </span>
+                      </div>
+                      <div>
+                        <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(streamText) }} />
+                        <span className="inline-block h-3 w-0.5 mt-1 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+                      </div>
                     </div>
                   )}
                   {chatStreaming && !streamText && (

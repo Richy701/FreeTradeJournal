@@ -49,13 +49,14 @@ export const trackUserAction = (action: string, details?: Record<string, any>) =
 };
 
 // ─── PostHog Event Tracking ─────────────────────────────────
-import { posthog } from './posthog';
+import { posthog, isAnalyticsBlocked } from './posthog';
 
 /**
  * Track a named event in PostHog with optional properties.
  * Silently swallows errors so analytics never breaks the app.
  */
 export function trackEvent(event: string, properties?: Record<string, any>) {
+  if (isAnalyticsBlocked()) return;
   try {
     posthog.capture(event, properties);
   } catch {
