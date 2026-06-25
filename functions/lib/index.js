@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -633,6 +633,114 @@ exports.sendWeeklyDigestEmails = functions.pubsub
         }
     }
     console.log(`Weekly digest: sent ${sent} emails`);
+    return null;
+});
+// ─── Weekly Activation Report (internal founder report) ────────
+// Activation = a user who has logged at least one trade (firstTradeLoggedAt set).
+// Emails a cohort breakdown each Monday so we can see whether the first-trade
+// activation changes shipped 2026-06-25 moved the needle vs the ~36% pre-deploy
+// baseline (week of Jun 22). Runs server-side where the admin credentials live,
+// so no service-account file or secret needs to leave the local machine.
+const ACTIVATION_REPORT_RECIPIENT = "Richmondlamptey75@gmail.com";
+const ACTIVATION_DEPLOY_BOUNDARY = "2026-06-25";
+function activationWeekOf(ms) {
+    const d = new Date(ms);
+    const day = (d.getUTCDay() + 6) % 7; // shift so Monday = 0
+    d.setUTCDate(d.getUTCDate() - day);
+    return d.toISOString().slice(0, 10);
+}
+exports.sendActivationReport = functions
+    .runWith({ timeoutSeconds: 300, memory: "512MB" })
+    .pubsub.schedule("every monday 09:00")
+    .timeZone("UTC")
+    .onRun(async () => {
+    // 1. All auth users -> signup time (ground truth, immune to client analytics)
+    const users = [];
+    let pageToken;
+    do {
+        const res = await admin.auth().listUsers(1000, pageToken);
+        for (const u of res.users) {
+            const created = u.metadata.creationTime
+                ? new Date(u.metadata.creationTime).getTime()
+                : 0;
+            users.push({ uid: u.uid, created });
+        }
+        pageToken = res.pageToken;
+    } while (pageToken);
+    // 2. Firestore docs -> activation flag (firstTradeLoggedAt set)
+    const snap = await db.collection("users").get();
+    const activated = new Set();
+    snap.forEach((doc) => {
+        if (doc.data().firstTradeLoggedAt)
+            activated.add(doc.id);
+    });
+    // 3. Bucket by signup week (Monday-start, UTC) + post-deploy aggregate
+    const weeks = {};
+    const boundaryMs = new Date(`${ACTIVATION_DEPLOY_BOUNDARY}T00:00:00Z`).getTime();
+    let postN = 0;
+    let postAct = 0;
+    for (const u of users) {
+        if (!u.created)
+            continue;
+        const w = activationWeekOf(u.created);
+        if (!weeks[w])
+            weeks[w] = { n: 0, act: 0 };
+        weeks[w].n++;
+        const isAct = activated.has(u.uid);
+        if (isAct)
+            weeks[w].act++;
+        if (u.created >= boundaryMs) {
+            postN++;
+            if (isAct)
+                postAct++;
+        }
+    }
+    const pct = (a, n) => (n ? Math.round((a / n) * 100) : 0);
+    const sortedWeeks = Object.keys(weeks).sort().slice(-9);
+    const rows = sortedWeeks
+        .map((w) => {
+        const c = weeks[w];
+        const isPost = new Date(`${w}T00:00:00Z`).getTime() >= boundaryMs - 6 * 86400000;
+        return `<tr style="${isPost ? "background:#fff7ed;font-weight:600;" : ""}">
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;">${w}${isPost ? " (post-deploy)" : ""}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">${c.n}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">${c.act}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">${pct(c.act, c.n)}%</td>
+      </tr>`;
+    })
+        .join("");
+    const postPctVal = pct(postAct, postN);
+    const verdict = postN === 0
+        ? "No signups yet on/after the deploy boundary."
+        : `Post-deploy cohort (signups on/after ${ACTIVATION_DEPLOY_BOUNDARY}): <b>${postAct}/${postN} = ${postPctVal}%</b> activated vs the ~36% pre-deploy baseline — ${postPctVal >= 36 ? "at or above baseline." : "below baseline so far (recent cohorts still maturing; activation is ~80% same-day)."}`;
+    const html = `
+      <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;color:#111;">
+        <h2 style="margin:0 0 4px;">Activation report</h2>
+        <p style="color:#666;margin:0 0 16px;font-size:13px;">Activation = logged at least one trade. Cohorts by signup week (Monday-start, UTC).</p>
+        <p style="font-size:14px;line-height:1.5;">${verdict}</p>
+        <table style="border-collapse:collapse;width:100%;font-size:13px;margin-top:12px;">
+          <thead><tr style="text-align:left;color:#666;">
+            <th style="padding:6px 10px;border-bottom:2px solid #ddd;">Signup week</th>
+            <th style="padding:6px 10px;border-bottom:2px solid #ddd;text-align:right;">Signups</th>
+            <th style="padding:6px 10px;border-bottom:2px solid #ddd;text-align:right;">Activated</th>
+            <th style="padding:6px 10px;border-bottom:2px solid #ddd;text-align:right;">Rate</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <p style="color:#999;font-size:12px;margin-top:16px;">Older cohorts undercount activation (reliable tracking shipped 2026-06-23). Single before/after, not an A/B — sanity-check cohort mix before drawing conclusions.</p>
+      </div>`;
+    try {
+        await getResend().emails.send({
+            from: FROM_EMAIL,
+            to: ACTIVATION_REPORT_RECIPIENT,
+            subject: `Activation report — post-deploy ${postN ? postPctVal + "%" : "n/a"} vs 36% baseline`,
+            html,
+        });
+        console.log(`Activation report sent: post-deploy ${postAct}/${postN}`);
+    }
+    catch (err) {
+        console.error("Failed to send activation report:", err);
+    }
     return null;
 });
 // ─── Trial Offer Batch (Admin callable) ────────────────────────
