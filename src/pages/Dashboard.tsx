@@ -8,14 +8,14 @@ import { notifyDataChange } from '@/contexts/sync-context'
 import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades'
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
 import { ErrorBoundary } from '@/components/error-boundary'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar } from '@phosphor-icons/react'
+import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -146,6 +146,31 @@ export default function Dashboard() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Drop newly-onboarded users straight into logging their first trade -- our
+  // biggest activation and retention lever. One-time: clear the router state so a
+  // refresh or back-navigation doesn't reopen the dialog.
+  useEffect(() => {
+    if ((location.state as { promptFirstTrade?: boolean } | null)?.promptFirstTrade) {
+      setIsTradeModalOpen(true)
+      navigate(location.pathname, { replace: true, state: null })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Quick-log vs full form: show only the essentials (symbol, side, P&L) for new
+  // users -- the activation moment -- and expand the optional fields for
+  // returning users who already log richer detail.
+  const [showTradeDetails, setShowTradeDetails] = useState(false)
+  useEffect(() => {
+    if (isTradeModalOpen) setShowTradeDetails(tradeCount > 0)
+  }, [isTradeModalOpen, tradeCount])
+
+  // Which tab the Log a Trade dialog opens on (manual quick-log vs CSV import).
+  const [tradeDialogTab, setTradeDialogTab] = useState<'manual' | 'import'>('manual')
+
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
   })
@@ -208,8 +233,8 @@ export default function Dashboard() {
       }
     }
     
-    const entryPrice = parseFloat(tradeForm.entryPrice)
-    const exitPrice = parseFloat(tradeForm.exitPrice)
+    const entryPrice = parseFloat(tradeForm.entryPrice) || 0
+    const exitPrice = parseFloat(tradeForm.exitPrice) || 0
     const lotSize = parseFloat(tradeForm.lotSize) || 1
     const pnl = parseFloat(tradeForm.pnl) || ((exitPrice - entryPrice) * lotSize * (tradeForm.side === 'long' ? 1 : -1))
     
@@ -777,7 +802,7 @@ export default function Dashboard() {
               <>
               {tradeCount > 0 && <ShareStatsCard />}
               <CustomizeSheet />
-              <Dialog open={isTradeModalOpen} onOpenChange={setIsTradeModalOpen}>
+              <Dialog open={isTradeModalOpen} onOpenChange={(open) => { setIsTradeModalOpen(open); if (!open) setTradeDialogTab('manual'); }}>
                 <DialogTrigger asChild>
                   <Button
                     size="default"
@@ -806,7 +831,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="px-5 pb-5 sm:px-6 sm:pb-6 mt-4">
-                  <Tabs defaultValue="manual" className="w-full">
+                  <Tabs value={tradeDialogTab} onValueChange={(v) => setTradeDialogTab(v as 'manual' | 'import')} className="w-full">
                     <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
                       <TabsTrigger value="manual" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
                         <Plus className="h-3.5 w-3.5" />
@@ -819,192 +844,171 @@ export default function Dashboard() {
                     </TabsList>
 
                     <TabsContent value="manual" className="space-y-4 mt-0">
-                    {/* -- Setup Card -- */}
-                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Crosshair className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                        <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setup</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="trade-market" className="text-xs text-muted-foreground">Market</Label>
-                          <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
-                            setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
-                            userStorage.setItem('preferredMarket', value)
-                          }}>
-                            <SelectTrigger id="trade-market" className="h-10 bg-background/60 border-border/50">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="forex">Forex</SelectItem>
-                              <SelectItem value="futures">Futures</SelectItem>
-                              <SelectItem value="indices">Indices</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="trade-symbol" className="text-xs text-muted-foreground">Symbol</Label>
-                          <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
-                            <SelectTrigger id="trade-symbol" className="h-10 bg-background/60 border-border/50">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
-                                <SelectItem key={instrument} value={instrument}>
-                                  {instrument}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="trade-side" className="text-xs text-muted-foreground">Side</Label>
-                          <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
-                            <SelectTrigger id="trade-side" className="h-10 bg-background/60 border-border/50">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="long">Long</SelectItem>
-                              <SelectItem value="short">Short</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* -- Mini Chart (shows when symbol is selected) -- */}
-                    {tradeForm.symbol && (
-                      <Suspense fallback={null}>
-                        <div className="rounded-xl border bg-card/50 overflow-hidden">
-                          <TradingViewMiniChart symbol={tradeForm.symbol} height={180} />
-                        </div>
-                      </Suspense>
-                    )}
-
-                    {/* -- Execution Card -- */}
-                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <ArrowsLeftRight className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                        <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Execution</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="entry-price" className="text-xs text-muted-foreground">Entry Price</Label>
-                          <Input
-                            id="entry-price"
-                            type="number"
-                            step="0.00001"
-                            placeholder="1.08450"
-                            className="h-10 bg-background/60 border-border/50"
-                            value={tradeForm.entryPrice}
-                            onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="exit-price" className="text-xs text-muted-foreground">Exit Price</Label>
-                          <Input
-                            id="exit-price"
-                            type="number"
-                            step="0.00001"
-                            placeholder="1.08650"
-                            className="h-10 bg-background/60 border-border/50"
-                            value={tradeForm.exitPrice}
-                            onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="lot-size" className="text-xs text-muted-foreground">Lot Size</Label>
-                          <Input
-                            id="lot-size"
-                            type="number"
-                            step="0.01"
-                            placeholder="1.00"
-                            className="h-10 bg-background/60 border-border/50"
-                            value={tradeForm.lotSize}
-                            onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* -- Context Card -- */}
-                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Lightbulb className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                        <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Context</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="trade-strategy" className="text-xs text-muted-foreground">Strategy</Label>
-                          <Input
-                            id="trade-strategy"
-                            placeholder="Breakout, S/R..."
-                            className="h-10 bg-background/60 border-border/50"
-                            value={tradeForm.strategy}
-                            onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="trade-prop-firm" className="text-xs text-muted-foreground">Prop Firm</Label>
-                          <PropFirmSelect
-                            triggerId="trade-prop-firm"
-                            triggerClassName="h-10 bg-background/60 border-border/50"
-                            value={tradeForm.propFirm}
-                            onChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* -- Mindset Card -- */}
-                    <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Heart className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Mindset</span>
-                        </div>
-                        {tradeForm.emotions.split(',').filter(s => s.trim()).length > 0 && (
-                          <span className="text-[10px] font-medium" style={{ color: themeColors.primary }}>
-                            {tradeForm.emotions.split(',').filter(s => s.trim()).length} selected
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => {
-                          const selected = tradeForm.emotions.split(',').map(s => s.trim()).filter(Boolean);
-                          const isActive = selected.includes(e);
-                          return (
-                            <button
-                              key={e}
-                              type="button"
-                              onClick={() => {
-                                const next = isActive ? selected.filter(s => s !== e) : [...selected, e];
-                                setTradeForm(prev => ({ ...prev, emotions: next.join(', ') }));
-                              }}
-                              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-150 ${
-                                isActive
-                                  ? ''
-                                  : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
-                              }`}
-                              style={isActive ? { backgroundColor: alpha(themeColors.primary, '15'), borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary } : undefined}
-                            >
-                              {e}
-                            </button>
-                          );
-                        })}
-                      </div>
-
+                    {/* Setup: what did you trade */}
+                    <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="trade-notes" className="text-xs text-muted-foreground">Notes</Label>
-                        <Textarea
-                          id="trade-notes"
-                          placeholder="What was your reasoning? What did you notice?"
-                          value={tradeForm.notes}
-                          onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
-                          className="min-h-[72px] resize-none text-sm bg-background/60 border-border/50"
+                        <Label htmlFor="trade-market" className="text-xs text-muted-foreground">Market</Label>
+                        <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
+                          setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
+                          userStorage.setItem('preferredMarket', value)
+                        }}>
+                          <SelectTrigger id="trade-market" className="h-10 bg-background/60 border-border/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="forex">Forex</SelectItem>
+                            <SelectItem value="futures">Futures</SelectItem>
+                            <SelectItem value="indices">Indices</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="trade-symbol" className="text-xs text-muted-foreground">Symbol</Label>
+                        <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
+                          <SelectTrigger id="trade-symbol" className="h-10 bg-background/60 border-border/50">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
+                              <SelectItem key={instrument} value={instrument}>
+                                {instrument}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="trade-side" className="text-xs text-muted-foreground">Side</Label>
+                        <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
+                          <SelectTrigger id="trade-side" className="h-10 bg-background/60 border-border/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="long">Long</SelectItem>
+                            <SelectItem value="short">Short</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Profit / Loss -- the hero field */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="trade-pnl" className="text-sm font-medium">Profit / Loss</Label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground pointer-events-none">$</span>
+                        <Input
+                          id="trade-pnl"
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          placeholder="0.00"
+                          className="h-14 pl-8 text-lg font-semibold bg-background/60 border-border/50"
+                          style={tradeForm.pnl !== '' && !Number.isNaN(Number(tradeForm.pnl)) ? { color: Number(tradeForm.pnl) >= 0 ? themeColors.profit : themeColors.loss } : undefined}
+                          value={tradeForm.pnl}
+                          onChange={(e) => setTradeForm(prev => ({ ...prev, pnl: e.target.value }))}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">Enter your result -- use a minus for a loss (e.g. -50). Or add entry and exit below to calculate it.</p>
                     </div>
+
+                    {/* Progressive disclosure: every optional field lives here */}
+                    <button
+                      type="button"
+                      onClick={() => setShowTradeDetails(v => !v)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <CaretDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showTradeDetails ? 'rotate-180' : ''}`} />
+                      {showTradeDetails ? 'Hide details' : 'Add details -- prices, strategy, emotions, notes'}
+                    </button>
+
+                    {showTradeDetails && (
+                      <div className="space-y-4">
+                        {/* Mini chart (shows when a symbol is selected) */}
+                        {tradeForm.symbol && (
+                          <Suspense fallback={null}>
+                            <div className="rounded-xl border bg-card/50 overflow-hidden">
+                              <TradingViewMiniChart symbol={tradeForm.symbol} height={180} />
+                            </div>
+                          </Suspense>
+                        )}
+
+                        {/* Prices -- optional; auto-calculate P&L and unlock price stats */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="entry-price" className="text-xs text-muted-foreground">Entry</Label>
+                            <Input id="entry-price" type="number" step="0.00001" placeholder="e.g. 1.08450" className="h-10 bg-background/60 border-border/50" value={tradeForm.entryPrice} onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="exit-price" className="text-xs text-muted-foreground">Exit</Label>
+                            <Input id="exit-price" type="number" step="0.00001" placeholder="e.g. 1.08650" className="h-10 bg-background/60 border-border/50" value={tradeForm.exitPrice} onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="lot-size" className="text-xs text-muted-foreground">Lot Size</Label>
+                            <Input id="lot-size" type="number" step="0.01" placeholder="e.g. 1.00" className="h-10 bg-background/60 border-border/50" value={tradeForm.lotSize} onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))} />
+                          </div>
+                        </div>
+
+                        {/* Context */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label htmlFor="trade-strategy" className="text-xs text-muted-foreground">Strategy</Label>
+                            <Input id="trade-strategy" placeholder="Breakout, S/R..." className="h-10 bg-background/60 border-border/50" value={tradeForm.strategy} onChange={(e) => setTradeForm(prev => ({ ...prev, strategy: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label htmlFor="trade-prop-firm" className="text-xs text-muted-foreground">Prop Firm</Label>
+                            <PropFirmSelect triggerId="trade-prop-firm" triggerClassName="h-10 bg-background/60 border-border/50" value={tradeForm.propFirm} onChange={(value) => setTradeForm(prev => ({ ...prev, propFirm: value }))} />
+                          </div>
+                        </div>
+
+                        {/* Emotions */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs text-muted-foreground">How did you feel?</Label>
+                            {tradeForm.emotions.split(',').filter(s => s.trim()).length > 0 && (
+                              <span className="text-[10px] font-medium" style={{ color: themeColors.primary }}>
+                                {tradeForm.emotions.split(',').filter(s => s.trim()).length} selected
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Confident', 'Disciplined', 'Patient', 'Anxious', 'Fearful', 'FOMO', 'Greedy', 'Revenge', 'Frustrated', 'Uncertain'].map(e => {
+                              const selected = tradeForm.emotions.split(',').map(s => s.trim()).filter(Boolean);
+                              const isActive = selected.includes(e);
+                              return (
+                                <button
+                                  key={e}
+                                  type="button"
+                                  onClick={() => {
+                                    const next = isActive ? selected.filter(s => s !== e) : [...selected, e];
+                                    setTradeForm(prev => ({ ...prev, emotions: next.join(', ') }));
+                                  }}
+                                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-150 ${
+                                    isActive
+                                      ? ''
+                                      : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
+                                  }`}
+                                  style={isActive ? { backgroundColor: alpha(themeColors.primary, '15'), borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary } : undefined}
+                                >
+                                  {e}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        <div className="space-y-1.5">
+                          <Label htmlFor="trade-notes" className="text-xs text-muted-foreground">Notes</Label>
+                          <Textarea
+                            id="trade-notes"
+                            placeholder="What was your reasoning? What did you notice?"
+                            value={tradeForm.notes}
+                            onChange={(e) => setTradeForm(prev => ({ ...prev, notes: e.target.value }))}
+                            className="min-h-[72px] resize-none text-sm bg-background/60 border-border/50"
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {/* -- Footer -- */}
                     <div className="flex items-center justify-between pt-2">
@@ -1020,7 +1024,7 @@ export default function Dashboard() {
                           size="sm"
                           className="shadow-sm gap-2 px-5"
                           onClick={handleSaveTrade}
-                          disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                          disabled={!tradeForm.symbol || (!tradeForm.pnl && (!tradeForm.entryPrice || !tradeForm.exitPrice))}
                           style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                         >
                           <CurrencyDollar className="h-3.5 w-3.5" />
@@ -1110,6 +1114,35 @@ export default function Dashboard() {
         {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
             reorderable stack so widget visibility/order changes never affect it. */}
         <FreeAIBanner />
+        {tradeCount === 0 && !isDemo && (
+          <div className="rounded-2xl border bg-card/50 px-6 py-10 sm:py-12 text-center flex flex-col items-center">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+              <ChartLineUp className="h-6 w-6" style={{ color: themeColors.primary }} />
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight">Log your first trade</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground max-w-md">
+              Your P&L, win rate, and stats come to life the moment you add a trade. It takes about 15 seconds -- just symbol, side, and your result.
+            </p>
+            <div className="mt-5 flex flex-col sm:flex-row items-center gap-2.5">
+              <Button
+                onClick={() => { setTradeDialogTab('manual'); setIsTradeModalOpen(true); }}
+                className="gap-2 h-11 px-5"
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+              >
+                <Plus className="h-4 w-4" />
+                Log your first trade
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setTradeDialogTab('import'); setIsTradeModalOpen(true); }}
+                className="gap-2 h-11 px-5"
+              >
+                <UploadSimple className="h-4 w-4" />
+                Import from broker
+              </Button>
+            </div>
+          </div>
+        )}
         {visibleWidgets.map(w => {
           const node = w.render({ tradeCount, isDemo })
           // Isolate each widget: a single one throwing (e.g. on a bad date in

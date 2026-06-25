@@ -293,7 +293,7 @@ export default function OnboardingSimplified() {
 
       trackEvent('onboarding_completed', { skipped: false, experienceLevel: data.experienceLevel, accountType: data.accountType });
       toast.success('Setup complete! Welcome to FreeTradeJournal!');
-      navigate('/dashboard');
+      navigate('/dashboard', { state: { promptFirstTrade: true } });
     } catch (error) {
       toast.error('Failed to complete setup. Please try again.');
       setLoading(false);
