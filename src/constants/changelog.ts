@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.48.0',
+    date: '2026-06-30',
+    summary: 'Reporting a bug is faster and more useful — attach a screenshot and the feedback form adapts to what you are sending.',
+    items: [
+      {
+        type: 'new',
+        text: 'Attach a screenshot to bug reports',
+        description: 'When you report a bug you can now add an image so we can see exactly what you saw. It is compressed automatically before sending.',
+      },
+      {
+        type: 'improved',
+        text: 'A smarter feedback form',
+        description: 'The form now asks what kind of feedback you are sending first, then shows only what is relevant — a rating for general feedback and feature requests, and bug-specific details for bug reports.',
+      },
+    ],
+  },
+  {
     version: '2.47.0',
     date: '2026-06-30',
     summary: 'Your Goals & Risk page now keeps up with your trades in real time, and earned achievements stay earned.',
@@ -1458,4 +1475,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.47.0'
+export const LATEST_CHANGELOG_VERSION = '2.48.0'

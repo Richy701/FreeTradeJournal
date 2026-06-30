@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Chat, Bug, Sparkle, Star, CheckCircle, CaretRight, ArrowLeft, Envelope } from '@phosphor-icons/react';
+import { Chat, Bug, Sparkle, Star, CheckCircle, CaretRight, ArrowLeft, Envelope, Image as ImageIcon, Info, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,6 +11,8 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
+import { compressImage } from '@/utils/image-store';
+import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog';
 
 export type FeedbackType = 'bug' | 'feature' | 'general';
 
@@ -142,6 +144,17 @@ function getPageContext(): string {
   return labels[path] || path;
 }
 
+function getDiagnostics(page: string): Record<string, string> {
+  return {
+    'App version': LATEST_CHANGELOG_VERSION,
+    Page: page,
+    URL: window.location.href,
+    Browser: navigator.userAgent,
+    Screen: `${window.innerWidth}×${window.innerHeight}`,
+    Theme: document.documentElement.classList.contains('dark') ? 'Dark' : 'Light',
+  };
+}
+
 function FeedbackDialog({
   open,
   onOpenChange,
@@ -161,6 +174,8 @@ function FeedbackDialog({
   const [hoverRating, setHoverRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [wantFollowUp, setWantFollowUp] = useState(false);
+  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [attaching, setAttaching] = useState(false);
 
   // Testimonial fields
   const [testimonialName, setTestimonialName] = useState(user?.displayName || '');
@@ -178,6 +193,8 @@ function FeedbackDialog({
         setRating(0);
         setHoverRating(0);
         setWantFollowUp(false);
+        setScreenshot(null);
+        setAttaching(false);
         setTestimonialName(user?.displayName || '');
         setTestimonialRole('');
         setTestimonialQuote('');
@@ -194,12 +211,15 @@ function FeedbackDialog({
     try {
       const { getFunctions, httpsCallable } = await import('firebase/functions');
       const fn = httpsCallable(getFunctions(), 'sendFeedback');
+      const page = context || getPageContext();
       await fn({
         type,
         message: message.trim(),
         rating,
-        page: context || getPageContext(),
+        page,
         wantFollowUp,
+        diagnostics: type === 'bug' ? getDiagnostics(page) : undefined,
+        screenshot: screenshot || undefined,
       });
 
       // If they loved it, invite them to leave a testimonial
@@ -212,6 +232,19 @@ function FeedbackDialog({
       toast.error('Failed to send. Please try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleScreenshotSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttaching(true);
+    try {
+      setScreenshot(await compressImage(file, 1200, 0.6));
+    } catch {
+      toast.error('Could not process that image.');
+    } finally {
+      setAttaching(false);
     }
   }
 
@@ -268,40 +301,7 @@ function FeedbackDialog({
             </div>
 
             <form onSubmit={handleFeedbackSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
-              {/* Star rating */}
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium">How's your experience so far?</span>
-                <div className="flex items-center gap-1.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="group p-0.5 transition-transform hover:scale-110 active:scale-95"
-                      aria-label={`Rate ${star} stars`}
-                    >
-                      <Star
-                        weight={star <= activeRating ? 'fill' : 'regular'}
-                        className={cn(
-                          "h-7 w-7 transition-colors duration-100",
-                          star <= activeRating
-                            ? "fill-amber-400 text-amber-400"
-                            : "fill-muted text-muted-foreground/30 group-hover:text-amber-300"
-                        )}
-                      />
-                    </button>
-                  ))}
-                  {activeRating > 0 && (
-                    <span className="ml-2 text-sm text-muted-foreground animate-in fade-in duration-200">
-                      {STAR_LABELS[activeRating - 1]}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Type selector */}
+              {/* Type selector — first, so the form can adapt to it */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">What kind of feedback is this?</span>
                 <div className="grid grid-cols-3 gap-2">
@@ -327,6 +327,79 @@ function FeedbackDialog({
                   })}
                 </div>
               </div>
+
+              {/* Star rating — only for feedback where a sentiment makes sense (not bugs) */}
+              {type !== 'bug' && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm font-medium">How's your experience so far?</span>
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="group p-0.5 transition-transform hover:scale-110 active:scale-95"
+                        aria-label={`Rate ${star} stars`}
+                      >
+                        <Star
+                          weight={star <= activeRating ? 'fill' : 'regular'}
+                          className={cn(
+                            "h-7 w-7 transition-colors duration-100",
+                            star <= activeRating
+                              ? "fill-amber-400 text-amber-400"
+                              : "fill-muted text-muted-foreground/30 group-hover:text-amber-300"
+                          )}
+                        />
+                      </button>
+                    ))}
+                    {activeRating > 0 && (
+                      <span className="ml-2 text-sm text-muted-foreground animate-in fade-in duration-200">
+                        {STAR_LABELS[activeRating - 1]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Bug-only: auto diagnostics preview + optional screenshot */}
+              {type === 'bug' && (
+                <>
+                  <div className="rounded-xl border border-border/70 bg-muted/40 px-3.5 py-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">Auto-included to help us debug</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                      App v{LATEST_CHANGELOG_VERSION} · {context || getPageContext()} · your browser &amp; screen size. No personal data.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium">Screenshot <span className="font-normal text-muted-foreground">(optional)</span></span>
+                    {screenshot ? (
+                      <div className="relative w-fit">
+                        <img src={screenshot} alt="Screenshot preview" className="h-24 rounded-lg border border-border object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setScreenshot(null)}
+                          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-foreground text-background flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+                          aria-label="Remove screenshot"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 px-3.5 py-3 rounded-xl border border-dashed border-border/80 cursor-pointer hover:border-primary/50 hover:bg-muted/40 transition-colors">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{attaching ? 'Processing…' : 'Click to attach an image'}</span>
+                        <input type="file" accept="image/*" className="sr-only" onChange={handleScreenshotSelect} />
+                      </label>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Message */}
               <div className="flex flex-col gap-2">

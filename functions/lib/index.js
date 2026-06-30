@@ -808,7 +808,7 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
-    const { type, message, rating, page, wantFollowUp } = data;
+    const { type, message, rating, page, wantFollowUp, diagnostics, screenshot } = data;
     if (!message || typeof message !== "string" || message.trim().length === 0) {
         throw new functions.https.HttpsError("invalid-argument", "Message is required.");
     }
@@ -839,6 +839,8 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
         rating: starRating,
         page: page || null,
         wantFollowUp: wantFollowUp || false,
+        diagnostics: diagnostics || null,
+        hasScreenshot: !!screenshot,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     // Email notification
@@ -852,30 +854,50 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
     };
     const label = typeLabel[type] || "Feedback";
     const stars = starRating ? "⭐".repeat(starRating) + ` (${starRating}/5)` : "No rating";
-    const followUpBadge = wantFollowUp ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">WANTS REPLY</span>` : "";
-    const pageInfo = page ? `<p style="margin:0 0 4px;color:#666;font-size:13px">Page: <strong>${page}</strong></p>` : "";
-    await getResend().emails.send({
-        from: FROM_EMAIL,
-        to: "support@freetradejournal.com",
-        replyTo: userEmail,
-        subject: `[${label}]${wantFollowUp ? " [REPLY REQUESTED]" : ""} ${starRating ? stars + " · " : ""}from ${userName}`,
-        html: `
-      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
-        <h2 style="margin:0 0 8px">${label} ${followUpBadge}</h2>
-        <p style="margin:0 0 4px;color:#666;font-size:14px">
-          From <strong>${userName}</strong> (${userEmail}) · ${new Date().toUTCString()}
-        </p>
-        ${pageInfo}
-        <p style="margin:0 0 16px;font-size:14px">Rating: ${stars}</p>
-        <div style="background:#f5f5f5;border-radius:8px;padding:16px;white-space:pre-wrap;font-size:15px;line-height:1.6">
-          ${message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+    // High-volume, low-signal types (AI thumbs up/down, NPS taps) are kept out of the
+    // support inbox — they still land in Firestore + PostHog above, just not email.
+    const SILENT_TYPES = new Set(["ai_feedback", "nps"]);
+    if (!SILENT_TYPES.has(type || "")) {
+        const followUpBadge = wantFollowUp ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">WANTS REPLY</span>` : "";
+        const pageInfo = page ? `<p style="margin:0 0 4px;color:#666;font-size:13px">Page: <strong>${page}</strong></p>` : "";
+        const diagRows = diagnostics
+            ? Object.entries(diagnostics).map(([k, v]) => `<tr><td style="padding:2px 12px 2px 0;color:#999;white-space:nowrap;vertical-align:top">${k}</td>`
+                + `<td style="color:#444;word-break:break-word">${String(v).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td></tr>`).join("")
+            : "";
+        const diagBlock = diagRows
+            ? `<p style="margin:16px 0 4px;color:#999;font-size:12px;font-weight:600">DEBUG INFO</p>
+         <table style="font-size:12px;border-collapse:collapse">${diagRows}</table>`
+            : "";
+        // Only attach a sanely-sized screenshot (base64 data URL from the client).
+        const attachments = (screenshot && screenshot.length < 4_000_000)
+            ? [{ filename: "screenshot.jpg", content: screenshot.replace(/^data:image\/\w+;base64,/, "") }]
+            : undefined;
+        await getResend().emails.send({
+            from: FROM_EMAIL,
+            to: "support@freetradejournal.com",
+            replyTo: userEmail,
+            subject: `[${label}]${wantFollowUp ? " [REPLY REQUESTED]" : ""} ${starRating ? stars + " · " : ""}from ${userName}`,
+            attachments,
+            html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+          <h2 style="margin:0 0 8px">${label} ${followUpBadge}</h2>
+          <p style="margin:0 0 4px;color:#666;font-size:14px">
+            From <strong>${userName}</strong> (${userEmail}) · ${new Date().toUTCString()}
+          </p>
+          ${pageInfo}
+          <p style="margin:0 0 16px;font-size:14px">Rating: ${stars}</p>
+          <div style="background:#f5f5f5;border-radius:8px;padding:16px;white-space:pre-wrap;font-size:15px;line-height:1.6">
+            ${message.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+          </div>
+          ${diagBlock}
+          ${screenshot ? `<p style="margin:16px 0 0;color:#999;font-size:12px">Screenshot attached.</p>` : ""}
+          <p style="margin:16px 0 0;color:#999;font-size:12px">
+            Reply to this email to respond directly to the user.
+          </p>
         </div>
-        <p style="margin:16px 0 0;color:#999;font-size:12px">
-          Reply to this email to respond directly to the user.
-        </p>
-      </div>
-    `,
-    });
+      `,
+        });
+    }
     try {
         await getPostHog().captureImmediate({
             distinctId: uid,
