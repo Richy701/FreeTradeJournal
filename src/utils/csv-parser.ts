@@ -98,10 +98,12 @@ export function findColumnIndex(headers: string[], possibleNames: string[]): num
   }
 
   // Pass 2: substring match as a fallback for headers that aren't exact (e.g. a
-  // "P/L" header matching a "Net P/L" candidate).
+  // "P/L" header matching a "Net P/L" candidate). Skip empty cells: an empty
+  // header would match every candidate (target.includes('') is always true),
+  // which lets a data row's blank cells masquerade as a header row.
   for (const name of possibleNames) {
     const target = name.trim().toLowerCase();
-    const index = normalized.findIndex(h => h.includes(target) || target.includes(h));
+    const index = normalized.findIndex(h => h !== '' && (h.includes(target) || target.includes(h)));
     if (index !== -1) return index;
   }
 
@@ -1268,11 +1270,52 @@ function parseMT5DealHistory(lines: string[], headerRow: number): CSVParseResult
   return result;
 }
 
-// Skip preamble/title rows: find the first row that parses to a header with at
-// least a symbol column and a price-or-P&L column. Falls back to row 0 (the
-// common case where the first line is already the header).
+// A cell looks like DATA (not a header label) when it's a pure number/currency
+// or a date/time. Header cells are textual labels. Used to tell a header row
+// apart from a data row when no column names are recognizable.
+function looksLikeData(cell: string): boolean {
+  const s = cell.trim();
+  if (!s) return false;
+  // number / currency / percentage, incl. accounting negatives like "$(400.00)"
+  if (/^[-+]?[$£€¥₹]?\s?\(?[\d,]+(\.\d+)?\)?%?$/.test(s)) return true;
+  // date or date-time: 2025-08-28, 6/10/26, 06/10/2026 16:00:05, optional AM/PM
+  if (/^\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}([ T]\d{1,2}:\d{2}(:\d{2})?\s?([AP]M)?)?$/i.test(s)) return true;
+  return false;
+}
+
+// Fraction of a row's non-empty cells that are textual labels (vs numbers/dates).
+// A header row scores high; a data row scores low. -1 = too few cells to judge.
+function headerLikeness(cells: string[]): number {
+  const nonEmpty = cells.filter(c => c.trim());
+  if (nonEmpty.length < 2) return -1;
+  const textCells = nonEmpty.filter(c => !looksLikeData(c));
+  return textCells.length / nonEmpty.length;
+}
+
+// Locate the header row, skipping any preamble/title rows above it. Three passes,
+// most reliable first:
+//   0. Precise broker detectors — they require exact column-name sets a data row
+//      can't satisfy, so they pin the true header even for formats with no
+//      symbol/price-named column (e.g. Tradovate Orders/Performance exports).
+//   1. Generic symbol + price/P&L name heuristic.
+//   2. Structural fallback — pick the most header-like row (mostly textual cells)
+//      so even an unknown format surfaces real column names to the mapping dialog
+//      instead of a data row. Falls back to row 0.
 function findStandardHeaderRow(lines: string[], delimiter: string): number {
   const limit = Math.min(lines.length, 15);
+
+  // Pass 0: precise broker detectors.
+  for (let i = 0; i < limit; i++) {
+    const headers = parseCSVLine(lines[i], delimiter);
+    if (headers.filter(h => h.trim()).length < 2) continue;
+    if (
+      isIBKRClosedPositions(headers) || isIBKRTradesFormat(headers) ||
+      isTopStepOrderFormat(headers) || isTradovateFormat(headers) ||
+      isTradovatePerformanceFormat(headers)
+    ) return i;
+  }
+
+  // Pass 1: generic name heuristic.
   for (let i = 0; i < limit; i++) {
     const headers = parseCSVLine(lines[i], delimiter);
     if (headers.filter(h => h.trim()).length < 2) continue;
@@ -1282,7 +1325,14 @@ function findStandardHeaderRow(lines: string[], delimiter: string): number {
       findColumnIndex(headers, COLUMN_MAPPINGS.standard.pnl) !== -1;
     if (hasSymbol && hasPriceOrPnl) return i;
   }
-  return 0;
+
+  // Pass 2: structural fallback (earliest row wins ties).
+  let bestRow = 0, bestScore = -1;
+  for (let i = 0; i < limit; i++) {
+    const score = headerLikeness(parseCSVLine(lines[i], delimiter));
+    if (score > bestScore) { bestScore = score; bestRow = i; }
+  }
+  return bestRow;
 }
 
 export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): CSVParseResult {

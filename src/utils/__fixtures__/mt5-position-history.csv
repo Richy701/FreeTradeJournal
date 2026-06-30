@@ -1,0 +1,7 @@
+Report,,,,,,,,
+Name: Mt5 Position History List ,Produced At: 17/06/2026 19:49,,,,,,,
+Symbol,Account Number,Position,Position Status,Date Time,Transaction Type,Trade Volume Lots,Open Price,Profit
+XAUUSD    ,7390495,4272445503,Closed,3/2/2026 1:47:41 AM,Trade Buy In,0.01,5385.06,0
+XAUUSD    ,7390495,4272445503,Closed,3/2/2026 2:01:35 AM,Trade Sell Out,0.01,5377.31,-5.78
+XAUUSD    ,7390495,4299999999,Closed,5/14/2026 12:52:45 PM,Trade Sell In,0.02,5400.00,0
+XAUUSD    ,7390495,4299999999,Closed,5/14/2026 1:42:02 PM,Trade Buy Out,0.02,5390.00,20.00

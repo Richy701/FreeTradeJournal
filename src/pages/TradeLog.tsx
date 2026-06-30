@@ -45,7 +45,7 @@ import {
 import { Pie, PieChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker, DatePicker } from '@/components/ui/date-picker';
-import { parseCSV, validateCSVFile, parseCSVWithMappings, type CSVParseResult } from '@/utils/csv-parser';
+import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
@@ -810,8 +810,20 @@ export default function TradeLog() {
       const content = await validateCSVFile(file);
       const result = parseCSV(content);
 
-      // If auto-detect failed due to missing columns, show column mapping dialog
-      if (!result.success && result.errors.some(e => e.includes('Missing required columns'))) {
+      // If auto-detect produced no trades, offer manual column mapping instead of
+      // dead-ending on an unrecognized format. Gate on the actual outcome (zero
+      // trades), not a specific error string — many formats fail with other
+      // messages ("No valid trades…") and still need the mapping dialog.
+      if (!result.success && result.trades.length === 0) {
+        // Telemetry: surface unsupported formats proactively. Column names only —
+        // no row/trade data — so this carries no PII.
+        const headers = parseCSVHeaders(content);
+        trackEvent('csv_import_failed', {
+          source: 'tradelog',
+          column_count: headers.length,
+          headers: headers.slice(0, 40),
+          error: result.errors[0],
+        });
         setColumnMapping(buildColumnMapping(content, file));
       } else {
         // Show preview dialog (existing behavior)

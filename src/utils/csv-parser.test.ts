@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCSV, findColumnIndex } from './csv-parser';
+import { parseCSV, findColumnIndex, parseCSVHeaders } from './csv-parser';
 
 describe('findColumnIndex', () => {
   it('prefers an exact header match over a substring collision', () => {
@@ -110,6 +110,38 @@ describe('parseCSV — Tradovate Trades / Performance export', () => {
     expect(a.exitPrice).toBe('28491.750000');
     expect(a.entryDate).toBe('2026-06-10T16:00:05');
     expect(a.exitDate).toBe('2026-06-10T16:00:29');
+  });
+});
+
+describe('parseCSV — Tradovate Orders History export', () => {
+  // Real Tradovate "Orders History" export: one row per ORDER (including
+  // Canceled working orders), with the leading "orderId" column and no
+  // open/close-price or P&L column names the generic parser recognises. A blank
+  // cell in the first data row previously fooled findStandardHeaderRow into
+  // treating that data row as the header, so the real header (and the Tradovate
+  // detector) never ran. Filled rows must pair into completed trades.
+  const csv = [
+    'orderId,Account,Order ID,B/S,Contract,Product,Product Description,avgPrice,filledQty,Fill Time,lastCommandId,Status,_priceFormat,_priceFormatType,_tickSize,spreadDefinitionId,Version ID,Timestamp,Date,Quantity,Text,Type,Limit Price,Stop Price,decimalLimit,decimalStop,Filled Qty,Avg Fill Price,decimalFillAvg,Venue,Notional Value,Currency',
+    '537862110004,TDFYSL50309938221,537862110004, Buy,MNQM6,MNQ,Micro E-mini NASDAQ-100,28531.75,5,06/10/2026 16:00:05,537862110004, Filled,-2,0,0.25,,537862110004,06/10/2026 16:00:04,6/10/26,5,Chart, Market,,,,,5,28531.75,28531.75,,"285,317.50",USD',
+    '537862110015,TDFYSL50309938221,537862110015, Sell,MNQM6,MNQ,Micro E-mini NASDAQ-100,28491.75,5,06/10/2026 16:00:29,537862110015, Filled,-2,0,0.25,,537862110015,06/10/2026 16:00:29,6/10/26,5,multibracket, Market,,,,,5,28491.75,28491.75,,"284,917.50",USD',
+    '537862110026,TDFYSL50309938221,537862110026, Buy,MNQM6,MNQ,Micro E-mini NASDAQ-100,,,,537862110036, Canceled,-2,0,0.25,,537862110036,06/10/2026 16:00:29,6/10/26,5,multibracket, Limit,27891.75,,27891.75,,,,,,,USD',
+  ].join('\n');
+
+  it('detects the Orders History layout despite blank cells in the first data row', () => {
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades).toHaveLength(1); // one Buy+Sell round-trip; Canceled order ignored
+    expect(r.summary.failed).toBe(0);
+  });
+
+  it('pairs the filled fills into a long trade with multiplier-aware P&L', () => {
+    const [t] = parseCSV(csv).trades;
+    expect(t.symbol).toBe('MNQM6');
+    expect(t.side).toBe('long'); // bought then sold
+    expect(t.entryPrice).toBe('28531.750000');
+    expect(t.exitPrice).toBe('28491.750000');
+    expect(t.quantity).toBe('5');
+    expect(t.pnl).toBe('-400.00'); // (28491.75 - 28531.75) * 5 * 2 (MNQ multiplier)
   });
 });
 
@@ -252,5 +284,32 @@ describe('parseCSV — cross-broker robustness', () => {
     expect(t.side).toBe('long');
     expect(t.entryPrice).toBe('1.0850');
     expect(t.pnl).toBe('50');
+  });
+});
+
+describe('parseCSVHeaders — header-row detection for arbitrary formats', () => {
+  it('skips a title/preamble row and returns the real header of an unknown format', () => {
+    // Unknown broker: no symbol/price-named columns the generic heuristic knows,
+    // plus a junk preamble row on top. The structural fallback should still pick
+    // the textual header row, not the numeric data row, so the mapping dialog
+    // shows real column names.
+    const csv = [
+      'My Broker Export,,,,',
+      'Ticker,Direction,In,Out,Net',
+      'AAPL,long,180.5,185.0,450',
+      'TSLA,short,250.0,240.0,1000',
+    ].join('\n');
+    expect(parseCSVHeaders(csv)).toEqual(['Ticker', 'Direction', 'In', 'Out', 'Net']);
+  });
+
+  it('does not mistake a data row with blank cells for the header', () => {
+    // Regression: a blank cell used to match every column candidate, letting the
+    // first data row pose as the header.
+    const csv = [
+      'orderId,B/S,Contract,Status,Avg Fill Price,Filled Qty,Product',
+      '1, Buy,MNQM6, Filled,28531.75,5,MNQ',
+      '2, Buy,MNQM6, Canceled,,,MNQ',
+    ].join('\n');
+    expect(parseCSVHeaders(csv)[0]).toBe('orderId');
   });
 });

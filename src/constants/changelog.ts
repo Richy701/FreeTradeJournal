@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.48.3',
+    date: '2026-06-30',
+    summary: 'Tradovate’s Orders History export now imports reliably.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Import Tradovate’s Orders History export',
+        description: 'Some Tradovate Orders History files failed to import and showed “missing required columns.” They now import automatically, pairing your fills into completed trades. No column renaming needed.',
+      },
+    ],
+  },
+  {
     version: '2.48.2',
     date: '2026-06-30',
     summary: 'Tradovate’s Trades export now imports directly.',
@@ -1504,4 +1516,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.48.2'
+export const LATEST_CHANGELOG_VERSION = '2.48.3'

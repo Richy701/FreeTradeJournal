@@ -1,0 +1,3 @@
+Id,ContractName,EnteredAt,ExitedAt,EntryPrice,ExitPrice,Fees,PnL,Size,Type
+1,MNQ,01/28/2026 14:30:00,01/28/2026 15:05:00,21450.25,21475.75,1.34,51.00,1,Long
+2,NQ,01/29/2026 09:31:00,01/29/2026 09:48:00,21500.00,21480.00,2.68,-400.00,1,Short

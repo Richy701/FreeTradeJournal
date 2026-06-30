@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
-import { parseCSV, parseCSVWithMappings, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
+import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
@@ -322,9 +322,21 @@ export default function Dashboard() {
 
       setIsTradeModalOpen(false);
 
-      // If auto-detect failed on missing columns, offer manual mapping (same as
-      // the Trade Log importer) instead of dead-ending on an unrecognized format.
-      if (!result.success && result.errors.some(e => e.includes('Missing required columns'))) {
+      // If auto-detect produced no trades, offer manual mapping (same as the
+      // Trade Log importer) instead of dead-ending on an unrecognized format.
+      // Gate on the actual outcome (zero trades), not a specific error string —
+      // many formats fail with other messages ("No valid trades…") yet still
+      // need the mapping dialog.
+      if (!result.success && result.trades.length === 0) {
+        // Telemetry: surface unsupported formats proactively. Column names only —
+        // no row/trade data — so this carries no PII.
+        const headers = parseCSVHeaders(content);
+        trackEvent('csv_import_failed', {
+          source: 'dashboard',
+          column_count: headers.length,
+          headers: headers.slice(0, 40),
+          error: result.errors[0],
+        });
         setColumnMapping(buildColumnMapping(content, file));
       } else {
         setCsvPreview({
