@@ -718,6 +718,118 @@ function parseTradovateOrders(lines: string[], headers: string[]): CSVParseResul
   return result;
 }
 
+// ─── Tradovate Trades / Performance Export ─────────────────
+
+// Tradovate's "Trades" (performance) export is a SECOND, unrelated layout to the
+// Orders export above: one row per completed round-trip trade, with realized P&L
+// already computed. Columns:
+//   symbol,_priceFormat,_priceFormatType,_tickSize,buyFillId,sellFillId,qty,
+//   buyPrice,sellPrice,pnl,boughtTimestamp,soldTimestamp,duration
+// There is no Side column — direction is implied by which leg filled first
+// (bought-then-sold = long). P&L is given directly (accounting format like
+// "$(400.00)" for losses), so no contract multiplier is needed.
+function isTradovatePerformanceFormat(headers: string[]): boolean {
+  const h = headers.map(x => x.toLowerCase().trim());
+  return (
+    h.includes('symbol') &&
+    h.includes('buyprice') &&
+    h.includes('sellprice') &&
+    h.includes('pnl') &&
+    h.includes('boughttimestamp') &&
+    h.includes('soldtimestamp')
+  );
+}
+
+// Parse Tradovate's accounting-style currency: "$(400.00)" → -400, "$1,200.00" →
+// 1200, "$800.00" → 800. Parentheses denote a negative (a loss).
+function parseTradovatePnl(raw: string): number {
+  const s = (raw || '').trim();
+  const negative = s.includes('(');
+  const num = parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
+  return negative ? -num : num;
+}
+
+function parseTradovatePerformance(lines: string[], headers: string[]): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false, trades: [], errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.toLowerCase().trim());
+  const col = {
+    symbol:    h.indexOf('symbol'),
+    qty:       h.indexOf('qty'),
+    buyPrice:  h.indexOf('buyprice'),
+    sellPrice: h.indexOf('sellprice'),
+    pnl:       h.indexOf('pnl'),
+    bought:    h.indexOf('boughttimestamp'),
+    sold:      h.indexOf('soldtimestamp'),
+  };
+
+  const dates: string[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    result.summary.totalRows++;
+
+    try {
+      const fields = parseCSVLine(line);
+      const symbol = (fields[col.symbol] || '').trim();
+      const qty = Math.abs(parseInt(fields[col.qty] || '', 10) || 0);
+      const buyPrice = parseFloat(fields[col.buyPrice] || '');
+      const sellPrice = parseFloat(fields[col.sellPrice] || '');
+      const pnl = parseTradovatePnl(fields[col.pnl] || '');
+      const boughtStr = (fields[col.bought] || '').trim();
+      const soldStr = (fields[col.sold] || '').trim();
+
+      if (!symbol || !qty || isNaN(buyPrice) || isNaN(sellPrice)) {
+        result.errors.push(`Row ${i + 1}: Missing symbol, quantity, or price`);
+        result.summary.failed++;
+        continue;
+      }
+
+      // Side is implied by which leg executed first: bought-then-sold = long,
+      // sold-then-bought = short (sell opened the position, buy covered it).
+      const boughtMs = parseTradovateTimestamp(boughtStr);
+      const soldMs = parseTradovateTimestamp(soldStr);
+      const isLong = boughtMs && soldMs ? boughtMs <= soldMs : true;
+
+      const entryPrice = isLong ? buyPrice : sellPrice;
+      const exitPrice = isLong ? sellPrice : buyPrice;
+      const entryDate = parseDateString(isLong ? boughtStr : soldStr);
+      const exitDate = parseDateString(isLong ? soldStr : boughtStr);
+      dates.push(exitDate);
+
+      result.trades.push({
+        symbol,
+        side: isLong ? 'long' : 'short',
+        entryPrice: entryPrice.toFixed(6),
+        exitPrice: exitPrice.toFixed(6),
+        quantity: qty.toString(),
+        pnl: pnl.toFixed(2),
+        date: exitDate,
+        entryDate,
+        exitDate,
+      });
+      result.summary.successfulParsed++;
+    } catch {
+      result.errors.push(`Row ${i + 1}: Parse error`);
+      result.summary.failed++;
+    }
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) {
+    result.errors.push('No completed trades found in the Tradovate performance export');
+  }
+  return result;
+}
+
 // ─── TopStep Detection ───────────────────────────────────────
 
 // Detect if this is a TopStep order-level export
@@ -1225,6 +1337,7 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): 
       if (isIBKRTradesFormat(headers)) return parseIBKRTrades(lines, headers);
       if (isTopStepOrderFormat(headers)) return parseTopStepOrders(lines, headers);
       if (isTradovateFormat(headers)) return parseTradovateOrders(lines, headers);
+      if (isTradovatePerformanceFormat(headers)) return parseTradovatePerformance(lines, headers);
     }
 
     // Find column indices

@@ -31,3 +31,7 @@ After making visual, animation, or UI changes, verify the change actually render
 ## Git Workflow
 
 When I say 'push to git', run the git add/commit/push commands immediately. Commit ALL pending changes — not a partial subset. Show the full file list before pushing so I can confirm nothing was missed. When I say 'update the README', I may mean I've already done it myself — ask before making changes. Do not ask clarifying questions about git operations unless there's a genuine conflict.
+
+## Changelog Conventions
+
+The changelog is for END USERS only. Only add entries for user-facing changes (new features, visible UI changes, behavior users will notice). Never add changelog entries for internal or technical fixes (refactors, build tooling, analytics tracking, server config, deploy plumbing) — these are invisible to users and must not be surfaced. If it's unclear whether a change is user-facing, ASK before adding an entry. When you do add an entry, keep `LATEST_CHANGELOG_VERSION` in sync.

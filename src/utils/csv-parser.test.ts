@@ -80,6 +80,39 @@ describe('parseCSV — Topstep Trades export with separate Fees and Commissions'
   });
 });
 
+describe('parseCSV — Tradovate Trades / Performance export', () => {
+  // Real Tradovate "Trades" export: one row per completed round-trip, with no
+  // Side column (direction implied by which leg filled first) and P&L already
+  // realized in accounting format ("$(400.00)" = a $400 loss).
+  const csv = [
+    'symbol,_priceFormat,_priceFormatType,_tickSize,buyFillId,sellFillId,qty,buyPrice,sellPrice,pnl,boughtTimestamp,soldTimestamp,duration',
+    'MNQM6,-2,0,0.25,537862110007,537862110018,5,28531.75,28491.75,$(400.00),06/10/2026 16:00:05,06/10/2026 16:00:29,24sec',
+    'MNQM6,-2,0,0.25,537862110155,537862110184,5,29262.00,29382.00,"$1,200.00",06/12/2026 09:45:49,06/12/2026 09:57:07,11min 18sec',
+  ].join('\n');
+
+  it('imports the performance export without manual column mapping', () => {
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.summary.successfulParsed).toBe(2);
+    expect(r.summary.failed).toBe(0);
+  });
+
+  it('parses accounting-style P&L (parentheses = loss, $ and commas stripped)', () => {
+    const [a, b] = parseCSV(csv).trades;
+    expect(a.pnl).toBe('-400.00');
+    expect(b.pnl).toBe('1200.00');
+  });
+
+  it('derives side from leg order and maps entry/exit prices accordingly', () => {
+    const [a] = parseCSV(csv).trades;
+    expect(a.side).toBe('long'); // bought before sold
+    expect(a.entryPrice).toBe('28531.750000');
+    expect(a.exitPrice).toBe('28491.750000');
+    expect(a.entryDate).toBe('2026-06-10T16:00:05');
+    expect(a.exitDate).toBe('2026-06-10T16:00:29');
+  });
+});
+
 describe('parseCSV — MT5 / IC Markets position history', () => {
   // Real IC Markets "Mt5 Position History List" shape: two title rows above the
   // header, each position split into an opening + closing leg sharing a Position
