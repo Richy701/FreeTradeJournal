@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Chat, Bug, Sparkle, Star, CheckCircle, CaretRight, ArrowLeft, Envelope, Image as ImageIcon, Info, X } from '@phosphor-icons/react';
+import { Chat, Bug, Lightbulb, Star, CheckCircle, CaretRight, ArrowLeft, Envelope, Image as ImageIcon, Info, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -87,24 +87,18 @@ const FEEDBACK_TYPES = [
     label: 'Bug report',
     description: "Something isn't working",
     icon: Bug,
-    color: 'text-red-500',
-    activeBg: 'bg-red-500/15 border-red-500/40',
   },
   {
     value: 'feature',
     label: 'Feature request',
     description: 'Suggest an improvement',
-    icon: Sparkle,
-    color: 'text-amber-500',
-    activeBg: 'bg-amber-500/15 border-amber-500/40',
+    icon: Lightbulb,
   },
   {
     value: 'general',
     label: 'General feedback',
     description: 'Share your thoughts',
     icon: Chat,
-    color: 'text-blue-500',
-    activeBg: 'bg-blue-500/15 border-blue-500/40',
   },
 ] as const;
 
@@ -222,8 +216,8 @@ function FeedbackDialog({
         screenshot: screenshot || undefined,
       });
 
-      // If they loved it, invite them to leave a testimonial
-      if (rating >= 4) {
+      // If they loved it, invite them to leave a testimonial (never after a bug report)
+      if (type !== 'bug' && rating >= 4) {
         setStep('testimonial');
       } else {
         setStep('done');
@@ -287,24 +281,29 @@ function FeedbackDialog({
         {step === 'feedback' && (
           <>
             <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-primary/[0.03] to-transparent">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-semibold">Share your feedback</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground mt-1">
-                  Help us make FreeTradeJournal better for you.
-                  {context && (
-                    <span className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground/80 align-middle">
-                      {context}
-                    </span>
-                  )}
-                </DialogDescription>
-              </DialogHeader>
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Chat className="h-[18px] w-[18px]" weight="fill" />
+                </div>
+                <DialogHeader className="space-y-1">
+                  <DialogTitle className="text-lg font-semibold leading-tight">Share your feedback</DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    Help us make FreeTradeJournal better for you.
+                    {context && (
+                      <span className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground/80 align-middle">
+                        {context}
+                      </span>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
             </div>
 
             <form onSubmit={handleFeedbackSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
               {/* Type selector — first, so the form can adapt to it */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">What kind of feedback is this?</span>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col gap-2">
                   {FEEDBACK_TYPES.map((t) => {
                     const Icon = t.icon;
                     const isActive = type === t.value;
@@ -312,16 +311,37 @@ function FeedbackDialog({
                       <button
                         key={t.value}
                         type="button"
-                        onClick={() => setType(t.value)}
+                        aria-pressed={isActive}
+                        onClick={() => {
+                          setType(t.value);
+                          // Bugs have no star UI — clear any stale rating so it can't
+                          // silently trigger the testimonial upsell on submit.
+                          if (t.value === 'bug') setRating(0);
+                        }}
                         className={cn(
-                          "flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-center transition-all duration-150",
-                          isActive ? t.activeBg : "border-border/80 hover:border-border bg-muted/50 hover:bg-muted/50"
+                          "flex items-center gap-3 px-3.5 py-3 rounded-xl border text-left transition-all duration-150",
+                          isActive
+                            ? "bg-primary/10 border-primary/40"
+                            : "border-border/80 hover:border-border bg-muted/40 hover:bg-muted/70"
                         )}
                       >
-                        <Icon className={cn("h-4 w-4", isActive ? t.color : "text-muted-foreground")} />
-                        <span className={cn("text-xs font-medium leading-tight", isActive ? t.color : "text-muted-foreground")}>
-                          {t.label}
-                        </span>
+                        <div className={cn(
+                          "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
+                          isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                        )}>
+                          <Icon className="h-[18px] w-[18px]" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className={cn("text-sm font-medium leading-tight", isActive ? "text-primary" : "text-foreground")}>
+                            {t.label}
+                          </span>
+                          <span className="mt-0.5 text-xs text-muted-foreground leading-tight">
+                            {t.description}
+                          </span>
+                        </div>
+                        {isActive && (
+                          <CheckCircle weight="fill" className="ml-auto h-5 w-5 flex-shrink-0 text-primary" />
+                        )}
                       </button>
                     );
                   })}
@@ -403,8 +423,9 @@ function FeedbackDialog({
 
               {/* Message */}
               <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Tell us more</span>
+                <label htmlFor="fb-message" className="text-sm font-medium">Tell us more</label>
                 <textarea
+                  id="fb-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={PLACEHOLDERS[type]}
@@ -420,8 +441,10 @@ function FeedbackDialog({
 
               {/* Follow-up toggle */}
               <label className="flex items-center gap-2.5 cursor-pointer group">
+                <input type="checkbox" className="sr-only peer" checked={wantFollowUp} onChange={(e) => setWantFollowUp(e.target.checked)} />
                 <div className={cn(
                   "h-4 w-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors",
+                  "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   wantFollowUp ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
                 )}>
                   {wantFollowUp && (
@@ -429,7 +452,6 @@ function FeedbackDialog({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
-                  <input type="checkbox" className="sr-only" checked={wantFollowUp} onChange={(e) => setWantFollowUp(e.target.checked)} />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Envelope className="h-3.5 w-3.5 text-muted-foreground" />
@@ -441,7 +463,7 @@ function FeedbackDialog({
                 <Button type="button" variant="ghost" size="sm" onClick={() => handleClose(false)} disabled={loading} className="text-muted-foreground">
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={loading || !message.trim()} className="ml-auto gap-1.5">
+                <Button type="submit" size="sm" disabled={loading || !message.trim() || attaching} className="ml-auto gap-1.5">
                   {loading ? (
                     <><span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />Sending...</>
                   ) : (
@@ -472,8 +494,9 @@ function FeedbackDialog({
             <form onSubmit={handleTestimonialSubmit} className={cn("flex flex-col gap-4 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
               {/* Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Your name</label>
+                <label htmlFor="testimonial-name" className="text-sm font-medium">Your name</label>
                 <input
+                  id="testimonial-name"
                   type="text"
                   value={testimonialName}
                   onChange={(e) => setTestimonialName(e.target.value)}
@@ -484,12 +507,14 @@ function FeedbackDialog({
 
               {/* Role */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">What kind of trader are you?</label>
-                <div className="flex flex-wrap gap-2">
+                <span className="text-sm font-medium">What kind of trader are you?</span>
+                <div role="radiogroup" aria-label="Trader type" className="flex flex-wrap gap-2">
                   {TRADER_ROLES.map((role) => (
                     <button
                       key={role}
                       type="button"
+                      role="radio"
+                      aria-checked={testimonialRole === role}
                       onClick={() => setTestimonialRole(role)}
                       className={cn(
                         "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150",
@@ -506,8 +531,9 @@ function FeedbackDialog({
 
               {/* Quote */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">What do you love about FreeTradeJournal?</label>
+                <label htmlFor="testimonial-quote" className="text-sm font-medium">What do you love about FreeTradeJournal?</label>
                 <textarea
+                  id="testimonial-quote"
                   value={testimonialQuote}
                   onChange={(e) => setTestimonialQuote(e.target.value)}
                   placeholder="Share what's made the biggest difference to your trading..."
@@ -521,8 +547,10 @@ function FeedbackDialog({
 
               {/* Consent */}
               <label className="flex items-start gap-3 cursor-pointer group">
+                <input type="checkbox" className="sr-only peer" checked={testimonialConsent} onChange={(e) => setTestimonialConsent(e.target.checked)} />
                 <div className={cn(
                   "mt-0.5 h-4 w-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors",
+                  "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
                   testimonialConsent ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
                 )}>
                   {testimonialConsent && (
@@ -530,7 +558,6 @@ function FeedbackDialog({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
-                  <input type="checkbox" className="sr-only" checked={testimonialConsent} onChange={(e) => setTestimonialConsent(e.target.checked)} />
                 </div>
                 <span className="text-xs text-muted-foreground leading-relaxed">
                   I'm happy for my name, role, and testimonial to appear on the FreeTradeJournal homepage.
@@ -571,13 +598,13 @@ function SuccessScreen({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center gap-5 px-8 py-14 text-center bg-gradient-to-b from-green-500/[0.04] via-transparent to-transparent">
       <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-green-500/20 animate-ping opacity-20" />
+        <div className="absolute inset-0 rounded-full bg-green-500/30 animate-ping opacity-40" />
         <div className="relative flex items-center justify-center h-16 w-16 rounded-full bg-green-500/10 border border-green-500/20 shadow-sm shadow-green-500/10">
           <CheckCircle className="h-8 w-8 text-green-500" />
         </div>
       </div>
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-lg font-semibold">Thanks — you're the best!</h3>
+        <DialogTitle className="text-lg font-semibold">Thanks — you're the best!</DialogTitle>
         <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
           We read every message and use it to make FreeTradeJournal better for traders like you.
         </p>

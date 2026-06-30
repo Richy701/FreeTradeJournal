@@ -15,6 +15,23 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.48.1',
+    date: '2026-06-30',
+    summary: 'Small refinements to the feedback form — a cleaner look and a smoother bug-reporting flow.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Bug reports no longer ask for a testimonial',
+        description: 'After sending a bug report you go straight to the confirmation, instead of occasionally being asked to share a testimonial.',
+      },
+      {
+        type: 'improved',
+        text: 'A more polished feedback form',
+        description: 'The feedback dialog has a refreshed header and a cleaner, consistent look for the feedback-type buttons, with clearer keyboard focus throughout.',
+      },
+    ],
+  },
+  {
     version: '2.48.0',
     date: '2026-06-30',
     summary: 'Reporting a bug is faster and more useful — attach a screenshot and the feedback form adapts to what you are sending.',
@@ -1475,4 +1492,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.48.0'
+export const LATEST_CHANGELOG_VERSION = '2.48.1'
