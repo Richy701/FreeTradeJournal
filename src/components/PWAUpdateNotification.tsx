@@ -41,7 +41,7 @@ export function PWAUpdateNotification() {
         >
           <div className="max-w-md mx-auto">
             <Card className="border-primary/30 shadow-lg bg-background/95 backdrop-blur-sm">
-              <CardContent className="p-4">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center gap-3">
                   <ArrowsClockwise className="w-5 h-5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">

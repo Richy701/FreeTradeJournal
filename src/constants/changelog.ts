@@ -15,6 +15,129 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.47.0',
+    date: '2026-06-30',
+    summary: 'Your Goals & Risk page now keeps up with your trades in real time, and earned achievements stay earned.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Achievements stay earned',
+        description: 'A goal you have already hit no longer disappears from the Achievements tab when a new week or month begins.',
+      },
+      {
+        type: 'improved',
+        text: 'Goals and risk limits keep up with your trades',
+        description: 'The Goals & Risk page now reflects trades you add or edit elsewhere right away, and your risk limits are checked against them, instead of only updating after a page reload.',
+      },
+    ],
+  },
+  {
+    version: '2.46.0',
+    date: '2026-06-30',
+    summary: 'Journal entries now keep their formatting — line breaks, headings, and bold all show the way you wrote them.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Journal entries keep their line breaks',
+        description: 'Saved entries no longer collapse into one run-on paragraph — paragraphs, blank lines, and lists now display just as you typed them.',
+      },
+      {
+        type: 'improved',
+        text: 'Formatted journal entries',
+        description: 'Entries support light formatting: headings, bold text, and bullet or numbered lists. The Pre-Trade, Post-Trade, and Daily Review templates now insert tidy, headed sections instead of plain text.',
+      },
+    ],
+  },
+  {
+    version: '2.45.0',
+    date: '2026-06-30',
+    summary: 'Goals & Risk Management is redesigned into clear tabs with a single home for everything risk.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Goals & Risk Management split into tabs',
+        description: 'The page is now organised into Goals, Risk Limits, and Achievements tabs instead of one long stacked screen, so each area is easier to find and work with.',
+      },
+      {
+        type: 'improved',
+        text: 'One place for all your risk',
+        description: 'The Risk Limits tab now shows your per-trade risk from Settings (account size, risk per trade, max risk per trade, and how many losers would blow the account) and a read-only view of your prop firm drawdown limits, so you can see how protected you are at a glance.',
+      },
+      {
+        type: 'new',
+        text: 'Edit a goal without recreating it',
+        description: 'Goals can now be edited in place to change the target, type, or period, instead of deleting and adding a new one.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer goals and limits',
+        description: 'Loss and drawdown caps now live only under Risk Limits rather than being mixed in with goals, and goals cover profit, win rate, trade count, and risk/reward targets.',
+      },
+      {
+        type: 'fixed',
+        text: 'Achievement celebrations no longer mis-fire',
+        description: 'Goal achievements are now detected reliably and only celebrated once, and breach counts on risk limits reset each day so they stay meaningful.',
+      },
+    ],
+  },
+  {
+    version: '2.44.0',
+    date: '2026-06-30',
+    summary: 'A cleaner, clearer PropTracker and Trade Journal — calmer cards, a redesigned risk calculator, and tighter layouts.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Refreshed Trade Journal layout',
+        description: 'The journal summary cards are more compact and line up in a single row, entry cards drop the colored side accent and busy tints for a calmer look, and the list spacing is tighter so you can scan more at once.',
+      },
+      {
+        type: 'fixed',
+        text: 'Journal "Read more" only shows when there is more to read',
+        description: 'The Read more / Show less toggle on a journal entry now appears only when the note is actually truncated, instead of showing on shorter entries where it did nothing.',
+      },
+      {
+        type: 'fixed',
+        text: 'Card contents no longer sit flush against the top edge',
+        description: 'Fixed a spacing issue where the contents of several cards (PropTracker summaries and account cards, journal cards, coach cards) were pinned to the top edge on larger screens, leaving uneven empty space below.',
+      },
+      {
+        type: 'fixed',
+        text: 'Funded accounts no longer show a challenge profit target',
+        description: 'Funded and instant-funding accounts now show a "Risk Limits" section with your drawdown limits, instead of an evaluation "Challenge Progress" bar and profit target that no longer applies once you are funded.',
+      },
+      {
+        type: 'fixed',
+        text: 'Clearer wording on failed accounts',
+        description: 'A failed or closed account now shows your net loss instead of telling you how much more is needed "to break even", which only makes sense for an account you can still recover.',
+      },
+      {
+        type: 'fixed',
+        text: 'Trading days no longer read past the requirement',
+        description: 'Once you have met the minimum trading days, the count now caps at the requirement (for example 4 / 4) instead of showing more days than required.',
+      },
+      {
+        type: 'improved',
+        text: 'Calmer, less cluttered account cards',
+        description: 'Account cards are toned down so the numbers stand out: the invested/earned/P&L tiles use a plain neutral background instead of coloured tints and borders, the cost-recovery note is now plain text, and the small status dot was removed. Cards in a row also stay the same height with their buttons aligned along the bottom, so there is no awkward empty space.',
+      },
+      {
+        type: 'improved',
+        text: 'Redesigned risk calculator',
+        description: 'The "If I lose..." calculator now has quick-amount buttons and a "Max safe" button that fills in the largest loss you can take before any active challenge breaches. Each account shows a before/after drawdown bar so you can see at a glance how close a loss pushes you to the limit, and the empty state tells you your tightest buffer for the day.',
+      },
+      {
+        type: 'improved',
+        text: 'Summary cards line up across the top',
+        description: 'Total Invested, Total Earned, P&L, and Active Accounts now sit in a single row on desktop instead of an uneven layout where P&L stretched across the width.',
+      },
+      {
+        type: 'fixed',
+        text: 'The5ers logo now visible in dark mode',
+        description: 'Firm logos sit on a light tile so dark logos like The5ers no longer disappear against the dark background.',
+      },
+    ],
+  },
+  {
     version: '2.43.0',
     date: '2026-06-23',
     summary: 'The AI coach chat now gives sharper, safer advice based on your full trading history.',
@@ -1335,4 +1458,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.43.0'
+export const LATEST_CHANGELOG_VERSION = '2.47.0'

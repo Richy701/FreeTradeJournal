@@ -1,13 +1,19 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
-import { DemoDataService } from '@/services/demo-service';
 import { useUserStorage } from '@/utils/user-storage';
 import { useCallback, useEffect, useState } from 'react';
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
 
 /**
- * Hook to get data based on demo mode status
- * Re-reads localStorage when remote sync pushes new data
+ * Hook to read trading data, account-scoped.
+ *
+ * Demo mode is an interactive sandbox: entering demo seeds the demo dataset
+ * into demo-user-scoped storage (see seedDemoStorage), so demo reads/writes go
+ * through the exact same user-scoped storage path as a real account. There is
+ * no special demo read branch — that keeps demo and real behaviour identical
+ * and lets sandbox edits show up immediately.
+ *
+ * Re-reads storage when sync (or a local write) bumps the change version.
  */
 export function useDemoData() {
   const { isDemo } = useAuth();
@@ -23,18 +29,13 @@ export function useDemoData() {
   const getTrades = useCallback(() => {
     let trades = [];
 
-    if (isDemo) {
-      trades = DemoDataService.getTrades();
-      return trades; // Demo data isn't scoped to accounts
-    } else {
-      // Get from user-scoped localStorage
-      const savedTrades = userStorage.getItem('trades');
-      if (savedTrades) {
-        try {
-          trades = JSON.parse(savedTrades);
-        } catch {
-          trades = [];
-        }
+    // Get from user-scoped localStorage (seeded with demo data in demo mode)
+    const savedTrades = userStorage.getItem('trades');
+    if (savedTrades) {
+      try {
+        trades = JSON.parse(savedTrades);
+      } catch {
+        trades = [];
       }
     }
 
@@ -52,18 +53,12 @@ export function useDemoData() {
   const getJournalEntries = useCallback(() => {
     let entries = [];
 
-    if (isDemo) {
-      entries = DemoDataService.getJournalEntries();
-      return entries; // Demo data isn't scoped to accounts
-    } else {
-      // Get from user-scoped localStorage
-      const savedEntries = userStorage.getItem('journalEntries');
-      if (savedEntries) {
-        try {
-          entries = JSON.parse(savedEntries);
-        } catch {
-          entries = [];
-        }
+    const savedEntries = userStorage.getItem('journalEntries');
+    if (savedEntries) {
+      try {
+        entries = JSON.parse(savedEntries);
+      } catch {
+        entries = [];
       }
     }
 
@@ -81,18 +76,12 @@ export function useDemoData() {
   const getGoals = useCallback(() => {
     let goals = [];
 
-    if (isDemo) {
-      goals = DemoDataService.getGoals();
-      return goals; // Demo data isn't scoped to accounts
-    } else {
-      // Get from user-scoped localStorage
-      const savedGoals = userStorage.getItem('goals');
-      if (savedGoals) {
-        try {
-          goals = JSON.parse(savedGoals);
-        } catch {
-          goals = [];
-        }
+    const savedGoals = userStorage.getItem('goals');
+    if (savedGoals) {
+      try {
+        goals = JSON.parse(savedGoals);
+      } catch {
+        goals = [];
       }
     }
 
@@ -107,18 +96,10 @@ export function useDemoData() {
     return goals;
   }, [isDemo, userStorage, activeAccount]);
 
-  const getStats = () => {
-    if (isDemo) {
-      return DemoDataService.getStats();
-    }
-    return null;
-  };
-
   return {
     isDemo,
     getTrades,
     getJournalEntries,
     getGoals,
-    getStats,
   };
 }

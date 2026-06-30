@@ -67,10 +67,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
 import { useUserStorage } from '@/utils/user-storage'
+import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useProStatus } from '@/contexts/pro-context'
 import { useAuth } from '@/contexts/auth-context'
-import { DemoDataService } from '@/services/demo-service'
+import { getDemoPropAnalysis, DEMO_AI_USAGE } from '@/lib/demo-ai'
 import { ProGate } from '@/components/pro-gate'
 import { toast } from 'sonner'
 import { requestPropAnalysis, requestScreenshotParse } from '@/services/ai-analysis'
@@ -329,7 +330,7 @@ export default function PropTracker() {
   const { themeColors, alpha } = useThemePresets()
   const { isPro } = useProStatus()
   const { isDemo } = useAuth()
-
+  const demoGuard = useDemoGuard()
   // ── Data ──
   const [accounts, setAccounts] = useState<PropFirmAccount[]>([])
   const [transactions, setTransactions] = useState<PropFirmTransaction[]>([])
@@ -337,12 +338,8 @@ export default function PropTracker() {
   const [showDealsBanner, setShowDealsBanner] = useState(() => !localStorage.getItem('ftj-dismiss-deals-pt'))
 
   useEffect(() => {
-    if (isDemo) {
-      setAccounts(DemoDataService.getPropAccounts())
-      setTransactions(DemoDataService.getPropTransactions())
-      setTipDismissed(true)
-      return
-    }
+    // Demo mode seeds prop accounts/transactions into demo-user storage, so the
+    // same read/write path works for both demo and real accounts.
     const savedAccounts = storage.getItem('propFirmAccounts')
     const savedTxs = storage.getItem('propFirmTransactions')
     const dismissed = storage.getItem('propTrackerTipDismissed')
@@ -355,17 +352,17 @@ export default function PropTracker() {
       toast.error('Failed to load saved data')
     }
     setTipDismissed(dismissed === 'true')
-  }, [storage, isDemo])
+  }, [storage])
 
   const saveAccounts = useCallback((updated: PropFirmAccount[]) => {
     setAccounts(updated)
-    if (!isDemo) storage.setItem('propFirmAccounts', JSON.stringify(updated))
-  }, [storage, isDemo])
+    storage.setItem('propFirmAccounts', JSON.stringify(updated))
+  }, [storage])
 
   const saveTransactions = useCallback((updated: PropFirmTransaction[]) => {
     setTransactions(updated)
-    if (!isDemo) storage.setItem('propFirmTransactions', JSON.stringify(updated))
-  }, [storage, isDemo])
+    storage.setItem('propFirmTransactions', JSON.stringify(updated))
+  }, [storage])
 
   function dismissTip() {
     setTipDismissed(true)
@@ -381,6 +378,14 @@ export default function PropTracker() {
     if (accounts.length === 0) { toast.error('Add some accounts first'); return }
     setAiLoading(true)
     setAiAnalysis(null)
+    // Demo mode: show a pre-written analysis instead of calling the backend.
+    if (isDemo) {
+      await new Promise(resolve => setTimeout(resolve, 600))
+      setAiAnalysis(getDemoPropAnalysis())
+      setAiUsage(DEMO_AI_USAGE)
+      setAiLoading(false)
+      return
+    }
     try {
       const res = await requestPropAnalysis(accounts, transactions)
       setAiAnalysis(res.result)
@@ -393,6 +398,14 @@ export default function PropTracker() {
       setAiLoading(false)
     }
   }
+
+  // In demo mode, auto-run the AI analysis once so it shows working without a click.
+  useEffect(() => {
+    if (isDemo && accounts.length > 0 && transactions.length > 0 && !aiAnalysis && !aiLoading) {
+      runAiAnalysis()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, accounts.length, transactions.length])
 
   // ── UI state ──
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
@@ -479,6 +492,7 @@ export default function PropTracker() {
   }
 
   function handleConfirmImport() {
+    if (demoGuard('import transactions')) return
     const toImport = importDialog.parsed.filter(tx => tx.keep)
     if (!toImport.length) { toast.error('No transactions selected'); return }
     saveTransactions([...transactions, ...toImport.map(tx => ({
@@ -531,6 +545,7 @@ export default function PropTracker() {
   }
 
   function handleSaveAccount() {
+    if (demoGuard('add prop firm accounts')) return
     const firmName = accountForm.firmName === 'Custom...' ? accountForm.customFirm.trim() : accountForm.firmName
     const sizeRaw = accountForm.accountSizeStr === 'custom' ? accountForm.customSizeStr : accountForm.accountSizeStr
     const accountSize = Number(sizeRaw)
@@ -587,6 +602,7 @@ export default function PropTracker() {
   }
 
   function handleDeleteAccount(id: string) {
+    if (demoGuard('manage prop firm accounts')) return
     saveAccounts(accounts.filter(a => a.id !== id))
     saveTransactions(transactions.filter(t => t.propAccountId !== id))
     setDeleteDialog(null)
@@ -602,6 +618,7 @@ export default function PropTracker() {
   }
 
   function handleSaveTx() {
+    if (demoGuard('add transactions')) return
     const amount = Number(txForm.amount)
     if (!txForm.propAccountId) { toast.error('Select an account'); return }
     if (!amount || amount <= 0) { toast.error('Amount must be greater than 0'); return }
@@ -621,6 +638,7 @@ export default function PropTracker() {
   }
 
   function handleDeleteTx(id: string) {
+    if (demoGuard('manage transactions')) return
     saveTransactions(transactions.filter(t => t.id !== id))
     setDeleteDialog(null)
     toast.success('Transaction deleted')
@@ -647,6 +665,7 @@ export default function PropTracker() {
   }
 
   function handleSaveBalance() {
+    if (demoGuard('update balances')) return
     const balance = Number(balanceDialog.balance)
     if (isNaN(balance) || balance < 0) { toast.error('Enter a valid balance'); return }
     const tradingDays = Number(balanceDialog.tradingDays) || 0
@@ -870,6 +889,7 @@ export default function PropTracker() {
   }
 
   function handleSaveCheckin() {
+    if (demoGuard('log a daily check-in')) return
     const today = new Date().toISOString().split('T')[0]
     saveAccounts(accounts.map(a => {
       const entry = checkinDialog.entries.find(e => e.accountId === a.id)
@@ -910,11 +930,13 @@ export default function PropTracker() {
       const currentDD = Math.max(0, progress.highWaterMark - progress.currentBalance)
       const afterDD = currentDD + loss
       const totalDDPctAfter = maxTotalDDDollars > 0 ? (afterDD / maxTotalDDDollars) * 100 : 0
+      const totalDDPctBefore = maxTotalDDDollars > 0 ? (currentDD / maxTotalDDDollars) * 100 : 0
       const wouldBreachTotal = totalDDPctAfter >= 100
 
       const existingDailyLoss = (progress.todayPnL !== undefined && progress.todayPnL < 0) ? Math.abs(progress.todayPnL) : 0
       const dailyAfter = existingDailyLoss + loss
       const dailyDDPctAfter = maxDailyDDDollars > 0 ? (dailyAfter / maxDailyDDDollars) * 100 : 0
+      const dailyDDPctBefore = maxDailyDDDollars > 0 ? (existingDailyLoss / maxDailyDDDollars) * 100 : 0
       const wouldBreachDaily = maxDailyDDDollars > 0 && dailyDDPctAfter >= 100
 
       const remainingBeforeTotal = Math.max(0, maxTotalDDDollars - currentDD - loss)
@@ -923,7 +945,9 @@ export default function PropTracker() {
       return {
         account: a,
         totalDDPctAfter: Math.min(totalDDPctAfter, 100),
+        totalDDPctBefore: Math.min(totalDDPctBefore, 100),
         dailyDDPctAfter: Math.min(dailyDDPctAfter, 100),
+        dailyDDPctBefore: Math.min(dailyDDPctBefore, 100),
         wouldBreachTotal,
         wouldBreachDaily,
         remainingBeforeTotal,
@@ -932,6 +956,26 @@ export default function PropTracker() {
       }
     })
   }, [riskCalcAmount, activeRulesAccounts])
+
+  // Largest loss that keeps every active challenge under its limits
+  const maxSafeLoss = useMemo(() => {
+    if (activeRulesAccounts.length === 0) return 0
+    let safe = Infinity
+    for (const a of activeRulesAccounts) {
+      const rules = a.challengeRules!
+      const progress = a.challengeProgress ?? { currentBalance: a.accountSize, highWaterMark: a.accountSize, tradingDaysCount: 0, lastUpdated: '' }
+      const maxTotalDDDollars = (rules.maxTotalDrawdown / 100) * a.accountSize
+      const currentDD = Math.max(0, progress.highWaterMark - progress.currentBalance)
+      let room = Math.max(0, maxTotalDDDollars - currentDD)
+      if (rules.maxDailyDrawdown > 0) {
+        const maxDailyDDDollars = (rules.maxDailyDrawdown / 100) * a.accountSize
+        const existingDailyLoss = (progress.todayPnL !== undefined && progress.todayPnL < 0) ? Math.abs(progress.todayPnL) : 0
+        room = Math.min(room, Math.max(0, maxDailyDDDollars - existingDailyLoss))
+      }
+      safe = Math.min(safe, room)
+    }
+    return safe === Infinity ? 0 : safe
+  }, [activeRulesAccounts])
 
   // ─── Deadline alerts ────────────────────────────────────────────────────────
   const upcomingDeadlines = useMemo(() => {
@@ -1103,13 +1147,13 @@ export default function PropTracker() {
         )}
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {statCards.map((card) => {
             const isPnL = card.label === 'P&L'
             return (
               <div
                 key={card.label}
-                className={`relative rounded-xl overflow-hidden ${isPnL ? 'col-span-2 2xl:col-span-1' : ''}`}
+                className={`relative rounded-xl overflow-hidden ${isPnL ? 'col-span-2 xl:col-span-1' : ''}`}
                 style={{
                   backgroundColor: `${card.valueColor}${isPnL ? '0c' : '08'}`,
                   border: `1px solid ${card.valueColor}${isPnL ? '22' : '18'}`,
@@ -1349,15 +1393,48 @@ export default function PropTracker() {
                   <label className="text-sm text-muted-foreground whitespace-nowrap">today...</label>
                 </div>
 
+                {/* Quick-amount presets */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[100, 250, 500, 1000].map(v => {
+                    const active = Number(riskCalcAmount) === v
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setRiskCalcAmount(String(v))}
+                        className="h-7 px-2.5 rounded-md text-xs font-medium tabular-nums border transition-colors hover:bg-muted/40"
+                        style={{
+                          borderColor: active ? themeColors.primary : 'var(--border)',
+                          backgroundColor: active ? `${themeColors.primary}15` : 'transparent',
+                          color: active ? themeColors.primary : undefined,
+                        }}
+                      >
+                        ${v >= 1000 ? `${v / 1000}k` : v}
+                      </button>
+                    )
+                  })}
+                  {maxSafeLoss > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setRiskCalcAmount(String(Math.floor(maxSafeLoss)))}
+                      className="h-7 px-2.5 rounded-md text-xs font-medium tabular-nums border border-dashed transition-colors hover:bg-muted/40"
+                      style={{ borderColor: `${themeColors.primary}60`, color: themeColors.primary }}
+                    >
+                      Max safe · {fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}
+                    </button>
+                  )}
+                </div>
+
                 {riskCalcResults && riskCalcResults.length > 0 && (
                   <div className="space-y-2">
                     {riskCalcResults.map(r => {
                       const brandColor = firmAvatarColor(r.account.firmName)
                       const breached = r.wouldBreachTotal || r.wouldBreachDaily
+                      const hasDaily = r.account.challengeRules!.maxDailyDrawdown > 0
                       return (
                         <div
                           key={r.account.id}
-                          className="rounded-lg border p-3 space-y-2"
+                          className="rounded-lg border p-3 space-y-2.5"
                           style={{
                             borderColor: breached ? `${themeColors.loss}40` : 'var(--border)',
                             backgroundColor: breached ? `${themeColors.loss}06` : undefined,
@@ -1365,7 +1442,7 @@ export default function PropTracker() {
                         >
                           <div className="flex items-center gap-2">
                             {FIRM_LOGOS[r.account.firmName] ? (
-                              <div className="h-6 w-6 rounded shrink-0 overflow-hidden"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-cover" /></div>
+                              <div className="h-6 w-6 rounded shrink-0 overflow-hidden bg-white"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-cover" /></div>
                             ) : (
                               <div
                                 className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
@@ -1382,35 +1459,49 @@ export default function PropTracker() {
                               </Badge>
                             )}
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
-                            <div>
-                              <p className="text-muted-foreground">Balance after</p>
-                              <p className="font-semibold tabular-nums" style={{ color: r.balanceAfter < r.account.accountSize ? themeColors.loss : themeColors.profit }}>
-                                {fmt(r.balanceAfter, r.account.currency)}
-                              </p>
+
+                          {/* Total drawdown impact bar */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-muted-foreground">Total drawdown</span>
+                              <span className="font-semibold tabular-nums">
+                                <span className="text-muted-foreground">{r.totalDDPctBefore.toFixed(0)}%</span>
+                                <span className="text-muted-foreground mx-1">&rarr;</span>
+                                <span style={{ color: ddBarColor(r.totalDDPctAfter, themeColors) }}>
+                                  {r.totalDDPctAfter.toFixed(0)}%{r.wouldBreachTotal && ' LIMIT'}
+                                </span>
+                              </span>
                             </div>
-                            <div>
-                              <p className="text-muted-foreground">Total DD used</p>
-                              <p className="font-semibold tabular-nums" style={{ color: ddBarColor(r.totalDDPctAfter, themeColors) }}>
-                                {r.totalDDPctAfter.toFixed(1)}%
-                                {r.wouldBreachTotal && <span className="text-red-500 ml-1">LIMIT</span>}
-                              </p>
+                            <div className="relative h-2 rounded-full bg-muted/60 overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.totalDDPctAfter)}%`, backgroundColor: ddBarColor(r.totalDDPctAfter, themeColors) }} />
+                              <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.totalDDPctBefore)}%` }} aria-hidden="true" />
                             </div>
-                            {r.account.challengeRules!.maxDailyDrawdown > 0 && (
-                              <div>
-                                <p className="text-muted-foreground">Daily DD used</p>
-                                <p className="font-semibold tabular-nums" style={{ color: ddBarColor(r.dailyDDPctAfter, themeColors) }}>
-                                  {r.dailyDDPctAfter.toFixed(1)}%
-                                  {r.wouldBreachDaily && <span className="text-red-500 ml-1">LIMIT</span>}
-                                </p>
+                          </div>
+
+                          {/* Daily drawdown impact bar */}
+                          {hasDaily && (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted-foreground">Daily drawdown</span>
+                                <span className="font-semibold tabular-nums">
+                                  <span className="text-muted-foreground">{r.dailyDDPctBefore.toFixed(0)}%</span>
+                                  <span className="text-muted-foreground mx-1">&rarr;</span>
+                                  <span style={{ color: ddBarColor(r.dailyDDPctAfter, themeColors) }}>
+                                    {r.dailyDDPctAfter.toFixed(0)}%{r.wouldBreachDaily && ' LIMIT'}
+                                  </span>
+                                </span>
                               </div>
-                            )}
-                            <div>
-                              <p className="text-muted-foreground">Room left (total)</p>
-                              <p className="font-semibold tabular-nums">
-                                {fmt(r.remainingBeforeTotal, r.account.currency)}
-                              </p>
+                              <div className="relative h-2 rounded-full bg-muted/60 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.dailyDDPctAfter)}%`, backgroundColor: ddBarColor(r.dailyDDPctAfter, themeColors) }} />
+                                <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.dailyDDPctBefore)}%` }} aria-hidden="true" />
+                              </div>
                             </div>
+                          )}
+
+                          {/* Footer stats */}
+                          <div className="flex items-center justify-between text-[11px] pt-0.5">
+                            <span className="text-muted-foreground">Balance after <span className="font-semibold tabular-nums text-foreground">{fmt(r.balanceAfter, r.account.currency)}</span></span>
+                            <span className="text-muted-foreground">Room left <span className="font-semibold tabular-nums text-foreground">{fmt(r.remainingBeforeTotal, r.account.currency)}</span></span>
                           </div>
                         </div>
                       )
@@ -1419,7 +1510,14 @@ export default function PropTracker() {
                 )}
 
                 {(!riskCalcResults || riskCalcResults.length === 0) && (
-                  <p className="text-xs text-muted-foreground text-center py-2">Enter an amount to see the impact on your active challenges.</p>
+                  <div className="rounded-lg border border-dashed border-border/60 px-4 py-5 text-center space-y-1">
+                    <p className="text-xs text-muted-foreground">Enter an amount or tap a preset to see how a loss would affect your active challenges.</p>
+                    {maxSafeLoss > 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Your tightest buffer today is <span className="font-semibold text-foreground tabular-nums">{fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}</span> before a breach.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -1438,7 +1536,7 @@ export default function PropTracker() {
                 borderColor: `${themeColors.loss}18`,
               }}
             >
-              <CardContent className="p-5 flex flex-col flex-1">
+              <CardContent className="p-5 sm:p-5 flex flex-col flex-1">
                 <div className="flex items-center gap-2 mb-4">
                   <CurrencyDollar className="h-4 w-4 text-muted-foreground" />
                   <p className="text-sm font-semibold">Spend by Firm</p>
@@ -1508,7 +1606,7 @@ export default function PropTracker() {
                 borderColor: `${themeColors.profit}18`,
               }}
             >
-              <CardContent className="p-5 flex flex-col flex-1">
+              <CardContent className="p-5 sm:p-5 flex flex-col flex-1">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <TrendUp className="h-4 w-4 text-muted-foreground" />
@@ -1592,21 +1690,23 @@ export default function PropTracker() {
                     <p className="text-xs text-muted-foreground">Your prop trading, reviewed honestly</p>
                   </div>
                 </div>
-                <div className="shrink-0 flex flex-col items-end gap-1">
-                  <button
-                    onClick={runAiAnalysis}
-                    disabled={aiLoading}
-                    aria-label="Run AI analysis"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white disabled:opacity-60 transition-opacity"
-                    style={{ backgroundColor: themeColors.primary }}
-                  >
-                    <Brain className="h-3 w-3" aria-hidden="true" />
-                    {aiLoading ? 'Analysing…' : aiAnalysis ? 'Re-analyse' : 'Analyse'}
-                  </button>
-                  {aiUsage && (
-                    <p className="text-[10px] text-muted-foreground">{aiUsage.remaining}/{aiUsage.limit} uses today</p>
-                  )}
-                </div>
+                {!isDemo && (
+                  <div className="shrink-0 flex flex-col items-end gap-1">
+                    <button
+                      onClick={runAiAnalysis}
+                      disabled={aiLoading}
+                      aria-label="Run AI analysis"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white disabled:opacity-60 transition-opacity"
+                      style={{ backgroundColor: themeColors.primary }}
+                    >
+                      <Brain className="h-3 w-3" aria-hidden="true" />
+                      {aiLoading ? 'Analysing…' : aiAnalysis ? 'Re-analyse' : 'Analyse'}
+                    </button>
+                    {aiUsage && (
+                      <p className="text-[10px] text-muted-foreground">{aiUsage.remaining}/{aiUsage.limit} uses today</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Loading state */}
@@ -1770,7 +1870,7 @@ export default function PropTracker() {
             {/* Ghost preview — visible, fades at bottom */}
             <div className="relative">
               <div className="pointer-events-none select-none opacity-50 p-4 sm:p-6 space-y-4">
-                <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
                   {[
                     { icon: CurrencyDollar, label: 'Total Invested',  value: '$1,915',  sub: 'All fees paid',        color: themeColors.loss, isPnL: false },
                     { icon: Wallet,     label: 'Total Earned',    value: '$7,700',  sub: 'All payouts received', color: themeColors.profit, isPnL: false },
@@ -1779,7 +1879,7 @@ export default function PropTracker() {
                   ].map(c => (
                     <div
                       key={c.label}
-                      className={`relative rounded-xl overflow-hidden ${c.isPnL ? 'col-span-2 2xl:col-span-1' : ''}`}
+                      className={`relative rounded-xl overflow-hidden ${c.isPnL ? 'col-span-2 xl:col-span-1' : ''}`}
                       style={{
                         backgroundColor: `${c.color}${c.isPnL ? '0c' : '08'}`,
                         border: `1px solid ${c.color}${c.isPnL ? '22' : '18'}`,
@@ -1836,7 +1936,7 @@ export default function PropTracker() {
                     { initials: 'MF', color: '#D8AE5E', firm: 'My Funded Futures',    size: '$150,000', type: 'Funded',     status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$524',  earned: '$3,500', pnl: '+$2,976' },
                   ].map(g => (
                     <Card key={g.firm} className="relative overflow-hidden" style={{ backgroundColor: g.color + '04', border: '1px solid ' + g.color + '12' }}>
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 sm:p-5">
                         <div className="flex items-start gap-3 mb-4">
                           {FIRM_LOGOS[g.firm] ? (
                             <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm overflow-hidden"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
@@ -1878,15 +1978,17 @@ export default function PropTracker() {
               const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)!
               const brandColor = firmAvatarColor(account.firmName)
               const challengeStatus = getChallengeStatus(account)
+              const isEvalPhase = account.accountType === 'evaluation' || account.accountType === 'express'
+              const isClosed = account.status === 'failed' || account.status === 'withdrawn'
 
               return (
-                <Card key={account.id} className="relative overflow-hidden transition-[transform,box-shadow] duration-300 hover:shadow-lg hover:scale-[1.005]" style={{ backgroundColor: brandColor + '04', border: '1px solid ' + brandColor + '12' }}>
-                  <CardContent className="p-4">
+                <Card key={account.id} className="relative overflow-hidden h-full flex flex-col transition-[transform,box-shadow] duration-300 hover:shadow-lg hover:scale-[1.005]" style={{ backgroundColor: brandColor + '04', border: '1px solid ' + brandColor + '12' }}>
+                  <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
 
                     {/* Account header */}
                     <div className="flex items-start gap-3 mb-4">
                       {FIRM_LOGOS[account.firmName] ? (
-                        <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm overflow-hidden">
+                        <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm overflow-hidden bg-white">
                           <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" />
                         </div>
                       ) : (
@@ -1900,18 +2002,7 @@ export default function PropTracker() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-semibold text-sm leading-tight truncate">{account.firmName}</p>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {challengeStatus && (
-                              <span
-                                className="h-2 w-2 rounded-full shrink-0"
-                                style={{ backgroundColor:
-                                  challengeStatus.health === 'red' ? themeColors.loss :
-                                  challengeStatus.health === 'amber' ? '#f59e0b' :
-                                  themeColors.profit
-                                }}
-                                aria-label={`Challenge health: ${challengeStatus.health}`}
-                              />
-                            )}
+                          <div className="flex items-center shrink-0">
                             <Badge variant="outline" className={`text-[10px] h-5 px-1.5 shrink-0 ${meta.badgeClass}`}>
                               {meta.label}
                             </Badge>
@@ -1933,11 +2024,7 @@ export default function PropTracker() {
                       ].map(s => (
                         <div
                           key={s.label}
-                          className="rounded-lg px-2 sm:px-2.5 py-2.5"
-                          style={{
-                            backgroundColor: s.color ? s.color + '08' : 'var(--muted)',
-                            border: '1px solid ' + (s.color ? s.color + '18' : 'transparent'),
-                          }}
+                          className="rounded-lg px-2 sm:px-2.5 py-2.5 bg-muted/50"
                         >
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{s.label}</p>
                           <p className="text-xs sm:text-sm font-bold tabular-nums mt-1" style={{ color: s.color ?? 'var(--muted-foreground)' }}>{s.value}</p>
@@ -1947,7 +2034,7 @@ export default function PropTracker() {
 
                     {/* Cost recovery indicator */}
                     {invested > 0 && (
-                      <div className="rounded-md px-2.5 py-1.5 mb-3" style={{ backgroundColor: (net >= 0 ? themeColors.profit : 'var(--muted-foreground)') + '06' }}>
+                      <div className="mb-3">
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
                           {net >= 0 ? (
                             <>
@@ -1957,7 +2044,7 @@ export default function PropTracker() {
                           ) : (
                             <>
                               <Target className="h-3 w-3 shrink-0 text-muted-foreground" />
-                              <span>{fmt(Math.abs(net), account.currency)} more in payouts to break even</span>
+                              <span>{isClosed ? `${fmt(Math.abs(net), account.currency)} net loss` : `${fmt(Math.abs(net), account.currency)} more in payouts to break even`}</span>
                             </>
                           )}
                         </p>
@@ -1971,7 +2058,7 @@ export default function PropTracker() {
                           <div className="flex items-center justify-between mb-3">
                             <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
                               <Shield className="h-3 w-3" />
-                              Challenge Progress
+                              {isEvalPhase ? 'Challenge Progress' : 'Risk Limits'}
                             </p>
                             {account.challengeProgress?.lastUpdated && (
                               <p className="text-[10px] text-muted-foreground">
@@ -1986,7 +2073,8 @@ export default function PropTracker() {
                           </div>
                         </div>
 
-                        {/* Profit Target — hero metric */}
+                        {/* Profit Target — hero metric (evaluation phase only) */}
+                        {isEvalPhase && (
                         <div className="rounded-lg p-3 mb-2.5" style={{ backgroundColor: profitBarColor(challengeStatus.profitPct, themeColors) + '08', border: '1px solid ' + profitBarColor(challengeStatus.profitPct, themeColors) + '15' }}>
                           <div className="flex items-center justify-between text-[10px] mb-1.5">
                             <span className="font-medium" style={{ color: profitBarColor(challengeStatus.profitPct, themeColors) }}>Profit Target</span>
@@ -2007,6 +2095,7 @@ export default function PropTracker() {
                             {challengeStatus.profitGain >= 0 ? '+' : ''}{fmt(challengeStatus.profitGain, account.currency)} of {fmt(account.challengeRules.profitTarget, account.currency)}
                           </p>
                         </div>
+                        )}
 
                         {/* Total Drawdown */}
                         <div className="space-y-1 mb-2.5 px-0.5">
@@ -2059,13 +2148,13 @@ export default function PropTracker() {
                         )}
 
                         {/* Trading Days */}
-                        {challengeStatus.tradingDaysPct !== null && account.challengeRules.minTradingDays && (
+                        {isEvalPhase && challengeStatus.tradingDaysPct !== null && account.challengeRules.minTradingDays && (
                           <div className="space-y-1 px-0.5">
                             <div className="flex items-center justify-between text-[10px]">
                               <span className="text-muted-foreground">Trading Days</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-muted-foreground tabular-nums">
-                                  {challengeStatus.tradingDaysCount} / {account.challengeRules.minTradingDays}
+                                  {Math.min(challengeStatus.tradingDaysCount, account.challengeRules.minTradingDays)} / {account.challengeRules.minTradingDays}
                                 </span>
                                 <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: themeColors.primary }}>
                                   {Math.min(100, challengeStatus.tradingDaysPct).toFixed(0)}%
@@ -2091,7 +2180,7 @@ export default function PropTracker() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 border-t border-border/40">
+                    <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 mt-auto border-t border-border/40">
                       <div className="flex items-center gap-1.5">
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
                           <Plus className="h-3 w-3" />

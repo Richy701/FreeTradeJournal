@@ -18,7 +18,7 @@ export function MobileTable({ data, columns, className }: MobileTableProps) {
     <div className={cn("space-y-3", className)}>
       {data.map((row, rowIndex) => (
         <Card key={rowIndex} className="overflow-hidden">
-          <CardContent className="p-4">
+          <CardContent className="p-4 sm:p-4">
             <div className="space-y-2">
               {columns.map((column) => (
                 <div 
@@ -84,7 +84,7 @@ export const ResponsiveTable = React.forwardRef<
                     const cells = React.Children.toArray(rowProps.children)
                     return (
                       <Card key={index} className="overflow-hidden">
-                        <CardContent className="p-4">
+                        <CardContent className="p-4 sm:p-4">
                           <div className="space-y-2">
                             {cells.map((cell, cellIndex) => {
                               if (!React.isValidElement(cell)) return null

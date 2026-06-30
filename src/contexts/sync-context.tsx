@@ -44,7 +44,7 @@ export function notifyDataChange() {
 }
 
 export function SyncProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const { isPro, isLoading: isProLoading } = useProStatus();
   const engineRef = useRef<SyncEngine | null>(null);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
@@ -62,6 +62,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     // No user — no sync needed
     if (!user) {
+      setInitialSyncDone(true);
+      return;
+    }
+
+    // Demo sandbox — the demo user isn't a real Firebase user. Never start the
+    // sync engine (it would hit Firestore with a fake uid). Mark initial sync
+    // done so account/data providers load locally.
+    if (isDemo) {
       setInitialSyncDone(true);
       return;
     }
@@ -108,7 +116,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       engine.disable();
       setSyncRef(null);
     };
-  }, [user, isPro, isProLoading]);
+  }, [user, isDemo, isPro, isProLoading]);
 
   const value = useMemo(() => ({
     isSyncing: syncStatus === 'syncing',

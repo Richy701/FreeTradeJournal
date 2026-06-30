@@ -49,6 +49,7 @@ import { parseCSV, validateCSVFile, parseCSVWithMappings, type CSVParseResult } 
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { TradeLogFilters, TradeLogFilterPills, EMPTY_FILTERS, countActiveFilters, type TradeFilters } from '@/components/trade-log-filters';
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { AITradeReview } from '@/components/ai-trade-review';
@@ -132,6 +133,7 @@ export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
   const { settings } = useSettings();
   const { user, isDemo } = useAuth();
+  const demoGuard = useDemoGuard();
   const { isPro } = useProStatus();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
@@ -597,10 +599,7 @@ export default function TradeLog() {
   };
 
   const onSubmit = (data: TradeFormData) => {
-    if (isDemo) {
-      toast.info('Sign up to save your real trades!');
-      return;
-    }
+    if (demoGuard('save your trades')) return;
 
     // Normalize SL/TP to absolute price levels (they may be entered as pips/points)
     const stopLoss = resolveSlTpPrice(data.stopLoss, 'sl', data);
@@ -701,10 +700,6 @@ export default function TradeLog() {
   };
 
   const handleEdit = (trade: Trade) => {
-    if (isDemo) {
-      toast.info('Sign up to edit trades!');
-      return;
-    }
     setEditingTrade(trade);
     const hasAutoRR = trade.stopLoss && trade.takeProfit;
     form.reset({
@@ -720,10 +715,7 @@ export default function TradeLog() {
   };
 
   const handleDelete = (id: string) => {
-    if (isDemo) {
-      toast.info('Sign up to delete trades!');
-      return;
-    }
+    if (demoGuard('delete trades')) return;
     if (!window.confirm('Are you sure you want to delete this trade?')) return;
     const updatedTrades = trades.filter((t) => t.id !== id);
     saveTrades(updatedTrades);
@@ -731,10 +723,7 @@ export default function TradeLog() {
   };
 
   const handleBulkDelete = () => {
-    if (isDemo) {
-      toast.info('Sign up to delete trades!');
-      return;
-    }
+    if (demoGuard('delete trades')) return;
     if (selectedTradeIds.size === 0) return;
     if (!window.confirm(`Delete ${selectedTradeIds.size} selected trade${selectedTradeIds.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
     const updatedTrades = trades.filter((t) => !selectedTradeIds.has(t.id));
@@ -846,6 +835,8 @@ export default function TradeLog() {
   const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
+
+    if (demoGuard('import trades')) { event.target.value = ''; return; }
 
     await processCsvFile(files[0]);
     // Clear file input so re-selecting the same file re-triggers onChange
@@ -1208,7 +1199,7 @@ export default function TradeLog() {
           <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-8">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <CardContent className="p-5">
+                <CardContent className="p-5 sm:p-5">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="h-3 w-16 bg-muted rounded"></div>
@@ -1283,8 +1274,6 @@ export default function TradeLog() {
               </div>
             </div>
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
-              {!isDemo && (
-              <>
               <Button
                 size="sm"
                 onClick={() => {
@@ -1313,8 +1302,6 @@ export default function TradeLog() {
                 className="hidden"
                 onChange={handleCSVImport}
               />
-              </>
-              )}
 
               <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
                 <PopoverTrigger asChild>
@@ -1371,16 +1358,19 @@ export default function TradeLog() {
                 PDF
               </Button>
 
+              {/* AI Auto-Tag calls the auth-required aiAssist backend and has no
+                  canned demo path, so it can't work for the fake demo user —
+                  hide it in demo rather than show a button that only errors. */}
               {!isDemo && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsStrategyTaggerOpen(true)}
-                disabled={trades.length === 0}
-              >
-                <Tag className="mr-2 h-4 w-4" />
-                AI Auto-Tag
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsStrategyTaggerOpen(true)}
+                  disabled={trades.length === 0}
+                >
+                  <Tag className="mr-2 h-4 w-4" />
+                  AI Auto-Tag
+                </Button>
               )}
             </div>
           </div>

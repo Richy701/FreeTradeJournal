@@ -17,7 +17,7 @@ export function DemoCtaCard() {
           Ready to Track Your Real Trades?
         </CardTitle>
         <CardDescription>
-          You're currently exploring with demo data. Sign up free to start tracking your actual trading performance!
+          You're viewing a live demo with sample data. Sign up free to start tracking your real trades — it only takes a minute.
         </CardDescription>
       </CardHeader>
       <CardContent>

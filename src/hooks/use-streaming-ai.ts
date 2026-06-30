@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
+import { useAuth } from '@/contexts/auth-context';
+import { getDemoAIResponse, DEMO_AI_USAGE } from '@/lib/demo-ai';
 import type { FreeAIQuota } from '@/contexts/pro-context';
 
 function getStreamUrl(): string {
@@ -24,6 +26,7 @@ interface UseStreamingAIReturn {
 }
 
 export function useStreamingAI(): UseStreamingAIReturn {
+  const { isDemo } = useAuth();
   const [streamText, setStreamText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +46,26 @@ export function useStreamingAI(): UseStreamingAIReturn {
     setIsStreaming(true);
     setError(null);
     setMeta(null);
+
+    // Demo mode: stream a pre-written response with a typewriter effect so the
+    // feature looks live, without any backend call.
+    if (isDemo) {
+      const full = getDemoAIResponse(endpoint, data);
+      let shown = '';
+      try {
+        for (const token of full.split(/(\s+)/)) {
+          if (controller.signal.aborted) break;
+          shown += token;
+          setStreamText(shown);
+          await new Promise(resolve => setTimeout(resolve, 14));
+        }
+        setMeta({ usage: DEMO_AI_USAGE });
+      } finally {
+        setIsStreaming(false);
+        abortRef.current = null;
+      }
+      return shown;
+    }
 
     let fullText = '';
 
@@ -114,7 +137,7 @@ export function useStreamingAI(): UseStreamingAIReturn {
     }
 
     return fullText;
-  }, []);
+  }, [isDemo]);
 
   return { streamText, isStreaming, error, meta, startStream, abort };
 }

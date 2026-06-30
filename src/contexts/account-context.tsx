@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
 import { useAuth } from '@/contexts/auth-context';
+import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useSync } from '@/contexts/sync-context';
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
@@ -42,6 +43,7 @@ interface AccountProviderProps {
 
 export function AccountProvider({ children }: AccountProviderProps) {
   const { user } = useAuth();
+  const demoGuard = useDemoGuard();
   const userId = user?.uid || null;
   const { initialSyncDone } = useSync();
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
@@ -161,6 +163,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
   };
 
   const updateAccount = (id: string, updates: Partial<TradingAccount>) => {
+    if (demoGuard('manage accounts')) return;
     setAccounts(prev => {
       const updatedAccounts = prev.map(acc => {
         if (acc.id === id) {
@@ -184,6 +187,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
   };
 
   const deleteAccount = (id: string) => {
+    if (demoGuard('manage accounts')) return;
     if (accounts.length <= 1) {
       throw new Error('Cannot delete the last account');
     }

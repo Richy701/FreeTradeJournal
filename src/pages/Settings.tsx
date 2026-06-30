@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
+import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock } from '@phosphor-icons/react';
@@ -107,6 +108,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha, setCustomColors, customColors } = useThemePresets();
   const { user, isDemo } = useAuth();
+  const demoGuard = useDemoGuard();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
   const userStorage = useUserStorage();
@@ -212,6 +214,7 @@ export default function Settings() {
   const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (demoGuard('import data')) { event.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -236,11 +239,16 @@ export default function Settings() {
   };
 
   const clearAllData = () => {
+    if (demoGuard('manage your data')) return;
     ['trades','journalEntries','goals','accounts','settings'].forEach(k => userStorage.removeItem(k));
     window.location.reload();
   };
 
   const deleteMyAccount = async () => {
+    if (demoGuard('delete your account')) {
+      setShowDeleteAccountConfirm(false);
+      return;
+    }
     setDeletingAccount(true);
     try {
       const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
@@ -634,7 +642,7 @@ export default function Settings() {
                         </div>
                       </div>
                       <div className="flex gap-2 pt-1">
-                        <Button size="sm" onClick={() => { if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.profit }}>Add Account</Button>
+                        <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.profit }}>Add Account</Button>
                         <Button size="sm" variant="outline" onClick={() => setShowAddAccount(false)}>Cancel</Button>
                       </div>
                     </div>

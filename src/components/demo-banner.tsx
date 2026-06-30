@@ -59,7 +59,7 @@ export function DemoBanner() {
           <Info className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
           <p className="text-xs sm:text-sm font-medium">
             <span className="sm:hidden">Demo mode — sample data</span>
-            <span className="hidden sm:inline">You're viewing a demo with sample data. Sign up to save your real trades!</span>
+            <span className="hidden sm:inline">You're viewing a live demo with sample data. Sign up free to start tracking your own trades.</span>
           </p>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">

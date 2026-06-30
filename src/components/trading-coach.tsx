@@ -11,7 +11,7 @@ import { useStreamingAI } from '@/hooks/use-streaming-ai'
 import { useUserStorage } from '@/utils/user-storage'
 import { getAICache, setAICache } from '@/utils/ai-cache'
 import { SpinnerGap } from '@phosphor-icons/react'
-import DOMPurify from 'dompurify'
+import { renderMarkdown } from '@/lib/markdown'
 
 interface Trade {
   pnl: number
@@ -341,45 +341,15 @@ function cleanDashes(s: string): string {
 // Block-level markdown renderer for chat replies: turns the model's markdown
 // (headings, paragraphs, bullet/numbered lists, bold, inline code) into clean
 // semantic HTML. Styling lives in CHAT_PROSE so headings, lists and spacing are
-// applied from the JSX container rather than baked into the string.
+// applied from the JSX container rather than baked into the string. Normalises
+// the model's em/en dashes first.
 function renderChatMarkdown(md: string): string {
-  const inline = (s: string) =>
-    s
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-
-  const lines = cleanDashes(md).split('\n')
-  const out: string[] = []
-  let list: 'ul' | 'ol' | null = null
-  const closeList = () => { if (list) { out.push(`</${list}>`); list = null } }
-
-  for (const raw of lines) {
-    const line = raw.trim()
-    if (!line) { closeList(); continue }
-
-    const heading = line.match(/^#{1,6}\s+(.+?):?\s*$/)
-    const bullet = line.match(/^[-*]\s+(.+)$/)
-    const numbered = line.match(/^\d+\.\s+(.+)$/)
-
-    if (heading) {
-      closeList()
-      out.push(`<p class="md-h">${inline(heading[1])}</p>`)
-    } else if (bullet) {
-      if (list !== 'ul') { closeList(); out.push('<ul class="md-ul">'); list = 'ul' }
-      out.push(`<li>${inline(bullet[1])}</li>`)
-    } else if (numbered) {
-      if (list !== 'ol') { closeList(); out.push('<ol class="md-ol">'); list = 'ol' }
-      out.push(`<li>${inline(numbered[1])}</li>`)
-    } else {
-      closeList()
-      out.push(`<p>${inline(line)}</p>`)
-    }
-  }
-  closeList()
-
-  return DOMPurify.sanitize(out.join(''), {
-    ALLOWED_TAGS: ['strong', 'em', 'code', 'li', 'ul', 'ol', 'p'],
-    ALLOWED_ATTR: ['class'],
+  return renderMarkdown(md, {
+    preprocess: cleanDashes,
+    maxHeadingLevel: 6,
+    stripHeadingColon: true,
+    classes: { heading: () => 'md-h', ul: 'md-ul', ol: 'md-ol' },
+    allowedInlineTags: ['em'],
   })
 }
 
@@ -1348,14 +1318,14 @@ export function TradingCoach() {
         <div className="grid gap-4 md:grid-cols-2">
           {trades.length >= 3 && (
             <Card className="min-h-[200px] flex flex-col">
-              <CardContent className="flex-1 flex flex-col justify-center py-6">
+              <CardContent className="flex-1 flex flex-col justify-center py-6 sm:py-6">
                 <TiltMeter tilt={tiltScore} alpha={alpha} />
               </CardContent>
             </Card>
           )}
           {metrics && (
             <Card className={`min-h-[200px] flex flex-col ${trades.length < 3 ? 'md:col-span-2' : ''}`}>
-              <CardContent className="flex-1 flex flex-col justify-center py-6">
+              <CardContent className="flex-1 flex flex-col justify-center py-6 sm:py-6">
                 <CoachStats metrics={metrics} themeColors={themeColors} />
               </CardContent>
             </Card>

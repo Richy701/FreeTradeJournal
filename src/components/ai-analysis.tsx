@@ -8,7 +8,9 @@ import { ProGate } from '@/components/pro-gate';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
+import { useAuth } from '@/contexts/auth-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
+import { getDemoAIResponse, DEMO_AI_TRADE_COUNT, DEMO_AI_USAGE } from '@/lib/demo-ai';
 import { trackEvent } from '@/lib/analytics';
 import type { AIAnalysisResponse } from '@/services/ai-analysis';
 import DOMPurify from 'dompurify';
@@ -36,6 +38,13 @@ type Period = 'recent' | 'last30' | 'all';
 
 const CACHE_KEY = 'ftj-ai-analysis-cache';
 
+// Scope the cache per user (matching UserStorage's `user_<uid>_` scheme) so one
+// account's private analysis can never surface for another user — including the
+// demo user — and so clearDemoStorage()/clearUserData() also wipe it.
+function scopedCacheKey(uid: string | null): string {
+  return uid ? `user_${uid}_${CACHE_KEY}` : `guest_${CACHE_KEY}`;
+}
+
 interface CachedAnalysis {
   analysis: string;
   usage: AIAnalysisResponse['usage'];
@@ -44,9 +53,9 @@ interface CachedAnalysis {
   tradeCount: number;
 }
 
-function getCachedAnalysis(): CachedAnalysis | null {
+function getCachedAnalysis(uid: string | null): CachedAnalysis | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(scopedCacheKey(uid));
     if (!raw) return null;
     const cached = JSON.parse(raw) as CachedAnalysis;
     if (Date.now() - cached.timestamp > 24 * 60 * 60 * 1000) return null;
@@ -56,8 +65,8 @@ function getCachedAnalysis(): CachedAnalysis | null {
   }
 }
 
-function setCachedAnalysis(data: CachedAnalysis) {
-  localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+function setCachedAnalysis(uid: string | null, data: CachedAnalysis) {
+  localStorage.setItem(scopedCacheKey(uid), JSON.stringify(data));
 }
 
 function filterTrades(trades: Trade[], period: Period): Trade[] {
@@ -244,17 +253,31 @@ function SampleAnalysisPreview() {
 export function AIAnalysis({ trades }: AIAnalysisProps) {
   const { themeColors, alpha } = useThemePresets();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { user, isDemo } = useAuth();
   const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const [period, setPeriod] = useState<Period>('last30');
   const [result, setResult] = useState<CachedAnalysis | null>(null);
 
   useEffect(() => {
-    const cached = getCachedAnalysis();
+    // In demo mode, auto-show the shared canned analysis (single source of
+    // truth) so the feature is visible without a backend call — and never read
+    // the cache, which belongs to whatever real user last used this browser.
+    if (isDemo) {
+      setResult({
+        analysis: getDemoAIResponse('analysis', null),
+        usage: DEMO_AI_USAGE,
+        timestamp: Date.now(),
+        period: 'last30',
+        tradeCount: DEMO_AI_TRADE_COUNT,
+      });
+      return;
+    }
+    const cached = getCachedAnalysis(user?.uid ?? null);
     if (cached) {
       setResult(cached);
       setPeriod(cached.period);
     }
-  }, []);
+  }, [isDemo, user?.uid]);
 
   useEffect(() => {
     if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
@@ -273,6 +296,18 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
   const filteredTrades = filterTrades(trades, period);
 
   const handleAnalyze = async () => {
+    // Demo mode never calls the backend — re-show the pre-built analysis.
+    if (isDemo) {
+      setResult({
+        analysis: getDemoAIResponse('analysis', null),
+        usage: DEMO_AI_USAGE,
+        timestamp: Date.now(),
+        period,
+        tradeCount: filteredTrades.length || DEMO_AI_TRADE_COUNT,
+      });
+      return;
+    }
+
     if (filteredTrades.length < 3) {
       toast.error('Need at least 3 trades in this period to analyze.');
       return;
@@ -305,7 +340,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
         period,
         tradeCount: filteredTrades.length,
       };
-      setCachedAnalysis(cached);
+      setCachedAnalysis(user?.uid ?? null, cached);
       setResult(cached);
       trackEvent('ai_analysis_succeeded', { period, tradeCount: filteredTrades.length });
     } catch (err: any) {

@@ -107,7 +107,8 @@ export class UserStorage {
     // Let storage-quota and other write errors propagate so awaiting callers can
     // surface them instead of silently dropping data.
     localStorage.setItem(scopedKey, toWrite);
-    if (syncRef && userId && !skipSync) {
+    // Never push the demo sandbox to the cloud — it's a throwaway fake user.
+    if (syncRef && userId && userId !== 'demo-user' && !skipSync) {
       syncRef.syncKey(key, value);
     }
   }

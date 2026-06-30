@@ -175,8 +175,17 @@ export function ProProvider({ children }: ProProviderProps) {
 
   const hasReferralPro = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
 
+  // isPro means "actually entitled" — a paid subscription or referral perk.
+  // Demo mode counts as Pro so the read-only demo showcases the full product
+  // (every Pro feature visible and working with sample data). Edits are still
+  // blocked by useDemoGuard, and AI calls are served canned responses (below),
+  // so nothing real is mutated or charged.
   const isPro = isDemo || isActivePro(subscription) || hasReferralPro;
-  const hasAIAccess = isPro || (freeAiQuota !== null && freeAiQuota.remaining > 0);
+  // Demo gets AI access too. Safe: demo never calls the real (paid) AI backend —
+  // the useStreamingAI hook and PropTracker AI handler serve canned sample
+  // responses (src/lib/demo-ai.ts) instead. Components that auto-fetch when
+  // hasAIAccess is true therefore auto-show sample output in demo.
+  const hasAIAccess = isDemo || isPro || (freeAiQuota !== null && freeAiQuota.remaining > 0);
 
   const value: ProContextType = useMemo(() => ({
     isPro,
@@ -184,9 +193,9 @@ export function ProProvider({ children }: ProProviderProps) {
     subscription,
     openCheckout: handleOpenCheckout,
     hasAIAccess,
-    freeAiQuota: isPro ? null : freeAiQuota,
+    freeAiQuota: isPro || isDemo ? null : freeAiQuota,
     updateFreeAiQuota,
-  }), [isPro, isLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota]);
+  }), [isPro, isDemo, isLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useCallback, useState, useRef, useMemo, type ReactNode } from 'react';
 import { useUserStorage, markSettingsDirty } from '@/utils/user-storage';
 import { useAuth } from '@/contexts/auth-context';
+import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts } from '@/contexts/account-context';
 import { onSyncChange } from '@/contexts/sync-context';
 import { DEFAULT_VALUES } from '@/constants/trading';
@@ -50,6 +51,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const storageRef = useRef(userStorage);
   storageRef.current = userStorage;
   const { user } = useAuth();
+  const demoGuard = useDemoGuard();
   const userId = user?.uid ?? null;
   const uidRef = useRef<string | null>(userId);
   uidRef.current = userId;
@@ -132,6 +134,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   }, []);
 
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
+    if (demoGuard('change settings')) return;
     // Flag this as a deliberate local edit so the sync engine keeps it
     // authoritative instead of letting a stale remote pull overwrite it.
     markSettingsDirty(uidRef.current);
@@ -141,7 +144,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       storageRef.current.setItem('settings', JSON.stringify(next));
       return next;
     });
-  }, []);
+  }, [demoGuard]);
 
   const getCurrencySymbol = useCallback(() => {
     switch (effectiveCurrency) {

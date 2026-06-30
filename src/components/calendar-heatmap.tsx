@@ -3,6 +3,7 @@ import { toast } from "sonner"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
 import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
@@ -93,6 +94,7 @@ export function CalendarHeatmap() {
   const { themeColors, alpha } = useThemePresets()
   const { activeAccount } = useAccounts()
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
+  const demoGuard = useDemoGuard()
   const userStorage = useUserStorage()
   
   // State for current viewing month/year
@@ -266,11 +268,7 @@ export function CalendarHeatmap() {
 
   const handleSaveJournal = () => {
     if (!selectedDateForTrade || !journalNote.trim()) return
-
-    if (isDemo) {
-      toast.info('Sign up to save journal entries!');
-      return;
-    }
+    if (demoGuard('save journal entries')) return
 
     let entries = getJournalEntries()
     
@@ -318,11 +316,7 @@ export function CalendarHeatmap() {
 
   const handleSaveTrade = () => {
     if (!selectedDateForTrade || !tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
-
-    if (isDemo) {
-      toast.info('Sign up to save your real trades!');
-      return;
-    }
+    if (demoGuard('save your trades')) return
 
     const entryPrice = parseFloat(tradeForm.entryPrice)
     const exitPrice = parseFloat(tradeForm.exitPrice)

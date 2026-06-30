@@ -3,6 +3,8 @@ import type { User, Auth } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
 import { DEMO_USER } from '@/data/demo-data';
 import { UserStorage } from '@/utils/user-storage';
+import { setAICacheUser } from '@/utils/ai-cache';
+import { seedDemoStorage, clearDemoStorage } from '@/services/demo-service';
 
 interface AuthContextType {
   user: User | null;
@@ -40,6 +42,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [auth, setAuth] = useState<Auth | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
+
+  // Keep the AI response cache scoped to the current user (or demo). Set during
+  // render so the scope is current before any child AI component reads it.
+  setAICacheUser(user?.uid ?? null);
 
   const initAuth = async () => {
     if (authInitialized) return auth;
@@ -164,6 +170,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async (): Promise<void> => {
     if (isDemo) {
+      clearDemoStorage();
       setUser(null);
       setIsDemo(false);
       delete document.documentElement.dataset.demo;
@@ -178,6 +185,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
   
   const enterDemoMode = () => {
+    // Start every demo session from a clean, freshly-seeded sandbox so prior
+    // edits never carry over. Seeding writes synchronously to localStorage
+    // (demo-user has no encryption key), so reads on the next render are ready.
+    clearDemoStorage();
+    void seedDemoStorage();
     setUser(DEMO_USER as any);
     setIsDemo(true);
     setLoading(false);
@@ -185,6 +197,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const exitDemoMode = () => {
+    clearDemoStorage();
     setUser(null);
     setIsDemo(false);
     delete document.documentElement.dataset.demo;

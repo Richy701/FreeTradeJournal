@@ -10,6 +10,10 @@ export interface JournalEntry {
   content: string;
   mood?: string;
   tags?: string[];
+  emotions?: string[];
+  entryType?: 'general' | 'pre-trade' | 'post-trade';
+  tradeId?: string;
+  screenshots?: string[];
   marketConditions?: string;
   lessonsLearned?: string;
   improvementAreas?: string;

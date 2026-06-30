@@ -20,6 +20,7 @@ import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
 import { isIncognitoMode } from '@/utils/incognito-detection'
 import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
@@ -104,6 +105,7 @@ function FreeAIBanner() {
 export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
+  const demoGuard = useDemoGuard()
   const { isPro } = useProStatus()
   const { activeAccount } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
@@ -216,12 +218,8 @@ export default function Dashboard() {
 
   const handleSaveTrade = () => {
     if (!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
-    
-    if (isDemo) {
-      toast.info('Sign up to save your real trades!');
-      return;
-    }
-    
+    if (demoGuard('save your trades')) return
+
     const savedTrades = userStorage.getItem('trades')
     let trades = []
     

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,9 @@ import {
 } from '@/utils/image-store';
 import { StoredImage } from '@/components/stored-image';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { toast } from 'sonner';
+import { renderMarkdown } from '@/lib/markdown';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import {
@@ -112,6 +114,103 @@ interface JournalEntry {
 // image was loaded from an existing entry, so re-saving doesn't re-upload it.
 type UploadedImage = { id: string; dataUrl: string; ref?: string };
 
+// Render a small, safe subset of markdown for journal entries: `#`/`##`/`###`
+// headers, **bold**, `code`, "- " bullet lists, "1." numbered lists, and
+// paragraphs (blank lines separate them). Escapes user-typed text first so
+// "price < 100" renders literally and can't inject markup. Preserves line
+// breaks that the old plain-<p> render collapsed.
+function renderJournalMarkdown(content: string): string {
+  return renderMarkdown(content, {
+    escape: true,
+    maxHeadingLevel: 3,
+    classes: {
+      heading: level =>
+        level === 1
+          ? 'text-base font-semibold text-foreground mt-3 mb-1'
+          : level === 2
+          ? 'text-sm font-semibold text-foreground mt-3 mb-1'
+          : 'text-xs font-semibold uppercase tracking-wide text-muted-foreground mt-3 mb-1',
+      paragraph: 'my-1.5',
+      ul: 'list-disc pl-5 space-y-1 my-2',
+      ol: 'list-decimal pl-5 space-y-1 my-2',
+      code: 'px-1 py-0.5 rounded bg-muted text-xs font-mono',
+    },
+  });
+}
+
+// Renders entry content (as markdown) clamped to ~3 lines with a Read more/Show
+// less toggle. The toggle only appears when content actually overflows the
+// collapsed height (measured), so entries that already fit don't show a dead
+// "Read more". Uses a max-height clamp rather than line-clamp because markdown
+// produces multiple block elements that -webkit-line-clamp can't truncate.
+function ExpandableContent({ content, color }: { content: string; color: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const html = useMemo(() => renderJournalMarkdown(content), [content]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      if (expanded) return;
+      setOverflowing(el.scrollHeight > el.clientHeight + 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [content, expanded, html]);
+
+  return (
+    <div>
+      <div
+        ref={ref}
+        className={`text-sm leading-relaxed text-foreground/90 break-words [&>*:first-child]:mt-0 ${!expanded ? 'max-h-[4.5rem] overflow-hidden' : ''}`}
+        style={
+          !expanded && overflowing
+            ? {
+                maskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+              }
+            : undefined
+        }
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      {(overflowing || expanded) && (
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="text-xs font-medium mt-1 hover:underline"
+          style={{ color }}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Shared entry templates, written in markdown so they render as headed sections.
+// One source of truth for the editor's quick-insert buttons, the Pre/Post-Trade
+// header buttons, and the empty-state starter cards.
+const TEMPLATE_TITLES = {
+  'pre-trade': 'Pre-Trade Analysis',
+  'post-trade': 'Post-Trade Review',
+  general: 'Daily Review',
+} as const;
+
+const TEMPLATE_BODIES = {
+  'pre-trade': '**Setup:** \n\n**Bias:** Bullish / Bearish / Neutral\n\n**Entry trigger:** \n\n**Stop loss:** \n\n**Take profit:** \n\n**Risk (% of account):** \n\n**What could invalidate this trade:** ',
+  'post-trade': '**What was the plan:**\n\n**What actually happened:**\n\n**Did I follow my rules?** Yes / No\nIf not, why:\n\n**Emotional state during trade:**\n\n**Key lesson:**\n\n**What I\'d do differently:** ',
+  general: '**Market conditions:**\n\n**Key levels watched:**\n\n**How I felt:** Focused / Distracted / Confident / Cautious\n\n**What went well:**\n\n**What to improve:**\n\n**Tomorrow\'s focus:** ',
+} as const;
+
+// Full insert (header + body) for the editor's quick-insert chips, which only
+// fill the content field and so need the section title inline.
+function templateInsert(type: keyof typeof TEMPLATE_BODIES): string {
+  return `## ${TEMPLATE_TITLES[type]}\n\n${TEMPLATE_BODIES[type]}`;
+}
+
 const mockEntries: JournalEntry[] = [];
 
 // Mirrors the trade-log account filter: an entry belongs to the active account,
@@ -129,6 +228,7 @@ function matchesActiveAccount(
 export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
   const { isDemo, user } = useAuth();
+  const demoGuard = useDemoGuard();
   const { isPro } = useProStatus();
   const { accounts, activeAccount, loading: accountsLoading } = useAccounts();
   const userStorage = useUserStorage();
@@ -165,7 +265,6 @@ export default function Journal() {
   const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'title'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   
   const [newEntry, setNewEntry] = useState({
     title: '',
@@ -369,11 +468,7 @@ export default function Journal() {
 
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;
-
-    if (isDemo) {
-      toast.info('Sign up to save journal entries!');
-      return;
-    }
+    if (demoGuard('save journal entries')) return;
 
     // Block creating NEW entries past the free cap (editing existing is allowed).
     if (!editingEntry && atFreeJournalLimit) {
@@ -516,10 +611,8 @@ export default function Journal() {
 
   const quickStartEntry = (type: 'pre-trade' | 'post-trade', tradeId?: string) => {
     setNewEntry({
-      title: type === 'pre-trade' ? 'Pre-Trade Analysis' : 'Post-Trade Review',
-      content: type === 'pre-trade' 
-        ? 'Market analysis and trade setup reasoning...' 
-        : 'Trade outcome analysis and lessons learned...',
+      title: TEMPLATE_TITLES[type],
+      content: TEMPLATE_BODIES[type],
       tags: '',
       emotions: [],
       mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
@@ -616,10 +709,7 @@ export default function Journal() {
 
   // Edit and delete functions
   const startEdit = (entry: JournalEntry) => {
-    if (isDemo) {
-      toast.info('Sign up to edit journal entries!');
-      return;
-    }
+    if (demoGuard('edit journal entries')) return;
     setEditingEntry(entry);
     setNewEntry({
       title: entry.title,
@@ -645,10 +735,7 @@ export default function Journal() {
   };
 
   const deleteEntry = async (entryId: string) => {
-    if (isDemo) {
-      toast.info('Sign up to delete journal entries!');
-      return;
-    }
+    if (demoGuard('delete journal entries')) return;
     if (confirm('Are you sure you want to delete this journal entry?')) {
       const target = entries.find(entry => entry.id === entryId);
       const updatedEntries = entries.filter(entry => entry.id !== entryId);
@@ -859,14 +946,6 @@ export default function Journal() {
     }
   };
 
-  const toggleExpanded = (id: string) => {
-    setExpandedEntries(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
@@ -891,7 +970,6 @@ export default function Journal() {
                   </p>
                 </div>
               </div>
-              {!isDemo && (
               <div className="hidden sm:flex gap-3 shrink-0">
                 {trades.length > 0 && (
                   <div className="flex gap-2">
@@ -922,7 +1000,6 @@ export default function Journal() {
                   New Entry
                 </Button>
               </div>
-              )}
             </div>
           </div>
         </div>
@@ -955,7 +1032,7 @@ export default function Journal() {
 
         {/* Quick Stats */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
               {
                 Icon: BookOpen,
@@ -986,26 +1063,16 @@ export default function Journal() {
                 subtitle: 'Trade-connected'
               }
             ].map((stat, index) => (
-              <Card
-                key={index}
-                className=""
-              >
-                <CardHeader className="pb-2 pt-5 px-5">
-                  <div
-                    className="p-2.5 rounded-lg shadow-sm w-fit"
-                    style={{ backgroundColor: `${alpha(stat.color, '20')}` }}
-                  >
-                    <stat.Icon className="h-4 w-4" style={{ color: stat.color }} />
+              <Card key={index}>
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <stat.Icon className="h-3.5 w-3.5 shrink-0" style={{ color: stat.color, opacity: 0.7 }} aria-hidden="true" />
+                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider truncate">{stat.label}</p>
                   </div>
-                </CardHeader>
-                <CardContent className="px-5 pb-5">
-                  <div className="space-y-1">
-                    <span className="text-2xl sm:text-3xl font-bold" style={{ color: stat.color }}>
-                      {stat.value}
-                    </span>
-                    <CardTitle className="text-sm font-medium text-foreground">{stat.label}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold tabular-nums leading-none" style={{ color: stat.color }}>
+                    {stat.value}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1.5">{stat.subtitle}</p>
                 </CardContent>
               </Card>
             ))}
@@ -1030,8 +1097,7 @@ export default function Journal() {
                   return (
                     <div
                       key={key}
-                      className="rounded-xl border p-4 space-y-2"
-                      style={{ borderColor: `${color}25`, backgroundColor: `${color}08` }}
+                      className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-2"
                     >
                       <p className="text-xs font-medium text-muted-foreground">{label}</p>
                       {stat.avg !== null ? (
@@ -1128,31 +1194,20 @@ export default function Journal() {
                   <label htmlFor="journal-content" className="text-xs text-muted-foreground">Content</label>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {([
-                      {
-                        label: 'Pre-trade',
-                        type: 'pre-trade',
-                        text: 'Pre-Trade Analysis\n\nSetup: \n\nBias: Bullish / Bearish / Neutral\n\nEntry trigger: \n\nStop loss: \n\nTake profit: \n\nRisk (% of account): \n\nWhat could invalidate this trade: ',
-                      },
-                      {
-                        label: 'Post-trade',
-                        type: 'post-trade',
-                        text: 'Post-Trade Review\n\nWhat was the plan:\n\nWhat actually happened:\n\nDid I follow my rules? Yes / No\nIf not, why:\n\nEmotional state during trade:\n\nKey lesson:\n\nWhat I\'d do differently: ',
-                      },
-                      {
-                        label: 'Daily review',
-                        type: 'general',
-                        text: 'Daily Review\n\nMarket conditions:\n\nKey levels watched:\n\nHow I felt: Focused / Distracted / Confident / Cautious\n\nWhat went well:\n\nWhat to improve:\n\nTomorrow\'s focus: ',
-                      },
+                      { label: 'Pre-trade', type: 'pre-trade' },
+                      { label: 'Post-trade', type: 'post-trade' },
+                      { label: 'Daily review', type: 'general' },
                     ] as const).map((tpl) => (
                       <button
                         key={tpl.type}
                         type="button"
                         onClick={() => {
                           const content = newEntry.content.trim();
+                          const text = templateInsert(tpl.type);
                           setNewEntry({
                             ...newEntry,
-                            content: content ? `${content}\n\n${tpl.text}` : tpl.text,
-                            entryType: tpl.type === 'general' ? 'general' : tpl.type === 'pre-trade' ? 'pre-trade' : 'post-trade',
+                            content: content ? `${content}\n\n${text}` : text,
+                            entryType: tpl.type,
                           });
                         }}
                         className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
@@ -1516,7 +1571,7 @@ export default function Journal() {
           {/* Filter Panel */}
           {showFilters && (
             <Card className="">
-              <CardContent className="pt-6">
+              <CardContent className="pt-6 sm:pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Date Range Filter */}
                   <div className="space-y-2 col-span-1 sm:col-span-2 lg:col-span-1">
@@ -1673,7 +1728,7 @@ export default function Journal() {
           )}
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           {filteredAndSortedEntries.length === 0 ? (
             searchTerm || activeFilterCount > 0 ? (
               <div className="flex flex-col items-center py-16 text-center">
@@ -1723,8 +1778,8 @@ export default function Journal() {
                       color: themeColors.primary,
                       onClick: () => {
                         setNewEntry({
-                          title: 'Daily Review',
-                          content: 'Market conditions:\n\nKey levels watched:\n\nHow I felt:\n\nWhat went well:\n\nWhat to improve:\n\nTomorrow\'s focus:',
+                          title: TEMPLATE_TITLES.general,
+                          content: TEMPLATE_BODIES.general,
                           tags: '',
                           emotions: [],
                           mood: 'neutral' as const,
@@ -1775,13 +1830,12 @@ export default function Journal() {
               return (
                 <Card
                   key={entry.id}
-                  className="overflow-hidden border-l-[3px]"
-                  style={{ borderLeftColor: getMoodColor(entry.mood) }}
+                  className="overflow-hidden"
                 >
                   <CardHeader className="pb-2 pt-5 px-5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <div className="p-2 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: `${alpha(getMoodColor(entry.mood), '15')}` }}>
+                        <div className="p-2 rounded-lg shrink-0 mt-0.5 bg-muted">
                           <PenNib className="h-4 w-4" style={{ color: getMoodColor(entry.mood) }} />
                         </div>
                         <div className="min-w-0">
@@ -1845,23 +1899,10 @@ export default function Journal() {
                     </div>
                   </CardHeader>
                   <CardContent className="px-5 pb-5 pt-2 space-y-3">
-                    <div>
-                      <p className={`text-sm leading-relaxed text-foreground/90 ${!expandedEntries.has(entry.id) ? 'line-clamp-3' : ''}`}>
-                        {entry.content}
-                      </p>
-                      {entry.content.length > 200 && (
-                        <button
-                          onClick={() => toggleExpanded(entry.id)}
-                          className="text-xs font-medium mt-1 hover:underline"
-                          style={{ color: themeColors.primary }}
-                        >
-                          {expandedEntries.has(entry.id) ? 'Show less' : 'Read more'}
-                        </button>
-                      )}
-                    </div>
+                    <ExpandableContent content={entry.content} color={themeColors.primary} />
 
                     {linkedTrade && (
-                      <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${alpha(linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '20')}`, backgroundColor: `${alpha(linkedTrade.pnl > 0 ? themeColors.profit : themeColors.loss, '05')}` }}>
+                      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
                         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                           <LinkSimple className="h-3 w-3" />
                           Linked Trade
@@ -1911,13 +1952,8 @@ export default function Journal() {
                         {entry.emotions && entry.emotions.map((emotion) => (
                           <Badge
                             key={emotion}
-                            variant="outline"
-                            className="text-[10px] border"
-                            style={{
-                              backgroundColor: `${alpha(themeColors.primary, '08')}`,
-                              borderColor: `${alpha(themeColors.primary, '25')}`,
-                              color: themeColors.primary
-                            }}
+                            variant="secondary"
+                            className="text-[10px] bg-muted/50 hover:bg-muted/70 transition-colors"
                           >
                             {emotion}
                           </Badge>
@@ -1942,7 +1978,6 @@ export default function Journal() {
       </div>
       
       {/* Mobile Floating Action Button */}
-      {!isDemo && (
       <Button
         onClick={() => setShowNewEntry(true)}
         className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl z-50"
@@ -1951,7 +1986,6 @@ export default function Journal() {
       >
         <Plus className="h-5 w-5" />
       </Button>
-      )}
       <AppFooter />
 
       {/* Image Lightbox */}
