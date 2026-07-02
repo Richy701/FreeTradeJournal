@@ -139,6 +139,11 @@ describe('parseCSV — NinjaTrader Grid (Trade Performance) export', () => {
     expect(loss.side).toBe('long');
     expect(loss.pnl).toBe('-75.9'); // ($75.90) is a loss, not a gain
   });
+
+  it('flags Profit as already-net so commissions are not subtracted twice', () => {
+    const [win] = parseCSV(csv).trades;
+    expect(win.pnlIsNet).toBe(true);
+  });
 });
 
 describe('parseCSV — Tradovate Orders History export', () => {

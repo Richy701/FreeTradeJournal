@@ -100,9 +100,15 @@ export function buildImportedTrades(
 ): ImportedTrade[] {
   const stamp = Date.now();
   return trades.map((trade, index) => {
-    const grossPnl = parseFloat(trade.pnl) || 0;
+    const reportedPnl = parseFloat(trade.pnl) || 0;
     const commission = trade.commission ? parseFloat(trade.commission) || 0 : 0;
     const fees = trade.fees ? parseFloat(trade.fees) || 0 : 0;
+    // Most brokers report GROSS P&L, so net = gross - costs. NinjaTrader's
+    // "Profit" is already NET of commissions (pnlIsNet): keep it as the net and
+    // reconstruct gross (net + costs) so we never subtract commissions twice and
+    // the edit-time invariant (net = brokerPnL - commission - fees) still holds.
+    const netPnl = trade.pnlIsNet ? reportedPnl : reportedPnl - commission - fees;
+    const grossPnl = trade.pnlIsNet ? reportedPnl + commission + fees : reportedPnl;
     return {
       id: `csv-${stamp}-${index}`,
       symbol: trade.symbol,
@@ -116,7 +122,7 @@ export function buildImportedTrades(
       commission,
       fees,
       swap: 0,
-      pnl: grossPnl - commission - fees,
+      pnl: netPnl,
       brokerPnL: grossPnl,
       pnlPercentage: 0,
       riskReward: 0,

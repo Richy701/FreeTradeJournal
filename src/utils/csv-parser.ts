@@ -11,6 +11,9 @@ export interface ParsedTrade {
   exitDate?: string;
   commission?: string;
   fees?: string;
+  // True when `pnl` is ALREADY net of commissions/fees (e.g. NinjaTrader's Grid
+  // "Profit" column). The importer must then NOT subtract costs from it again.
+  pnlIsNet?: boolean;
 }
 
 export interface CSVParseResult {
@@ -1340,6 +1343,17 @@ function findStandardHeaderRow(lines: string[], delimiter: string): number {
   return bestRow;
 }
 
+// NinjaTrader's grid trade exports (e.g. "Grid Trade Tab") carry a "Market pos."
+// column and a "Profit" that is ALREADY net of commissions. We flag such rows so
+// the importer doesn't subtract the Commission column a second time.
+function isNinjaTraderGrid(headers: string[]): boolean {
+  const h = headers.map(x => x.trim().toLowerCase());
+  const hasMarketPos = h.some(x => x === 'market pos.' || x === 'market position');
+  const hasProfit = h.includes('profit');
+  const hasCommission = h.some(x => x === 'commission' || x === 'commissions');
+  return hasMarketPos && hasProfit && hasCommission;
+}
+
 export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): CSVParseResult {
   // Strip BOM character that some exports (e.g. Topstep) include
   csvContent = csvContent.replace(/^\uFEFF/, '');
@@ -1394,6 +1408,10 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): 
       if (isTradovateFormat(headers)) return parseTradovateOrders(lines, headers);
       if (isTradovatePerformanceFormat(headers)) return parseTradovatePerformance(lines, headers);
     }
+
+    // NinjaTrader's "Profit" is already net of commissions — flag it so the
+    // importer doesn't double-subtract the Commission column.
+    const pnlIsNet = isNinjaTraderGrid(headers);
 
     // Find column indices
     const columnIndices = {
@@ -1505,6 +1523,7 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): 
           exitDate,
           commission: commissionField ? Math.abs(parseCurrency(commissionField, decimalComma)).toString() : undefined,
           fees: feesField ? Math.abs(parseCurrency(feesField, decimalComma)).toString() : undefined,
+          pnlIsNet: pnlIsNet || undefined,
         };
 
         result.trades.push(trade);
@@ -1595,6 +1614,11 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
     const headerRow = findStandardHeaderRow(rawLines, delimiter);
     const lines = rawLines.slice(headerRow);
 
+    // NinjaTrader's "Profit" is already net of commissions — detect it from the
+    // header row so the importer doesn't double-subtract the Commission column,
+    // even when the file is imported via a manual/AI column mapping.
+    const pnlIsNet = isNinjaTraderGrid(parseCSVLine(lines[0] || '', delimiter));
+
     // Infer DD/MM vs MM/DD across the chosen date column.
     let dayFirst: boolean | undefined;
     const dateCol = mappings.openTime >= 0 ? mappings.openTime : mappings.closeTime;
@@ -1665,6 +1689,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
           exitDate,
           commission: commissionField ? Math.abs(parseCurrency(commissionField, decimalComma)).toString() : undefined,
           fees: feesField ? Math.abs(parseCurrency(feesField, decimalComma)).toString() : undefined,
+          pnlIsNet: pnlIsNet || undefined,
         };
 
         result.trades.push(trade);

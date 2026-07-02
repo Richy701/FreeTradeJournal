@@ -32,7 +32,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'fixed',
         text: 'Import NinjaTrader trade exports',
-        description: 'NinjaTrader’s trade export now imports automatically, with wins and losses recorded correctly.',
+        description: 'NinjaTrader’s trade export now imports automatically, with wins, losses and commissions recorded correctly — so your imported P&L matches NinjaTrader exactly.',
       },
     ],
   },
