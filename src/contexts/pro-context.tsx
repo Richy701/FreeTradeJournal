@@ -39,7 +39,11 @@ const FREE_AI_MONTHLY_LIMIT = 20;
 
 function isActivePro(sub: SubscriptionInfo | null): boolean {
   if (!sub) return false;
-  return sub.status === 'active' || sub.status === 'on_trial';
+  // past_due = Stripe is still retrying the card (dunning, up to ~2 weeks).
+  // Locking out on the first failed charge churned users whose card recovered
+  // on retry; if dunning fails Stripe moves the sub to cancelled/unpaid,
+  // which ends access here.
+  return sub.status === 'active' || sub.status === 'on_trial' || sub.status === 'past_due';
 }
 
 interface ProProviderProps {

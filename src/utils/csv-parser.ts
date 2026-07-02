@@ -180,7 +180,10 @@ function parseDateString(dateStr: string, dayFirst?: boolean): string {
       const parts = datePart.split(/[./]/);
       const a = parseInt(parts[0]);
       const b = parseInt(parts[1]);
-      const year = parseInt(parts[2]);
+      let year = parseInt(parts[2]);
+      // Two-digit years ("6/10/26") must map to 2000+; new Date(26, ...) would
+      // otherwise land in 1926 and silently poison all-time stats.
+      if (parts[2].length <= 2) year += year < 70 ? 2000 : 1900;
 
       let month: number, day: number;
       // A value > 12 is unambiguous. Otherwise honor the file-level dayFirst hint;
@@ -333,10 +336,10 @@ function parseIBKRClosedPositions(lines: string[], headers: string[]): CSVParseR
       const fields = parseCSVLine(line);
       const symbol = col.symbol >= 0 ? fields[col.symbol]?.trim() : '';
       const buySell = col.buySell >= 0 ? fields[col.buySell]?.trim().toUpperCase() : '';
-      const quantity = col.quantity >= 0 ? Math.abs(parseFloat(fields[col.quantity]) || 0) : 0;
-      const openPrice = col.openPrice >= 0 ? parseFloat(fields[col.openPrice]) : NaN;
-      const closePrice = col.closePrice >= 0 ? parseFloat(fields[col.closePrice]) : NaN;
-      const pnl = col.pnl >= 0 ? parseFloat(fields[col.pnl]) : NaN;
+      const quantity = col.quantity >= 0 ? Math.abs(parseFloat(cleanNumeric(fields[col.quantity] || '')) || 0) : 0;
+      const openPrice = col.openPrice >= 0 ? parseFloat(cleanNumeric(fields[col.openPrice] || '')) : NaN;
+      const closePrice = col.closePrice >= 0 ? parseFloat(cleanNumeric(fields[col.closePrice] || '')) : NaN;
+      const pnl = col.pnl >= 0 ? parseFloat(cleanNumeric(fields[col.pnl] || '')) : NaN;
       const openDateStr = col.openDate >= 0 ? parseIBKRDate(fields[col.openDate] || '') : '';
       const closeDateStr = col.closeDate >= 0 ? parseIBKRDate(fields[col.closeDate] || '') : '';
       const date = closeDateStr || openDateStr || formatLocalDateTime(new Date());
@@ -423,9 +426,9 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
       const fields = parseCSVLine(line);
       const symbol = col.symbol >= 0 ? fields[col.symbol]?.trim() : '';
       const buySell = col.buySell >= 0 ? fields[col.buySell]?.trim().toUpperCase() : '';
-      const quantity = Math.abs(parseFloat(col.quantity >= 0 ? fields[col.quantity] : '0') || 0);
-      const price = parseFloat(col.price >= 0 ? fields[col.price] : '0');
-      const pnlRaw = col.pnl >= 0 ? parseFloat(fields[col.pnl]) : NaN;
+      const quantity = Math.abs(parseFloat(cleanNumeric((col.quantity >= 0 ? fields[col.quantity] : '0') || '0')) || 0);
+      const price = parseFloat(cleanNumeric((col.price >= 0 ? fields[col.price] : '0') || '0'));
+      const pnlRaw = col.pnl >= 0 ? parseFloat(cleanNumeric(fields[col.pnl] || '')) : NaN;
       const indicator = col.indicator >= 0 ? fields[col.indicator]?.trim().toUpperCase() : '';
       const date = parseIBKRDate(col.dateTime >= 0 ? fields[col.dateTime] : '');
 
@@ -755,10 +758,11 @@ function isTradovatePerformanceFormat(headers: string[]): boolean {
 }
 
 // Parse Tradovate's accounting-style currency: "$(400.00)" → -400, "$1,200.00" →
-// 1200, "$800.00" → 800. Parentheses denote a negative (a loss).
+// 1200, "$800.00" → 800. Losses may appear as parentheses OR a plain minus
+// sign ("-$400.00") depending on export locale — honor both.
 function parseTradovatePnl(raw: string): number {
   const s = (raw || '').trim();
-  const negative = s.includes('(');
+  const negative = s.includes('(') || s.includes('-');
   const num = parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
   return negative ? -num : num;
 }

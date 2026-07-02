@@ -208,10 +208,14 @@ export class SyncEngine {
   async syncKey(key: string, data: string) {
     if (!SYNC_KEYS.includes(key as SyncKey)) return;
 
-    // CRITICAL: Never sync empty arrays - this prevents data loss
+    // CRITICAL: Block empty collections only BEFORE the initial pull — a fresh
+    // device writes default '[]' on mount, and pushing that would wipe the
+    // cloud copy. AFTER the pull, an empty array is a real user deletion and
+    // must propagate: blocking it made the 10s poll resurrect deleted trades.
     const isEmpty = data === '[]' || data === '{}' || data === '' || data === 'null';
-    if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
-      console.warn(`[Sync] Blocked empty ${key} from syncing to prevent data loss`);
+    if (isEmpty && !this._initialPullDone &&
+        (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
+      console.warn(`[Sync] Blocked empty ${key} push before initial pull`);
       return;
     }
 

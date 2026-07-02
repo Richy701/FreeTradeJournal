@@ -771,10 +771,21 @@ export const sendActivationReport = functions
 
 // ─── Trial Offer Batch (Admin callable) ────────────────────────
 
+const ADMIN_EMAILS = ["richmondlamptey75@gmail.com"];
+
+function assertAdmin(context: functions.https.CallableContext): void {
+  const email = (context.auth?.token?.email || "").toLowerCase();
+  const verified = context.auth?.token?.email_verified === true;
+  if (!email || !verified || !ADMIN_EMAILS.includes(email)) {
+    throw new functions.https.HttpsError("permission-denied", "Admin only.");
+  }
+}
+
 export const sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
   }
+  assertAdmin(context);
 
   const batchSize: number = typeof data?.batchSize === "number" ? data.batchSize : 40;
   const dryRun: boolean = data?.dryRun === true;
@@ -1790,6 +1801,7 @@ export const createCheckoutSession = functions.https.onCall(
       );
     }
 
+    const hadTrial = userDoc.data()?.hadTrial === true;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
     const buildSessionParams = (customerId: string): Stripe.Checkout.SessionCreateParams => {
       const params: Stripe.Checkout.SessionCreateParams = {
@@ -1803,9 +1815,10 @@ export const createCheckoutSession = functions.https.onCall(
       };
       if (!isLifetime) {
         params.subscription_data = {
-          trial_period_days: 14,
           metadata: { firebase_uid: uid },
         };
+        // One free trial per user — cancel/resubscribe pays from day one.
+        if (!hadTrial) params.subscription_data.trial_period_days = 14;
       } else {
         params.payment_intent_data = {
           metadata: { firebase_uid: uid },
@@ -1937,6 +1950,9 @@ export const stripeWebhook = functions.https.onRequest(
               isPro: isProStatus,
               stripeCustomerId: customerId,
               subscription: subscriptionData,
+              // Record consumed trials so createCheckoutSession never grants
+              // a second one (set only on completed checkout, not abandoned).
+              ...(subscriptionData.status === "on_trial" ? { hadTrial: true } : {}),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
             { merge: true },
@@ -1994,7 +2010,9 @@ export const stripeWebhook = functions.https.onRequest(
 
           const priceId = sub.items.data[0]?.price.id || "";
           const status = mapStripeStatus(sub.status);
-          const isPro = status === "active" || status === "on_trial";
+          // past_due keeps Pro during Stripe's dunning retries (see client
+          // isActivePro); dunning failure moves to cancelled/unpaid → not pro.
+          const isPro = status === "active" || status === "on_trial" || status === "past_due";
 
           await db.collection("users").doc(firebaseUid).set(
             {

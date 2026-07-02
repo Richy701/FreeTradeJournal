@@ -346,3 +346,34 @@ describe('parseCSVHeaders — header-row detection for arbitrary formats', () =>
     expect(parseCSVHeaders(csv)[0]).toBe('orderId');
   });
 });
+
+describe('parseCSV — silent numeric/date corruption regressions', () => {
+  it('maps two-digit years to 2000+, not 1926', () => {
+    const csv = [
+      'Symbol,Side,Open Price,Close Price,Lots,Profit,Open Time',
+      'EURUSD,buy,1.0850,1.0900,1,50,6/10/26 10:00:00',
+    ].join('\n');
+    const [t] = parseCSV(csv).trades;
+    expect(t.entryDate).toBe('2026-06-10T10:00:00');
+  });
+
+  it('parses IBKR thousands-separated P&L instead of truncating at the comma', () => {
+    // "1,234.56" with raw parseFloat used to import as $1.00.
+    const csv = [
+      'Symbol,Buy/Sell,Quantity,TradePrice,ClosePrice,FifoPnlRealized,OpenDateTime,CloseDateTime',
+      'AAPL,SELL,10,150.00,160.00,"1,234.56",2026-06-10 10:00:00,2026-06-10 15:00:00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.summary.successfulParsed).toBe(1);
+    expect(r.trades[0].pnl).toBe('1234.56');
+  });
+
+  it('honors a plain minus sign in Tradovate P&L, not just parentheses', () => {
+    const csv = [
+      'symbol,_priceFormat,_priceFormatType,_tickSize,buyFillId,sellFillId,qty,buyPrice,sellPrice,pnl,boughtTimestamp,soldTimestamp,duration',
+      'MNQM6,-2,0,0.25,537862110007,537862110018,5,28531.75,28491.75,-$400.00,06/10/2026 16:00:05,06/10/2026 16:00:29,24sec',
+    ].join('\n');
+    const [t] = parseCSV(csv).trades;
+    expect(t.pnl).toBe('-400.00');
+  });
+});

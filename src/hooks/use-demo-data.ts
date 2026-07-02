@@ -21,7 +21,7 @@ export function useDemoData() {
   const userStorage = useUserStorage();
 
   // Subscribe to sync changes — version bump triggers re-render
-  const [, setVersion] = useState(() => getChangeVersion());
+  const [version, setVersion] = useState(() => getChangeVersion());
   useEffect(() => {
     return onSyncChange(() => setVersion(getChangeVersion()));
   }, []);
@@ -48,7 +48,7 @@ export function useDemoData() {
     }
 
     return trades;
-  }, [isDemo, userStorage, activeAccount]);
+  }, [isDemo, userStorage, activeAccount, version]);
 
   const getJournalEntries = useCallback(() => {
     let entries = [];
@@ -71,7 +71,7 @@ export function useDemoData() {
     }
 
     return entries;
-  }, [isDemo, userStorage, activeAccount]);
+  }, [isDemo, userStorage, activeAccount, version]);
 
   const getGoals = useCallback(() => {
     let goals = [];
@@ -94,7 +94,7 @@ export function useDemoData() {
     }
 
     return goals;
-  }, [isDemo, userStorage, activeAccount]);
+  }, [isDemo, userStorage, activeAccount, version]);
 
   return {
     isDemo,

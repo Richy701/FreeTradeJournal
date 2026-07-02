@@ -73,7 +73,8 @@ export interface GrossPnlInput {
   exitPrice: number;
   /** Lots for forex, contracts for futures/indices. */
   quantity: number;
-  /** Overrides all symbol/market logic when > 0: gross = diff × customMultiplier. */
+  /** Per-contract override of the symbol/market multiplier when > 0:
+      gross = diff × customMultiplier × quantity. */
   customMultiplier?: number;
 }
 
@@ -94,7 +95,7 @@ export function calculateGrossPnl(input: GrossPnlInput): number {
   const diff = (exitPrice - entryPrice) * (side === 'long' ? 1 : -1);
 
   if (customMultiplier && customMultiplier > 0) {
-    return diff * customMultiplier;
+    return diff * customMultiplier * quantity;
   }
 
   const sym = (symbol || '').toUpperCase();

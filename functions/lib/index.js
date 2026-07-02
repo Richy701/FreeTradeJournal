@@ -744,10 +744,19 @@ exports.sendActivationReport = functions
     return null;
 });
 // ─── Trial Offer Batch (Admin callable) ────────────────────────
+const ADMIN_EMAILS = ["richmondlamptey75@gmail.com"];
+function assertAdmin(context) {
+    const email = (context.auth?.token?.email || "").toLowerCase();
+    const verified = context.auth?.token?.email_verified === true;
+    if (!email || !verified || !ADMIN_EMAILS.includes(email)) {
+        throw new functions.https.HttpsError("permission-denied", "Admin only.");
+    }
+}
 exports.sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
+    assertAdmin(context);
     const batchSize = typeof data?.batchSize === "number" ? data.batchSize : 40;
     const dryRun = data?.dryRun === true;
     // Fetch a broad pool of users — Firestore can't query for missing fields,
@@ -1604,6 +1613,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         stripeCustomerId = customer.id;
         await db.collection("users").doc(uid).set({ stripeCustomerId }, { merge: true });
     }
+    const hadTrial = userDoc.data()?.hadTrial === true;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
     const buildSessionParams = (customerId) => {
         const params = {
@@ -1617,9 +1627,11 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         };
         if (!isLifetime) {
             params.subscription_data = {
-                trial_period_days: 14,
                 metadata: { firebase_uid: uid },
             };
+            // One free trial per user — cancel/resubscribe pays from day one.
+            if (!hadTrial)
+                params.subscription_data.trial_period_days = 14;
         }
         else {
             params.payment_intent_data = {
@@ -1725,6 +1737,9 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     isPro: isProStatus,
                     stripeCustomerId: customerId,
                     subscription: subscriptionData,
+                    // Record consumed trials so createCheckoutSession never grants
+                    // a second one (set only on completed checkout, not abandoned).
+                    ...(subscriptionData.status === "on_trial" ? { hadTrial: true } : {}),
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
@@ -1779,7 +1794,9 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 }
                 const priceId = sub.items.data[0]?.price.id || "";
                 const status = mapStripeStatus(sub.status);
-                const isPro = status === "active" || status === "on_trial";
+                // past_due keeps Pro during Stripe's dunning retries (see client
+                // isActivePro); dunning failure moves to cancelled/unpaid → not pro.
+                const isPro = status === "active" || status === "on_trial" || status === "past_due";
                 await db.collection("users").doc(firebaseUid).set({
                     isPro,
                     subscription: {

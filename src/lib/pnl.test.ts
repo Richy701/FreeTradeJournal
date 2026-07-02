@@ -110,10 +110,10 @@ describe('calculateGrossPnl — indices and overrides', () => {
     })).toBe(150);
   });
 
-  it('customMultiplier overrides everything', () => {
+  it('customMultiplier is per-contract and scales with quantity', () => {
     expect(calculateGrossPnl({
       symbol: 'ES', market: 'futures', side: 'long',
       entryPrice: 100, exitPrice: 110, quantity: 5, customMultiplier: 7,
-    })).toBe(70);
+    })).toBe(350);
   });
 });

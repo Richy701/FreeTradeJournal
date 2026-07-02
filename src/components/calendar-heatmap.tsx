@@ -4,6 +4,7 @@ import { calculateGrossPnl } from "@/lib/pnl"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { notifyDataChange } from '@/contexts/sync-context'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
 import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
@@ -289,7 +290,8 @@ export function CalendarHeatmap() {
     entries.unshift(journalEntry)
     
     userStorage.setItem('journalEntries', JSON.stringify(entries))
-    
+    notifyDataChange()
+
     // Reset form
     setJournalNote("")
     setJournalTitle("")
@@ -362,7 +364,8 @@ export function CalendarHeatmap() {
     } catch { /* empty */ }
     allTrades.unshift(newTrade)
     userStorage.setItem('trades', JSON.stringify(allTrades))
-    
+    notifyDataChange()
+
     // Reset form
     setTradeForm({
       symbol: "",

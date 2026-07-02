@@ -1,10 +1,18 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
+import { precacheAndRoute, createHandlerBoundToURL, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { clientsClaim } from 'workbox-core';
 
 declare const self: ServiceWorkerGlobalScope;
+
+// registerType 'autoUpdate' requires the custom SW to activate immediately:
+// without skipWaiting/clientsClaim a new deploy sits in "waiting" until every
+// tab is closed, so open PWA tabs keep serving stale chunks (the 404 window).
+self.skipWaiting();
+clientsClaim();
+cleanupOutdatedCaches();
 
 // Workbox precaching (VitePWA injects the manifest)
 precacheAndRoute(self.__WB_MANIFEST);
