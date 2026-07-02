@@ -7,6 +7,8 @@ import { useSettings } from '@/contexts/settings-context'
 import { notifyDataChange } from '@/contexts/sync-context'
 import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades'
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
+import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory'
+import { rescueFailedImport } from '@/utils/csv-import-flow'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { SiteHeader } from "@/components/site-header"
@@ -318,25 +320,44 @@ export default function Dashboard() {
 
     try {
       const content = await validateCSVFile(file);
-      const result = parseCSV(content);
+      let result = parseCSV(content);
 
       setIsTradeModalOpen(false);
 
-      // If auto-detect produced no trades, offer manual mapping (same as the
-      // Trade Log importer) instead of dead-ending on an unrecognized format.
-      // Gate on the actual outcome (zero trades), not a specific error string —
-      // many formats fail with other messages ("No valid trades…") yet still
-      // need the mapping dialog.
+      // If auto-detect failed, try to rescue the import silently: replay a mapping
+      // the user previously confirmed for this file shape, or (Pro only) ask the
+      // LLM to map the columns, before falling back to the manual dialog.
+      if (!result.success && result.trades.length === 0) {
+        const rescued = await rescueFailedImport({
+          content,
+          headers: parseCSVHeaders(content),
+          storage: userStorage,
+          isPro,
+          isDemo,
+          source: 'dashboard',
+        });
+        if (rescued.kind === 'parsed') result = rescued.result;
+      }
+
+      // Still nothing: offer manual mapping (same as the Trade Log importer)
+      // instead of dead-ending on an unrecognized format.
       if (!result.success && result.trades.length === 0) {
         // Telemetry: surface unsupported formats proactively. Column names only —
         // no row/trade data — so this carries no PII.
         const headers = parseCSVHeaders(content);
         trackEvent('csv_import_failed', {
           source: 'dashboard',
+          signature: headerSignature(headers),
           column_count: headers.length,
           headers: headers.slice(0, 40),
           error: result.errors[0],
         });
+        // Nudge free users toward the Pro AI auto-mapper.
+        if (!isPro && !isDemo) {
+          toast('Unrecognized format', {
+            description: 'Map the columns below — or upgrade to Pro to auto-map any broker with AI.',
+          });
+        }
         setColumnMapping(buildColumnMapping(content, file));
       } else {
         setCsvPreview({
@@ -358,7 +379,7 @@ export default function Dashboard() {
 
   const handleMappingConfirm = () => {
     if (!columnMapping) return;
-    const { csvContent, mappings, file } = columnMapping;
+    const { csvContent, mappings, file, headers } = columnMapping;
 
     const requiredFields = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
     const unmapped = requiredFields.filter(f => mappings[f] === undefined || mappings[f] < 0);
@@ -370,6 +391,12 @@ export default function Dashboard() {
     }
 
     const result = parseCSVWithMappings(csvContent, mappings);
+    // Report + remember the mapping the user used to rescue this format so it
+    // auto-imports next time (and informs a future built-in detector).
+    if (result.success && result.trades.length > 0) {
+      trackImportMapped('dashboard', headers, mappings);
+      rememberMapping(userStorage, headers, mappings);
+    }
     setColumnMapping(null);
     setCsvPreview({ show: true, file, parseResult: result });
   };

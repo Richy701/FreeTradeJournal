@@ -33,7 +33,7 @@ const COLUMN_MAPPINGS = {
   // Your current format (MT5-like) + Topstep + other prop firms
   standard: {
     symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract', 'Market'],
-    side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell'],
+    side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell', 'Market pos.', 'Market position'],
     openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice', 'Avg Entry Price'],
     closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice', 'Avg Exit Price'],
     quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units', 'Qty', 'Filled Qty', 'Shares', 'Amount'],
@@ -114,12 +114,17 @@ export function findColumnIndex(headers: string[], possibleNames: string[]): num
 // (European exports), "1.234,56" → "1234.56"; otherwise "1,234.56" → "1234.56".
 function cleanNumeric(value: string, decimalComma: boolean = false): string {
   let s = (value || '').replace(/[$£€¥₹\s]/g, '');
+  // Accounting-style negatives wrap the value in parentheses ("(75.90)" = -75.90).
+  // NinjaTrader and other exports use these for losses; stripping the parens
+  // without honoring the sign would flip every loss into a gain.
+  const negative = /^\(.*\)$/.test(s);
   if (decimalComma) {
     s = s.replace(/\./g, '').replace(',', '.');
   } else {
     s = s.replace(/,/g, '');
   }
-  return s.replace(/[^0-9.\-]/g, '');
+  s = s.replace(/[^0-9.\-]/g, '');
+  return negative && s ? `-${s.replace(/-/g, '')}` : s;
 }
 
 function parseCurrency(value: string, decimalComma: boolean = false): number {
@@ -1436,10 +1441,14 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): 
 
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
-      result.summary.totalRows++;
 
       try {
         const fields = parseCSVLine(lines[i], delimiter);
+
+        // Skip trailing separator rows (all cells empty, e.g. ",,,,,,") that some
+        // exports (NinjaTrader) append — they aren't failed trades.
+        if (fields.every(f => !f.trim())) continue;
+        result.summary.totalRows++;
 
         if (fields.length < headers.length) {
           result.errors.push(`Row ${i + 1}: Insufficient columns (${fields.length} vs ${headers.length} expected)`);
@@ -1538,6 +1547,25 @@ export function parseCSVHeaders(csvContent: string): string[] {
   return parseCSVLine(lines[headerRow] || '', delimiter);
 }
 
+// Return up to `maxRows` data rows (after the detected header) as raw cell
+// arrays, using the same delimiter/preamble detection as the parser. Used to
+// give the AI column-mapper a few concrete example rows for format inference.
+export function parseCSVSample(csvContent: string, maxRows: number = 5): string[][] {
+  const cleaned = csvContent.replace(/^﻿/, '');
+  const lines = cleaned.trim().split('\n');
+  if (lines.length < 2) return [];
+  const delimiter = detectDelimiter(lines);
+  const headerRow = findStandardHeaderRow(lines, delimiter);
+  const rows: string[][] = [];
+  for (let i = headerRow + 1; i < lines.length && rows.length < maxRows; i++) {
+    if (!lines[i].trim()) continue;
+    const fields = parseCSVLine(lines[i], delimiter);
+    if (fields.every(f => !f.trim())) continue; // skip separator rows
+    rows.push(fields);
+  }
+  return rows;
+}
+
 export function parseCSVWithMappings(csvContent: string, mappings: Record<string, number>): CSVParseResult {
   csvContent = csvContent.replace(/^\uFEFF/, '');
 
@@ -1585,10 +1613,13 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      result.summary.totalRows++;
 
       try {
         const fields = parseCSVLine(line, delimiter);
+
+        // Skip trailing separator rows (all cells empty) some exports append.
+        if (fields.every(f => !f.trim())) continue;
+        result.summary.totalRows++;
 
         const symbol = mappings.symbol >= 0 ? (fields[mappings.symbol] || '') : '';
         const side = mappings.side >= 0 ? (fields[mappings.side] || '') : '';

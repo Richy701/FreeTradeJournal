@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.49.0',
+    date: '2026-07-02',
+    summary: 'Import from any broker — AI maps unfamiliar CSVs for Pro, and we remember your layouts.',
+    items: [
+      {
+        type: 'new',
+        text: 'AI column mapping for any broker (Pro)',
+        description: 'Upload a CSV we don’t recognize and Pro members get its columns mapped automatically by AI — no manual matching. Free members can still map columns by hand as before.',
+      },
+      {
+        type: 'improved',
+        text: 'We remember your import layouts',
+        description: 'Once you map an unfamiliar broker’s columns, we remember that layout and apply it automatically the next time you import the same export.',
+      },
+      {
+        type: 'fixed',
+        text: 'Import NinjaTrader trade exports',
+        description: 'NinjaTrader’s trade export now imports automatically, with wins and losses recorded correctly.',
+      },
+    ],
+  },
+  {
     version: '2.48.3',
     date: '2026-06-30',
     summary: 'Tradovate’s Orders History export now imports reliably.',
@@ -1516,4 +1538,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.48.3'
+export const LATEST_CHANGELOG_VERSION = '2.49.0'

@@ -113,6 +113,34 @@ describe('parseCSV — Tradovate Trades / Performance export', () => {
   });
 });
 
+describe('parseCSV — NinjaTrader Grid (Trade Performance) export', () => {
+  // NinjaTrader's "Trades" grid export: one row per completed round-trip. The
+  // side lives in a "Market pos." column (Long/Short), Profit uses accounting
+  // negatives ("($75.90)" = a loss), and the file ends with blank separator rows.
+  const csv = [
+    'Instrument,Account,Market pos.,Qty,Entry time,Exit time,Entry price,Exit price,Profit,Commission',
+    'MNQ SEP26,DEMO6557236,Long,1,7/2/2026 9:12,7/2/2026 9:13,30220,30245,$48.10 ,$0.78 ',
+    'MNQ SEP26,DEMO6557236,Long,1,7/2/2026 9:23,7/2/2026 9:23,30123.75,30086.75,($75.90),$0.78 ',
+    ',,,,,,,,,',
+    ',,,,,,,,,',
+  ].join('\n');
+
+  it('imports without manual mapping and ignores trailing blank rows', () => {
+    const r = parseCSV(csv);
+    expect(r.success, `errors: ${r.errors.join('; ')}`).toBe(true);
+    expect(r.summary.successfulParsed).toBe(2);
+    expect(r.summary.failed).toBe(0);
+  });
+
+  it('maps "Market pos." to side and honors accounting-negative P&L', () => {
+    const [win, loss] = parseCSV(csv).trades;
+    expect(win.side).toBe('long');
+    expect(win.pnl).toBe('48.1');
+    expect(loss.side).toBe('long');
+    expect(loss.pnl).toBe('-75.9'); // ($75.90) is a loss, not a gain
+  });
+});
+
 describe('parseCSV — Tradovate Orders History export', () => {
   // Real Tradovate "Orders History" export: one row per ORDER (including
   // Canceled working orders), with the leading "orderId" column and no

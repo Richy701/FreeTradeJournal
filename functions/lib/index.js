@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -1933,6 +1933,7 @@ const RATE_LIMITS = {
     journal_prompts: 150, // Light - uses GPT-4o-mini
     risk_alert: 75, // Light - uses GPT-4o-mini
     strategy_tagger: 75, // Light - uses GPT-4o-mini (1125 trades/day with batches of 15)
+    csv_mapping: 40, // Light - uses GPT-4o-mini (Pro-only broker CSV auto-mapping)
 };
 // Model selection per feature type
 const FEATURE_MODELS = {
@@ -1945,6 +1946,7 @@ const FEATURE_MODELS = {
     journal_prompts: "gpt-4o-mini",
     risk_alert: "gpt-4o-mini",
     strategy_tagger: "gpt-4o-mini",
+    csv_mapping: "gpt-4o-mini",
 };
 // ─── Free-Tier AI Quota ───────────────────────────────────────
 const FREE_AI_MONTHLY_LIMIT = 20;
@@ -2158,6 +2160,110 @@ Give me a thorough analysis of my trading.`;
             remaining: limit - (usedToday + 1),
         },
         ...(freeUsage && { freeUsage }),
+    };
+});
+// ─── CSV Column Mapping (Pro) ───────────────────────────────
+// Maps an unrecognized broker CSV's columns to our import roles using the LLM.
+// Pro-only: a paid convenience for the long tail of broker exports our heuristic
+// parsers don't recognize. It returns column NAMES per role — the client
+// resolves them to indices and re-parses locally — so no trades are created
+// server-side and the model only ever sees the header + a few sample rows.
+const CSV_MAPPING_ROLES = [
+    "symbol", "side", "openPrice", "closePrice",
+    "quantity", "pnl", "openTime", "closeTime", "commission", "fees",
+];
+exports.suggestCsvMapping = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
+    }
+    const uid = context.auth.uid;
+    // Pro-only. Free / anonymous users get the manual mapping dialog on the client.
+    const userDoc = await db.collection("users").doc(uid).get();
+    const userIsPro = userDoc.exists && userDoc.data()?.isPro;
+    if (!userIsPro) {
+        throw new functions.https.HttpsError("permission-denied", "AI column mapping is a Pro feature.");
+    }
+    // Daily abuse cap (Pro).
+    const limit = RATE_LIMITS.csv_mapping;
+    const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
+    const todayStr = new Date().toISOString().split("T")[0];
+    const usedToday = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(usageRef);
+        const d = snap.data();
+        const current = (d?.date === todayStr ? d?.csv_mapping : 0) || 0;
+        if (current >= limit) {
+            throw new functions.https.HttpsError("resource-exhausted", `Daily AI mapping limit reached (${limit}/day). Resets at midnight UTC.`);
+        }
+        tx.set(usageRef, { date: todayStr, csv_mapping: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        return current;
+    });
+    // Validate + bound input (caps keep the prompt small and cost predictable).
+    const req = data;
+    const headers = Array.isArray(req.headers)
+        ? req.headers.map((h) => String(h)).filter((h) => h.trim()).slice(0, 60)
+        : [];
+    if (headers.length < 2) {
+        throw new functions.https.HttpsError("invalid-argument", "At least two column headers are required.");
+    }
+    const sampleRows = Array.isArray(req.sampleRows)
+        ? req.sampleRows.slice(0, 5).map((row) => Array.isArray(row) ? row.slice(0, headers.length).map((c) => String(c).slice(0, 40)) : [])
+        : [];
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey || apiKey === "your-openai-api-key-here") {
+        throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
+    }
+    const openai = new openai_1.default({ apiKey });
+    const systemPrompt = `You map columns from a trading platform's trade-history CSV export to a fixed set of roles.
+For each role return the EXACT column header string it maps to, or null if the file has no such column:
+- symbol: the traded instrument/ticker/contract
+- side: long/short or buy/sell direction (may be a position column like "Market pos." with values Long/Short)
+- openPrice: entry/open/average fill price of the opening
+- closePrice: exit/close price
+- quantity: contracts/lots/shares/size
+- pnl: REALIZED profit/loss for the trade in money (never a price column)
+- openTime: entry/open date-time
+- closeTime: exit/close date-time
+- commission: commissions (null if absent)
+- fees: other fees (null if absent)
+Rules: every value must be one of the provided headers verbatim, or null. Do not invent columns. Do not map two roles to the same column unless truly identical.
+Also report: dayFirst (true if dates are DD/MM/YYYY, false if MM/DD/YYYY, null if unknown/ISO) and confidence (0..1).
+Respond with ONLY a JSON object: {"mapping":{"symbol":...,"side":...,"openPrice":...,"closePrice":...,"quantity":...,"pnl":...,"openTime":...,"closeTime":...,"commission":...,"fees":...},"dayFirst":...,"confidence":...}`;
+    const userPrompt = `Headers: ${JSON.stringify(headers)}
+Sample rows (each aligned to Headers):
+${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
+    let parsed;
+    try {
+        const completion = await openai.chat.completions.create({
+            model: FEATURE_MODELS.csv_mapping,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt },
+            ],
+            max_tokens: 400,
+            temperature: 0,
+            response_format: { type: "json_object" },
+        });
+        parsed = JSON.parse(completion.choices[0]?.message?.content || "{}");
+    }
+    catch (err) {
+        console.error("CSV mapping AI error:", err.message);
+        throw new functions.https.HttpsError("internal", "Failed to generate a mapping. Please map columns manually.");
+    }
+    // Sanitize: keep only roles whose value is an actual header (or null), so a
+    // hallucinated column name can never reach the client's parser.
+    const headerSet = new Set(headers);
+    const mapping = {};
+    for (const role of CSV_MAPPING_ROLES) {
+        const v = parsed?.mapping?.[role];
+        mapping[role] = typeof v === "string" && headerSet.has(v) ? v : null;
+    }
+    const dayFirst = parsed?.dayFirst === true ? true : parsed?.dayFirst === false ? false : null;
+    const confidence = typeof parsed?.confidence === "number" ? Math.max(0, Math.min(1, parsed.confidence)) : null;
+    return {
+        mapping,
+        dayFirst,
+        confidence,
+        usage: { used: usedToday + 1, limit, remaining: limit - (usedToday + 1) },
     };
 });
 function buildJournalPromptsPrompt(payload) {
@@ -2589,6 +2695,7 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
                     journal_prompts: "Journal Prompts",
                     risk_alert: "Risk Alert",
                     strategy_tagger: "Strategy Tagger",
+                    csv_mapping: "AI Column Mapping",
                 };
                 const displayName = featureNames[featureType] || featureType.replace(/_/g, " ");
                 throw new functions.https.HttpsError("resource-exhausted", `Daily ${displayName} limit reached (${limit}/day). Resets at midnight UTC.`);

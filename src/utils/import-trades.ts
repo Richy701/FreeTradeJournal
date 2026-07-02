@@ -8,7 +8,7 @@ import { findColumnIndex, parseCSVHeaders, type ParsedTrade } from './csv-parser
 // Kept in one place so the Trade Log and Dashboard mapping dialogs stay in sync.
 export const MAPPING_FIELDS: Record<string, string[]> = {
   symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract', 'Market'],
-  side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell'],
+  side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell', 'Market pos.', 'Market position'],
   openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice', 'Avg Entry Price'],
   closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice', 'Avg Exit Price'],
   quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units', 'Qty', 'Filled Qty', 'Shares', 'Amount'],
