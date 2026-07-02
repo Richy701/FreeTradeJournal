@@ -15,6 +15,43 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.51.0',
+    date: '2026-07-02',
+    summary: 'Deleted trades stay deleted, new trades appear instantly, and imports stop mangling numbers.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Deleted trades stay deleted',
+        description: 'With cloud sync on, deleting your trades, journal entries or goals no longer brings them back a few seconds later. Deletions now sync to the cloud like any other change.',
+      },
+      {
+        type: 'fixed',
+        text: 'Trades you add now appear instantly',
+        description: 'Adding a trade or journal entry from the dashboard quick-add or the calendar now shows up everywhere immediately — no more refreshing the page to see it.',
+      },
+      {
+        type: 'fixed',
+        text: 'Custom contract multiplier now counts your contracts',
+        description: 'If you set a custom multiplier in the trade form’s advanced options, calculated P&L now multiplies by the number of contracts you traded, matching how the built-in multipliers work.',
+      },
+      {
+        type: 'fixed',
+        text: 'CSV imports no longer mangle numbers and dates',
+        description: 'Dates like 6/10/26 now import as 2026 instead of 1926, IBKR values like "1,234.56" import as $1,234.56 instead of $1, and Tradovate losses written as -$400.00 stay losses.',
+      },
+      {
+        type: 'fixed',
+        text: 'A failed card payment no longer instantly removes Pro',
+        description: 'If a renewal charge fails, you keep Pro access while your card is retried over the following days instead of being locked out on the first attempt.',
+      },
+      {
+        type: 'improved',
+        text: 'Updates reach you automatically',
+        description: 'When we release a fix, open tabs now pick it up on their own — you no longer need to close every tab of the app to get the newest version.',
+      },
+    ],
+  },
+  {
     version: '2.50.0',
     date: '2026-07-02',
     summary: 'Accurate P&L math for futures, forex and metals when we calculate it for you.',
@@ -1565,4 +1602,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.50.0'
+export const LATEST_CHANGELOG_VERSION = '2.51.0'
