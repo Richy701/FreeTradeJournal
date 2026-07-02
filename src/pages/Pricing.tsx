@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
-import { ArrowRight, SealCheck, Check, X } from '@phosphor-icons/react';
+import { ArrowRight, SealCheck, Check, X, SpinnerGap } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
@@ -82,6 +82,7 @@ interface CardProps {
   isCurrentPlan?: boolean;
   onCtaClick?: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 function PricingCard({
@@ -96,6 +97,7 @@ function PricingCard({
   isCurrentPlan,
   onCtaClick,
   disabled,
+  loading,
 }: CardProps) {
   return (
     <div
@@ -110,7 +112,7 @@ function PricingCard({
       <h2 className="relative flex items-center gap-3 text-xl font-medium">
         {name}
         {popular && (
-          <Badge className="bg-amber-600 px-1.5 py-0 text-white text-[11px] hover:bg-amber-600 border-0">
+          <Badge className="bg-amber-500 px-1.5 py-0 text-amber-950 text-[11px] hover:bg-amber-500 border-0">
             Most Popular
           </Badge>
         )}
@@ -173,12 +175,13 @@ function PricingCard({
           <Button
             className={cn(
               'group w-full h-11 rounded-lg font-semibold gap-0 overflow-hidden',
-              popular && 'bg-amber-500 text-white hover:bg-amber-600',
+              popular && 'bg-amber-500 text-amber-950 hover:bg-amber-600',
             )}
             variant={popular ? 'default' : 'outline'}
             onClick={onCtaClick}
-            disabled={disabled}
+            disabled={disabled || loading}
           >
+            {loading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
             {cta}
             <span className="inline-flex w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:w-5 group-hover:pl-2 group-hover:opacity-100">
               <ArrowRight className="h-4 w-4" />
@@ -254,6 +257,10 @@ export default function Pricing() {
   const navigate = useNavigate();
   const { themeColors, alpha } = useThemePresets();
   const [frequency, setFrequency] = useState<Frequency>('yearly');
+  // priceId currently being sent to Stripe — the checkout Cloud Function can
+  // cold-start for several seconds, so CTAs must show progress and block
+  // double-clicks (each click would create another checkout session).
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   // Dedicated funnel step so pricing → cta → checkout_started → checkout_completed
   // can be built as one funnel in PostHog
@@ -262,15 +269,23 @@ export default function Pricing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleUpgrade = (priceId: string, plan: string) => {
-    trackEvent('pricing_cta_clicked', { plan });
+  const handleUpgrade = async (priceId: string, plan: string, source?: string) => {
+    if (checkoutLoading) return;
+    trackEvent('pricing_cta_clicked', source ? { plan, source } : { plan });
     if (!user) {
       sessionStorage.setItem('pendingCheckoutPriceId', priceId);
       navigate('/signup');
       return;
     }
     trackEvent('checkout_started', { plan, priceId });
-    openCheckout(priceId);
+    setCheckoutLoading(priceId);
+    try {
+      // openCheckout toasts on failure and resolves either way; on success the
+      // Stripe redirect takes over before the reset below matters.
+      await openCheckout(priceId);
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   const currentPlan = subscription?.planType || null;
@@ -371,6 +386,7 @@ export default function Pricing() {
             isCurrentPlan={isPro && currentPlan === activePlan.interval}
             onCtaClick={() => handleUpgrade(activePlan.priceId, activePlan.interval)}
             disabled={isPro && currentPlan === 'lifetime'}
+            loading={checkoutLoading === activePlan.priceId}
           />
 
           {/* Lifetime — solid dark, no grid overlay */}
@@ -384,6 +400,7 @@ export default function Pricing() {
             highlighted
             isCurrentPlan={isPro && currentPlan === 'lifetime'}
             onCtaClick={() => handleUpgrade(lifetimePlan.priceId, 'lifetime')}
+            loading={checkoutLoading === lifetimePlan.priceId}
           />
         </div>
       </section>
@@ -433,12 +450,11 @@ export default function Pricing() {
             {!isPro && (
               <div className="mt-8 text-center space-y-2">
                 <Button
-                  className="bg-amber-500 text-white hover:bg-amber-600 font-semibold px-8"
-                  onClick={() => {
-                    trackEvent('pricing_cta_clicked', { plan: user ? activePlan.interval : 'free', source: 'comparison_table' });
-                    user ? openCheckout(activePlan.priceId) : navigate('/signup');
-                  }}
+                  className="bg-amber-500 text-amber-950 hover:bg-amber-600 font-semibold px-8"
+                  disabled={!!checkoutLoading}
+                  onClick={() => handleUpgrade(activePlan.priceId, user ? activePlan.interval : 'free', 'comparison_table')}
                 >
+                  {checkoutLoading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
                   {user ? 'Start free trial' : 'Get Started Free'}
                 </Button>
                 <p className="text-xs text-muted-foreground">14-day free trial · Cancel anytime · No hidden fees</p>

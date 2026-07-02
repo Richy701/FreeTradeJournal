@@ -595,8 +595,15 @@ export function TradingCoach() {
       if (result) {
         setChatMessages(prev => [...prev, { role: 'assistant', content: result }])
       }
-    } catch {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I could not respond right now. Try again.' }])
+    } catch (err: any) {
+      // Quota/limit errors carry their own next step ("Upgrade to Pro...",
+      // "Resets at midnight UTC") — show them instead of a fake transient error.
+      const msg: string = err?.message || ''
+      const isQuota = msg.includes('limit') || msg.includes('Upgrade to Pro')
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: isQuota ? msg : 'Sorry, I could not respond right now. Try again.',
+      }])
     }
   }, [chatStreaming, chatMessages, buildChatContext, startStream])
 

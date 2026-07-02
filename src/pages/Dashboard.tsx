@@ -220,7 +220,14 @@ export default function Dashboard() {
   }
 
   const handleSaveTrade = () => {
-    if (!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
+    // P&L-only quick adds are valid (the form copy invites them); prices are
+    // the optional path. Never bail silently — the save button looked enabled.
+    const hasPnl = tradeForm.pnl.trim() !== '' && !Number.isNaN(Number(tradeForm.pnl))
+    const hasPrices = !!tradeForm.entryPrice && !!tradeForm.exitPrice
+    if (!tradeForm.symbol || (!hasPnl && !hasPrices)) {
+      toast.error('Add a P&L amount, or entry and exit prices, to save the trade.')
+      return
+    }
     if (demoGuard('save your trades')) return
 
     const savedTrades = userStorage.getItem('trades')

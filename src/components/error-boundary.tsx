@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import * as Sentry from '@sentry/react'
 import { Button } from '@/components/ui/button'
 
 interface ErrorBoundaryProps {
@@ -26,6 +27,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Keep a console trace for debugging without crashing the page.
     console.error('ErrorBoundary caught an error:', error, info.componentStack)
+    // Boundaries swallow errors before Sentry's global handler sees them —
+    // report explicitly so crashes stay visible in telemetry.
+    Sentry.captureException(error, { contexts: { react: { componentStack: info.componentStack } } })
   }
 
   reset = () => this.setState({ error: null })

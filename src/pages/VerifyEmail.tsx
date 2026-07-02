@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Envelope, SpinnerGap, Check, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 
 export default function VerifyEmail() {
   const { user, logout } = useAuth();
@@ -69,8 +70,8 @@ export default function VerifyEmail() {
       const sendVerification = httpsCallable(fns, 'sendEmailVerificationLink');
       await sendVerification();
       setResendCooldown(60);
-    } catch {
-      // silently fail — user can try again
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not send the verification email. Please try again.');
     } finally {
       setResending(false);
     }

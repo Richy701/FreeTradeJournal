@@ -17,6 +17,8 @@ import { CookieConsent } from '@/components/CookieConsent';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
 import { FeedbackListener } from '@/components/feedback-listener';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { Button } from '@/components/ui/button';
 import { Toaster } from 'sonner';
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
@@ -108,6 +110,20 @@ function App() {
             <PWAInstallPrompt />
             <PWAUpdateNotification />
             <FeedbackListener />
+            <ErrorBoundary
+              fallback={(_, reset) => (
+                <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-6 text-center">
+                  <p className="text-lg font-semibold">Something went wrong</p>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    The page hit an unexpected error. Your data is safe — try again or reload.
+                  </p>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" onClick={reset}>Try Again</Button>
+                    <Button onClick={() => window.location.reload()}>Reload Page</Button>
+                  </div>
+                </div>
+              )}
+            >
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center" role="status">
                 <SpinnerGap className="h-8 w-8 animate-spin text-primary" />
@@ -160,6 +176,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            </ErrorBoundary>
             </Router>
             </SettingsProvider>
           </AccountProvider>

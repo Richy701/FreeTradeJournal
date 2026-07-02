@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.51.1',
+    date: '2026-07-02',
+    summary: 'Quick-add saves P&L-only trades, and clearer feedback when something needs your attention.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Quick-add now saves trades with just a P&L amount',
+        description: 'Adding a trade from the dashboard with only a symbol and your result now saves as intended — previously the Save button did nothing unless you also opened the details and entered prices. If something is missing, you now get a clear message instead of silence.',
+      },
+      {
+        type: 'improved',
+        text: 'AI limits now say so',
+        description: 'When you reach your AI usage limit, Coach FTJ now tells you exactly that — including when it resets — instead of showing a generic "try again" error.',
+      },
+      {
+        type: 'improved',
+        text: 'Checkout buttons show progress',
+        description: 'The upgrade buttons on the pricing page now show a spinner while your checkout session is being created, and the button text is easier to read.',
+      },
+    ],
+  },
+  {
     version: '2.51.0',
     date: '2026-07-02',
     summary: 'Deleted trades stay deleted, new trades appear instantly, and imports stop mangling numbers.',
@@ -1602,4 +1624,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.51.0'
+export const LATEST_CHANGELOG_VERSION = '2.51.1'
