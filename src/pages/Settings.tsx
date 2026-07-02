@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock } from '@phosphor-icons/react';
+import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock, CircleNotch, Sparkle, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -117,6 +117,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProWelcome, setShowProWelcome] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -148,6 +149,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (searchParams.get('checkout') === 'success') {
+      trackEvent('checkout_completed');
       setShowProWelcome(true);
       toast.success('Welcome to Pro! Your upgrade is complete.');
       setSearchParams({}, { replace: true });
@@ -157,6 +159,14 @@ export default function Settings() {
       setTimeout(() => scrollTo(tab), 300);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Prefetch the Stripe portal chunks once the Subscription section is in view,
+  // so they aren't part of the click latency when opening the billing portal.
+  useEffect(() => {
+    if (activeSection !== 'subscription' || !isPro) return;
+    import('@/lib/stripe').catch(() => {});
+    import('@/lib/firebase-lazy').then(m => m.getFirebaseFunctions()).catch(() => {});
+  }, [activeSection, isPro]);
 
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [accountForm, setAccountForm] = useState({
@@ -960,10 +970,25 @@ export default function Settings() {
                           </p>
                         )}
                         {subscription?.stripeCustomerId && (
-                          <Button variant="outline" size="sm" onClick={async () => {
-                            try { const { redirectToPortal } = await import('@/lib/stripe'); await redirectToPortal(); }
-                            catch { toast.error('Failed to open subscription portal'); }
-                          }}>Manage Subscription</Button>
+                          <Button variant="outline" size="sm" disabled={portalLoading} onClick={async () => {
+                            // Opening the Stripe portal is a Cloud Function + Stripe
+                            // round-trip that can take a few seconds (cold start), so
+                            // show a pending state immediately — otherwise the button
+                            // looks dead and gets clicked repeatedly. Keep the spinner
+                            // through the redirect; only clear it if the call fails.
+                            setPortalLoading(true);
+                            try {
+                              const { redirectToPortal } = await import('@/lib/stripe');
+                              await redirectToPortal();
+                            } catch {
+                              toast.error('Failed to open subscription portal');
+                              setPortalLoading(false);
+                            }
+                          }}>
+                            {portalLoading ? (
+                              <><CircleNotch className="h-4 w-4 animate-spin" /> Opening…</>
+                            ) : 'Manage Subscription'}
+                          </Button>
                         )}
                       </div>
                     ) : (
@@ -1065,23 +1090,42 @@ export default function Settings() {
       <Dialog open={showProWelcome} onOpenChange={setShowProWelcome}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="text-center items-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10">
-              <Crown className="h-8 w-8 text-amber-500" />
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/20">
+              <Crown className="h-6 w-6 text-amber-500" weight="fill" />
             </div>
-            <DialogTitle className="text-2xl font-bold">Welcome to Pro!</DialogTitle>
-            <DialogDescription className="text-base">Your upgrade is complete. You now have access to all premium features.</DialogDescription>
+            <DialogTitle className="text-xl font-bold">Welcome to Pro</DialogTitle>
+            <DialogDescription>Everything is unlocked. Here's what changed:</DialogDescription>
           </DialogHeader>
-          <div className="mt-4 space-y-3">
-            {PRO_FEATURES.map(feature => (
-              <div key={feature} className="flex items-center gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500/10">
-                  <Check className="h-3 w-3 text-green-500" />
+          <div className="mt-2 space-y-4">
+            {[
+              { icon: Sparkle, title: 'Unlimited AI', text: 'Coach FTJ, trade analysis, and reviews with no monthly cap.' },
+              { icon: CloudCheck, title: 'Cloud sync & backup', text: 'Your trades and journal now sync across all your devices.' },
+              { icon: InfinityIcon, title: 'No more limits', text: 'Unlimited journal entries, trading accounts, and prop tracking.' },
+              { icon: Headset, title: 'Priority support', text: 'Faster help and early access to new features.' },
+            ].map(({ icon: BenefitIcon, title, text }) => (
+              <div key={title} className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                  <BenefitIcon className="h-[18px] w-[18px] text-amber-600 dark:text-amber-400" />
                 </div>
-                <span className="text-sm">{feature}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-tight">{title}</p>
+                  <p className="text-sm text-muted-foreground leading-snug mt-0.5">{text}</p>
+                </div>
               </div>
             ))}
           </div>
-          <Button className="mt-6 w-full" onClick={() => setShowProWelcome(false)}>Get Started</Button>
+          <div className="mt-6 space-y-2">
+            <Button
+              className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold"
+              onClick={() => { setShowProWelcome(false); navigate('/coach'); }}
+            >
+              <Sparkle className="mr-2 h-4 w-4" />
+              Try Coach FTJ
+            </Button>
+            <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => setShowProWelcome(false)}>
+              Explore on my own
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

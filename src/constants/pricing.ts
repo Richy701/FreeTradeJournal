@@ -5,12 +5,16 @@ import type { PricingPlan } from '@/types/subscription';
 // creating NEW entries past the cap is blocked. Pro is unlimited.
 export const FREE_JOURNAL_ENTRY_LIMIT = 100;
 
+// The values stored in Vercel have been observed with trailing newlines, which
+// Stripe rejects as invalid price IDs — always trim.
+const envPriceId = (value: string | undefined) => (value || '').trim();
+
 export const PRICING_PLANS: PricingPlan[] = [
   {
     name: 'Monthly',
     interval: 'monthly',
     price: 12.99,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_MONTHLY || '',
+    priceId: envPriceId(import.meta.env.VITE_STRIPE_PRICE_MONTHLY),
     features: [
       'Everything in Free',
       'PropTracker — unlimited accounts',
@@ -24,7 +28,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Yearly',
     interval: 'yearly',
     price: 99.99,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_YEARLY || '',
+    priceId: envPriceId(import.meta.env.VITE_STRIPE_PRICE_YEARLY),
     features: [
       'Everything in Free',
       'PropTracker — unlimited accounts',
@@ -39,7 +43,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Lifetime',
     interval: 'lifetime',
     price: 249,
-    priceId: import.meta.env.VITE_STRIPE_PRICE_LIFETIME || '',
+    priceId: envPriceId(import.meta.env.VITE_STRIPE_PRICE_LIFETIME),
     features: [
       'Everything in Free',
       'PropTracker — unlimited accounts',

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { redirectToCheckout } from '@/lib/stripe';
 import { trackEvent } from '@/lib/analytics';
+import { toast } from 'sonner';
 import { UserStorage } from '@/utils/user-storage';
 import type { SubscriptionInfo } from '@/types/subscription';
 
@@ -151,10 +152,19 @@ export function ProProvider({ children }: ProProviderProps) {
 
   const handleOpenCheckout = useCallback(
     async (priceId: string) => {
+      if (!priceId) {
+        // Empty priceId means a missing VITE_STRIPE_PRICE_* env var at build time
+        console.error('Checkout blocked: no Stripe price ID configured');
+        trackEvent('checkout_failed', { reason: 'missing_price_id' });
+        toast.error('Checkout is temporarily unavailable. Please try again later or contact support.');
+        return;
+      }
       try {
         await redirectToCheckout(priceId);
       } catch (error) {
         console.error('Failed to open checkout:', error);
+        trackEvent('checkout_failed', { priceId, reason: 'session_error' });
+        toast.error('Could not start checkout. Please try again, or contact support if it keeps happening.');
       }
     },
     [],

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
@@ -254,6 +254,13 @@ export default function Pricing() {
   const navigate = useNavigate();
   const { themeColors, alpha } = useThemePresets();
   const [frequency, setFrequency] = useState<Frequency>('yearly');
+
+  // Dedicated funnel step so pricing → cta → checkout_started → checkout_completed
+  // can be built as one funnel in PostHog
+  useEffect(() => {
+    trackEvent('pricing_viewed', { logged_in: !!user, is_pro: isPro });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleUpgrade = (priceId: string, plan: string) => {
     trackEvent('pricing_cta_clicked', { plan });

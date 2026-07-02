@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Envelope, SpinnerGap, Check, ArrowCounterClockwise } from '@phosphor-icons/react';
 
@@ -21,6 +22,16 @@ export default function VerifyEmail() {
     }
   }, [user, navigate]);
 
+  // Funnel instrumentation: the verify-email wall is a suspected major
+  // drop-off point (Google signups skip it entirely) — track entry and exit.
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      trackEvent('verify_email_viewed');
+    }
+    // Only on mount — we want one event per wall encounter, not per user refresh
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Poll for verification every 3 seconds
   useEffect(() => {
     if (!user || user.emailVerified) return;
@@ -30,6 +41,7 @@ export default function VerifyEmail() {
         await user.reload();
         if (user.emailVerified) {
           setVerified(true);
+          trackEvent('verify_email_completed');
           clearInterval(interval);
           setTimeout(() => navigate('/dashboard', { replace: true }), 1500);
         }

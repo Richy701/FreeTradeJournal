@@ -7,6 +7,9 @@ import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Hea
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useProStatus } from '@/contexts/pro-context'
+import { Link } from 'react-router-dom'
+import { Sparkle } from '@phosphor-icons/react'
+import { trackEvent } from '@/lib/analytics'
 import { useStreamingAI } from '@/hooks/use-streaming-ai'
 import { useUserStorage } from '@/utils/user-storage'
 import { getAICache, setAICache } from '@/utils/ai-cache'
@@ -381,7 +384,7 @@ const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
 export function TradingCoach() {
   const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
-  const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus()
+  const { isPro, hasAIAccess, freeAiQuota, updateFreeAiQuota } = useProStatus()
   const [aiTips, setAiTips] = useState<any[] | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => {
@@ -1530,6 +1533,29 @@ export function TradingCoach() {
                 </form>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Free quota exhausted: keep an upgrade path where the chat button was,
+            instead of the section silently disappearing */}
+        {!hasAIAccess && freeAiQuota && freeAiQuota.remaining === 0 && (
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <div className="flex flex-col items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-center">
+              <p className="text-sm font-medium">
+                You've used all {freeAiQuota.limit} free AI queries this month
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Upgrade to Pro to keep chatting with Coach FTJ — or your quota resets next month.
+              </p>
+              <Link
+                to="/pricing"
+                onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Coach FTJ', source: 'quota_exhausted' })}
+                className="mt-1 inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-semibold px-4 py-2 rounded-lg transition-colors duration-150 shadow-sm"
+              >
+                <Sparkle className="h-3.5 w-3.5" />
+                Get Unlimited AI
+              </Link>
+            </div>
           </div>
         )}
       </CardContent>

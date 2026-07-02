@@ -50,7 +50,7 @@ function getDescription(id: string, level: ExperienceLevel | null): string {
 
 export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: number }) {
   const { user, isDemo } = useAuth();
-  const { isPro, hasAIAccess } = useProStatus();
+  const { isPro, hasAIAccess, freeAiQuota } = useProStatus();
   const userStorage = useUserStorage();
   const [dismissed, setDismissed] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
@@ -127,7 +127,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         label: 'Ask Coach FTJ',
         description: isPro
           ? 'Get personalised coaching based on your trading patterns.'
-          : 'You have 3 free AI queries this month -- try your AI trading coach.',
+          : `You have ${freeAiQuota?.limit ?? 20} free AI queries every month -- try your AI trading coach.`,
         icon: Robot,
         href: '/dashboard',
         done: hasUsedAiCoach,
@@ -151,7 +151,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
       localStorage.setItem(dismissKey, '1');
       setDismissed(true);
     }
-  }, [user, isDemo, isPro, userStorage, refreshKey]);
+  }, [user, isDemo, isPro, userStorage, refreshKey, hasAIAccess, freeAiQuota]);
 
   function dismiss() {
     if (!user) return;

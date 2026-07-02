@@ -1178,6 +1178,9 @@ export default function Dashboard() {
                 Import from broker
               </Button>
             </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Once you have a few trades logged, Coach FTJ can analyze them -- you get 20 free AI queries every month.
+            </p>
           </div>
         )}
         {visibleWidgets.map(w => {
