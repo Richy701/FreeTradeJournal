@@ -4,6 +4,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
+import { calculateGrossPnl, getFuturesMultiplier } from '@/lib/pnl';
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -485,90 +486,29 @@ export default function TradeLog() {
 
   const calculatePnL = (data: TradeFormData): { pnl: number; pnlPercentage: number; riskReward: number } => {
     const { side, entryPrice, exitPrice, stopLoss, takeProfit, lotSize, commission, fees, swap, spread, market = 'forex', customMultiplier } = data;
-    let grossPnL = 0;
-    let multiplier = 1;
+    const symbol = data.symbol?.toUpperCase() || '';
+
+    // Gross P&L (contract multipliers, lot/contract count, quote-currency
+    // conversion) lives in the shared module used by all entry paths.
+    const grossPnL = calculateGrossPnl({ symbol, market, side, entryPrice, exitPrice, quantity: lotSize, customMultiplier });
+
+    // Spread cost — spread is entered in pips (forex) / ticks or points (futures, indices)
     let spreadCost = 0;
-    
-    // Use custom multiplier if provided
     if (customMultiplier && customMultiplier > 0) {
-      multiplier = customMultiplier;
-      spreadCost = spread * multiplier * lotSize;
-    } else {
-      // Set multipliers based on market type
-      if (market === 'forex') {
-      const symbol = data.symbol?.toUpperCase() || '';
-      
-      // For forex: 1 standard lot = 100,000 units of base currency
-      // Pip value calculation depends on the pair
-      if (symbol.includes('JPY') || symbol.includes('THB') || symbol.includes('HUF')) {
-        // JPY pairs: price quoted to 2 decimals, 1 pip = 0.01
-        // For 1 standard lot of USDJPY: 1 pip = 1000 JPY / current rate ≈ $10
-        multiplier = 1000 * lotSize; // Yen per pip * lot size
-      } else {
-        // Standard pairs: price quoted to 4 decimals, 1 pip = 0.0001
-        // For 1 standard lot: 1 pip = $10 (for USD quote currency)
-        multiplier = 100000 * lotSize; // Standard lot size * lots
-      }
-      
-      // Calculate spread cost (spread is in pips)
-      const pipValue = 10; // $10 per pip for standard lot
-      spreadCost = spread * lotSize * pipValue;
-      
+      spreadCost = spread * customMultiplier * lotSize;
+    } else if (market === 'forex') {
+      spreadCost = spread * lotSize * 10; // ≈$10 per pip per standard lot
     } else if (market === 'futures') {
-      // Check for micro futures based on symbol
-      const symbol = data.symbol?.toUpperCase() || '';
-      
-      // Micro futures (1/10th of standard contracts)
-      if (symbol.includes('MES')) {
-        multiplier = 5; // Micro E-mini S&P 500 ($5 per point)
-      } else if (symbol.includes('MNQ')) {
-        multiplier = 2; // Micro E-mini Nasdaq ($2 per point)
-      } else if (symbol.includes('MYM')) {
-        multiplier = 0.5; // Micro E-mini Dow ($0.50 per point)
-      } else if (symbol.includes('M2K')) {
-        multiplier = 5; // Micro E-mini Russell 2000 ($5 per point)
-      } else if (symbol.includes('MGC')) {
-        multiplier = 10; // Micro Gold ($10 per troy ounce)
-      } else if (symbol.includes('MCL')) {
-        multiplier = 100; // Micro WTI Crude Oil ($100 per barrel)
-      } else if (symbol.includes('M6E')) {
-        multiplier = 1250; // Micro Euro FX ($1.25 per pip)
-      } else if (symbol.includes('M6B')) {
-        multiplier = 625; // Micro British Pound ($6.25 per pip)
-      } else if (symbol.includes('ES')) {
-        multiplier = 50; // E-mini S&P 500 ($50 per point)
-      } else if (symbol.includes('NQ')) {
-        multiplier = 20; // E-mini Nasdaq ($20 per point)
-      } else if (symbol.includes('YM')) {
-        multiplier = 5; // E-mini Dow ($5 per point)
-      } else if (symbol.includes('RTY')) {
-        multiplier = 50; // E-mini Russell 2000 ($50 per point)
-      } else if (symbol.includes('GC')) {
-        multiplier = 100; // Gold ($100 per troy ounce)
-      } else if (symbol.includes('CL')) {
-        multiplier = 1000; // WTI Crude Oil ($1000 per barrel)
-      } else {
-        multiplier = 1; // Default futures multiplier
-      }
-      
-      // For futures, spread is usually in ticks, calculate cost based on contract
-      spreadCost = spread * multiplier * lotSize;
-      
+      spreadCost = spread * getFuturesMultiplier(symbol) * lotSize;
     } else if (market === 'indices') {
-      multiplier = 1; // Indices per point
-      spreadCost = spread * lotSize; // Spread in points
+      spreadCost = spread * lotSize;
     }
-    }
-    
-    if (side === 'long') {
-      grossPnL = (exitPrice - entryPrice) * multiplier;
-    } else {
-      grossPnL = (entryPrice - exitPrice) * multiplier;
-    }
-    
-    // Use calculated spreadCost instead of spread * lotSize
+
     const pnl = grossPnL - commission - (fees || 0) - swap - spreadCost;
-    const investment = entryPrice * (market === 'forex' ? 100000 * lotSize : lotSize * multiplier);
+    const contractMultiplier = customMultiplier && customMultiplier > 0
+      ? customMultiplier
+      : market === 'futures' ? getFuturesMultiplier(symbol) : 1;
+    const investment = entryPrice * (market === 'forex' ? 100000 * lotSize : lotSize * contractMultiplier);
     const pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
     
     // Calculate Risk-Reward ratio properly

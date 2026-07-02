@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react"
 import { toast } from "sonner"
+import { calculateGrossPnl } from "@/lib/pnl"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
@@ -321,7 +322,16 @@ export function CalendarHeatmap() {
     const entryPrice = parseFloat(tradeForm.entryPrice)
     const exitPrice = parseFloat(tradeForm.exitPrice)
     const lotSize = parseFloat(tradeForm.lotSize) || 1
-    const pnl = parseFloat(tradeForm.pnl) || ((exitPrice - entryPrice) * lotSize * (tradeForm.side === 'long' ? 1 : -1))
+    // Manual P&L wins; otherwise use the shared calculation (same math as the
+    // Trade Log form) so every entry path agrees on contract multipliers.
+    const pnl = parseFloat(tradeForm.pnl) || calculateGrossPnl({
+      symbol: tradeForm.symbol,
+      market: tradeForm.market,
+      side: tradeForm.side,
+      entryPrice,
+      exitPrice,
+      quantity: lotSize,
+    })
 
     const newTrade = {
       id: Date.now().toString(),

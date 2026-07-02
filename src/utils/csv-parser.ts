@@ -1,4 +1,8 @@
 // CSV Parser for trading platform data
+// Futures contract multipliers live in the shared P&L module so every code
+// path (manual entry, quick-add, imports) prices contracts identically.
+import { getFuturesMultiplier } from '@/lib/pnl';
+
 export interface ParsedTrade {
   symbol: string;
   side: 'long' | 'short';
@@ -848,49 +852,6 @@ function isTopStepOrderFormat(headers: string[]): boolean {
   const hasPositionDisposition = headers.some(h => h.trim().toLowerCase() === 'positiondisposition');
   const hasStatus = headers.some(h => h.trim().toLowerCase() === 'status');
   return hasExecutePrice && hasPositionDisposition && hasStatus;
-}
-
-// Futures contract dollar-per-point multipliers
-// The symbol in the CSV includes month/year code (e.g. MNQH6), so we match by base prefix
-const FUTURES_MULTIPLIERS: Record<string, number> = {
-  // Micro E-minis
-  MNQ: 2,    // Micro E-mini Nasdaq — $0.50/tick (0.25pt) = $2/pt
-  MES: 5,    // Micro E-mini S&P 500 — $1.25/tick (0.25pt) = $5/pt
-  MYM: 0.5,  // Micro E-mini Dow — $0.50/tick (1pt) = $0.50/pt
-  M2K: 5,    // Micro E-mini Russell — $0.50/tick (0.10pt) = $5/pt
-  // E-minis
-  NQ: 20,    // E-mini Nasdaq — $5.00/tick (0.25pt) = $20/pt
-  ES: 50,    // E-mini S&P 500 — $12.50/tick (0.25pt) = $50/pt
-  YM: 5,     // E-mini Dow — $5.00/tick (1pt) = $5/pt
-  RTY: 50,   // E-mini Russell — $5.00/tick (0.10pt) = $50/pt
-  // Metals
-  MGC: 10,   // Micro Gold — $1.00/tick (0.10pt) = $10/pt
-  GC: 100,   // Gold — $10.00/tick (0.10pt) = $100/pt
-  SIL: 5,    // Micro Silver — $0.005/tick = $5/tick (tick=0.005)... $1000/pt
-  SI: 50,    // Silver (5000oz) — $25/tick (0.005pt) = $5000/pt... simplified
-  HG: 250,   // Copper — $12.50/tick (0.0005pt) = $250 per full pt? Actually per 0.01 = $2.50
-  // Energy
-  MCL: 10,   // Micro Crude — $1.00/tick (0.01pt) = $100/pt? Actually $10 per $1
-  CL: 1000,  // Crude Oil — $10.00/tick (0.01pt) = $1000/pt
-  MNG: 1,    // Micro Natural Gas
-  NG: 10,    // Natural Gas
-  // Grains
-  ZC: 50,    // Corn — $12.50/tick (0.25¢) = $50/pt
-  ZS: 50,    // Soybeans
-  ZW: 50,    // Wheat
-  // Treasuries
-  ZN: 1000,  // 10-Year T-Note
-  ZB: 1000,  // 30-Year T-Bond
-  // Currency micros
-  M6E: 12500, // Micro Euro
-  M6B: 6250,  // Micro British Pound
-};
-
-function getFuturesMultiplier(contractName: string): number {
-  // Strip month code + year digits from the end (e.g. MNQH6 → MNQ, ESU24 → ES)
-  // Month codes: F,G,H,J,K,M,N,Q,U,V,X,Z followed by 1-2 digits
-  const base = contractName.replace(/[FGHJKMNQUVXZ]\d{1,2}$/, '');
-  return FUTURES_MULTIPLIERS[base] || 1;
 }
 
 interface TopStepOrder {

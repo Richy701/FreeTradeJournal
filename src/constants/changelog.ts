@@ -15,6 +15,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.50.0',
+    date: '2026-07-02',
+    summary: 'Accurate P&L math for futures, forex and metals when we calculate it for you.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Futures P&L now counts your contracts',
+        description: 'When you enter prices and let us calculate P&L, futures and index trades now multiply by the number of contracts you traded. 5 ES contracts over 10 points is now correctly $2,500, not $500. Trades you already saved are not changed.',
+      },
+      {
+        type: 'fixed',
+        text: 'Correct pip values for JPY pairs and other non-USD quotes',
+        description: 'USDJPY, USDCAD, USDCHF and similar pairs now convert your P&L to dollars at the exit rate instead of assuming every pip is worth $10.',
+      },
+      {
+        type: 'fixed',
+        text: 'Gold and silver lot sizes',
+        description: 'XAUUSD and XAGUSD now use their real lot sizes (100oz and 5,000oz), so calculated P&L on metals matches your broker.',
+      },
+      {
+        type: 'improved',
+        text: 'Every way of adding a trade now uses the same math',
+        description: 'The trade form, the dashboard quick-add, the calendar quick-add and CSV imports all share one calculation, so the same trade shows the same P&L everywhere.',
+      },
+    ],
+  },
+  {
     version: '2.49.0',
     date: '2026-07-02',
     summary: 'Import from any broker — AI maps unfamiliar CSVs for Pro, and we remember your layouts.',
@@ -1538,4 +1565,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.49.0'
+export const LATEST_CHANGELOG_VERSION = '2.50.0'

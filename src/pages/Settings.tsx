@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock, CircleNotch, Sparkle, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
+import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -194,7 +194,9 @@ export default function Settings() {
     const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
     const avgWin = wins.length > 0 ? wins.reduce((s: number, t: any) => s + t.pnl, 0) / wins.length : 0;
     const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s: number, t: any) => s + t.pnl, 0) / losses.length) : 0;
-    const profitFactor = avgLoss > 0 ? avgWin / avgLoss : avgWin > 0 ? Infinity : 0;
+    const grossProfit = wins.reduce((s: number, t: any) => s + t.pnl, 0);
+    const grossLoss = Math.abs(losses.reduce((s: number, t: any) => s + t.pnl, 0));
+    const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
     const bestTrade = trades.length > 0 ? Math.max(...trades.map((t: any) => t.pnl || 0)) : 0;
     const worstTrade = trades.length > 0 ? Math.min(...trades.map((t: any) => t.pnl || 0)) : 0;
     let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0, tw = 0, tl = 0;
@@ -1090,15 +1092,15 @@ export default function Settings() {
       <Dialog open={showProWelcome} onOpenChange={setShowProWelcome}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader className="text-center items-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/20">
-              <Crown className="h-6 w-6 text-amber-500" weight="fill" />
+            <div className="mx-auto mb-3">
+              <ProBadge size="md" />
             </div>
             <DialogTitle className="text-xl font-bold">Welcome to Pro</DialogTitle>
             <DialogDescription>Everything is unlocked. Here's what changed:</DialogDescription>
           </DialogHeader>
           <div className="mt-2 space-y-4">
             {[
-              { icon: Sparkle, title: 'Unlimited AI', text: 'Coach FTJ, trade analysis, and reviews with no monthly cap.' },
+              { icon: Robot, title: 'Unlimited AI', text: 'Coach FTJ, trade analysis, and reviews with no monthly cap.' },
               { icon: CloudCheck, title: 'Cloud sync & backup', text: 'Your trades and journal now sync across all your devices.' },
               { icon: InfinityIcon, title: 'No more limits', text: 'Unlimited journal entries, trading accounts, and prop tracking.' },
               { icon: Headset, title: 'Priority support', text: 'Faster help and early access to new features.' },
@@ -1119,7 +1121,6 @@ export default function Settings() {
               className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold"
               onClick={() => { setShowProWelcome(false); navigate('/coach'); }}
             >
-              <Sparkle className="mr-2 h-4 w-4" />
               Try Coach FTJ
             </Button>
             <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => setShowProWelcome(false)}>

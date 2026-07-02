@@ -1,5 +1,6 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { trackEvent } from '@/lib/analytics'
+import { calculateGrossPnl } from '@/lib/pnl'
 import { useAuth } from '@/contexts/auth-context'
 import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
@@ -236,7 +237,16 @@ export default function Dashboard() {
     const entryPrice = parseFloat(tradeForm.entryPrice) || 0
     const exitPrice = parseFloat(tradeForm.exitPrice) || 0
     const lotSize = parseFloat(tradeForm.lotSize) || 1
-    const pnl = parseFloat(tradeForm.pnl) || ((exitPrice - entryPrice) * lotSize * (tradeForm.side === 'long' ? 1 : -1))
+    // Manual P&L wins; otherwise use the shared calculation (same math as the
+    // Trade Log form) so both entry paths agree on contract multipliers.
+    const pnl = parseFloat(tradeForm.pnl) || calculateGrossPnl({
+      symbol: tradeForm.symbol,
+      market: tradeForm.market,
+      side: tradeForm.side,
+      entryPrice,
+      exitPrice,
+      quantity: lotSize,
+    })
     
     const newTrade = {
       id: Date.now().toString(),
