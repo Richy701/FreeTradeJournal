@@ -30,7 +30,7 @@ export function ColumnMappingDialog({ value, onChange, onConfirm }: ColumnMappin
 
   return (
     <Dialog open={!!value?.show} onOpenChange={(open) => { if (!open) onChange(null); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[90svh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Map Your CSV Columns</DialogTitle>
           <DialogDescription>
@@ -53,7 +53,7 @@ export function ColumnMappingDialog({ value, onChange, onConfirm }: ColumnMappin
               <span className="text-sm text-muted-foreground">{value.headers.length} columns detected</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {FIELDS.map(({ key, label, required }) => (
                 <div key={key} className="space-y-1.5">
                   <Label className="text-sm font-medium">

@@ -1,7 +1,7 @@
-const admin = require('./functions/node_modules/firebase-admin');
+const admin = require('../../functions/node_modules/firebase-admin');
 
 // Initialize Firebase Admin
-const serviceAccount = require('./functions/service-account.json');
+const serviceAccount = require('../../functions/service-account.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });

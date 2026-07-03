@@ -15,6 +15,43 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.52.0',
+    date: '2026-07-03',
+    summary: 'Cloud sync fixes, recovered trades, and a smoother, more accessible app everywhere.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Cloud sync now backs up your settings and performance goals',
+        description: 'For Pro members, your app settings and performance goals now sync to the cloud correctly — previously they silently never reached your backup. Deleting data also syncs reliably across sessions now.',
+      },
+      {
+        type: 'fixed',
+        text: 'Recovered trades that were saved without an account',
+        description: 'Trades logged in the brief moment before your account finished loading could become invisible. They now appear on your default account, including ones affected in the past.',
+      },
+      {
+        type: 'fixed',
+        text: 'Manual P&L accepts commas and breakeven zero',
+        description: 'Typing 1,200 in the quick-add P&L field now saves as $1,200 instead of $1, and entering 0 for a breakeven trade is respected instead of being recalculated.',
+      },
+      {
+        type: 'improved',
+        text: 'Calendar day view shows that day\'s journal entries',
+        description: 'Opening a day on the calendar now lists the journal entries you already wrote for that day, alongside the form to add more.',
+      },
+      {
+        type: 'improved',
+        text: 'Trade Log opens instantly',
+        description: 'Removed an artificial loading delay — your trades now appear the moment the page opens.',
+      },
+      {
+        type: 'improved',
+        text: 'Easier to read and tap everywhere',
+        description: 'Faded text across trade details is now readable, small close and page buttons are easier to tap on phones, dialogs fit better on small screens, and screen reader support is improved throughout.',
+      },
+    ],
+  },
+  {
     version: '2.51.1',
     date: '2026-07-02',
     summary: 'Quick-add saves P&L-only trades, and clearer feedback when something needs your attention.',
@@ -1624,4 +1661,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.51.1'
+export const LATEST_CHANGELOG_VERSION = '2.52.0'

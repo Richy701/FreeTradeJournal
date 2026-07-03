@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react"
 import { toast } from "sonner"
 import { calculateGrossPnl } from "@/lib/pnl"
+import { belongsToAccount } from "@/lib/account-scope"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
@@ -154,7 +155,7 @@ export function CalendarHeatmap() {
     try {
       const parsedTrades = JSON.parse(storedTrades)
       return parsedTrades
-        .filter((trade: any) => trade.accountId === activeAccount.id || (!trade.accountId && activeAccount.id.includes('default')))
+        .filter((trade: any) => belongsToAccount(trade, activeAccount.id))
         .map((trade: any) => ({
           ...trade,
           entryTime: new Date(trade.entryTime),
@@ -305,16 +306,7 @@ export function CalendarHeatmap() {
     const updatedDayEntries = [...(journalEntries[dateKey] || []), journalEntry]
     setSelectedDateEntries(updatedDayEntries)
     
-    // Show success feedback
-    const feedback = document.createElement('div')
-    feedback.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-in slide-in-from-right-full duration-300'
-    feedback.textContent = '✓ Journal entry saved successfully!'
-    document.body.appendChild(feedback)
-    
-    setTimeout(() => {
-      feedback.classList.add('animate-out', 'slide-out-to-right-full')
-      setTimeout(() => document.body.removeChild(feedback), 300)
-    }, 2000)
+    toast.success('Journal entry saved')
   }
 
   const handleSaveTrade = () => {
@@ -326,7 +318,10 @@ export function CalendarHeatmap() {
     const lotSize = parseFloat(tradeForm.lotSize) || 1
     // Manual P&L wins; otherwise use the shared calculation (same math as the
     // Trade Log form) so every entry path agrees on contract multipliers.
-    const pnl = parseFloat(tradeForm.pnl) || calculateGrossPnl({
+    // Number() after stripping commas — parseFloat('1,200') silently truncated
+    // to 1, and `|| calculated` discarded a deliberate breakeven 0.
+    const manualPnl = tradeForm.pnl.trim() === '' ? NaN : Number(tradeForm.pnl.replace(/,/g, ''))
+    const pnl = !Number.isNaN(manualPnl) ? manualPnl : calculateGrossPnl({
       symbol: tradeForm.symbol,
       market: tradeForm.market,
       side: tradeForm.side,
@@ -353,7 +348,7 @@ export function CalendarHeatmap() {
       strategy: tradeForm.strategy,
       market: tradeForm.market,
       propFirm: tradeForm.propFirm === "none" ? "" : tradeForm.propFirm,
-      accountId: activeAccount?.id || 'default-main-account'
+      accountId: activeAccount?.id // undefined = legacy-default bucket, still visible on default accounts
     }
 
     // Read ALL trades from localStorage to avoid overwriting other accounts
@@ -699,14 +694,16 @@ export function CalendarHeatmap() {
                   <div className="flex items-center justify-between mb-3">
                     <button
                       onClick={() => setPickerYear(y => y - 1)}
-                      className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
+                      aria-label="Previous year"
+                      className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <CaretLeft className="h-3 w-3 text-muted-foreground" />
                     </button>
                     <span className="text-sm font-semibold">{pickerYear}</span>
                     <button
                       onClick={() => setPickerYear(y => y + 1)}
-                      className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
+                      aria-label="Next year"
+                      className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <CaretRight className="h-3 w-3 text-muted-foreground" />
                     </button>
@@ -819,13 +816,13 @@ export function CalendarHeatmap() {
           <div className="flex gap-1 sm:gap-3 mb-2">
             <div className="grid grid-cols-7 gap-1 sm:gap-3 flex-1">
               {DAYS.map((day) => (
-                <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
+                <div key={day} className="text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground py-1.5 sm:py-2">
                   <span className="sm:hidden">{day.slice(0, 1)}</span>
                   <span className="hidden sm:inline">{day}</span>
                 </div>
               ))}
             </div>
-            <div className="w-12 sm:w-20 shrink-0 text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground/70 py-1.5 sm:py-2">
+            <div className="w-12 sm:w-20 shrink-0 text-center text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground py-1.5 sm:py-2">
               Week
             </div>
           </div>
@@ -860,6 +857,8 @@ export function CalendarHeatmap() {
                           tabIndex={day.isCurrentMonth ? 0 : -1}
                           className={cn(
                             "h-[72px] sm:h-24 rounded-lg sm:rounded-xl relative overflow-hidden",
+                            // overflow-hidden clips the UA outline, so paint an inset ring instead
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                             getPnLColor(day.pnl, day.trades),
                             day.isCurrentMonth ? "opacity-100" : "opacity-40",
                             hasData && "hover:z-10",
@@ -879,6 +878,18 @@ export function CalendarHeatmap() {
                             }
                           }}
                           onMouseLeave={() => {
+                            setIsPopoverOpen(false)
+                            setSelectedDay(null)
+                          }}
+                          // Keyboard parity with hover: focusing a day shows
+                          // the same summary popover the mouse gets.
+                          onFocus={() => {
+                            if (hasData) {
+                              setSelectedDay(day)
+                              setIsPopoverOpen(true)
+                            }
+                          }}
+                          onBlur={() => {
                             setIsPopoverOpen(false)
                             setSelectedDay(null)
                           }}
@@ -904,7 +915,7 @@ export function CalendarHeatmap() {
                             <div className={cn(
                               "absolute top-1.5 left-1.5 sm:top-2 sm:left-2 text-[10px] sm:text-[11px] font-medium leading-none tabular-nums",
                               hasData ? `${getCellTextColor(day.pnl, day.trades, maxAbsPnl)} opacity-60` :
-                              day.isCurrentMonth ? "text-foreground/60" : "text-muted-foreground/50"
+                              day.isCurrentMonth ? "text-foreground/60" : "text-muted-foreground"
                             )}>
                               {day.date.getDate()}
                             </div>
@@ -1065,7 +1076,7 @@ export function CalendarHeatmap() {
                       >
                         {formatWeekPnl(wt.pnl)}
                       </span>
-                      <span className="hidden sm:block text-[10px] text-muted-foreground/60 mt-1 tabular-nums">
+                      <span className="hidden sm:block text-[10px] text-muted-foreground mt-1 tabular-nums">
                         {wt.trades} trade{wt.trades !== 1 ? 's' : ''}
                       </span>
                     </>
@@ -1094,7 +1105,7 @@ export function CalendarHeatmap() {
             </div>
 
             <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border/50">
-              <span className="text-[10px] text-muted-foreground/60">Less</span>
+              <span className="text-[10px] text-muted-foreground">Less</span>
               {[30, 50, 70, 85, 100].map(pct => (
                 <div
                   key={pct}
@@ -1102,7 +1113,7 @@ export function CalendarHeatmap() {
                   style={{ backgroundColor: alpha(themeColors.profit, pctToHex(pct)) }}
                 />
               ))}
-              <span className="text-[10px] text-muted-foreground/60">More</span>
+              <span className="text-[10px] text-muted-foreground">More</span>
             </div>
           </div>
         </div>
@@ -1110,7 +1121,7 @@ export function CalendarHeatmap() {
       
       {/* Trade Entry & Journal Modal */}
       <Dialog open={isTradeDialogOpen} onOpenChange={setIsTradeDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90svh] overflow-y-auto p-0">
           <div className="px-5 pt-5 sm:px-6 sm:pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
@@ -1154,6 +1165,33 @@ export function CalendarHeatmap() {
             </TabsList>
 
             <TabsContent value="journal" className="space-y-4 mt-0">
+              {/* -- Existing entries for this day -- */}
+              {selectedDateEntries.length > 0 && (
+                <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                    <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">
+                      {selectedDateEntries.length} {selectedDateEntries.length === 1 ? 'entry' : 'entries'} this day
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedDateEntries.map((entry: any, i: number) => (
+                      <div key={entry.id || i} className="rounded-lg border border-border/50 bg-background/60 p-3 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium truncate">{entry.title || 'Untitled entry'}</span>
+                          {entry.mood && (
+                            <span className="text-[11px] text-muted-foreground shrink-0 capitalize">{entry.mood}</span>
+                          )}
+                        </div>
+                        {entry.content && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{entry.content}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* -- Entry Card -- */}
               <div className="rounded-xl border bg-card/50 p-4 space-y-3">
                 <div className="flex items-center gap-2">
@@ -1201,7 +1239,7 @@ export function CalendarHeatmap() {
                     Link to Trade
                   </Label>
                   <Select value={selectedTradeId} onValueChange={setSelectedTradeId}>
-                    <SelectTrigger className="h-10 text-sm bg-background/60 border-border/50">
+                    <SelectTrigger aria-label="Link to trade" className="h-10 text-sm bg-background/60 border-border/50">
                       <SelectValue placeholder="No trade linked" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1222,7 +1260,7 @@ export function CalendarHeatmap() {
                       Sentiment
                     </Label>
                     <Select value={journalMood} onValueChange={(value: 'bullish' | 'bearish' | 'neutral') => setJournalMood(value)}>
-                      <SelectTrigger className="h-10 text-sm bg-background/60 border-border/50">
+                      <SelectTrigger aria-label="Sentiment" className="h-10 text-sm bg-background/60 border-border/50">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1282,7 +1320,7 @@ export function CalendarHeatmap() {
                     <Select value={tradeForm.market} onValueChange={(value: "forex" | "futures" | "indices") => {
                       setTradeForm(prev => ({ ...prev, market: value, symbol: "" }))
                     }}>
-                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
+                      <SelectTrigger aria-label="Market" className="h-10 bg-background/60 border-border/50">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1295,7 +1333,7 @@ export function CalendarHeatmap() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Symbol</Label>
                     <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
-                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
+                      <SelectTrigger aria-label="Symbol" className="h-10 bg-background/60 border-border/50">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1310,7 +1348,7 @@ export function CalendarHeatmap() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Side</Label>
                     <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
-                      <SelectTrigger className="h-10 bg-background/60 border-border/50">
+                      <SelectTrigger aria-label="Side" className="h-10 bg-background/60 border-border/50">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

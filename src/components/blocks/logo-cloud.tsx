@@ -60,7 +60,7 @@ export function LogoCloud() {
 
         <LogoCarousel logos={propFirms} />
 
-        <p className="mt-8 text-center text-sm text-muted-foreground/70">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Compatible with every prop firm, broker, and market
         </p>
         <p className="mt-2 text-center">

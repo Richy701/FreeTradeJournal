@@ -752,6 +752,12 @@ function assertAdmin(context) {
         throw new functions.https.HttpsError("permission-denied", "Admin only.");
     }
 }
+// Escape user-controlled strings before interpolating into email HTML —
+// a display name set to markup would otherwise render verbatim in emails
+// sent from our own domain (phishing surface).
+function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 exports.sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
@@ -868,7 +874,7 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
     const SILENT_TYPES = new Set(["ai_feedback", "nps"]);
     if (!SILENT_TYPES.has(type || "")) {
         const followUpBadge = wantFollowUp ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">WANTS REPLY</span>` : "";
-        const pageInfo = page ? `<p style="margin:0 0 4px;color:#666;font-size:13px">Page: <strong>${page}</strong></p>` : "";
+        const pageInfo = page ? `<p style="margin:0 0 4px;color:#666;font-size:13px">Page: <strong>${escapeHtml(page)}</strong></p>` : "";
         const diagRows = diagnostics
             ? Object.entries(diagnostics).map(([k, v]) => `<tr><td style="padding:2px 12px 2px 0;color:#999;white-space:nowrap;vertical-align:top">${k}</td>`
                 + `<td style="color:#444;word-break:break-word">${String(v).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td></tr>`).join("")
@@ -891,7 +897,7 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
           <h2 style="margin:0 0 8px">${label} ${followUpBadge}</h2>
           <p style="margin:0 0 4px;color:#666;font-size:14px">
-            From <strong>${userName}</strong> (${userEmail}) · ${new Date().toUTCString()}
+            From <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)}) · ${new Date().toUTCString()}
           </p>
           ${pageInfo}
           <p style="margin:0 0 16px;font-size:14px">Rating: ${stars}</p>
@@ -1157,11 +1163,12 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
                 const subject = rewardEarned
                     ? `You earned 14 days of Pro! ${newUserName} was your 3rd referral`
                     : `${newUserName} just started trading with your link`;
+                const newUserNameHtml = escapeHtml(newUserName);
                 const body = rewardEarned
                     ? `<p style="color:#ededed;font-size:16px;font-weight:600;margin:0 0 8px">You just earned 14 days of Pro</p>
-             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserName} was your 3rd referral. Your Pro access is now active — AI coaching, cloud sync, and everything else is unlocked for the next 14 days.</p>`
+             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserNameHtml} was your 3rd referral. Your Pro access is now active — AI coaching, cloud sync, and everything else is unlocked for the next 14 days.</p>`
                     : `<p style="color:#ededed;font-size:16px;font-weight:600;margin:0 0 8px">Referral confirmed</p>
-             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserName} signed up with your link and logged their first trade. ${REFERRAL_REWARD_THRESHOLD - newCount} more referral${REFERRAL_REWARD_THRESHOLD - newCount !== 1 ? "s" : ""} to unlock 14 days of Pro free.</p>`;
+             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserNameHtml} signed up with your link and logged their first trade. ${REFERRAL_REWARD_THRESHOLD - newCount} more referral${REFERRAL_REWARD_THRESHOLD - newCount !== 1 ? "s" : ""} to unlock 14 days of Pro free.</p>`;
                 await getResend().emails.send({
                     from: FROM_EMAIL,
                     to: referrerEmail,
@@ -1429,7 +1436,12 @@ exports.sendStreakReminders = functions.pubsub
 });
 // ─── Email Unsubscribe ─────────────────────────────────────
 function generateUnsubscribeToken(uid) {
-    const hmac = crypto.createHmac("sha256", process.env.UNSUBSCRIBE_SECRET || "ftj-unsub-default");
+    // No fallback: a hardcoded default would let anyone who reads the source
+    // mint valid tokens and opt arbitrary users out of email. Fail loudly.
+    const secret = process.env.UNSUBSCRIBE_SECRET;
+    if (!secret)
+        throw new Error("UNSUBSCRIBE_SECRET is not configured");
+    const hmac = crypto.createHmac("sha256", secret);
     hmac.update(uid);
     return hmac.digest("hex");
 }
@@ -1537,6 +1549,7 @@ exports.initResendContactProperties = functions.https.onCall(async (_data, conte
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
+    assertAdmin(context);
     const resend = getResend();
     const results = [];
     for (const prop of [
@@ -2863,7 +2876,10 @@ Return only valid JSON with no extra text.`;
     };
 });
 // ─── Cloud Sync Proxy (bypasses content blockers) ──────────
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions'];
+// Must match the client list in src/services/sync-engine.ts — a key missing
+// here is silently rejected as "Invalid sync key" ('settings' was missing for
+// weeks and Pro settings sync never reached Firestore).
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'];
 /**
  * Syncs data to Firestore (bypasses content blockers)
  * Client calls this instead of direct Firestore SDK
@@ -2878,7 +2894,7 @@ exports.syncData = functions.https.onCall(async (data, context) => {
     if (!userDoc.exists || !userDoc.data()?.isPro) {
         throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
     }
-    const { key, value } = data;
+    const { key, value, allowEmpty } = data;
     if (!key || !SYNC_KEYS.includes(key)) {
         throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
     }
@@ -2887,9 +2903,12 @@ exports.syncData = functions.https.onCall(async (data, context) => {
     if (value && value.length > MAX_SYNC_SIZE) {
         throw new functions.https.HttpsError("invalid-argument", `Sync value too large. Max size: 1MB`);
     }
-    // CRITICAL: Never sync empty arrays - prevents data loss
+    // Block empty collection writes UNLESS the client marks them deliberate
+    // (allowEmpty = its initial pull completed, so '[]' is a real user deletion
+    // that must propagate — blocking it made deleted trades resurrect). The
+    // unmarked case still guards fresh devices pushing default empty state.
     const isEmpty = value === '[]' || value === '{}' || value === '' || value === 'null';
-    if (isEmpty && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
+    if (isEmpty && allowEmpty !== true && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
         console.warn(`[syncData] Blocked empty ${key} from syncing for ${uid}`);
         return { success: false, reason: 'empty_data_blocked' };
     }

@@ -28,6 +28,7 @@ import { ProBadge } from '@/components/pro-badge';
 import { PRO_FEATURES } from '@/constants/pricing';
 import { ReferralCard } from '@/components/referral-card';
 import { PushNotificationPrompt } from '@/components/push-notification-prompt';
+import { belongsToAccount } from '@/lib/account-scope';
 import { ExitSurveyDialog } from '@/components/exit-survey-dialog';
 
 const BROKERS = [
@@ -181,7 +182,7 @@ export default function Settings() {
 
   const getTradeStats = () => {
     const trades = JSON.parse(userStorage.getItem('trades') || '[]')
-      .filter((t: any) => !activeAccount || t.accountId === activeAccount.id || (!t.accountId && activeAccount.id.includes('default')));
+      .filter((t: any) => !activeAccount || belongsToAccount(t, activeAccount.id));
     const now = new Date();
     const thisMonth = trades.filter((t: any) => {
       const d = new Date(t.exitTime);
@@ -832,7 +833,7 @@ export default function Settings() {
                     <div className="rounded-lg p-4 bg-muted/40 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {['Never risk more than you can afford to lose', 'Always use stop losses on every trade', 'Keep risk consistent across all trades', 'Size positions based on distance to stop loss'].map(tip => (
                         <div key={tip} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <span className="mt-0.5 text-xs" style={{ color: themeColors.profit }}>✓</span>
+                          <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: themeColors.profit }} />
                           <span>{tip}</span>
                         </div>
                       ))}
@@ -1007,7 +1008,7 @@ export default function Settings() {
                           <ul className="space-y-1.5">
                             {PRO_FEATURES.map(f => (
                               <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span className="text-amber-500 text-xs">✓</span>
+                                <Check className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
                                 {f}
                               </li>
                             ))}

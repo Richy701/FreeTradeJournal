@@ -246,7 +246,10 @@ export default function Dashboard() {
     const lotSize = parseFloat(tradeForm.lotSize) || 1
     // Manual P&L wins; otherwise use the shared calculation (same math as the
     // Trade Log form) so both entry paths agree on contract multipliers.
-    const pnl = parseFloat(tradeForm.pnl) || calculateGrossPnl({
+    // Number() after stripping commas — parseFloat('1,200') silently truncated
+    // to 1, and `|| calculated` discarded a deliberate breakeven 0.
+    const manualPnl = tradeForm.pnl.trim() === '' ? NaN : Number(tradeForm.pnl.replace(/,/g, ''))
+    const pnl = !Number.isNaN(manualPnl) ? manualPnl : calculateGrossPnl({
       symbol: tradeForm.symbol,
       market: tradeForm.market,
       side: tradeForm.side,
@@ -257,7 +260,7 @@ export default function Dashboard() {
     
     const newTrade = {
       id: Date.now().toString(),
-      accountId: activeAccount?.id || 'default',
+      accountId: activeAccount?.id, // undefined = legacy-default bucket, still visible on default accounts
       symbol: tradeForm.symbol.toUpperCase(),
       side: tradeForm.side,
       entryPrice,
@@ -462,7 +465,7 @@ export default function Dashboard() {
         // produces the same trades (correct dates, net P&L, market) either way.
         const importedTrades = buildImportedTrades(result.trades, {
           fileName: file.name,
-          accountId: activeAccount?.id || 'default-main-account',
+          accountId: activeAccount?.id || '', // '' = legacy-default bucket, still visible on default accounts
           source: 'Dashboard',
         });
 
@@ -561,7 +564,7 @@ export default function Dashboard() {
     if (!tradesData || tradesData.length === 0) {
       return (
         <div className="flex flex-wrap items-center justify-start gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground/70">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground">
             No trades yet -- log your first trade to see live stats
           </span>
         </div>
@@ -761,7 +764,7 @@ export default function Dashboard() {
                 className="text-muted-foreground hover:text-foreground flex-shrink-0 p-2 -m-1 flex items-center justify-center"
                 aria-label="Close warning"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
         </div>
       )}
@@ -867,7 +870,7 @@ export default function Dashboard() {
                     <span>Add Trade</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90svh] overflow-y-auto p-0">
                   <div className="px-5 pt-5 sm:px-6 sm:pt-6">
                     <div className="flex items-center gap-3">
                       <div className="p-2.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
@@ -899,7 +902,7 @@ export default function Dashboard() {
 
                     <TabsContent value="manual" className="space-y-4 mt-0">
                     {/* Setup: what did you trade */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="trade-market" className="text-xs text-muted-foreground">Market</Label>
                         <Select value={tradeForm.market} onValueChange={(value: MarketType) => {
@@ -987,7 +990,7 @@ export default function Dashboard() {
                         )}
 
                         {/* Prices -- optional; auto-calculate P&L and unlock price stats */}
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="space-y-1.5">
                             <Label htmlFor="entry-price" className="text-xs text-muted-foreground">Entry</Label>
                             <Input id="entry-price" type="number" step="0.00001" placeholder="e.g. 1.08450" className="h-10 bg-background/60 border-border/50" value={tradeForm.entryPrice} onChange={(e) => setTradeForm(prev => ({ ...prev, entryPrice: e.target.value }))} />
@@ -1213,7 +1216,7 @@ export default function Dashboard() {
 
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90svh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-4 flex-shrink-0">
             <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground">
               Import Preview
@@ -1358,7 +1361,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Desktop table view */}
-                  <div className="hidden sm:block overflow-x-auto">
+                  <div className="hidden sm:block overflow-x-auto scrollbar-hide">
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-border">

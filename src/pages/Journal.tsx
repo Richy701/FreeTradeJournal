@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { trackEvent } from '@/lib/analytics';
+import { belongsToAccount } from '@/lib/account-scope';
 import { Badge } from '@/components/ui/badge';
 import { 
   TrendUp, 
@@ -220,9 +221,7 @@ function matchesActiveAccount(
   account: { id: string } | null
 ): boolean {
   if (!account) return true;
-  if (entry.accountId === account.id) return true;
-  if (!entry.accountId && account.id.includes('default')) return true;
-  return false;
+  return belongsToAccount(entry, account.id);
 }
 
 export default function Journal() {
@@ -1005,7 +1004,8 @@ export default function Journal() {
         </div>
       </div>
 
-      <div className="flex-1 w-full px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      {/* pb-24 on mobile keeps the last row clear of the floating add button */}
+      <div className="flex-1 w-full px-4 pt-6 pb-24 sm:px-6 sm:pb-6 lg:px-8 space-y-6">
 
         {(nearFreeJournalLimit || atFreeJournalLimit) && (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
@@ -1254,7 +1254,7 @@ export default function Journal() {
                       value={newEntry.tradeId || 'none'}
                       onValueChange={(value) => handleTradeSelection(value)}
                     >
-                      <SelectTrigger className="w-full h-11 bg-background/60 border-border/50 focus:border-primary/50 text-sm">
+                      <SelectTrigger aria-label="Link to trade" className="w-full h-11 bg-background/60 border-border/50 focus:border-primary/50 text-sm">
                         <SelectValue placeholder="Choose a trade to analyze..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1292,15 +1292,15 @@ export default function Journal() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
-                        <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Entry</span>
+                        <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Entry</span>
                         <div className="font-semibold text-foreground mt-0.5">{selectedTrade.entryPrice}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Exit</span>
+                        <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Exit</span>
                         <div className="font-semibold text-foreground mt-0.5">{selectedTrade.exitPrice}</div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground/70 text-[10px] uppercase tracking-wider">Date</span>
+                        <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Date</span>
                         <div className="font-semibold text-foreground mt-0.5">{format(selectedTrade.entryTime, 'MMM dd')}</div>
                       </div>
                     </div>
@@ -1528,7 +1528,7 @@ export default function Journal() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Sort By</label>
                       <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger aria-label="Sort by" className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1542,7 +1542,7 @@ export default function Journal() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Order</label>
                       <Select value={sortOrder} onValueChange={(value: any) => setSortOrder(value)}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger aria-label="Sort order" className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1602,7 +1602,7 @@ export default function Journal() {
                       Market
                     </label>
                     <Select value={selectedMarket} onValueChange={setSelectedMarket}>
-                      <SelectTrigger className="bg-background/50 border-muted-foreground/20">
+                      <SelectTrigger aria-label="Filter by market" className="bg-background/50 border-muted-foreground/20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1618,7 +1618,7 @@ export default function Journal() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Mood</label>
                     <Select value={selectedMood} onValueChange={setSelectedMood}>
-                      <SelectTrigger className="bg-background/50 border-muted-foreground/20">
+                      <SelectTrigger aria-label="Filter by mood" className="bg-background/50 border-muted-foreground/20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1634,7 +1634,7 @@ export default function Journal() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Entry Type</label>
                     <Select value={selectedEntryType} onValueChange={setSelectedEntryType}>
-                      <SelectTrigger className="bg-background/50 border-muted-foreground/20">
+                      <SelectTrigger aria-label="Filter by entry type" className="bg-background/50 border-muted-foreground/20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1733,7 +1733,7 @@ export default function Journal() {
             searchTerm || activeFilterCount > 0 ? (
               <div className="flex flex-col items-center py-16 text-center">
                 <div className="p-3 rounded-xl mb-4 bg-muted/40">
-                  <MagnifyingGlass className="h-6 w-6 text-muted-foreground/50" />
+                  <MagnifyingGlass className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold mb-1">No entries found</h3>
                 <p className="text-sm text-muted-foreground mb-4">Try adjusting your search or filters.</p>
@@ -1909,19 +1909,19 @@ export default function Journal() {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                           <div>
-                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Side</span>
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">Side</span>
                             <span className="font-semibold text-foreground">{linkedTrade.side.toUpperCase()}</span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Entry</span>
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">Entry</span>
                             <span className="font-semibold text-foreground">{linkedTrade.entryPrice}</span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">Exit</span>
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">Exit</span>
                             <span className="font-semibold text-foreground">{linkedTrade.exitPrice}</span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground/60 text-[10px] uppercase tracking-wider block">R:R</span>
+                            <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">R:R</span>
                             <span className="font-semibold text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</span>
                           </div>
                         </div>

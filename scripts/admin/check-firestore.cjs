@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Script to check Firestore data for a user
-const admin = require('firebase-admin');
+const admin = require('../../functions/node_modules/firebase-admin');
 
 // Initialize with the same credentials as Cloud Functions
 const serviceAccount = require('../functions/service-account.json');

@@ -19,7 +19,7 @@ function formatMacro(ind: MacroIndicator): string {
 // Macro direction is shown neutrally — for these series "up" is not inherently
 // good or bad, so we avoid the profit/loss coloring used for price changes.
 function MacroArrow({ change }: { change: number }) {
-  if (Math.abs(change) < 0.005) return <Minus className="h-3 w-3 text-muted-foreground/60" weight="bold" />
+  if (Math.abs(change) < 0.005) return <Minus className="h-3 w-3 text-muted-foreground" weight="bold" />
   return change > 0
     ? <TrendUp className="h-3 w-3 text-muted-foreground" weight="bold" />
     : <TrendDown className="h-3 w-3 text-muted-foreground" weight="bold" />
@@ -97,7 +97,7 @@ export function MarketTicker() {
     return fromTrades
   }, [getTrades, userStorage])
 
-  const { quotes, isLoading } = useMarketData(settings.showMarketPrices ? topSymbols : [])
+  const { quotes, isLoading, error } = useMarketData(settings.showMarketPrices ? topSymbols : [])
   const { indicators } = useMacroData(settings.showMacroSnapshot)
 
   if (!MARKET_DATA_ENABLED) return null
@@ -112,7 +112,17 @@ export function MarketTicker() {
     )
   }
 
-  if (quotes.length === 0 && indicators.length === 0) return null
+  if (quotes.length === 0 && indicators.length === 0) {
+    // A fetch failure shouldn't silently collapse the strip — say why it's empty.
+    if (error) {
+      return (
+        <p className="py-1 text-[11px] text-muted-foreground">
+          Market data is temporarily unavailable.
+        </p>
+      )
+    }
+    return null
+  }
 
   return (
     <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">

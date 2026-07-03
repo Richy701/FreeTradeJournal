@@ -324,8 +324,10 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-9 w-9 -m-1"
                           onClick={() => toggleAccept(result.id)}
+                          aria-label={isAccepted ? 'Suggestion accepted — click to reject' : 'Suggestion rejected — click to accept'}
+                          aria-pressed={isAccepted}
                         >
                           {isAccepted ? (
                             <Check className="h-4 w-4 text-green-500" />

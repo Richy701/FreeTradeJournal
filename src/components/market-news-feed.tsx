@@ -73,7 +73,7 @@ function NewsCard({ item, alpha, themeColors, isLast }: {
           >
             {item.source}
           </span>
-          <span className="text-[10px] text-muted-foreground/50 select-none">·</span>
+          <span className="text-[10px] text-muted-foreground select-none">·</span>
           <span className="text-[10px] text-muted-foreground">{formatAge(item.datetime)}</span>
         </div>
       </div>
@@ -104,7 +104,7 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
   const symbolResult = useSymbolNews(symbol ?? null)
   const generalResult = useMarketNews(symbol ? 'general' : category)
 
-  const { news, isLoading } = symbol ? symbolResult : generalResult
+  const { news, isLoading, error } = symbol ? symbolResult : generalResult
   const displayTitle = title || (symbol ? `${symbol} News` : 'Market News')
 
   if (!MARKET_DATA_ENABLED) return null
@@ -119,7 +119,17 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
     )
   }
 
-  if (news.length === 0) return null
+  if (news.length === 0) {
+    // A fetch failure shouldn't silently remove the card — say why it's empty.
+    if (error) {
+      return (
+        <div className="rounded-xl border bg-card/50 p-4">
+          <p className="text-sm text-muted-foreground">News is temporarily unavailable.</p>
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className="rounded-xl border bg-card/50">

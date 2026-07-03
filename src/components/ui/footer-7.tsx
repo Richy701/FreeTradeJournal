@@ -234,7 +234,7 @@ export const Footer7 = ({
         {/* Gradient bottom divider */}
         <div className="mt-10 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <motion.div
-          className="pt-8 flex flex-col justify-between gap-4 text-sm font-medium text-muted-foreground/70 md:flex-row md:items-center md:text-left"
+          className="pt-8 flex flex-col justify-between gap-4 text-sm font-medium text-muted-foreground md:flex-row md:items-center md:text-left"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -259,7 +259,7 @@ export const Footer7 = ({
             <li className={legalLinks.length > 0 ? "md:border-l md:border-border/70 md:pl-6" : ""}>
               <FeedbackButton
                 variant="ghost"
-                className="h-auto p-0 text-muted-foreground/70 hover:text-foreground text-sm font-medium"
+                className="h-auto p-0 text-muted-foreground hover:text-foreground text-sm font-medium"
                 buttonText="Feedback"
               />
             </li>

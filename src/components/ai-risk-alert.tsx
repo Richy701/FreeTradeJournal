@@ -271,7 +271,7 @@ export function AIRiskAlertMonitor() {
               <Warning className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
               <span className="text-sm font-semibold">{alert.title}</span>
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => dismiss(alert.type)}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 -m-1.5 shrink-0" onClick={() => dismiss(alert.type)} aria-label="Dismiss alert">
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>

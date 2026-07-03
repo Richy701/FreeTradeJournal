@@ -14,6 +14,13 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={false}>
+      {/* Keyboard users skip the full sidebar tab-through on every page */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:shadow-lg focus:ring-2 focus:ring-ring"
+      >
+        Skip to content
+      </a>
       <AppSidebar />
       <SidebarInset
         className="h-dvh overflow-auto"
@@ -28,6 +35,8 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         <PropTrackerAnnouncement />
         <MobileHeader />
         <motion.main
+          id="main-content"
+          tabIndex={-1}
           key={location.pathname}
           initial={shouldReduceMotion ? {} : { opacity: 0, y: 8 }}
           animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}

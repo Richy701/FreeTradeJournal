@@ -46,7 +46,7 @@ export function AIFeedback({ feature, responseId, className, onFeedback }: AIFee
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       {!submitted && (
-        <span className="text-[11px] text-muted-foreground/70 mr-0.5 font-medium">Was this helpful?</span>
+        <span className="text-[11px] text-muted-foreground mr-0.5 font-medium">Was this helpful?</span>
       )}
       {submitted && vote && (
         <span className="text-[11px] text-muted-foreground mr-0.5 animate-in fade-in slide-in-from-left-2 duration-300 font-medium">

@@ -14,7 +14,7 @@ export default function NotFound() {
         <Button asChild size="lg">
           <Link to="/">
             <House className="mr-2 h-4 w-4" />
-            Back to House
+            Back to Home
           </Link>
         </Button>
       </div>

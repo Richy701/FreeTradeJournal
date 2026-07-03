@@ -795,7 +795,8 @@ export default function PropTracker() {
       icon: CurrencyDollar,
       label: 'Total Invested',
       value: hasData ? fmt(stats.totalInvested) : '—',
-      valueColor: hasData ? themeColors.loss : 'var(--muted-foreground)',
+      // Neutral, not loss-red: fees paid are an investment, not a losing trade.
+      valueColor: hasData ? 'hsl(var(--foreground))' : 'var(--muted-foreground)',
       subtitle: 'All fees paid',
     },
     {
@@ -1232,7 +1233,7 @@ export default function PropTracker() {
                       >
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Pass Rate</p>
-                          <Target className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                          <Target className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="text-2xl font-bold tabular-nums" style={{ color: passColor }}>
                           {successStats.passRate !== null ? `${successStats.passRate.toFixed(0)}%` : '--'}
@@ -1271,7 +1272,7 @@ export default function PropTracker() {
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Attempts</p>
-                      <ChartBar className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                      <ChartBar className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <p className="text-2xl font-bold tabular-nums" style={{ color: themeColors.primary }}>
                       {successStats.total}
@@ -1292,7 +1293,7 @@ export default function PropTracker() {
                       >
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Avg Cost to Fund</p>
-                          <Calculator className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                          <Calculator className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="text-2xl font-bold tabular-nums" style={{ color: costColor ?? 'var(--muted-foreground)' }}>
                           {successStats.avgCostToFund !== null ? fmt(successStats.avgCostToFund) : '--'}
@@ -1315,7 +1316,7 @@ export default function PropTracker() {
                       >
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Wasted on Failed</p>
-                          <Warning className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                          <Warning className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="text-2xl font-bold tabular-nums" style={{ color: wastedColor ?? 'var(--muted-foreground)' }}>
                           {successStats.totalWastedOnFailed > 0 ? fmt(successStats.totalWastedOnFailed) : '--'}
@@ -1339,7 +1340,7 @@ export default function PropTracker() {
                       >
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Best Firm ROI</p>
-                          <Trophy className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                          <Trophy className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="text-2xl font-bold tabular-nums" style={{ color: hasData ? roiColor : 'var(--muted-foreground)' }}>
                           {successStats.bestFirm ? `${successStats.bestFirm.roi >= 0 ? '+' : ''}${successStats.bestFirm.roi.toFixed(0)}%` : '--'}
@@ -1872,7 +1873,7 @@ export default function PropTracker() {
               <div className="pointer-events-none select-none opacity-50 p-4 sm:p-6 space-y-4">
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
                   {[
-                    { icon: CurrencyDollar, label: 'Total Invested',  value: '$1,915',  sub: 'All fees paid',        color: themeColors.loss, isPnL: false },
+                    { icon: CurrencyDollar, label: 'Total Invested',  value: '$1,915',  sub: 'All fees paid',        color: 'hsl(var(--foreground))', isPnL: false },
                     { icon: Wallet,     label: 'Total Earned',    value: '$7,700',  sub: 'All payouts received', color: themeColors.profit, isPnL: false },
                     { icon: TrendUp, label: 'P&L',             value: '+$5,785', sub: '+302% ROI',            color: themeColors.profit, isPnL: true },
                     { icon: Buildings,  label: 'Active Accounts', value: '2',       sub: 'of 4 total',          color: themeColors.primary, isPnL: false },
@@ -2291,7 +2292,7 @@ export default function PropTracker() {
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                                          className="h-9 w-9 -m-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                                           aria-label="Delete transaction"
                                           onClick={() => setDeleteDialog({ open: true, type: 'tx', id: tx.id })}
                                         >

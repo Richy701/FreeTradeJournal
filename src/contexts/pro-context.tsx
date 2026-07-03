@@ -111,11 +111,15 @@ export function ProProvider({ children }: ProProviderProps) {
     }
 
     let unsubscribe: (() => void) | undefined;
+    // The listener attaches after two awaits; if the effect cleans up first
+    // (logout, uid change, StrictMode), detach immediately instead of leaking.
+    let cancelled = false;
 
     (async () => {
       try {
         const db = await getFirebaseFirestore();
         const { doc, onSnapshot } = await import('firebase/firestore');
+        if (cancelled) return;
 
         const userDocRef = doc(db, 'users', uid);
         unsubscribe = onSnapshot(
@@ -150,6 +154,7 @@ export function ProProvider({ children }: ProProviderProps) {
     })();
 
     return () => {
+      cancelled = true;
       unsubscribe?.();
     };
   }, [uid, isDemo]);

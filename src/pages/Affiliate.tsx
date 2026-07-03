@@ -306,7 +306,7 @@ export default function Affiliate() {
               </p>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-border/40">
+            <div className="overflow-x-auto scrollbar-hide rounded-xl border border-border/40">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/40 bg-muted/30">

@@ -63,6 +63,8 @@ import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, buil
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog';
 import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory';
 import { rescueFailedImport } from '@/utils/csv-import-flow';
+import { cn } from '@/lib/utils';
+import { belongsToAccount } from '@/lib/account-scope';
 import { lazy, Suspense } from 'react';
 const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })));
 const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })));
@@ -415,21 +417,25 @@ export default function TradeLog() {
       recordFirstTradeIfNeeded(user.uid);
     }
 
-    // Merge with other accounts' trades to avoid overwriting them
+    // Merge with other accounts' trades to avoid overwriting them.
+    // "Other" must be the exact complement of belongsToAccount, or legacy
+    // (accountId-less) trades would land in both halves and duplicate.
     const currentAccountId = activeAccount?.id || 'default-main-account';
     try {
       const allSaved = userStorage.getItem('trades');
       if (allSaved) {
         const allTrades = JSON.parse(allSaved) as any[];
-        const otherAccountTrades = allTrades.filter((t: any) =>
-          t.accountId && t.accountId !== currentAccountId
-        );
+        const otherAccountTrades = allTrades.filter((t: any) => !belongsToAccount(t, currentAccountId));
         userStorage.setItem('trades', JSON.stringify([...otherAccountTrades, ...updatedTrades]));
       } else {
         userStorage.setItem('trades', JSON.stringify(updatedTrades));
       }
     } catch {
-      userStorage.setItem('trades', JSON.stringify(updatedTrades));
+      // Do NOT write current-account trades over the whole key here: if the
+      // existing blob couldn't be read, overwriting it would silently destroy
+      // every other account's trades. Surface the failure instead.
+      toast.error('Could not save: your existing trades failed to load. Refresh and try again.');
+      return;
     }
 
     // Notify useDemoData subscribers (dashboard widgets, etc.) so they re-read
@@ -595,7 +601,7 @@ export default function TradeLog() {
       riskReward,
       entryTime: new Date(data.entryTime),
       exitTime: new Date(data.exitTime),
-      accountId: activeAccount?.id || 'default-main-account',
+      accountId: activeAccount?.id, // undefined = legacy-default bucket, still visible on default accounts
     };
 
     if (editingTrade) {
@@ -841,7 +847,7 @@ export default function TradeLog() {
         // preserved as brokerPnL, real entry/exit dates, market auto-detected.
         const importedTrades = buildImportedTrades(result.trades, {
           fileName: file.name,
-          accountId: activeAccount?.id || 'default-main-account',
+          accountId: activeAccount?.id || '', // '' = legacy-default bucket, still visible on default accounts
         });
 
         // Deduplicate against existing trades on key fields.
@@ -1028,10 +1034,11 @@ export default function TradeLog() {
     });
   };
 
-  // Enhanced loading simulation
+  // Load trades — synchronous localStorage read, no artificial delay (the old
+  // 800ms setTimeout showed a fake skeleton on every visit).
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => {
+    const loadTrades = () => {
       // Demo mode: load demo trades directly
       if (isDemo) {
         const demoTrades = getDemoTrades().map((trade: any) => ({
@@ -1049,6 +1056,7 @@ export default function TradeLog() {
       if (savedTrades) {
         try {
           const parsedTrades = JSON.parse(savedTrades);
+          let rrBackfilled = false;
           const tradesWithDates = parsedTrades.map((trade: any) => {
             const tradeWithDates = {
               ...trade,
@@ -1077,27 +1085,31 @@ export default function TradeLog() {
               }
               // Without SL/TP we can't know the R:R — leave as 0
               tradeWithDates.riskReward = riskReward;
+              rrBackfilled = true;
             }
             // Cap any previously stored garbage values
             if (tradeWithDates.riskReward > 100) {
               tradeWithDates.riskReward = 0;
+              rrBackfilled = true;
             }
 
             return tradeWithDates;
           });
           
           // Filter trades by active account
-          const filteredTrades = tradesWithDates.filter((trade: any) => 
-            !activeAccount || 
-            trade.accountId === activeAccount.id || 
-            (!trade.accountId && activeAccount.id.includes('default'))
+          const filteredTrades = tradesWithDates.filter((trade: any) =>
+            !activeAccount || belongsToAccount(trade, activeAccount.id)
           );
           
           setTrades(filteredTrades);
           calculateQuickStats(filteredTrades);
           
-          // Save the updated trades with RR calculations back to localStorage
-          userStorage.setItem('trades', JSON.stringify(tradesWithDates));
+          // Persist only when the backfill actually changed a trade — an
+          // unconditional write pushed the full blob to cloud sync every visit
+          // and could race a stale device against newer remote data.
+          if (rrBackfilled) {
+            userStorage.setItem('trades', JSON.stringify(tradesWithDates));
+          }
         } catch (error) {
           console.error('Error loading trades:', error);
           setTrades([]);
@@ -1149,9 +1161,8 @@ export default function TradeLog() {
       }
       
       setIsLoading(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
+    };
+    loadTrades();
   }, [activeAccount]);
 
   // Enhanced loading state
@@ -1292,7 +1303,7 @@ export default function TradeLog() {
                     Export
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-96 p-4 space-y-3" align="end">
+                <PopoverContent className="w-[min(24rem,calc(100vw-2rem))] p-4 space-y-3" align="end">
                   <p className="text-sm font-medium">Export trades as CSV</p>
                   <div className="flex gap-1.5">
                     {[
@@ -1389,7 +1400,7 @@ export default function TradeLog() {
 
       {/* Add Trade Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90svh] sm:max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold flex items-center gap-2.5">
                       <div className="p-1.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
@@ -2216,11 +2227,14 @@ export default function TradeLog() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-                      style={{ color: quickStats.avgRR >= 1.5 ? themeColors.profit : quickStats.avgRR >= 1 ? themeColors.primary : themeColors.loss }}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+                        quickStats.validRRCount === 0 && 'text-muted-foreground',
+                      )}
+                      style={quickStats.validRRCount > 0 ? { color: quickStats.avgRR >= 1.5 ? themeColors.profit : quickStats.avgRR >= 1 ? themeColors.primary : themeColors.loss } : undefined}
                     >
-                      {quickStats.avgRR >= 1 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
-                      {quickStats.avgRR >= 2 ? 'Excellent' : quickStats.avgRR >= 1.5 ? 'Good' : quickStats.avgRR >= 1 ? 'Okay' : 'Low'}
+                      {quickStats.validRRCount > 0 && (quickStats.avgRR >= 1 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />)}
+                      {quickStats.validRRCount === 0 ? 'No data' : quickStats.avgRR >= 2 ? 'Excellent' : quickStats.avgRR >= 1.5 ? 'Good' : quickStats.avgRR >= 1 ? 'Okay' : 'Low'}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="p-2 border bg-popover">
@@ -2229,8 +2243,8 @@ export default function TradeLog() {
                 </Tooltip>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold tracking-tight tabular-nums"
-                     style={{ color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss }}>
+                <div className={cn('text-3xl font-bold tracking-tight tabular-nums', quickStats.validRRCount === 0 && 'text-muted-foreground')}
+                     style={quickStats.validRRCount > 0 ? { color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss } : undefined}>
                   {quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '--'}
                 </div>
                 <div className="mt-3 space-y-0.5">
@@ -2486,7 +2500,7 @@ export default function TradeLog() {
                           {(() => {
                             const d = new Date(trade.exitTime);
                             return (d.getHours() !== 0 || d.getMinutes() !== 0) ? (
-                              <div className="text-xs text-muted-foreground/60">{format(d, 'h:mm a')}</div>
+                              <div className="text-xs text-muted-foreground">{format(d, 'h:mm a')}</div>
                             ) : null;
                           })()}
                         </TableCell>
@@ -2781,7 +2795,9 @@ export default function TradeLog() {
                           variant={currentPage === pageNumber ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(pageNumber)}
-                          className="w-8 h-8 p-0"
+                          className="w-9 h-9 p-0"
+                          aria-label={`Page ${pageNumber}`}
+                          aria-current={currentPage === pageNumber ? 'page' : undefined}
                         >
                           {pageNumber}
                         </Button>
@@ -2809,7 +2825,7 @@ export default function TradeLog() {
 
       {/* CSV Preview Dialog */}
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90svh] overflow-hidden">
           <DialogHeader>
                 <DialogTitle>Import Preview</DialogTitle>
                 <DialogDescription>
@@ -2954,7 +2970,7 @@ export default function TradeLog() {
                   </div>
 
                   {/* Desktop table view */}
-                  <div className="hidden sm:block overflow-x-auto">
+                  <div className="hidden sm:block overflow-x-auto scrollbar-hide">
                     <Table>
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-border">

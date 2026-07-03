@@ -391,7 +391,7 @@ function FeedbackDialog({
                       <Info className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs font-medium text-muted-foreground">Auto-included to help us debug</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
                       App v{LATEST_CHANGELOG_VERSION} · {context || getPageContext()} · your browser &amp; screen size. No personal data.
                     </p>
                   </div>
@@ -432,9 +432,9 @@ function FeedbackDialog({
                   rows={4}
                   maxLength={2000}
                   required
-                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
+                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
                 />
-                <span className="text-xs text-muted-foreground/60">
+                <span className="text-xs text-muted-foreground">
                   {message.length > 0 ? `${message.length}/2000` : 'Max 2000 characters'}
                 </span>
               </div>
@@ -501,7 +501,7 @@ function FeedbackDialog({
                   value={testimonialName}
                   onChange={(e) => setTestimonialName(e.target.value)}
                   placeholder="How should we credit you?"
-                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
 
@@ -540,9 +540,9 @@ function FeedbackDialog({
                   rows={4}
                   maxLength={300}
                   required
-                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                 />
-                <span className="text-xs text-muted-foreground/60">{testimonialQuote.length}/300</span>
+                <span className="text-xs text-muted-foreground">{testimonialQuote.length}/300</span>
               </div>
 
               {/* Consent */}

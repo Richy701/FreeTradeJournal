@@ -243,6 +243,17 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     display: none;                /* Chrome/Safari */
   }
 
+  /* Notch/home-indicator clearance for full-screen pages (auth, PWA).
+     Backed by --pwa-safe-top/bottom, which resolve to env(safe-area-inset-*)
+     in standalone display mode and 0px in the browser. */
+  .safe-top {
+    padding-top: var(--pwa-safe-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: var(--pwa-safe-bottom, 0px);
+  }
+
   /* Force hide only Radix Select scroll buttons - specific targeting only */
   [data-radix-select-content] button[data-radix-select-scroll-up-button],
   [data-radix-select-content] button[data-radix-select-scroll-down-button],

@@ -3,7 +3,7 @@ import { UserStorage, isSettingsDirty, clearSettingsDirty } from '@/utils/user-s
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
 // Keys we sync between localStorage and Firestore
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
 type SyncKey = typeof SYNC_KEYS[number];
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
@@ -24,6 +24,9 @@ export class SyncEngine {
   private maxRetries = 3;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  // Set by disable(); enable() re-checks it after its awaits so a mid-flight
+  // logout can't leave the poll interval running on a disabled engine.
+  private stopped = false;
   private _initialPullDone = false;
   private initialPullCallbacks: Set<() => void> = new Set();
 
@@ -70,6 +73,7 @@ export class SyncEngine {
   /** Start Cloud Function polling (bypasses content blockers) */
   async enable() {
     try {
+      this.stopped = false;
       this.setStatus('syncing');
       this.retryCount = 0;
 
@@ -116,6 +120,10 @@ export class SyncEngine {
           console.log(`[Sync] Pulled ${key} from remote`);
         }
       }
+
+      // disable() may have run while the pull above was awaiting — don't
+      // start (or leak) the poll interval on a disabled engine.
+      if (this.stopped) return;
 
       // Start polling for changes every 10 seconds
       this.pollTimer = setInterval(() => {
@@ -257,7 +265,10 @@ export class SyncEngine {
       const functions = getFunctions();
       const syncDataFn = httpsCallable(functions, 'syncData');
 
-      await syncDataFn({ key, value: data });
+      // allowEmpty tells the server this is a deliberate post-pull write, so
+      // an empty array (user deleted everything) is accepted instead of being
+      // blocked by the server's fresh-device guard.
+      await syncDataFn({ key, value: data, allowEmpty: this._initialPullDone });
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');
@@ -277,6 +288,7 @@ export class SyncEngine {
 
   /** Stop all listeners and clean up */
   disable() {
+    this.stopped = true;
     this.unsubscribers.forEach(unsub => unsub());
     this.unsubscribers = [];
     this.listeners.clear();

@@ -275,7 +275,7 @@ function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, op
             <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground">
               {tilt.factors.map((f, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-muted-foreground/60 shrink-0">–</span>
+                  <span className="text-muted-foreground shrink-0">–</span>
                   {f}
                 </li>
               ))}
@@ -1387,7 +1387,7 @@ export function TradingCoach() {
                     </h3>
                     <button
                       onClick={() => dismissTip(tip.key)}
-                      className="ml-auto shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors"
+                      className="ml-auto shrink-0 text-muted-foreground hover:text-foreground transition-colors"
                       aria-label="Dismiss this insight"
                       title="Dismiss"
                     >
@@ -1437,8 +1437,9 @@ export function TradingCoach() {
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div ref={chatScrollRef} className="max-h-64 overflow-y-auto space-y-2.5 scroll-smooth">
+                {/* Messages — aria-busy suppresses announcements while tokens
+                    stream in; the finished reply is announced once. */}
+                <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-64 overflow-y-auto space-y-2.5 scroll-smooth">
                   {chatMessages.length === 0 && !chatStreaming && (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground text-center">Ask anything about your trading</p>
@@ -1524,9 +1525,9 @@ export function TradingCoach() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Ask Coach FTJ..."
+                    aria-label="Ask Coach FTJ"
                     disabled={chatStreaming}
-                    className="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 disabled:opacity-50"
-                    style={{ focusRingColor: themeColors.primary } as React.CSSProperties}
+                    className="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                   />
                   <Button
                     type="submit"
@@ -1534,6 +1535,7 @@ export function TradingCoach() {
                     disabled={!chatInput.trim() || chatStreaming}
                     className="h-9 w-9 p-0 shrink-0"
                     style={{ backgroundColor: themeColors.primary }}
+                    aria-label="Send message"
                   >
                     <PaperPlaneTilt className="h-3.5 w-3.5" />
                   </Button>

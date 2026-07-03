@@ -157,7 +157,7 @@ export function SectionCards() {
                   {formatCurrency(metrics.totalPnL)}
                 </div>
                 <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words" style={{ color: themeColors.primary }}>
+                  <p className="text-sm font-medium break-words text-muted-foreground">
                     Balance: {formatCurrencyPlain(accountBalance)}
                   </p>
                   <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>

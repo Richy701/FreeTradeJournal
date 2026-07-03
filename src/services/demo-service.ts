@@ -23,8 +23,15 @@ export const DEMO_UID = 'demo-user';
  * Writes are sync-skipped — demo data must never reach the cloud.
  */
 export async function seedDemoStorage(): Promise<void> {
+  // Demo trades predate the lotSize field: they carry raw `quantity` units
+  // (200000 = 2 forex lots). Derive lotSize at seed time so tables and P&L
+  // math show real values instead of blank cells.
+  const tradesWithLots = DEMO_TRADES.map((t: any) => ({
+    ...t,
+    lotSize: t.lotSize ?? (t.instrumentType === 'forex' ? t.quantity / 100000 : t.quantity),
+  }));
   const seed: Array<[string, string]> = [
-    ['trades', JSON.stringify(DEMO_TRADES)],
+    ['trades', JSON.stringify(tradesWithLots)],
     ['journalEntries', JSON.stringify(DEMO_JOURNAL_ENTRIES)],
     ['goals', JSON.stringify(DEMO_GOALS)],
     ['accounts', JSON.stringify(DEMO_ACCOUNTS)],

@@ -3,6 +3,7 @@ import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { useCallback, useEffect, useState } from 'react';
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
+import { belongsToAccount } from '@/lib/account-scope';
 
 /**
  * Hook to read trading data, account-scoped.
@@ -41,10 +42,7 @@ export function useDemoData() {
 
     // Filter trades by active account if account exists
     if (activeAccount) {
-      return trades.filter((trade: any) =>
-        trade.accountId === activeAccount.id ||
-        (!trade.accountId && activeAccount.id.includes('default')) // Handle legacy trades without accountId
-      );
+      return trades.filter((trade: any) => belongsToAccount(trade, activeAccount.id));
     }
 
     return trades;
@@ -64,10 +62,7 @@ export function useDemoData() {
 
     // Filter journal entries by active account if account exists
     if (activeAccount) {
-      return entries.filter((entry: any) =>
-        entry.accountId === activeAccount.id ||
-        (!entry.accountId && activeAccount.id.includes('default'))
-      );
+      return entries.filter((entry: any) => belongsToAccount(entry, activeAccount.id));
     }
 
     return entries;
@@ -87,10 +82,7 @@ export function useDemoData() {
 
     // Filter goals by active account if account exists
     if (activeAccount) {
-      return goals.filter((goal: any) =>
-        goal.accountId === activeAccount.id ||
-        (!goal.accountId && activeAccount.id.includes('default'))
-      );
+      return goals.filter((goal: any) => belongsToAccount(goal, activeAccount.id));
     }
 
     return goals;

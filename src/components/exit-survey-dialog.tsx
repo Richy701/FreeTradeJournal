@@ -96,7 +96,7 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
                     placeholder="Anything else you'd like to share? (optional)"
                     rows={2}
                     maxLength={500}
-                    className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                    className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                   />
                 </div>
               )}

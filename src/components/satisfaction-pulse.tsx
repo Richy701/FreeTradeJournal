@@ -71,7 +71,7 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
   return (
     <div
       className={cn(
-        "fixed bottom-6 left-6 z-50 max-w-[380px] w-full rounded-2xl border shadow-2xl shadow-black/10 dark:shadow-black/30 overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-500",
+        "fixed bottom-6 left-6 right-6 sm:right-auto sm:w-full z-50 max-w-[380px] rounded-2xl border shadow-2xl shadow-black/10 dark:shadow-black/30 overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-500",
         "bg-card backdrop-blur-sm"
       )}
       style={{ borderColor: alpha(themeColors.primary, '20') }}
@@ -85,7 +85,7 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
       <div className="p-5">
         <button
           onClick={dismiss}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted/80 transition-all"
+          className="absolute top-2.5 right-2.5 p-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
           aria-label="Dismiss"
         >
           <X className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
                 </button>
               ))}
             </div>
-            <div className="flex justify-between text-[10px] text-muted-foreground/50 px-0.5">
+            <div className="flex justify-between text-[10px] text-muted-foreground px-0.5">
               <span>Not likely</span>
               <span>Extremely likely</span>
             </div>
