@@ -14,26 +14,6 @@ export interface JournalEntry {
   entryType?: 'general' | 'pre-trade' | 'post-trade';
   tradeId?: string;
   screenshots?: string[];
-  marketConditions?: string;
-  lessonsLearned?: string;
-  improvementAreas?: string;
-  tradingPlan?: string;
-  gratitude?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Goal {
-  id: string;
-  userId: string;
-  title: string;
-  category: 'profit' | 'performance' | 'risk' | 'discipline' | 'other';
-  targetValue: number;
-  currentValue: number;
-  targetDate: string;
-  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'ongoing';
-  status: 'pending' | 'in-progress' | 'achieved' | 'failed';
-  description?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,18 +43,12 @@ export interface ExtendedTrade extends Omit<Trade, 'exitTime' | 'entryTime'> {
   swap?: number;
   profit?: number;
   netProfit?: number;
-  percentGain?: number;
-  riskRewardRatio?: number;
   exitDate?: string;
   exitTime?: Date | string;
   entryTime?: Date | string;
   duration?: string;
   status?: 'open' | 'closed' | 'pending';
   emotions?: string;
-  emotionScore?: number;
-  setup?: string;
-  mistakes?: string;
-  lessons?: string;
   createdAt?: string;
   updatedAt?: string;
 }

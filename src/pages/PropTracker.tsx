@@ -992,6 +992,23 @@ export default function PropTracker() {
       .sort((a, b) => a.daysLeft - b.daysLeft)
   }, [accounts])
 
+  // ─── Breach alerts — an account still marked active whose recorded balance
+  // already exceeds a drawdown limit (the "would breach" calculator only warns
+  // about future losses; this flags limits that are already blown) ────────────
+  const breachedAccounts = useMemo(() => {
+    return accounts
+      .filter(a => a.status === 'active')
+      .map(a => {
+        const status = getChallengeStatus(a)
+        if (!status) return null
+        const totalBreached = status.totalDDUsedPct >= 100
+        const dailyBreached = status.dailyDDUsedPct >= 100
+        if (!totalBreached && !dailyBreached) return null
+        return { account: a, totalBreached, dailyBreached }
+      })
+      .filter(Boolean) as Array<{ account: PropFirmAccount; totalBreached: boolean; dailyBreached: boolean }>
+  }, [accounts])
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -1065,7 +1082,7 @@ export default function PropTracker() {
             </div>
             {/* Action button */}
             <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
-              {activeRulesAccounts.length >= 2 && (
+              {activeRulesAccounts.length >= 1 && (
                 <Button variant="outline" onClick={openCheckinDialog} className="h-11 touch-manipulation">
                   <ClipboardText className="h-4 w-4 mr-1.5" aria-hidden="true" />
                   <span className="hidden sm:inline">End of Day</span>
@@ -1101,6 +1118,29 @@ export default function PropTracker() {
             cta="Unlock unlimited accounts"
             dismissKey="proptracker-limit"
           />
+        )}
+
+        {/* Breach alerts */}
+        {breachedAccounts.length > 0 && (
+          <div className="space-y-2">
+            {breachedAccounts.map(({ account, totalBreached, dailyBreached }) => (
+              <div
+                key={account.id}
+                role="alert"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm"
+                style={{ borderColor: `${themeColors.loss}55`, backgroundColor: `${themeColors.loss}0d` }}
+              >
+                <Warning className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
+                <span className="font-medium" style={{ color: themeColors.loss }}>
+                  {totalBreached ? 'Max drawdown breached' : 'Daily drawdown breached'}
+                </span>
+                <span className="text-muted-foreground">
+                  {account.firmName} ({account.accountType}) — {totalBreached && dailyBreached ? 'both limits exceeded. ' : ''}
+                  Check your balance entry, or mark the account as failed if the firm confirmed the breach.
+                </span>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Deadline alerts */}

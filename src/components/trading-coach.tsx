@@ -1540,6 +1540,13 @@ export function TradingCoach() {
                     <PaperPlaneTilt className="h-3.5 w-3.5" />
                   </Button>
                 </form>
+                {/* freeAiQuota is null for Pro/demo, so this only renders for
+                    free users — no more hitting the wall with zero warning. */}
+                {freeAiQuota && (
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    {freeAiQuota.remaining} of {freeAiQuota.limit} free AI queries left this month
+                  </p>
+                )}
               </div>
             )}
           </div>

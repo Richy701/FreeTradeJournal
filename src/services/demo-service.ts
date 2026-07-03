@@ -1,7 +1,6 @@
 import {
   DEMO_TRADES,
   DEMO_JOURNAL_ENTRIES,
-  DEMO_GOALS,
   DEMO_ACCOUNTS,
   DEMO_ACCOUNT_ID,
   DEMO_PROP_ACCOUNTS,
@@ -33,7 +32,6 @@ export async function seedDemoStorage(): Promise<void> {
   const seed: Array<[string, string]> = [
     ['trades', JSON.stringify(tradesWithLots)],
     ['journalEntries', JSON.stringify(DEMO_JOURNAL_ENTRIES)],
-    ['goals', JSON.stringify(DEMO_GOALS)],
     ['accounts', JSON.stringify(DEMO_ACCOUNTS)],
     ['active-account-id', DEMO_ACCOUNT_ID],
     ['propFirmAccounts', JSON.stringify(DEMO_PROP_ACCOUNTS)],

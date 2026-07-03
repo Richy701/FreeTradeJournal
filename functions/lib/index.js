@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.initResendContactProperties = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -1544,28 +1544,6 @@ exports.resendWebhook = functions.https.onRequest(async (req, res) => {
         res.status(500).send("Webhook handler error");
     }
 });
-// ─── Resend Contact Properties Setup (run once) ───────────
-exports.initResendContactProperties = functions.https.onCall(async (_data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
-    }
-    assertAdmin(context);
-    const resend = getResend();
-    const results = [];
-    for (const prop of [
-        { key: "is_pro", type: "string", fallbackValue: "false" },
-        { key: "has_logged_trade", type: "string", fallbackValue: "false" },
-    ]) {
-        try {
-            await resend.contactProperties.create(prop);
-            results.push({ key: prop.key, status: "created" });
-        }
-        catch (err) {
-            results.push({ key: prop.key, status: "error", error: err?.message });
-        }
-    }
-    return { results };
-});
 // ─── Stripe Integration ────────────────────────────────────
 let _stripe;
 function getStripe() {
@@ -1634,7 +1612,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
             line_items: [{ price: priceId, quantity: 1 }],
             mode: isLifetime ? "payment" : "subscription",
             success_url: `${process.env.APP_URL}/settings?tab=subscription&checkout=success`,
-            cancel_url: `${process.env.APP_URL}/pricing`,
+            cancel_url: `${process.env.APP_URL}/pricing?checkout=cancelled`,
             allow_promotion_codes: true,
             metadata: { firebase_uid: uid },
         };

@@ -33,6 +33,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics'
+import { computeGoalProgress } from '@/lib/goal-progress'
 import type { PropFirmAccount } from '@/types/prop-tracker'
 
 // Goals are *targets* only — things you want to hit. Loss/drawdown protection
@@ -327,69 +328,9 @@ export function PerformanceGoals() {
     }
   }, [userStorage, dataVersion])
 
-  // Calculate goal progress (pure — no side effects in render).
-  const goalProgress = useMemo(() => {
-    // Build each boundary from the unmutated `now`. (Date setters mutate in
-    // place, so deriving them sequentially off one Date corrupts later reads —
-    // e.g. weekStart rolling into the previous month would break monthStart.)
-    const now = new Date()
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const weekStart = new Date(todayStart)
-    weekStart.setDate(weekStart.getDate() - now.getDay())
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-
-    return goals.map(goal => {
-      let startDate: Date
-
-      switch (goal.period) {
-        case 'daily':
-          startDate = todayStart
-          break
-        case 'weekly':
-          startDate = weekStart
-          break
-        case 'monthly':
-          startDate = monthStart
-          break
-      }
-
-      const relevantTrades = trades.filter((t: any) => t.exitTime >= startDate)
-
-      let current = 0
-      let achieved = false
-
-      switch (goal.type) {
-        case 'profit':
-          current = relevantTrades.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0)
-          achieved = current >= goal.target
-          break
-        case 'winRate': {
-          const wins = relevantTrades.filter((t: any) => t.pnl > 0).length
-          current = relevantTrades.length > 0 ? (wins / relevantTrades.length) * 100 : 0
-          achieved = relevantTrades.length > 0 && current >= goal.target
-          break
-        }
-        case 'trades':
-          current = relevantTrades.length
-          achieved = current >= goal.target
-          break
-        case 'riskReward': {
-          const avgRR = relevantTrades.length > 0
-            ? relevantTrades.reduce((sum: number, t: any) => sum + (t.riskReward || 0), 0) / relevantTrades.length
-            : 0
-          current = avgRR
-          achieved = relevantTrades.length > 0 && current >= goal.target
-          break
-        }
-      }
-
-      // Once a goal has been achieved (and persisted), it stays in the
-      // Achievements tab even after the period rolls over and current-period
-      // trades no longer meet the target. resetGoalProgress is the deliberate
-      // way to clear it.
-      return { ...goal, current, achieved: achieved || goal.achieved === true }
-    })
-  }, [goals, trades])
+  // Calculate goal progress (pure — no side effects in render). Shared with
+  // the Profile "Active Goals" widget so both surfaces show the same numbers.
+  const goalProgress = useMemo(() => computeGoalProgress(goals, trades), [goals, trades])
 
   // Detect *newly* achieved goals and celebrate + persist (side effect lives
   // here, not inside the render-time useMemo above).

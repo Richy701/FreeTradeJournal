@@ -9,6 +9,7 @@ import { useThemePresets } from '@/contexts/theme-presets';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useUserStorage } from '@/utils/user-storage';
+import { computeGoalProgress, getGoalTitle } from '@/lib/goal-progress';
 import { toast } from 'sonner';
 
 const AVATAR_COLORS = [
@@ -70,8 +71,12 @@ export default function Profile() {
 
   const activeGoals = (() => {
     try {
-      return (JSON.parse(userStorage.getItem('goals') || '[]') as any[])
-        .filter((g: any) => g.status !== 'achieved' && g.status !== 'failed')
+      // Same store + progress math as the Goals page (`tradingGoals`); the
+      // legacy `goals` key is dead and no user flow writes it.
+      const goals = JSON.parse(userStorage.getItem('tradingGoals') || '[]') as any[];
+      const trades = JSON.parse(userStorage.getItem('trades') || '[]') as any[];
+      return computeGoalProgress(goals, trades)
+        .filter((g) => !g.achieved)
         .slice(0, 4);
     } catch { return []; }
   })();
@@ -421,12 +426,12 @@ export default function Profile() {
             ) : (
               <div className="divide-y divide-border/50">
                 {activeGoals.map((g: any) => {
-                  const pct = g.targetValue > 0 ? Math.min(100, Math.round((g.currentValue / g.targetValue) * 100)) : 0;
+                  const pct = g.target > 0 ? Math.min(100, Math.round(((g.current || 0) / g.target) * 100)) : 0;
                   const isDone = pct >= 100;
                   return (
                     <div key={g.id} className="px-5 py-3.5 space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium truncate">{g.title}</span>
+                        <span className="text-sm font-medium truncate">{getGoalTitle(g)}</span>
                         <span className="text-xs tabular-nums text-muted-foreground shrink-0">{pct}%</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">

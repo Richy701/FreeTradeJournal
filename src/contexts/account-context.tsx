@@ -1,10 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
 import { useAuth } from '@/contexts/auth-context';
+import { useProStatus } from '@/contexts/pro-context';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useSync } from '@/contexts/sync-context';
-import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
+import { getChangeVersion, onSyncChange, notifyDataChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
+
+// Free-plan cap on trading accounts. Enforced here (the only write path) —
+// UI gates in Settings are messaging, not enforcement.
+export const FREE_TRADING_ACCOUNT_LIMIT = 2;
 
 export interface TradingAccount {
   id: string;
@@ -43,6 +49,7 @@ interface AccountProviderProps {
 
 export function AccountProvider({ children }: AccountProviderProps) {
   const { user } = useAuth();
+  const { isPro } = useProStatus();
   const demoGuard = useDemoGuard();
   const userId = user?.uid || null;
   const { initialSyncDone } = useSync();
@@ -143,6 +150,10 @@ export function AccountProvider({ children }: AccountProviderProps) {
   };
 
   const addAccount = (accountData: Omit<TradingAccount, 'id' | 'createdAt'>): TradingAccount => {
+    if (!isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT) {
+      toast.error(`Free plan is limited to ${FREE_TRADING_ACCOUNT_LIMIT} trading accounts. Upgrade to Pro for unlimited accounts.`);
+      throw new Error('Free account limit reached');
+    }
     const newAccount: TradingAccount = {
       ...accountData,
       id: 'account-' + Date.now(),
@@ -203,7 +214,21 @@ export function AccountProvider({ children }: AccountProviderProps) {
       }
     }
 
+    // Journal entries are account-scoped too — purge exact matches only
+    // (legacy/unscoped entries stay; they belong to the default bucket).
+    const savedEntries = UserStorage.getItem(userId, 'journalEntries');
+    if (savedEntries) {
+      try {
+        const allEntries = JSON.parse(savedEntries);
+        const filteredEntries = allEntries.filter((e: any) => e.accountId !== id);
+        UserStorage.setItem(userId, 'journalEntries', JSON.stringify(filteredEntries));
+      } catch {
+        // If parsing fails, leave entries as-is
+      }
+    }
+
     setAccounts(prev => prev.filter(acc => acc.id !== id));
+    notifyDataChange();
 
     if (activeAccount?.id === id) {
       const remainingAccounts = accounts.filter(acc => acc.id !== id);

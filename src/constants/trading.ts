@@ -75,5 +75,14 @@ export const DEFAULT_VALUES = {
 } as const;
 
 export type MarketType = keyof typeof MARKET_INSTRUMENTS;
+
+// One quantity concept, three market dialects: forex trades in lots,
+// futures in contracts, indices in units.
+export function quantityLabelForMarket(market: string | undefined): string {
+  if (market === 'futures') return 'Contracts';
+  if (market === 'forex') return 'Lot Size';
+  return 'Quantity';
+}
+
 export type PropFirm = typeof PROP_FIRMS[number];
 export type Currency = typeof SUPPORTED_CURRENCIES[number]['code'];

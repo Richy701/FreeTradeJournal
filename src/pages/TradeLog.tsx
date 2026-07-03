@@ -65,6 +65,7 @@ import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv
 import { rescueFailedImport } from '@/utils/csv-import-flow';
 import { cn } from '@/lib/utils';
 import { belongsToAccount } from '@/lib/account-scope';
+import { quantityLabelForMarket } from '@/constants/trading';
 import { lazy, Suspense } from 'react';
 const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })));
 const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })));
@@ -608,11 +609,13 @@ export default function TradeLog() {
       const updatedTrades = trades.map((t) => (t.id === editingTrade.id ? newTrade : t));
       saveTrades(updatedTrades);
       trackEvent('trade_edited', { symbol: newTrade.symbol, side: newTrade.side });
+      toast.success(`${newTrade.symbol} trade updated`);
       setEditingTrade(null);
     } else {
       saveTrades([...trades, newTrade]);
       trackEvent('trade_created', { symbol: newTrade.symbol, side: newTrade.side, market: newTrade.market });
       trackTradeLogged(1, 'manual');
+      toast.success(`${newTrade.symbol} trade saved`);
       setJournalPromptTrade(newTrade);
       // Check risk rules after saving (warn only, never block)
       if (pnl < 0) checkRiskRules(pnl, newTrade.exitTime);
@@ -1572,15 +1575,15 @@ export default function TradeLog() {
                           <FormField
                             control={form.control}
                             name="lotSize"
-                            rules={{ required: 'Lot size is required', min: 0 }}
+                            rules={{ required: 'Quantity is required', min: 0 }}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-sm font-medium">Lot Size *</FormLabel>
+                                <FormLabel className="text-sm font-medium">{quantityLabelForMarket(watchedMarket)} *</FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    placeholder="1.0"
+                                    placeholder={watchedMarket === 'futures' ? '2' : '1.0'}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
                                     onChange={e => field.onChange(parseFloat(e.target.value))}

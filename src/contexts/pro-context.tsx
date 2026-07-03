@@ -159,6 +159,29 @@ export function ProProvider({ children }: ProProviderProps) {
     };
   }, [uid, isDemo]);
 
+  // Server is the source of truth for the free AI quota — the local cache is
+  // optimistic and starts fresh on a new device/month, so a new session could
+  // show a full quota to a user with none left until their next call fails.
+  useEffect(() => {
+    if (!uid || isDemo || isLoading) return;
+    const referralActive = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
+    if (isActivePro(subscription) || referralActive) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+        const { httpsCallable } = await import('firebase/functions');
+        const fns = await getFirebaseFunctions();
+        const res = await httpsCallable(fns, 'getFreeAIQuota')();
+        if (!cancelled && res.data) updateFreeAiQuota(res.data as FreeAIQuota);
+      } catch {
+        // Keep the cached value; the next AI call will surface the real state.
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, isDemo, isLoading]);
+
   const handleOpenCheckout = useCallback(
     async (priceId: string) => {
       if (!priceId) {

@@ -18,6 +18,7 @@ import {
   Rocket,
   RssSimple,
   Tag,
+  Question,
   Fire,
   Lightning,
   CheckCircle,
@@ -211,10 +212,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               )}
               <SidebarMenuItem>
                 <SidebarMenuButton size="sm" asChild>
-                  <a href="/affiliate" target="_blank" rel="noopener noreferrer">
+                  <Link to="/affiliate" onClick={() => isMobile && setOpenMobile(false)}>
                     <Tag className="h-4 w-4" />
                     <span>Prop Firm Deals</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -223,6 +224,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <RssSimple className="h-4 w-4" />
                     <span>Blog</span>
                   </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="sm" asChild>
+                  <Link to="/documentation" onClick={() => isMobile && setOpenMobile(false)}>
+                    <Question className="h-4 w-4" />
+                    <span>Help & Docs</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

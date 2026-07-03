@@ -12,6 +12,7 @@ import { footerConfig } from '@/components/ui/footer-config';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS } from '@/constants/pricing';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -266,6 +267,14 @@ export default function Pricing() {
   // can be built as one funnel in PostHog
   useEffect(() => {
     trackEvent('pricing_viewed', { logged_in: !!user, is_pro: isPro });
+    // Stripe sends cancelled checkouts back here — say so instead of
+    // silently landing on the page the user just left.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') === 'cancelled') {
+      trackEvent('checkout_cancelled');
+      toast.info('Checkout cancelled — you have not been charged.');
+      navigate('/pricing', { replace: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

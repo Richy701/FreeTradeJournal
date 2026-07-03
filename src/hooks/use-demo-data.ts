@@ -68,30 +68,9 @@ export function useDemoData() {
     return entries;
   }, [isDemo, userStorage, activeAccount, version]);
 
-  const getGoals = useCallback(() => {
-    let goals = [];
-
-    const savedGoals = userStorage.getItem('goals');
-    if (savedGoals) {
-      try {
-        goals = JSON.parse(savedGoals);
-      } catch {
-        goals = [];
-      }
-    }
-
-    // Filter goals by active account if account exists
-    if (activeAccount) {
-      return goals.filter((goal: any) => belongsToAccount(goal, activeAccount.id));
-    }
-
-    return goals;
-  }, [isDemo, userStorage, activeAccount, version]);
-
   return {
     isDemo,
     getTrades,
     getJournalEntries,
-    getGoals,
   };
 }

@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
-import { useAccounts, type TradingAccount } from '@/contexts/account-context';
+import { useAccounts, FREE_TRADING_ACCOUNT_LIMIT, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
@@ -90,10 +90,10 @@ function BrokerSelect({ value, onChange }: { value: string; onChange: (v: string
   );
 }
 
-// Free plan is capped at this many trading accounts; Pro is unlimited.
-// Existing accounts above the cap are grandfathered — the guard only blocks
-// adding new ones, it never removes accounts a user already created.
-const FREE_TRADING_ACCOUNT_LIMIT = 2;
+// Free plan is capped at FREE_TRADING_ACCOUNT_LIMIT trading accounts; Pro is
+// unlimited. Existing accounts above the cap are grandfathered — the guard
+// only blocks adding new ones, it never removes accounts a user already
+// created. The cap itself is enforced in account-context's addAccount.
 
 const NAV = [
   { id: 'general',       label: 'General',       Icon: Sliders },
@@ -118,6 +118,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProWelcome, setShowProWelcome] = useState(false);
+  const [checkoutPending, setCheckoutPending] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
@@ -151,15 +152,29 @@ export default function Settings() {
   useEffect(() => {
     if (searchParams.get('checkout') === 'success') {
       trackEvent('checkout_completed');
-      setShowProWelcome(true);
-      toast.success('Welcome to Pro! Your upgrade is complete.');
       setSearchParams({}, { replace: true });
       setTimeout(() => scrollTo('subscription'), 600);
+      setCheckoutPending(true);
     } else if (searchParams.get('tab')) {
       const tab = searchParams.get('tab')!;
       setTimeout(() => scrollTo(tab), 300);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Only celebrate once the Stripe webhook has actually flipped the pro flag.
+  // Celebrating off the redirect alone shows "everything is unlocked" over a
+  // Subscription section that still says Free while the webhook lags.
+  useEffect(() => {
+    if (!checkoutPending) return;
+    if (isPro) {
+      setCheckoutPending(false);
+      toast.dismiss('checkout-confirming');
+      setShowProWelcome(true);
+      toast.success('Welcome to Pro! Your upgrade is complete.');
+    } else {
+      toast.info('Payment received — unlocking your Pro features...', { id: 'checkout-confirming', duration: 15000 });
+    }
+  }, [checkoutPending, isPro]);
 
   // Prefetch the Stripe portal chunks once the Subscription section is in view,
   // so they aren't part of the click latency when opening the billing portal.
@@ -211,7 +226,7 @@ export default function Settings() {
   const stats = getTradeStats();
 
   const exportData = () => {
-    const keys = ['trades','accounts','journalEntries','goals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions'];
+    const keys = ['trades','accounts','journalEntries','tradingGoals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions'];
     const raw: Record<string, any> = {};
     keys.forEach(k => { const v = userStorage.getItem(k); if (v) try { raw[k] = JSON.parse(v); } catch { raw[k] = v; } });
     const blob = new Blob([JSON.stringify({ ...raw, exportDate: new Date().toISOString(), version: '2.0' }, null, 2)], { type: 'application/json' });
@@ -235,14 +250,14 @@ export default function Settings() {
         if (data.trades) userStorage.setItem('trades', JSON.stringify(data.trades));
         if (data.accounts) userStorage.setItem('accounts', JSON.stringify(data.accounts));
         if (data.journalEntries) userStorage.setItem('journalEntries', JSON.stringify(data.journalEntries));
-        if (data.goals) userStorage.setItem('goals', JSON.stringify(data.goals));
+        if (data.tradingGoals) userStorage.setItem('tradingGoals', JSON.stringify(data.tradingGoals));
         if (data.riskRules) userStorage.setItem('riskRules', JSON.stringify(data.riskRules));
         if (data.settings) userStorage.setItem('settings', JSON.stringify(data.settings));
         if (data.onboarding) userStorage.setItem('onboarding', JSON.stringify(data.onboarding));
         if (data.onboardingCompleted !== undefined) userStorage.setItem('onboardingCompleted', String(data.onboardingCompleted));
         if (data.propFirmAccounts) userStorage.setItem('propFirmAccounts', JSON.stringify(data.propFirmAccounts));
         if (data.propFirmTransactions) userStorage.setItem('propFirmTransactions', JSON.stringify(data.propFirmTransactions));
-        const count = [data.trades?.length||0, data.accounts?.length||0, data.journalEntries?.length||0, data.goals?.length||0, data.propFirmAccounts?.length||0].reduce((a,b)=>a+b,0);
+        const count = [data.trades?.length||0, data.accounts?.length||0, data.journalEntries?.length||0, data.tradingGoals?.length||0, data.propFirmAccounts?.length||0].reduce((a,b)=>a+b,0);
         toast.success(`Imported ${count} items!`);
         setTimeout(() => window.location.reload(), 2000);
       } catch { toast.error('Error importing data. Check the file format.'); }
@@ -253,7 +268,7 @@ export default function Settings() {
 
   const clearAllData = () => {
     if (demoGuard('manage your data')) return;
-    ['trades','journalEntries','goals','accounts','settings'].forEach(k => userStorage.removeItem(k));
+    ['trades','journalEntries','goals','tradingGoals','riskRules','accounts','settings'].forEach(k => userStorage.removeItem(k));
     window.location.reload();
   };
 
@@ -270,7 +285,7 @@ export default function Settings() {
       const deleteAccount = httpsCallable(fns, 'deleteUserAccount');
       await deleteAccount();
       // Clear local data
-      ['trades','journalEntries','goals','accounts','settings','riskRules','onboarding','propFirmAccounts','propFirmTransactions'].forEach(k => userStorage.removeItem(k));
+      ['trades','journalEntries','goals','tradingGoals','accounts','settings','riskRules','onboarding','propFirmAccounts','propFirmTransactions'].forEach(k => userStorage.removeItem(k));
       toast.success('Account deleted successfully');
       navigate('/');
     } catch (err: any) {
@@ -284,7 +299,7 @@ export default function Settings() {
 
   const storageUsed = (() => {
     let total = 0;
-    ['trades','accounts','journalEntries','goals','riskRules','settings','onboarding'].forEach(k => {
+    ['trades','accounts','journalEntries','tradingGoals','riskRules','settings','onboarding'].forEach(k => {
       const v = userStorage.getItem(k);
       if (v) total += new Blob([v]).size;
     });
@@ -1080,7 +1095,7 @@ export default function Settings() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Account?</DialogTitle>
-            <DialogDescription>This will permanently delete the account and cannot be undone.</DialogDescription>
+            <DialogDescription>This permanently deletes the account along with all of its trades and journal entries. This cannot be undone.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 mt-2">
             <Button variant="outline" className="flex-1" onClick={() => setDeleteAccountId(null)}>Cancel</Button>

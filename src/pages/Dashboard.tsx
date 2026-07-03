@@ -1,6 +1,7 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { trackEvent } from '@/lib/analytics'
 import { calculateGrossPnl } from '@/lib/pnl'
+import { belongsToAccount } from '@/lib/account-scope'
 import { useAuth } from '@/contexts/auth-context'
 import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
@@ -26,7 +27,7 @@ import { useDemoData } from '@/hooks/use-demo-data'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
 import { isIncognitoMode } from '@/utils/incognito-detection'
-import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { MARKET_INSTRUMENTS, quantityLabelForMarket, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
@@ -291,6 +292,7 @@ export default function Dashboard() {
     trackTradeLogged(1, 'dashboard_quickadd')
     // Refresh widgets live without requiring a page refresh.
     notifyDataChange()
+    toast.success(`${newTrade.symbol} trade saved`)
 
     // Referral nudge after a winning trade (max once per 7 days)
     if (pnl > 0 && user && !isDemo) {
@@ -471,8 +473,10 @@ export default function Dashboard() {
 
         setImportProgress({ active: true, phase: 'Checking for duplicates...', percent: 70 });
 
-        // Deduplicate against existing trades on key fields.
-        const { newTrades, skippedCount } = dedupeImportedTrades(existingTrades, importedTrades);
+        // Deduplicate only against trades already in the target account — the
+        // same file imported into a different account is new data, not a dupe.
+        const accountTrades = existingTrades.filter((t: any) => belongsToAccount(t, activeAccount?.id || ''));
+        const { newTrades, skippedCount } = dedupeImportedTrades(accountTrades, importedTrades);
 
         setImportProgress({ active: true, phase: 'Saving trades...', percent: 90 });
 
@@ -1000,8 +1004,8 @@ export default function Dashboard() {
                             <Input id="exit-price" type="number" step="0.00001" placeholder="e.g. 1.08650" className="h-10 bg-background/60 border-border/50" value={tradeForm.exitPrice} onChange={(e) => setTradeForm(prev => ({ ...prev, exitPrice: e.target.value }))} />
                           </div>
                           <div className="space-y-1.5">
-                            <Label htmlFor="lot-size" className="text-xs text-muted-foreground">Lot Size</Label>
-                            <Input id="lot-size" type="number" step="0.01" placeholder="e.g. 1.00" className="h-10 bg-background/60 border-border/50" value={tradeForm.lotSize} onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))} />
+                            <Label htmlFor="lot-size" className="text-xs text-muted-foreground">{quantityLabelForMarket(tradeForm.market)}</Label>
+                            <Input id="lot-size" type="number" step="0.01" placeholder={tradeForm.market === 'futures' ? 'e.g. 2' : 'e.g. 1.00'} className="h-10 bg-background/60 border-border/50" value={tradeForm.lotSize} onChange={(e) => setTradeForm(prev => ({ ...prev, lotSize: e.target.value }))} />
                           </div>
                         </div>
 

@@ -15,6 +15,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.53.0',
+    date: '2026-07-03',
+    summary: 'Save confirmations, smarter quotas and limits, PropTracker breach alerts, and goals everywhere they belong.',
+    items: [
+      {
+        type: 'new',
+        text: 'See your remaining free AI queries at a glance',
+        description: 'The Coach FTJ chat now shows how many of your free monthly AI queries are left, and the count stays accurate across devices — no more hitting the limit without warning.',
+      },
+      {
+        type: 'new',
+        text: 'PropTracker warns you when a drawdown limit is breached',
+        description: 'If a recorded balance crosses your max or daily drawdown limit, the account is flagged with a clear alert instead of staying quietly green. The End of Day check-in also now works with a single account.',
+      },
+      {
+        type: 'improved',
+        text: 'Trades confirm when they save',
+        description: 'Logging or editing a trade now shows a confirmation, from both the dashboard quick-add and the Trade Log form.',
+      },
+      {
+        type: 'improved',
+        text: 'Quantity fields match your market',
+        description: 'The trade forms now ask for Contracts on futures and Lot Size on forex, instead of calling everything a lot.',
+      },
+      {
+        type: 'fixed',
+        text: 'Your goals now appear in your Profile and backups',
+        description: 'The Profile page\'s Active Goals panel and the Settings backup file were reading an old, empty goals list. Both now use your real performance goals, with live progress.',
+      },
+      {
+        type: 'fixed',
+        text: 'Importing the same file into a second account works',
+        description: 'Duplicate detection during CSV import now only checks the account you are importing into, so moving your history into another account is no longer skipped as duplicates.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer checkout and account deletion',
+        description: 'Cancelling a Stripe checkout now returns you to pricing with a clear message that you were not charged, the Pro welcome appears once your upgrade is actually confirmed, and deleting a trading account now spells out that its trades and journal entries go with it.',
+      },
+      {
+        type: 'improved',
+        text: 'Help & Docs in the sidebar',
+        description: 'The documentation page is now one click away from inside the app.',
+      },
+    ],
+  },
+  {
     version: '2.52.0',
     date: '2026-07-03',
     summary: 'Cloud sync fixes, recovered trades, and a smoother, more accessible app everywhere.',
@@ -1661,4 +1708,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.52.0'
+export const LATEST_CHANGELOG_VERSION = '2.53.0'

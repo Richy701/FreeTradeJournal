@@ -1715,32 +1715,6 @@ export const resendWebhook = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// ─── Resend Contact Properties Setup (run once) ───────────
-
-export const initResendContactProperties = functions.https.onCall(async (_data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
-  }
-  assertAdmin(context);
-
-  const resend = getResend();
-  const results: Array<{ key: string; status: string; error?: string }> = [];
-
-  for (const prop of [
-    { key: "is_pro", type: "string" as const, fallbackValue: "false" },
-    { key: "has_logged_trade", type: "string" as const, fallbackValue: "false" },
-  ]) {
-    try {
-      await resend.contactProperties.create(prop);
-      results.push({ key: prop.key, status: "created" });
-    } catch (err: any) {
-      results.push({ key: prop.key, status: "error", error: err?.message });
-    }
-  }
-
-  return { results };
-});
-
 // ─── Stripe Integration ────────────────────────────────────
 
 let _stripe: Stripe;
@@ -1822,7 +1796,7 @@ export const createCheckoutSession = functions.https.onCall(
         line_items: [{ price: priceId, quantity: 1 }],
         mode: isLifetime ? "payment" : "subscription",
         success_url: `${process.env.APP_URL}/settings?tab=subscription&checkout=success`,
-        cancel_url: `${process.env.APP_URL}/pricing`,
+        cancel_url: `${process.env.APP_URL}/pricing?checkout=cancelled`,
         allow_promotion_codes: true,
         metadata: { firebase_uid: uid },
       };

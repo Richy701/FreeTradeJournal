@@ -127,9 +127,12 @@ function getPageContext(): string {
   const path = window.location.pathname;
   const labels: Record<string, string> = {
     '/dashboard': 'Dashboard',
-    '/trade-log': 'Trade Log',
+    '/trades': 'Trade Log',
     '/settings': 'Settings',
-    '/trade-ideas': 'Trade Ideas',
+    '/ideas': 'Trade Insights',
+    '/coach': 'AI Coach',
+    '/journal': 'Journal',
+    '/goals': 'Goals & Risk Management',
     '/prop-tracker': 'Prop Tracker',
     '/pricing': 'Pricing',
     '/documentation': 'Documentation',
@@ -215,6 +218,12 @@ function FeedbackDialog({
         diagnostics: type === 'bug' ? getDiagnostics(page) : undefined,
         screenshot: screenshot || undefined,
       });
+
+      // A star rating is a sentiment signal — reset the NPS pulse timer so
+      // SatisfactionPulse doesn't ask "how are we doing" right after they told us.
+      if (type !== 'bug' && rating > 0) {
+        localStorage.setItem('ftj-satisfaction-pulse', String(Date.now()));
+      }
 
       // If they loved it, invite them to leave a testimonial (never after a bug report)
       if (type !== 'bug' && rating >= 4) {
