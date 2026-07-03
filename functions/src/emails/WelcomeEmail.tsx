@@ -1,212 +1,35 @@
-import * as React from 'react'
-import {
-  Html, Head, Body, Container, Section, Img, Text, Heading,
-  Hr, Link, Preview, Font,
-} from '@react-email/components'
+import { Section, Text, Heading } from '@react-email/components'
+import { Hr } from '@react-email/components'
+import { EmailShell, EmailButton, FeatureList, styles } from './components'
+import { URLS, FREE_AI_QUERIES_PER_MONTH } from './facts'
 
 interface WelcomeEmailProps {
   firstName: string
 }
 
 const features = [
-  { label: 'Trade Log', desc: 'Manual entry or CSV import from any broker.' },
-  { label: 'Analytics', desc: 'P&L curve, win rate, and performance breakdown.' },
-  { label: 'Goals & Risk', desc: 'Set targets and rules to keep your discipline.' },
+  { label: 'Trade log', desc: 'Unlimited trades — type them in or import a CSV from any broker in one go.' },
+  { label: 'Analytics', desc: 'P&L curve, win rate, calendar heatmap, and breakdowns by symbol and setup.' },
+  { label: 'AI coach', desc: `${FREE_AI_QUERIES_PER_MONTH} free AI queries a month — get any trade reviewed in plain English.` },
+  { label: 'Goals & risk', desc: 'Set targets and risk rules that keep your discipline honest.' },
 ]
 
 export function WelcomeEmail({ firstName }: WelcomeEmailProps) {
   return (
-    <Html lang="en">
-      <Head>
-        <Font
-          fontFamily="Inter"
-          fallbackFontFamily="Arial"
-          webFont={{ url: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2', format: 'woff2' }}
-          fontWeight={400}
-          fontStyle="normal"
-        />
-      </Head>
-      <Preview>Most traders never track a single trade. You just changed that.</Preview>
-      <Body style={body}>
-        <Container style={container}>
+    <EmailShell preview="Most traders never track a single trade. You just changed that.">
+      <Section style={styles.content}>
+        <Heading style={styles.h1}>
+          {firstName ? `Welcome, ${firstName}.` : 'Welcome.'}
+        </Heading>
+        <Text style={styles.paragraph}>
+          Your journal is set up. Track your trades, spot the patterns behind your wins and losses, and build the discipline most traders never develop.
+        </Text>
+        <EmailButton href={URLS.dashboard}>Open your journal</EmailButton>
+      </Section>
 
-          {/* Header */}
-          <Section style={header}>
-            <Img
-              src="https://www.freetradejournal.com/favicon-64x64.png"
-              width="28"
-              height="28"
-              alt="FTJ"
-              style={logo}
-            />
-            <Text style={brandName}>FreeTradeJournal</Text>
-          </Section>
+      <Hr style={styles.divider} />
 
-          <Hr style={topDivider} />
-
-          {/* Banner */}
-          <Section style={{ padding: 0 }}>
-            <Img
-              src="https://www.freetradejournal.com/images/email-banner-welcome.png"
-              width="600"
-              height="200"
-              alt="Your edge starts here"
-              style={{ display: 'block', width: '100%' }}
-            />
-          </Section>
-
-          {/* Hero */}
-          <Section style={content}>
-            <Heading style={h1}>
-              {firstName ? `Welcome, ${firstName}.` : 'Welcome.'}
-            </Heading>
-            <Text style={body1}>
-              Your journal is set up. Track your trades, spot patterns, and build the discipline most traders never develop.
-            </Text>
-            <Link href="https://www.freetradejournal.com/dashboard" style={button}>
-              Open your journal
-            </Link>
-
-          </Section>
-
-          <Hr style={divider} />
-
-          {/* Features */}
-          <Section style={content}>
-            <Text style={label}>WHAT YOU CAN DO FOR FREE</Text>
-            {features.map((f, i) => (
-              <React.Fragment key={f.label}>
-                <Text style={featureTitle}>{f.label}</Text>
-                <Text style={featureDesc}>{f.desc}</Text>
-                {i < features.length - 1 && <Hr style={featureDivider} />}
-              </React.Fragment>
-            ))}
-          </Section>
-
-          <Hr style={divider} />
-
-          {/* Footer */}
-          <Section style={footer}>
-            <Text style={footerText}>
-              Richy from FreeTradeJournal. Reply if you have questions — I read every one.
-            </Text>
-            <Text style={footerLinks}>
-              <Link href="https://www.freetradejournal.com/privacy" style={footerLink}>Privacy Policy</Link>
-              {' · '}
-              <Link href="https://www.freetradejournal.com/terms" style={footerLink}>Terms</Link>
-            </Text>
-          </Section>
-
-        </Container>
-      </Body>
-    </Html>
+      <FeatureList heading="What you can do for free" items={features} />
+    </EmailShell>
   )
-}
-
-const body: React.CSSProperties = {
-  backgroundColor: '#0a0a0a',
-  fontFamily: 'Inter, Arial, sans-serif',
-  margin: 0,
-  padding: '40px 0',
-}
-const container: React.CSSProperties = {
-  maxWidth: '600px',
-  margin: '0 auto',
-}
-const header: React.CSSProperties = {
-  padding: '24px 32px',
-  display: 'flex',
-  alignItems: 'center',
-}
-const logo: React.CSSProperties = {
-  borderRadius: '6px',
-  display: 'inline-block',
-  verticalAlign: 'middle',
-}
-const brandName: React.CSSProperties = {
-  display: 'inline-block',
-  verticalAlign: 'middle',
-  margin: '0 0 0 10px',
-  fontSize: '14px',
-  fontWeight: 600,
-  color: '#ededed',
-  lineHeight: '28px',
-}
-const topDivider: React.CSSProperties = {
-  borderColor: '#1f1f1f',
-  margin: 0,
-}
-const divider: React.CSSProperties = {
-  borderColor: '#1f1f1f',
-  margin: 0,
-}
-const featureDivider: React.CSSProperties = {
-  borderColor: '#1a1a1a',
-  margin: '16px 0',
-}
-const content: React.CSSProperties = {
-  padding: '32px 32px',
-}
-const h1: React.CSSProperties = {
-  fontSize: '26px',
-  fontWeight: 700,
-  color: '#ededed',
-  margin: '0 0 16px',
-  lineHeight: '1.3',
-  letterSpacing: '-0.01em',
-}
-const body1: React.CSSProperties = {
-  fontSize: '15px',
-  color: '#888',
-  lineHeight: '1.5',
-  margin: '0 0 24px',
-}
-const label: React.CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 600,
-  color: '#f59e0b',
-  letterSpacing: '0.08em',
-  margin: '0 0 20px',
-  textTransform: 'uppercase' as const,
-}
-const featureTitle: React.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: 600,
-  color: '#ededed',
-  margin: '0 0 6px',
-}
-const featureDesc: React.CSSProperties = {
-  fontSize: '13px',
-  color: '#666',
-  lineHeight: '1.5',
-  margin: 0,
-}
-const button: React.CSSProperties = {
-  display: 'inline-block',
-  backgroundColor: '#f59e0b',
-  color: '#000000',
-  fontWeight: 700,
-  fontSize: '15px',
-  padding: '13px 28px',
-  borderRadius: '6px',
-  textDecoration: 'none',
-  lineHeight: '1.5',
-}
-const footer: React.CSSProperties = {
-  padding: '24px 32px',
-}
-const footerText: React.CSSProperties = {
-  fontSize: '13px',
-  color: '#444',
-  lineHeight: '1.5',
-  margin: '0 0 12px',
-}
-const footerLinks: React.CSSProperties = {
-  fontSize: '12px',
-  color: '#333',
-  margin: 0,
-}
-const footerLink: React.CSSProperties = {
-  color: '#555',
-  textDecoration: 'underline',
 }

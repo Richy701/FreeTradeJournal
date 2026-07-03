@@ -61,6 +61,7 @@ const Day7NudgeEmail_1 = require("./emails/Day7NudgeEmail");
 const Day14UpgradeEmail_1 = require("./emails/Day14UpgradeEmail");
 const Day21BackupEmail_1 = require("./emails/Day21BackupEmail");
 const WeeklyDigestEmail_1 = require("./emails/WeeklyDigestEmail");
+const ReferralEmail_1 = require("./emails/ReferralEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -162,7 +163,7 @@ function unsubHeaders(uid) {
 async function sendTrialStartedEmail(email, name, trialEnd, uid) {
     const firstName = name?.split(" ")[0] || "trader";
     const trialEndDate = new Date(trialEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    const html = await (0, components_1.render)(React.createElement(TrialStartedEmail_1.TrialStartedEmail, { firstName, trialEndDate }));
+    const html = await (0, components_1.render)(React.createElement(TrialStartedEmail_1.TrialStartedEmail, { firstName, trialEndDate, unsubscribeUrl: uid ? getUnsubscribeUrl(uid) : undefined }));
     await getResend().emails.send({
         from: FROM_EMAIL,
         to: email,
@@ -174,7 +175,7 @@ async function sendTrialStartedEmail(email, name, trialEnd, uid) {
 async function sendTrialEndingEmail(email, name, trialEnd, uid) {
     const firstName = name?.split(" ")[0] || "trader";
     const trialEndDate = new Date(trialEnd).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    const html = await (0, components_1.render)(React.createElement(TrialEndingEmail_1.TrialEndingEmail, { firstName, trialEndDate }));
+    const html = await (0, components_1.render)(React.createElement(TrialEndingEmail_1.TrialEndingEmail, { firstName, trialEndDate, unsubscribeUrl: uid ? getUnsubscribeUrl(uid) : undefined }));
     await getResend().emails.send({
         from: FROM_EMAIL,
         to: email,
@@ -364,7 +365,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
             continue;
         try {
             const firstName = (data.displayName || data.email || "trader").split(" ")[0];
-            const html = await (0, components_1.render)(React.createElement(Day3NudgeEmail_1.Day3NudgeEmail, { firstName }));
+            const html = await (0, components_1.render)(React.createElement(Day3NudgeEmail_1.Day3NudgeEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
             await getResend().emails.send({
                 from: FROM_EMAIL,
                 to: email,
@@ -447,7 +448,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
             continue;
         try {
             const firstName = (data.displayName || data.email || "trader").split(" ")[0];
-            const html = await (0, components_1.render)(React.createElement(Day7NudgeEmail_1.Day7NudgeEmail, { firstName }));
+            const html = await (0, components_1.render)(React.createElement(Day7NudgeEmail_1.Day7NudgeEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
             await getResend().emails.send({
                 from: FROM_EMAIL,
                 to: email,
@@ -492,7 +493,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
             continue;
         try {
             const firstName = (data.displayName || data.email || "trader").split(" ")[0];
-            const html = await (0, components_1.render)(React.createElement(Day14UpgradeEmail_1.Day14UpgradeEmail, { firstName }));
+            const html = await (0, components_1.render)(React.createElement(Day14UpgradeEmail_1.Day14UpgradeEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
             await getResend().emails.send({
                 from: FROM_EMAIL,
                 to: email,
@@ -536,7 +537,7 @@ exports.sendDay21BackupEmails = functions.pubsub
             continue;
         try {
             const firstName = (data.displayName || data.email || "trader").split(" ")[0];
-            const html = await (0, components_1.render)(React.createElement(Day21BackupEmail_1.Day21BackupEmail, { firstName }));
+            const html = await (0, components_1.render)(React.createElement(Day21BackupEmail_1.Day21BackupEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
             await getResend().emails.send({
                 from: FROM_EMAIL,
                 to: email,
@@ -602,7 +603,7 @@ exports.sendWeeklyDigestEmails = functions.pubsub
                         winRate = Math.round((wins / tradeCount) * 100);
                         const totalPnl = weekTrades.reduce((s, t) => s + (Number(t.pnl) || 0), 0);
                         const best = weekTrades.reduce((max, t) => Math.max(max, Number(t.pnl) || 0), -Infinity);
-                        const sym = totalPnl >= 0 ? "+" : "";
+                        const sym = totalPnl >= 0 ? "+" : "-";
                         pnl = `${sym}$${Math.abs(totalPnl).toFixed(2)}`;
                         bestTrade = best > 0 ? `+$${best.toFixed(2)}` : `$${best.toFixed(2)}`;
                     }
@@ -615,6 +616,7 @@ exports.sendWeeklyDigestEmails = functions.pubsub
         try {
             const html = await (0, components_1.render)(React.createElement(WeeklyDigestEmail_1.WeeklyDigestEmail, {
                 firstName, tradeCount, winRate, pnl, bestTrade, weekLabel,
+                unsubscribeUrl: getUnsubscribeUrl(doc.id),
             }));
             await getResend().emails.send({
                 from: FROM_EMAIL,
@@ -798,12 +800,13 @@ exports.sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
     const failed = [];
     for (const user of batch) {
         try {
-            const html = await (0, components_1.render)(React.createElement(TrialOfferEmail_1.TrialOfferEmail, { firstName: user.firstName }));
+            const html = await (0, components_1.render)(React.createElement(TrialOfferEmail_1.TrialOfferEmail, { firstName: user.firstName, unsubscribeUrl: getUnsubscribeUrl(user.uid) }));
             await getResend().emails.send({
                 from: FROM_EMAIL,
                 to: user.email,
                 subject: "14 days of Pro — on us",
                 html,
+                headers: unsubHeaders(user.uid),
             });
             await db.collection("users").doc(user.uid).update({
                 trialOutreachSentAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -873,7 +876,7 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
     // support inbox — they still land in Firestore + PostHog above, just not email.
     const SILENT_TYPES = new Set(["ai_feedback", "nps"]);
     if (!SILENT_TYPES.has(type || "")) {
-        const followUpBadge = wantFollowUp ? `<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">WANTS REPLY</span>` : "";
+        const followUpBadge = wantFollowUp ? `<span style="background:#f59e0b;color:#1a1305;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700">WANTS REPLY</span>` : "";
         const pageInfo = page ? `<p style="margin:0 0 4px;color:#666;font-size:13px">Page: <strong>${escapeHtml(page)}</strong></p>` : "";
         const diagRows = diagnostics
             ? Object.entries(diagnostics).map(([k, v]) => `<tr><td style="padding:2px 12px 2px 0;color:#999;white-space:nowrap;vertical-align:top">${k}</td>`
@@ -894,7 +897,7 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
             subject: `[${label}]${wantFollowUp ? " [REPLY REQUESTED]" : ""} ${starRating ? stars + " · " : ""}from ${userName}`,
             attachments,
             html: `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <div style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111">
           <h2 style="margin:0 0 8px">${label} ${followUpBadge}</h2>
           <p style="margin:0 0 4px;color:#666;font-size:14px">
             From <strong>${escapeHtml(userName)}</strong> (${escapeHtml(userEmail)}) · ${new Date().toUTCString()}
@@ -971,7 +974,7 @@ exports.submitTestimonial = functions.https.onCall(async (data, context) => {
         to: "support@freetradejournal.com",
         subject: `[Testimonial] ${stars} from ${name || "Anonymous"}`,
         html: `
-      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+      <div style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111">
         <h2 style="margin:0 0 8px">New Testimonial — needs approval</h2>
         <p style="margin:0 0 16px;color:#666;font-size:14px">
           From <strong>${name || "Anonymous"}</strong>${role ? ` · ${role}` : ""} · ${userEmail}
@@ -1163,22 +1166,17 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
                 const subject = rewardEarned
                     ? `You earned 14 days of Pro! ${newUserName} was your 3rd referral`
                     : `${newUserName} just started trading with your link`;
-                const newUserNameHtml = escapeHtml(newUserName);
-                const body = rewardEarned
-                    ? `<p style="color:#ededed;font-size:16px;font-weight:600;margin:0 0 8px">You just earned 14 days of Pro</p>
-             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserNameHtml} was your 3rd referral. Your Pro access is now active — AI coaching, cloud sync, and everything else is unlocked for the next 14 days.</p>`
-                    : `<p style="color:#ededed;font-size:16px;font-weight:600;margin:0 0 8px">Referral confirmed</p>
-             <p style="margin:0 0 16px;font-size:14px;line-height:1.6">${newUserNameHtml} signed up with your link and logged their first trade. ${REFERRAL_REWARD_THRESHOLD - newCount} more referral${REFERRAL_REWARD_THRESHOLD - newCount !== 1 ? "s" : ""} to unlock 14 days of Pro free.</p>`;
+                const html = await (0, components_1.render)(React.createElement(ReferralEmail_1.ReferralEmail, {
+                    rewardEarned,
+                    newUserName,
+                    remaining: Math.max(REFERRAL_REWARD_THRESHOLD - newCount, 0),
+                    rewardDays: REFERRAL_REWARD_DAYS,
+                }));
                 await getResend().emails.send({
                     from: FROM_EMAIL,
                     to: referrerEmail,
                     subject,
-                    html: `
-            <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#0a0a0a;color:#999;border-radius:12px">
-              ${body}
-              <a href="https://www.freetradejournal.com/settings?tab=subscription" style="display:inline-block;background:#f59e0b;color:#000;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;text-decoration:none">View your referrals</a>
-            </div>
-          `,
+                    html,
                 });
             }
             console.log(`Referral counted: ${uid} → referrer ${referrerUid} (now ${newCount})`);
