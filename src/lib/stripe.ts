@@ -1,4 +1,5 @@
 import { getFirebaseFunctions } from '@/lib/firebase-lazy';
+import { getReferral } from '@/lib/referral';
 
 export async function redirectToCheckout(priceId: string): Promise<void> {
   const [functions, { httpsCallable }] = await Promise.all([
@@ -6,12 +7,13 @@ export async function redirectToCheckout(priceId: string): Promise<void> {
     import('firebase/functions'),
   ]);
 
-  const createSession = httpsCallable<{ priceId: string }, { url: string }>(
+  const createSession = httpsCallable<{ priceId: string; ref?: string }, { url: string }>(
     functions,
     'createCheckoutSession',
   );
 
-  const result = await createSession({ priceId });
+  const ref = getReferral();
+  const result = await createSession(ref ? { priceId, ref } : { priceId });
   const url = result.data.url;
 
   if (url) {

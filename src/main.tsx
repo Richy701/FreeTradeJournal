@@ -7,6 +7,7 @@ import App from './App.tsx'
 import './utils/emergency-recovery'
 import { initPostHog } from './lib/posthog'
 import { installThirdPartyErrorFilter } from './lib/suppress-third-party-noise'
+import { captureReferral } from './lib/referral'
 
 // Register before Sentry so blocked-TradingView chunk errors are filtered out
 // before Sentry's global handler sees them.
@@ -17,6 +18,9 @@ Sentry.init({
 })
 
 initPostHog();
+
+// Persist ?ref= partner attribution before any navigation strips it
+captureReferral();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1580,6 +1580,10 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     if (!priceId) {
         throw new functions.https.HttpsError("invalid-argument", "Missing priceId.");
     }
+    // Optional partner attribution from a ?ref= link; promo codes remain the
+    // primary attribution path, this catches referrals who skip the code.
+    const rawRef = (data.ref || "").trim().toLowerCase().slice(0, 50);
+    const ref = /^[a-z0-9_-]+$/.test(rawRef) ? rawRef : "";
     // Validate priceId against allowed values to prevent use of arbitrary Stripe prices
     const ALLOWED_PRICES = [
         process.env.STRIPE_PRICE_MONTHLY,
@@ -1612,11 +1616,11 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
             success_url: `${process.env.APP_URL}/settings?tab=subscription&checkout=success`,
             cancel_url: `${process.env.APP_URL}/pricing?checkout=cancelled`,
             allow_promotion_codes: true,
-            metadata: { firebase_uid: uid },
+            metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
         };
         if (!isLifetime) {
             params.subscription_data = {
-                metadata: { firebase_uid: uid },
+                metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
             };
             // One free trial per user — cancel/resubscribe pays from day one.
             if (!hadTrial)
@@ -1624,7 +1628,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         }
         else {
             params.payment_intent_data = {
-                metadata: { firebase_uid: uid },
+                metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
             };
         }
         return params;
