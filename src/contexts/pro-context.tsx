@@ -21,6 +21,9 @@ interface ProContextType {
   hasAIAccess: boolean;
   freeAiQuota: FreeAIQuota | null;
   updateFreeAiQuota: (quota: FreeAIQuota) => void;
+  /** ISO date the signup Pro trial ends — set only while the trial is the
+   * user's sole Pro entitlement (null for paid, referral, expired, demo). */
+  trialEndsAt: string | null;
 }
 
 const ProContext = createContext<ProContextType | undefined>(undefined);
@@ -34,8 +37,16 @@ export function useProStatus() {
 }
 
 const PRO_CACHE_KEY = 'proStatus';
+// Trial/referral expiry dates cached alongside the subscription so an entitled
+// user doesn't flash (or, offline, get stuck in) the free experience while the
+// Firestore snapshot is still loading.
+const ENTITLEMENT_CACHE_KEY = 'proEntitlements';
 const FREE_AI_CACHE_KEY = 'freeAiQuota';
 const FREE_AI_MONTHLY_LIMIT = 20;
+
+function isFutureIso(date: string | null | undefined): boolean {
+  return !!date && new Date(date) > new Date();
+}
 
 function isActivePro(sub: SubscriptionInfo | null): boolean {
   if (!sub) return false;
@@ -69,7 +80,18 @@ export function ProProvider({ children }: ProProviderProps) {
   })();
 
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedSub);
-  const [referralProExpiresAt, setReferralProExpiresAt] = useState<string | null>(null);
+  const cachedEntitlements: { trial?: string | null; referral?: string | null } = (() => {
+    if (!uid) return {};
+    try {
+      return JSON.parse(UserStorage.getItem(uid, ENTITLEMENT_CACHE_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const [referralProExpiresAt, setReferralProExpiresAt] = useState<string | null>(cachedEntitlements.referral || null);
+  // Signup reverse trial: every new account gets full Pro for 14 days, written
+  // server-side by the onUserCreated function. Expiry-date based, no card.
+  const [trialProExpiresAt, setTrialProExpiresAt] = useState<string | null>(cachedEntitlements.trial || null);
   const [isLoading, setIsLoading] = useState(!cachedSub && !!uid && !isDemo);
 
   const [freeAiQuota, setFreeAiQuota] = useState<FreeAIQuota | null>(() => {
@@ -136,10 +158,17 @@ export function ProProvider({ children }: ProProviderProps) {
                 UserStorage.removeItem(uid, PRO_CACHE_KEY);
               }
               setReferralProExpiresAt(data.referralProExpiresAt || null);
+              setTrialProExpiresAt(data.trialProExpiresAt || null);
+              UserStorage.setItem(uid, ENTITLEMENT_CACHE_KEY, JSON.stringify({
+                trial: data.trialProExpiresAt || null,
+                referral: data.referralProExpiresAt || null,
+              }));
             } else {
               setSubscription(null);
               setReferralProExpiresAt(null);
+              setTrialProExpiresAt(null);
               UserStorage.removeItem(uid, PRO_CACHE_KEY);
+              UserStorage.removeItem(uid, ENTITLEMENT_CACHE_KEY);
             }
             setIsLoading(false);
           },
@@ -164,8 +193,7 @@ export function ProProvider({ children }: ProProviderProps) {
   // show a full quota to a user with none left until their next call fails.
   useEffect(() => {
     if (!uid || isDemo || isLoading) return;
-    const referralActive = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
-    if (isActivePro(subscription) || referralActive) return;
+    if (isActivePro(subscription) || isFutureIso(referralProExpiresAt) || isFutureIso(trialProExpiresAt)) return;
     let cancelled = false;
     (async () => {
       try {
@@ -215,14 +243,19 @@ export function ProProvider({ children }: ProProviderProps) {
     handleOpenCheckout(priceId);
   }, [uid, isDemo, handleOpenCheckout]);
 
-  const hasReferralPro = !!referralProExpiresAt && new Date(referralProExpiresAt) > new Date();
+  const hasReferralPro = isFutureIso(referralProExpiresAt);
+  const hasTrialPro = isFutureIso(trialProExpiresAt);
 
   // isPro means "actually entitled" — a paid subscription or referral perk.
   // Demo mode counts as Pro so the read-only demo showcases the full product
   // (every Pro feature visible and working with sample data). Edits are still
   // blocked by useDemoGuard, and AI calls are served canned responses (below),
   // so nothing real is mutated or charged.
-  const isPro = isDemo || isActivePro(subscription) || hasReferralPro;
+  const isPro = isDemo || isActivePro(subscription) || hasReferralPro || hasTrialPro;
+  // Surface the countdown only when the trial is what's granting Pro
+  const trialEndsAt = !isDemo && !isActivePro(subscription) && !hasReferralPro && hasTrialPro
+    ? trialProExpiresAt
+    : null;
   // Demo gets AI access too. Safe: demo never calls the real (paid) AI backend —
   // the useStreamingAI hook and PropTracker AI handler serve canned sample
   // responses (src/lib/demo-ai.ts) instead. Components that auto-fetch when
@@ -237,7 +270,8 @@ export function ProProvider({ children }: ProProviderProps) {
     hasAIAccess,
     freeAiQuota: isPro || isDemo ? null : freeAiQuota,
     updateFreeAiQuota,
-  }), [isPro, isDemo, isLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota]);
+    trialEndsAt,
+  }), [isPro, isDemo, isLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

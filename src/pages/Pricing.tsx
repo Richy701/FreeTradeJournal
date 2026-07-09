@@ -223,11 +223,11 @@ function ComparisonRow({ feature, free, pro }: { feature: string; free: boolean;
 const FAQS = [
   {
     q: 'Is the free plan really free forever?',
-    a: 'Yes. No credit card required. The core journal — unlimited trades, analytics, and up to 100 journal entries — is free for life. Upgrade to Pro for unlimited journal entries.',
+    a: 'Yes. No credit card required. The core journal — unlimited trades, 30 days of analytics, and up to 20 journal entries — is free for life. Upgrade to Pro for full analytics history and unlimited journaling.',
   },
   {
     q: 'How does the 14-day free trial work?',
-    a: 'Start a monthly or yearly Pro subscription and get 14 days free — no charge until the trial ends. Cancel anytime before then and you will not be billed.',
+    a: 'Every new account automatically starts with 14 days of full Pro — no card required. When it ends, you keep the free plan and nothing is charged. Upgrade anytime to keep Pro.',
   },
   {
     q: 'Can I cancel my Pro subscription anytime?',
@@ -387,10 +387,10 @@ export default function Pricing() {
           <PricingCard
             name={`Pro ${activePlan.name}`}
             price={activePlan.price}
-            subtitle={frequency === 'monthly' ? 'Per month · 14-day free trial' : 'Per year · Save 36% · 14-day free trial'}
+            subtitle={frequency === 'monthly' ? 'Per month · Cancel anytime' : 'Per year · Save 36%'}
             description="For traders who want an edge"
             features={activePlan.features}
-            cta="Start free trial"
+            cta="Get Pro"
             popular
             isCurrentPlan={isPro && currentPlan === activePlan.interval}
             onCtaClick={() => handleUpgrade(activePlan.priceId, activePlan.interval)}
@@ -464,9 +464,9 @@ export default function Pricing() {
                   onClick={() => handleUpgrade(activePlan.priceId, user ? activePlan.interval : 'free', 'comparison_table')}
                 >
                   {checkoutLoading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
-                  {user ? 'Start free trial' : 'Get Started Free'}
+                  {user ? 'Get Pro' : 'Get Started Free'}
                 </Button>
-                <p className="text-xs text-muted-foreground">14-day free trial · Cancel anytime · No hidden fees</p>
+                <p className="text-xs text-muted-foreground">New accounts get 14 days of Pro free · Cancel anytime · No hidden fees</p>
               </div>
             )}
           </div>

@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.54.0',
+    date: '2026-07-09',
+    summary: 'Every new account now starts with a free 14-day Pro trial, plus updated free plan limits.',
+    items: [
+      {
+        type: 'new',
+        text: 'Everyone gets 14 days of Pro, free',
+        description: 'Every account — new signups and existing free accounts alike — now gets the full Pro experience: unlimited AI coaching, cloud sync, PDF reports, and full analytics for 14 days. No card required; it simply switches to the free plan when it ends.',
+      },
+      {
+        type: 'new',
+        text: 'Prop firm partner discounts, where you need them',
+        description: 'PropTracker now links to partner discounts at top prop firms when you are setting up a challenge.',
+      },
+      {
+        type: 'improved',
+        text: 'Updated free plan limits',
+        description: 'Free accounts now see dashboard stats and charts for the last 30 days of trading (Pro keeps full history), and include up to 20 journal entries and 1 PropTracker account. Nothing is ever deleted: your complete trade log, exports, and existing journal entries always stay available, and the calendar heatmap still shows your full history.',
+      },
+    ],
+  },
+  {
     version: '2.53.0',
     date: '2026-07-03',
     summary: 'Save confirmations, smarter quotas and limits, PropTracker breach alerts, and goals everywhere they belong.',
@@ -1708,4 +1730,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.53.0'
+export const LATEST_CHANGELOG_VERSION = '2.54.0'

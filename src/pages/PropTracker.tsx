@@ -77,6 +77,7 @@ import { toast } from 'sonner'
 import { requestPropAnalysis, requestScreenshotParse } from '@/services/ai-analysis'
 import type { ParsedTransaction } from '@/services/ai-analysis'
 import { Link } from 'react-router-dom'
+import { trackEvent } from '@/lib/analytics'
 import { ProUpgradeCard } from '@/components/pro-upgrade-card'
 import type {
   PropFirmAccount,
@@ -110,7 +111,7 @@ const PROP_FIRMS = [
   'Custom...',
 ] as const
 
-const FREE_ACCOUNT_LIMIT = 2
+const FREE_ACCOUNT_LIMIT = 1
 
 const ACCOUNT_SIZES = [10000, 25000, 50000, 75000, 80000, 100000, 150000, 200000, 300000]
 
@@ -513,7 +514,7 @@ export default function PropTracker() {
 
   function openAddAccount() {
     if (!isPro && accounts.length >= FREE_ACCOUNT_LIMIT) {
-      toast.error(`Free plan is limited to ${FREE_ACCOUNT_LIMIT} accounts. Upgrade to Pro for unlimited accounts.`)
+      toast.error(`Free plan is limited to ${FREE_ACCOUNT_LIMIT} prop firm ${FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'}. Upgrade to Pro for unlimited accounts.`)
       return
     }
     setAccountForm(defaultAccountForm())
@@ -1113,7 +1114,7 @@ export default function PropTracker() {
         {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT && (
           <ProUpgradeCard
             icon={Buildings}
-            title={`You've used all ${FREE_ACCOUNT_LIMIT} free accounts`}
+            title={FREE_ACCOUNT_LIMIT === 1 ? 'You\'ve used your free account' : `You've used all ${FREE_ACCOUNT_LIMIT} free accounts`}
             description="Upgrade to Pro for unlimited prop firm accounts, advanced analytics, AI-powered challenge analysis, and more."
             cta="Unlock unlimited accounts"
             dismissKey="proptracker-limit"
@@ -1897,7 +1898,19 @@ export default function PropTracker() {
                 Add your first account
               </Button>
 
-              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · {FREE_ACCOUNT_LIMIT} accounts on free plan</p>}
+              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · {FREE_ACCOUNT_LIMIT} {FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'} on free plan</p>}
+
+              <p className="text-xs text-muted-foreground">
+                Starting a new challenge?{' '}
+                <Link
+                  to="/affiliate"
+                  className="font-medium hover:underline"
+                  style={{ color: themeColors.primary }}
+                  onClick={() => trackEvent('affiliate_link_clicked', { source: 'proptracker_empty_state' })}
+                >
+                  Get partner discounts at top prop firms
+                </Link>
+              </p>
             </div>
 
             {/* Divider */}

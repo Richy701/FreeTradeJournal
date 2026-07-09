@@ -32,7 +32,7 @@ export function PostHogTracker() {
   const posthog = usePostHog();
   const location = useLocation();
   const { user, isDemo } = useAuth();
-  const { isPro, subscription } = useProStatus();
+  const { isPro, subscription, trialEndsAt } = useProStatus();
   const sessionTracked = useRef(false);
 
   // Track session start once
@@ -66,13 +66,17 @@ export function PostHogTracker() {
           email: user.email ?? undefined,
           name: user.displayName ?? undefined,
           is_pro: isPro,
-          plan_type: subscription?.planType ?? 'free',
+          // Keeps paid vs trial segmentable — without this the signup-trial
+          // backfill flips the whole base to is_pro:true and every free/Pro
+          // funnel reads as a fake conversion spike
+          is_trial: !!trialEndsAt,
+          plan_type: subscription?.planType ?? (trialEndsAt ? 'trial' : 'free'),
         });
       }
     } else {
       posthog.reset();
     }
-  }, [user, isDemo, posthog, isPro, subscription]);
+  }, [user, isDemo, posthog, isPro, subscription, trialEndsAt]);
 
   return null;
 }

@@ -97,11 +97,11 @@ export function ChartAreaInteractive() {
   const [view, setView] = useState<ChartView>('equity')
   // Get theme colors and demo data
   const { themeColors } = useThemePresets()
-  const { getTrades } = useDemoData()
+  const { getAnalyticsTrades } = useDemoData()
 
   // Get trades from demo data or localStorage and generate equity curve data
   const chartData = useMemo(() => {
-    const tradesData = getTrades()
+    const tradesData = getAnalyticsTrades().trades
     if (!tradesData || tradesData.length === 0) return []
 
     const parsedTrades: Trade[] = tradesData.map((trade: any) => ({
@@ -124,7 +124,7 @@ export function ChartAreaInteractive() {
           trade: index + 1,
         }
       })
-  }, [getTrades])
+  }, [getAnalyticsTrades])
 
   // Aggregate trades by day for the P&L bar chart
   const dailyData = useMemo(() => {

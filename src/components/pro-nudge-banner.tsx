@@ -27,15 +27,15 @@ export function ProNudgeBanner() {
   return (
     <div className="mx-4 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-center gap-3 relative">
       <p className="text-sm text-foreground/80 flex-1 leading-snug">
-        Try every Pro feature free for{' '}
-        <span className="font-semibold text-foreground">14 days</span>
-        {' '}— AI coaching, trade analysis, cloud sync and more. No charge until your trial ends.
+        Unlock every Pro feature —{' '}
+        <span className="font-semibold text-foreground">full analytics history</span>
+        , unlimited AI coaching, cloud sync and more. Cancel anytime.
       </p>
       <Link
         to="/pricing"
         className="flex-shrink-0 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150 whitespace-nowrap"
       >
-        Start free trial →
+        Upgrade to Pro →
       </Link>
       <button
         onClick={dismiss}

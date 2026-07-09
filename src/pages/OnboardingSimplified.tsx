@@ -629,6 +629,9 @@ export default function OnboardingSimplified() {
                 <motion.p variants={activeFadeUpItem} className="text-muted-foreground">
                   Your account is ready. Start logging trades, and your AI Coach is in the sidebar whenever you want feedback.
                 </motion.p>
+                <motion.p variants={activeFadeUpItem} className="text-sm font-medium">
+                  Your first 14 days include every Pro feature — unlimited AI coaching, cloud sync, and full analytics. No card needed.
+                </motion.p>
               </div>
 
               <motion.div

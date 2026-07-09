@@ -280,7 +280,7 @@ export default function Journal() {
   // full access to their own data). Pro and demo are unlimited.
   const atFreeJournalLimit = !isPro && !isDemo && totalEntryCount >= FREE_JOURNAL_ENTRY_LIMIT;
   const nearFreeJournalLimit =
-    !isPro && !isDemo && !atFreeJournalLimit && totalEntryCount >= FREE_JOURNAL_ENTRY_LIMIT - 10;
+    !isPro && !isDemo && !atFreeJournalLimit && totalEntryCount >= FREE_JOURNAL_ENTRY_LIMIT - 5;
 
   // Load entries from localStorage or demo data, scoped to the active account.
   // Re-runs when the active account changes so the journal mirrors the trade log.

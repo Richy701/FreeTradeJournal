@@ -72,7 +72,7 @@ export function ChartRadarDefault() {
     () => generatePairColors(themeColors.primary, themeColors.profit, themeColors.loss),
     [themeColors.primary, themeColors.profit, themeColors.loss]
   )
-  const { getTrades } = useDemoData()
+  const { getAnalyticsTrades } = useDemoData()
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export function ChartRadarDefault() {
   }, [])
 
   const { chartData, rawData, pieData, pieConfig, totalTrades } = useMemo(() => {
-    const trades = getTrades()
+    const trades = getAnalyticsTrades().trades
 
     let rawPairData: any[]
     if (!trades || trades.length === 0) {
@@ -150,7 +150,7 @@ export function ChartRadarDefault() {
       pieConfig: config,
       totalTrades: total,
     }
-  }, [refreshKey, getTrades])
+  }, [refreshKey, getAnalyticsTrades])
 
   const radarConfig = {
     score: {

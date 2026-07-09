@@ -1,9 +1,12 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
+import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { useCallback, useEffect, useState } from 'react';
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
 import { belongsToAccount } from '@/lib/account-scope';
+import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing';
+import { windowAnalyticsTrades } from '@/lib/analytics-window';
 
 /**
  * Hook to read trading data, account-scoped.
@@ -18,6 +21,7 @@ import { belongsToAccount } from '@/lib/account-scope';
  */
 export function useDemoData() {
   const { isDemo } = useAuth();
+  const { isPro, isLoading: isProLoading } = useProStatus();
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
 
@@ -48,6 +52,19 @@ export function useDemoData() {
     return trades;
   }, [isDemo, userStorage, activeAccount, version]);
 
+  // Analytics views (dashboard widgets, header stats) read through this instead
+  // of getTrades: free accounts get the trailing FREE_ANALYTICS_WINDOW_DAYS
+  // only. The trade log and exports always read getTrades — the window gates
+  // analytics depth, never the user's own data. isPro already covers demo mode
+  // and active trials.
+  const getAnalyticsTrades = useCallback((): { trades: any[]; hiddenCount: number } => {
+    const trades = getTrades();
+    // While pro status is still resolving, err on the unwindowed side — never
+    // flash the degraded free view (and its upgrade banner) at an entitled user
+    if (isPro || isProLoading) return { trades, hiddenCount: 0 };
+    return windowAnalyticsTrades(trades, FREE_ANALYTICS_WINDOW_DAYS);
+  }, [getTrades, isPro, isProLoading]);
+
   const getJournalEntries = useCallback(() => {
     let entries = [];
 
@@ -71,6 +88,7 @@ export function useDemoData() {
   return {
     isDemo,
     getTrades,
+    getAnalyticsTrades,
     getJournalEntries,
   };
 }

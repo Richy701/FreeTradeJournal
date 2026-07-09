@@ -89,7 +89,10 @@ function isItemActive(url: string, pathname: string): boolean {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
-  const { isPro } = useProStatus()
+  const { isPro, trialEndsAt } = useProStatus()
+  const trialDaysLeft = trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : null
   const { streak, loggedToday } = useLoggingStreak()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
@@ -205,7 +208,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       style={{ backgroundColor: alpha(themeColors.primary, '15') }}
                     >
                       <Rocket className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      <span>Start free trial</span>
+                      <span>Upgrade to Pro</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {trialDaysLeft !== null && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton size="sm" asChild>
+                    <Link
+                      to="/pricing"
+                      onClick={() => isMobile && setOpenMobile(false)}
+                      className="font-medium"
+                      style={{ backgroundColor: alpha(themeColors.primary, '15') }}
+                    >
+                      <Rocket className="h-4 w-4" style={{ color: themeColors.primary }} />
+                      <span>
+                        Pro trial · {trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'} left
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

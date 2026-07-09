@@ -113,7 +113,7 @@ export default function Settings() {
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
   const userStorage = useUserStorage();
-  const { isPro, subscription } = useProStatus();
+  const { isPro, subscription, trialEndsAt } = useProStatus();
   const { syncStatus, lastSyncTime } = useSync();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -975,17 +975,33 @@ export default function Settings() {
                             <div className="flex items-center gap-2">
                               <ProBadge size="md" />
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 capitalize">{subscription?.planType} plan</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+                              {trialEndsAt ? 'Free trial' : subscription ? `${subscription.planType} plan` : 'Pro'}
+                            </p>
                           </div>
                           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 capitalize">
-                            {subscription?.status === 'on_trial' ? 'Trial' : subscription?.status || 'Active'}
+                            {trialEndsAt || subscription?.status === 'on_trial' ? 'Trial' : subscription?.status || 'Active'}
                           </Badge>
                         </div>
-                        {subscription?.currentPeriodEnd && subscription.planType !== 'lifetime' && (
+                        {/* trialEndsAt set means the trial is the entitlement — any
+                            subscription object left over is stale (cancelled/expired)
+                            and its dates would only mislead here */}
+                        {!trialEndsAt && subscription?.currentPeriodEnd && subscription.planType !== 'lifetime' && (
                           <p className="text-xs text-muted-foreground">
                             {subscription.status === 'cancelled' ? 'Access until' : subscription.status === 'on_trial' ? 'Trial ends on' : 'Renews on'}{' '}
                             {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                           </p>
+                        )}
+                        {trialEndsAt && (
+                          <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground">
+                              Your free Pro trial ends on {new Date(trialEndsAt).toLocaleDateString()} — no card on file, nothing is charged. Upgrade to keep Pro after it ends.
+                            </p>
+                            <Button size="sm" className="font-semibold" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }} onClick={() => navigate('/pricing')}>
+                              <Crown className="mr-2 h-3.5 w-3.5" />
+                              Keep Pro
+                            </Button>
+                          </div>
                         )}
                         {subscription?.stripeCustomerId && (
                           <Button variant="outline" size="sm" disabled={portalLoading} onClick={async () => {

@@ -55,6 +55,8 @@ export function DataTable({ data }: DataTableProps) {
   const navigate = useNavigate()
 
   const trades = useMemo(() => {
+    // Deliberately unwindowed: this is a trade list, not a stat — the free
+    // analytics window never hides rows from a list of the user's own trades
     const tradesData = getTrades()
     return tradesData.map((trade: any) => ({
       ...trade,

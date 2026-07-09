@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -54,6 +54,7 @@ const CancellationEmail_1 = require("./emails/CancellationEmail");
 const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
 const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
 const TrialEndingEmail_1 = require("./emails/TrialEndingEmail");
+const SignupTrialEndingEmail_1 = require("./emails/SignupTrialEndingEmail");
 const TrialOfferEmail_1 = require("./emails/TrialOfferEmail");
 const PasswordResetEmail_1 = require("./emails/PasswordResetEmail");
 const EmailVerificationEmail_1 = require("./emails/EmailVerificationEmail");
@@ -283,6 +284,10 @@ function normalizeEmail(email) {
     return `${local.split("+")[0]}@${domain}`;
 }
 // ─── Welcome Email on Signup ───────────────────────────────
+// Every new account starts with a full-Pro reverse trial: no card, expires on
+// its own. Entitlement is derived from the expiry date (client pro-context +
+// isEntitledPro below) — never from the isPro flag, which the Stripe webhook owns.
+const SIGNUP_TRIAL_DAYS = 14;
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     // Write user record to Firestore for email scheduling
     try {
@@ -291,6 +296,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
             normalizedEmail: user.email ? normalizeEmail(user.email) : null,
             displayName: user.displayName || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            trialProExpiresAt: new Date(Date.now() + SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
         }, { merge: true });
     }
     catch (err) {
@@ -421,6 +427,46 @@ exports.sendTrialEndingEmails = functions.pubsub
         }
     }
     console.log(`Trial ending: sent ${sent} emails`);
+    // Second pass: the no-card signup trial (trialProExpiresAt). Same 1–3 day
+    // window, its own one-shot flag, and different copy — nothing gets charged,
+    // the account just drops to the free plan.
+    const signupTrialSnapshot = await db
+        .collection("users")
+        .where("trialProExpiresAt", ">=", oneDayFromNow)
+        .where("trialProExpiresAt", "<=", threeDaysFromNow)
+        .get();
+    let signupSent = 0;
+    for (const doc of signupTrialSnapshot.docs) {
+        if (signupSent >= MAX_SENDS)
+            break;
+        const data = doc.data();
+        if (data.signupTrialEndingSentAt || data.emailOptOut)
+            continue;
+        // Already converted to a paid plan — the trial expiry is moot
+        if (hasActiveSubscription(data))
+            continue;
+        const email = data.email;
+        if (!email)
+            continue;
+        try {
+            const firstName = (data.displayName || email).split(" ")[0];
+            const trialEndDate = new Date(data.trialProExpiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+            const html = await (0, components_1.render)(React.createElement(SignupTrialEndingEmail_1.SignupTrialEndingEmail, { firstName, trialEndDate, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
+            await getResend().emails.send({
+                from: FROM_EMAIL,
+                to: email,
+                subject: "Your free Pro trial ends soon — nothing will be charged",
+                html,
+                headers: unsubHeaders(doc.id),
+            });
+            await doc.ref.update({ signupTrialEndingSentAt: admin.firestore.FieldValue.serverTimestamp() });
+            signupSent++;
+        }
+        catch (err) {
+            console.error(`Failed to send signup-trial ending email for ${doc.id}:`, err);
+        }
+    }
+    console.log(`Signup-trial ending: sent ${signupSent} emails`);
     return null;
 });
 // ─── Day 7 Nudge (Scheduled) ────────────────────────────────────
@@ -486,7 +532,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
             break;
         const data = doc.data();
         // Only target free users who have logged at least one trade
-        if (data.resendAutomationEnrolled || data.emailOptOut || data.isPro || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || isEntitledPro(data) || data.day14UpgradeSentAt || !data.firstTradeLoggedAt)
             continue;
         const email = data.email;
         if (!email)
@@ -530,7 +576,7 @@ exports.sendDay21BackupEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        if (data.resendAutomationEnrolled || data.emailOptOut || data.isPro || data.day21BackupSentAt || !data.firstTradeLoggedAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || isEntitledPro(data) || data.day21BackupSentAt || !data.firstTradeLoggedAt)
             continue;
         const email = data.email;
         if (!email)
@@ -565,11 +611,12 @@ exports.sendWeeklyDigestEmails = functions.pubsub
     const now = Date.now();
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const weekLabel = `Week of ${weekAgo.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(now).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
-    // Only send to Pro users (free users' trades are in localStorage, not Firestore)
+    // Only send to entitled Pro users (free users' trades are in localStorage,
+    // not Firestore). Trial/referral users don't carry the isPro flag, so pull
+    // the traded cohort and filter on full entitlement in memory.
     const allSnapshot = await db.collection("users")
-        .where("isPro", "==", true)
         .where("firstTradeLoggedAt", "!=", null)
-        .limit(500)
+        .limit(2000)
         .get();
     const currentWeek = `${new Date(now).getFullYear()}-W${Math.ceil((now - new Date(new Date(now).getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}`;
     let sent = 0;
@@ -582,13 +629,15 @@ exports.sendWeeklyDigestEmails = functions.pubsub
             continue;
         if (data.emailOptOut || data.weeklyDigestLastSentWeek === currentWeek)
             continue;
+        if (!isEntitledPro(data))
+            continue;
         const firstName = (data.displayName || data.email || "trader").split(" ")[0];
         let tradeCount = 0;
         let winRate = 0;
         let pnl = "$0.00";
         let bestTrade = "$0.00";
-        // Pro users with synced trades — compute real weekly stats
-        if (data.isPro) {
+        // Entitled users with synced trades — compute real weekly stats
+        if (isEntitledPro(data)) {
             try {
                 const tradesDoc = await db.collection("users").doc(doc.id).collection("sync").doc("trades").get();
                 if (tradesDoc.exists) {
@@ -773,8 +822,11 @@ exports.sendTrialOfferBatch = functions.https.onCall(async (data, context) => {
     const eligible = [];
     for (const doc of snapshot.docs) {
         const d = doc.data();
-        // Skip pro users, already-outreached users, and users without an email
-        if (d.emailOptOut || d.isPro === true)
+        // Skip entitled users (paid, trial, or referral Pro), already-outreached
+        // users, and users without an email. Anyone who ever had the signup trial
+        // (even expired) is also out: createCheckoutSession won't grant them the
+        // Stripe trial this email promises.
+        if (d.emailOptOut || isEntitledPro(d) || d.trialProExpiresAt)
             continue;
         if (d.trialOutreachSentAt)
             continue;
@@ -1154,8 +1206,10 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
             };
             if (newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt) {
                 const expiresAt = new Date(Date.now() + REFERRAL_REWARD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+                // Entitlement comes from the expiry date alone (isEntitledPro + client
+                // pro-context) — never write isPro, which the Stripe webhook owns.
+                // Writing it here left rewardees server-side Pro forever.
                 referrerUpdate.referralProExpiresAt = expiresAt;
-                referrerUpdate.isPro = true;
             }
             await db.collection("users").doc(referrerUid).set(referrerUpdate, { merge: true });
             // Notify the referrer
@@ -1287,8 +1341,10 @@ exports.processDeferredReferrals = functions.pubsub
         };
         if (newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt) {
             const expiresAt = new Date(Date.now() + REFERRAL_REWARD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+            // Entitlement comes from the expiry date alone (isEntitledPro + client
+            // pro-context) — never write isPro, which the Stripe webhook owns.
+            // Writing it here left rewardees server-side Pro forever.
             referrerUpdate.referralProExpiresAt = expiresAt;
-            referrerUpdate.isPro = true;
         }
         await db.collection("users").doc(referrerUid).set(referrerUpdate, { merge: true });
         processed++;
@@ -1296,6 +1352,100 @@ exports.processDeferredReferrals = functions.pubsub
     }
     console.log(`Deferred referrals: processed ${processed}`);
     return null;
+});
+// Subscription statuses the client's isActivePro counts as paid Pro — shared
+// by both admin migration callables so they can't drift apart.
+const ACTIVE_SUB_STATUSES = ["active", "on_trial", "past_due"];
+function hasActiveSubscription(d) {
+    return !!d?.subscription && ACTIVE_SUB_STATUSES.includes(d.subscription.status);
+}
+// ─── One-Time Cleanup: Stale Referral isPro Flags ──────────
+// Referral rewards used to write isPro: true permanently; entitlement now
+// comes solely from referralProExpiresAt. This clears the stale flag for
+// users whose only claim to isPro was the referral reward. Admin-only,
+// dryRun by default lists affected uids without writing.
+exports.cleanupReferralIsPro = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    assertAdmin(context);
+    const dryRun = data?.dryRun !== false;
+    const snapshot = await db.collection("users")
+        .where("isPro", "==", true)
+        .select("subscription", "referralProExpiresAt")
+        .get();
+    const stale = [];
+    let batch = db.batch();
+    let pending = 0;
+    for (const doc of snapshot.docs) {
+        const d = doc.data();
+        // A real (or lifetime) subscription keeps isPro — the webhook owns those
+        if (hasActiveSubscription(d))
+            continue;
+        // No referral trace means isPro came from somewhere unexpected — leave it
+        // for manual review rather than revoking blindly
+        if (!d.referralProExpiresAt)
+            continue;
+        stale.push(doc.id);
+        if (!dryRun) {
+            batch.set(doc.ref, { isPro: false }, { merge: true });
+            pending++;
+            if (pending === 400) {
+                await batch.commit();
+                batch = db.batch();
+                pending = 0;
+            }
+        }
+    }
+    if (!dryRun && pending > 0) {
+        await batch.commit();
+    }
+    console.log(`cleanupReferralIsPro: ${dryRun ? "would clear" : "cleared"} ${stale.length} stale isPro flags`);
+    return { dryRun, count: stale.length, uids: stale };
+});
+// ─── One-Time Backfill: Signup Trial for Existing Users ────
+// New signups get a 14-day Pro trial via onUserCreated; this grants the same
+// trial (starting now) to every existing user who has never paid, so the
+// free-plan rebalance lands as an upgrade rather than a downgrade. Idempotent:
+// anyone who already has a trialProExpiresAt (new signups, or a previous run)
+// is skipped, so the clock is never reset or extended. Admin-only, dryRun by
+// default. Run it at deploy/announcement time — the 14 days start on grant.
+exports.backfillTrialPro = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    assertAdmin(context);
+    const dryRun = data?.dryRun !== false;
+    const expiresAt = new Date(Date.now() + SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    // Firestore can't query for missing fields — pull all users and filter here
+    const snapshot = await db.collection("users")
+        .select("trialProExpiresAt", "subscription")
+        .get();
+    let granted = 0;
+    let batch = db.batch();
+    let pending = 0;
+    for (const doc of snapshot.docs) {
+        const d = doc.data();
+        if (d.trialProExpiresAt)
+            continue;
+        if (hasActiveSubscription(d))
+            continue;
+        granted++;
+        if (!dryRun) {
+            batch.set(doc.ref, { trialProExpiresAt: expiresAt }, { merge: true });
+            pending++;
+            if (pending === 400) {
+                await batch.commit();
+                batch = db.batch();
+                pending = 0;
+            }
+        }
+    }
+    if (!dryRun && pending > 0) {
+        await batch.commit();
+    }
+    console.log(`backfillTrialPro: ${dryRun ? "would grant" : "granted"} trial to ${granted} users (until ${expiresAt})`);
+    return { dryRun, granted, expiresAt };
 });
 // ─── Push Notifications (Web Push / VAPID) ─────────────────
 function initWebPush() {
@@ -1606,7 +1756,10 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         stripeCustomerId = customer.id;
         await db.collection("users").doc(uid).set({ stripeCustomerId }, { merge: true });
     }
-    const hadTrial = userDoc.data()?.hadTrial === true;
+    // No Stripe card trial for anyone who already got the no-card signup
+    // trial (trialProExpiresAt) — otherwise the two stack to 28 free days
+    // and every "Keep Pro" conversion books zero revenue for two more weeks.
+    const hadTrial = userDoc.data()?.hadTrial === true || !!userDoc.data()?.trialProExpiresAt;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
     const buildSessionParams = (customerId) => {
         const params = {
@@ -1960,6 +2113,16 @@ const FEATURE_MODELS = {
 };
 // ─── Free-Tier AI Quota ───────────────────────────────────────
 const FREE_AI_MONTHLY_LIMIT = 20;
+// Server-side Pro entitlement: a paid subscription (isPro, Stripe-webhook-owned)
+// or an unexpired signup-trial / referral-reward grant. Mirrors the client's
+// pro-context so trial users get the same AI access they see in the UI.
+function isEntitledPro(data) {
+    if (!data)
+        return false;
+    if (data.isPro)
+        return true;
+    return [data.trialProExpiresAt, data.referralProExpiresAt].some((v) => typeof v === "string" && new Date(v).getTime() > Date.now());
+}
 async function checkAndIncrementFreeAI(uid) {
     const monthStr = new Date().toISOString().slice(0, 7);
     const freeUsageRef = db.collection("users").doc(uid).collection("meta").doc("freeAiUsage");
@@ -1994,7 +2157,7 @@ exports.analyzeTradesAI = functions.https.onCall(async (data, context) => {
     const uid = context.auth.uid;
     // 2. Pro or free-tier check
     const userDoc = await db.collection("users").doc(uid).get();
-    const userIsPro = userDoc.exists && userDoc.data()?.isPro;
+    const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
     let freeUsage = null;
     if (!userIsPro) {
         freeUsage = await checkAndIncrementFreeAI(uid);
@@ -2189,7 +2352,7 @@ exports.suggestCsvMapping = functions.https.onCall(async (data, context) => {
     const uid = context.auth.uid;
     // Pro-only. Free / anonymous users get the manual mapping dialog on the client.
     const userDoc = await db.collection("users").doc(uid).get();
-    const userIsPro = userDoc.exists && userDoc.data()?.isPro;
+    const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
     if (!userIsPro) {
         throw new functions.https.HttpsError("permission-denied", "AI column mapping is a Pro feature.");
     }
@@ -2657,7 +2820,7 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
     const uid = context.auth.uid;
     // 2. Pro or free-tier check
     const userDoc = await db.collection("users").doc(uid).get();
-    const userIsPro = userDoc.exists && userDoc.data()?.isPro;
+    const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
     // 3. Route by type
     const request = data;
     if (!request.type || !request.payload) {
@@ -2762,7 +2925,7 @@ exports.parseScreenshot = functions.https.onCall(async (data, context) => {
     }
     const uid = context.auth.uid;
     const userDoc = await db.collection("users").doc(uid).get();
-    if (!userDoc.exists || !userDoc.data()?.isPro) {
+    if (!userDoc.exists || !isEntitledPro(userDoc.data())) {
         throw new functions.https.HttpsError("permission-denied", "Screenshot import is a Pro feature.");
     }
     const { image, mimeType, importType } = data;
@@ -2871,7 +3034,7 @@ exports.syncData = functions.https.onCall(async (data, context) => {
     const uid = context.auth.uid;
     // Pro check — cloud sync is a Pro feature
     const userDoc = await db.collection("users").doc(uid).get();
-    if (!userDoc.exists || !userDoc.data()?.isPro) {
+    if (!userDoc.exists || !isEntitledPro(userDoc.data())) {
         throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
     }
     const { key, value, allowEmpty } = data;
@@ -2939,7 +3102,7 @@ exports.getSyncData = functions.https.onCall(async (_data, context) => {
     const uid = context.auth.uid;
     // Pro check — cloud sync is a Pro feature
     const userDoc = await db.collection("users").doc(uid).get();
-    if (!userDoc.exists || !userDoc.data()?.isPro) {
+    if (!userDoc.exists || !isEntitledPro(userDoc.data())) {
         throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
     }
     try {
@@ -3090,7 +3253,7 @@ exports.aiStream = functions.https.onRequest(async (req, res) => {
         return;
     }
     const userDoc = await db.collection("users").doc(uid).get();
-    const userIsPro = userDoc.exists && userDoc.data()?.isPro;
+    const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
     let freeUsage = null;
     if (!userIsPro) {
         try {

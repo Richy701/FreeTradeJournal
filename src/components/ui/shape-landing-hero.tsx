@@ -268,7 +268,7 @@ function HeroGeometric({
                             animate="visible"
                             className="text-xs text-muted-foreground mt-2"
                         >
-                            Pro plans include a 14-day free trial · Cancel anytime
+                            Every new account starts with 14 days of Pro free · Cancel anytime
                         </motion.p>
                       </>
                     )}

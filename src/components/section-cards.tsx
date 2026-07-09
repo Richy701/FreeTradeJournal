@@ -42,17 +42,24 @@ export function SectionCards() {
   const { themeColors } = useThemePresets()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { activeAccount } = useAccounts()
-  const { getTrades } = useDemoData()
+  const { getTrades, getAnalyticsTrades } = useDemoData()
 
   // Get trades from demo data or localStorage
   const trades = useMemo(() => {
-    const tradesData = getTrades()
+    const tradesData = getAnalyticsTrades().trades
     return tradesData.map((trade: any) => ({
       ...trade,
       entryTime: new Date(trade.entryTime),
       exitTime: new Date(trade.exitTime)
     }))
-  }, [getTrades])
+  }, [getAnalyticsTrades])
+
+  // Account balance is an absolute value, not a windowed stat — always derive
+  // it from the full trade history or it disagrees with the header balance
+  const allTimePnL = useMemo(
+    () => getTrades().reduce((sum: number, t: any) => sum + (Number(t.pnl) || 0), 0),
+    [getTrades]
+  )
 
   // Calculate metrics
   const metrics = useMemo(() => {
@@ -99,7 +106,7 @@ export function SectionCards() {
 
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`
 
-  const accountBalance = (activeAccount?.balance || settings.accountSize || 10000) + metrics.totalPnL
+  const accountBalance = (activeAccount?.balance || settings.accountSize || 10000) + allTimePnL
   const balancePositive = accountBalance >= (activeAccount?.balance || settings.accountSize || 10000)
 
   const pnlPositive = metrics.totalPnL >= 0

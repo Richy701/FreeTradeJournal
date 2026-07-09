@@ -11,7 +11,7 @@ interface ProUpgradeCardProps {
   dismissKey?: string;
 }
 
-export function ProUpgradeCard({ icon: Icon, title, description, cta = 'Start free trial', dismissKey }: ProUpgradeCardProps) {
+export function ProUpgradeCard({ icon: Icon, title, description, cta = 'Upgrade to Pro', dismissKey }: ProUpgradeCardProps) {
   const { user, isDemo } = useAuth();
   const { isPro, isLoading } = useProStatus();
 

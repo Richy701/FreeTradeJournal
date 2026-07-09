@@ -38,6 +38,7 @@ import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
 import { recordFirstTradeIfNeeded } from '@/lib/first-trade'
 import { trackTradeLogged } from '@/lib/track-trade'
 import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
+import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
 import { SatisfactionPulse } from '@/components/satisfaction-pulse'
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
 import { ShareStatsCard } from '@/components/share-stats-card'
@@ -113,7 +114,7 @@ export default function Dashboard() {
   const { isPro } = useProStatus()
   const { activeAccount } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
-  const { getTrades } = useDemoData()
+  const { getTrades, getAnalyticsTrades } = useDemoData()
   const userStorage = useUserStorage()
   const [dataVersion, setDataVersion] = useState(0)
   const [showDataWarning, setShowDataWarning] = useState(true)
@@ -142,6 +143,11 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getTrades, activeAccount, settings.accountSize, dataVersion])
   const tradeCount = useMemo(() => getTrades().length, [getTrades, dataVersion])
+  // Windowed trades + count of older trades excluded (0 for Pro/demo) — one
+  // computation shared by the header stats and the "last 30 days" notice
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const analyticsData = useMemo(() => getAnalyticsTrades(), [getAnalyticsTrades, dataVersion])
+  const analyticsHiddenCount = analyticsData.hiddenCount
   useFirstTradeCelebration(tradeCount)
   useMilestoneCelebrations(tradeCount)
 
@@ -562,9 +568,9 @@ export default function Dashboard() {
     }
   }
 
-  // Compute dynamic header stats from trades
+  // Compute dynamic header stats from trades (free plan: trailing 30-day window)
   const headerInsight = useMemo((): React.ReactNode => {
-    const tradesData = getTrades()
+    const tradesData = analyticsData.trades
     if (!tradesData || tradesData.length === 0) {
       return (
         <div className="flex flex-wrap items-center justify-start gap-2">
@@ -652,7 +658,7 @@ export default function Dashboard() {
       </div>
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getTrades, themeColors.profit, themeColors.loss, themeColors.primary, alpha, dataVersion])
+  }, [analyticsData, themeColors.profit, themeColors.loss, themeColors.primary, alpha])
 
   // No loading state needed - render content immediately
 
@@ -770,6 +776,23 @@ export default function Dashboard() {
               >
                 <X className="h-4 w-4" />
               </button>
+        </div>
+      )}
+
+      {/* Free analytics window notice */}
+      {analyticsHiddenCount > 0 && (
+        <div className="mx-4 mb-4 rounded-xl border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="text-xs text-muted-foreground">
+            Stats and charts show your last {FREE_ANALYTICS_WINDOW_DAYS} days ({analyticsHiddenCount} older {analyticsHiddenCount === 1 ? 'trade' : 'trades'} not included). Your trade log and exports always include everything.
+          </p>
+          <Link
+            to="/pricing"
+            className="text-xs font-semibold hover:underline"
+            style={{ color: themeColors.primary }}
+            onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'dashboard_window_notice' })}
+          >
+            Unlock full history with Pro
+          </Link>
         </div>
       )}
 

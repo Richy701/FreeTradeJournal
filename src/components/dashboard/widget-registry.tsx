@@ -81,7 +81,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
           icon={Brain}
           title={`You have ${tradeCount} trades — unlock AI insights`}
           description="Pro's AI coach analyses your patterns, detects weaknesses, and gives you a personalised action plan to improve."
-          cta="Try free for 14 days"
+          cta="Upgrade to Pro"
           dismissKey="dashboard-ai"
         />
       ) : null,
