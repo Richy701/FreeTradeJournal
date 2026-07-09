@@ -34,7 +34,7 @@ interface AITradeReviewProps {
 
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-function renderReviewMarkdown(md: string): string {
+export function renderReviewMarkdown(md: string): string {
   const html = md
     .replace(/## (.*)/g, '<h4 class="text-sm font-semibold mt-4 mb-1.5 text-foreground">$1</h4>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')

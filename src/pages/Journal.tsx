@@ -31,8 +31,10 @@ import {
   MagnifyingGlass,
   Tag,
   LinkSimple,
-  PenNib
+  PenNib,
+  Brain
 } from '@phosphor-icons/react';
+import { AIJournalReview } from '@/components/ai-journal-review';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useAuth } from '@/contexts/auth-context';
@@ -200,16 +202,22 @@ const TEMPLATE_TITLES = {
   general: 'Daily Review',
 } as const;
 
+// Plain text, no markdown symbols — these are typed over in a bare textarea,
+// where raw ### and ** read as clutter. Simple "Label:" lines render cleanly
+// as paragraphs too.
 const TEMPLATE_BODIES = {
-  'pre-trade': '**Setup:** \n\n**Bias:** Bullish / Bearish / Neutral\n\n**Entry trigger:** \n\n**Stop loss:** \n\n**Take profit:** \n\n**Risk (% of account):** \n\n**What could invalidate this trade:** ',
-  'post-trade': '**What was the plan:**\n\n**What actually happened:**\n\n**Did I follow my rules?** Yes / No\nIf not, why:\n\n**Emotional state during trade:**\n\n**Key lesson:**\n\n**What I\'d do differently:** ',
-  general: '**Market conditions:**\n\n**Key levels watched:**\n\n**How I felt:** Focused / Distracted / Confident / Cautious\n\n**What went well:**\n\n**What to improve:**\n\n**Tomorrow\'s focus:** ',
+  'pre-trade':
+    'Instrument: \nSetup: \nBias: bullish / bearish / neutral\n\nEntry trigger: \nStop loss: \nTake profit: \nRisk (% of account): \n\nWhat proves this idea wrong before the stop does?\n',
+  'post-trade':
+    'The plan was: \nWhat actually happened: \nRules followed (yes / no — if not, why): \n\nEmotions during the trade: \n\nKey lesson: \nNext time I will: ',
+  general:
+    'Market conditions: \nKey levels watched: \nHeadspace: focused / distracted / confident / cautious\n\nWhat went well: \nWhat to improve: \n\nTomorrow\'s one focus: ',
 } as const;
 
 // Full insert (header + body) for the editor's quick-insert chips, which only
 // fill the content field and so need the section title inline.
 function templateInsert(type: keyof typeof TEMPLATE_BODIES): string {
-  return `## ${TEMPLATE_TITLES[type]}\n\n${TEMPLATE_BODIES[type]}`;
+  return `${TEMPLATE_TITLES[type]}\n\n${TEMPLATE_BODIES[type]}`;
 }
 
 const mockEntries: JournalEntry[] = [];
@@ -228,7 +236,7 @@ export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
   const { isDemo, user } = useAuth();
   const demoGuard = useDemoGuard();
-  const { isPro } = useProStatus();
+  const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { accounts, activeAccount, loading: accountsLoading } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
@@ -238,6 +246,10 @@ export default function Journal() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
   const [showNewEntry, setShowNewEntry] = useState(false);
+  const [aiReviewOpen, setAiReviewOpen] = useState(false);
+  // In-editor writing coach: 2-3 AI follow-up questions on the current draft
+  const [coachQuestions, setCoachQuestions] = useState<string | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
@@ -274,6 +286,46 @@ export default function Journal() {
     tradeId: '',
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade'
   });
+
+  // Ask the writing coach about the current draft (or for starters if empty).
+  // Same quota/rate-limit rails as every other AI feature.
+  const askCoach = async () => {
+    setCoachLoading(true);
+    trackEvent('ai_journal_assist_started', { hasDraft: newEntry.content.trim().length > 0 });
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      let dayPnl = 0;
+      let tradeCount = 0;
+      for (const t of trades) {
+        if (new Date(t.exitTime).toISOString().slice(0, 10) !== today) continue;
+        dayPnl += Number(t.pnl) || 0;
+        tradeCount++;
+      }
+      const { requestAIAssist } = await import('@/services/ai-assist');
+      const response = await requestAIAssist({
+        type: 'journal_assist',
+        payload: {
+          draft: newEntry.content.slice(0, 1200),
+          mood: newEntry.mood,
+          entryType: newEntry.entryType,
+          dayStats: { tradeCount, dayPnl },
+        },
+      });
+      if (response.freeUsage) updateFreeAiQuota(response.freeUsage);
+      setCoachQuestions(response.result);
+      trackEvent('ai_journal_assist_used');
+    } catch (err: any) {
+      trackEvent('ai_journal_assist_error', { message: err?.message });
+      toast.error(err?.message || 'Coach is unavailable right now');
+    } finally {
+      setCoachLoading(false);
+    }
+  };
+
+  // Stale coach questions shouldn't greet the next entry
+  useEffect(() => {
+    if (!showNewEntry) setCoachQuestions(null);
+  }, [showNewEntry]);
 
   // Free tier journal cap. Only NEW entries past the cap are blocked; existing
   // entries are always kept and editable (so users already over the cap keep
@@ -970,6 +1022,16 @@ export default function Journal() {
                 </div>
               </div>
               <div className="hidden sm:flex gap-3 shrink-0">
+                {entries.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setAiReviewOpen(true)}
+                    className="gap-2 border-2"
+                  >
+                    <Brain className="h-4 w-4" />
+                    AI Review
+                  </Button>
+                )}
                 {trades.length > 0 && (
                   <div className="flex gap-2">
                     <Button
@@ -1215,6 +1277,18 @@ export default function Journal() {
                         {tpl.label}
                       </button>
                     ))}
+                    {hasAIAccess && (
+                      <button
+                        type="button"
+                        onClick={askCoach}
+                        disabled={coachLoading}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md border flex items-center gap-1 transition-colors disabled:opacity-60"
+                        style={{ borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary, backgroundColor: alpha(themeColors.primary, '08') }}
+                      >
+                        {coachLoading ? <SpinnerGap className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
+                        Ask Coach
+                      </button>
+                    )}
                   </div>
                 </div>
                 <Textarea
@@ -1224,6 +1298,33 @@ export default function Journal() {
                   onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
                   className="min-h-36 sm:min-h-44 bg-background/60 border-border/50 resize-none text-sm leading-relaxed"
                 />
+                {coachQuestions && (
+                  <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line flex-1">{coachQuestions}</p>
+                      <button
+                        type="button"
+                        onClick={() => setCoachQuestions(null)}
+                        className="text-muted-foreground hover:text-foreground shrink-0 p-1 -m-1"
+                        aria-label="Dismiss coach questions"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const content = newEntry.content.trim();
+                        setNewEntry({ ...newEntry, content: content ? `${content}\n\n${coachQuestions}` : coachQuestions });
+                        setCoachQuestions(null);
+                      }}
+                      className="text-xs font-medium hover:underline"
+                      style={{ color: themeColors.primary }}
+                    >
+                      Add to entry
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1987,6 +2088,13 @@ export default function Journal() {
         <Plus className="h-5 w-5" />
       </Button>
       <AppFooter />
+
+      <AIJournalReview
+        open={aiReviewOpen}
+        onOpenChange={setAiReviewOpen}
+        entries={entries}
+        trades={trades}
+      />
 
       {/* Image Lightbox */}
       {enlargedImage && (

@@ -6,7 +6,9 @@ export type AIAssistType =
   | 'risk_alert'
   | 'strategy_tagger'
   | 'goal_coach'
-  | 'coaching_tips';
+  | 'coaching_tips'
+  | 'journal_review'
+  | 'journal_assist';
 
 export interface AIAssistRequest {
   type: AIAssistType;

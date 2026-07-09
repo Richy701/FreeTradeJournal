@@ -15,6 +15,28 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.56.0',
+    date: '2026-07-09',
+    summary: 'AI Journal Review — your journal and your results, finally connected.',
+    items: [
+      {
+        type: 'new',
+        text: 'AI Journal Review connects what you write to how you trade',
+        description: 'A new AI Review button in your Trading Journal reads your last 30 days of entries alongside your actual trading results and shows you the patterns — which moods and habits line up with your winning days, which ones cost you money, and the one change to make this week. Your journal text is only sent for the analysis, never stored or trained on.',
+      },
+      {
+        type: 'new',
+        text: 'Ask Coach while you write',
+        description: 'Stuck mid-entry? The new Ask Coach button in the journal editor reads your draft and asks the follow-up questions worth answering — or gives you starters based on your trading day if the page is blank.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner journal templates',
+        description: 'The Pre-Trade, Post-Trade, and Daily Review templates are now plain, easy-to-fill text instead of markdown symbols.',
+      },
+    ],
+  },
+  {
     version: '2.55.0',
     date: '2026-07-09',
     summary: 'Every AI feature just got a major intelligence upgrade.',
@@ -1742,4 +1764,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.55.0'
+export const LATEST_CHANGELOG_VERSION = '2.56.0'
