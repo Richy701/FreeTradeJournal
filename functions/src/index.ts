@@ -2346,31 +2346,42 @@ interface AnalysisRequest {
 // Daily rate limits per feature type (Pro users; free tier is gated by monthly quota).
 // Tuned to feel effectively unlimited for normal use while still capping runaway/abuse.
 const RATE_LIMITS = {
-  ai_analysis: 30,      // Heavy - uses GPT-4o
-  goal_coach: 30,       // Heavy - uses GPT-4o
-  trade_review: 50,     // Heavy - uses GPT-4o
-  prop_tracker: 30,     // Heavy - uses GPT-4o
-  coaching_tips: 75,    // Light - uses GPT-4o-mini
-  coach_chat: 150,      // Light - uses GPT-4o-mini
-  journal_prompts: 150, // Light - uses GPT-4o-mini
-  risk_alert: 75,       // Light - uses GPT-4o-mini
-  strategy_tagger: 75,  // Light - uses GPT-4o-mini (1125 trades/day with batches of 15)
-  csv_mapping: 40,      // Light - uses GPT-4o-mini (Pro-only broker CSV auto-mapping)
+  ai_analysis: 30,      // Heavy - flagship model (see FEATURE_MODELS)
+  goal_coach: 30,       // Heavy - mid-tier model
+  trade_review: 50,     // Heavy - flagship model
+  prop_tracker: 30,     // Heavy - mid-tier model
+  coaching_tips: 75,    // Light - nano model
+  coach_chat: 150,      // Light - nano model
+  journal_prompts: 150, // Light - nano model
+  risk_alert: 75,       // Light - nano model
+  strategy_tagger: 75,  // Light - nano model (1125 trades/day with batches of 15)
+  csv_mapping: 40,      // Light - nano model (Pro-only broker CSV auto-mapping)
 } as const;
 
 // Model selection per feature type
+// Model tiers (updated 2026-07-09 from the 2024 gpt-4o family):
+// - gpt-5.4 (flagship) on the two showcase features users judge Pro by
+// - gpt-5.4-mini on the other heavy analysis (smarter AND ~65% cheaper than gpt-4o)
+// - gpt-5.4-nano on high-volume light features
+// The gpt-5.x family requires max_completion_tokens (max_tokens is rejected);
+// temperature and response_format json_object still work. Vision confirmed on
+// gpt-5.4-mini (parseScreenshot).
 const FEATURE_MODELS = {
-  ai_analysis: "gpt-4o",
-  goal_coach: "gpt-4o",
-  trade_review: "gpt-4o",
-  prop_tracker: "gpt-4o",
-  coaching_tips: "gpt-4o-mini",
-  coach_chat: "gpt-4o-mini",
-  journal_prompts: "gpt-4o-mini",
-  risk_alert: "gpt-4o-mini",
-  strategy_tagger: "gpt-4o-mini",
-  csv_mapping: "gpt-4o-mini",
+  ai_analysis: "gpt-5.4",
+  goal_coach: "gpt-5.4-mini",
+  trade_review: "gpt-5.4",
+  prop_tracker: "gpt-5.4-mini",
+  coaching_tips: "gpt-5.4-nano",
+  coach_chat: "gpt-5.4-nano",
+  journal_prompts: "gpt-5.4-nano",
+  risk_alert: "gpt-5.4-nano",
+  strategy_tagger: "gpt-5.4-nano",
+  csv_mapping: "gpt-5.4-nano",
 } as const;
+
+// Screenshot import needs a vision-capable model; not part of the quota
+// feature map, so it gets its own constant.
+const SCREENSHOT_MODEL = "gpt-5.4-mini";
 
 type FeatureType = keyof typeof RATE_LIMITS;
 
@@ -2602,12 +2613,12 @@ Give me a thorough analysis of my trading.`;
   let analysis: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: FEATURE_MODELS.ai_analysis,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
       temperature: 0.7,
     });
     analysis = completion.choices[0]?.message?.content || "No analysis generated.";
@@ -2720,7 +2731,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: 400,
+      max_completion_tokens: 400,
       temperature: 0,
       response_format: { type: "json_object" },
     });
@@ -3297,7 +3308,7 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
         { role: "system", content: prompt.system },
         { role: "user", content: prompt.user },
       ],
-      max_tokens: prompt.maxTokens,
+      max_completion_tokens: prompt.maxTokens,
       temperature: prompt.temperature,
     });
     result = completion.choices[0]?.message?.content || "No response generated.";
@@ -3317,7 +3328,7 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
   };
 });
 
-// ─── Screenshot Parser (GPT-4o Vision) ─────────────────────
+// ─── Screenshot Parser (vision model) ──────────────────────
 
 export const parseScreenshot = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -3404,7 +3415,7 @@ Return only valid JSON with no extra text.`;
   let result: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: SCREENSHOT_MODEL,
       messages: [
         {
           role: "user",
@@ -3414,7 +3425,7 @@ Return only valid JSON with no extra text.`;
           ],
         },
       ],
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
       temperature: 0,
       response_format: { type: "json_object" },
     });
@@ -3731,7 +3742,7 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
 
   if (endpoint === "analysis") {
     featureType = "ai_analysis" as FeatureType;
-    model = "gpt-4o";
+    model = FEATURE_MODELS.ai_analysis;
     limit = RATE_LIMITS.ai_analysis;
 
     if (userIsPro) {
@@ -3936,7 +3947,7 @@ Give me a thorough analysis of my trading.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       temperature,
       stream: true,
     });

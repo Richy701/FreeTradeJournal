@@ -243,7 +243,7 @@ const FAQS = [
   },
   {
     q: 'What AI features does Pro include?',
-    a: 'Coach FTJ, AI Trade Analysis, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, and AI Goal Coach — all powered by GPT-4.',
+    a: 'Coach FTJ, AI Trade Analysis, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, and AI Goal Coach — all powered by the latest OpenAI models.',
   },
   {
     q: 'Is the lifetime deal really one payment?',
