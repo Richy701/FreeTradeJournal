@@ -15,11 +15,12 @@ const COMMISSION_RATE = 0.3;
 const WINDOW_MONTHS = 12;
 const PROGRAM_START = Math.floor(new Date('2026-07-06T00:00:00Z').getTime() / 1000);
 const REF_SLUGS: Record<string, string[]> = { eunice_adegelu: ['eunice'] };
-const REF_LINK = 'https://freetradejournal.com/?ref=eunice';
+const REF_LINK = 'https://freetradejournal.com/pricing?ref=eunice';
 const REPORT_TO = 'Richmondlamptey75@gmail.com';
-// Forward-ready preview goes to Richy until the agreement is signed —
-// then point this at Eunice's email to send her the weekly update directly.
-const PARTNER_REPORT_TO = REPORT_TO;
+// Agreement signed 2026-07-09 — partner update goes directly to Eunice.
+const PARTNER_REPORT_TO = 'yeuniss28@gmail.com';
+// Partner accounts whose own purchases never count as commissionable referrals.
+const EXCLUDED_EMAILS = new Set(['yeuniss28@gmail.com']);
 const FROM_EMAIL = 'FreeTradeJournal <hello@freetradejournal.com>';
 
 // Design tokens — mirror functions/src/emails/components.tsx `tone`
@@ -196,6 +197,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }[] = [];
 
   for (const [customerId, ref] of referrals) {
+    const customer = await stripeGet(stripeKey, `customers/${customerId}`);
+    // The partner's own purchases are never commissionable (agreement: personal
+    // discount via EUNICE30; she may also use her own code/link, so exclude by email).
+    if (EXCLUDED_EMAILS.has((customer.email ?? '').toLowerCase())) {
+      referrals.delete(customerId);
+      continue;
+    }
     const windowEnd = ref.start + WINDOW_MONTHS * 30.44 * 24 * 3600;
     const charges = await listAll(stripeKey, 'charges', {
       customer: customerId,
@@ -209,7 +217,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (c.created >= monthStart) monthNet += chargeNet;
       if (c.created >= weekStart) weekNet += chargeNet;
     }
-    const customer = await stripeGet(stripeKey, `customers/${customerId}`);
     totalNet += net;
     rows.push({
       email: customer.email ?? customerId,
@@ -249,7 +256,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         <p style="font-size:11px;font-weight:700;color:${T.amber};letter-spacing:0.08em;text-transform:uppercase;margin:0 0 10px;">Your codes</p>
         <p style="font-size:14px;color:${T.body};line-height:1.8;margin:0;">${codeLines}</p>
       </div>` +
-      fine(`Your share link: <a href="${REF_LINK}" style="color:${T.amber};">freetradejournal.com/?ref=eunice</a>. You earn ${COMMISSION_RATE * 100}% of everything your referrals pay in their first ${WINDOW_MONTHS} months.`),
+      fine(`Your share link: <a href="${REF_LINK}" style="color:${T.amber};">freetradejournal.com/pricing?ref=eunice</a>. You earn ${COMMISSION_RATE * 100}% of everything your referrals pay in their first ${WINDOW_MONTHS} months.`),
     'Richy from FreeTradeJournal. Reply if you have questions — I read every one.',
   );
 

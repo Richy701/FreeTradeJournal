@@ -32,6 +32,8 @@ const WINDOW_MONTHS = 12;
 const PROGRAM_START = Math.floor(new Date("2026-07-06T00:00:00Z").getTime() / 1000);
 // ?ref= slugs that attribute to each partner (see src/lib/referral.ts)
 const REF_SLUGS = { eunice_adegelu: ["eunice"] };
+// Partner accounts whose own purchases never count as commissionable referrals
+const EXCLUDED_EMAILS = new Set(["yeuniss28@gmail.com"]);
 const PAYOUT_LEDGER = join(homedir(), "Documents", "ftj-commission-payouts.json");
 
 const envPath = join(dirname(fileURLToPath(import.meta.url)), "..", "functions", ".env");
@@ -137,6 +139,13 @@ let totalMonthNet = 0;
 const rows = [];
 
 for (const [customerId, ref] of referrals) {
+  const customer = await stripeGet(`customers/${customerId}`);
+  // The partner's own purchases are never commissionable — she may use her own
+  // code/link, so exclude by email rather than relying on code metadata.
+  if (EXCLUDED_EMAILS.has((customer.email ?? "").toLowerCase())) {
+    referrals.delete(customerId);
+    continue;
+  }
   const windowEnd = ref.start + WINDOW_MONTHS * 30.44 * 24 * 3600;
   const charges = await listAll("charges", { customer: customerId, "created[gte]": ref.start });
   let net = 0;
@@ -147,7 +156,6 @@ for (const [customerId, ref] of referrals) {
     net += chargeNet;
     if (c.created >= monthStart) monthNet += chargeNet;
   }
-  const customer = await stripeGet(`customers/${customerId}`);
   totalNet += net;
   totalMonthNet += monthNet;
   rows.push({

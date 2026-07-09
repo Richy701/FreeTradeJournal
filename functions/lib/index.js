@@ -1761,14 +1761,38 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     // and every "Keep Pro" conversion books zero revenue for two more weeks.
     const hadTrial = userDoc.data()?.hadTrial === true || !!userDoc.data()?.trialProExpiresAt;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
-    const buildSessionParams = (customerId) => {
+    // Partner ref links pre-apply the partner's discount code so referrals
+    // don't pay full price by forgetting the code. Codes are resolved by name
+    // (they get deactivated/recreated on coupon changes; names are stable).
+    const PARTNER_CODES = {
+        eunice: { subscription: "GWORLZ20", lifetime: "GWORLZLIFE" },
+    };
+    let autoPromoId = "";
+    const partnerCodes = ref ? PARTNER_CODES[ref] : undefined;
+    if (partnerCodes) {
+        try {
+            const found = await getStripe().promotionCodes.list({
+                code: isLifetime ? partnerCodes.lifetime : partnerCodes.subscription,
+                active: true,
+                limit: 1,
+            });
+            autoPromoId = found.data[0]?.id ?? "";
+        }
+        catch {
+            // Lookup failed — fall back to the manual promo-code field
+        }
+    }
+    const buildSessionParams = (customerId, promoId) => {
         const params = {
             customer: customerId,
             line_items: [{ price: priceId, quantity: 1 }],
             mode: isLifetime ? "payment" : "subscription",
             success_url: `${process.env.APP_URL}/settings?tab=subscription&checkout=success`,
             cancel_url: `${process.env.APP_URL}/pricing?checkout=cancelled`,
-            allow_promotion_codes: true,
+            // Stripe rejects discounts + allow_promotion_codes together
+            ...(promoId
+                ? { discounts: [{ promotion_code: promoId }] }
+                : { allow_promotion_codes: true }),
             metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
         };
         if (!isLifetime) {
@@ -1786,9 +1810,24 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         }
         return params;
     };
+    // Try the partner discount first; if the customer isn't eligible (the
+    // codes are first-purchase-only), retry with the manual promo field.
+    const createSession = async (customerId) => {
+        if (autoPromoId) {
+            try {
+                return await getStripe().checkout.sessions.create(buildSessionParams(customerId, autoPromoId));
+            }
+            catch (err) {
+                // Stale customer is handled by the outer retry, not by dropping the code
+                if (err?.code === "resource_missing" && err?.param === "customer")
+                    throw err;
+            }
+        }
+        return await getStripe().checkout.sessions.create(buildSessionParams(customerId));
+    };
     let session;
     try {
-        session = await getStripe().checkout.sessions.create(buildSessionParams(stripeCustomerId));
+        session = await createSession(stripeCustomerId);
     }
     catch (err) {
         // Stale/deleted customer (e.g. test-mode ID in prod) — recreate and retry
@@ -1798,7 +1837,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
                 metadata: { firebase_uid: uid },
             });
             await db.collection("users").doc(uid).set({ stripeCustomerId: newCustomer.id }, { merge: true });
-            session = await getStripe().checkout.sessions.create(buildSessionParams(newCustomer.id));
+            session = await createSession(newCustomer.id);
         }
         else {
             throw err;
