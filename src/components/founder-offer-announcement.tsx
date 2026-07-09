@@ -1,15 +1,23 @@
 import { Link } from 'react-router-dom';
-import { X, TrendUp, ArrowRight } from '@phosphor-icons/react';
+import { X, Crown, ArrowRight } from '@phosphor-icons/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { trackEvent } from '@/lib/analytics';
 
-const SNOOZED_UNTIL_KEY = 'prop-tracker-announcement-v2-snoozed-until';
-const DISMISSED_KEY = 'prop-tracker-announcement-v2-dismissed';
+const SNOOZED_UNTIL_KEY = 'founder-offer-banner-snoozed-until';
+const DISMISSED_KEY = 'founder-offer-banner-dismissed';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
+// Matches the FOUNDER149 promotion code's expiry in Stripe — the banner
+// removes itself when the offer stops being redeemable.
+const OFFER_ENDS_AT = Date.parse('2026-08-07T23:59:59Z');
+
 function shouldShowBanner(): boolean {
-  // Permanently dismissed (clicked "Try it")
+  if (Date.now() > OFFER_ENDS_AT) return false;
+
+  // Permanently dismissed (clicked the CTA)
   if (localStorage.getItem(DISMISSED_KEY) === 'true') return false;
 
   // Snoozed (clicked X) — hidden until snooze expires
@@ -19,13 +27,18 @@ function shouldShowBanner(): boolean {
   return true;
 }
 
-export function PropTrackerAnnouncement() {
+export function FounderOfferAnnouncement() {
   const { user, isDemo } = useAuth();
+  // Trial users still see the offer — they are exactly the founders audience.
+  // Only users whose Pro comes from a real subscription (or referral) are exempt.
+  const { isPro, trialEndsAt } = useProStatus();
   const { themeColors } = useThemePresets();
   const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [show] = useState(() => shouldShowBanner());
   const bannerRef = useRef<HTMLDivElement>(null);
+
+  const isPayingPro = isPro && !trialEndsAt;
 
   const updateHeight = useCallback(() => {
     const height = bannerRef.current?.offsetHeight ?? 0;
@@ -33,13 +46,13 @@ export function PropTrackerAnnouncement() {
   }, []);
 
   useEffect(() => {
-    if (user && !isDemo && show) {
+    if (user && !isDemo && !isPayingPro && show) {
       const timer = setTimeout(() => setIsVisible(true), 800);
       return () => clearTimeout(timer);
     } else {
       document.documentElement.style.setProperty('--announcement-banner-height', '0px');
     }
-  }, [user, isDemo, show]);
+  }, [user, isDemo, isPayingPro, show]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -48,7 +61,7 @@ export function PropTrackerAnnouncement() {
     return () => window.removeEventListener('resize', updateHeight);
   }, [isVisible, updateHeight]);
 
-  if (!user || isDemo || !show || !mounted) return null;
+  if (!user || isDemo || isPayingPro || !show || !mounted) return null;
 
   const dismiss = () => {
     setIsVisible(false);
@@ -62,8 +75,9 @@ export function PropTrackerAnnouncement() {
     dismiss();
   };
 
-  // "Try it" = permanently dismissed
-  const handleTry = () => {
+  // CTA = permanently dismissed
+  const handleCta = () => {
+    trackEvent('pricing_cta_clicked', { plan: 'lifetime', source: 'founder_banner' });
     localStorage.setItem(DISMISSED_KEY, 'true');
     dismiss();
   };
@@ -94,18 +108,17 @@ export function PropTrackerAnnouncement() {
         <div className="relative container mx-auto flex items-center justify-between gap-3 max-w-6xl">
           {/* Left: badge + text */}
           <div className="flex items-center gap-3 min-w-0">
-            {/* NEW pill */}
             <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 border border-white/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
-              <TrendUp className="h-2.5 w-2.5" aria-hidden="true" />
-              New
+              <Crown className="h-2.5 w-2.5" aria-hidden="true" />
+              Last chance
             </span>
             <p className="text-xs sm:text-sm font-medium text-white">
               <span className="sm:hidden">
-                <span className="font-bold">PropTracker is live</span> — track every prop firm fee & payout.
+                <span className="font-bold">Lifetime Pro: $149</span> — retiring in August.
               </span>
               <span className="hidden sm:inline">
-                <span className="font-bold">PropTracker is live</span>
-                <span className="text-white/90"> — finally know if your prop firm journey is actually profitable. Free.</span>
+                <span className="font-bold">Lifetime Pro retires in August</span>
+                <span className="text-white/90"> — own every Pro feature forever for $149 instead of $249. Code FOUNDER149 at checkout.</span>
               </span>
             </p>
           </div>
@@ -113,12 +126,12 @@ export function PropTrackerAnnouncement() {
           {/* Right: CTA + dismiss */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <Link
-              to="/prop-tracker"
-              onClick={handleTry}
+              to="/pricing"
+              onClick={handleCta}
               className="flex items-center gap-1.5 rounded-full bg-white/95 hover:bg-white active:scale-95 px-3.5 py-1 text-xs font-bold transition-[colors,transform] whitespace-nowrap shadow-md"
               style={{ color: themeColors.primary }}
             >
-              Try it free
+              Get Lifetime
               <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
             <button

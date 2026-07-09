@@ -4,7 +4,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { MobileHeader } from '@/components/mobile-header';
 import { DemoBanner } from '@/components/demo-banner';
-import { PropTrackerAnnouncement } from '@/components/prop-tracker-announcement';
+import { FounderOfferAnnouncement } from '@/components/founder-offer-announcement';
 import { useAuth } from '@/contexts/auth-context';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
@@ -32,7 +32,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         }}
       >
         <DemoBanner />
-        <PropTrackerAnnouncement />
+        <FounderOfferAnnouncement />
         <MobileHeader />
         <motion.main
           id="main-content"
