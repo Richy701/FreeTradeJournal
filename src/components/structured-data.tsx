@@ -95,8 +95,8 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       return {
         "@context": "https://schema.org",
         "@type": "WebPage",
-        "name": "Forex Trading Journal - Professional FX Tracker",
-        "description": "Professional forex trading journal for FX traders. Track currency pairs, analyze pip performance, manage risk with position sizing.",
+        "name": "Free Forex Trading Journal — MT4/MT5 Import & Auto Pip P&L",
+        "description": "Log every FX trade, auto-calculate pips and P&L by pair, and import from MT4 or MT5 in one click. Free forever — no credit card, no sign-up wall.",
         "url": `${baseUrl}${currentPath}`,
         "breadcrumb": {
           "@type": "BreadcrumbList",

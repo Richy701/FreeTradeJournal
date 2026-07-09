@@ -81,8 +81,10 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'trading journal pricing, free trading journal, pro trading tools, AI trading coach, trading analytics subscription, trade analysis pricing'
   },
   '/forex-trading-journal': {
-    title: 'Free Forex Trading Journal (2026) | Track Pips, Pairs & P&L | FreeTradeJournal',
-    description: 'The best free forex trading journal. Log every FX trade, auto-calculate pips, analyze performance by pair, and import from MT4/MT5. No credit card, no sign-up wall.',
+    // Full value prop fits inside Google's ~60-char display cutoff — the page
+    // was ranking pos 9 with 0.17% CTR on a generic title
+    title: 'Free Forex Trading Journal | MT4/MT5 Import & Auto Pip P&L | FreeTradeJournal',
+    description: 'Log every FX trade, auto-calculate pips and P&L by pair, and import from MT4 or MT5 in one click. See your win rate by currency pair and session. Free forever — no credit card, no sign-up wall.',
     keywords: 'forex trading journal, free forex trading journal, free forex journal, FX trading tracker, currency trading log, forex performance tracker, pip counter, forex P&L tracker, MT4 journal, MT5 trading journal, forex risk management, currency pair analysis, forex win rate, FX trading diary, forex trade log, EURUSD tracker, GBPUSD journal, forex position sizing, pip calculator journal, forex drawdown tracker'
   },
   '/futures-trading-tracker': {
