@@ -53,6 +53,7 @@ import { useDemoData } from '@/hooks/use-demo-data';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { TradeLogFilters, TradeLogFilterPills, EMPTY_FILTERS, countActiveFilters, type TradeFilters } from '@/components/trade-log-filters';
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
+import { ImportInsightDialog } from '@/components/import-insight-dialog';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
@@ -140,7 +141,9 @@ export default function TradeLog() {
   const { settings } = useSettings();
   const { user, isDemo } = useAuth();
   const demoGuard = useDemoGuard();
-  const { isPro } = useProStatus();
+  const { isPro, hasAIAccess } = useProStatus();
+  // Freshly imported trades queued for the AI first-read dialog
+  const [importInsightTrades, setImportInsightTrades] = useState<any[] | null>(null);
   const { activeAccount } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries } = useDemoData();
@@ -879,7 +882,12 @@ export default function TradeLog() {
           }
         );
 
-        if (newTrades.length >= 5) {
+        // The activation moment: stream an AI first-read of a meaningful import.
+        // When it shows, hold the feedback toast — one ask at a time.
+        const showInsight = newTrades.length >= 10 && hasAIAccess && !isDemo;
+        if (showInsight) setImportInsightTrades(newTrades);
+
+        if (newTrades.length >= 5 && !showInsight) {
           setTimeout(() => {
             toast('How was the import experience?', {
               description: 'Help us improve CSV imports for your broker.',
@@ -3153,6 +3161,11 @@ export default function TradeLog() {
       <AIJournalPrompts
         trade={journalPromptTrade}
         onClose={() => setJournalPromptTrade(null)}
+      />
+      <ImportInsightDialog
+        open={!!importInsightTrades}
+        onOpenChange={(o) => { if (!o) setImportInsightTrades(null); }}
+        trades={importInsightTrades || []}
       />
       <AIStrategyTagger
         open={isStrategyTaggerOpen}

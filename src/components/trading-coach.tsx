@@ -430,6 +430,9 @@ export function TradingCoach() {
     const symbolMap = new Map<string, GroupAcc>()
     const strategyMap = new Map<string, GroupAcc>()
     const sideMap = new Map<string, GroupAcc>()
+    const weekdayMap = new Map<string, GroupAcc>()
+    const sessionMap = new Map<string, GroupAcc>()
+    const emotionMap = new Map<string, GroupAcc>()
 
     let strategiesTaggedCount = 0 // trades with a real (non-empty) strategy
     let sumWinPnl = 0, winCount = 0
@@ -458,6 +461,31 @@ export function TradingCoach() {
       const sideKey = t.side === 'short' ? 'short' : t.side === 'long' ? 'long' : 'unknown'
       if (!sideMap.has(sideKey)) sideMap.set(sideKey, makeAcc(sideKey))
       pushTradeIntoAcc(sideMap.get(sideKey)!, pnl, rr)
+
+      // Time dimensions use the trade's local clock — session/weekday patterns
+      // only mean something in the trader's own timezone.
+      const when = t.exitTime instanceof Date && !isNaN(t.exitTime.getTime()) ? t.exitTime
+        : t.entryTime instanceof Date && !isNaN(t.entryTime.getTime()) ? t.entryTime : null
+      if (when) {
+        const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][when.getDay()]
+        if (!weekdayMap.has(dayKey)) weekdayMap.set(dayKey, makeAcc(dayKey))
+        pushTradeIntoAcc(weekdayMap.get(dayKey)!, pnl, rr)
+
+        const h = when.getHours()
+        const sessKey = h < 6 ? 'overnight (00-06)' : h < 12 ? 'morning (06-12)' : h < 18 ? 'afternoon (12-18)' : 'evening (18-24)'
+        if (!sessionMap.has(sessKey)) sessionMap.set(sessKey, makeAcc(sessKey))
+        pushTradeIntoAcc(sessionMap.get(sessKey)!, pnl, rr)
+      }
+
+      // A trade can carry several emotions — it counts once per emotion tag
+      if (typeof t.emotions === 'string' && t.emotions.trim()) {
+        for (const raw of t.emotions.split(',')) {
+          const emoKey = raw.trim().toLowerCase()
+          if (!emoKey) continue
+          if (!emotionMap.has(emoKey)) emotionMap.set(emoKey, makeAcc(emoKey))
+          pushTradeIntoAcc(emotionMap.get(emoKey)!, pnl, rr)
+        }
+      }
     }
 
     // Rank by SAMPLE SIZE (trade count), never by raw dollar P&L. This is the
@@ -474,6 +502,10 @@ export function TradingCoach() {
     // Keep long/short; drop 'unknown' from any long-vs-short claim.
     const perSide = Array.from(sideMap.values())
       .map(finalizeAcc).filter(g => g.key !== 'unknown').sort(byCount)
+
+    const perWeekday = Array.from(weekdayMap.values()).map(finalizeAcc).sort(byCount)
+    const perSession = Array.from(sessionMap.values()).map(finalizeAcc).sort(byCount)
+    const perEmotion = Array.from(emotionMap.values()).map(finalizeAcc).sort(byCount).slice(0, MAX_BUCKETS)
 
     const avgWin = winCount > 0 ? sumWinPnl / winCount : 0
     const avgLossAbs = lossCount > 0 ? Math.abs(sumLossPnl / lossCount) : 0
@@ -494,8 +526,51 @@ export function TradingCoach() {
       perSymbol,
       perStrategy,
       perSide,
+      perWeekday,
+      perSession,
+      perEmotion,
     }
   }, [trades])
+
+  // Typewriter reveal: streamed chunks arrive in bursts, and rendering them
+  // raw makes text pop in blocks. Two pieces make it read as typing:
+  // 1. A paced reveal (~2-4 chars/frame) instead of painting whole chunks.
+  // 2. `finishingText`: fast models finish generating before the typing does,
+  //    and committing the full message at stream-end would cut the animation
+  //    mid-word — so the final text keeps typing from local state and only
+  //    commits to the message list once fully painted.
+  const [typedStream, setTypedStream] = useState('')
+  const [finishingText, setFinishingText] = useState<string | null>(null)
+  useEffect(() => {
+    const target = chatStreaming ? streamText : (finishingText ?? '')
+    if (!target) { setTypedStream(''); return }
+    let raf: number
+    const tick = () => {
+      setTypedStream(prev => {
+        const current = chatStreaming ? streamText : (finishingText ?? '')
+        if (prev.length >= current.length) return prev
+        const backlog = current.length - prev.length
+        // ~120 chars/s baseline, ~240 when behind, proportional catch-up only
+        // for very large backlogs so it never lags by more than a second or two
+        const step = backlog > 400 ? Math.ceil(backlog / 100) + 4 : backlog > 150 ? 4 : 2
+        return current.slice(0, prev.length + step)
+      })
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [chatStreaming, streamText, finishingText])
+
+  // Commit the finished answer to the message list only after the typewriter
+  // has painted all of it
+  useEffect(() => {
+    if (!finishingText || chatStreaming) return
+    if (typedStream.length >= finishingText.length) {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: finishingText }])
+      setFinishingText(null)
+      setTypedStream('')
+    }
+  }, [finishingText, chatStreaming, typedStream])
 
   // Persist chat history
   useEffect(() => {
@@ -508,10 +583,32 @@ export function TradingCoach() {
 
   // Keep the chat pinned to its latest message by scrolling ONLY the inner
   // message list — never scrollIntoView, which would also scroll the page/window.
+  // Sending your own message always snaps down; anything else (streaming
+  // tokens, the assistant's completed message) only follows if the reader is
+  // already at the bottom — yanking someone down token-by-token while they
+  // read the top of a long answer makes it unreadable.
   useEffect(() => {
     const el = chatScrollRef.current
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [chatMessages, streamText])
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    const lastIsUser = chatMessages[chatMessages.length - 1]?.role === 'user'
+    if (lastIsUser || distanceFromBottom < 120) {
+      el.scrollTo({ top: el.scrollHeight, behavior: lastIsUser ? 'smooth' : 'auto' })
+    }
+  }, [chatMessages])
+
+  useEffect(() => {
+    const el = chatScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    // Instant (not smooth) while streaming: a smooth scroll still in flight
+    // makes the next tick's distance measurement lie, which would unpin the
+    // follow mid-stream. Keyed on the TYPED text so the follow tracks what is
+    // actually painted, not the chunk buffer running ahead of it.
+    if (distanceFromBottom < 120) {
+      el.scrollTo({ top: el.scrollHeight })
+    }
+  }, [typedStream])
 
   // Update free quota from chat responses
   useEffect(() => {
@@ -557,6 +654,9 @@ export function TradingCoach() {
       perStrategy: chatAggregates.strategiesTagged ? chatAggregates.perStrategy : [],
       strategiesTagged: chatAggregates.strategiesTagged,
       perSide: chatAggregates.perSide,
+      perWeekday: chatAggregates.perWeekday,
+      perSession: chatAggregates.perSession,
+      perEmotion: chatAggregates.perEmotion,
       recentTrades: trades.slice(-10).map((t: Trade) => ({
         symbol: t.symbol,
         side: t.side || 'long',
@@ -575,7 +675,7 @@ export function TradingCoach() {
   }, [trades, userStorage, tiltScore.factors, chatAggregates])
 
   const sendChatMessage = useCallback(async (message: string) => {
-    if (!message.trim() || chatStreaming) return
+    if (!message.trim() || chatStreaming || finishingText) return
 
     const userMsg: ChatMessage = { role: 'user', content: message.trim() }
     setChatMessages(prev => [...prev, userMsg])
@@ -593,7 +693,9 @@ export function TradingCoach() {
       })
 
       if (result) {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: result }])
+        // Hand off to the typewriter — the message is committed by the effect
+        // above once fully typed out
+        setFinishingText(result)
       }
     } catch (err: any) {
       // Quota/limit errors carry their own next step ("Upgrade to Pro...",
@@ -605,7 +707,7 @@ export function TradingCoach() {
         content: isQuota ? msg : 'Sorry, I could not respond right now. Try again.',
       }])
     }
-  }, [chatStreaming, chatMessages, buildChatContext, startStream])
+  }, [chatStreaming, finishingText, chatMessages, buildChatContext, startStream])
 
   const clearChat = useCallback(() => {
     setChatMessages([])
@@ -1486,7 +1588,7 @@ export function TradingCoach() {
                       </div>
                     )
                   )}
-                  {chatStreaming && streamText && (
+                  {(chatStreaming || finishingText) && typedStream && (
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
                         <div
@@ -1500,15 +1602,32 @@ export function TradingCoach() {
                         </span>
                       </div>
                       <div>
-                        <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(streamText) }} />
+                        <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(typedStream) }} />
                         <span className="inline-block h-3 w-0.5 mt-1 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
                       </div>
                     </div>
                   )}
-                  {chatStreaming && !streamText && (
+                  {chatStreaming && !typedStream && (
                     <div className="flex items-center gap-2 py-2">
-                      <SpinnerGap className="h-3.5 w-3.5 animate-spin" style={{ color: themeColors.primary }} />
-                      <span className="text-xs text-muted-foreground">Coach FTJ is thinking...</span>
+                      <div
+                        className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: alpha(themeColors.primary, '15') }}
+                      >
+                        <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                      </div>
+                      <div
+                        className="flex items-center gap-1 px-3 py-2.5 rounded-2xl"
+                        style={{ backgroundColor: alpha(themeColors.primary, '08') }}
+                        aria-label="Coach FTJ is typing"
+                      >
+                        {[0, 1, 2].map(i => (
+                          <span
+                            key={i}
+                            className="h-1.5 w-1.5 rounded-full animate-bounce"
+                            style={{ backgroundColor: themeColors.primary, animationDelay: `${i * 160}ms`, animationDuration: '900ms' }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                   <div ref={chatEndRef} />
@@ -1526,13 +1645,13 @@ export function TradingCoach() {
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Ask Coach FTJ..."
                     aria-label="Ask Coach FTJ"
-                    disabled={chatStreaming}
+                    disabled={chatStreaming || !!finishingText}
                     className="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                   />
                   <Button
                     type="submit"
                     size="sm"
-                    disabled={!chatInput.trim() || chatStreaming}
+                    disabled={!chatInput.trim() || chatStreaming || !!finishingText}
                     className="h-9 w-9 p-0 shrink-0"
                     style={{ backgroundColor: themeColors.primary }}
                     aria-label="Send message"

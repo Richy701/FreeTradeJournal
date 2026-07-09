@@ -39,6 +39,7 @@ import { recordFirstTradeIfNeeded } from '@/lib/first-trade'
 import { trackTradeLogged } from '@/lib/track-trade'
 import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
 import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
+import { ImportInsightDialog } from '@/components/import-insight-dialog'
 import { SatisfactionPulse } from '@/components/satisfaction-pulse'
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
 import { ShareStatsCard } from '@/components/share-stats-card'
@@ -111,13 +112,15 @@ export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
   const demoGuard = useDemoGuard()
-  const { isPro } = useProStatus()
+  const { isPro, hasAIAccess } = useProStatus()
   const { activeAccount } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const userStorage = useUserStorage()
   const [dataVersion, setDataVersion] = useState(0)
   const [showDataWarning, setShowDataWarning] = useState(true)
+  // Freshly imported trades queued for the AI first-read dialog
+  const [importInsightTrades, setImportInsightTrades] = useState<any[] | null>(null)
   const [showDealsBanner, setShowDealsBanner] = useState(() => !localStorage.getItem('ftj-dismiss-deals'))
   const [showTrackerBanner, setShowTrackerBanner] = useState(() => !localStorage.getItem('ftj-dismiss-tracker'))
 
@@ -522,8 +525,13 @@ export default function Dashboard() {
           }
         );
 
+        // The activation moment: stream an AI first-read of a meaningful import.
+        // When it shows, hold the feedback toast — one ask at a time.
+        const showInsight = newTrades.length >= 10 && hasAIAccess && !isDemo;
+        if (showInsight) setImportInsightTrades(newTrades);
+
         // Prompt for feedback after importing 5+ trades
-        if (newTrades.length >= 5) {
+        if (newTrades.length >= 5 && !showInsight) {
           setTimeout(() => {
             toast('How was the import experience?', {
               description: 'Help us improve CSV imports for your broker.',
@@ -750,6 +758,12 @@ export default function Dashboard() {
 
       <GettingStartedChecklist refreshKey={dataVersion} />
       <ProNudgeBanner />
+
+      <ImportInsightDialog
+        open={!!importInsightTrades}
+        onOpenChange={(o) => { if (!o) setImportInsightTrades(null) }}
+        trades={importInsightTrades || []}
+      />
 
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (

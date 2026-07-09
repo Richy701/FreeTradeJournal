@@ -8,7 +8,8 @@ export type AIAssistType =
   | 'goal_coach'
   | 'coaching_tips'
   | 'journal_review'
-  | 'journal_assist';
+  | 'journal_assist'
+  | 'import_insight';
 
 export interface AIAssistRequest {
   type: AIAssistType;

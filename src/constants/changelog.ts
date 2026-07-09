@@ -34,6 +34,26 @@ export const changelog: ChangelogEntry[] = [
         text: 'Cleaner journal templates',
         description: 'The Pre-Trade, Post-Trade, and Daily Review templates are now plain, easy-to-fill text instead of markdown symbols.',
       },
+      {
+        type: 'improved',
+        text: 'Coach FTJ now knows your schedule and your emotions',
+        description: 'The coach can now see your performance by day of week, time of day, and the emotions you tag on trades — so it can tell you things like which session is quietly draining your account. It also runs on a stronger model with room for longer answers.',
+      },
+      {
+        type: 'fixed',
+        text: 'Coach chat stays put while you read',
+        description: 'The chat no longer jumps to the bottom while an answer is still coming in — scroll up to read and it stays where you are. Sending a new message still brings you back down.',
+      },
+      {
+        type: 'new',
+        text: 'Import your history, get an instant AI read',
+        description: 'Import 10 or more trades by CSV and the AI immediately gives you a first read of your history — the three things that stand out in your numbers and where to start. No clicks needed; it appears right after the import finishes.',
+      },
+      {
+        type: 'improved',
+        text: 'AI answers in plain English',
+        description: 'All AI features now explain your trading in everyday language — what is actually happening with your money, not finance-textbook terms.',
+      },
     ],
   },
   {
