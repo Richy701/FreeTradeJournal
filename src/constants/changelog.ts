@@ -15,6 +15,18 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.55.0',
+    date: '2026-07-09',
+    summary: 'Every AI feature just got a major intelligence upgrade.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Smarter AI across the board — upgraded from GPT-4o to GPT-5.4',
+        description: 'Every AI feature has been upgraded from GPT-4o to OpenAI\'s newest GPT-5.4 family. AI Trade Analysis and Trade Review now run on the flagship GPT-5.4 model, with Coach FTJ, Risk Alerts, and the rest on the new generation too — noticeably sharper analysis, better pattern-spotting in your trades, and less generic advice.',
+      },
+    ],
+  },
+  {
     version: '2.54.0',
     date: '2026-07-09',
     summary: 'Every new account now starts with a free 14-day Pro trial, plus updated free plan limits.',
@@ -1730,4 +1742,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.54.0'
+export const LATEST_CHANGELOG_VERSION = '2.55.0'
