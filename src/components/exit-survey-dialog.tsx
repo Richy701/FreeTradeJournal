@@ -1,19 +1,58 @@
-import { useState } from 'react';
-import { UserMinus, Warning } from '@phosphor-icons/react';
+import { useMemo, useState } from 'react';
+import { DownloadSimple, UserMinus, Warning } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
+import { useUserStorage } from '@/utils/user-storage';
 
-const EXIT_REASONS = [
-  { value: 'not_useful', label: 'Not useful for my trading' },
-  { value: 'too_complex', label: 'Too complex to use' },
-  { value: 'missing_features', label: 'Missing features I need' },
-  { value: 'switched', label: 'Switched to another tool' },
+interface ExitReason {
+  value: string;
+  label: string;
+  /** Reason-specific prompt for the details box. */
+  followUp?: string;
+  /** Shown under the selected reason — the one thing worth knowing before deleting. */
+  save?: string;
+}
+
+const EXIT_REASONS: ExitReason[] = [
+  {
+    value: 'starting_fresh',
+    label: 'Starting fresh (new account or challenge)',
+    save: 'You can start a new journal without deleting anything — add a new trading account in Settings and its trades, stats, and journal stay separate. Or use Settings, then Delete All Data for a clean slate that keeps your login.',
+  },
+  {
+    value: 'not_useful',
+    label: 'Not useful for my trading',
+    followUp: 'What were you hoping it would do?',
+  },
+  {
+    value: 'too_complex',
+    label: 'Too complex to use',
+    followUp: 'Where did it get confusing?',
+    save: 'Most traders start with just the trade log: import a broker CSV and the dashboard fills itself in. If something specific tripped you up, tell me below — I read every reply.',
+  },
+  {
+    value: 'too_expensive',
+    label: 'Too expensive',
+    followUp: 'What would a fair price be?',
+    save: 'You never need to delete your account to stop paying — cancel in Settings under Subscription and the free plan keeps your journal, trade log, and monthly AI queries. Your data stays.',
+  },
+  {
+    value: 'missing_features',
+    label: 'Missing features I need',
+    followUp: 'What feature would have kept you?',
+    save: 'Tell me what is missing below — FreeTradeJournal ships weekly and user requests set the roadmap.',
+  },
+  {
+    value: 'switched',
+    label: 'Switched to another tool',
+    followUp: 'Which tool, and what does it do better?',
+  },
   { value: 'stopped_trading', label: 'Stopped trading' },
   { value: 'privacy', label: 'Privacy/data concerns' },
   { value: 'other', label: 'Other reason' },
-] as const;
+];
 
 interface ExitSurveyDialogProps {
   open: boolean;
@@ -26,6 +65,20 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
   const [step, setStep] = useState<'survey' | 'confirm'>('survey');
+  const userStorage = useUserStorage();
+
+  const selected = useMemo(() => EXIT_REASONS.find((r) => r.value === reason) ?? null, [reason]);
+
+  const tradeCount = useMemo(() => {
+    if (!open) return 0;
+    try {
+      const saved = userStorage.getItem('trades');
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed.length : 0;
+    } catch {
+      return 0;
+    }
+  }, [open, userStorage]);
 
   function handleContinue() {
     if (reason) {
@@ -39,6 +92,11 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
 
   function handleDelete() {
     onConfirmDelete();
+  }
+
+  function handleExport() {
+    trackEvent('exit_survey_export_clicked', { trade_count: tradeCount });
+    exportTradesCsv(userStorage.getItem('trades'));
   }
 
   function handleClose(val: boolean) {
@@ -69,7 +127,7 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
               </DialogHeader>
             </div>
 
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
               <div className="space-y-1.5">
                 {EXIT_REASONS.map((r) => (
                   <button
@@ -77,7 +135,7 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
                     type="button"
                     onClick={() => setReason(r.value)}
                     className={cn(
-                      "w-full text-left px-4 py-2.5 rounded-xl border text-sm transition-all duration-150",
+                      "w-full text-left px-4 py-2 rounded-xl border text-sm transition-all duration-150",
                       reason === r.value
                         ? "border-primary/40 bg-primary/[0.08] text-foreground font-medium shadow-sm"
                         : "border-border/60 hover:border-border text-muted-foreground hover:text-foreground hover:bg-muted/40"
@@ -88,12 +146,18 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
                 ))}
               </div>
 
+              {selected?.save && (
+                <div className="animate-in slide-in-from-top-2 fade-in duration-200 rounded-xl border border-border/60 bg-muted/40 px-4 py-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{selected.save}</p>
+                </div>
+              )}
+
               {reason && (
                 <div className="animate-in slide-in-from-top-2 fade-in duration-200">
                   <textarea
                     value={details}
                     onChange={(e) => setDetails(e.target.value)}
-                    placeholder="Anything else you'd like to share? (optional)"
+                    placeholder={selected?.followUp ?? "Anything else you'd like to share? (optional)"}
                     rows={2}
                     maxLength={500}
                     className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
@@ -122,7 +186,13 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
                 This will permanently delete your account, all local and cloud data, and cancel any active subscription. You will be signed out and this cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex gap-3 mt-5">
+            {tradeCount > 0 && (
+              <Button variant="outline" className="w-full mt-5" onClick={handleExport} disabled={deleting}>
+                <DownloadSimple className="h-4 w-4 mr-2" />
+                Download my {tradeCount} {tradeCount === 1 ? 'trade' : 'trades'} (CSV)
+              </Button>
+            )}
+            <div className="flex gap-3 mt-3">
               <Button variant="outline" className="flex-1" onClick={() => handleClose(false)} disabled={deleting}>
                 Cancel
               </Button>
@@ -135,6 +205,38 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
       </DialogContent>
     </Dialog>
   );
+}
+
+const CSV_HEADERS = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'fees', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes'];
+
+function exportTradesCsv(saved: string | null) {
+  let trades: Record<string, unknown>[] = [];
+  try {
+    const parsed = saved ? JSON.parse(saved) : [];
+    if (Array.isArray(parsed)) trades = parsed;
+  } catch {
+    return;
+  }
+  if (trades.length === 0) return;
+
+  const escapeCSV = (val: unknown): string => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+
+  const csvContent = [
+    CSV_HEADERS.join(','),
+    ...trades.map((trade) => CSV_HEADERS.map((header) => escapeCSV(trade[header])).join(',')),
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.setAttribute('href', url);
+  a.setAttribute('download', `freetradejournal-trades_${new Date().toISOString().slice(0, 10)}.csv`);
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function sendExitFeedback(reason: string, details: string) {
