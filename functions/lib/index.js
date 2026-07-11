@@ -3366,10 +3366,21 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
     catch (err) {
         console.error(`[deleteUserAccount] Testimonial cleanup error:`, err.message);
     }
-    // 5. Delete main user document
+    // 5. Remove Resend contact so deleted users stop receiving marketing email
+    try {
+        if (email !== "unknown") {
+            await getResend().contacts.remove({ email });
+            console.log(`[deleteUserAccount] Removed Resend contact for ${email}`);
+        }
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Resend cleanup error:`, err.message);
+        // Continue with deletion even if Resend fails
+    }
+    // 6. Delete main user document
     await db.collection("users").doc(uid).delete();
     console.log(`[deleteUserAccount] Deleted users/${uid}`);
-    // 6. Track deletion in PostHog
+    // 7. Track deletion in PostHog
     try {
         await getPostHog().captureImmediate({
             distinctId: uid,
@@ -3380,7 +3391,7 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
     catch (err) {
         console.error("[deleteUserAccount] PostHog error:", err);
     }
-    // 7. Delete Firebase Auth account (do this last)
+    // 8. Delete Firebase Auth account (do this last)
     await admin.auth().deleteUser(uid);
     console.log(`[deleteUserAccount] Deleted Firebase Auth user ${uid}`);
     return { ok: true };
