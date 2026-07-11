@@ -27,6 +27,23 @@ export function initPostHog() {
     capture_pageleave: true,
     persistence: analyticsAllowed ? 'localStorage+cookie' : 'memory',
     autocapture: analyticsAllowed,
+    // Crash telemetry (replaces Sentry). Console errors are excluded — they're
+    // high-volume noise (blocked third-party fetches etc.) that would burn the
+    // free exception quota the same way TradingView noise burned Sentry's.
+    capture_exceptions: {
+      capture_unhandled_errors: true,
+      capture_unhandled_rejections: true,
+      capture_console_errors: false,
+    },
+    before_send: (event) => {
+      if (event?.event === '$exception') {
+        const list = JSON.stringify(event.properties?.$exception_list ?? '');
+        // Drop crashes from third-party embeds and browser extensions — not
+        // actionable app errors, and TradingView's alone would eat the quota.
+        if (/tradingview|chrome-extension|safari-extension|moz-extension/i.test(list)) return null;
+      }
+      return event;
+    },
     // Funnel-critical events (signup / first trade / subscription) are captured
     // server-side via Cloud Functions, so the client only needs lightweight
     // product analytics. Session replay records screens full of financial data
@@ -49,7 +66,7 @@ function detectBlocking(): void {
     .catch(() => {
       blocked = true;
       try {
-        posthog.set_config({ autocapture: false, capture_pageleave: false });
+        posthog.set_config({ autocapture: false, capture_pageleave: false, capture_exceptions: false });
       } catch {
         // noop
       }

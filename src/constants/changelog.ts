@@ -15,6 +15,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.57.0',
+    date: '2026-07-11',
+    summary: 'Four new full themes, a smarter theme picker, and the new Theme Studio.',
+    items: [
+      {
+        type: 'new',
+        text: 'Four new full themes: Forest, Graphite, Terminal, and Midnight',
+        description: 'Complete looks that restyle the whole app — backgrounds, cards, and sidebar included — in both light and dark mode. Forest is a deep emerald green, Graphite a quiet minimal grey, Terminal the classic green-on-black trader look, and Midnight a deep violet.',
+      },
+      {
+        type: 'new',
+        text: 'Theme Studio for Pro members',
+        description: 'Build a theme that is completely yours: pick separate colors for dark mode, tint the backgrounds and sidebar to create your own full theme, and choose how rounded the app feels. A live preview shows your theme in light and dark before you commit, and you get a heads-up if a color would be hard to read.',
+      },
+      {
+        type: 'improved',
+        text: 'A clearer theme picker',
+        description: 'Themes in Settings are now grouped into accent colors, full themes, and your own custom theme — and full themes show a small preview of how the whole app will look instead of just three color bars.',
+      },
+      {
+        type: 'improved',
+        text: 'Charts now follow your theme',
+        description: 'Dashboard and analytics charts pick up your theme colors instead of always using the default palette.',
+      },
+      {
+        type: 'improved',
+        text: 'Your color theme follows you across devices',
+        description: 'With cloud sync, the theme you pick on one device now shows up on your other devices too.',
+      },
+      {
+        type: 'improved',
+        text: 'A tidier Settings page',
+        description: 'Settings is now just settings: a profile summary with your plan sits at the top, each section has a clearer heading, the performance stats (which live on your dashboard) no longer repeat there, and the static risk guidelines are tucked behind a click instead of filling the page.',
+      },
+      {
+        type: 'fixed',
+        text: 'No more color flash when the app opens',
+        description: 'If you use a theme like Wine or Navy Gold, the app no longer flashes the default colors for a moment on every page load.',
+      },
+      {
+        type: 'fixed',
+        text: 'Fixed an error screen that could appear when opening the dashboard',
+        description: 'Some traders saw a "Something went wrong" screen the first time they opened the app after their free Pro trial started. The dashboard now loads normally.',
+      },
+    ],
+  },
+  {
     version: '2.56.0',
     date: '2026-07-09',
     summary: 'AI Journal Review — your journal and your results, finally connected.',
@@ -1784,4 +1831,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.56.0'
+export const LATEST_CHANGELOG_VERSION = '2.57.0'

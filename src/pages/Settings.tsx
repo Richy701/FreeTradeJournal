@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
-import { useThemePresets } from '@/contexts/theme-presets';
+import { useThemePresets, computeThemeVars } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
 import { MARKET_DATA_ENABLED } from '@/config/market-data';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,13 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts, FREE_TRADING_ACCOUNT_LIMIT, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
-import { Sliders, Wallet, ChartBar, Shield, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, TrendUp, TrendDown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
+import { Sliders, Wallet, Gauge, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -30,6 +31,8 @@ import { ReferralCard } from '@/components/referral-card';
 import { PushNotificationPrompt } from '@/components/push-notification-prompt';
 import { belongsToAccount } from '@/lib/account-scope';
 import { ExitSurveyDialog } from '@/components/exit-survey-dialog';
+import { ProGate } from '@/components/pro-gate';
+import { ThemeStudio, ThemeMiniPreview, PREVIEW_DEFAULTS } from '@/components/theme-studio';
 
 const BROKERS = [
   'OANDA','IC Markets','MetaTrader 4','MetaTrader 5','Pepperstone','IG',
@@ -98,8 +101,7 @@ function BrokerSelect({ value, onChange }: { value: string; onChange: (v: string
 const NAV = [
   { id: 'general',       label: 'General',       Icon: Sliders },
   { id: 'accounts',      label: 'Accounts',      Icon: Wallet },
-  { id: 'performance',   label: 'Performance',   Icon: ChartBar },
-  { id: 'risk',          label: 'Risk',          Icon: Shield },
+  { id: 'risk',          label: 'Risk',          Icon: Gauge },
   { id: 'data',          label: 'Data',          Icon: Database },
   { id: 'notifications', label: 'Notifications', Icon: Bell },
   { id: 'subscription',  label: 'Subscription',  Icon: CreditCard },
@@ -108,6 +110,8 @@ const NAV = [
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha, setCustomColors, customColors } = useThemePresets();
+  // Mode used to render the full-theme preview mocks
+  const resolvedMode: 'light' | 'dark' = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   const { user, isDemo } = useAuth();
   const demoGuard = useDemoGuard();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
@@ -194,36 +198,6 @@ export default function Settings() {
     isDefault: false,
   });
   const [editForm, setEditForm] = useState<TradingAccount | null>(null);
-
-  const getTradeStats = () => {
-    const trades = JSON.parse(userStorage.getItem('trades') || '[]')
-      .filter((t: any) => !activeAccount || belongsToAccount(t, activeAccount.id));
-    const now = new Date();
-    const thisMonth = trades.filter((t: any) => {
-      const d = new Date(t.exitTime);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-    const wins = trades.filter((t: any) => t.pnl > 0);
-    const losses = trades.filter((t: any) => t.pnl < 0);
-    const totalPnL = trades.reduce((s: number, t: any) => s + (t.pnl || 0), 0);
-    const monthlyPnL = thisMonth.reduce((s: number, t: any) => s + (t.pnl || 0), 0);
-    const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
-    const avgWin = wins.length > 0 ? wins.reduce((s: number, t: any) => s + t.pnl, 0) / wins.length : 0;
-    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s: number, t: any) => s + t.pnl, 0) / losses.length) : 0;
-    const grossProfit = wins.reduce((s: number, t: any) => s + t.pnl, 0);
-    const grossLoss = Math.abs(losses.reduce((s: number, t: any) => s + t.pnl, 0));
-    const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
-    const bestTrade = trades.length > 0 ? Math.max(...trades.map((t: any) => t.pnl || 0)) : 0;
-    const worstTrade = trades.length > 0 ? Math.min(...trades.map((t: any) => t.pnl || 0)) : 0;
-    let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0, tw = 0, tl = 0;
-    for (const t of [...trades].sort((a: any, b: any) => new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime())) {
-      if (t.pnl > 0) { tw++; tl = 0; currentStreak = currentStreak >= 0 ? currentStreak + 1 : 1; maxWinStreak = Math.max(maxWinStreak, tw); }
-      else if (t.pnl < 0) { tl++; tw = 0; currentStreak = currentStreak <= 0 ? currentStreak - 1 : -1; maxLossStreak = Math.max(maxLossStreak, tl); }
-    }
-    return { total: trades.length, thisMonth: thisMonth.length, totalPnL, monthlyPnL, winRate, wins: wins.length, losses: losses.length, avgWin, avgLoss, profitFactor, bestTrade, worstTrade, currentStreak, maxWinStreak, maxLossStreak, accountName: activeAccount?.name || 'All Accounts' };
-  };
-
-  const stats = getTradeStats();
 
   const exportData = () => {
     const keys = ['trades','accounts','journalEntries','tradingGoals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions'];
@@ -318,11 +292,11 @@ export default function Settings() {
         <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
           <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                <Sliders className="h-5 w-5" style={{ color: themeColors.primary }} />
+              <div className="p-2.5 rounded-lg shrink-0 mt-0.5 bg-primary/10">
+                <Sliders className="h-5 w-5 text-primary" />
               </div>
               <div className="space-y-0.5">
-                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Settings</h1>
+                <h1 className="font-display text-2xl font-bold">Settings</h1>
                 <p className="text-sm text-muted-foreground">Customize your experience and manage your account.</p>
               </div>
             </div>
@@ -338,9 +312,8 @@ export default function Settings() {
                   key={id}
                   onClick={() => scrollTo(id)}
                   className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                    activeSection === id ? 'border-current' : 'border-transparent text-muted-foreground hover:text-foreground'
+                    activeSection === id ? 'text-primary border-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
-                  style={activeSection === id ? { color: themeColors.primary, borderColor: themeColors.primary } : {}}
                 >
                   <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                   {label}
@@ -353,6 +326,60 @@ export default function Settings() {
         <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="space-y-12 pb-16">
 
+              {/* Profile & plan summary */}
+              <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.08] via-transparent to-transparent pointer-events-none" aria-hidden="true" />
+                <div className="relative p-4 sm:p-5 flex flex-wrap items-center gap-4">
+                  {user?.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt=""
+                      referrerPolicy="no-referrer"
+                      className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/25 shrink-0"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-primary/10 ring-2 ring-primary/25 flex items-center justify-center shrink-0">
+                      <span className="text-xl font-bold text-primary">{(user?.displayName || user?.email || 'T').charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-base font-semibold capitalize truncate">{user?.displayName || 'Trader'}</p>
+                      {isPro ? <ProBadge /> : (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Free plan</span>
+                      )}
+                    </div>
+                    {user?.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>}
+                  </div>
+                  <div className="hidden md:flex items-center gap-5 shrink-0 pr-1">
+                    {user?.metadata?.creationTime && (
+                      <>
+                        <div className="text-right">
+                          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Member since</p>
+                          <p className="text-sm font-semibold mt-0.5">
+                            {new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(user.metadata.creationTime))}
+                          </p>
+                        </div>
+                        <div className="h-8 w-px bg-border/70" aria-hidden="true" />
+                      </>
+                    )}
+                    {isPro ? (
+                      <button
+                        onClick={() => scrollTo('subscription')}
+                        className="text-xs font-medium text-primary hover:underline underline-offset-4"
+                      >
+                        Manage plan
+                      </button>
+                    ) : !isDemo && (
+                      <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
+                        <Crown className="mr-1.5 h-3.5 w-3.5" />
+                        Upgrade
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* ── GENERAL ─────────────────────────────────────────────── */}
               <section
                 id="general"
@@ -360,8 +387,13 @@ export default function Settings() {
                 className="scroll-mt-24 space-y-5"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
-                  <h2 className="text-base font-semibold">General</h2>
+                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
+                    <Sliders aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight">General</h2>
+                    <p className="text-xs text-muted-foreground">Appearance and display preferences</p>
+                  </div>
                 </div>
 
                 {/* Appearance */}
@@ -388,11 +420,10 @@ export default function Settings() {
                             onClick={() => setTheme(value)}
                             aria-pressed={theme === value}
                             className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-xs transition-all ${
-                              theme === value ? 'font-semibold' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                              theme === value ? 'font-semibold border-primary/40 bg-primary/10' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
                             }`}
-                            style={theme === value ? { borderColor: `${themeColors.primary}60`, backgroundColor: `${themeColors.primary}10` } : {}}
                           >
-                            {(() => { const ThemeIcon = icon; return <ThemeIcon aria-hidden="true" className="h-4 w-4" style={theme === value ? { color: themeColors.primary } : {}} />; })()}
+                            {(() => { const ThemeIcon = icon; return <ThemeIcon aria-hidden="true" className={`h-4 w-4 ${theme === value ? 'text-primary' : ''}`} />; })()}
                             {label}
                           </button>
                         ))}
@@ -416,12 +447,11 @@ export default function Settings() {
                                 if (activeAccount) updateAccount(activeAccount.id, { ...activeAccount, currency: value });
                               }}
                               aria-pressed={isActive}
-                              className={`flex flex-col items-center gap-0.5 rounded-xl border px-4 py-3 text-xs transition-all min-w-[3.5rem] ${
-                                isActive ? 'font-semibold' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                              className={`flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-xs transition-all min-w-[4rem] ${
+                                isActive ? 'font-semibold border-primary/40 bg-primary/10' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
                               }`}
-                              style={isActive ? { borderColor: `${themeColors.primary}60`, backgroundColor: `${themeColors.primary}14` } : {}}
                             >
-                              <span className="text-sm font-bold" style={isActive ? { color: themeColors.primary } : {}}>{symbol}</span>
+                              <span className={`text-sm font-bold ${isActive ? 'text-primary' : ''}`}>{symbol}</span>
                               <span>{label}</span>
                             </button>
                           );
@@ -437,77 +467,144 @@ export default function Settings() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Color Theme</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Accent, profit, and loss colors across the app</p>
                   </div>
-                  <div className="p-5 space-y-5">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                      {Object.entries(availableThemes).map(([key, preset]) => {
-                        const isSelected = currentTheme === key;
+                  <div className="p-5 space-y-6">
+
+                    {/* Accent themes: swap the data colors, keep the standard look */}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Accent colors</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Change the accent and profit/loss colors, keep the standard look</p>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {Object.entries(availableThemes).filter(([key, preset]) => !preset.cssOverrides && key !== 'custom').map(([key, preset]) => {
+                          const isSelected = currentTheme === key;
+                          return (
+                            <div
+                              key={key}
+                              onClick={() => setColorTheme(key)}
+                              tabIndex={0}
+                              role="button"
+                              aria-pressed={isSelected}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
+                              className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                              <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
+                                <ThemeMiniPreview
+                                  vars={computeThemeVars(key, customColors, resolvedMode)}
+                                  fallback={PREVIEW_DEFAULTS[resolvedMode]}
+                                  style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
+                                />
+                              </div>
+                              <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Full themes: restyle every surface, previewed as a mini app mock */}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full themes</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Restyle everything — backgrounds, cards, and sidebar included</p>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {Object.entries(availableThemes).filter(([, preset]) => !!preset.cssOverrides).map(([key, preset]) => {
+                          const isSelected = currentTheme === key;
+                          return (
+                            <div
+                              key={key}
+                              onClick={() => setColorTheme(key)}
+                              tabIndex={0}
+                              role="button"
+                              aria-pressed={isSelected}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
+                              className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                              <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
+                                <ThemeMiniPreview
+                                  vars={computeThemeVars(key, customColors, resolvedMode)}
+                                  style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
+                                />
+                              </div>
+                              <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Custom theme: free base colors + Pro Theme Studio */}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your theme</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Pick your own accent, profit, and loss colors</p>
+                      </div>
+                      {(() => {
+                        const isSelected = currentTheme === 'custom';
                         return (
                           <div
-                            key={key}
-                            onClick={() => setColorTheme(key)}
+                            onClick={() => setColorTheme('custom')}
                             tabIndex={0}
                             role="button"
                             aria-pressed={isSelected}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                            className="rounded-lg border-2 p-3 cursor-pointer transition-all hover:shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            style={{ borderColor: isSelected ? preset.colors.primary : 'hsl(var(--border))', backgroundColor: isSelected ? `${preset.colors.primary}08` : 'transparent' }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme('custom'); } }}
+                            className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background max-w-xs"
                           >
-                            <div className="flex rounded-md overflow-hidden h-2.5 mb-2.5">
-                              {(preset.swatch ?? [preset.colors.profit, preset.colors.primary, preset.colors.loss]).map((c, i) => (
-                                <div key={i} className="flex-1" style={{ backgroundColor: c }} />
-                              ))}
+                            <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
+                              <ThemeMiniPreview
+                                vars={computeThemeVars('custom', customColors, resolvedMode)}
+                                fallback={PREVIEW_DEFAULTS[resolvedMode]}
+                                style={isSelected ? { boxShadow: `0 0 0 2px ${customColors.primary}` } : undefined}
+                              />
                             </div>
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-medium truncate">{preset.name}</span>
-                              {isSelected && <Check aria-hidden="true" className="h-3 w-3 shrink-0" style={{ color: preset.colors.primary }} />}
-                            </div>
-                            {!preset.swatch && (
-                              <div className="flex mt-1 text-[10px] text-muted-foreground">
-                                <span className="flex-1">Profit</span>
-                                <span className="flex-1 text-center">Accent</span>
-                                <span className="flex-1 text-right">Loss</span>
-                              </div>
-                            )}
+                            <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>Custom</span>
                           </div>
                         );
-                      })}
-                    </div>
+                      })()}
 
-                    {currentTheme === 'custom' && (
-                      <div className="pt-4 border-t border-border/70 space-y-3">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Custom colors</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          {([
-                            { key: 'primary' as const, label: 'Accent' },
-                            { key: 'profit' as const, label: 'Profit' },
-                            { key: 'loss' as const, label: 'Loss' },
-                          ]).map(({ key, label }) => (
-                            <div key={key} className="space-y-1.5">
-                              <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button type="button" className="flex items-center gap-2.5 w-full rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                                    <div className="h-5 w-5 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
-                                    <span className="uppercase text-xs text-muted-foreground flex-1 text-left">{customColors[key]}</span>
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-3 space-y-3" align="start">
-                                  <HexColorPicker color={customColors[key]} onChange={(c) => setCustomColors({ [key]: c })} />
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
-                                    <Input value={customColors[key]} maxLength={7} className="h-8 font-mono text-sm uppercase" onChange={(e) => {
-                                      let v = e.target.value;
-                                      if (!v.startsWith('#')) v = '#' + v;
-                                      if (/^#[0-9a-fA-F]{0,6}$/.test(v) && v.length === 7) setCustomColors({ [key]: v.toLowerCase() });
-                                    }} />
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
+                      {currentTheme === 'custom' && (
+                        <div className="pt-4 border-t border-border/70 space-y-5">
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Base colors</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              {([
+                                { key: 'primary' as const, label: 'Accent' },
+                                { key: 'profit' as const, label: 'Profit' },
+                                { key: 'loss' as const, label: 'Loss' },
+                              ]).map(({ key, label }) => (
+                                <div key={key} className="space-y-1.5">
+                                  <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button type="button" className="flex items-center gap-2.5 w-full rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                        <div className="h-5 w-5 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
+                                        <span className="uppercase text-xs text-muted-foreground flex-1 text-left">{customColors[key]}</span>
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-3 space-y-3" align="start">
+                                      <HexColorPicker color={customColors[key]} onChange={(c) => setCustomColors({ [key]: c })} />
+                                      <div className="flex items-center gap-2">
+                                        <div className="h-8 w-8 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
+                                        <Input value={customColors[key]} maxLength={7} className="h-8 font-mono text-sm uppercase" onChange={(e) => {
+                                          let v = e.target.value;
+                                          if (!v.startsWith('#')) v = '#' + v;
+                                          if (/^#[0-9a-fA-F]{0,6}$/.test(v) && v.length === 7) setCustomColors({ [key]: v.toLowerCase() });
+                                        }} />
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+
+                          <ProGate featureName="Theme Studio">
+                            <ThemeStudio />
+                          </ProGate>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -551,9 +648,11 @@ export default function Settings() {
                 className="scroll-mt-24 space-y-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
+                    <Wallet aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <h2 className="text-base font-semibold">Accounts</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">Accounts</h2>
                     <p className="text-xs text-muted-foreground">Manage trading accounts to track performance separately</p>
                   </div>
                 </div>
@@ -602,7 +701,7 @@ export default function Settings() {
                             </div>
                           </div>
                           <div className="flex gap-2 pt-1">
-                            <Button size="sm" onClick={() => { if (editForm.name && editForm.broker) { updateAccount(editForm.id, editForm); if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) updateSettings({ currency: editForm.currency }); setEditForm(null); } }} disabled={!editForm.name || !editForm.broker} style={{ backgroundColor: themeColors.primary }}>Save</Button>
+                            <Button size="sm" onClick={() => { if (editForm.name && editForm.broker) { updateAccount(editForm.id, editForm); if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) updateSettings({ currency: editForm.currency }); setEditForm(null); } }} disabled={!editForm.name || !editForm.broker}>Save</Button>
                             <Button size="sm" variant="outline" onClick={() => setEditForm(null)}>Cancel</Button>
                           </div>
                         </div>
@@ -699,54 +798,6 @@ export default function Settings() {
                 </div>
               </section>
 
-              {/* ── PERFORMANCE ─────────────────────────────────────────── */}
-              <section
-                id="performance"
-                ref={(el) => { sectionRefs.current['performance'] = el; }}
-                className="scroll-mt-24 space-y-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
-                  <div>
-                    <h2 className="text-base font-semibold">Performance</h2>
-                    <p className="text-xs text-muted-foreground">Stats for {stats.accountName}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Total P&L', value: formatCurrency(stats.totalPnL, true), color: stats.totalPnL >= 0 ? themeColors.profit : themeColors.loss, icon: stats.totalPnL >= 0 ? TrendUp : TrendDown },
-                    { label: 'Win Rate', value: `${stats.winRate.toFixed(1)}%`, sub: `${stats.wins}W / ${stats.losses}L`, color: stats.winRate >= 50 ? themeColors.profit : themeColors.loss },
-                    { label: 'Profit Factor', value: stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2), sub: stats.profitFactor > 1 ? 'Profitable' : stats.profitFactor === 0 ? 'No data' : 'Unprofitable', color: stats.profitFactor > 1 ? themeColors.profit : themeColors.loss },
-                    { label: 'Streak', value: `${Math.abs(stats.currentStreak)} ${stats.currentStreak > 0 ? 'Wins' : stats.currentStreak < 0 ? 'Losses' : 'N/A'}`, sub: `Max: ${stats.maxWinStreak}W / ${stats.maxLossStreak}L`, color: stats.currentStreak > 0 ? themeColors.profit : stats.currentStreak < 0 ? themeColors.loss : undefined },
-                  ].map(({ label, value, sub, color, icon }) => (
-                    <div key={label} className="rounded-xl border border-border/70 bg-muted/40 p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-xs text-muted-foreground">{label}</p>
-                        {icon && (() => { const StatIcon = icon; return <StatIcon aria-hidden="true" className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color }} />; })()}
-                      </div>
-                      <p className="text-xl font-bold mt-1.5" style={{ color }}>{value}</p>
-                      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Total Trades', value: String(stats.total) },
-                    { label: 'This Month', value: String(stats.thisMonth), sub: formatCurrency(stats.monthlyPnL, true) },
-                    { label: 'Best Trade', value: formatCurrency(stats.bestTrade, true), color: themeColors.profit },
-                    { label: 'Worst Trade', value: formatCurrency(stats.worstTrade, true), color: themeColors.loss },
-                  ].map(({ label, value, sub, color }) => (
-                    <div key={label} className="rounded-xl border border-border/70 bg-muted/40 p-4">
-                      <p className="text-xs text-muted-foreground">{label}</p>
-                      <p className="text-base font-bold mt-1" style={{ color }}>{value}</p>
-                      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-                    </div>
-                  ))}
-                </div>
-              </section>
-
               {/* ── RISK ────────────────────────────────────────────────── */}
               <section
                 id="risk"
@@ -754,9 +805,11 @@ export default function Settings() {
                 className="scroll-mt-24 space-y-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
+                    <Gauge aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <h2 className="text-base font-semibold">Risk Management</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">Risk Management</h2>
                     <p className="text-xs text-muted-foreground">Protect your capital with smart position sizing</p>
                   </div>
                 </div>
@@ -823,12 +876,14 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Guidelines */}
+                {/* Guidelines — static reference content, collapsed by default */}
                 <div className="rounded-xl border border-border/70 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Guidelines</p>
-                  </div>
-                  <div className="p-5 space-y-4">
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="guidelines" className="border-0">
+                      <AccordionTrigger className="px-5 py-3.5 bg-muted/30 hover:no-underline">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Risk guidelines</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-5 space-y-4 border-t border-border/70">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
                         { label: 'Conservative', range: '1–2%', color: themeColors.profit, desc: 'Beginners, steady growth' },
@@ -848,12 +903,14 @@ export default function Settings() {
                     <div className="rounded-lg p-4 bg-muted/40 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {['Never risk more than you can afford to lose', 'Always use stop losses on every trade', 'Keep risk consistent across all trades', 'Size positions based on distance to stop loss'].map(tip => (
                         <div key={tip} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: themeColors.profit }} />
+                          <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-profit" />
                           <span>{tip}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </div>
               </section>
 
@@ -864,9 +921,11 @@ export default function Settings() {
                 className="scroll-mt-24 space-y-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
+                    <Database aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <h2 className="text-base font-semibold">Data &amp; Privacy</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">Data &amp; Privacy</h2>
                     <p className="text-xs text-muted-foreground">Export, import, and manage your data</p>
                   </div>
                 </div>
@@ -939,9 +998,11 @@ export default function Settings() {
                 className="scroll-mt-24 space-y-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
+                    <Bell aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <h2 className="text-base font-semibold">Notifications</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">Notifications</h2>
                     <p className="text-xs text-muted-foreground">Manage push notification preferences</p>
                   </div>
                 </div>
@@ -958,9 +1019,11 @@ export default function Settings() {
                 className="scroll-mt-24 space-y-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-0.5 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
+                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
+                    <CreditCard aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <h2 className="text-base font-semibold">Subscription</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">Subscription</h2>
                     <p className="text-xs text-muted-foreground">Manage your plan and billing</p>
                   </div>
                 </div>
@@ -997,7 +1060,7 @@ export default function Settings() {
                             <p className="text-xs text-muted-foreground">
                               Your free Pro trial ends on {new Date(trialEndsAt).toLocaleDateString()} — no card on file, nothing is charged. Upgrade to keep Pro after it ends.
                             </p>
-                            <Button size="sm" className="font-semibold" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }} onClick={() => navigate('/pricing')}>
+                            <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
                               <Crown className="mr-2 h-3.5 w-3.5" />
                               Keep Pro
                             </Button>
@@ -1045,7 +1108,7 @@ export default function Settings() {
                             ))}
                           </ul>
                         </div>
-                        <Button size="sm" className="font-semibold" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }} onClick={() => navigate('/pricing')}>
+                        <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
                           <Crown className="mr-2 h-3.5 w-3.5" />
                           Upgrade to Pro
                         </Button>

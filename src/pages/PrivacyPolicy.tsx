@@ -49,7 +49,7 @@ export default function PrivacyPolicy() {
             <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">Analytics & Diagnostics</h3>
             <ul className="space-y-1 pl-4 list-disc">
               <li>Anonymous usage analytics (PostHog, Vercel Analytics) to understand how the app is used</li>
-              <li>Error tracking and crash reports via Sentry to improve stability</li>
+              <li>Error tracking and crash reports via PostHog to improve stability</li>
               <li>Device type, browser, and screen size for compatibility</li>
             </ul>
           </LegalSection>
@@ -84,9 +84,8 @@ export default function PrivacyPolicy() {
                 ['Firebase (Google)', 'Authentication and cloud storage'],
                 ['Stripe', 'Payment processing for Pro subscriptions'],
                 ['OpenAI', 'AI-powered analysis features and screenshot import (Pro only)'],
-                ['PostHog', 'Anonymous usage analytics'],
+                ['PostHog', 'Anonymous usage analytics, error tracking, and crash reporting'],
                 ['Vercel Analytics', 'Anonymous performance and usage analytics'],
-                ['Sentry', 'Error tracking and crash reporting'],
                 ['Resend', 'Transactional email delivery'],
                 ['Cloudflare', 'DNS, CDN, and DDoS protection'],
                 ['Vercel', 'Application hosting'],

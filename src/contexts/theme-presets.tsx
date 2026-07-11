@@ -1,13 +1,25 @@
 import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useMemo, useCallback } from 'react'
+import {
+  hexToHslString,
+  perceivedLuma,
+  contrastText,
+  deriveChartVars,
+  deriveSurfaceVars,
+} from '@/lib/theme-vars'
+
+interface ModeColors {
+  profit: string
+  loss: string
+  primary: string
+}
 
 interface ThemePreset {
   name: string
-  colors: {
-    profit: string
-    loss: string
-    primary: string
-    primaryButtonText?: string
-  }
+  colors: ModeColors & { primaryButtonText?: string }
+  // Optional per-mode color overrides. Declared here (instead of special-cased
+  // in code) so each preset owns how it reads in light vs dark mode.
+  dark?: Partial<ModeColors>
+  light?: Partial<ModeColors>
   // Optional: full CSS variable overrides for complete visual themes
   cssOverrides?: {
     light: Record<string, string>
@@ -19,7 +31,20 @@ interface ThemePreset {
   swatch?: string[]
 }
 
-const DEFAULT_CUSTOM_COLORS = {
+// User-defined custom theme. The three base colors are the free tier (as it
+// has always been); the optional fields are the Pro Theme Studio — per-mode
+// color variants, surface tints that generate a full theme, and corner radius.
+export interface CustomThemeConfig {
+  primary: string
+  profit: string
+  loss: string
+  dark?: Partial<ModeColors>
+  surfaceLight?: string
+  surfaceDark?: string
+  radius?: number
+}
+
+export const DEFAULT_CUSTOM_COLORS: CustomThemeConfig = {
   profit: '#10b981',
   loss: '#ef4444',
   primary: '#8b5cf6',
@@ -30,7 +55,7 @@ const themePresets: Record<string, ThemePreset> = {
     name: 'Default',
     colors: {
       profit: '#10b981', // green-500
-      loss: '#ef4444',   // red-500  
+      loss: '#ef4444',   // red-500
       primary: '#3b82f6' // blue-500
     }
   },
@@ -46,7 +71,7 @@ const themePresets: Record<string, ThemePreset> = {
     name: 'Neon',
     colors: {
       profit: '#10b981', // emerald-500 - vibrant but readable green
-      loss: '#ec4899',   // pink-500 - bright but readable pink  
+      loss: '#ec4899',   // pink-500 - bright but readable pink
       primary: '#06b6d4' // cyan-500 - vibrant cyan
     }
   },
@@ -66,7 +91,7 @@ const themePresets: Record<string, ThemePreset> = {
       primary: '#7c3aed' // violet-600
     }
   },
-  
+
   // Deep Yellow & White theme - bold and striking
   monochrome: {
     name: 'Deep Yellow',
@@ -74,6 +99,9 @@ const themePresets: Record<string, ThemePreset> = {
       profit: '#FFC000', // yellow for wins
       loss: '#374151',   // gray-700 for losses in light mode
       primary: '#FFC000' // yellow primary
+    },
+    dark: {
+      loss: '#f8fafc', // slate-50 - clean white for losses in dark mode
     }
   },
 
@@ -120,6 +148,16 @@ const themePresets: Record<string, ThemePreset> = {
       profit: '#1a1a1a', // near-black for profits (light mode)
       loss: '#9ca3af',   // medium gray for losses (light mode)
       primary: '#374151' // gray-700 - dark charcoal primary
+    },
+    light: {
+      profit: '#000000', // black profits visible in light mode
+      loss: '#000000',   // black losses visible in light mode
+      primary: '#374151' // darker gray primary for light mode
+    },
+    dark: {
+      profit: '#f1f5f9', // slate-100 - bright for dark backgrounds
+      loss: '#6b7280',   // gray-500 - muted but visible
+      primary: '#d1d5db' // gray-300 - light charcoal primary
     }
   },
 
@@ -222,6 +260,9 @@ const themePresets: Record<string, ThemePreset> = {
       loss: '#ef4444',   // red-500 - familiar loss color
       primary: '#b31938' // vivid wine red
     },
+    dark: {
+      primary: '#e82149' // brighter wine for dark surfaces
+    },
     cssOverrides: {
       light: {
         '--background': '350 15% 96%',
@@ -299,9 +340,17 @@ const themePresets: Record<string, ThemePreset> = {
   navy: {
     name: 'Navy Gold',
     colors: {
-      profit: '#f59e0b', // gold = up (refined per-mode in getAdjustedColors)
+      profit: '#f59e0b', // gold = up
       loss: '#8b97ac',   // muted slate = down — no red, stays on the navy palette
       primary: '#f59e0b' // gold accent on navy
+    },
+    dark: {
+      profit: '#fbbf24', // amber-400 - bright gold on navy
+      loss: '#8ea2cc',   // navy-tinted slate - "down" without red or neutral grey
+    },
+    light: {
+      profit: '#c2820a', // amber-700 - gold readable on light background
+      loss: '#465980',   // navy-slate - "down" tone that stays on the navy palette
     },
     swatch: ['#0e1c3a', '#1f3057', '#f59e0b'], // deep navy, navy, gold
     cssOverrides: {
@@ -378,17 +427,368 @@ const themePresets: Record<string, ThemePreset> = {
     }
   },
 
+  // Deep emerald full theme - calm, growth-focused
+  forest: {
+    name: 'Forest',
+    colors: {
+      profit: '#34d399', // emerald-400
+      loss: '#fb923c',   // orange-400 - warm "down" that stays off harsh red
+      primary: '#10b981' // emerald-500
+    },
+    light: {
+      profit: '#059669', // emerald-600 - readable on light surfaces
+      loss: '#ea580c',   // orange-600
+      primary: '#047857' // emerald-700
+    },
+    swatch: ['#07150e', '#0e2418', '#10b981'],
+    cssOverrides: {
+      light: {
+        '--background': '150 25% 96.5%',
+        '--foreground': '158 30% 8%',
+        '--card': '0 0% 100%',
+        '--card-foreground': '158 30% 8%',
+        '--popover': '0 0% 100%',
+        '--popover-foreground': '158 30% 8%',
+        '--primary': '161 84% 28%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '150 18% 92%',
+        '--secondary-foreground': '158 30% 12%',
+        '--muted': '150 18% 92%',
+        '--muted-foreground': '155 12% 36%',
+        '--accent': '152 24% 88%',
+        '--accent-foreground': '158 30% 12%',
+        '--destructive': '0 76% 50%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '150 15% 85%',
+        '--input': '150 15% 85%',
+        '--ring': '161 84% 28%',
+        '--chart-1': '161 84% 28%',
+        '--chart-2': '160 84% 39%',
+        '--chart-3': '25 90% 48%',
+        '--chart-4': '84 65% 38%',
+        '--chart-5': '190 55% 38%',
+        '--sidebar-background': '158 35% 12%',
+        '--sidebar-foreground': '150 15% 95%',
+        '--sidebar-primary': '160 70% 45%',
+        '--sidebar-primary-foreground': '160 90% 6%',
+        '--sidebar-accent': '157 30% 18%',
+        '--sidebar-accent-foreground': '150 15% 95%',
+        '--sidebar-border': '157 30% 17%',
+        '--sidebar-ring': '160 70% 45%',
+        '--radius': '0.85rem',
+      },
+      dark: {
+        '--background': '155 35% 4%',
+        '--foreground': '150 20% 96%',
+        '--card': '155 28% 7%',
+        '--card-foreground': '150 20% 96%',
+        '--popover': '155 28% 7%',
+        '--popover-foreground': '150 20% 96%',
+        '--primary': '160 84% 45%',
+        '--primary-foreground': '160 90% 6%',
+        '--secondary': '155 22% 12%',
+        '--secondary-foreground': '150 20% 96%',
+        '--muted': '155 20% 11%',
+        '--muted-foreground': '152 12% 60%',
+        '--accent': '155 25% 13%',
+        '--accent-foreground': '150 20% 96%',
+        '--destructive': '0 76% 55%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '155 20% 15%',
+        '--input': '155 20% 15%',
+        '--ring': '160 84% 45%',
+        '--chart-1': '160 84% 45%',
+        '--chart-2': '158 64% 52%',
+        '--chart-3': '27 96% 61%',
+        '--chart-4': '84 60% 55%',
+        '--chart-5': '190 50% 55%',
+        '--sidebar-background': '158 40% 3%',
+        '--sidebar-foreground': '150 15% 90%',
+        '--sidebar-primary': '160 84% 45%',
+        '--sidebar-primary-foreground': '160 90% 6%',
+        '--sidebar-accent': '155 28% 9%',
+        '--sidebar-accent-foreground': '150 15% 92%',
+        '--sidebar-border': '155 25% 10%',
+        '--sidebar-ring': '160 84% 45%',
+        '--radius': '0.85rem',
+      }
+    }
+  },
+
+  // Clean neutral full theme - quiet slate surfaces, steel accent
+  graphite: {
+    name: 'Graphite',
+    colors: {
+      profit: '#10b981', // emerald-500 - classic data colors on neutral surfaces
+      loss: '#ef4444',   // red-500
+      primary: '#64748b' // slate-500
+    },
+    dark: {
+      primary: '#cbd5e1' // slate-300 - steel accent on dark graphite
+    },
+    light: {
+      primary: '#475569' // slate-600
+    },
+    swatch: ['#111318', '#1f232b', '#94a3b8'],
+    cssOverrides: {
+      light: {
+        '--background': '220 15% 97%',
+        '--foreground': '222 15% 10%',
+        '--card': '0 0% 100%',
+        '--card-foreground': '222 15% 10%',
+        '--popover': '0 0% 100%',
+        '--popover-foreground': '222 15% 10%',
+        '--primary': '217 20% 30%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '220 12% 92.5%',
+        '--secondary-foreground': '222 15% 14%',
+        '--muted': '220 12% 92.5%',
+        '--muted-foreground': '220 8% 40%',
+        '--accent': '220 12% 90%',
+        '--accent-foreground': '222 15% 12%',
+        '--destructive': '0 76% 50%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '220 10% 86%',
+        '--input': '220 10% 86%',
+        '--ring': '217 20% 30%',
+        '--chart-1': '217 25% 35%',
+        '--chart-2': '160 84% 32%',
+        '--chart-3': '0 72% 45%',
+        '--chart-4': '217 15% 55%',
+        '--chart-5': '217 10% 70%',
+        '--sidebar-background': '220 12% 94%',
+        '--sidebar-foreground': '222 12% 22%',
+        '--sidebar-primary': '217 20% 30%',
+        '--sidebar-primary-foreground': '0 0% 100%',
+        '--sidebar-accent': '220 10% 89%',
+        '--sidebar-accent-foreground': '222 12% 14%',
+        '--sidebar-border': '220 10% 84%',
+        '--sidebar-ring': '217 20% 30%',
+        '--radius': '0.65rem',
+      },
+      dark: {
+        '--background': '220 8% 5%',
+        '--foreground': '220 10% 96%',
+        '--card': '220 8% 8.5%',
+        '--card-foreground': '220 10% 96%',
+        '--popover': '220 8% 8.5%',
+        '--popover-foreground': '220 10% 96%',
+        '--primary': '215 18% 78%',
+        '--primary-foreground': '220 20% 8%',
+        '--secondary': '220 7% 14%',
+        '--secondary-foreground': '220 10% 96%',
+        '--muted': '220 6% 13%',
+        '--muted-foreground': '218 8% 62%',
+        '--accent': '220 8% 15%',
+        '--accent-foreground': '220 10% 96%',
+        '--destructive': '0 76% 55%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '220 7% 17%',
+        '--input': '220 7% 17%',
+        '--ring': '215 18% 78%',
+        '--chart-1': '215 20% 75%',
+        '--chart-2': '160 60% 50%',
+        '--chart-3': '0 72% 60%',
+        '--chart-4': '215 15% 55%',
+        '--chart-5': '215 10% 40%',
+        '--sidebar-background': '220 9% 3.5%',
+        '--sidebar-foreground': '220 8% 88%',
+        '--sidebar-primary': '215 18% 78%',
+        '--sidebar-primary-foreground': '220 20% 8%',
+        '--sidebar-accent': '220 8% 11%',
+        '--sidebar-accent-foreground': '220 8% 92%',
+        '--sidebar-border': '220 7% 12%',
+        '--sidebar-ring': '215 18% 78%',
+        '--radius': '0.65rem',
+      }
+    }
+  },
+
+  // Green-on-black trader terminal full theme
+  terminal: {
+    name: 'Terminal',
+    colors: {
+      profit: '#4ade80', // green-400
+      loss: '#f87171',   // red-400
+      primary: '#22c55e' // green-500
+    },
+    light: {
+      profit: '#15803d', // green-700
+      loss: '#dc2626',   // red-600
+      primary: '#16a34a' // green-600
+    },
+    swatch: ['#020402', '#0a120a', '#22c55e'],
+    cssOverrides: {
+      light: {
+        '--background': '120 12% 96.5%',
+        '--foreground': '140 25% 8%',
+        '--card': '0 0% 100%',
+        '--card-foreground': '140 25% 8%',
+        '--popover': '0 0% 100%',
+        '--popover-foreground': '140 25% 8%',
+        '--primary': '142 70% 28%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '130 10% 92%',
+        '--secondary-foreground': '140 25% 12%',
+        '--muted': '130 10% 92%',
+        '--muted-foreground': '135 8% 38%',
+        '--accent': '135 12% 89%',
+        '--accent-foreground': '140 25% 10%',
+        '--destructive': '0 76% 45%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '130 10% 85%',
+        '--input': '130 10% 85%',
+        '--ring': '142 70% 28%',
+        '--chart-1': '142 70% 28%',
+        '--chart-2': '142 71% 38%',
+        '--chart-3': '0 74% 48%',
+        '--chart-4': '84 60% 35%',
+        '--chart-5': '170 55% 32%',
+        '--sidebar-background': '140 15% 6%',
+        '--sidebar-foreground': '140 15% 88%',
+        '--sidebar-primary': '142 71% 45%',
+        '--sidebar-primary-foreground': '144 80% 5%',
+        '--sidebar-accent': '140 12% 11%',
+        '--sidebar-accent-foreground': '140 15% 92%',
+        '--sidebar-border': '140 12% 12%',
+        '--sidebar-ring': '142 71% 45%',
+        '--radius': '0.45rem',
+      },
+      dark: {
+        '--background': '140 15% 2.5%',
+        '--foreground': '140 25% 92%',
+        '--card': '140 12% 5%',
+        '--card-foreground': '140 25% 92%',
+        '--popover': '140 12% 5%',
+        '--popover-foreground': '140 25% 92%',
+        '--primary': '142 71% 45%',
+        '--primary-foreground': '144 80% 5%',
+        '--secondary': '140 10% 10%',
+        '--secondary-foreground': '140 25% 92%',
+        '--muted': '140 8% 9%',
+        '--muted-foreground': '140 12% 55%',
+        '--accent': '140 12% 11%',
+        '--accent-foreground': '140 25% 94%',
+        '--destructive': '0 80% 58%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '140 12% 12%',
+        '--input': '140 12% 12%',
+        '--ring': '142 71% 45%',
+        '--chart-1': '142 71% 45%',
+        '--chart-2': '142 69% 58%',
+        '--chart-3': '0 91% 71%',
+        '--chart-4': '84 70% 55%',
+        '--chart-5': '170 60% 45%',
+        '--sidebar-background': '140 18% 1.8%',
+        '--sidebar-foreground': '140 15% 85%',
+        '--sidebar-primary': '142 71% 45%',
+        '--sidebar-primary-foreground': '144 80% 5%',
+        '--sidebar-accent': '140 12% 7%',
+        '--sidebar-accent-foreground': '140 15% 90%',
+        '--sidebar-border': '140 12% 8%',
+        '--sidebar-ring': '142 71% 45%',
+        '--radius': '0.45rem',
+      }
+    }
+  },
+
+  // Deep violet full theme
+  midnight: {
+    name: 'Midnight',
+    colors: {
+      profit: '#34d399', // emerald-400
+      loss: '#fb7185',   // rose-400
+      primary: '#8b5cf6' // violet-500
+    },
+    light: {
+      profit: '#059669', // emerald-600
+      loss: '#e11d48',   // rose-600
+      primary: '#7c3aed' // violet-600
+    },
+    swatch: ['#0b0716', '#1b1230', '#8b5cf6'],
+    cssOverrides: {
+      light: {
+        '--background': '255 30% 96.5%',
+        '--foreground': '258 30% 10%',
+        '--card': '0 0% 100%',
+        '--card-foreground': '258 30% 10%',
+        '--popover': '0 0% 100%',
+        '--popover-foreground': '258 30% 10%',
+        '--primary': '262 75% 48%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '256 22% 92%',
+        '--secondary-foreground': '258 30% 14%',
+        '--muted': '256 22% 92%',
+        '--muted-foreground': '257 12% 40%',
+        '--accent': '256 26% 89%',
+        '--accent-foreground': '258 30% 12%',
+        '--destructive': '347 77% 45%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '256 18% 86%',
+        '--input': '256 18% 86%',
+        '--ring': '262 75% 48%',
+        '--chart-1': '262 75% 48%',
+        '--chart-2': '160 84% 32%',
+        '--chart-3': '347 77% 50%',
+        '--chart-4': '290 60% 45%',
+        '--chart-5': '220 70% 50%',
+        '--sidebar-background': '259 35% 13%',
+        '--sidebar-foreground': '255 20% 95%',
+        '--sidebar-primary': '258 85% 70%',
+        '--sidebar-primary-foreground': '259 40% 10%',
+        '--sidebar-accent': '258 30% 19%',
+        '--sidebar-accent-foreground': '255 20% 95%',
+        '--sidebar-border': '258 30% 18%',
+        '--sidebar-ring': '258 85% 70%',
+        '--radius': '0.85rem',
+      },
+      dark: {
+        '--background': '258 35% 4.5%',
+        '--foreground': '255 30% 96%',
+        '--card': '258 30% 7.5%',
+        '--card-foreground': '255 30% 96%',
+        '--popover': '258 30% 7.5%',
+        '--popover-foreground': '255 30% 96%',
+        '--primary': '258 88% 66%',
+        '--primary-foreground': '0 0% 100%',
+        '--secondary': '258 22% 14%',
+        '--secondary-foreground': '255 30% 96%',
+        '--muted': '258 20% 12%',
+        '--muted-foreground': '256 15% 64%',
+        '--accent': '258 25% 15%',
+        '--accent-foreground': '255 30% 96%',
+        '--destructive': '350 84% 60%',
+        '--destructive-foreground': '0 0% 100%',
+        '--border': '258 22% 16%',
+        '--input': '258 22% 16%',
+        '--ring': '258 88% 66%',
+        '--chart-1': '258 88% 66%',
+        '--chart-2': '158 64% 52%',
+        '--chart-3': '351 95% 71%',
+        '--chart-4': '290 70% 65%',
+        '--chart-5': '220 70% 65%',
+        '--sidebar-background': '260 40% 3%',
+        '--sidebar-foreground': '255 20% 90%',
+        '--sidebar-primary': '258 88% 66%',
+        '--sidebar-primary-foreground': '0 0% 100%',
+        '--sidebar-accent': '258 28% 10%',
+        '--sidebar-accent-foreground': '255 20% 93%',
+        '--sidebar-border': '258 25% 11%',
+        '--sidebar-ring': '258 88% 66%',
+        '--radius': '0.85rem',
+      }
+    }
+  },
+
   // User-defined custom theme — always last
   custom: {
     name: 'Custom',
-    colors: { ...DEFAULT_CUSTOM_COLORS },
+    colors: {
+      profit: DEFAULT_CUSTOM_COLORS.profit,
+      loss: DEFAULT_CUSTOM_COLORS.loss,
+      primary: DEFAULT_CUSTOM_COLORS.primary,
+    },
   },
-}
-
-interface CustomColors {
-  primary: string
-  profit: string
-  loss: string
 }
 
 interface ThemeContextType {
@@ -397,11 +797,119 @@ interface ThemeContextType {
   setTheme: (theme: string) => void
   availableThemes: Record<string, ThemePreset>
   alpha: (color: string, hexOpacity: string) => string
-  setCustomColors: (colors: Partial<CustomColors>) => void
-  customColors: CustomColors
+  setCustomColors: (colors: Partial<CustomThemeConfig>) => void
+  customColors: CustomThemeConfig
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
+
+// Resolve the three data colors (primary/profit/loss) for a preset in a given
+// mode: base colors, then the preset's declared per-mode overrides, then a
+// dark-mode brightness safety net for colors without an explicit override
+// (matters mainly for user-picked custom colors that vanish on dark surfaces).
+function resolveModeColors(
+  presetKey: string,
+  custom: CustomThemeConfig,
+  mode: 'light' | 'dark'
+): ModeColors {
+  const preset = themePresets[presetKey]
+  const base: ModeColors = presetKey === 'custom'
+    ? { primary: custom.primary, profit: custom.profit, loss: custom.loss }
+    : { primary: preset.colors.primary, profit: preset.colors.profit, loss: preset.colors.loss }
+
+  const override = presetKey === 'custom'
+    ? (mode === 'dark' ? custom.dark : undefined)
+    : (mode === 'dark' ? preset.dark : preset.light)
+
+  const colors: ModeColors = { ...base }
+  const explicit: Partial<Record<keyof ModeColors, boolean>> = {}
+  if (override) {
+    for (const key of ['primary', 'profit', 'loss'] as const) {
+      if (override[key]) {
+        colors[key] = override[key]!
+        explicit[key] = true
+      }
+    }
+  }
+
+  if (mode === 'dark') {
+    const brightness = (hex: string) => perceivedLuma(hex) * 255
+
+    if (!explicit.loss && brightness(colors.loss) < 100) {
+      if (colors.loss.startsWith('#1f') || colors.loss.startsWith('#0f')) {
+        colors.loss = '#ef4444' // red-500
+      }
+    }
+
+    const brighten = (hex: string, factor: number) => {
+      const r = parseInt(hex.slice(1, 3), 16)
+      const g = parseInt(hex.slice(3, 5), 16)
+      const b = parseInt(hex.slice(5, 7), 16)
+      const ch = (v: number) => Math.min(255, Math.round(v * factor)).toString(16).padStart(2, '0')
+      return `#${ch(r)}${ch(g)}${ch(b)}`
+    }
+
+    if (!explicit.profit && brightness(colors.profit) < 80) {
+      colors.profit = brighten(colors.profit, 1.5)
+    }
+    if (!explicit.primary && brightness(colors.primary) < 80) {
+      colors.primary = brighten(colors.primary, 1.3)
+    }
+  }
+
+  return colors
+}
+
+// Compute the full CSS-variable set for a preset in one mode. Used to apply
+// the theme live, to cache {light, dark} sets in localStorage so the
+// index.html pre-paint script can apply them before React mounts (FOUC fix),
+// and by the Theme Studio to render live previews of draft custom themes.
+export function computeThemeVars(
+  presetKey: string,
+  custom: CustomThemeConfig,
+  mode: 'light' | 'dark'
+): Record<string, string> {
+  const preset = themePresets[presetKey]
+  const vars: Record<string, string> = {}
+  const colors = resolveModeColors(presetKey, custom, mode)
+
+  if (preset.cssOverrides) {
+    Object.assign(vars, preset.cssOverrides[mode])
+  } else {
+    // Custom theme's Pro surface tint generates a full theme like the
+    // built-in cssOverrides themes do
+    if (presetKey === 'custom') {
+      const tint = mode === 'dark' ? custom.surfaceDark : custom.surfaceLight
+      if (tint) Object.assign(vars, deriveSurfaceVars(tint, mode))
+      if (custom.radius != null) vars['--radius'] = `${custom.radius}rem`
+    }
+    const primaryHsl = hexToHslString(colors.primary)
+    vars['--primary'] = primaryHsl
+    vars['--accent'] = primaryHsl
+    vars['--ring'] = primaryHsl
+    vars['--primary-foreground'] = perceivedLuma(colors.primary) > 0.55 ? '0 0% 0%' : '0 0% 100%'
+  }
+
+  vars['--profit'] = hexToHslString(colors.profit)
+  vars['--loss'] = hexToHslString(colors.loss)
+
+  const charts = deriveChartVars(colors.primary, colors.profit, colors.loss, mode === 'dark')
+  for (const [prop, value] of Object.entries(charts)) {
+    if (!vars[prop]) vars[prop] = value
+  }
+
+  return vars
+}
+
+const THEME_VARS_CACHE_KEY = 'theme-vars-cache'
+
+declare global {
+  interface Window {
+    // CSS custom property names applied by the index.html pre-paint script,
+    // so the provider knows what to clean up before its first apply
+    __ftjThemeVars?: string[]
+  }
+}
 
 export function ThemePresetsProvider({ children }: { children: React.ReactNode }) {
   const [currentTheme, setCurrentTheme] = useState('default')
@@ -410,7 +918,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   const [isDemo, setIsDemo] = useState(!!document.documentElement.dataset.demo)
 
   // Custom theme colors state — initialise from localStorage or defaults
-  const [customColors, setCustomColorsState] = useState<CustomColors>(() => {
+  const [customColors, setCustomColorsState] = useState<CustomThemeConfig>(() => {
     try {
       const saved = localStorage.getItem('custom-theme-colors')
       if (saved) {
@@ -423,11 +931,15 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
 
   // Keep the mutable custom preset in sync with state
   useEffect(() => {
-    themePresets.custom.colors = { ...customColors }
+    themePresets.custom.colors = {
+      primary: customColors.primary,
+      profit: customColors.profit,
+      loss: customColors.loss,
+    }
     localStorage.setItem('custom-theme-colors', JSON.stringify(customColors))
   }, [customColors])
 
-  const setCustomColors = useCallback((partial: Partial<CustomColors>) => {
+  const setCustomColors = useCallback((partial: Partial<CustomThemeConfig>) => {
     setCustomColorsState(prev => ({ ...prev, ...partial }))
   }, [])
 
@@ -455,7 +967,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     if (savedTheme && themePresets[savedTheme]) {
       setCurrentTheme(savedTheme)
     }
-    
+
     // Check for dark mode and demo mode
     const checkAttributes = () => {
       setIsDarkMode(document.documentElement.classList.contains('dark'))
@@ -470,42 +982,18 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       attributes: true,
       attributeFilter: ['class', 'data-demo']
     })
-    
+
     return () => observer.disconnect()
   }, [])
 
-  // Track which CSS properties we've set via overrides so we can clean them up
-  const appliedOverridesRef = React.useRef<string[]>([])
+  // Track which CSS properties we've set via overrides so we can clean them
+  // up. Seeded with whatever the index.html pre-paint script applied, so the
+  // first cleanup removes those too (e.g. when demo mode is detected).
+  const appliedOverridesRef = React.useRef<string[]>(window.__ftjThemeVars ?? [])
 
   // Update CSS variables when theme changes — useLayoutEffect to sync with inline styles
   useLayoutEffect(() => {
-    const preset = themePresets[currentTheme]
-    const colors = preset.colors
     const root = document.documentElement
-
-    // Convert hex to HSL for CSS variables
-    const hexToHsl = (hex: string) => {
-      const r = parseInt(hex.slice(1, 3), 16) / 255
-      const g = parseInt(hex.slice(3, 5), 16) / 255
-      const b = parseInt(hex.slice(5, 7), 16) / 255
-
-      const max = Math.max(r, g, b)
-      const min = Math.min(r, g, b)
-      let h = 0, s = 0, l = (max + min) / 2
-
-      if (max !== min) {
-        const d = max - min
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-        switch (max) {
-          case r: h = (g - b) / d + (g < b ? 6 : 0); break
-          case g: h = (b - r) / d + 2; break
-          case b: h = (r - g) / d + 4; break
-        }
-        h /= 6
-      }
-
-      return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
-    }
 
     // Clean up all previously applied CSS overrides
     const cleanupOverrides = () => {
@@ -530,33 +1018,23 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       return
     }
 
-    // If theme has full CSS overrides, apply them all
-    if (preset.cssOverrides) {
-      cleanupOverrides()
-      const overrides = isDarkMode ? preset.cssOverrides.dark : preset.cssOverrides.light
-      const appliedProps: string[] = []
-      for (const [prop, value] of Object.entries(overrides)) {
-        root.style.setProperty(prop, value)
-        appliedProps.push(prop)
-      }
-      appliedOverridesRef.current = appliedProps
-      return
-    }
+    const vars = computeThemeVars(currentTheme, customColors, isDarkMode ? 'dark' : 'light')
 
-    // Standard theme: clean up any previous full overrides, then set primary/ring
     cleanupOverrides()
+    const appliedProps: string[] = []
+    for (const [prop, value] of Object.entries(vars)) {
+      root.style.setProperty(prop, value)
+      appliedProps.push(prop)
+    }
+    appliedOverridesRef.current = appliedProps
 
-    // Update CSS variables for dashboard pages
-    const primaryHsl = hexToHsl(colors.primary)
-    root.style.setProperty('--primary', primaryHsl)
-    root.style.setProperty('--accent', primaryHsl)
-    root.style.setProperty('--ring', primaryHsl)
-    // Set primary-foreground for contrast (buttons, badges)
-    const r = parseInt(colors.primary.slice(1, 3), 16)
-    const g = parseInt(colors.primary.slice(3, 5), 16)
-    const b = parseInt(colors.primary.slice(5, 7), 16)
-    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    root.style.setProperty('--primary-foreground', lum > 0.55 ? '0 0% 0%' : '0 0% 100%')
+    // Cache both modes for the index.html pre-paint script (FOUC prevention)
+    try {
+      localStorage.setItem(THEME_VARS_CACHE_KEY, JSON.stringify({
+        light: computeThemeVars(currentTheme, customColors, 'light'),
+        dark: computeThemeVars(currentTheme, customColors, 'dark'),
+      }))
+    } catch { /* storage full/unavailable — theme still applies live */ }
   }, [currentTheme, isDarkMode, pathname, isDemo, customColors])
 
   const setTheme = useCallback((theme: string) => {
@@ -566,124 +1044,11 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
   }, [])
 
-  // Adjust colors based on dark/light mode for better visibility
-  const getAdjustedColors = () => {
-    const baseColors = themePresets[currentTheme].colors
-    
-    // For certain themes that have visibility issues, apply adjustments
-    if (isDarkMode) {
-      // In dark mode, ensure colors are bright enough and visible
-      if (currentTheme === 'monochrome') {
-        // Deep Yellow theme - yellow and white aesthetic
-        return {
-          ...baseColors,
-          loss: '#f8fafc', // slate-50 - clean white for losses in dark mode
-          profit: baseColors.profit, // keep same yellow color
-          primary: baseColors.primary // keep same yellow primary
-        }
-      }
-      
-      if (currentTheme === 'energy') {
-        // Mono theme - flip for dark mode visibility
-        return {
-          ...baseColors,
-          profit: '#f1f5f9', // slate-100 - bright for dark backgrounds
-          loss: '#6b7280',   // gray-500 - muted but visible
-          primary: '#d1d5db' // gray-300 - light charcoal primary
-        }
-      }
-
-      if (currentTheme === 'navy') {
-        // Navy Gold - gold for wins, navy-slate for losses (no red/green/grey)
-        return {
-          ...baseColors,
-          profit: '#fbbf24', // amber-400 - bright gold on navy
-          loss: '#8ea2cc',   // navy-tinted slate - "down" without red or neutral grey
-        }
-      }
-      
-      // Check for other themes that might have dark colors that become invisible
-      const adjustedColors = { ...baseColors }
-      
-      // Convert colors to RGB to check brightness
-      const hexToRgb = (hex: string) => {
-        const r = parseInt(hex.slice(1, 3), 16)
-        const g = parseInt(hex.slice(3, 5), 16)
-        const b = parseInt(hex.slice(5, 7), 16)
-        return { r, g, b }
-      }
-      
-      const getBrightness = (hex: string) => {
-        const { r, g, b } = hexToRgb(hex)
-        return (r * 299 + g * 587 + b * 114) / 1000
-      }
-      
-      // If any color is too dark (brightness < 100), make it brighter
-      if (getBrightness(adjustedColors.loss) < 100) {
-        // Make loss color brighter for dark mode
-        if (adjustedColors.loss.startsWith('#1f') || adjustedColors.loss.startsWith('#0f')) {
-          adjustedColors.loss = '#ef4444' // red-500
-        }
-      }
-      
-      if (getBrightness(adjustedColors.profit) < 80) {
-        // Ensure profit color is visible
-        adjustedColors.profit = adjustedColors.profit.replace('#', '#').substring(0, 7)
-        if (getBrightness(adjustedColors.profit) < 80) {
-          const { r, g, b } = hexToRgb(adjustedColors.profit)
-          const factor = 1.5
-          adjustedColors.profit = `#${Math.min(255, Math.round(r * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(g * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(b * factor)).toString(16).padStart(2, '0')}`
-        }
-      }
-      
-      if (getBrightness(adjustedColors.primary) < 80) {
-        // Ensure primary color is visible
-        const { r, g, b } = hexToRgb(adjustedColors.primary)
-        const factor = 1.3
-        adjustedColors.primary = `#${Math.min(255, Math.round(r * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(g * factor)).toString(16).padStart(2, '0')}${Math.min(255, Math.round(b * factor)).toString(16).padStart(2, '0')}`
-      }
-      
-      return adjustedColors
-    } else {
-      // In light mode, keep colors consistent with dark mode but ensure readability
-      if (currentTheme === 'energy') {
-        // Mono Black & White theme adjustments for light mode
-        return {
-          ...baseColors,
-          profit: '#000000', // black profits visible in light mode
-          loss: '#000000',   // black losses visible in light mode
-          primary: '#374151' // darker gray primary for light mode
-        }
-      }
-
-      if (currentTheme === 'navy') {
-        // Navy Gold - rich gold for wins, navy-slate for losses (readable on light bg)
-        return {
-          ...baseColors,
-          profit: '#c2820a', // amber-700 - gold readable on light background
-          loss: '#465980',   // navy-slate - "down" tone that stays on the navy palette
-        }
-      }
-
-      return baseColors
-    }
-  }
-  
-  // Compute contrast-aware button text color from primary
-  const getContrastText = (hex: string): string => {
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-    // W3C relative luminance formula
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    return luminance > 0.55 ? '#000000' : '#ffffff'
-  }
-
   const themeColors = useMemo(() => {
-    const adjustedColors = getAdjustedColors()
+    const adjustedColors = resolveModeColors(currentTheme, customColors, isDarkMode ? 'dark' : 'light')
     return {
       ...adjustedColors,
-      primaryButtonText: getContrastText(adjustedColors.primary),
+      primaryButtonText: contrastText(adjustedColors.primary),
     }
   }, [currentTheme, isDarkMode, customColors])
 

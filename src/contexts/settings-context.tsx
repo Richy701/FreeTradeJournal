@@ -5,6 +5,7 @@ import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts } from '@/contexts/account-context';
 import { onSyncChange } from '@/contexts/sync-context';
 import { DEFAULT_VALUES } from '@/constants/trading';
+import type { CustomThemeConfig } from '@/contexts/theme-presets';
 
 export interface AppSettings {
   currency: string;
@@ -13,6 +14,10 @@ export interface AppSettings {
   showMarketPrices: boolean;
   showMacroSnapshot: boolean;
   dashboardLayout?: { hidden: string[]; order: string[] };
+  // Mirrored from the theme system by ThemeSettingsSync so the color theme
+  // rides Pro cloud sync across devices. Light/dark mode is deliberately NOT
+  // synced — that's a per-device preference.
+  theme?: { preset: string; custom?: CustomThemeConfig };
 }
 
 interface SettingsContextType {

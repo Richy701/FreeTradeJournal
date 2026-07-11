@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
-import { ShieldCheck } from '@phosphor-icons/react';
+import { Gauge } from '@phosphor-icons/react';
 import SceneContainer from '../shared/SceneContainer';
 import { staggeredOpacity, staggeredTranslateY, iconScale } from '../shared/animations';
 
@@ -32,7 +32,7 @@ const GoalsScene: React.FC<GoalsSceneProps> = ({
           transform: `scale(${iconScale(frame, fps)})`,
         }}
       >
-        <ShieldCheck
+        <Gauge
           size={64}
           color={primaryColor}
           strokeWidth={1.5}

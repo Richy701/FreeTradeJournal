@@ -116,6 +116,14 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --input: 40 12% 87%;
     --ring: 43 96% 56%; /* Amber/gold ring */
     --radius: 0.85rem;
+    /* Trading data colors — overridden per color-theme by ThemePresetsProvider */
+    --profit: 160 84% 39%; /* emerald-500 #10b981 */
+    --loss: 0 84% 60%; /* red-500 #ef4444 */
+    --chart-1: 43 96% 56%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 0 84% 60%;
+    --chart-4: 43 96% 40%;
+    --chart-5: 43 43% 46%;
     --sidebar-background: 40 18% 95%;
     --sidebar-foreground: 30 10% 20%;
     --sidebar-primary: 30 10% 12%;
@@ -147,6 +155,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --border: 35 10% 16%;
     --input: 35 10% 16%;
     --ring: 43 96% 56%; /* Amber/gold ring */
+    --profit: 160 84% 39%;
+    --loss: 0 84% 60%;
+    --chart-1: 43 96% 56%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 0 84% 60%;
+    --chart-4: 43 90% 72%;
+    --chart-5: 43 43% 66%;
     --sidebar-background: 30 6% 8%;
     --sidebar-foreground: 40 10% 95%;
     --sidebar-primary: 43 96% 56%;
@@ -193,11 +208,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
   /* Consistent typography for trading app */
   .trade-value-positive {
-    @apply text-green-500 font-medium;
+    @apply text-profit font-medium;
   }
 
   .trade-value-negative {
-    @apply text-red-500 font-medium;
+    @apply text-loss font-medium;
   }
 
   .trade-value-neutral {

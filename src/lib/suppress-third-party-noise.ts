@@ -2,10 +2,10 @@
 // own loader throw an uncaught ChunkLoadError we can't try/catch (it happens
 // inside their dynamic import). The widgets already degrade gracefully in the UI;
 // this swallows just those rejections so they don't spam the console or get
-// reported to Sentry as app errors.
+// reported to error tracking as app errors.
 //
-// Registered in the capture phase so it runs before Sentry's global handler and
-// can stop the event from reaching it.
+// Registered in the capture phase so it runs before PostHog's global exception
+// handler and can stop the event from reaching it.
 export function installThirdPartyErrorFilter() {
   if (typeof window === 'undefined') return;
 

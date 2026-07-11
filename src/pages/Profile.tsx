@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Check, Envelope, Calendar, Shield, Pencil, SignOut, UserCircle, ChartLineUp, Target } from '@phosphor-icons/react';
+import { Camera, Check, Envelope, Calendar, Fingerprint, IdentificationCard, Pencil, SignOut, UserCircle, ChartLineUp, Target } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -161,7 +161,7 @@ export default function Profile() {
       value: user.metadata?.lastSignInTime ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(user.metadata.lastSignInTime)) : '—',
     },
     {
-      icon: Shield,
+      icon: Fingerprint,
       label: 'User ID',
       value: user.uid,
       mono: true,
@@ -349,7 +349,7 @@ export default function Profile() {
 
           <div className="rounded-xl border bg-card/50 p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <IdentificationCard className="h-4 w-4" style={{ color: themeColors.primary }} />
               <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account Details</span>
             </div>
             <div className="rounded-2xl border border-border/50 divide-y divide-border/50 overflow-hidden">

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeSlash, Check, ChartLineUp, SpinnerGap, Brain, ShieldCheck, ChartPie, BookOpen, ArrowRight } from '@phosphor-icons/react';
+import { Eye, EyeSlash, Check, ChartLineUp, SpinnerGap, Brain, Gauge, ChartPie, BookOpen, ArrowRight } from '@phosphor-icons/react';
 import { GoogleIcon } from '@/components/ui/brand-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -127,7 +127,7 @@ export default function Signup() {
     { icon: ChartPie, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
     { icon: Brain, title: 'AI Trade Coaching', desc: 'Get personalized insights on your trades' },
     { icon: BookOpen, title: 'Trading Journal', desc: 'Document setups, emotions, and lessons' },
-    { icon: ShieldCheck, title: 'Risk Management', desc: 'Set rules and monitor your discipline' },
+    { icon: Gauge, title: 'Risk Management', desc: 'Set rules and monitor your discipline' },
   ];
 
   return (

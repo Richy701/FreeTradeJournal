@@ -32,13 +32,12 @@ import {
   Lock,
   Warning,
   CheckCircle,
-  ListChecks,
   ChartBar,
   UploadSimple,
   Tag,
   ArrowsClockwise,
   Target,
-  Shield,
+  ListChecks,
   Trophy,
   Calculator,
   ClipboardText,
@@ -1883,7 +1882,7 @@ export default function PropTracker() {
                 {[
                   { icon: Receipt,    label: 'Fees & Payouts' },
                   { icon: TrendUp, label: 'True ROI' },
-                  { icon: Shield,     label: 'Challenge Rules' },
+                  { icon: ClipboardText,     label: 'Challenge Rules' },
                   { icon: Brain,      label: 'AI Analysis' },
                 ].map(f => (
                   <div key={f.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border border-border/60 text-muted-foreground">
@@ -2111,7 +2110,7 @@ export default function PropTracker() {
                         <div className="border-t border-border/40 pt-3 mb-2.5">
                           <div className="flex items-center justify-between mb-3">
                             <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
-                              <Shield className="h-3 w-3" />
+                              <ClipboardText className="h-3 w-3" />
                               {isEvalPhase ? 'Challenge Progress' : 'Risk Limits'}
                             </p>
                             {account.challengeProgress?.lastUpdated && (
@@ -2585,7 +2584,7 @@ export default function PropTracker() {
                 className="w-full flex items-center justify-between text-left"
               >
                 <div className="flex items-center gap-2">
-                  <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                  <ClipboardText className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Challenge Rules</span>
                   {!accountForm.rulesEnabled && <span className="text-[10px] text-muted-foreground normal-case">(optional)</span>}
                 </div>

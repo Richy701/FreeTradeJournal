@@ -86,13 +86,16 @@ function FreeAIBanner() {
     if (!dismissed) setVisible(true)
   }, [user, isDemo, isPro, isLoading, hasAIAccess, freeAiQuota, dismissKey])
 
-  if (!visible) return null
+  // Re-check the quota in render: the effect's `visible` latch never unsets, and
+  // the provider nulls freeAiQuota the moment a snapshot upgrades the user to Pro
+  // (e.g. a trial landing mid-session) — rendering from the stale latch crashed.
+  if (!visible || !freeAiQuota) return null
 
   return (
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3 relative">
       <Brain className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">You have {freeAiQuota!.remaining} free AI queries this month</p>
+        <p className="text-sm font-semibold text-foreground">You have {freeAiQuota.remaining} free AI queries this month</p>
         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
           Try Coach FTJ below -- ask it anything about your trading. Your free queries reset monthly.
         </p>

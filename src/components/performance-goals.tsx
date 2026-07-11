@@ -4,7 +4,7 @@ import { useSettings } from '@/contexts/settings-context'
 import { useUserStorage } from '@/utils/user-storage'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context'
-import { Target, Trophy, ChartLineUp, ShieldCheck, Warning, Medal, Fire, Star, CurrencyDollar, Percent, Lightning, Scales, Shield, ChartLine, Calendar, CalendarDots, ArrowCounterClockwise, Pen, Check, Trash, ArrowSquareOut, type Icon } from '@phosphor-icons/react'
+import { Target, Trophy, ChartLineUp, Gauge, Warning, Medal, Fire, Star, CurrencyDollar, Percent, Lightning, Scales, ChartLine, Calendar, CalendarDots, ArrowCounterClockwise, Pen, Check, Trash, ArrowSquareOut, type Icon } from '@phosphor-icons/react'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -131,7 +131,7 @@ function getRuleIcon(type: string): Icon {
     maxLossPerTrade: Warning,
     maxDrawdown: ChartLine
   }
-  return icons[type] || ShieldCheck
+  return icons[type] || Target
 }
 
 function getRuleLabel(type: string) {
@@ -753,7 +753,7 @@ export function PerformanceGoals() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
-              <ShieldCheck className="h-4 w-4" style={{ color: themeColors.primary }} />
+              <Gauge className="h-4 w-4" style={{ color: themeColors.primary }} />
             </div>
             <div>
               <h2 className="text-lg font-semibold">Risk Limits</h2>
@@ -824,7 +824,7 @@ export function PerformanceGoals() {
           <div className="rounded-lg p-4" style={{ backgroundColor: alpha(healthColor, '08'), border: `1px solid ${alpha(healthColor, '20')}` }}>
             <div className="flex items-center gap-2 mb-2.5">
               <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: alpha(healthColor, '15') }}>
-                <Shield className="h-3.5 w-3.5" style={{ color: healthColor }} />
+                <Gauge className="h-3.5 w-3.5" style={{ color: healthColor }} />
               </div>
               <div>
                 <p className="text-xs font-semibold" style={{ color: healthColor }}>
@@ -849,7 +849,7 @@ export function PerformanceGoals() {
         {riskRules.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-10 px-6 text-center">
             <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
-              <ShieldCheck className="h-6 w-6" style={{ color: themeColors.primary }} />
+              <Gauge className="h-6 w-6" style={{ color: themeColors.primary }} />
             </div>
             <h3 className="text-sm font-semibold mb-1">No risk limits configured</h3>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">

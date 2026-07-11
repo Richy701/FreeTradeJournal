@@ -20,6 +20,7 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   'AI Risk Alerts': 'Catch revenge trading, loss streaks, and overexposure before they hurt.',
   'AI Goal Coach': 'Turn your trading goals into an actionable improvement plan.',
   'PDF Report': 'Export a professional performance report to share or review offline.',
+  'Theme Studio': 'Design your own full theme — separate dark-mode colors, custom surfaces, and corner style.',
 };
 
 const isAIFeature = (name: string) => name.startsWith('AI ') || name === 'Coach FTJ';
