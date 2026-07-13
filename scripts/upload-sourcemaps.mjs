@@ -6,7 +6,7 @@
 // Without it (local builds, forks) the upload is skipped but maps are still
 // stripped, so the deployed output is identical either way.
 import { execFileSync } from 'node:child_process';
-import { readdirSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,6 +27,16 @@ if (process.env.POSTHOG_CLI_API_KEY) {
     ...process.env,
     POSTHOG_CLI_PROJECT_ID: process.env.POSTHOG_CLI_PROJECT_ID || '155164',
   };
+  // The CLI's static musl binary (used on Vercel's build image, where the
+  // glibc one is incompatible) needs the CA bundle path spelled out or its
+  // HTTPS client fails to initialize ("Request error: builder error").
+  if (!env.SSL_CERT_FILE) {
+    const caBundle = [
+      '/etc/pki/tls/certs/ca-bundle.crt', // Amazon Linux (Vercel)
+      '/etc/ssl/certs/ca-certificates.crt', // Debian/Ubuntu
+    ].find((p) => existsSync(p));
+    if (caBundle) env.SSL_CERT_FILE = caBundle;
+  }
   const releaseVersion = process.env.VERCEL_GIT_COMMIT_SHA;
   const releaseArgs = releaseVersion
     ? ['--release-name', 'freetradejournal', '--release-version', releaseVersion]
@@ -37,9 +47,14 @@ if (process.env.POSTHOG_CLI_API_KEY) {
       env,
       cwd: root,
     });
-  run(['sourcemap', 'inject', '--directory', 'dist', ...releaseArgs]);
-  run(['sourcemap', 'upload', '--directory', 'dist', ...releaseArgs]);
-  console.log(`[sourcemaps] uploaded ${mapFiles.length} sourcemaps to PostHog`);
+  try {
+    run(['sourcemap', 'inject', '--directory', 'dist', ...releaseArgs]);
+    run(['sourcemap', 'upload', '--directory', 'dist', ...releaseArgs]);
+    console.log(`[sourcemaps] uploaded ${mapFiles.length} sourcemaps to PostHog`);
+  } catch (err) {
+    // Symbolication is nice-to-have; it must never take down a deploy.
+    console.warn(`[sourcemaps] upload failed — continuing without symbolication: ${err.message}`);
+  }
 } else {
   console.log('[sourcemaps] POSTHOG_CLI_API_KEY not set — skipping upload');
 }
