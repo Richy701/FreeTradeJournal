@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/prerender.mjs",
+    "build": "tsc -b && vite build && node scripts/prerender.mjs && node scripts/upload-sourcemaps.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "screenshots": "npx tsx scripts/take-screenshots.ts",
@@ -71,6 +71,7 @@
   "devDependencies": {
     "@babel/preset-env": "^7.28.3",
     "@eslint/js": "^9.33.0",
+    "@posthog/cli": "^0.8.1",
     "@sparticuz/chromium": "^147.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/dompurify": "^3.0.5",

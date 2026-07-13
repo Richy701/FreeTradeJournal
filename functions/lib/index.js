@@ -283,12 +283,100 @@ function normalizeEmail(email) {
     }
     return `${local.split("+")[0]}@${domain}`;
 }
+// ─── Signup Velocity Guard (anti-abuse) ─────────────────────
+// Firebase Auth account creation itself can't be blocked from a plain onCreate
+// trigger, so the guard gates the costly side effects instead: welcome email,
+// Resend contact, drip enrollment. Throttled accounts get signupThrottled on
+// their user doc so metrics (activation report) and nudge emails exclude them.
+// Organic rate is ~1-2 signups/hour, so these thresholds only trip on scripted
+// bursts (ratelimitprobe-style) while leaving a viral spike plenty of headroom.
+const FOUNDER_EMAIL = "Richmondlamptey75@gmail.com";
+const SIGNUP_GLOBAL_WINDOW_MS = 10 * 60 * 1000;
+const SIGNUP_GLOBAL_MAX = 15;
+const SIGNUP_DOMAIN_WINDOW_MS = 60 * 60 * 1000;
+const SIGNUP_DOMAIN_MAX = 5;
+const SIGNUP_ALERT_COOLDOWN_MS = 60 * 60 * 1000;
+const MAINSTREAM_EMAIL_DOMAINS = new Set([
+    "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com",
+    "msn.com", "yahoo.com", "ymail.com", "icloud.com", "me.com", "mac.com",
+    "proton.me", "protonmail.com", "aol.com", "gmx.com", "gmx.de", "web.de",
+    "mail.com",
+]);
+// Returns true when this signup pushes the window over `max`.
+async function bumpSignupWindow(docId, windowMs, max) {
+    const ref = db.collection("signupRateLimit").doc(docId);
+    let exceeded = false;
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const data = snap.data() || {};
+        const windowStart = data.windowStart?.toMillis() || 0;
+        const count = data.count || 0;
+        const now = Date.now();
+        if (now - windowStart >= windowMs) {
+            tx.set(ref, { windowStart: admin.firestore.FieldValue.serverTimestamp(), count: 1 });
+            exceeded = false;
+        }
+        else {
+            tx.update(ref, { count: admin.firestore.FieldValue.increment(1) });
+            exceeded = count + 1 > max;
+        }
+    });
+    return exceeded;
+}
+async function maybeSendSignupAbuseAlert(reason) {
+    // At most one alert email per cooldown window, claimed transactionally.
+    const ref = db.collection("signupRateLimit").doc("alert");
+    let shouldSend = false;
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const lastAt = snap.data()?.lastAt?.toMillis() || 0;
+        if (Date.now() - lastAt >= SIGNUP_ALERT_COOLDOWN_MS) {
+            tx.set(ref, { lastAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            shouldSend = true;
+        }
+    });
+    if (!shouldSend)
+        return;
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: FOUNDER_EMAIL,
+        subject: "Signup velocity guard triggered",
+        html: `
+      <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;color:#0b0b0b;font-size:14px;line-height:1.5;">
+        <p><b>The signup velocity guard just fired</b> (${reason}).</p>
+        <p>Accounts over the limit still get created, but their welcome email, Resend contact, and drip enrollment are skipped, and they are flagged <code>signupThrottled</code> in Firestore (excluded from the activation report).</p>
+        <p style="color:#52514e;">One alert per hour max — check the <code>signupRateLimit</code> collection and PostHog "user signed up" events (property <code>throttled</code>) if this keeps firing.</p>
+      </div>`,
+    });
+}
+// Returns a human-readable throttle reason, or null when the signup is fine.
+// Fails open: an infra error must never cost a real user their welcome flow.
+async function checkSignupVelocity(email) {
+    try {
+        const globalExceeded = await bumpSignupWindow("global", SIGNUP_GLOBAL_WINDOW_MS, SIGNUP_GLOBAL_MAX);
+        let domainExceeded = false;
+        const domain = email?.toLowerCase().trim().split("@")[1];
+        if (domain && !MAINSTREAM_EMAIL_DOMAINS.has(domain)) {
+            domainExceeded = await bumpSignupWindow(`d_${Buffer.from(domain).toString("base64url")}`, SIGNUP_DOMAIN_WINDOW_MS, SIGNUP_DOMAIN_MAX);
+        }
+        if (globalExceeded)
+            return `more than ${SIGNUP_GLOBAL_MAX} signups in 10 minutes`;
+        if (domainExceeded)
+            return `more than ${SIGNUP_DOMAIN_MAX} signups from ${domain} in 1 hour`;
+        return null;
+    }
+    catch (err) {
+        console.error("Signup velocity check failed (failing open):", err);
+        return null;
+    }
+}
 // ─── Welcome Email on Signup ───────────────────────────────
 // Every new account starts with a full-Pro reverse trial: no card, expires on
 // its own. Entitlement is derived from the expiry date (client pro-context +
 // isEntitledPro below) — never from the isPro flag, which the Stripe webhook owns.
 const SIGNUP_TRIAL_DAYS = 14;
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
+    const throttleReason = await checkSignupVelocity(user.email || undefined);
     // Write user record to Firestore for email scheduling
     try {
         await db.collection("users").doc(user.uid).set({
@@ -297,6 +385,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
             displayName: user.displayName || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             trialProExpiresAt: new Date(Date.now() + SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+            ...(throttleReason ? { signupThrottled: true } : {}),
         }, { merge: true });
     }
     catch (err) {
@@ -324,11 +413,22 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
                 email: user.email || null,
                 name: user.displayName || null,
                 provider: user.providerData?.[0]?.providerId || "password",
+                throttled: !!throttleReason,
             },
         });
     }
     catch (err) {
         console.error("PostHog: failed to track user signup:", err);
+    }
+    if (throttleReason) {
+        console.warn(`Signup throttled (${throttleReason}): ${user.uid} <${user.email || "no email"}>`);
+        try {
+            await maybeSendSignupAbuseAlert(throttleReason);
+        }
+        catch (err) {
+            console.error("Failed to send signup abuse alert:", err);
+        }
+        return;
     }
     if (!user.email)
         return;
@@ -364,7 +464,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        if (data.resendAutomationEnrolled || data.emailOptOut || data.firstTradeLoggedAt || data.day3NudgeSentAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || data.signupThrottled || data.firstTradeLoggedAt || data.day3NudgeSentAt)
             continue;
         const email = data.email;
         if (!email)
@@ -487,7 +587,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
         if (sent >= MAX_SENDS)
             break;
         const data = doc.data();
-        if (data.resendAutomationEnrolled || data.emailOptOut || data.firstTradeLoggedAt || data.day7NudgeSentAt)
+        if (data.resendAutomationEnrolled || data.emailOptOut || data.signupThrottled || data.firstTradeLoggedAt || data.day7NudgeSentAt)
             continue;
         const email = data.email;
         if (!email)
@@ -690,15 +790,24 @@ exports.sendWeeklyDigestEmails = functions.pubsub
 // Activation = a user who has logged at least one trade (firstTradeLoggedAt set).
 // Emails a cohort breakdown each Monday so we can see whether the first-trade
 // activation changes shipped 2026-06-25 moved the needle vs the ~36% pre-deploy
-// baseline (week of Jun 22). Runs server-side where the admin credentials live,
-// so no service-account file or secret needs to leave the local machine.
-const ACTIVATION_REPORT_RECIPIENT = "Richmondlamptey75@gmail.com";
+// baseline (a fixed snapshot of the reliably-tracked Jun 22-24 signups). Runs
+// server-side where the admin credentials live, so no service-account file or
+// secret needs to leave the local machine.
+const ACTIVATION_REPORT_RECIPIENT = FOUNDER_EMAIL;
 const ACTIVATION_DEPLOY_BOUNDARY = "2026-06-25";
+const ACTIVATION_BASELINE_PCT = 36;
 function activationWeekOf(ms) {
     const d = new Date(ms);
     const day = (d.getUTCDay() + 6) % 7; // shift so Monday = 0
     d.setUTCDate(d.getUTCDate() - day);
     return d.toISOString().slice(0, 10);
+}
+function activationWeekLabel(w) {
+    return new Date(`${w}T00:00:00Z`).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+    });
 }
 exports.sendActivationReport = functions
     .runWith({ timeoutSeconds: 300, memory: "512MB" })
@@ -718,21 +827,33 @@ exports.sendActivationReport = functions
         }
         pageToken = res.pageToken;
     } while (pageToken);
-    // 2. Firestore docs -> activation flag (firstTradeLoggedAt set)
+    // 2. Firestore docs -> activation flag (firstTradeLoggedAt set) +
+    //    velocity-guard flag (signupThrottled)
     const snap = await db.collection("users").get();
     const activated = new Set();
+    const throttled = new Set();
     snap.forEach((doc) => {
-        if (doc.data().firstTradeLoggedAt)
+        const d = doc.data();
+        if (d.firstTradeLoggedAt)
             activated.add(doc.id);
+        if (d.signupThrottled)
+            throttled.add(doc.id);
     });
-    // 3. Bucket by signup week (Monday-start, UTC) + post-deploy aggregate
+    // 3. Bucket by signup week (Monday-start, UTC) + post-deploy aggregate.
+    //    Velocity-guard throttled accounts are excluded entirely — scripted
+    //    signups can never activate and only drag the denominator down.
     const weeks = {};
     const boundaryMs = new Date(`${ACTIVATION_DEPLOY_BOUNDARY}T00:00:00Z`).getTime();
     let postN = 0;
     let postAct = 0;
+    let excludedThrottled = 0;
     for (const u of users) {
         if (!u.created)
             continue;
+        if (throttled.has(u.uid)) {
+            excludedThrottled++;
+            continue;
+        }
         const w = activationWeekOf(u.created);
         if (!weeks[w])
             weeks[w] = { n: 0, act: 0 };
@@ -748,46 +869,97 @@ exports.sendActivationReport = functions
     }
     const pct = (a, n) => (n ? Math.round((a / n) * 100) : 0);
     const sortedWeeks = Object.keys(weeks).sort().slice(-9);
+    const boundaryWeek = activationWeekOf(boundaryMs);
+    const currentWeek = activationWeekOf(Date.now());
+    const postPctVal = pct(postAct, postN);
+    // Latest complete week is the best trend signal: ~80% of activations
+    // happen the day of signup, so it is already effectively mature.
+    const fullWeeks = sortedWeeks.filter((w) => w !== currentWeek);
+    const latestFullWeek = fullWeeks[fullWeeks.length - 1];
+    const latestC = latestFullWeek ? weeks[latestFullWeek] : undefined;
+    const latestPct = latestC ? pct(latestC.act, latestC.n) : 0;
+    // Cell styles shared across the cohort table
+    const cellL = "padding:8px 0;border-bottom:1px solid #ececea;white-space:nowrap;";
+    const cellR = "padding:8px 0 8px 12px;border-bottom:1px solid #ececea;text-align:right;font-variant-numeric:tabular-nums;";
+    const th = "padding:6px 0;border-bottom:1px solid #d9d8d2;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#898781;";
+    const pill = "display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#f1f0ec;color:#52514e;font-size:11px;";
+    // Annotation row marking where the change under test landed
+    const deployMarker = `<tr><td colspan="4" style="padding:12px 0 4px;font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#b45309;">First-trade changes deployed Thu Jun 25</td></tr>`;
     const rows = sortedWeeks
         .map((w) => {
         const c = weeks[w];
-        const isPost = new Date(`${w}T00:00:00Z`).getTime() >= boundaryMs - 6 * 86400000;
-        return `<tr style="${isPost ? "background:#fff7ed;font-weight:600;" : ""}">
-        <td style="padding:6px 10px;border-bottom:1px solid #eee;">${w}${isPost ? " (post-deploy)" : ""}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">${c.n}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">${c.act}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;">${pct(c.act, c.n)}%</td>
-      </tr>`;
+        const rate = pct(c.act, c.n);
+        const isPre = w < boundaryWeek; // fully pre-deploy AND tracking-incomplete
+        const isMixed = w === boundaryWeek;
+        const isCurrent = w === currentWeek;
+        const ink = isPre ? "#898781" : "#0b0b0b";
+        const tag = isMixed
+            ? `<span style="${pill}">mixed</span>`
+            : isCurrent
+                ? `<span style="${pill}">in progress</span>`
+                : "";
+        // Bar meters only where tracking is trustworthy — a confident bar on a
+        // known-undercounted week would misread. Values are always in the text.
+        const bar = isPre
+            ? ""
+            : `<span style="display:inline-block;vertical-align:middle;width:90px;height:8px;border-radius:4px;background:#fdeed3;margin-right:8px;font-size:0;line-height:0;text-align:left;"><span style="display:inline-block;vertical-align:top;height:8px;border-radius:4px;background:#d97706;width:${rate}%;"></span></span>`;
+        return `${isMixed ? deployMarker : ""}<tr>
+          <td style="${cellL}color:${ink};">${activationWeekLabel(w)}${isPre ? "&dagger;" : ""}${tag}</td>
+          <td style="${cellR}color:${ink};">${c.n}</td>
+          <td style="${cellR}color:${ink};">${c.act}</td>
+          <td style="${cellR}padding-left:16px;white-space:nowrap;">${bar}<span style="display:inline-block;min-width:34px;font-weight:600;color:${ink};">${rate}%</span></td>
+        </tr>`;
     })
         .join("");
-    const postPctVal = pct(postAct, postN);
     const verdict = postN === 0
         ? "No signups yet on/after the deploy boundary."
-        : `Post-deploy cohort (signups on/after ${ACTIVATION_DEPLOY_BOUNDARY}): <b>${postAct}/${postN} = ${postPctVal}%</b> activated vs the ~36% pre-deploy baseline — ${postPctVal >= 36 ? "at or above baseline." : "below baseline so far (recent cohorts still maturing; activation is ~80% same-day)."}`;
+        : `${postAct} of the ${postN} signups since Jun 25 have logged a trade — <b>${postPctVal}%</b>, ${postPctVal >= ACTIVATION_BASELINE_PCT ? "at or above" : "below"} the ~${ACTIVATION_BASELINE_PCT}% pre-deploy baseline.${latestFullWeek
+            ? ` Latest full week (${activationWeekLabel(latestFullWeek)}): <b>${latestPct}%</b> of ${latestC.n} signups.`
+            : ""}`;
+    const preheader = postN
+        ? `Post-deploy ${postPctVal}% vs ~${ACTIVATION_BASELINE_PCT}% baseline. Latest full week ${latestPct}%. ${postN} signups since Jun 25.`
+        : "No post-deploy signups yet.";
     const html = `
-      <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;color:#111;">
-        <h2 style="margin:0 0 4px;">Activation report</h2>
-        <p style="color:#666;margin:0 0 16px;font-size:13px;">Activation = logged at least one trade. Cohorts by signup week (Monday-start, UTC).</p>
-        <p style="font-size:14px;line-height:1.5;">${verdict}</p>
-        <table style="border-collapse:collapse;width:100%;font-size:13px;margin-top:12px;">
-          <thead><tr style="text-align:left;color:#666;">
-            <th style="padding:6px 10px;border-bottom:2px solid #ddd;">Signup week</th>
-            <th style="padding:6px 10px;border-bottom:2px solid #ddd;text-align:right;">Signups</th>
-            <th style="padding:6px 10px;border-bottom:2px solid #ddd;text-align:right;">Activated</th>
-            <th style="padding:6px 10px;border-bottom:2px solid #ddd;text-align:right;">Rate</th>
-          </tr></thead>
+      <div style="display:none;font-size:1px;color:#fcfcfb;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}</div>
+      <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:600px;margin:0 auto;padding:8px 4px;color:#0b0b0b;">
+        <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#898781;">FreeTradeJournal</div>
+        <h1 style="margin:4px 0 2px;font-size:22px;font-weight:650;">Weekly activation report</h1>
+        <div style="font-size:13px;color:#52514e;">Activation = logged at least one trade. Cohorts by signup week (Monday-start, UTC).</div>
+
+        <div style="margin:26px 0 0;">
+          <div style="font-size:13px;color:#52514e;">Post-deploy activation</div>
+          <div style="font-size:46px;font-weight:700;letter-spacing:-1px;line-height:1.15;">${postN ? `${postPctVal}%` : "n/a"}</div>
+          <div style="font-size:13px;color:#898781;">${postAct} of ${postN} signups since Jun 25 &middot; pre-deploy baseline ~${ACTIVATION_BASELINE_PCT}%</div>
+        </div>
+
+        <p style="font-size:14px;line-height:1.55;margin:18px 0 8px;">${verdict}</p>
+
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:10px;font-size:13px;">
+          <thead>
+            <tr>
+              <th align="left" style="${th}text-align:left;">Signup week</th>
+              <th align="right" style="${th}text-align:right;">Signups</th>
+              <th align="right" style="${th}text-align:right;">Activated</th>
+              <th align="right" style="${th}text-align:right;">Rate</th>
+            </tr>
+          </thead>
           <tbody>${rows}</tbody>
         </table>
-        <p style="color:#999;font-size:12px;margin-top:16px;">Older cohorts undercount activation (reliable tracking shipped 2026-06-23). Single before/after, not an A/B — sanity-check cohort mix before drawing conclusions.</p>
+
+        <div style="margin-top:22px;padding-top:12px;border-top:1px solid #ececea;font-size:12px;line-height:1.6;color:#898781;">
+          <p style="margin:0 0 6px;">&dagger; Weeks before Jun 22 undercount activation: reliable first-trade tracking shipped Jun 23, so users who churned before then were never flagged. No bars are drawn for those weeks.</p>
+          <p style="margin:0 0 6px;">The Jun 22 week is mixed (pre- and post-deploy signups); the headline only counts signups on/after Jun 25. The ~${ACTIVATION_BASELINE_PCT}% baseline is a fixed snapshot of the reliably-tracked signups just before the deploy (Jun 22&ndash;24) &mdash; a small sample, so treat small gaps as noise.</p>
+          <p style="margin:0;">About 80% of activations happen the day of signup, so every week except the one in progress is effectively mature. Single before/after, not an A/B &mdash; check traffic mix before drawing conclusions.${excludedThrottled ? ` Excludes ${excludedThrottled} signup${excludedThrottled === 1 ? "" : "s"} flagged by the velocity guard.` : ""}</p>
+        </div>
       </div>`;
     try {
         await getResend().emails.send({
             from: FROM_EMAIL,
             to: ACTIVATION_REPORT_RECIPIENT,
-            subject: `Activation report — post-deploy ${postN ? postPctVal + "%" : "n/a"} vs 36% baseline`,
+            subject: `Activation report — post-deploy ${postN ? postPctVal + "%" : "n/a"} vs ~${ACTIVATION_BASELINE_PCT}% baseline`,
             html,
         });
-        console.log(`Activation report sent: post-deploy ${postAct}/${postN}`);
+        console.log(`Activation report sent: post-deploy ${postAct}/${postN}, excluded throttled ${excludedThrottled}`);
     }
     catch (err) {
         console.error("Failed to send activation report:", err);

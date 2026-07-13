@@ -104,6 +104,10 @@ export default defineConfig(({ mode }) => {
   },
   build: {
     target: 'es2022',
+    // 'hidden' emits .map files without a sourceMappingURL comment in the JS.
+    // scripts/upload-sourcemaps.mjs uploads them to PostHog (crash
+    // symbolication) and deletes them so they are never deployed publicly.
+    sourcemap: 'hidden',
     cssCodeSplit: true,
     rollupOptions: {
       output: {

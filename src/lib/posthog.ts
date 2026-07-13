@@ -37,10 +37,23 @@ export function initPostHog() {
     },
     before_send: (event) => {
       if (event?.event === '$exception') {
-        const list = JSON.stringify(event.properties?.$exception_list ?? '');
+        const list = event.properties?.$exception_list;
+        const json = JSON.stringify(list ?? '');
         // Drop crashes from third-party embeds and browser extensions — not
         // actionable app errors, and TradingView's alone would eat the quota.
-        if (/tradingview|chrome-extension|safari-extension|moz-extension/i.test(list)) return null;
+        if (/tradingview|chrome-extension|safari-extension|moz-extension/i.test(json)) return null;
+        // Cross-origin "Script error." carries no stack frames, so the filter
+        // above can't catch it and it can never be attributed to app code.
+        if (
+          Array.isArray(list) &&
+          list.length > 0 &&
+          list.every(
+            (ex: { value?: string; stacktrace?: { frames?: unknown[] } }) =>
+              /^Script error\.?$/.test(ex?.value ?? '') && !ex?.stacktrace?.frames?.length
+          )
+        ) {
+          return null;
+        }
       }
       return event;
     },
