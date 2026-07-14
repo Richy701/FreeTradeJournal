@@ -1,8 +1,12 @@
 "use client"
 
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useSettings } from '@/contexts/settings-context'
+import { useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { PolarAngleAxis, PolarGrid, Radar, RadarChart, Pie, PieChart, Sector, Label } from "recharts"
+import { Bar, BarChart, Cell, LabelList, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, Sector, Label, XAxis, YAxis } from "recharts"
+import { ChartEmptyState } from '@/components/dashboard/chart-empty-state'
+import { ChartBarHorizontal, ChartDonut } from '@phosphor-icons/react'
 import { useMemo, useEffect, useState } from "react"
 
 import {
@@ -68,12 +72,22 @@ function generatePairColors(primary: string, profit: string, loss: string): stri
 
 export function ChartRadarDefault() {
   const { themeColors } = useThemePresets()
+  const { formatCurrency, getCurrencySymbol } = useSettings()
+  // Compact currency for bar labels — no decimals, EUR keeps its suffix position
+  const fmtCompact = (n: number) => {
+    const symbol = getCurrencySymbol()
+    const sign = n > 0 ? '+' : n < 0 ? '-' : ''
+    const formatted = Math.abs(Math.round(n)).toLocaleString('en-US')
+    return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
+  }
   const pairColors = useMemo(
     () => generatePairColors(themeColors.primary, themeColors.profit, themeColors.loss),
     [themeColors.primary, themeColors.profit, themeColors.loss]
   )
   const { getAnalyticsTrades } = useDemoData()
+  const { period } = useDashboardPeriod()
   const [refreshKey, setRefreshKey] = useState(0)
+  const [symbolView, setSymbolView] = useState<'bars' | 'radar'>('bars')
 
   useEffect(() => {
     const handleStorageChange = () => setRefreshKey(prev => prev + 1)
@@ -88,50 +102,44 @@ export function ChartRadarDefault() {
     }
   }, [])
 
-  const { chartData, rawData, pieData, pieConfig, totalTrades } = useMemo(() => {
-    const trades = getAnalyticsTrades().trades
+  const { chartData, rawData, pieData, pieConfig, totalTrades, allTradesCount } = useMemo(() => {
+    const allTrades = getAnalyticsTrades().trades
+    const trades = filterTradesByPeriod(allTrades, period)
 
     let rawPairData: any[]
     if (!trades || trades.length === 0) {
-      rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0 }]
+      rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0, winRate: 0 }]
     } else {
       const pairPerformance = trades.reduce((acc: any, trade: any) => {
         const symbol = trade.symbol || 'Unknown'
         if (!acc[symbol]) {
-          acc[symbol] = { pair: symbol, pnl: 0, actualPnl: 0, tradeCount: 0 }
+          acc[symbol] = { pair: symbol, pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0 }
         }
         acc[symbol].pnl += trade.pnl || 0
         acc[symbol].actualPnl += trade.pnl || 0
         acc[symbol].tradeCount += 1
+        if ((trade.pnl || 0) > 0) acc[symbol].wins += 1
         return acc
       }, {})
 
       rawPairData = Object.values(pairPerformance)
         .sort((a: any, b: any) => b.pnl - a.pnl)
         .slice(0, 8)
+        .map((d: any) => ({ ...d, winRate: d.tradeCount > 0 ? Math.round((d.wins / d.tradeCount) * 100) : 0 }))
 
       if (rawPairData.length === 0) {
-        rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0 }]
+        rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0, winRate: 0 }]
       }
     }
 
-    const allPnls = rawPairData.map((d: any) => d.pnl)
-    const minPnl = Math.min(...allPnls)
-    const maxPnl = Math.max(...allPnls)
-
-    const normalizedData = rawPairData.map((item: any) => ({
-      ...item,
-      score: item.pnl < 0
-        ? Math.max(0, 25 + (item.pnl / Math.abs(minPnl)) * 25)
-        : 50 + (item.pnl / (maxPnl || 1)) * 50
-    }))
-
     const total = rawPairData.reduce((sum: number, d: any) => sum + d.tradeCount, 0)
+    // Slices and legend sort by share (largest first) — colors are assigned
+    // before sorting so each symbol keeps a stable color.
     const piePairs = rawPairData.map((d: any, i: number) => ({
       pair: d.pair,
       trades: d.tradeCount,
       fill: pairColors[i % pairColors.length],
-    }))
+    })).sort((a: any, b: any) => b.trades - a.trades)
 
     const config: ChartConfig = {
       trades: { label: "Trades" },
@@ -144,46 +152,92 @@ export function ChartRadarDefault() {
     })
 
     return {
-      chartData: normalizedData,
+      chartData: rawPairData,
       rawData: rawPairData,
       pieData: piePairs,
       pieConfig: config,
       totalTrades: total,
+      allTradesCount: allTrades.length,
     }
-  }, [refreshKey, getAnalyticsTrades])
+  }, [refreshKey, getAnalyticsTrades, period])
+
+  const barConfig = {
+    actualPnl: {
+      label: "P&L",
+      color: "hsl(var(--primary))",
+    },
+  } satisfies ChartConfig
 
   const radarConfig = {
-    score: {
-      label: "Performance",
+    winRate: {
+      label: "Win rate",
       color: "hsl(var(--primary))",
     },
   } satisfies ChartConfig
 
   const totalPnL = rawData.reduce((sum: number, item: any) => sum + item.actualPnl, 0)
   const hasData = chartData.length > 0 && chartData[0].pair !== "No Data"
+  // rawData is sorted by P&L descending, so the best symbol is first
+  const bestSymbol = hasData ? rawData[0] : null
+  const mostTraded = hasData
+    ? rawData.reduce((max: any, d: any) => (d.tradeCount > max.tradeCount ? d : max), rawData[0])
+    : null
+  const concentration = mostTraded && totalTrades > 0
+    ? Math.round((mostTraded.tradeCount / totalTrades) * 100)
+    : 0
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-      {/* Radar Chart */}
+      {/* Symbol P&L bars */}
       <Card className="h-[450px] flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold tracking-tight">Pairs Performance</CardTitle>
-          <CardDescription className="text-xs text-muted-foreground">
-            P&L breakdown by currency pairs and instruments
-          </CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <CardTitle className="text-lg font-semibold tracking-tight">Symbols Performance</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground mt-1.5">
+                {symbolView === 'bars' ? 'P&L breakdown by symbol' : 'Win rate by symbol'}
+              </CardDescription>
+            </div>
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
+              <button
+                onClick={() => setSymbolView('bars')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                  symbolView === 'bars'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-pressed={symbolView === 'bars'}
+              >
+                Bars
+              </button>
+              <button
+                onClick={() => setSymbolView('radar')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                  symbolView === 'radar'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-pressed={symbolView === 'radar'}
+              >
+                Radar
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
             <div className="h-full px-1 sm:px-2">
+              {symbolView === 'radar' ? (
               <ChartContainer config={radarConfig} className="h-full w-full aspect-auto">
                 <RadarChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                   <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent
-                      formatter={(value, name) => {
-                        const item = chartData.find((d: any) => d.pair === name)
-                        return item ? `$${item.actualPnl.toFixed(2)}` : value
-                      }}
+                      formatter={(value, _name, item) => (
+                        <span>
+                          {value}% win rate · {formatCurrency(item.payload.actualPnl, true)} · {item.payload.tradeCount} trades
+                        </span>
+                      )}
                     />}
                   />
                   <PolarAngleAxis
@@ -191,8 +245,9 @@ export function ChartRadarDefault() {
                     tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                   />
                   <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar
-                    dataKey="score"
+                    dataKey="winRate"
                     fill={themeColors.primary}
                     fillOpacity={0.6}
                     stroke={themeColors.primary}
@@ -200,27 +255,96 @@ export function ChartRadarDefault() {
                   />
                 </RadarChart>
               </ChartContainer>
+              ) : (
+              // Fixed height per symbol, centered — otherwise recharts stretches a
+              // handful of bars across the whole card and the gaps dwarf the bars.
+              <div className="h-full flex items-center">
+              <ChartContainer
+                config={barConfig}
+                className="w-full aspect-auto"
+                style={{ height: `${Math.min(chartData.length * 56, 300)}px` }}
+              >
+                <BarChart
+                  data={chartData}
+                  layout="vertical"
+                  margin={{ top: 4, right: 64, bottom: 4, left: 4 }}
+                  barCategoryGap="20%"
+                >
+                  <XAxis type="number" dataKey="actualPnl" hide />
+                  <YAxis
+                    dataKey="pair"
+                    type="category"
+                    width={72}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent
+                      formatter={(value, _name, item) => (
+                        <span>
+                          {formatCurrency(Number(value), true)} · {item.payload.tradeCount} trades
+                        </span>
+                      )}
+                    />}
+                  />
+                  <Bar dataKey="actualPnl" radius={4} maxBarSize={28}>
+                    {chartData.map((entry: any) => (
+                      <Cell key={entry.pair} fill={entry.actualPnl >= 0 ? themeColors.profit : themeColors.loss} />
+                    ))}
+                    <LabelList
+                      dataKey="actualPnl"
+                      position="right"
+                      offset={8}
+                      formatter={(v: number) => fmtCompact(v)}
+                      className="fill-foreground"
+                      fontSize={11}
+                    />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+              </div>
+              )}
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-              No trading data available. Start trading to see your pairs performance!
-            </div>
+            <ChartEmptyState
+              icon={ChartBarHorizontal}
+              title="No symbol data yet"
+              description="Your P&L by symbol appears after your first trade."
+              hasDataOutsidePeriod={allTradesCount > 0}
+            />
           )}
         </CardContent>
-        <CardFooter className="border-t border-border/70 py-3">
-          <div className="flex w-full items-end justify-between">
+        {hasData && (
+        <CardFooter className="border-t border-border/70 py-3 sm:py-3">
+          <div className="flex w-full items-end justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pairs tracked</span>
-              <span className="text-sm font-semibold tabular-nums">{chartData.length}</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Symbols</span>
+              <span className="text-sm font-semibold tabular-nums">{hasData ? chartData.length : '—'}</span>
+            </div>
+            <div className="flex flex-col gap-0.5 text-center">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Best</span>
+              <span className="text-sm font-semibold tabular-nums truncate">
+                {bestSymbol ? (
+                  <>
+                    {bestSymbol.pair}{' '}
+                    <span style={{ color: bestSymbol.actualPnl >= 0 ? themeColors.profit : themeColors.loss }}>
+                      {fmtCompact(bestSymbol.actualPnl)}
+                    </span>
+                  </>
+                ) : '—'}
+              </span>
             </div>
             <div className="flex flex-col gap-0.5 text-right">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Net P&L</span>
               <span className="text-sm font-semibold tabular-nums" style={{color: totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-                {totalPnL >= 0 ? '+' : '-'}${Math.abs(totalPnL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(totalPnL, true)}
               </span>
             </div>
           </div>
         </CardFooter>
+        )}
       </Card>
 
       {/* Pie Chart */}
@@ -228,13 +352,13 @@ export function ChartRadarDefault() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold tracking-tight">Trade Distribution</CardTitle>
           <CardDescription className="text-xs text-muted-foreground">
-            Trade count distribution across pairs
+            Trade count distribution across symbols
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
-            <div className="h-full">
-              <ChartContainer config={pieConfig} className="h-full w-full aspect-auto">
+            <div className="h-full flex items-center justify-center gap-4 sm:gap-8">
+              <ChartContainer config={pieConfig} className="h-full aspect-square">
                 <PieChart>
                   <ChartTooltip
                     cursor={false}
@@ -284,25 +408,50 @@ export function ChartRadarDefault() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
+              <div className="shrink-0 space-y-2.5 max-w-[45%]">
+                {pieData.map((entry: any) => (
+                  <div key={entry.pair} className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-[2px] shrink-0" style={{ backgroundColor: entry.fill }} />
+                      <span className="text-foreground font-medium truncate">{entry.pair}</span>
+                      <span className="text-foreground font-semibold tabular-nums">
+                        {totalTrades > 0 ? Math.round((entry.trades / totalTrades) * 100) : 0}%
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5 pl-[18px]">
+                      {entry.trades} {entry.trades === 1 ? 'trade' : 'trades'}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-              No trading data available. Start trading to see distribution!
-            </div>
+            <ChartEmptyState
+              icon={ChartDonut}
+              title="No trades to count yet"
+              description="See where your trading volume goes once you log trades."
+              hasDataOutsidePeriod={allTradesCount > 0}
+            />
           )}
         </CardContent>
-        <CardFooter className="border-t border-border/70 py-3">
-          <div className="flex w-full items-end justify-between">
+        {hasData && (
+        <CardFooter className="border-t border-border/70 py-3 sm:py-3">
+          <div className="flex w-full items-end justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Pairs traded</span>
-              <span className="text-sm font-semibold tabular-nums">{chartData.length}</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Most traded</span>
+              <span className="text-sm font-semibold tabular-nums truncate">
+                {mostTraded ? `${mostTraded.pair} · ${mostTraded.tradeCount} trades` : '—'}
+              </span>
             </div>
             <div className="flex flex-col gap-0.5 text-right">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Total trades</span>
-              <span className="text-sm font-semibold tabular-nums">{totalTrades.toLocaleString()}</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Concentration</span>
+              <span className="text-sm font-semibold tabular-nums">
+                {mostTraded ? `${concentration}% of all trades` : '—'}
+              </span>
             </div>
           </div>
         </CardFooter>
+        )}
       </Card>
     </div>
   )

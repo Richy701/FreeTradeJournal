@@ -310,6 +310,9 @@ function CoachStats({ metrics, themeColors }: { metrics: any; themeColors: { pri
       <div className="flex items-center gap-2">
         <ChartPie className="h-4 w-4" style={{ color: themeColors.primary }} />
         <span className="text-sm font-semibold">Your numbers</span>
+        {/* The coach always analyses full history (pattern detection needs it),
+            so make that explicit next to the period-filtered dashboard widgets. */}
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">All time</span>
       </div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-4">
         {stats.map((s) => (

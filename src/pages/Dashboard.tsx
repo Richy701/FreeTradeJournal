@@ -68,6 +68,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DashboardPeriodProvider } from '@/contexts/dashboard-period'
+import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
 
 function FreeAIBanner() {
   const { user, isDemo } = useAuth()
@@ -1211,10 +1213,16 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile-optimized Main Content — registry-driven, reorderable widget stack */}
+      <DashboardPeriodProvider>
       <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
             reorderable stack so widget visibility/order changes never affect it. */}
         <FreeAIBanner />
+        {tradeCount > 0 && (
+          <div className="flex justify-end">
+            <DashboardPeriodPills />
+          </div>
+        )}
         {tradeCount === 0 && !isDemo && (
           <div className="rounded-2xl border bg-card/50 px-6 py-10 sm:py-12 text-center flex flex-col items-center">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
@@ -1254,6 +1262,7 @@ export default function Dashboard() {
           return node ? <ErrorBoundary key={w.id}>{node}</ErrorBoundary> : null
         })}
       </div>
+      </DashboardPeriodProvider>
       
       {/* Column Mapping Dialog */}
       <ColumnMappingDialog value={columnMapping} onChange={setColumnMapping} onConfirm={handleMappingConfirm} />

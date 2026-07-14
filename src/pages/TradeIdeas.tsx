@@ -37,7 +37,15 @@ import type { ChartConfig } from '@/components/ui/chart'
 export default function TradeIdeas() {
   const { ideas, charts, summary, totalTrades, hasEnoughData } = useTradeIdeas()
   const { themeColors, alpha } = useThemePresets()
-  const { formatCurrency } = useSettings()
+  const { formatCurrency, getCurrencySymbol } = useSettings()
+  // Axis ticks get a compact format (no decimals) so long values like $8,000.00
+  // don't overflow recharts' fixed 60px axis width. Tooltips keep full precision.
+  const formatAxisCurrency = (v: number) => {
+    const symbol = getCurrencySymbol()
+    const sign = v < 0 ? '-' : ''
+    const formatted = Math.abs(Math.round(v)).toLocaleString('en-US')
+    return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
+  }
   const { getTrades } = useDemoData()
   const trades = useMemo(() => getTrades(), [getTrades])
   const gradientId = useId().replace(/:/g, '')
@@ -446,7 +454,7 @@ export default function TradeIdeas() {
                 <BarChart data={charts.strategyPnl} layout="vertical" margin={{ left: 30, right: 20 }}>
                   <CartesianGrid horizontal={false} strokeOpacity={0.1} />
                   <YAxis dataKey="strategy" type="category" width={120} tick={{ fontSize: 11 }} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v)} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => formatAxisCurrency(v)} />
                   <ChartTooltip
                     cursor={false}
                     content={
@@ -491,7 +499,7 @@ export default function TradeIdeas() {
                     </defs>
                     <CartesianGrid vertical={false} strokeOpacity={0.1} />
                     <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v)} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatAxisCurrency(v)} />
                     <ChartTooltip
                       cursor={false}
                       content={
@@ -531,7 +539,7 @@ export default function TradeIdeas() {
                   <BarChart data={charts.dayOfWeek} maxBarSize={24} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                     <CartesianGrid vertical={false} strokeOpacity={0.1} />
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatCurrency(v)} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatAxisCurrency(v)} />
                     <ChartTooltip
                       cursor={false}
                       content={

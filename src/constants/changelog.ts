@@ -15,6 +15,58 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.58.0',
+    date: '2026-07-14',
+    summary: 'Pick a time period for your dashboard, cleaner stat cards, clearer charts, and currency fixes.',
+    items: [
+      {
+        type: 'new',
+        text: 'Choose the time period for your dashboard stats',
+        description: 'New 7D, 30D, 90D, YTD, and All buttons above your dashboard let you see your stats, equity curve, and symbol breakdowns for just the last week, month, or any range — instead of always everything. Ranges past 30 days are part of Pro.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner dashboard stat cards',
+        description: 'The four stat cards no longer repeat the same numbers: Total Trades now shows your current win or loss streak and a win/loss split bar, the badge shows how many trades you made this week, and the profit factor gauge now reflects dollars won versus lost.',
+      },
+      {
+        type: 'improved',
+        text: 'Symbols Performance chart is easier to read',
+        description: 'The default view is now a simple bar chart: one bar per symbol, green for profit and red for loss, with the actual amounts shown. A toggle brings back the radar view, which now shows each symbol\'s win rate instead of an abstract score.',
+      },
+      {
+        type: 'improved',
+        text: 'Trade Distribution now has a legend',
+        description: 'You can see which slice belongs to which symbol, with trade counts, without hovering.',
+      },
+      {
+        type: 'improved',
+        text: 'A clearer Recent Trades list',
+        description: 'Trades are now grouped under day headings, and each row says Long or Short with the trade size in plain text. The list also no longer shows a meaningless 0.00% or a 12:00 AM time on imported trades that have no time of day.',
+      },
+      {
+        type: 'improved',
+        text: 'Easier-to-read equity curve and daily P&L charts',
+        description: 'Axis amounts use a compact format like $10.6k, dates read as Mar 2 instead of 02/03, the equity curve marks your peak with a dot and a faint line, and the daily bars show a dashed line at your average day.',
+      },
+      {
+        type: 'improved',
+        text: 'Friendlier empty charts',
+        description: 'Chart cards without data now explain what will appear there. And if you have trades but none in the selected time period, they say so and offer a one-click way to widen the range.',
+      },
+      {
+        type: 'fixed',
+        text: 'Charts now use your chosen currency',
+        description: 'The equity curve, daily P&L, and insight charts showed dollar signs even if your account is set to euros, pounds, or another currency. They now follow your currency setting.',
+      },
+      {
+        type: 'fixed',
+        text: 'Chart amounts no longer get cut off',
+        description: 'Larger amounts on chart axes were clipped at the edge. Axis labels are now compact so they always fit.',
+      },
+    ],
+  },
+  {
     version: '2.57.0',
     date: '2026-07-11',
     summary: 'Four new full themes, a smarter theme picker, and the new Theme Studio.',
@@ -1831,4 +1883,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.57.0'
+export const LATEST_CHANGELOG_VERSION = '2.58.0'

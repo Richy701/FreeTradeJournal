@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
+import { useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { TrendUp, TrendDown } from '@phosphor-icons/react'
 import { Link } from "react-router-dom"
@@ -16,7 +17,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Pie, PieChart, Sector, RadialBar, RadialBarChart, Line, LineChart, PolarGrid, PolarRadiusAxis, Label } from "recharts"
+import { Pie, PieChart, Sector, RadialBar, RadialBarChart, Line, LineChart } from "recharts"
 import { useMemo } from "react"
 
 // Define interfaces for type safety
@@ -43,16 +44,17 @@ export function SectionCards() {
   const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
   const { activeAccount } = useAccounts()
   const { getTrades, getAnalyticsTrades } = useDemoData()
+  const { period } = useDashboardPeriod()
 
-  // Get trades from demo data or localStorage
+  // Get trades from demo data or localStorage, narrowed to the dashboard period
   const trades = useMemo(() => {
-    const tradesData = getAnalyticsTrades().trades
+    const tradesData = filterTradesByPeriod(getAnalyticsTrades().trades, period)
     return tradesData.map((trade: any) => ({
       ...trade,
       entryTime: new Date(trade.entryTime),
       exitTime: new Date(trade.exitTime)
     }))
-  }, [getAnalyticsTrades])
+  }, [getAnalyticsTrades, period])
 
   // Account balance is an absolute value, not a windowed stat — always derive
   // it from the full trade history or it disagrees with the header balance
@@ -121,6 +123,26 @@ export function SectionCards() {
   const avgPnlPerTrade = metrics.totalTrades > 0 ? metrics.totalPnL / metrics.totalTrades : 0
   const grossProfit = trades.filter((t: Trade) => t.pnl > 0).reduce((s: number, t: Trade) => s + t.pnl, 0)
   const grossLoss = Math.abs(trades.filter((t: Trade) => t.pnl < 0).reduce((s: number, t: Trade) => s + t.pnl, 0))
+
+  // Current win/loss streak from the most recent trades (breakeven ends a streak)
+  const streak = useMemo(() => {
+    const sorted = [...trades].sort((a: Trade, b: Trade) => a.exitTime.getTime() - b.exitTime.getTime())
+    let count = 0
+    let dir: 'win' | 'loss' | null = null
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (sorted[i].pnl === 0) break
+      const d = sorted[i].pnl > 0 ? 'win' : 'loss'
+      if (!dir) dir = d
+      if (d !== dir) break
+      count++
+    }
+    return { count, dir }
+  }, [trades])
+
+  const weekCount = useMemo(
+    () => trades.filter((t: Trade) => Date.now() - t.exitTime.getTime() <= 7 * 24 * 60 * 60 * 1000).length,
+    [trades]
+  )
 
   // Mini cumulative P&L sparkline (last 10 trades)
   const pnlSparkline = useMemo(() => {
@@ -255,59 +277,37 @@ export function SectionCards() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Trades</CardTitle>
             <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground">
-              {metrics.totalTrades} total
+              {weekCount} this week
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
+                <div className="text-3xl font-bold tracking-tight text-foreground">
                   {metrics.totalTrades.toLocaleString()}
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium break-words">
                     <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
                   </p>
-                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                  {streak.count > 0 ? (
+                    <p className="text-xs break-words" style={{ color: streak.dir === 'win' ? themeColors.profit : themeColors.loss }}>
+                      {streak.count}-{streak.dir} streak
+                    </p>
+                  ) : (
+                    <p className="text-xs break-words text-muted-foreground">No active streak</p>
+                  )}
                 </div>
               </div>
-              <div className="w-20 h-20 relative shrink-0">
-                <ChartContainer
-                  config={{ trades: { label: "Trades", color: themeColors.primary } }}
-                  className="w-full h-full"
-                >
-                  <RadialBarChart
-                    data={[{ trades: metrics.totalTrades, fill: themeColors.primary }]}
-                    startAngle={0}
-                    endAngle={Math.min(350, (metrics.winRate / 100) * 360)}
-                    innerRadius={24}
-                    outerRadius={38}
-                  >
-                    <PolarGrid
-                      gridType="circle"
-                      radialLines={false}
-                      stroke="none"
-                      className="first:fill-muted last:fill-background"
-                      polarRadius={[28, 21]}
-                    />
-                    <RadialBar dataKey="trades" background cornerRadius={4} />
-                    <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-                      <Label
-                        content={({ viewBox }) => {
-                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                            return (
-                              <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                                <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground font-bold" style={{ fontSize: '10px' }}>
-                                  {formatPercentage(metrics.winRate)}
-                                </tspan>
-                              </text>
-                            )
-                          }
-                        }}
-                      />
-                    </PolarRadiusAxis>
-                  </RadialBarChart>
-                </ChartContainer>
+              <div className="w-16 h-16 flex items-center shrink-0">
+                {winCount + lossCount > 0 ? (
+                  <div className="flex h-2.5 w-full overflow-hidden rounded-full">
+                    <div style={{ width: `${(winCount / (winCount + lossCount)) * 100}%`, backgroundColor: themeColors.profit }} />
+                    <div style={{ width: `${(lossCount / (winCount + lossCount)) * 100}%`, backgroundColor: themeColors.loss }} />
+                  </div>
+                ) : (
+                  <div className="h-2.5 w-full rounded-full bg-muted" />
+                )}
               </div>
             </div>
           </CardContent>
@@ -350,29 +350,28 @@ export function SectionCards() {
               <div className="w-16 h-16 relative shrink-0">
                 <ChartContainer
                   config={{
-                    wins: { label: "Wins", color: themeColors.profit },
-                    losses: { label: "Losses", color: themeColors.loss }
+                    won: { label: "Won", color: themeColors.profit },
+                    lost: { label: "Lost", color: themeColors.loss }
                   }}
                   className="w-full h-full"
                 >
                   <RadialBarChart
-                    data={[{
-                      wins: trades.filter((t: Trade) => t.pnl > 0).length,
-                      losses: trades.filter((t: Trade) => t.pnl < 0).length
-                    }]}
-                    endAngle={180}
+                    data={[{ won: grossProfit, lost: grossLoss }]}
+                    startAngle={180}
+                    endAngle={0}
                     innerRadius={20}
                     outerRadius={32}
+                    cy="68%"
                   >
                     <RadialBar
-                      dataKey="wins"
+                      dataKey="won"
                       stackId="a"
                       cornerRadius={2}
                       fill={themeColors.profit}
                       className="stroke-transparent"
                     />
                     <RadialBar
-                      dataKey="losses"
+                      dataKey="lost"
                       fill={themeColors.loss}
                       stackId="a"
                       cornerRadius={2}
