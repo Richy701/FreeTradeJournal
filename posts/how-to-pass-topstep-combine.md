@@ -2,6 +2,7 @@
 title: How to Pass a Topstep Combine (The Mindset Nobody Talks About)
 subtitle: Failing combines isn't the problem. Not learning from them is.
 tags: topstep, prop firm, funded trader, trading combine, pass combine
+date: 2026-04-03
 coverImage: https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png
 ---
 

@@ -17,6 +17,7 @@ export const URLS = {
   pricing: `${BASE_URL}/pricing`,
   settings: `${BASE_URL}/settings`,
   subscription: `${BASE_URL}/settings?tab=subscription`,
+  feedbackFromDigest: `${BASE_URL}/dashboard?feedback=digest`,
   privacy: `${BASE_URL}/privacy`,
   terms: `${BASE_URL}/terms`,
   logo: `${BASE_URL}/favicon-64x64.png`,

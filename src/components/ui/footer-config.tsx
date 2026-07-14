@@ -20,7 +20,7 @@ export const footerConfig = {
         { name: "Pricing", href: "/pricing" },
         { name: "Documentation", href: "/documentation" },
         { name: "Changelog", href: "/changelog" },
-        { name: "Blog", href: "https://blog.freetradejournal.com" },
+        { name: "Blog", href: "/blog" },
       ]
     },
     {

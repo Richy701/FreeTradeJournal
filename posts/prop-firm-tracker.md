@@ -2,6 +2,7 @@
 title: How to Track Multiple Prop Firm Accounts in One Place (For Free)
 subtitle: Stop juggling spreadsheets — FreeTradeJournal's Prop Tracker does it all
 tags: prop firm, prop trading, funded trader, topstep, ftmo, prop firm tracker
+date: 2026-04-03
 coverImage: https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot.png
 ---
 

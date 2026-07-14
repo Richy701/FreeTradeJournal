@@ -20,76 +20,6 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       "description": description || "Free professional trading journal for forex, futures and stock traders"
     };
 
-    // Homepage - WebSite + SoftwareApplication + Organization in @graph
-    if (currentPath === '/') {
-      return {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "WebSite",
-            "url": baseUrl,
-            "name": "FreeTradeJournal",
-            "description": "Free professional trading journal and analytics platform"
-          },
-          {
-            "@type": "SoftwareApplication",
-            "name": "FreeTradeJournal",
-            "applicationCategory": "FinanceApplication",
-            "operatingSystem": "Web",
-            "description": "Free professional trading journal for forex, futures and stock traders. Track trades, analyze performance metrics, manage risk, and improve your trading with advanced analytics.",
-            "url": baseUrl,
-            "offers": {
-              "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "USD"
-            },
-            "featureList": [
-              "Free trading journal and trade tracker",
-              "Performance analytics dashboard with equity curve",
-              "Risk management tools and position sizing calculator",
-              "Calendar heatmap visualization for daily P&L",
-              "CSV/Excel import for MetaTrader and broker data",
-              "Multi-account support with user-scoped data",
-              "Trading psychology journal with mood tracking",
-              "Coach FTJ with personalised coaching tips",
-              "AI Trade Analysis with pattern detection",
-              "AI Trade Review with entry/exit assessment",
-              "AI Journal Prompts for self-reflection",
-              "AI Strategy Tagger for trade classification",
-              "AI Risk Alerts for revenge trading and loss streaks",
-              "AI Goal Coach with progress recommendations",
-              "Cloud sync across devices for Pro users",
-              "Export trades to CSV/Excel for tax reporting",
-              "Goal setting and progress tracking",
-              "Prop firm dashboard support",
-              "Real-time P&L calculations",
-              "Win rate and performance metrics",
-              "Trade filtering and search functionality"
-            ],
-            "screenshot": `${baseUrl}/images/screenshots/trading-dashboard-screenshot.png`,
-            "softwareVersion": "2.0.0",
-            "author": {
-              "@type": "Organization",
-              "name": "FreeTradeJournal",
-              "url": baseUrl
-            },
-            "sameAs": [
-              "https://t.me/+UI6uTKgfswUwNzhk"
-            ]
-          },
-          {
-            "@type": "Organization",
-            "name": "FreeTradeJournal",
-            "url": baseUrl,
-            "logo": `${baseUrl}/favicon-512x512.png`,
-            "sameAs": [
-              "https://t.me/+UI6uTKgfswUwNzhk"
-            ]
-          }
-        ]
-      };
-    }
-
     // Forex Trading Journal page
     if (currentPath === '/forex-trading-journal') {
       return {
@@ -420,6 +350,12 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       }
     };
   };
+
+  // The homepage's Organization/SoftwareApplication/WebSite graph lives in
+  // index.html — emitting a second graph here confuses entity resolution.
+  if (currentPath === '/') {
+    return null;
+  }
 
   const structuredData = getStructuredData();
 

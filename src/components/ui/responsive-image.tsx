@@ -13,6 +13,7 @@ interface ResponsiveImageProps {
 export function ResponsiveImage({ src, alt, className = '', imgClassName, priority = false, width, height }: ResponsiveImageProps) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(priority)
+  const [useSrcSet, setUseSrcSet] = useState(true)
   const imgRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -50,8 +51,8 @@ export function ResponsiveImage({ src, alt, className = '', imgClassName, priori
         return (
           <img
             src={src}
-            srcSet={srcSet}
-            sizes="(max-width: 640px) 640px, (max-width: 1280px) 1280px, 1920px"
+            srcSet={useSrcSet ? srcSet : undefined}
+            sizes={useSrcSet ? '(max-width: 640px) 640px, (max-width: 1280px) 1280px, 1920px' : undefined}
             alt={alt}
             width={width}
             height={height}
@@ -59,6 +60,7 @@ export function ResponsiveImage({ src, alt, className = '', imgClassName, priori
               isLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setIsLoaded(true)}
+            onError={() => setUseSrcSet(false)}
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
           />

@@ -1,21 +1,19 @@
 import { Link } from 'react-router-dom';
-import { X, Crown, ArrowRight } from '@phosphor-icons/react';
+import { X, Timer, ArrowRight } from '@phosphor-icons/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
+import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
 
 const SNOOZED_UNTIL_KEY = 'founder-offer-banner-snoozed-until';
 const DISMISSED_KEY = 'founder-offer-banner-dismissed';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-// Matches the FOUNDER149 promotion code's expiry in Stripe — the banner
-// removes itself when the offer stops being redeemable.
-const OFFER_ENDS_AT = Date.parse('2026-08-07T23:59:59Z');
-
 function shouldShowBanner(): boolean {
-  if (Date.now() > OFFER_ENDS_AT) return false;
+  // The banner removes itself when the offer stops being redeemable.
+  if (Date.now() > LIFETIME_RETIRES_AT) return false;
 
   // Permanently dismissed (clicked the CTA)
   if (localStorage.getItem(DISMISSED_KEY) === 'true') return false;
@@ -109,7 +107,7 @@ export function FounderOfferAnnouncement() {
           {/* Left: badge + text */}
           <div className="flex items-center gap-3 min-w-0">
             <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 border border-white/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
-              <Crown className="h-2.5 w-2.5" aria-hidden="true" />
+              <Timer className="h-2.5 w-2.5" aria-hidden="true" />
               Last chance
             </span>
             <p className="text-xs sm:text-sm font-medium text-white">
@@ -118,7 +116,7 @@ export function FounderOfferAnnouncement() {
               </span>
               <span className="hidden sm:inline">
                 <span className="font-bold">Lifetime Pro retires in August</span>
-                <span className="text-white/90"> — own every Pro feature forever for $149 instead of $249. Code FOUNDER149 at checkout.</span>
+                <span className="text-white/90"> — $149 instead of $249 with code FOUNDER149.</span>
               </span>
             </p>
           </div>

@@ -251,14 +251,13 @@ function HeroGeometric({
                             >
                                 View Live Demo
                             </Button>
-                            <Link to="/signup">
-                                <Button
-                                    variant="outline"
-                                    className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
-                                >
-                                    Sign Up Free
-                                </Button>
-                            </Link>
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                            >
+                                <Link to="/signup">Sign Up Free</Link>
+                            </Button>
                         </motion.div>
 
                         <motion.p

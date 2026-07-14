@@ -70,6 +70,15 @@ export function WeeklyDigestEmail({ firstName, tradeCount, winRate, pnl, bestTra
           <EmailButton href={URLS.trades}>Log a trade</EmailButton>
         </Section>
       )}
+
+      <Hr style={styles.divider} />
+
+      <Section style={styles.content}>
+        <Text style={styles.paragraph}>
+          How are we doing? Tell us what to improve — it takes 30 seconds.
+        </Text>
+        <EmailButton href={URLS.feedbackFromDigest} variant="secondary">Share feedback</EmailButton>
+      </Section>
     </EmailShell>
   )
 }

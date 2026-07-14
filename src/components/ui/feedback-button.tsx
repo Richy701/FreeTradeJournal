@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Chat, Bug, Lightbulb, Star, CheckCircle, CaretRight, ArrowLeft, Envelope, Image as ImageIcon, Info, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +24,8 @@ interface FeedbackButtonProps {
   onOpenChange?: (open: boolean) => void;
   context?: string;
   defaultType?: FeedbackType;
+  /** When set, the dialog opens directly on the testimonial step with this star rating. */
+  testimonialRating?: number;
 }
 
 export function FeedbackButton({
@@ -34,6 +36,7 @@ export function FeedbackButton({
   onOpenChange: controlledOnOpenChange,
   context,
   defaultType,
+  testimonialRating,
 }: FeedbackButtonProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -41,7 +44,7 @@ export function FeedbackButton({
 
   // Controlled mode — just render the dialog, no trigger button
   if (controlledOpen !== undefined) {
-    return <FeedbackDialog open={open} onOpenChange={setOpen} context={context} defaultType={defaultType} />;
+    return <FeedbackDialog open={open} onOpenChange={setOpen} context={context} defaultType={defaultType} testimonialRating={testimonialRating} />;
   }
 
   if (variant === 'floating') {
@@ -157,11 +160,13 @@ function FeedbackDialog({
   onOpenChange,
   context,
   defaultType,
+  testimonialRating,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   context?: string;
   defaultType?: FeedbackType;
+  testimonialRating?: number;
 }) {
   const { user } = useAuth();
   const [step, setStep] = useState<Step>('feedback');
@@ -179,6 +184,15 @@ function FeedbackDialog({
   const [testimonialRole, setTestimonialRole] = useState('');
   const [testimonialQuote, setTestimonialQuote] = useState('');
   const [testimonialConsent, setTestimonialConsent] = useState(false);
+
+  // Promoters arriving from the NPS pulse already told us they love it —
+  // skip the feedback form and open straight on the testimonial step.
+  useEffect(() => {
+    if (open && testimonialRating) {
+      setStep('testimonial');
+      setRating(testimonialRating);
+    }
+  }, [open, testimonialRating]);
 
   function handleClose(val: boolean) {
     onOpenChange(val);

@@ -9,14 +9,27 @@ declare global {
 // Google Analytics Configuration
 export const GA_TRACKING_ID = import.meta.env.VITE_GA_TRACKING_ID || '';
 
-// Initialize Google Analytics
+// Initialize Google Analytics. The gtag.js loader lives here (not as an inline
+// script in index.html) so the CSP script-src can stay free of 'unsafe-inline'.
 export const initGA = () => {
-  if (typeof window !== 'undefined' && window.gtag && GA_TRACKING_ID) {
-    window.gtag('config', GA_TRACKING_ID, {
-      page_title: document.title,
-      page_location: window.location.href,
-    });
-  }
+  if (typeof window === 'undefined' || !GA_TRACKING_ID) return;
+  if (typeof window.gtag === 'function') return; // already initialised
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer.push(arguments);
+  };
+  window.gtag('js', new Date());
+  window.gtag('config', GA_TRACKING_ID, {
+    page_title: document.title,
+    page_location: window.location.href,
+  });
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
+  document.head.appendChild(script);
 };
 
 // Track page views

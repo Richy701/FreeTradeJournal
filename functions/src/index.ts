@@ -2147,6 +2147,35 @@ export const createCheckoutSession = functions.https.onCall(
     const hadTrial = userDoc.data()?.hadTrial === true || !!userDoc.data()?.trialProExpiresAt;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
 
+    // Lifetime retires for good on this date (committed publicly) — matches
+    // LIFETIME_RETIRES_AT in src/constants/pricing.ts, where the pricing card
+    // hides itself. This guard covers stale tabs loaded before the cutoff.
+    const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
+    if (isLifetime && Date.now() > LIFETIME_RETIRES_AT) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "The lifetime plan is no longer available.",
+      );
+    }
+
+    // A subscriber opening a second subscription checkout would stack two
+    // subscriptions on one Stripe customer — interval switches go through the
+    // billing portal instead. Lifetime stays allowed (one-time payment mode;
+    // the webhook marks the plan lifetime and the old subscription is dealt
+    // with there), as does resubscribing after cancel/expiry.
+    const existingSub = userDoc.data()?.subscription;
+    const LIVE_SUB_STATUSES = ["active", "on_trial", "past_due", "paused"];
+    if (
+      !isLifetime &&
+      existingSub?.planType !== "lifetime" &&
+      LIVE_SUB_STATUSES.includes(existingSub?.status)
+    ) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "You already have an active subscription. Switch plans from Settings → Subscription.",
+      );
+    }
+
     // Partner ref links pre-apply the partner's discount code so referrals
     // don't pay full price by forgetting the code. Codes are resolved by name
     // (they get deactivated/recreated on coupon changes; names are stable).
@@ -2159,6 +2188,23 @@ export const createCheckoutSession = functions.https.onCall(
       try {
         const found = await getStripe().promotionCodes.list({
           code: isLifetime ? partnerCodes.lifetime : partnerCodes.subscription,
+          active: true,
+          limit: 1,
+        });
+        autoPromoId = found.data[0]?.id ?? "";
+      } catch {
+        // Lookup failed — fall back to the manual promo-code field
+      }
+    }
+
+    // The pricing page advertises the $149 founding price, so apply the code
+    // for the buyer instead of trusting them to retype it at checkout. The
+    // code's expiry lives in Stripe (active: false after Aug 7) — when it
+    // lapses, this quietly falls back to the manual promo-code field.
+    if (!autoPromoId && isLifetime) {
+      try {
+        const found = await getStripe().promotionCodes.list({
+          code: "FOUNDER149",
           active: true,
           limit: 1,
         });

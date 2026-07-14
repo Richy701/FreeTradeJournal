@@ -240,10 +240,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton size="sm" asChild>
-                  <a href="https://blog.freetradejournal.com" target="_blank" rel="noopener noreferrer">
+                  <Link to="/blog" onClick={() => isMobile && setOpenMobile(false)}>
                     <RssSimple className="h-4 w-4" />
                     <span>Blog</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

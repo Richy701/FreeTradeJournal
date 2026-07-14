@@ -10,6 +10,16 @@ export const FREE_JOURNAL_ENTRY_LIMIT = 20;
 // Pro removes the window.
 export const FREE_ANALYTICS_WINDOW_DAYS = 30;
 
+// When the lifetime plan stops being sold. Matches the FOUNDER149 promotion
+// code's expiry in Stripe — the founder banner and the pricing-page countdown
+// both key off this so they disappear together.
+export const LIFETIME_RETIRES_AT = Date.parse('2026-08-07T23:59:59Z');
+
+// Founding lifetime price while FOUNDER149 is live. Checkout auto-applies the
+// code server-side; the pricing card shows this with the list price struck
+// through. The list price in PRICING_PLANS stays canonical.
+export const FOUNDER_LIFETIME_PRICE = 149;
+
 // The values stored in Vercel have been observed with trailing newlines, which
 // Stripe rejects as invalid price IDs — always trim.
 const envPriceId = (value: string | undefined) => (value || '').trim();

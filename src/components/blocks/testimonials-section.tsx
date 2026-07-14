@@ -52,10 +52,10 @@ export function TestimonialsSection() {
       <div className="max-w-6xl mx-auto flex flex-col gap-12">
         {/* Header */}
         <div className="flex flex-col gap-3 text-center">
-          <p className="text-sm font-medium text-amber-500 uppercase tracking-widest">Traders love it</p>
+          <p className="text-sm font-medium text-amber-600 dark:text-amber-500 uppercase tracking-widest">Traders love it</p>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
             Real results from{' '}
-            <span className="text-amber-500">real traders</span>
+            <span className="text-amber-600 dark:text-amber-500">real traders</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Join thousands of traders who use FreeTradeJournal to build consistency and find their edge.

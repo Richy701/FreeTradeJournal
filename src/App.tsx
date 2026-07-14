@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import { SpinnerGap } from '@phosphor-icons/react';
+import { RouteSpinner } from '@/components/ui/route-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -13,22 +13,27 @@ import { PropTrackerRoute } from '@/components/PropTrackerRoute';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { ScrollToTop } from '@/components/scroll-to-top';
-import { CookieConsent } from '@/components/CookieConsent';
-import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { PWAUpdateNotification } from '@/components/PWAUpdateNotification';
-import { FeedbackListener } from '@/components/feedback-listener';
+const FeedbackListener = lazy(() => import('@/components/feedback-listener').then(m => ({ default: m.FeedbackListener })));
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
 import { Toaster } from 'sonner';
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
+// Consent banner and PWA prompts render on delay/conditions anyway — lazy-load
+// them so their framer-motion + icon imports stay out of the entry bundle.
+const CookieConsent = lazy(() => import('@/components/CookieConsent').then(m => ({ default: m.CookieConsent })));
+const PWAInstallPrompt = lazy(() => import('@/components/PWAInstallPrompt').then(m => ({ default: m.PWAInstallPrompt })));
+const PWAUpdateNotification = lazy(() => import('@/components/PWAUpdateNotification').then(m => ({ default: m.PWAUpdateNotification })));
 import { PostHogProvider } from 'posthog-js/react';
 import { posthog } from '@/lib/posthog';
 import { PostHogTracker } from '@/components/PostHogTracker';
 import { initGA } from '@/lib/analytics';
-import Layout from '@/components/Layout';
 import { useReferralTracker } from '@/hooks/use-referral-tracker';
 import { lazyWithRetry } from '@/lib/lazy-with-retry';
+
+// The authenticated app shell (sidebar, upgrade CTA, sonner) — lazy like the
+// pages so logged-out visitors never download it.
+const Layout = lazyWithRetry(() => import('@/components/Layout'));
 
 // Lazy load all page components for smaller initial bundle.
 // lazyWithRetry self-heals stale-chunk failures after a deploy (see lazy-with-retry.ts).
@@ -54,6 +59,8 @@ const Coach = lazyWithRetry(() => import('@/pages/Coach'));
 const DayTradingJournal = lazyWithRetry(() => import('@/pages/DayTradingJournal'));
 const OnlineTradingJournal = lazyWithRetry(() => import('@/pages/OnlineTradingJournal'));
 const Changelog = lazyWithRetry(() => import('@/pages/Changelog'));
+const Blog = lazyWithRetry(() => import('@/pages/Blog'));
+const BlogPost = lazyWithRetry(() => import('@/pages/BlogPost'));
 const Pricing = lazyWithRetry(() => import('@/pages/Pricing'));
 const ForgotPassword = lazyWithRetry(() => import('@/pages/ForgotPassword'));
 const ResetPassword = lazyWithRetry(() => import('@/pages/ResetPassword'));
@@ -106,10 +113,12 @@ function App() {
               <Analytics />
               <SpeedInsights />
             </Suspense>
-            <CookieConsent />
-            <PWAInstallPrompt />
-            <PWAUpdateNotification />
-            <FeedbackListener />
+            <Suspense fallback={null}>
+              <CookieConsent />
+              <PWAInstallPrompt />
+              <PWAUpdateNotification />
+              <FeedbackListener />
+            </Suspense>
             <ErrorBoundary
               fallback={(_, reset) => (
                 <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-6 text-center">
@@ -124,11 +133,7 @@ function App() {
                 </div>
               )}
             >
-            <Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center" role="status">
-                <SpinnerGap className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            }>
+            <Suspense fallback={<RouteSpinner />}>
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<LandingPage />} />
@@ -142,6 +147,8 @@ function App() {
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/documentation" element={<Documentation />} />
                 <Route path="/changelog" element={<Changelog />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/pricing" element={<Pricing />} />
                 
                 {/* SEO Landing Pages */}

@@ -16,11 +16,12 @@ const WINDOW_MONTHS = 12;
 const PROGRAM_START = Math.floor(new Date('2026-07-06T00:00:00Z').getTime() / 1000);
 const REF_SLUGS: Record<string, string[]> = { eunice_adegelu: ['eunice'] };
 const REF_LINK = 'https://freetradejournal.com/pricing?ref=eunice';
-const REPORT_TO = 'Richmondlamptey75@gmail.com';
-// Agreement signed 2026-07-09 — partner update goes directly to Eunice.
-const PARTNER_REPORT_TO = 'yeuniss28@gmail.com';
+// Recipient addresses live in env vars — this repo is public, so personal
+// emails must never be hardcoded here. Handler fails closed if unset.
+const REPORT_TO = (process.env.REPORT_TO || '').trim();
+const PARTNER_REPORT_TO = (process.env.PARTNER_REPORT_TO || '').trim();
 // Partner accounts whose own purchases never count as commissionable referrals.
-const EXCLUDED_EMAILS = new Set(['yeuniss28@gmail.com']);
+const EXCLUDED_EMAILS = new Set([PARTNER_REPORT_TO].filter(Boolean));
 const FROM_EMAIL = 'FreeTradeJournal <hello@freetradejournal.com>';
 
 // Design tokens — mirror functions/src/emails/components.tsx `tone`
@@ -123,8 +124,14 @@ const fine = (text: string) =>
   `<p style="font-size:13px;color:${T.muted};line-height:1.6;margin:16px 0 0;">${text}</p>`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Missing CRON_SECRET must fail closed — without the guard the comparison
+  // string becomes "Bearer undefined", which anyone could send.
+  if (!process.env.CRON_SECRET || req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  if (!REPORT_TO || !PARTNER_REPORT_TO) {
+    res.status(500).json({ error: 'Report recipients not configured' });
     return;
   }
   const stripeKey = process.env.STRIPE_SECRET_KEY;

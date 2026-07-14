@@ -2,21 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      (function(){try{var t=localStorage.getItem('ftj-theme')||localStorage.getItem('vite-ui-theme');if(t==='dark'||!t||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();
-      // Apply the cached color-theme variables before first paint so themed
-      // users don't see the default amber flash. Kept in sync with the public
-      // path list + cache written by src/contexts/theme-presets.tsx.
-      (function(){try{
-        var p=['/','/privacy','/terms','/cookies','/documentation','/login','/signup','/onboarding'];
-        if(p.indexOf(location.pathname)>-1)return;
-        var c=JSON.parse(localStorage.getItem('theme-vars-cache')||'null');if(!c)return;
-        var v=document.documentElement.classList.contains('dark')?c.dark:c.light;if(!v)return;
-        var k=Object.keys(v),s=document.documentElement.style,i=0;
-        for(;i<k.length;i++)s.setProperty(k[i],v[k[i]]);
-        window.__ftjThemeVars=k;
-      }catch(e){}})();
-    </script>
+    <!-- Pre-paint theme bootstrap. External (public/theme-init.js) rather than
+         inline so the CSP script-src can stay free of 'unsafe-inline'. -->
+    <script src="/theme-init.js"></script>
     <!-- Critical CSS inlined to prevent render-blocking -->
     <style>
       :root{--background:220 14% 96%;--foreground:222.2 84% 4.9%;--primary:43 96% 56%;--primary-foreground:26 83% 8%}
@@ -46,7 +34,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="google-site-verification" content="0JQ58M05EtUxHjwrnOahu_d5CmGUP9w_rR2MxSGfBC8" />
     <!-- Primary Meta Tags -->
-    <meta name="description" content="The #1 free trading journal trusted by 5,000+ traders. Log trades, track P&L, get AI-powered coaching, and import from MT5, Tradovate, or any broker CSV. Works in your browser -- no download, no credit card, free forever." />
+    <meta name="description" content="Free forever, no credit card. Log trades, track P&L, get AI coaching, and import from MT4/MT5, Tradovate, or any broker CSV. Trusted by 5,000+ traders." />
     <meta name="keywords" content="free trading journal, forex trading journal, futures trading tracker, stock trading log, trading performance analytics, risk management calculator, prop firm dashboard, trading psychology journal, P&L tracker, trade logging software, trading diary, MetaTrader journal, day trading tracker, swing trading journal, TradingView journal, FTMO journal, prop firm tracker, forex trade tracker, futures trade log, CSV import trading, Excel trading journal, trading analytics dashboard, win rate calculator, profit loss tracker, trading performance analysis, risk management tools, position sizing calculator, trading goals tracker, equity curve analysis, trading statistics, trading metrics, forex dashboard, futures analytics, prop trading journal, funded trader journal, trading discipline tracker, market analysis journal, trade psychology tracking, trading strategy analyzer" />
     <meta name="author" content="FreeTradeJournal" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -56,7 +44,7 @@
     <meta name="geo.placename" content="United States" />
     <meta name="rating" content="General" />
     <meta name="distribution" content="Global" />
-    <title>Free Trading Journal | #1 Forex, Futures & Stock Tracker (2026) | FreeTradeJournal</title>
+    <title>Free Trading Journal — Forex, Futures & Stock Tracker (2026)</title>
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -133,16 +121,16 @@
             {
               "@type": "Offer",
               "name": "Pro Monthly",
-              "price": "5.99",
+              "price": "12.99",
               "priceCurrency": "USD",
-              "description": "AI Trading Coach, AI Trade Review, cloud sync, unlimited exports"
+              "description": "Coach FTJ AI coaching, AI trade review, full analytics history, cloud sync"
             },
             {
               "@type": "Offer",
               "name": "Pro Yearly",
-              "price": "49.99",
+              "price": "99.99",
               "priceCurrency": "USD",
-              "description": "All Pro features, billed annually — save 30%"
+              "description": "All Pro features, billed annually — save 36%"
             }
           ],
           "publisher": {
@@ -162,21 +150,8 @@
     }
     </script>
 
-<!-- Google tag (gtag.js) -->
-    <script>
-      var _gaId = '%VITE_GA_TRACKING_ID%';
-      if (typeof window !== 'undefined' && _gaId && _gaId.indexOf('%') === -1) {
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + _gaId;
-        document.head.appendChild(script);
-
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', _gaId);
-      }
-    </script>
+    <!-- Google Analytics loads from the app bundle (initGA in src/lib/analytics.ts)
+         so no inline script is needed here and CSP can drop 'unsafe-inline'. -->
   </head>
   <body>
 
@@ -185,7 +160,7 @@
     <!-- Fallback for non-JS users -->
     <noscript>
       <div style="padding: 40px; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
-        <h1 style="font-size: 32px; margin-bottom: 20px;">FreeTradeJournal</h1>
+        <p style="font-size: 32px; font-weight: 700; margin-bottom: 20px;">FreeTradeJournal</p>
         <p style="font-size: 18px; color: #666; margin-bottom: 30px;">
           Free professional trading journal for forex, futures & stocks.
           Track trades, analyze performance metrics, manage risk, and improve your trading

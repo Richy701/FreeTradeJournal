@@ -2,6 +2,7 @@
 title: The Best Free Trading Journal for Prop Firm Traders (2026)
 subtitle: I built FreeTradeJournal because I was tired of paying for tools that didn't serve me
 tags: trading journal, prop firm, topstep, funded trader, free trading journal
+date: 2026-04-03
 coverImage: https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot.png
 ---
 

@@ -11,10 +11,12 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS } from '@/constants/pricing';
+import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS, LIFETIME_RETIRES_AT, FOUNDER_LIFETIME_PRICE } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
+import { TestimonialsSection } from '@/components/blocks/testimonials-section';
+import { redirectToPortal } from '@/lib/stripe';
 import { useThemePresets } from '@/contexts/theme-presets';
 import {
   Accordion,
@@ -70,14 +72,57 @@ function FrequencyTab({
   );
 }
 
+// ─── Lifetime Retirement Countdown ───────────────────────────
+function LifetimeCountdown() {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const remaining = LIFETIME_RETIRES_AT - now;
+  if (remaining <= 0) return null;
+
+  const segments = [
+    { value: Math.floor(remaining / 86_400_000), unit: 'd', pad: false },
+    { value: Math.floor(remaining / 3_600_000) % 24, unit: 'h', pad: true },
+    { value: Math.floor(remaining / 60_000) % 60, unit: 'm', pad: true },
+    { value: Math.floor(remaining / 1_000) % 60, unit: 's', pad: true },
+  ];
+
+  return (
+    <div
+      role="timer"
+      aria-label="Time left before the lifetime plan retires"
+      className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2"
+    >
+      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+        Retires in
+      </span>
+      <span className="flex items-baseline gap-1.5 text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+        {segments.map(({ value, unit, pad }) => (
+          <span key={unit} className="flex items-baseline">
+            <NumberFlow value={value} format={pad ? { minimumIntegerDigits: 2 } : undefined} />
+            <span className="ml-px text-[10px] font-medium opacity-70">{unit}</span>
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
 // ─── Pricing Card ────────────────────────────────────────────
 interface CardProps {
   name: string;
   price: number | string;
+  // List price shown struck through next to a discounted `price`
+  originalPrice?: number;
   subtitle: string;
   description: string;
   features: string[];
   cta: string;
+  banner?: React.ReactNode;
   highlighted?: boolean;
   popular?: boolean;
   isCurrentPlan?: boolean;
@@ -89,10 +134,12 @@ interface CardProps {
 function PricingCard({
   name,
   price,
+  originalPrice,
   subtitle,
   description,
   features,
   cta,
+  banner,
   highlighted,
   popular,
   isCurrentPlan,
@@ -123,11 +170,18 @@ function PricingCard({
       <div className="relative h-16">
         {typeof price === 'number' ? (
           <>
-            <NumberFlow
-              format={{ style: 'currency', currency: 'USD' }}
-              value={price}
-              className="text-4xl font-medium"
-            />
+            <div className="flex items-baseline gap-2">
+              {originalPrice !== undefined && (
+                <span className="text-xl font-medium text-muted-foreground line-through">
+                  ${originalPrice}
+                </span>
+              )}
+              <NumberFlow
+                format={{ style: 'currency', currency: 'USD' }}
+                value={price}
+                className="text-4xl font-medium"
+              />
+            </div>
             <p className="-mt-1 text-xs font-medium text-muted-foreground">
               {subtitle}
             </p>
@@ -141,6 +195,8 @@ function PricingCard({
           </>
         )}
       </div>
+
+      {banner && <div className="relative">{banner}</div>}
 
       {/* Features */}
       <div className="relative flex-1 space-y-2">
@@ -184,7 +240,7 @@ function PricingCard({
           >
             {loading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
             {cta}
-            <span className="inline-flex w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:w-5 group-hover:pl-2 group-hover:opacity-100">
+            <span className="inline-flex w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:w-6 group-hover:pl-2 group-hover:opacity-100">
               <ArrowRight className="h-4 w-4" />
             </span>
           </Button>
@@ -220,7 +276,7 @@ function ComparisonRow({ feature, free, pro }: { feature: string; free: boolean;
 }
 
 // ─── FAQ ─────────────────────────────────────────────────────
-const FAQS = [
+const FAQS: { q: string; a: string; lifetime?: boolean }[] = [
   {
     q: 'Is the free plan really free forever?',
     a: 'Yes. No credit card required. The core journal — unlimited trades, 30 days of analytics, and up to 20 journal entries — is free for life. Upgrade to Pro for full analytics history and unlimited journaling.',
@@ -247,7 +303,8 @@ const FAQS = [
   },
   {
     q: 'Is the lifetime deal really one payment?',
-    a: 'Yes. Pay once, own it forever. All future Pro features included at no extra cost.',
+    a: 'Yes. Pay once, own it forever. All future Pro features included at no extra cost. The lifetime plan retires on August 7, 2026 — existing owners keep it for good.',
+    lifetime: true,
   },
 ];
 
@@ -262,6 +319,7 @@ export default function Pricing() {
   // cold-start for several seconds, so CTAs must show progress and block
   // double-clicks (each click would create another checkout session).
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // Dedicated funnel step so pricing → cta → checkout_started → checkout_completed
   // can be built as one funnel in PostHog
@@ -299,9 +357,31 @@ export default function Pricing() {
 
   const currentPlan = subscription?.planType || null;
 
+  // Subscribers switch intervals through the Stripe portal — a fresh checkout
+  // session would stack a second subscription on the same customer (the
+  // checkout Cloud Function rejects it too; this path is just better UX).
+  const hasActiveSubscription = isPro && (currentPlan === 'monthly' || currentPlan === 'yearly');
+  const handleSwitchPlan = async () => {
+    if (portalLoading) return;
+    trackEvent('pricing_cta_clicked', { plan: activePlan.interval, source: 'plan_switch_portal' });
+    setPortalLoading(true);
+    try {
+      await redirectToPortal();
+    } catch {
+      toast.error('Could not open the billing portal — try again from Settings → Subscription.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   // The active Pro plan based on toggle
   const activePlan = PRICING_PLANS.find((p) => p.interval === frequency)!;
   const lifetimePlan = PRICING_PLANS.find((p) => p.interval === 'lifetime')!;
+
+  // Lifetime is retired after this date — the card disappears here and the
+  // checkout Cloud Function rejects the price, so stale tabs can't buy it.
+  // Existing lifetime owners keep their plan (their card renders as current).
+  const lifetimeAvailable = Date.now() < LIFETIME_RETIRES_AT || currentPlan === 'lifetime';
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -333,11 +413,6 @@ export default function Pricing() {
       <section className="flex flex-col items-center gap-8 py-14 sm:py-20 px-4">
         <div className="space-y-4 text-center">
           <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
-            <span className="flex -space-x-2">
-              {['JM','AR','KT'].map((i) => (
-                <span key={i} className="w-6 h-6 rounded-full bg-amber-500 ring-2 ring-background flex items-center justify-center text-[8px] font-bold text-black">{i}</span>
-              ))}
-            </span>
             3,000+ traders already journaling
           </div>
           <h1 className="font-display text-4xl font-bold md:text-5xl tracking-tight">
@@ -364,7 +439,12 @@ export default function Pricing() {
 
       {/* Cards — 3 columns */}
       <section className="px-4 pb-16 sm:pb-24">
-        <div className="grid w-full max-w-5xl mx-auto gap-6 lg:grid-cols-3">
+        <div
+          className={cn(
+            'grid w-full mx-auto gap-6',
+            lifetimeAvailable ? 'max-w-5xl lg:grid-cols-3' : 'max-w-3xl lg:grid-cols-2',
+          )}
+        >
           {/* Free */}
           <PricingCard
             name="Free"
@@ -372,7 +452,7 @@ export default function Pricing() {
             subtitle="Free forever"
             description="Log, review, and improve"
             features={FREE_FEATURES}
-            cta={user ? 'Current Plan' : 'Get Started Free'}
+            cta={!user ? 'Get Started Free' : isPro ? 'Included with Pro' : 'Current Plan'}
             isCurrentPlan={!!user && !isPro}
             onCtaClick={() => {
               if (!user) {
@@ -380,7 +460,7 @@ export default function Pricing() {
                 navigate('/signup');
               }
             }}
-            disabled={!!user && !isPro}
+            disabled={!!user}
           />
 
           {/* Pro — toggles between monthly/yearly */}
@@ -390,27 +470,41 @@ export default function Pricing() {
             subtitle={frequency === 'monthly' ? 'Per month · Cancel anytime' : 'Per year · Save 36%'}
             description="For traders who want an edge"
             features={activePlan.features}
-            cta="Get Pro"
+            cta={
+              !user
+                ? 'Start 14-day free trial'
+                : hasActiveSubscription
+                  ? 'Switch plan'
+                  : 'Get Pro'
+            }
             popular
             isCurrentPlan={isPro && currentPlan === activePlan.interval}
-            onCtaClick={() => handleUpgrade(activePlan.priceId, activePlan.interval)}
+            onCtaClick={() =>
+              hasActiveSubscription
+                ? handleSwitchPlan()
+                : handleUpgrade(activePlan.priceId, activePlan.interval)
+            }
             disabled={isPro && currentPlan === 'lifetime'}
-            loading={checkoutLoading === activePlan.priceId}
+            loading={checkoutLoading === activePlan.priceId || portalLoading}
           />
 
           {/* Lifetime — solid dark, no grid overlay */}
-          <PricingCard
-            name="Pro Lifetime"
-            price={lifetimePlan.price}
-            subtitle="One-time payment, yours forever"
-            description="Never pay again"
-            features={lifetimePlan.features}
-            cta="Get Lifetime Access"
-            highlighted
-            isCurrentPlan={isPro && currentPlan === 'lifetime'}
-            onCtaClick={() => handleUpgrade(lifetimePlan.priceId, 'lifetime')}
-            loading={checkoutLoading === lifetimePlan.priceId}
-          />
+          {lifetimeAvailable && (
+            <PricingCard
+              name="Pro Lifetime"
+              price={FOUNDER_LIFETIME_PRICE}
+              originalPrice={lifetimePlan.price}
+              subtitle="One-time founding price · yours forever"
+              description="Never pay again"
+              features={lifetimePlan.features}
+              cta="Get Lifetime Access"
+              banner={<LifetimeCountdown />}
+              highlighted
+              isCurrentPlan={isPro && currentPlan === 'lifetime'}
+              onCtaClick={() => handleUpgrade(lifetimePlan.priceId, 'lifetime')}
+              loading={checkoutLoading === lifetimePlan.priceId}
+            />
+          )}
         </div>
       </section>
 
@@ -461,7 +555,16 @@ export default function Pricing() {
                 <Button
                   className="bg-amber-500 text-amber-950 hover:bg-amber-600 font-semibold px-8"
                   disabled={!!checkoutLoading}
-                  onClick={() => handleUpgrade(activePlan.priceId, user ? activePlan.interval : 'free', 'comparison_table')}
+                  onClick={() => {
+                    if (user) {
+                      handleUpgrade(activePlan.priceId, activePlan.interval, 'comparison_table');
+                    } else {
+                      // Logged-out users get the free signup they were promised —
+                      // don't seed a Pro checkout behind a "Get Started Free" label
+                      trackEvent('pricing_cta_clicked', { plan: 'free', source: 'comparison_table' });
+                      navigate('/signup');
+                    }
+                  }}
                 >
                   {checkoutLoading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
                   {user ? 'Get Pro' : 'Get Started Free'}
@@ -496,7 +599,7 @@ export default function Pricing() {
                   <motion.div
                     className="h-full rounded-full bg-amber-500"
                     initial={{width: 0}}
-                    whileInView={{width: '17%'}}
+                    whileInView={{width: '27%'}}
                     viewport={{once: true}}
                     transition={{duration: 0.8, ease: 'easeOut'}}
                   />
@@ -513,7 +616,7 @@ export default function Pricing() {
               {name: 'Tradervue', logo: '/logos/tradervue.png', price: '$49', unit: '/mo', bar: '100%', multiplier: '3.8x', delay: 0.1},
               {name: 'TraderSync', logo: '/logos/tradersync.png', price: '$29.95', unit: '/mo', bar: '61%', multiplier: '2.3x', delay: 0.2},
               {name: 'TradeZella', logo: '/logos/tradezella.png', price: '$29', unit: '/mo', bar: '59%', multiplier: '2.2x', delay: 0.3},
-              {name: 'Edgewonk', logo: '/logos/edgewonk.png', price: '$169', unit: '/yr', bar: '29%', multiplier: '1.7x', delay: 0.4},
+              {name: 'Edgewonk', logo: '/logos/edgewonk.png', price: '$169', unit: '/yr', bar: '29%', multiplier: '1.1x', delay: 0.4},
             ].map((comp) => (
               <div key={comp.name} className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 border-b border-border/50 last:border-0">
                 <img src={comp.logo} alt={comp.name} className="h-7 w-7 rounded-md shrink-0 bg-muted/50 p-0.5" />
@@ -544,12 +647,15 @@ export default function Pricing() {
             {/* Savings Footer */}
             <div className="px-5 sm:px-6 py-4 bg-amber-500/[0.04] border-t border-amber-500/10">
               <p className="text-sm text-center text-foreground/70">
-                Save up to <span className="font-bold text-amber-600 dark:text-amber-400">$488/year</span> compared to Tradervue — with AI features they don't even offer.
+                Save up to <span className="font-bold text-amber-600 dark:text-amber-400">$488/year</span> compared to Tradervue on the yearly plan — with AI features they don't even offer.
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Real approved testimonials from Firestore — renders nothing until some exist */}
+      <TestimonialsSection />
 
       {/* FAQ */}
       <section className="px-4 pb-16 sm:pb-24">
@@ -566,7 +672,7 @@ export default function Pricing() {
           </motion.div>
 
           <Accordion type="single" collapsible className="w-full">
-            {FAQS.map((faq, index) => (
+            {FAQS.filter((faq) => !faq.lifetime || lifetimeAvailable).map((faq, index) => (
               <motion.div
                 key={faq.q}
                 initial={{ opacity: 0, y: 16 }}

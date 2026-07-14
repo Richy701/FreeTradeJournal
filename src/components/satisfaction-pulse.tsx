@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
-import { triggerFeedbackDialog } from '@/lib/feedback-trigger';
+import { triggerTestimonialDialog } from '@/lib/feedback-trigger';
 
 const PULSE_KEY = 'ftj-satisfaction-pulse';
-const PULSE_INTERVAL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+const PULSE_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const MIN_TRADES = 5;
 const MIN_DAYS_SINCE_SIGNUP = 7;
 
@@ -52,10 +52,11 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
     // Send to backend
     sendNPSFeedback(value);
 
-    // If score is high, prompt for full feedback after a delay
+    // Promoters go straight to the testimonial ask — they already rated us,
+    // so don't make them fill in the full feedback form first.
     if (value >= 9) {
       setTimeout(() => {
-        triggerFeedbackDialog('NPS Score: ' + value);
+        triggerTestimonialDialog(Math.round(value / 2), 'NPS Score: ' + value);
       }, 1500);
     }
   }

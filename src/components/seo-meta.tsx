@@ -10,8 +10,8 @@ interface SEOMetaProps {
 
 const pageMeta: Record<string, SEOMetaProps> = {
   '/': {
-    title: 'Free Trading Journal | #1 Forex, Futures & Stock Tracker (2026) | FreeTradeJournal',
-    description: 'The #1 free trading journal trusted by 5,000+ traders. Log trades, track P&L, get AI-powered coaching, and import from MT5, Tradovate, or any broker CSV. Works in your browser -- no download, no credit card, free forever.',
+    title: 'Free Trading Journal — Forex, Futures & Stock Tracker (2026)',
+    description: 'Free forever, no credit card. Log trades, track P&L, get AI coaching, and import from MT4/MT5, Tradovate, or any broker CSV. Trusted by 5,000+ traders.',
     keywords: 'free trading journal, trading journal free, best free trading journal, free day trading journal, trading journal online, free online trading journal, forex trading journal, futures trading tracker, stock trading log, prop firm dashboard, day trading journal, swing trading tracker, MetaTrader journal, trading diary, trade performance tracker, forex trade log, trading analytics, prop firm journal, trading psychology tracker, AI trading coach, AI trade analysis, AI risk alerts, online trading journal, free trading journal website, trading journal app free, trading journal software free',
     image: 'https://www.freetradejournal.com/og-image.png'
   },

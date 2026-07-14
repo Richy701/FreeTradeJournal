@@ -1,9 +1,10 @@
 import { lazy, Suspense } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
-import Layout from '@/components/Layout';
-import { SpinnerGap } from '@phosphor-icons/react';
+import { RouteSpinner } from '@/components/ui/route-spinner';
+import { lazyWithRetry } from '@/lib/lazy-with-retry';
 
+const Layout = lazyWithRetry(() => import('@/components/Layout'));
 const PropTracker = lazy(() => import('@/pages/PropTracker'));
 const PropTrackerLanding = lazy(() => import('@/pages/PropTrackerLanding'));
 
@@ -11,11 +12,7 @@ export function PropTrackerRoute() {
   const { user, loading, isDemo } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" role="status">
-        <SpinnerGap className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <RouteSpinner />;
   }
 
   if (!user && !isDemo) {

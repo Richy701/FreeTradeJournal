@@ -9,7 +9,7 @@
 
 import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
 
 // On Vercel/CI the build container has no system Chrome and Puppeteer's managed
@@ -40,8 +40,23 @@ const DIST = new URL("../dist", import.meta.url).pathname;
 const PORT = 4173; // same port vite preview uses by default
 const PAGE_TIMEOUT = 30_000; // 30 s per page
 
+// Blog routes are derived from posts/*.md (slug = filename), so a new post
+// automatically gets prerendered and injected into the deployed sitemap —
+// no manual route or sitemap edits needed.
+const POSTS_DIR = new URL("../posts", import.meta.url).pathname;
+const BLOG_POSTS = existsSync(POSTS_DIR)
+  ? readdirSync(POSTS_DIR)
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => ({
+        route: `/blog/${f.replace(/\.md$/, "")}`,
+        lastmod: statSync(join(POSTS_DIR, f)).mtime.toISOString().slice(0, 10),
+      }))
+  : [];
+const BLOG_ROUTES = ["/blog", ...BLOG_POSTS.map((p) => p.route)];
+
 const ROUTES = [
   "/",
+  ...BLOG_ROUTES,
   "/login",
   "/signup",
   "/privacy",
@@ -165,6 +180,18 @@ async function prerender() {
       });
 
       const html = await page.evaluate(() => {
+        // Framer-motion serialises its entrance-animation initial state
+        // (opacity: 0 + translate/filter) as inline styles; frozen in the
+        // snapshot they hide the H1 and body content until JS hydrates.
+        // Strip them so the static HTML is visible without JavaScript —
+        // hydration re-applies the animation on the client regardless.
+        for (const el of document.querySelectorAll('[style*="opacity"]')) {
+          if (parseFloat(el.style.opacity) < 1) {
+            el.style.removeProperty("opacity");
+            el.style.removeProperty("transform");
+            el.style.removeProperty("filter");
+          }
+        }
         return "<!DOCTYPE html>" + document.documentElement.outerHTML;
       });
       await page.close();
@@ -203,6 +230,39 @@ async function prerender() {
   console.log("");
 
   return results.success;
+}
+
+// ── Blog sitemap injection ───────────────────────────────────────────────────
+//
+// public/sitemap.xml stays hand-maintained for the marketing pages; blog URLs
+// are injected into the built dist/sitemap.xml here so posts/*.md is the only
+// thing to touch when publishing. Runs before the sync guard, which then
+// verifies the injected URLs were actually prerendered.
+async function injectBlogUrlsIntoSitemap() {
+  const sitemapPath = join(DIST, "sitemap.xml");
+  let xml;
+  try {
+    xml = await readFile(sitemapPath, "utf-8");
+  } catch {
+    return;
+  }
+
+  const entries = [
+    { route: "/blog", lastmod: BLOG_POSTS[0]?.lastmod },
+    ...BLOG_POSTS,
+  ]
+    .filter(({ route }) => !xml.includes(`<loc>https://www.freetradejournal.com${route}</loc>`))
+    .map(
+      ({ route, lastmod }) =>
+        `  <url>\n    <loc>https://www.freetradejournal.com${route}</loc>\n` +
+        (lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "") +
+        `    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`,
+    );
+
+  if (entries.length === 0) return;
+  xml = xml.replace("</urlset>", `${entries.join("")}</urlset>`);
+  await writeFile(sitemapPath, xml, "utf-8");
+  console.log(`  ✅ Injected ${entries.length} blog URLs into dist/sitemap.xml.`);
 }
 
 // ── Sitemap sync guard ───────────────────────────────────────────────────────
@@ -252,44 +312,18 @@ async function assertSitemapPrerendered(prerendered) {
   }
 }
 
-// ── Defer CSS ────────────────────────────────────────────────────────────────
-
-import { readdir } from "node:fs/promises";
-
-async function deferCssInAllHtml(dir) {
-  const entries = await readdir(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await deferCssInAllHtml(fullPath);
-    } else if (entry.name.endsWith(".html")) {
-      let html = await readFile(fullPath, "utf-8");
-      const original = html;
-      // Convert render-blocking <link rel="stylesheet"> to async pattern
-      html = html.replace(
-        /<link rel="stylesheet"([^>]*?)>/g,
-        (_match, attrs) =>
-          `<link rel="stylesheet"${attrs} media="print" onload="this.media='all'">`
-          + `<noscript><link rel="stylesheet"${attrs}></noscript>`
-      );
-      if (html !== original) {
-        await writeFile(fullPath, html, "utf-8");
-      }
-    }
-  }
-}
+// NOTE: CSS is intentionally NOT deferred. The old media="print" onload hack
+// (a) rendered the prerendered body unstyled until the stylesheet loaded and
+// (b) required 'unsafe-inline' in the CSP script-src for its onload handlers.
+// A ~22KB gzipped render-blocking stylesheet is the cheaper trade.
 
 let prerenderedRoutes = [];
 prerender()
   .then((success) => {
     prerenderedRoutes = success || [];
-    console.log("  Deferring CSS in prerendered HTML…");
-    return deferCssInAllHtml(DIST);
+    return injectBlogUrlsIntoSitemap();
   })
-  .then(() => {
-    console.log("  ✅ CSS deferred in all HTML files.\n");
-    return assertSitemapPrerendered(prerenderedRoutes);
-  })
+  .then(() => assertSitemapPrerendered(prerenderedRoutes))
   .catch((err) => {
     console.error("Prerender script failed:", err);
     // Don't exit with error code — a failed prerender shouldn't break the build

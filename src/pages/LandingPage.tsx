@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
@@ -13,46 +12,8 @@ import { LogoCloud } from '@/components/blocks/logo-cloud';
 import { SEOMeta } from '@/components/seo-meta';
 
 
-const HOME_FAQS = [
-  {
-    q: 'Is FreeTradeJournal really free?',
-    a: 'Yes. FreeTradeJournal is free forever with no credit card required to sign up. The free plan includes unlimited trade logging, performance analytics, a calendar heatmap, CSV import and export, and an AI trading coach. A paid Pro tier is available for advanced features like prop firm account tracking and priority support, but the core journal is completely free.',
-  },
-  {
-    q: 'What markets can I track in this trading journal?',
-    a: 'FreeTradeJournal supports forex, futures, stocks, options, crypto, and indices. You can log trades across any market and track performance metrics such as win rate, profit factor, and average risk-to-reward for each instrument or asset class.',
-  },
-  {
-    q: 'Can I import trades from my broker?',
-    a: 'Yes. You can import trades via CSV from popular platforms including MetaTrader 4, MetaTrader 5, Tradovate, NinjaTrader, and most brokers that export to CSV. The import wizard maps columns automatically so you can get started in seconds.',
-  },
-  {
-    q: 'Does FreeTradeJournal work as a prop firm trading journal?',
-    a: 'Absolutely. FreeTradeJournal includes a dedicated prop firm dashboard where you can track multiple funded accounts, monitor daily and overall drawdown limits, view payout history, and compare your performance across different prop firms like FTMO, MyFundedFX, and TopStep.',
-  },
-  {
-    q: 'Is there an AI trading coach?',
-    a: 'Yes. The built-in AI trading coach analyzes your journal entries and trading patterns to surface actionable insights. It identifies recurring mistakes, highlights your strongest setups, and suggests improvements based on your actual trade data.',
-  },
-  {
-    q: 'Can I use this as a day trading journal?',
-    a: 'FreeTradeJournal is an excellent free day trading journal. It is built for active traders who need to log multiple trades per day, review intraday performance on a calendar heatmap, and analyze metrics like average hold time, win rate by session, and daily P&L. The fast trade entry form and real-time dashboard are designed for the speed day traders need.',
-  },
-];
-
 export default function LandingPage() {
   const { user } = useAuth();
-
-  useEffect(() => {
-    const sd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: HOME_FAQS.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify(sd);
-    script.id = 'faq-structured-data-home';
-    document.getElementById('faq-structured-data-home')?.remove();
-    document.head.appendChild(script);
-    return () => { document.getElementById('faq-structured-data-home')?.remove(); };
-  }, []);
 
   // If user is signed in, redirect to dashboard
   // Don't block rendering while auth loads — show landing page immediately
@@ -102,12 +63,12 @@ export default function LandingPage() {
           <span>
             Real-Time
             <br />
-            <span className="text-amber-500">Performance Dashboard</span>
+            <span className="text-amber-600 dark:text-amber-500">Performance Dashboard</span>
           </span>
         }
         description="See your recent trades, pairs performance radar, and trade distribution at a glance. Live P&L tracking, win rate calculations, and profit factor analytics update instantly as you log trades."
         images={[
-          { src: "/images/screenshots/dashboard-trades-performance-screenshot.png", alt: "Dashboard Performance" }
+          { src: "/images/screenshots/dashboard-trades-performance-screenshot.webp", alt: "Dashboard Performance" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -119,12 +80,12 @@ export default function LandingPage() {
           <span>
             Comprehensive Trade
             <br />
-            <span className="text-amber-500">Logging & Management</span>
+            <span className="text-amber-600 dark:text-amber-500">Logging & Management</span>
           </span>
         }
         description="Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across forex pairs, futures contracts, and indices with powerful filtering and export capabilities."
         images={[
-          { src: "/images/screenshots/trading-log-screenshot.png", alt: "Trade Log View" }
+          { src: "/images/screenshots/trading-log-screenshot.webp", alt: "Trade Log View" }
         ]}
         imageLayout="stack"
         reverseLayout={false}
@@ -136,12 +97,12 @@ export default function LandingPage() {
           <span>
             Visual Performance
             <br />
-            <span className="text-amber-500">Calendar Heatmap</span>
+            <span className="text-amber-600 dark:text-amber-500">Calendar Heatmap</span>
           </span>
         }
         description="Track your daily performance with an intuitive calendar heatmap. Quickly identify profitable and losing days, spot trading patterns, and track your consistency over time with beautiful visualizations."
         images={[
-          { src: "/images/screenshots/calendar-heatmap-screenshot.png", alt: "Calendar Heatmap" }
+          { src: "/images/screenshots/calendar-heatmap-screenshot.webp", alt: "Calendar Heatmap" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -153,12 +114,12 @@ export default function LandingPage() {
           <span>
             Trading Journal
             <br />
-            <span className="text-amber-500">& Analysis</span>
+            <span className="text-amber-600 dark:text-amber-500">& Analysis</span>
           </span>
         }
         description="Document your trading thoughts, strategies, and market observations. Maintain a detailed journal with mood tracking, screenshots, and comprehensive analysis to improve your trading psychology and performance."
         images={[
-          { src: "/images/screenshots/trading-journal-screenshot.png", alt: "Trading Journal" }
+          { src: "/images/screenshots/trading-journal-screenshot.webp", alt: "Trading Journal" }
         ]}
         imageLayout="stack"
         reverseLayout={false}
@@ -170,12 +131,12 @@ export default function LandingPage() {
           <span>
             Smart Goals &
             <br />
-            <span className="text-amber-500">Risk Management</span>
+            <span className="text-amber-600 dark:text-amber-500">Risk Management</span>
           </span>
         }
         description="Set clear trading goals and implement robust risk management rules. Track your progress, monitor rule violations, and maintain discipline with automated alerts and comprehensive analytics."
         images={[
-          { src: "/images/screenshots/goals-risk-management-screenshot.png", alt: "Goals & Risk Management" }
+          { src: "/images/screenshots/goals-risk-management-screenshot.webp", alt: "Goals & Risk Management" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -187,12 +148,12 @@ export default function LandingPage() {
           <span>
             AI-Powered
             <br />
-            <span className="text-amber-500">Trade Analysis</span>
+            <span className="text-amber-600 dark:text-amber-500">Trade Analysis</span>
           </span>
         }
         description="Get AI-generated analysis of your trading patterns, strengths, and areas to improve. Identify what's working, spot weaknesses like overtrading or tight stops, and receive an actionable summary — all personalised to your trade history."
         images={[
-          { src: "/images/screenshots/ai-trade-analysis-screenshot.png", alt: "AI Trade Analysis" }
+          { src: "/images/screenshots/ai-trade-analysis-screenshot.webp", alt: "AI Trade Analysis" }
         ]}
         imageLayout="stack"
         reverseLayout={false}
@@ -204,12 +165,12 @@ export default function LandingPage() {
           <span>
             Advanced Trade
             <br />
-            <span className="text-amber-500">Insights & Analytics</span>
+            <span className="text-amber-600 dark:text-amber-500">Insights & Analytics</span>
           </span>
         }
         description="Dive deep into your performance with symbol breakdowns, a multi-dimensional trader profile radar, and long vs short direction analysis. See exactly where your edge is and which instruments drive your profits."
         images={[
-          { src: "/images/screenshots/trade-insights-screenshot.png", alt: "Trade Insights" }
+          { src: "/images/screenshots/trade-insights-screenshot.webp", alt: "Trade Insights" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -221,12 +182,12 @@ export default function LandingPage() {
           <span>
             Prop Firm
             <br />
-            <span className="text-amber-500">ROI Tracker</span>
+            <span className="text-amber-600 dark:text-amber-500">ROI Tracker</span>
           </span>
         }
         description="Finally know if your prop firm journey is actually profitable. Log every evaluation fee, reset cost, and payout across all your accounts. See invested vs earned, net P&L per firm, and get an AI-powered verdict on which firms are worth your money."
         images={[
-          { src: "/images/screenshots/prop-tracker-screenshot.png", alt: "PropTracker" }
+          { src: "/images/screenshots/prop-tracker-screenshot.webp", alt: "PropTracker" }
         ]}
         imageLayout="stack"
         reverseLayout={false}

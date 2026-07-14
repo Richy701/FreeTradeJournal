@@ -30,6 +30,21 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     const { enterDemoMode } = useAuth();
     const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
 
+    // The lightbox triggers are styled containers, not <button>s — these props
+    // make them reachable and operable by keyboard and visible to screen readers.
+    const lightboxTriggerProps = (img: { src: string; alt: string }) => ({
+        role: 'button' as const,
+        tabIndex: 0,
+        'aria-label': `Enlarge screenshot: ${img.alt}`,
+        onClick: () => setSelectedImage(img),
+        onKeyDown: (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setSelectedImage(img);
+            }
+        },
+    });
+
     const containerVariants = {
         hidden: {},
         visible: {
@@ -66,12 +81,12 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         {images.map((img, index) => (
                             <motion.div
                                 key={index}
-                                className="relative overflow-hidden rounded-2xl shadow-2xl cursor-pointer"
+                                className="relative overflow-hidden rounded-2xl shadow-2xl cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, delay: index * 0.1 }}
                                 viewport={{ once: true }}
-                                onClick={() => setSelectedImage(img)}
+                                {...lightboxTriggerProps(img)}
                             >
                                 <ResponsiveImage
                                     src={img.src}
@@ -110,7 +125,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                 transition={{ duration: 0.8, delay: index * 0.2 }}
                                 viewport={{ once: true }}
                                 whileHover={{ scale: 1.02 }}
-                                onClick={() => setSelectedImage(img)}
+                                {...lightboxTriggerProps(img)}
                             >
                                 <ResponsiveImage
                                     src={img.src}
@@ -132,8 +147,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             {images.map((img, index) => (
                                 <motion.div
                                     key={index}
-                                    className="flex-shrink-0 w-full snap-center cursor-pointer"
-                                    onClick={() => setSelectedImage(img)}
+                                    className="flex-shrink-0 w-full snap-center cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    {...lightboxTriggerProps(img)}
                                     initial={{ opacity: 0 }}
                                     whileInView={{ opacity: 1 }}
                                     transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -176,8 +191,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                         >
                             {/* Main image container */}
                             <div
-                                className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/70 cursor-pointer"
-                                onClick={() => setSelectedImage(images[0])}
+                                className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/70 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                {...lightboxTriggerProps(images[0])}
                             >
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
@@ -201,10 +216,10 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             <motion.div
                                 key={index}
                                 className={cn(
-                                    "relative rounded-3xl shadow-2xl overflow-hidden cursor-pointer",
+                                    "relative rounded-3xl shadow-2xl overflow-hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                     index > 0 && "mt-[-20%]"
                                 )}
-                                onClick={() => setSelectedImage(img)}
+                                {...lightboxTriggerProps(img)}
                                 initial={{ 
                                     opacity: 0, 
                                     y: 50,
@@ -273,7 +288,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             <Link
                                 to="/dashboard"
                                 onClick={() => enterDemoMode()}
-                                className="bg-amber-500 hover:bg-amber-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="bg-amber-500 hover:bg-amber-600 text-black px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 text-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Try It Now
                             </Link>
