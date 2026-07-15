@@ -12,7 +12,7 @@ export default function CookiePolicy() {
         <div className="mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Cookie Policy</h1>
-          <p className="mt-3 text-muted-foreground">Last updated: April 8, 2026</p>
+          <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
         </div>
 
         <div className="divide-y divide-border text-sm leading-relaxed text-muted-foreground">
@@ -35,8 +35,8 @@ export default function CookiePolicy() {
                   {[
                     ['Essential',      'Authentication tokens and session management',                                          'Session'],
                     ['Functional',     'Theme preferences, layout settings, and onboarding status',                            'Persistent'],
-                    ['Local Storage',  'Trading data, journal entries, goals, and settings (stored on your device)',            'Persistent'],
-                    ['Analytics',      'PostHog and Vercel Analytics — anonymous page views, feature usage, and performance',   'Up to 1 year'],
+                    ['Local Storage',  'Trading data, journal entries, goals, and settings (stored on your device); screenshots are stored in your browser’s IndexedDB', 'Persistent'],
+                    ['Analytics',      'PostHog and Vercel Analytics — page views, feature usage, and performance (optional, set only with your consent)', 'Up to 1 year'],
                     ['Security',       'Cloudflare — bot management and DDoS protection',                                       'Up to 30 min'],
                     ['Payment',        'Stripe — fraud prevention and payment session management (Pro subscribers)',             'Session'],
                   ].map(([type, purpose, duration]) => (
@@ -66,11 +66,11 @@ export default function CookiePolicy() {
           </LegalSection>
 
           <LegalSection title="Analytics">
-            <p>We use PostHog and Vercel Analytics to understand how the app is used, which features are popular, and where we can improve. Analytics data is:</p>
+            <p>We use PostHog and Vercel Analytics to understand how the app is used, which features are popular, and where we can improve. Analytics cookies are <strong className="text-foreground">optional</strong> and only set if you accept them in the consent banner:</p>
             <ul className="mt-3 space-y-1 pl-4 list-disc">
-              <li>Anonymised — no personally identifiable information is collected</li>
-              <li>Used solely for product improvement</li>
-              <li>Never shared with third parties for marketing</li>
+              <li>If you accept, usage data is linked to your account (user ID and email) so we can understand how features are used</li>
+              <li>If you decline, tracking is limited to your current session — nothing is stored on your device or linked to your account</li>
+              <li>Analytics data is used solely for product improvement and never shared with third parties for marketing</li>
             </ul>
           </LegalSection>
 
@@ -79,7 +79,7 @@ export default function CookiePolicy() {
             <dl className="space-y-2">
               {[
                 ['Firebase / Google', 'Authentication and session management'],
-                ['PostHog', 'Anonymous usage analytics'],
+                ['PostHog', 'Usage analytics and error tracking (only with your consent)'],
                 ['Vercel Analytics', 'Anonymous performance analytics'],
                 ['Cloudflare', 'Bot management and DDoS protection'],
                 ['Stripe', 'Payment processing and fraud prevention (Pro subscribers only)'],
@@ -96,6 +96,7 @@ export default function CookiePolicy() {
           <LegalSection title="Managing Cookies">
             <p className="mb-3">You can control cookies through:</p>
             <ul className="space-y-1 pl-4 list-disc">
+              <li><strong className="text-foreground">The consent banner</strong> — accept or decline analytics cookies when you first visit; your choice is remembered</li>
               <li><strong className="text-foreground">Browser settings</strong> — most browsers let you view, manage, and delete cookies</li>
               <li><strong className="text-foreground">App settings</strong> — clear your local data via Settings → Data Management</li>
             </ul>

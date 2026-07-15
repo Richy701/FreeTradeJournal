@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
         <div className="mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Privacy Policy</h1>
-          <p className="mt-3 text-muted-foreground">Last updated: April 8, 2026</p>
+          <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
         </div>
 
         <div className="divide-y divide-border text-sm leading-relaxed text-muted-foreground">
@@ -38,8 +38,8 @@ export default function PrivacyPolicy() {
             <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">Payment Information</h3>
             <p>If you subscribe to Pro, payment processing is handled entirely by <strong className="text-foreground">Stripe</strong>. We do not store your card number, CVV, or full billing details. Stripe may collect payment card details, billing address, and transaction history. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">Stripe's Privacy Policy</a> for details.</p>
 
-            <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">AI Features (Pro)</h3>
-            <p>When you use AI-powered features, relevant trading data is sent to our servers and processed via OpenAI's API. When you use Screenshot Import, uploaded images are also sent to OpenAI for extraction. This data is:</p>
+            <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">AI Features</h3>
+            <p>AI-powered features are available on both Free (with a monthly allowance) and Pro plans. When you use them, relevant trading data — and, for journal AI features, journal text — is sent to our servers and processed via OpenAI's API. When you use Screenshot Import, uploaded images are also sent to OpenAI for extraction. This data is:</p>
             <ul className="mt-2 space-y-1 pl-4 list-disc">
               <li>Used solely to generate your analysis</li>
               <li>Not stored permanently on our servers</li>
@@ -48,10 +48,13 @@ export default function PrivacyPolicy() {
 
             <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">Analytics & Diagnostics</h3>
             <ul className="space-y-1 pl-4 list-disc">
-              <li>Anonymous usage analytics (PostHog, Vercel Analytics) to understand how the app is used</li>
+              <li>Usage analytics (PostHog, Vercel Analytics) to understand how the app is used. If you accept analytics cookies, this data is linked to your account (user ID and email) so we can understand feature usage; if you decline, tracking is limited to your current session and nothing is stored on your device or linked to you</li>
               <li>Error tracking and crash reports via PostHog to improve stability</li>
               <li>Device type, browser, and screen size for compatibility</li>
             </ul>
+
+            <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">Market Data</h3>
+            <p>Live quotes, news, and economic data shown in the app are fetched from Twelve Data, Finnhub, and FRED through our own servers. These providers receive the symbols being requested but never your identity or trading data.</p>
           </LegalSection>
 
           <LegalSection title="How We Use Your Information">
@@ -59,8 +62,9 @@ export default function PrivacyPolicy() {
               <li>Provide, maintain, and improve the application</li>
               <li>Authenticate your account and manage sessions</li>
               <li>Process Pro subscription payments via Stripe</li>
-              <li>Deliver AI-powered analysis and coaching (Pro users)</li>
+              <li>Deliver AI-powered analysis and coaching</li>
               <li>Send important service updates and security notices</li>
+              <li>Send product updates, tips, and onboarding emails — you can unsubscribe from these at any time via the link in each email</li>
               <li>Analyse usage patterns to improve the experience</li>
               <li>Provide customer support</li>
             </ul>
@@ -83,10 +87,13 @@ export default function PrivacyPolicy() {
               {[
                 ['Firebase (Google)', 'Authentication and cloud storage'],
                 ['Stripe', 'Payment processing for Pro subscriptions'],
-                ['OpenAI', 'AI-powered analysis features and screenshot import (Pro only)'],
-                ['PostHog', 'Anonymous usage analytics, error tracking, and crash reporting'],
+                ['OpenAI', 'AI-powered analysis features and screenshot import'],
+                ['PostHog', 'Usage analytics, error tracking, and crash reporting (account-linked only with your consent)'],
                 ['Vercel Analytics', 'Anonymous performance and usage analytics'],
-                ['Resend', 'Transactional email delivery'],
+                ['Resend', 'Transactional and product email delivery'],
+                ['Twelve Data', 'Market quotes and price data (requests proxied through our servers)'],
+                ['Finnhub', 'Market news and quotes (requests proxied through our servers)'],
+                ['FRED (St. Louis Fed)', 'Macroeconomic indicators shown in the app'],
                 ['Cloudflare', 'DNS, CDN, and DDoS protection'],
                 ['Vercel', 'Application hosting'],
               ].map(([name, desc]) => (
@@ -124,7 +131,7 @@ export default function PrivacyPolicy() {
           </LegalSection>
 
           <LegalSection title="Data Retention">
-            <p>Local data remains on your device until you clear it. Cloud data is retained while your account is active. If you delete your account, all associated cloud data is permanently removed within 30 days.</p>
+            <p>Local data remains on your device until you clear it. Cloud data is retained while your account is active. If you delete your account, all associated cloud data is permanently removed within 30 days, and your email address is removed from our mailing list.</p>
           </LegalSection>
 
           <LegalSection title="Children's Privacy">

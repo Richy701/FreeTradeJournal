@@ -43,7 +43,7 @@ export function DatePicker({
           )}
           disabled={disabled}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 -translate-y-1" />
+          <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? format(date, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
@@ -129,7 +129,7 @@ export function DateTimePicker({
             )}
             disabled={disabled}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 -translate-y-1 shrink-0" />
+            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
             <span className="truncate">
               {selectedDate ? format(selectedDate, "PPP") : placeholder}
             </span>

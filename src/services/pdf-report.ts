@@ -176,19 +176,13 @@ function drawLogo(doc: any, x: number, y: number, size: number) {
 }
 
 // ─── Visual Helpers ─────────────────────────────────────────
+// Flat page background. A stepped "gradient" rendered as visible horizontal
+// bands in every PDF viewer, so each page gets a single deep tint instead —
+// the per-page hue still gives every section its own identity.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function gradientBg(doc: any, c1: RGB, c2: RGB, W: number, H: number) {
-  const steps = 50;
-  const stepH = H / steps;
-  for (let i = 0; i < steps; i++) {
-    const t = i / (steps - 1);
-    doc.setFillColor(
-      Math.round(c1[0] + (c2[0] - c1[0]) * t),
-      Math.round(c1[1] + (c2[1] - c1[1]) * t),
-      Math.round(c1[2] + (c2[2] - c1[2]) * t),
-    );
-    doc.rect(0, i * stepH, W, stepH + 0.3, 'F');
-  }
+function pageBg(doc: any, color: RGB, W: number, H: number) {
+  doc.setFillColor(color[0], color[1], color[2]);
+  doc.rect(0, 0, W, H, 'F');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -264,11 +258,14 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   const tc = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
   const fc = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
 
+  let pageNo = 0;
   const footer = () => {
+    pageNo++;
     doc.setFontSize(7);
-    tc([60, 60, 65]);
+    tc([90, 90, 100]);
     doc.setFont('helvetica', 'normal');
-    doc.text('FreeTradeJournal', L, H - 10);
+    doc.text(`FreeTradeJournal  ·  ${periodLabel}`, L, H - 10);
+    doc.text(String(pageNo).padStart(2, '0'), R, H - 10, { align: 'right' });
   };
 
   // Shared colors
@@ -283,7 +280,7 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ═══════════════════════════════════════════════════════════
   // ─── 1. Cover ─────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════
-  gradientBg(doc, [8, 8, 10], [14, 12, 18], W, H);
+  pageBg(doc, [9, 9, 12], W, H);
 
   // Logo + brand
   drawLogo(doc, L, 32, 14);
@@ -345,36 +342,36 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ─── 2. The Numbers ──────────────────────────────────────
   // ═══════════════════════════════════════════════════════════
   doc.addPage();
-  const numGrad2: RGB = stats.totalPnL >= 0 ? [10, 16, 12] : [16, 10, 10];
-  gradientBg(doc, [8, 8, 10], numGrad2, W, H);
+  pageBg(doc, stats.totalPnL >= 0 ? [8, 12, 10] : [13, 8, 8], W, H);
 
-  // Watermark — giant faded P&L
-  drawWatermark(doc, fmtCurrency(Math.abs(stats.totalPnL)), W * 0.12, H * 0.38, 80, 0.03);
+  // Watermark — giant faded P&L, anchored in the empty bottom zone so it
+  // fills the page without colliding with real content.
+  drawWatermark(doc, fmtCurrency(Math.abs(stats.totalPnL)), W * 0.08, H - 32, 70, 0.05);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(16);
   tc(dim);
-  doc.text(stats.totalPnL >= 0 ? 'This period, you made' : 'This period, you lost', L, 50);
+  doc.text(stats.totalPnL >= 0 ? 'This period, you made' : 'This period, you lost', L, 54);
 
   // Giant P&L number
   const pnlColor: RGB = stats.totalPnL >= 0 ? green : red;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(72);
   tc(pnlColor);
-  doc.text(fmtCurrency(Math.abs(stats.totalPnL)), L, 88);
+  doc.text(fmtCurrency(Math.abs(stats.totalPnL)), L, 92);
 
   // Subtitle
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(16);
   tc(dim);
-  doc.text(`across ${stats.totalTrades} trades`, L, 106);
+  doc.text(`across ${stats.totalTrades} trades`, L, 110);
 
   // Divider
   fc(dimmer);
-  doc.rect(L, 118, 40, 0.5, 'F');
+  doc.rect(L, 122, 40, 0.5, 'F');
 
   // Win rate row with progress bar
-  let y = 134;
+  let y = 140;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(12);
   tc(dimmer);
@@ -421,7 +418,7 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
 
   // ── Donut chart for win/loss ──
   const donutCx = R - 30;
-  const donutCy = 160;
+  const donutCy = 168;
   const donutOuter = 28;
   const donutInner = 17;
 
@@ -464,71 +461,69 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ═══════════════════════════════════════════════════════════
   if (stats.topSymbol) {
     doc.addPage();
-    gradientBg(doc, [4, 12, 10], [8, 22, 18], W, H);
+    pageBg(doc, [6, 16, 13], W, H);
 
     const tealDim: RGB = [80, 150, 125];
 
-    // Watermark — giant faded symbol
-    drawWatermark(doc, stats.topSymbol.name, W * 0.15, H * 0.42, 100, 0.03);
+    // Watermark — giant faded symbol in the empty bottom zone
+    drawWatermark(doc, stats.topSymbol.name, W * 0.1, H - 32, 90, 0.05);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
     tc(tealDim);
-    doc.text('Your go-to instrument', L, 50);
+    doc.text('Your go-to instrument', L, 54);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(68);
     tc(white);
-    doc.text(stats.topSymbol.name, L, 95);
+    doc.text(stats.topSymbol.name, L, 100);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(15);
     tc(tealDim);
-    doc.text(`${stats.topSymbol.count} trades  ·  ${stats.topSymbolPct.toFixed(0)}% of all your activity`, L, 115);
+    doc.text(`${stats.topSymbol.count} trades  ·  ${stats.topSymbolPct.toFixed(0)}% of all your activity`, L, 120);
 
     // Divider
     fc(tealDim);
-    doc.rect(L, 128, 40, 0.5, 'F');
+    doc.rect(L, 133, 40, 0.5, 'F');
 
     // P&L stat with card
     const topWinRate = (stats.topSymbol.wins / stats.topSymbol.count * 100);
+    const instCardY = 148;
 
     fc([10, 28, 22]);
-    doc.roundedRect(L, 140, (R - L - 8) / 2, 52, 4, 4, 'F');
+    doc.roundedRect(L, instCardY, (R - L - 8) / 2, 52, 4, 4, 'F');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    tc([60, 110, 90]);
-    doc.text('P&L', L + 10, 153);
+    tc([90, 140, 115]);
+    doc.text('P&L', L + 10, instCardY + 15);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(30);
     tc(stats.topSymbol.pnl >= 0 ? green : red);
-    doc.text(fmtCurrency(stats.topSymbol.pnl), L + 10, 177);
+    doc.text(fmtCurrency(stats.topSymbol.pnl), L + 10, instCardY + 38);
 
     // Win rate stat card with progress bar
     const cardX2 = L + (R - L - 8) / 2 + 8;
     fc([10, 28, 22]);
-    doc.roundedRect(cardX2, 140, (R - L - 8) / 2, 52, 4, 4, 'F');
+    doc.roundedRect(cardX2, instCardY, (R - L - 8) / 2, 52, 4, 4, 'F');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    tc([60, 110, 90]);
-    doc.text('Win rate', cardX2 + 10, 153);
+    tc([90, 140, 115]);
+    doc.text('Win rate', cardX2 + 10, instCardY + 15);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(30);
     tc(green);
-    doc.text(`${topWinRate.toFixed(0)}%`, cardX2 + 10, 177);
-    drawProgressBar(doc, cardX2 + 10, 182, (R - L - 8) / 2 - 20, 4, topWinRate, [15, 35, 28], green);
+    doc.text(`${topWinRate.toFixed(0)}%`, cardX2 + 10, instCardY + 38);
+    drawProgressBar(doc, cardX2 + 10, instCardY + 44, (R - L - 8) / 2 - 20, 4, topWinRate, [15, 35, 28], green);
 
     // Worst symbol callout
     if (stats.worstSymbol && stats.worstSymbol[1].pnl < 0) {
-      fc([15, 30, 25]);
-      doc.roundedRect(L, 210, R - L, 28, 4, 4, 'F');
-      // Red accent left border
-      fc(red);
-      doc.roundedRect(L, 210, 3, 28, 1.5, 1.5, 'F');
+      fc([13, 30, 24]);
+      doc.roundedRect(L, 216, R - L, 28, 4, 4, 'F');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(13);
-      tc(tealDim);
-      doc.text(`${stats.worstSymbol[0]} cost you ${fmtCurrency(Math.abs(stats.worstSymbol[1].pnl))}. Consider cutting it.`, L + 12, 227);
+      tc([150, 190, 170]);
+      doc.text(`${stats.worstSymbol[0]} cost you ${fmtCurrency(Math.abs(stats.worstSymbol[1].pnl))}. Consider cutting it.`, L + 12, 233);
     }
 
     footer();
@@ -539,29 +534,29 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ═══════════════════════════════════════════════════════════
   if (stats.bestDay) {
     doc.addPage();
-    gradientBg(doc, [14, 10, 4], [22, 16, 6], W, H);
+    pageBg(doc, [16, 12, 5], W, H);
 
     const warmDim: RGB = [150, 120, 75];
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
     tc(warmDim);
-    doc.text('You trade best on', L, 50);
+    doc.text('You trade best on', L, 48);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(64);
+    doc.setFontSize(56);
     tc(amber);
-    doc.text(`${stats.bestDay[0]}s`, L, 95);
+    doc.text(`${stats.bestDay[0]}s`, L, 88);
 
     const dayWinRate = stats.bestDay[1].count > 0 ? (stats.bestDay[1].wins / stats.bestDay[1].count * 100).toFixed(0) : '0';
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(15);
     tc(warmDim);
-    doc.text(`${fmtCurrency(stats.bestDay[1].pnl)} profit  ·  ${dayWinRate}% win rate  ·  ${stats.bestDay[1].count} trades`, L, 115);
+    doc.text(`${fmtCurrency(stats.bestDay[1].pnl)} profit  ·  ${dayWinRate}% win rate  ·  ${stats.bestDay[1].count} trades`, L, 106);
 
     // Divider
     fc(warmDim);
-    doc.rect(L, 126, 40, 0.5, 'F');
+    doc.rect(L, 118, 40, 0.5, 'F');
 
     // ── Day-of-week bar chart ──
     const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -572,8 +567,8 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
 
     if (dayEntries.length > 0) {
       const maxAbsPnl = Math.max(...dayEntries.map(d => Math.abs(d.data!.pnl)), 1);
-      const barChartY = 138;
-      const rowH = 11;
+      const barChartY = 130;
+      const rowH = 10;
       const barMaxW = 75;
       const barStartX = L + 22;
 
@@ -598,34 +593,35 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
 
         // Value
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        doc.setFontSize(9);
         tc(isPos ? green : red);
         doc.text(fmtCurrency(pnl), barStartX + barW + 4, rowY + 6);
       });
     }
 
     // Divider
-    const barChartEndY = 138 + (dayEntries.length * 11) + 8;
+    const barChartEndY = 130 + (dayEntries.length * 10) + 8;
     fc(warmDim);
     doc.rect(L, barChartEndY, 40, 0.5, 'F');
 
-    // Peak hour
+    // Peak hour — sized so even a 7-day chart above never pushes this into
+    // the footer (worst case ends ~H-35).
     if (stats.bestHour) {
-      const hourY = barChartEndY + 12;
+      const hourY = barChartEndY + 14;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(16);
       tc(warmDim);
       doc.text('Your peak trading hour', L, hourY);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(56);
+      doc.setFontSize(44);
       tc(white);
-      doc.text(formatHour(stats.bestHour[0]), L, hourY + 38);
+      doc.text(formatHour(stats.bestHour[0]), L, hourY + 30);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(15);
       tc(warmDim);
-      doc.text(`${fmtCurrency(stats.bestHour[1].pnl)} from ${stats.bestHour[1].count} trades at this hour`, L, hourY + 56);
+      doc.text(`${fmtCurrency(stats.bestHour[1].pnl)} from ${stats.bestHour[1].count} trades at this hour`, L, hourY + 44);
     }
 
     footer();
@@ -636,9 +632,9 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ═══════════════════════════════════════════════════════════
   if (stats.longs > 0 || stats.shorts > 0) {
     doc.addPage();
-    gradientBg(doc, [6, 6, 14], [10, 10, 24], W, H);
+    pageBg(doc, [8, 8, 16], W, H);
 
-    const coolDim: RGB = [100, 100, 150];
+    const coolDim: RGB = [130, 130, 160];
     const totalDir = stats.longs + stats.shorts;
     const longPct = totalDir > 0 ? (stats.longs / totalDir) * 100 : 50;
     const betterSide = stats.longPnL >= stats.shortPnL ? 'long' : 'short';
@@ -646,22 +642,21 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
     tc(coolDim);
-    doc.text(`You lean ${longPct > 55 ? 'long' : longPct < 45 ? 'short' : 'balanced'}`, L, 50);
+    doc.text(`You lean ${longPct > 55 ? 'long' : longPct < 45 ? 'short' : 'balanced'}`, L, 56);
 
     // ── Stacked bar showing long/short split ──
-    const stackY = 60;
+    // Full-width red bar behind, green segment on top: one continuous pill
+    // with no seam between the halves.
+    const stackY = 68;
     const stackH = 10;
     const stackW = R - L;
     const longBarW = stackW * (longPct / 100);
 
-    fc(green);
     setOpacity(0.6);
-    doc.roundedRect(L, stackY, longBarW, stackH, stackH / 2, stackH / 2, 'F');
-    setOpacity(1);
     fc(red);
-    setOpacity(0.6);
-    // Right portion - overlap rounding handled by drawing full bar behind
-    doc.roundedRect(L + longBarW, stackY, stackW - longBarW, stackH, stackH / 2, stackH / 2, 'F');
+    doc.roundedRect(L, stackY, stackW, stackH, stackH / 2, stackH / 2, 'F');
+    fc(green);
+    doc.roundedRect(L, stackY, Math.max(stackH, longBarW), stackH, stackH / 2, stackH / 2, 'F');
     setOpacity(1);
 
     // Labels on bar
@@ -679,15 +674,12 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     // ── Side-by-side stat cards ──
     const cardGap = 8;
     const cardWidth = (R - L - cardGap) / 2;
-    const cardTop = 82;
+    const cardTop = 94;
     const cardHeight = 90;
 
     // Long card
     fc([14, 22, 18]);
     doc.roundedRect(L, cardTop, cardWidth, cardHeight, 6, 6, 'F');
-    // Green accent top border
-    fc(green);
-    doc.roundedRect(L, cardTop, cardWidth, 3, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(44);
@@ -714,9 +706,6 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     const shortCardX = L + cardWidth + cardGap;
     fc([18, 14, 22]);
     doc.roundedRect(shortCardX, cardTop, cardWidth, cardHeight, 6, 6, 'F');
-    // Red accent top border
-    fc(red);
-    doc.roundedRect(shortCardX, cardTop, cardWidth, 3, 3, 3, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(44);
@@ -740,14 +729,11 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
 
     // Verdict pill
     fc([20, 20, 35]);
-    doc.roundedRect(L, cardTop + cardHeight + 12, R - L, 22, 4, 4, 'F');
-    // Accent left border
-    fc(betterSide === 'long' ? green : red);
-    doc.roundedRect(L, cardTop + cardHeight + 12, 3, 22, 1.5, 1.5, 'F');
+    doc.roundedRect(L, cardTop + cardHeight + 12, R - L, 24, 4, 4, 'F');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(14);
     tc(white);
-    doc.text(`Your ${betterSide} trades are more profitable.`, L + 12, cardTop + cardHeight + 26);
+    doc.text(`Your ${betterSide} trades are more profitable.`, L + 12, cardTop + cardHeight + 27);
 
     footer();
   }
@@ -757,9 +743,9 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ═══════════════════════════════════════════════════════════
   if (stats.maxWinStreak > 0 || stats.maxLossStreak > 0) {
     doc.addPage();
-    gradientBg(doc, [12, 6, 10], [20, 10, 18], W, H);
+    pageBg(doc, [15, 8, 13], W, H);
 
-    const pinkDim: RGB = [140, 90, 120];
+    const pinkDim: RGB = [150, 100, 130];
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
@@ -849,9 +835,9 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ═══════════════════════════════════════════════════════════
   if (stats.equityPoints.length > 1) {
     doc.addPage();
-    gradientBg(doc, [4, 8, 6], [8, 16, 12], W, H);
+    pageBg(doc, [6, 12, 9], W, H);
 
-    const eqDim: RGB = [80, 120, 100];
+    const eqDim: RGB = [95, 135, 115];
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(16);
@@ -930,11 +916,14 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     fc(endColor);
     doc.circle(lastX, lastCurveY, 1.8, 'F');
 
-    // Axis labels
+    // Axis labels — when the curve never goes negative the min IS the zero
+    // line, and printing both overlapped ("$0.00" over "$0"), so skip it.
     doc.setFontSize(10);
     tc(eqDim);
     doc.text(fmtCurrency(maxV), chartX - 3, chartTop + 3, { align: 'right' });
-    doc.text(fmtCurrency(minV), chartX - 3, chartTop + chartH + 2, { align: 'right' });
+    if (minV < 0) {
+      doc.text(fmtCurrency(minV), chartX - 3, chartTop + chartH + 2, { align: 'right' });
+    }
 
     // Dates
     doc.text(format(new Date(stats.sorted[0].exitTime), 'MMM d'), chartX, chartTop + chartH + 12);
@@ -945,8 +934,6 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     const calloutY = chartTop + chartH + 22;
     fc([12, 24, 18]);
     doc.roundedRect(L, calloutY, R - L, 28, 4, 4, 'F');
-    fc(endColor);
-    doc.roundedRect(L, calloutY, 3, 28, 1.5, 1.5, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
     tc(endColor);
@@ -962,33 +949,30 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ─── 8. Trader Personality ───────────────────────────────
   // ═══════════════════════════════════════════════════════════
   doc.addPage();
-  gradientBg(doc, [6, 6, 6], [12, 12, 16], W, H);
-
-  // Big faded persona name watermark
-  drawWatermark(doc, persona.name.replace('The ', ''), W * 0.05, H * 0.55, 90, 0.025);
+  pageBg(doc, [9, 9, 12], W, H);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(16);
-  tc(dimmer);
-  doc.text('Your trader type', L, 50);
+  tc(dim);
+  doc.text('Your trader type', L, 56);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(60);
   tc(amber);
-  doc.text(persona.name, L, 100);
+  doc.text(persona.name, L, 106);
 
   // Decorative accent bar
   fc(amber);
-  doc.rect(L, 110, 50, 2.5, 'F');
+  doc.rect(L, 116, 50, 2.5, 'F');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(18);
   tc([190, 190, 195]);
   const descLines = doc.splitTextToSize(persona.desc, R - L);
-  doc.text(descLines, L, 132);
+  doc.text(descLines, L, 138);
 
-  // Trait cards — 2x2 grid with accent borders
-  const traitStartY = 180;
+  // Trait cards — 2x2 grid, values carry the color
+  const traitStartY = 186;
   const traits = [
     { label: 'AVG HOLD', value: fmtHoldTime(stats.avgHoldMinutes), color: amber },
     { label: 'TRADES / DAY', value: stats.tradingDays > 0 ? (stats.totalTrades / stats.tradingDays).toFixed(1) : '0', color: green },
@@ -1001,22 +985,19 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     const col = i % 2;
     const row = Math.floor(i / 2);
     const cx = L + col * (cardW + 10);
-    const cy = traitStartY + row * 44;
+    const cy = traitStartY + row * 46;
 
-    fc([20, 20, 22]);
-    doc.roundedRect(cx, cy, cardW, 38, 5, 5, 'F');
-    // Colored accent top border
-    fc(t.color);
-    doc.roundedRect(cx, cy, cardW, 2.5, 2.5, 2.5, 'F');
+    fc([20, 20, 24]);
+    doc.roundedRect(cx, cy, cardW, 40, 5, 5, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(26);
-    tc(white);
-    doc.text(t.value, cx + 12, cy + 20);
+    tc(t.color);
+    doc.text(t.value, cx + 12, cy + 21);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    tc(dimmer);
-    doc.text(t.label, cx + 12, cy + 30);
+    tc(dim);
+    doc.text(t.label, cx + 12, cy + 31);
   });
 
   footer();
@@ -1025,7 +1006,7 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
   // ─── 9. Key Takeaway + Fun Facts ─────────────────────────
   // ═══════════════════════════════════════════════════════════
   doc.addPage();
-  gradientBg(doc, [4, 4, 10], [10, 8, 20], W, H);
+  pageBg(doc, [7, 7, 14], W, H);
 
   let takeawayTitle = '';
   let takeawayBody = '';
@@ -1088,38 +1069,39 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     funFacts.push(`Your best trade on ${stats.largestWin.symbol} covered ${lossesPerBestTrade} average losses.`);
   }
 
+  // Facts card position is capped so the sign-off below always has room —
+  // previously long takeaway text pushed the card into the sign-off block.
+  let signY = H - 52;
   if (funFacts.length > 0) {
-    const factsY = Math.max(bodyEndY + 18, 195);
-    fc([15, 15, 25]);
-    const factH = funFacts.length * 14 + 18;
+    const factH = funFacts.length * 13 + 20;
+    const factsY = Math.min(Math.max(bodyEndY + 18, 185), H - factH - 60);
+    fc([15, 15, 26]);
     doc.roundedRect(L, factsY, R - L, factH, 5, 5, 'F');
-    // Amber accent left border
-    fc(amber);
-    doc.roundedRect(L, factsY, 3, factH, 1.5, 1.5, 'F');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     tc(amber);
-    doc.text('DID YOU KNOW?', L + 12, factsY + 12);
+    doc.text('DID YOU KNOW?', L + 12, factsY + 13);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    tc([140, 140, 155]);
+    tc([150, 150, 165]);
     funFacts.forEach((fact, i) => {
-      doc.text(`•  ${fact}`, L + 12, factsY + 24 + i * 14);
+      doc.text(fact, L + 12, factsY + 25 + i * 13);
     });
+    signY = Math.max(factsY + factH + 16, H - 52);
   }
 
   // Sign off
-  drawLogo(doc, L, H - 50, 14);
+  drawLogo(doc, L, signY, 14);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   tc(white);
-  doc.text('FreeTradeJournal', L + 19, H - 40);
+  doc.text('FreeTradeJournal', L + 19, signY + 6);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  tc(dimmer);
-  doc.text('See you next period. Trade well.', L + 19, H - 31);
+  tc(dim);
+  doc.text('See you next period. Trade well.', L + 19, signY + 14);
 
   footer();
 

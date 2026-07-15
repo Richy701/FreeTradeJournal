@@ -177,6 +177,20 @@ const FIRM_BRAND_COLORS: Record<string, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// YYYY-MM-DD in the user's local timezone. toISOString() would roll evening
+// entries onto the next UTC day, so every stored date goes through this.
+function localDateStr(d = new Date()) {
+  return d.toLocaleDateString('en-CA')
+}
+
+// todayPnL is only meaningful on the day it was recorded — a stale value would
+// keep yesterday's loss on today's daily-drawdown bar and fire false breach
+// alerts, so anything not recorded today reads as "no daily loss yet".
+function effectiveTodayPnL(progress?: ChallengeProgress) {
+  if (!progress || progress.todayPnL === undefined) return undefined
+  return progress.lastUpdated === localDateStr() ? progress.todayPnL : undefined
+}
+
 function currencySymbol(currency?: PropCurrency) {
   return CURRENCY_OPTIONS.find(c => c.value === currency)?.symbol ?? '$'
 }
@@ -190,8 +204,11 @@ function isExpenseTx(type: TransactionType) {
   return TX_TYPE_OPTIONS.find(t => t.value === type)?.isExpense ?? true
 }
 
+// Fall back to a muted badge for unknown values (legacy or synced data) instead
+// of crashing the whole page render on a non-null assertion.
 function statusMeta(status: PropAccountStatus) {
-  return STATUS_OPTIONS.find(s => s.value === status)!
+  return STATUS_OPTIONS.find(s => s.value === status)
+    ?? { value: status, label: String(status), badgeClass: 'bg-muted text-muted-foreground border-border' }
 }
 
 function firmInitials(name: string) {
@@ -217,7 +234,7 @@ function defaultAccountForm() {
     currency: 'USD' as PropCurrency,
     accountType: 'evaluation' as PropAccountType,
     status: 'active' as PropAccountStatus,
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: localDateStr(),
     endDate: '',
     notes: '',
     rulesEnabled: false,
@@ -225,7 +242,25 @@ function defaultAccountForm() {
     maxDailyDrawdown: '',
     maxTotalDrawdown: '',
     minTradingDays: '',
+    // True while profitTarget is the preset-derived dollar amount. The preset
+    // fills a DOLLAR target from the size selected at that moment, so changing
+    // the size later must rescale it — but never over a hand-entered value.
+    targetAutoFilled: false,
   }
+}
+
+type AccountForm = ReturnType<typeof defaultAccountForm>
+
+// Apply a size-field change and, if the profit target is still the auto-filled
+// preset value, rescale it to the new size.
+function applySizeChange(p: AccountForm, patch: Partial<AccountForm>): AccountForm {
+  const next = { ...p, ...patch }
+  const preset = FIRM_RULE_PRESETS[next.firmName]
+  if (preset && next.rulesEnabled && next.targetAutoFilled) {
+    const size = Number(next.accountSizeStr === 'custom' ? next.customSizeStr : next.accountSizeStr)
+    if (size > 0) next.profitTarget = String((preset.profitTarget / 100) * size)
+  }
+  return next
 }
 
 function defaultTxForm(accountId = '') {
@@ -234,7 +269,7 @@ function defaultTxForm(accountId = '') {
     type: 'evaluation-fee' as TransactionType,
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDateStr(),
   }
 }
 
@@ -276,15 +311,14 @@ const FIRM_RULE_PRESETS: Record<string, { profitTarget: number; maxDailyDrawdown
   'Aqua Funded':              { profitTarget: 8,  maxDailyDrawdown: 5,   maxTotalDrawdown: 8 },
 }
 
-type HealthStatus = 'green' | 'amber' | 'red'
-
 function getChallengeStatus(account: PropFirmAccount) {
   const rules = account.challengeRules
   const progress = account.challengeProgress
   if (!rules || !progress) return null
 
   const { accountSize } = account
-  const { currentBalance, highWaterMark, todayPnL, tradingDaysCount } = progress
+  const { currentBalance, highWaterMark, tradingDaysCount } = progress
+  const todayPnL = effectiveTodayPnL(progress)
 
   const profitGain = currentBalance - accountSize
   const profitPct = rules.profitTarget > 0 ? Math.min((profitGain / rules.profitTarget) * 100, 100) : 0
@@ -299,16 +333,11 @@ function getChallengeStatus(account: PropFirmAccount) {
 
   const tradingDaysPct = rules.minTradingDays ? Math.min((tradingDaysCount / rules.minTradingDays) * 100, 100) : null
 
-  let health: HealthStatus = 'green'
-  if (totalDDUsedPct >= 80 || dailyDDUsedPct >= 80) health = 'red'
-  else if (totalDDUsedPct >= 50 || dailyDDUsedPct >= 50) health = 'amber'
-
   return {
     profitGain, profitPct,
     totalDDDollars, totalDDUsedPct, maxTotalDDDollars,
     dailyDDDollars, dailyDDUsedPct, maxDailyDDDollars,
     tradingDaysCount, tradingDaysPct,
-    health,
   }
 }
 
@@ -540,6 +569,8 @@ export default function PropTracker() {
       maxDailyDrawdown: rules ? String(rules.maxDailyDrawdown) : '',
       maxTotalDrawdown: rules ? String(rules.maxTotalDrawdown) : '',
       minTradingDays: rules?.minTradingDays ? String(rules.minTradingDays) : '',
+      // Saved targets may be hand-tuned — never auto-rescale them on edit.
+      targetAutoFilled: false,
     })
     setAccountDialog({ open: true, editing: account })
   }
@@ -574,6 +605,17 @@ export default function PropTracker() {
         const updated = { ...a, firmName, accountSize, currency: accountForm.currency, accountType: accountForm.accountType, status: accountForm.status, startDate: accountForm.startDate, endDate: accountForm.endDate || undefined, notes: accountForm.notes || undefined, challengeRules }
         if (challengeRules && !a.challengeProgress) {
           updated.challengeProgress = { currentBalance: accountSize, highWaterMark: accountSize, tradingDaysCount: 0, lastUpdated: '' }
+        } else if (challengeRules && a.challengeProgress && a.accountSize !== accountSize) {
+          // Size changed: shift balance and high-water mark by the same delta so
+          // the recorded profit gain and drawdown dollars stay what they were —
+          // otherwise the progress bars read the resize as a huge gain or a
+          // limit breach.
+          const delta = accountSize - a.accountSize
+          updated.challengeProgress = {
+            ...a.challengeProgress,
+            currentBalance: a.challengeProgress.currentBalance + delta,
+            highWaterMark: a.challengeProgress.highWaterMark + delta,
+          }
         }
         if (!challengeRules) {
           updated.challengeProgress = undefined
@@ -655,11 +697,14 @@ export default function PropTracker() {
 
   function openBalanceDialog(account: PropFirmAccount) {
     const progress = account.challengeProgress
+    // Pre-fill today's P&L if it was already recorded today, so a mid-day
+    // balance update doesn't silently wipe it.
+    const todayPnL = effectiveTodayPnL(progress)
     setBalanceDialog({
       open: true,
       accountId: account.id,
       balance: progress ? String(progress.currentBalance) : String(account.accountSize),
-      todayPnL: '',
+      todayPnL: todayPnL !== undefined ? String(todayPnL) : '',
       tradingDays: progress ? String(progress.tradingDaysCount) : '0',
     })
   }
@@ -681,7 +726,7 @@ export default function PropTracker() {
           highWaterMark: Math.max(prev?.highWaterMark ?? a.accountSize, balance),
           tradingDaysCount: tradingDays,
           todayPnL,
-          lastUpdated: new Date().toISOString().split('T')[0],
+          lastUpdated: localDateStr(),
         },
       }
     }))
@@ -880,18 +925,21 @@ export default function PropTracker() {
   function openCheckinDialog() {
     setCheckinDialog({
       open: true,
-      entries: activeRulesAccounts.map(a => ({
-        accountId: a.id,
-        balance: a.challengeProgress ? String(a.challengeProgress.currentBalance) : String(a.accountSize),
-        todayPnL: '',
-        tradingDays: a.challengeProgress ? String(a.challengeProgress.tradingDaysCount) : '0',
-      })),
+      entries: activeRulesAccounts.map(a => {
+        const todayPnL = effectiveTodayPnL(a.challengeProgress)
+        return {
+          accountId: a.id,
+          balance: a.challengeProgress ? String(a.challengeProgress.currentBalance) : String(a.accountSize),
+          todayPnL: todayPnL !== undefined ? String(todayPnL) : '',
+          tradingDays: a.challengeProgress ? String(a.challengeProgress.tradingDaysCount) : '0',
+        }
+      }),
     })
   }
 
   function handleSaveCheckin() {
     if (demoGuard('log a daily check-in')) return
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateStr()
     saveAccounts(accounts.map(a => {
       const entry = checkinDialog.entries.find(e => e.accountId === a.id)
       if (!entry) return a
@@ -934,7 +982,8 @@ export default function PropTracker() {
       const totalDDPctBefore = maxTotalDDDollars > 0 ? (currentDD / maxTotalDDDollars) * 100 : 0
       const wouldBreachTotal = totalDDPctAfter >= 100
 
-      const existingDailyLoss = (progress.todayPnL !== undefined && progress.todayPnL < 0) ? Math.abs(progress.todayPnL) : 0
+      const todayPnL = effectiveTodayPnL(progress)
+      const existingDailyLoss = (todayPnL !== undefined && todayPnL < 0) ? Math.abs(todayPnL) : 0
       const dailyAfter = existingDailyLoss + loss
       const dailyDDPctAfter = maxDailyDDDollars > 0 ? (dailyAfter / maxDailyDDDollars) * 100 : 0
       const dailyDDPctBefore = maxDailyDDDollars > 0 ? (existingDailyLoss / maxDailyDDDollars) * 100 : 0
@@ -970,7 +1019,8 @@ export default function PropTracker() {
       let room = Math.max(0, maxTotalDDDollars - currentDD)
       if (rules.maxDailyDrawdown > 0) {
         const maxDailyDDDollars = (rules.maxDailyDrawdown / 100) * a.accountSize
-        const existingDailyLoss = (progress.todayPnL !== undefined && progress.todayPnL < 0) ? Math.abs(progress.todayPnL) : 0
+        const todayPnL = effectiveTodayPnL(progress)
+        const existingDailyLoss = (todayPnL !== undefined && todayPnL < 0) ? Math.abs(todayPnL) : 0
         room = Math.min(room, Math.max(0, maxDailyDDDollars - existingDailyLoss))
       }
       safe = Math.min(safe, room)
@@ -1023,11 +1073,14 @@ export default function PropTracker() {
             <span className="font-medium text-foreground">Save on your next challenge</span>
             <span className="hidden sm:inline"> · Exclusive codes for The5ers, FTMO, Apex, and more</span>
           </p>
-          <a href="/affiliate" target="_blank" rel="noopener noreferrer" className="shrink-0">
-            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150" style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}>
-              View Deals →
-            </button>
-          </a>
+          <Link
+            to="/affiliate"
+            className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150"
+            style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}
+            onClick={() => trackEvent('affiliate_link_clicked', { source: 'proptracker_deals_banner' })}
+          >
+            View Deals →
+          </Link>
           <button
             onClick={() => { localStorage.setItem('ftj-dismiss-deals-pt', '1'); setShowDealsBanner(false); }}
             className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
@@ -1787,6 +1840,16 @@ export default function PropTracker() {
                   parsed[s.key] = match ? match[1].trim() : ''
                 })
 
+                // If the model drifted from the expected headings, show the raw
+                // text rather than a blank card after spending the user's quota.
+                if (score === null && sections.every(s => !parsed[s.key])) {
+                  return (
+                    <div className="px-5 py-5 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {aiAnalysis}
+                    </div>
+                  )
+                }
+
                 return (
                   <div className="divide-y divide-border/60">
                     {/* Score card */}
@@ -1986,7 +2049,7 @@ export default function PropTracker() {
                     { initials: 'TS', color: '#FFCC06', firm: 'TopStep',              size: '$50,000',  type: 'Evaluation', status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$347',  earned: '—',      pnl: '-$347' },
                     { initials: 'AT', color: '#007BFF', firm: 'Apex Trader Funding',  size: '$100,000', type: 'Funded',     status: 'Passed',    statusClass: 'bg-blue-500/15 text-blue-600 border-blue-500/20',         invested: '$137',  earned: '$4,200', pnl: '+$4,063' },
                     { initials: 'FT', color: '#0781FE', firm: 'FTMO',                 size: '$200,000', type: 'Evaluation', status: 'Failed',    statusClass: 'bg-red-500/15 text-red-600 border-red-500/20',           invested: '$810',  earned: '—',      pnl: '-$810' },
-                    { initials: 'MF', color: '#D8AE5E', firm: 'My Funded Futures',    size: '$150,000', type: 'Funded',     status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$524',  earned: '$3,500', pnl: '+$2,976' },
+                    { initials: 'MF', color: '#D8AE5E', firm: 'My Funded Futures (MFFU)',    size: '$150,000', type: 'Funded',     status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$524',  earned: '$3,500', pnl: '+$2,976' },
                   ].map(g => (
                     <Card key={g.firm} className="relative overflow-hidden" style={{ backgroundColor: g.color + '04', border: '1px solid ' + g.color + '12' }}>
                       <CardContent className="p-4 sm:p-5">
@@ -2028,7 +2091,8 @@ export default function PropTracker() {
               const { invested, earned, net, txs } = getAccountStats(account.id)
               const expanded = expandedIds.has(account.id)
               const meta = statusMeta(account.status)
-              const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)!
+              const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)
+                ?? { value: account.accountType, label: String(account.accountType) }
               const brandColor = firmAvatarColor(account.firmName)
               const challengeStatus = getChallengeStatus(account)
               const isEvalPhase = account.accountType === 'evaluation' || account.accountType === 'express'
@@ -2063,7 +2127,7 @@ export default function PropTracker() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           <span className="font-medium text-foreground/70">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
-                          {' '}&middot; {typeMeta.label} &middot; Since {new Date(account.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          {' '}&middot; {typeMeta.label} &middot; Since {new Date(account.startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
@@ -2309,8 +2373,8 @@ export default function PropTracker() {
                                 >
                                   <div className="flex items-center gap-1">
                                     {monthOpen
-                                      ? <CaretDown className="h-3 w-3 text-muted-foreground" />
-                                      : <CaretUp className="h-3 w-3 text-muted-foreground" />}
+                                      ? <CaretUp className="h-3 w-3 text-muted-foreground" />
+                                      : <CaretDown className="h-3 w-3 text-muted-foreground" />}
                                     <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{monthLabel}</span>
                                     <span className="text-[10px] text-muted-foreground">({monthTxs.length})</span>
                                   </div>
@@ -2336,7 +2400,7 @@ export default function PropTracker() {
                                           </div>
                                         </div>
                                         <span className="text-[10px] text-muted-foreground shrink-0">
-                                          {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                                          {new Date(tx.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                                         </span>
                                         <span className="text-xs font-semibold shrink-0 tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
                                           {expense ? '-' : '+'}{fmt(tx.amount, account.currency)}
@@ -2434,6 +2498,7 @@ export default function PropTracker() {
                     next.maxDailyDrawdown = String(preset.maxDailyDrawdown)
                     next.maxTotalDrawdown = String(preset.maxTotalDrawdown)
                     next.minTradingDays = preset.minTradingDays ? String(preset.minTradingDays) : ''
+                    next.targetAutoFilled = true
                   }
                   return next
                 })
@@ -2477,7 +2542,7 @@ export default function PropTracker() {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setAccountForm(p => ({ ...p, accountSizeStr: String(s) }))}
+                    onClick={() => setAccountForm(p => applySizeChange(p, { accountSizeStr: String(s) }))}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       accountForm.accountSizeStr === String(s)
                         ? 'text-white shadow-sm'
@@ -2490,7 +2555,7 @@ export default function PropTracker() {
                 ))}
                 <button
                   type="button"
-                  onClick={() => setAccountForm(p => ({ ...p, accountSizeStr: 'custom' }))}
+                  onClick={() => setAccountForm(p => applySizeChange(p, { accountSizeStr: 'custom' }))}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                     accountForm.accountSizeStr === 'custom'
                       ? 'text-white shadow-sm'
@@ -2502,7 +2567,7 @@ export default function PropTracker() {
                 </button>
               </div>
               {accountForm.accountSizeStr === 'custom' && (
-                <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="e.g. 150000" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => ({ ...p, customSizeStr: e.target.value }))} />
+                <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="e.g. 150000" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => applySizeChange(p, { customSizeStr: e.target.value }))} />
               )}
             </div>
 
@@ -2534,7 +2599,7 @@ export default function PropTracker() {
                 <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Start Date</label>
                 <DatePicker
                   date={accountForm.startDate ? new Date(accountForm.startDate + 'T12:00:00') : undefined}
-                  onDateChange={d => setAccountForm(p => ({ ...p, startDate: d ? d.toISOString().split('T')[0] : '' }))}
+                  onDateChange={d => setAccountForm(p => ({ ...p, startDate: d ? localDateStr(d) : '' }))}
                   placeholder="Pick a date"
                   className="w-full"
                 />
@@ -2543,7 +2608,7 @@ export default function PropTracker() {
                 <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">End Date <span className="normal-case">(opt.)</span></label>
                 <DatePicker
                   date={accountForm.endDate ? new Date(accountForm.endDate + 'T12:00:00') : undefined}
-                  onDateChange={d => setAccountForm(p => ({ ...p, endDate: d ? d.toISOString().split('T')[0] : '' }))}
+                  onDateChange={d => setAccountForm(p => ({ ...p, endDate: d ? localDateStr(d) : '' }))}
                   placeholder="Pick a date"
                   className="w-full"
                 />
@@ -2575,6 +2640,7 @@ export default function PropTracker() {
                         maxDailyDrawdown: String(preset.maxDailyDrawdown),
                         maxTotalDrawdown: String(preset.maxTotalDrawdown),
                         minTradingDays: preset.minTradingDays ? String(preset.minTradingDays) : '',
+                        targetAutoFilled: true,
                       }))
                       return
                     }
@@ -2602,7 +2668,7 @@ export default function PropTracker() {
                     <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-profit-target">
                       Profit Target ({currencySymbol(accountForm.currency)})
                     </label>
-                    <Input id="rule-profit-target" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 10000" value={accountForm.profitTarget} onChange={e => setAccountForm(p => ({ ...p, profitTarget: e.target.value }))} />
+                    <Input id="rule-profit-target" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 10000" value={accountForm.profitTarget} onChange={e => setAccountForm(p => ({ ...p, profitTarget: e.target.value, targetAutoFilled: false }))} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
@@ -2693,7 +2759,7 @@ export default function PropTracker() {
                   <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Date</label>
                   <DatePicker
                     date={txForm.date ? new Date(txForm.date + 'T12:00:00') : undefined}
-                    onDateChange={d => setTxForm(p => ({ ...p, date: d ? d.toISOString().split('T')[0] : '' }))}
+                    onDateChange={d => setTxForm(p => ({ ...p, date: d ? localDateStr(d) : '' }))}
                     placeholder="Pick a date"
                     className="w-full"
                   />

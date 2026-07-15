@@ -28,17 +28,55 @@ interface Alert {
 const THROTTLE_TTL = 24 * 60 * 60 * 1000; // 1 alert per type per day
 
 function renderAlertMarkdown(md: string): string {
-  const html = md
-    .replace(/## (.*)/g, '<h4 class="text-sm font-semibold mt-3 mb-1 text-foreground">$1</h4>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.+)$/gm, '<li class="ml-3 list-disc text-sm">$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-3 list-decimal text-sm">$2</li>')
-    .replace(/\n\n/g, '<br/>')
-    .replace(/\n/g, ' ');
+  // Build real block structure (headings, paragraphs, lists) instead of
+  // <br/>-based spacing — stacked <br/>s made ragged gaps between sections.
+  const headingClass = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-4 mb-1.5 first:mt-0';
+  const listClass = 'ml-4 my-1 space-y-1.5';
+
+  let html = '';
+  let openList: 'ol' | 'ul' | null = null;
+  const closeList = () => {
+    if (openList) {
+      html += `</${openList}>`;
+      openList = null;
+    }
+  };
+
+  for (const raw of md.split('\n')) {
+    const line = raw.trim();
+    if (!line) { closeList(); continue; }
+
+    const heading = line.match(/^#{1,4} (.+)$/);
+    if (heading) {
+      closeList();
+      html += `<h4 class="${headingClass}">${heading[1]}</h4>`;
+      continue;
+    }
+
+    const ordered = line.match(/^\d+\. (.+)$/);
+    if (ordered) {
+      if (openList !== 'ol') { closeList(); html += `<ol class="list-decimal ${listClass}">`; openList = 'ol'; }
+      html += `<li class="pl-1">${ordered[1]}</li>`;
+      continue;
+    }
+
+    const unordered = line.match(/^- (.+)$/);
+    if (unordered) {
+      if (openList !== 'ul') { closeList(); html += `<ul class="list-disc ${listClass}">`; openList = 'ul'; }
+      html += `<li class="pl-1">${unordered[1]}</li>`;
+      continue;
+    }
+
+    closeList();
+    html += `<p class="my-1">${line}</p>`;
+  }
+  closeList();
+
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   // Sanitize HTML to prevent XSS attacks from AI-generated content
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['h4', 'strong', 'li', 'br'],
+    ALLOWED_TAGS: ['h4', 'strong', 'li', 'ol', 'ul', 'p'],
     ALLOWED_ATTR: ['class']
   });
 }
@@ -51,7 +89,7 @@ function SampleRiskAlert() {
 
   return (
     <div
-      className="rounded-lg border p-4 relative"
+      className="rounded-lg border p-4 relative mt-6"
       style={{
         backgroundColor: alpha(themeColors.loss, '08'),
         borderColor: alpha(themeColors.loss, '20'),
@@ -256,7 +294,7 @@ export function AIRiskAlertMonitor() {
   if (visibleAlerts.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div className="mt-6 space-y-3">
       {visibleAlerts.map(alert => (
         <div
           key={alert.type}
@@ -284,10 +322,13 @@ export function AIRiskAlertMonitor() {
           ) : alert.advice ? (
             <>
               <div
-                className="mt-3 ml-6 text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_h4]:text-foreground [&_li]:py-0.5"
+                className="mt-3 ml-6 max-w-3xl text-sm text-muted-foreground leading-relaxed [&_strong]:font-medium [&_strong]:text-foreground"
                 dangerouslySetInnerHTML={{ __html: renderAlertMarkdown(alert.advice) }}
               />
-              <div className="mt-2 ml-6">
+              <div
+                className="mt-4 ml-6 max-w-3xl border-t pt-3"
+                style={{ borderColor: alpha(themeColors.loss, '15') }}
+              >
                 <AIFeedback feature="AI Risk Alert" responseId={alert.type} />
               </div>
             </>

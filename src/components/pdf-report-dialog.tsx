@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
-import { FileArrowDown, SpinnerGap } from '@phosphor-icons/react';
+import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, endOfDay } from 'date-fns';
+import { Check, FileArrowDown, SpinnerGap } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ProGate } from '@/components/pro-gate';
 import type { PDFReportOptions } from '@/services/pdf-report';
@@ -50,8 +49,8 @@ type ReportPeriod = 'monthly' | 'quarterly' | 'yearly' | 'custom';
 
 export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, accountName }: PDFReportDialogProps) {
   const [period, setPeriod] = useState<ReportPeriod>('monthly');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
   const [generating, setGenerating] = useState(false);
 
   const getDateRange = (): { start: Date; end: Date } => {
@@ -60,7 +59,8 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
       case 'monthly': return { start: startOfMonth(now), end: endOfMonth(now) };
       case 'quarterly': return { start: startOfQuarter(now), end: endOfQuarter(now) };
       case 'yearly': return { start: startOfYear(now), end: endOfYear(now) };
-      case 'custom': return { start: new Date(startDate), end: new Date(endDate) };
+      // End of the chosen day, so trades ON the end date are included
+      case 'custom': return { start: startDate ?? now, end: endOfDay(endDate ?? now) };
     }
   };
 
@@ -83,7 +83,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
 
   const filteredCount = getFilteredTrades().length;
   const journalCount = getFilteredJournal().length;
-  const canGenerate = period !== 'custom' || (startDate && endDate);
+  const canGenerate = period !== 'custom' || (!!startDate && !!endDate);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -110,97 +110,120 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[90vw] max-w-lg">
+      {/* [&>button] targets the built-in close X so it stays visible over the dark hero */}
+      <DialogContent className="w-[90vw] max-w-lg p-0 gap-0 overflow-hidden [&>button]:text-white/70 [&>button:hover]:text-white">
         <ProGate featureName="PDF Trade Reports">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Trading Wrapped</DialogTitle>
-            <DialogDescription className="text-base">
-              Your personalised trading recap — stats, patterns, and insights tailored to your trading.
-            </DialogDescription>
-          </DialogHeader>
+          {/* Hero — previews the dark Wrapped cover the report actually has */}
+          <div className="bg-zinc-950 px-6 pt-6 pb-5">
+            <DialogHeader className="space-y-1.5 text-left">
+              <DialogTitle className="text-2xl font-bold tracking-tight text-white">
+                Your Trading <span className="text-amber-400">Wrapped.</span>
+              </DialogTitle>
+              <DialogDescription className="text-sm text-zinc-400">
+                A personalised recap of your trading — stats, patterns, and insights, styled to share.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          <div className="space-y-6 py-4">
+          <div className="px-6 py-5 space-y-5">
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Report Period</Label>
-              <Select value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
-                <SelectTrigger className="text-lg h-12">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Current Month</SelectItem>
-                  <SelectItem value="quarterly">Current Quarter</SelectItem>
-                  <SelectItem value="yearly">Current Year</SelectItem>
-                  <SelectItem value="custom">Custom Date Range</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-sm font-medium">Period</Label>
+              <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+                {([
+                  ['monthly', 'Month'],
+                  ['quarterly', 'Quarter'],
+                  ['yearly', 'Year'],
+                  ['custom', 'Custom'],
+                ] as [ReportPeriod, string][]).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPeriod(value)}
+                    aria-pressed={period === value}
+                    className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      period === value
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {period === 'custom' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold">Start Date</Label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="text-lg h-12"
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">From</Label>
+                  <DatePicker
+                    date={startDate}
+                    onDateChange={setStartDate}
+                    placeholder="Start date"
+                    className="w-full"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-base font-semibold">End Date</Label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="text-lg h-12"
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">To</Label>
+                  <DatePicker
+                    date={endDate}
+                    onDateChange={setEndDate}
+                    placeholder="End date"
+                    className="w-full"
                   />
                 </div>
               </div>
             )}
 
-            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Trades in period</span>
-                <span className="text-sm font-bold">{filteredCount}</span>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border p-3">
+                <p className="text-lg font-bold tabular-nums leading-none">{filteredCount}</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Trades</p>
               </div>
-              {journalCount > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Journal entries</span>
-                  <span className="text-sm font-bold">{journalCount}</span>
-                </div>
-              )}
-              {canGenerate && (
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs">Period</span>
-                  <span className="text-xs">
-                    {format(getDateRange().start, 'MMM d, yyyy')} — {format(getDateRange().end, 'MMM d, yyyy')}
-                  </span>
-                </div>
-              )}
+              <div className="rounded-lg border p-3">
+                <p className="text-lg font-bold tabular-nums leading-none">{journalCount}</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Journal entries</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-lg font-bold leading-none">9</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Pages</p>
+              </div>
+            </div>
+            {canGenerate && (
+              <p className="text-xs text-muted-foreground -mt-2">
+                {format(getDateRange().start, 'MMM d, yyyy')} — {format(getDateRange().end, 'MMM d, yyyy')}
+              </p>
+            )}
 
-              <div className="pt-2 border-t border-border/70">
-                <h4 className="font-semibold text-sm mb-1.5">Your Wrapped includes:</h4>
-                <ul className="text-xs text-muted-foreground space-y-0.5">
-                  <li>• Your numbers — P&L, win rate, profit factor</li>
-                  <li>• Top instrument & your money day</li>
-                  <li>• Long vs Short breakdown</li>
-                  <li>• Win/loss streaks & top strategy</li>
-                  <li>• Your equity journey</li>
-                  <li>• Your trader personality type</li>
-                  <li>• Personalised key takeaway</li>
-                </ul>
-              </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">What's inside</Label>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                {[
+                  'P&L, win rate, profit factor',
+                  'Top instrument',
+                  'Your money day & peak hour',
+                  'Long vs Short breakdown',
+                  'Streaks & top strategy',
+                  'Equity journey',
+                  'Trader personality type',
+                  'Personalised takeaway',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-1.5">
+                    <Check className="h-3 w-3 shrink-0 text-amber-500" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="px-6">
+          <div className="flex justify-end gap-3 border-t px-6 py-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
               onClick={handleGenerate}
               disabled={!canGenerate || generating || filteredCount === 0}
-              className="px-6 bg-primary text-primary-foreground"
             >
               {generating ? (
                 <>

@@ -12,7 +12,7 @@ export default function TermsAndConditions() {
         <div className="mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Terms and Conditions</h1>
-          <p className="mt-3 text-muted-foreground">Last updated: April 8, 2026</p>
+          <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
         </div>
 
         <div className="divide-y divide-border text-sm leading-relaxed text-muted-foreground">
@@ -26,11 +26,11 @@ export default function TermsAndConditions() {
             <dl className="space-y-2">
               <div className="grid grid-cols-[60px_1fr] gap-3">
                 <dt className="font-medium text-foreground">Free</dt>
-                <dd>Core trade logging, analytics, journaling, calendar heatmap, goals and risk management, and CSV import/export.</dd>
+                <dd>Core trade logging, analytics, journaling, calendar heatmap, goals and risk management, CSV import/export, and a monthly allowance of AI queries.</dd>
               </div>
               <div className="grid grid-cols-[60px_1fr] gap-3">
                 <dt className="font-medium text-foreground">Pro</dt>
-                <dd>All Free features plus AI coaching, trade reviews, strategy tagging, risk alerts, journal prompts, PropTracker screenshot import, unlimited prop firm accounts, and cloud sync.</dd>
+                <dd>All Free features plus expanded AI coaching and trade reviews, strategy tagging, risk alerts, journal prompts, PropTracker screenshot import, unlimited prop firm accounts, Theme Studio, and cloud sync.</dd>
               </div>
             </dl>
           </LegalSection>
@@ -50,8 +50,9 @@ export default function TermsAndConditions() {
             <ul className="space-y-1 pl-4 list-disc">
               <li><strong className="text-foreground">Monthly/Yearly plans</strong> include a 14-day free trial for new subscribers. You will not be charged until the trial ends. Cancel any time during the trial and you won't be charged.</li>
               <li>Monthly and yearly plans automatically renew at the end of each billing period unless cancelled.</li>
-              <li><strong className="text-foreground">Lifetime plans</strong> are a one-time purchase granting permanent Pro access. No trial applies.</li>
+              <li><strong className="text-foreground">Lifetime plans</strong> are a one-time purchase granting permanent Pro access. No trial applies. The Lifetime plan may be withdrawn from sale at any time; purchases made while it was available are unaffected and keep Pro access permanently.</li>
               <li>Prices are displayed in USD and may be subject to applicable taxes.</li>
+              <li><strong className="text-foreground">Promotional and partner discount codes</strong> apply only to the plans and periods stated in the offer, cannot be combined with other offers, and may be withdrawn or modified at any time. Discounts already applied to an active subscription are honoured for their stated duration.</li>
               <li>You may cancel at any time via <strong className="text-foreground">Settings → Subscription</strong>. Cancellation takes effect at the end of the current billing period.</li>
             </ul>
 
@@ -60,7 +61,7 @@ export default function TermsAndConditions() {
           </LegalSection>
 
           <LegalSection title="Free Tier">
-            <p>The Free tier provides access to core trading journal features at no cost, with no time limit. Some Free tier features carry usage limits — for example, the number of trading accounts and journal entries — which are described on the Pricing page; the Pro tier removes these. We reserve the right to modify Free tier features and limits, but will provide reasonable notice of any material changes.</p>
+            <p>The Free tier provides access to core trading journal features at no cost, with no time limit. Some Free tier features carry usage limits — for example, the number of trading accounts and journal entries, the analytics date range, and a monthly allowance of AI queries — which are described on the Pricing page; the Pro tier removes these. We reserve the right to modify Free tier features and limits, but will provide reasonable notice of any material changes.</p>
           </LegalSection>
 
           <LegalSection title="Not Financial Advice">

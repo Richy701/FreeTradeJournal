@@ -207,7 +207,9 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
   );
 }
 
-const CSV_HEADERS = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'fees', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes'];
+// Keep in sync with TradeLog's export headers — this is the "download your data
+// before deleting" path, so it must carry every stored field.
+const CSV_HEADERS = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'fees', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes', 'stopLoss', 'takeProfit', 'emotions', 'tags', 'propFirm', 'useManualPnL', 'manualPnL', 'customMultiplier'];
 
 function exportTradesCsv(saved: string | null) {
   let trades: Record<string, unknown>[] = [];

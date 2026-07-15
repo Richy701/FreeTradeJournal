@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
-import { useDemoData } from '@/hooks/use-demo-data'
 import { AIAnalysis } from '@/components/ai-analysis'
+import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
+import { trackEvent } from '@/lib/analytics'
 import {
   Bar,
   BarChart,
@@ -35,7 +36,7 @@ import {
 import type { ChartConfig } from '@/components/ui/chart'
 
 export default function TradeIdeas() {
-  const { ideas, charts, summary, totalTrades, hasEnoughData } = useTradeIdeas()
+  const { ideas, charts, summary, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
   const { themeColors, alpha } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
   // Axis ticks get a compact format (no decimals) so long values like $8,000.00
@@ -46,52 +47,7 @@ export default function TradeIdeas() {
     const formatted = Math.abs(Math.round(v)).toLocaleString('en-US')
     return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
   }
-  const { getTrades } = useDemoData()
-  const trades = useMemo(() => getTrades(), [getTrades])
   const gradientId = useId().replace(/:/g, '')
-
-  if (!hasEnoughData) {
-    return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <SiteHeader />
-        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
-              </div>
-              <div className="space-y-0.5">
-                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
-                <p className="text-sm text-muted-foreground">Data-driven patterns and analytics from your trading data.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
-          <div className="rounded-xl border border-dashed bg-card/50 flex flex-col items-center justify-center py-16 text-center space-y-4">
-            <div className="p-4 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-              <Lightbulb className="h-8 w-8" style={{ color: themeColors.primary }} aria-hidden="true" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold">Not Enough Data Yet</h2>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Log at least 5 trades to unlock data-driven trade insights.
-              </p>
-            </div>
-            <Button asChild className="mt-2" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
-              <Link to="/trades">
-                Log Trades <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-            <Link to="/coach" className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
-              Or meet your AI Coach
-            </Link>
-          </div>
-        </div>
-        <AppFooter />
-      </div>
-    )
-  }
 
   const symbolConfig = useMemo<ChartConfig>(() => ({
     pnl: { label: 'P&L', color: themeColors.primary },
@@ -117,6 +73,66 @@ export default function TradeIdeas() {
   const strategyConfig = useMemo<ChartConfig>(() => ({
     pnl: { label: 'P&L', color: themeColors.primary },
   }), [themeColors.primary])
+
+  const windowNotice = hiddenCount > 0 && (
+    <div className="rounded-xl border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <p className="text-xs text-muted-foreground">
+        Insights cover your last {FREE_ANALYTICS_WINDOW_DAYS} days ({hiddenCount} older {hiddenCount === 1 ? 'trade' : 'trades'} not included). Your trade log and exports always include everything.
+      </p>
+      <Link
+        to="/pricing"
+        className="text-xs font-semibold hover:underline"
+        style={{ color: themeColors.primary }}
+        onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'insights_window_notice' })}
+      >
+        Unlock full history with Pro
+      </Link>
+    </div>
+  )
+
+  if (!hasEnoughData) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <SiteHeader />
+        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
+              </div>
+              <div className="space-y-0.5">
+                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
+                <p className="text-sm text-muted-foreground">Data-driven patterns and analytics from your trading data.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+          {windowNotice}
+          <div className="rounded-xl border border-dashed bg-card/50 flex flex-col items-center justify-center py-16 text-center space-y-4">
+            <div className="p-4 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+              <Lightbulb className="h-8 w-8" style={{ color: themeColors.primary }} aria-hidden="true" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold">Not Enough Data Yet</h2>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Log at least 5 trades to unlock data-driven trade insights.
+              </p>
+            </div>
+            <Button asChild className="mt-2" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+              <Link to="/trades">
+                Log Trades <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Link to="/coach" className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
+              Or meet your AI Coach
+            </Link>
+          </div>
+        </div>
+        <AppFooter />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -153,9 +169,10 @@ export default function TradeIdeas() {
       </div>
 
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {windowNotice}
 
         {/* AI Trade Analysis */}
-        {trades.length >= 3 && <AIAnalysis trades={trades} />}
+        {rawTrades.length >= 3 && <AIAnalysis trades={rawTrades} />}
 
         {/* Summary Stats */}
         {summary && (

@@ -15,6 +15,45 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.60.0',
+    date: '2026-07-15',
+    summary: 'A sharper Trading Wrapped PDF and a redesigned report dialog.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Trading Wrapped PDF looks cleaner',
+        description: 'Every page of the PDF report has been rebalanced: no more overlapping text, smoother backgrounds, page numbers, and a consistent layout from cover to sign-off.',
+      },
+      {
+        type: 'improved',
+        text: 'Redesigned PDF report dialog',
+        description: 'Picking a period is now one tap on Month, Quarter, Year, or Custom, and the dialog shows what your Wrapped will include before you download it.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer AI risk alerts',
+        description: 'Risk alert advice on the Trade Log now reads as tidy sections with proper headings and numbered steps instead of one long block of text.',
+      },
+    ],
+  },
+  {
+    version: '2.59.0',
+    date: '2026-07-15',
+    summary: 'Refreshed documentation and updated privacy, cookie, and terms pages.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Documentation now covers the newest features',
+        description: 'The docs page now includes the customizable dashboard, journal AI helpers, import insight, themes and Theme Studio, custom brokers and prop firms, and emotion tagging — and correctly notes that free accounts include 20 AI queries per month.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer privacy, cookie, and terms pages',
+        description: 'The legal pages now accurately describe how AI features, analytics consent, market data, and emails work today, including exactly what happens to your data when you accept or decline analytics cookies.',
+      },
+    ],
+  },
+  {
     version: '2.58.0',
     date: '2026-07-14',
     summary: 'Pick a time period for your dashboard, cleaner stat cards, clearer charts, and currency fixes.',
@@ -1883,4 +1922,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.58.0'
+export const LATEST_CHANGELOG_VERSION = '2.60.0'

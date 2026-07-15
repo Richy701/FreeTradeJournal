@@ -12,14 +12,16 @@ import {
 
 const sections = [
   { id: 'quick-start',    label: 'Quick Start' },
+  { id: 'dashboard',      label: 'Dashboard' },
   { id: 'trade-logging',  label: 'Trade Logging' },
   { id: 'calendar',       label: 'Calendar Heatmap' },
   { id: 'journal',        label: 'Trading Journal' },
   { id: 'goals',          label: 'Goals & Risk' },
   { id: 'csv-import',     label: 'CSV Import' },
   { id: 'analytics',      label: 'Advanced Analytics' },
-  { id: 'ai-features',    label: 'AI Features',       pro: true },
+  { id: 'ai-features',    label: 'AI Features' },
   { id: 'trade-insights', label: 'Trade Insights',    pro: true },
+  { id: 'themes',         label: 'Themes' },
   { id: 'filtering',      label: 'Filtering & Search' },
   { id: 'export',         label: 'Export & Reporting' },
   { id: 'faq',            label: 'FAQ' },
@@ -117,8 +119,12 @@ export default function Documentation() {
                 </ol>
               </DocSection>
 
+              <DocSection id="dashboard" title="Dashboard">
+                <p>Your dashboard is fully customizable — show, hide, and drag-to-reorder widgets to match how you review your trading. Filter everything by time period with the pills in the ticker row, and switch between trading accounts at any time. Pro users get their layout synced across devices.</p>
+              </DocSection>
+
               <DocSection id="trade-logging" title="Trade Logging">
-                <p>Log trades with entry/exit prices, lot sizes, spreads, commissions, and swap costs. Supports forex, futures, and stocks with real-time P&L calculation.</p>
+                <p>Log trades with entry/exit prices, lot sizes, spreads, commissions, and swap costs. Supports forex, futures, and stocks with real-time P&L calculation. Tag each trade with the emotions you felt while trading, your strategy, and the prop firm or broker it belongs to — including custom firms and brokers you add yourself.</p>
               </DocSection>
 
               <DocSection id="calendar" title="Calendar Heatmap">
@@ -126,7 +132,8 @@ export default function Documentation() {
               </DocSection>
 
               <DocSection id="journal" title="Trading Journal">
-                <p>Document strategies, market observations, and trading psychology. Track your mood and build a searchable record of your decision-making over time.</p>
+                <p className="mb-3">Document strategies, market observations, and trading psychology. Track your mood, attach screenshots to entries, start from ready-made templates, and build a searchable record of your decision-making over time.</p>
+                <p>Two AI helpers live in the journal: <strong className="text-foreground">Ask Coach</strong> suggests follow-up questions or a starting point while you write, and <strong className="text-foreground">AI Journal Review</strong> reads your recent entries alongside your results and tells you where your words and your trading diverge.</p>
               </DocSection>
 
               <DocSection id="goals" title="Goals & Risk Management">
@@ -134,20 +141,24 @@ export default function Documentation() {
               </DocSection>
 
               <DocSection id="csv-import" title="CSV Import">
-                <p>Import trade history from any broker via CSV. Supports MetaTrader, TradingView, TopStep, Tradovate, Interactive Brokers, and most prop firm formats with automatic field mapping and duplicate detection.</p>
+                <p className="mb-3">Import trade history from any broker via CSV. Supports MetaTrader, TradingView, TopStep, Tradovate, Interactive Brokers, and most prop firm formats with automatic field mapping and duplicate detection.</p>
+                <p>After a larger import, the AI gives you a first read of your history — your strongest patterns, biggest leaks, and where to look next.</p>
               </DocSection>
 
               <DocSection id="analytics" title="Advanced Analytics">
                 <p>Professional-grade metrics including Sharpe ratio, profit factor, and maximum drawdown. Pattern detection identifies overtrading, revenge trading, and FOMO behaviors.</p>
               </DocSection>
 
-              <DocSection id="ai-features" title="AI Features" pro>
-                <p className="mb-5">Pro users unlock AI-powered tools that analyse your trading data and deliver personalised feedback:</p>
+              <DocSection id="ai-features" title="AI Features">
+                <p className="mb-5">AI-powered tools that analyse your trading data and deliver personalised feedback. Free accounts include 20 AI queries per month; Pro removes the cap:</p>
                 <dl className="space-y-3">
                   {[
-                    ['Coach FTJ', 'Your personal AI trading coach. Personalised tips based on your patterns, streaks, and performance. Updates daily.'],
+                    ['Coach FTJ', 'Your personal AI trading coach. Ask questions about your trading and get answers grounded in your actual patterns, streaks, and performance.'],
                     ['AI Trade Analysis', 'A full review of your overall performance — strengths, patterns, and an action plan.'],
                     ['AI Trade Review', 'Per-trade assessment with entry/exit analysis and specific improvement suggestions.'],
+                    ['AI Journal Review', 'Reads your recent journal entries next to your results and flags where your words and your trading diverge.'],
+                    ['Ask Coach (Journal)', 'In-editor writing help — follow-up questions on what you wrote, or a starting point when the page is blank.'],
+                    ['Import Insight', 'A first read of your history after a larger CSV import — strongest patterns, biggest leaks, where to look next.'],
                     ['AI Journal Prompts', 'Reflective questions generated after each trade to sharpen self-awareness.'],
                     ['AI Strategy Tagger', 'Auto-classify trades by pattern — breakout, pullback, reversal, scalp, and more.'],
                     ['AI Risk Alerts', 'Detects revenge trading, loss streaks, and daily limit breaches automatically.'],
@@ -181,6 +192,10 @@ export default function Documentation() {
                 <p className="mt-5 text-sm text-muted-foreground">All charts update automatically as you log new trades.</p>
               </DocSection>
 
+              <DocSection id="themes" title="Themes">
+                <p>Choose light or dark mode plus a colour preset to make the app yours — presets and basic customisation are free. Pro users unlock the <strong className="text-foreground">Theme Studio</strong> for full control over colours, including profit/loss and chart colours, with themes synced across devices.</p>
+              </DocSection>
+
               <DocSection id="filtering" title="Filtering & Search">
                 <p>Filter by date, instrument, strategy, or outcome. Save common filter combinations and export results to CSV or Excel.</p>
               </DocSection>
@@ -193,6 +208,7 @@ export default function Documentation() {
                 <Accordion type="single" collapsible className="w-full">
                   {[
                     ['Is my trading data secure?', 'Data is stored locally on your device by default. Cloud sync uses industry-standard encryption, and your financial information never leaves your control without consent.'],
+                    ['What does the Free plan include?', 'Everything you need to journal seriously — trade logging, analytics, journaling, goals, and CSV import/export — plus 20 AI queries per month. Pro removes usage limits and adds cloud sync, screenshot import, and the Theme Studio.'],
                     ['What file formats can I import?', 'CSV files from most major brokers — MetaTrader, TradingView, Interactive Brokers, Tradovate, TopStep, and common prop firm formats.'],
                     ['Can I use this for tax reporting?', 'FreeTradeJournal provides detailed P&L calculations and exports, but always verify data accuracy and consult a tax professional.'],
                     ['Does FreeTradeJournal provide trading advice?', 'No. FreeTradeJournal is purely an analysis and journaling tool. All trading decisions remain your responsibility.'],

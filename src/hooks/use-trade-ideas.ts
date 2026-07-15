@@ -102,13 +102,25 @@ interface ParsedTrade {
   strategy?: string
 }
 
+// Read the stored P&L the same way the Dashboard does (t.pnl first), with
+// legacy fallbacks for old imports. Checked field-by-field so a legitimate
+// $0 pnl doesn't fall through to netProfit/profit like a `||` chain would.
+function readStoredPnl(t: any): number {
+  for (const v of [t.pnl, t.netProfit, t.profit]) {
+    if (v === undefined || v === null || v === '') continue
+    const n = Number(v)
+    if (Number.isFinite(n)) return n
+  }
+  return 0
+}
+
 function parseTrades(rawTrades: any[]): ParsedTrade[] {
   return rawTrades
     .map((t: any) => ({
       id: t.id,
       symbol: t.symbol || '',
       side: t.side || t.action || '',
-      pnl: Number(t.pnl) || Number(t.netProfit) || Number(t.profit) || 0,
+      pnl: readStoredPnl(t),
       entryTime: t.entryTime ? new Date(t.entryTime) : new Date(t.date || t.createdAt),
       exitTime: t.exitTime ? new Date(t.exitTime) : new Date(t.exitDate || t.date || t.createdAt),
       strategy: t.strategy || undefined,
@@ -468,10 +480,13 @@ function generateIdeas(
 }
 
 export function useTradeIdeas() {
-  const { getTrades } = useDemoData()
+  const { getAnalyticsTrades } = useDemoData()
   const { formatCurrency } = useSettings()
 
-  const trades = useMemo(() => parseTrades(getTrades()), [getTrades])
+  // Insights are an analytics view, so free accounts get the trailing
+  // window only — same as the Dashboard. hiddenCount feeds the notice banner.
+  const analyticsData = useMemo(() => getAnalyticsTrades(), [getAnalyticsTrades])
+  const trades = useMemo(() => parseTrades(analyticsData.trades), [analyticsData])
 
   const charts = useMemo(() => {
     if (trades.length < 5) return null
@@ -494,5 +509,7 @@ export function useTradeIdeas() {
     summary,
     totalTrades: trades.length,
     hasEnoughData: trades.length >= 5,
+    hiddenCount: analyticsData.hiddenCount,
+    rawTrades: analyticsData.trades,
   }
 }

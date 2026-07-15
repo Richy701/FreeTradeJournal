@@ -132,7 +132,12 @@ interface TradeFormData {
   propFirm?: string
 }
 
-function formatPrice(price: number): string {
+// Forex quotes need their full precision (1.08523, not 1.09); JPY-style pairs
+// quote to 3 decimals. Futures/indices stay at 2.
+function formatPrice(price: number, symbol?: string): string {
+  if (symbol && detectMarketFromSymbol(symbol) === 'forex') {
+    return price.toFixed(/JPY|HUF|THB/.test(symbol.toUpperCase()) ? 3 : 5);
+  }
   return price.toFixed(2);
 }
 
@@ -241,6 +246,19 @@ export default function TradeLog() {
       return cmp * dir;
     });
   }, [trades, filters]);
+
+  // Trades in true time order (oldest → newest). The `trades` array is in
+  // insertion order — CSV imports append in file order — so anything that
+  // means "recent" or "surrounding" chronologically must read this instead.
+  const chronoTrades = useMemo(
+    () =>
+      [...trades].sort(
+        (a, b) =>
+          (a.exitTime instanceof Date ? a.exitTime : new Date(a.exitTime)).getTime() -
+          (b.exitTime instanceof Date ? b.exitTime : new Date(b.exitTime)).getTime(),
+      ),
+    [trades],
+  );
 
   // Filter option lists derived from the loaded trades
   const symbolOptions = useMemo(
@@ -960,14 +978,18 @@ export default function TradeLog() {
     let exportTrades = trades;
     if (fromDate || toDate) {
       const to = toDate ? new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59) : null;
+      // Filter on exitTime — the same date every other surface (table, filters,
+      // stats) uses — so "This month" exports the trades "This month" shows.
       exportTrades = trades.filter(t => {
-        const d = t.entryTime instanceof Date ? t.entryTime : new Date(t.entryTime);
+        const d = t.exitTime instanceof Date ? t.exitTime : new Date(t.exitTime);
         if (fromDate && d < fromDate) return false;
         if (to && d > to) return false;
         return true;
       });
     }
-    const headers = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'fees', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes'];
+    // Every stored field the user can enter — an export must survive a
+    // re-import (or an Excel round trip) without losing SL/TP, emotions, etc.
+    const headers = ['symbol', 'side', 'entryPrice', 'exitPrice', 'lotSize', 'entryTime', 'exitTime', 'spread', 'commission', 'fees', 'swap', 'pnl', 'pnlPercentage', 'riskReward', 'strategy', 'market', 'notes', 'stopLoss', 'takeProfit', 'emotions', 'tags', 'propFirm', 'useManualPnL', 'manualPnL', 'customMultiplier'];
     const csvContent = [
       headers.join(','),
       ...exportTrades.map(trade =>
@@ -2298,17 +2320,21 @@ export default function TradeLog() {
               <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
                 <span className="text-muted-foreground">Streak</span>
                 {(() => {
-                  if (trades.length === 0) return <span className="text-foreground">--</span>;
-                  const lastTrade = trades[trades.length - 1];
+                  // Same semantics as the Dashboard streak: chronological, and a
+                  // breakeven trade ends the run.
                   let streak = 0;
-                  const isWinning = lastTrade.pnl > 0;
-                  for (let i = trades.length - 1; i >= 0; i--) {
-                    if ((trades[i].pnl > 0) === isWinning) streak++;
-                    else break;
+                  let dir: 'win' | 'loss' | null = null;
+                  for (let i = chronoTrades.length - 1; i >= 0; i--) {
+                    if (chronoTrades[i].pnl === 0) break;
+                    const d = chronoTrades[i].pnl > 0 ? 'win' : 'loss';
+                    if (!dir) dir = d;
+                    if (d !== dir) break;
+                    streak++;
                   }
+                  if (!dir) return <span className="text-foreground">--</span>;
                   return (
-                    <span style={{ color: isWinning ? themeColors.profit : themeColors.loss }}>
-                      {streak}{isWinning ? 'W' : 'L'}
+                    <span style={{ color: dir === 'win' ? themeColors.profit : themeColors.loss }}>
+                      {streak}{dir === 'win' ? 'W' : 'L'}
                     </span>
                   );
                 })()}
@@ -2542,8 +2568,8 @@ export default function TradeLog() {
                             {trade.side.toUpperCase()}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.entryPrice)}</TableCell>
-                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.exitPrice)}</TableCell>
+                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.entryPrice, trade.symbol)}</TableCell>
+                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.exitPrice, trade.symbol)}</TableCell>
                         <TableCell className="font-medium text-sm">{trade.lotSize}</TableCell>
                         <TableCell 
                           className="font-bold text-base"
@@ -2610,7 +2636,7 @@ export default function TradeLog() {
                           <TableCell colSpan={12} className="p-0">
                             <AITradeReview
                               trade={trade}
-                              surroundingTrades={trades.slice(Math.max(0, trades.indexOf(trade) - 2), trades.indexOf(trade) + 3)}
+                              surroundingTrades={chronoTrades.slice(Math.max(0, chronoTrades.indexOf(trade) - 2), chronoTrades.indexOf(trade) + 3)}
                               onClose={() => setReviewingTradeId(null)}
                             />
                           </TableCell>
@@ -2661,11 +2687,11 @@ export default function TradeLog() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">Entry:</span>
-                          <span className="ml-2 font-medium">{formatPrice(trade.entryPrice)}</span>
+                          <span className="ml-2 font-medium">{formatPrice(trade.entryPrice, trade.symbol)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Exit:</span>
-                          <span className="ml-2 font-medium">{formatPrice(trade.exitPrice)}</span>
+                          <span className="ml-2 font-medium">{formatPrice(trade.exitPrice, trade.symbol)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Lots:</span>
@@ -2680,13 +2706,13 @@ export default function TradeLog() {
                         {trade.stopLoss && (
                           <div>
                             <span className="text-muted-foreground">SL:</span>
-                            <span className="ml-2 font-medium">{formatPrice(trade.stopLoss)}</span>
+                            <span className="ml-2 font-medium">{formatPrice(trade.stopLoss, trade.symbol)}</span>
                           </div>
                         )}
                         {trade.takeProfit && (
                           <div>
                             <span className="text-muted-foreground">TP:</span>
-                            <span className="ml-2 font-medium">{formatPrice(trade.takeProfit)}</span>
+                            <span className="ml-2 font-medium">{formatPrice(trade.takeProfit, trade.symbol)}</span>
                           </div>
                         )}
                       </div>
@@ -2730,16 +2756,7 @@ export default function TradeLog() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            setEditingTrade(trade);
-                            form.reset({
-                              ...trade,
-                              entryTime: trade.entryTime,
-                              exitTime: trade.exitTime,
-                              slTpUnit: 'price', // stored SL/TP are always absolute price levels
-                            });
-                            setIsDialogOpen(true);
-                          }}
+                          onClick={() => handleEdit(trade)}
                           className="h-10 justify-center"
                         >
                           <PencilSimple className="mr-2 h-3 w-3" />
@@ -2758,7 +2775,7 @@ export default function TradeLog() {
                       {reviewingTradeId === trade.id && (
                         <AITradeReview
                           trade={trade}
-                          surroundingTrades={trades.slice(Math.max(0, trades.indexOf(trade) - 2), trades.indexOf(trade) + 3)}
+                          surroundingTrades={chronoTrades.slice(Math.max(0, chronoTrades.indexOf(trade) - 2), chronoTrades.indexOf(trade) + 3)}
                           onClose={() => setReviewingTradeId(null)}
                         />
                       )}
