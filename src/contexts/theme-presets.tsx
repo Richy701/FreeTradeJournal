@@ -940,7 +940,13 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   }, [customColors])
 
   const setCustomColors = useCallback((partial: Partial<CustomThemeConfig>) => {
-    setCustomColorsState(prev => ({ ...prev, ...partial }))
+    setCustomColorsState(prev => {
+      const next = { ...prev, ...partial }
+      // Keep the same object when values are unchanged — a fresh identity here
+      // re-triggers ThemeSettingsSync's effects and can ping-pong settings
+      // writes into the sync engine forever.
+      return JSON.stringify(next) === JSON.stringify(prev) ? prev : next
+    })
   }, [])
 
   // Track route changes for SPA navigation

@@ -99,23 +99,31 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     setLoading(false);
   }, [userId]);
 
-  // Save settings to localStorage whenever they change
+  // Persist settings whenever they change. This is the ONLY writer for user
+  // edits (updateSettings just sets state), so each committed change produces
+  // exactly one storage write / sync push.
+  const lastSavedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!loading) {
+      const json = JSON.stringify(settings);
       // Skip when the change came from a remote pull — the sync engine already
       // wrote it to storage (with skipSync), so re-writing would echo it back.
       if (applyingRemoteRef.current) {
         applyingRemoteRef.current = false;
+        lastSavedRef.current = json;
         return;
       }
-      // Skip echoing a value we just loaded from storage (mount / scope change).
-      // Real user changes persist directly inside updateSettings, so skipping
-      // here can't drop a write.
+      // Skip echoing a value we just loaded from storage (mount / scope change) —
+      // it's already persisted, writing it back would only push it to sync.
       if (hydratingRef.current) {
         hydratingRef.current = false;
+        lastSavedRef.current = json;
         return;
       }
-      storageRef.current.setItem('settings', JSON.stringify(settings));
+      // Identity changed but values didn't — don't re-push the same blob.
+      if (json === lastSavedRef.current) return;
+      lastSavedRef.current = json;
+      storageRef.current.setItem('settings', json);
     }
   }, [settings, loading]);
 
@@ -145,12 +153,12 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     // Flag this as a deliberate local edit so the sync engine keeps it
     // authoritative instead of letting a stale remote pull overwrite it.
     markSettingsDirty(uidRef.current);
-    setSettings(prev => {
-      const next = { ...prev, ...updates };
-      // Save immediately to ensure persistence
-      storageRef.current.setItem('settings', JSON.stringify(next));
-      return next;
-    });
+    // No storage write here: React can replay updater functions (StrictMode,
+    // interrupted renders), so a setItem inside one fires for renders that
+    // never commit — during a render storm that flooded the sync engine with
+    // hundreds of pushes. The save-on-change effect persists the committed
+    // value exactly once.
+    setSettings(prev => ({ ...prev, ...updates }));
   }, [demoGuard]);
 
   const getCurrencySymbol = useCallback(() => {

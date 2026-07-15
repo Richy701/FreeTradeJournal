@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable } from '@/components/data-table'
+import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
 import { CalendarHeatmap } from '@/components/calendar-heatmap'
 import { TradingCoach } from '@/components/trading-coach'
 import { DemoCtaCard } from '@/components/demo-cta-card'
@@ -34,10 +35,22 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     id: 'market-prices',
     label: 'Market prices',
     removable: true,
-    render: () => (
-      <Suspense fallback={null}>
-        <MarketTicker />
-      </Suspense>
+    // Period pills share this row (ticker left, pills right) so they don't
+    // float alone; Dashboard renders a standalone fallback when this widget
+    // is hidden.
+    render: ({ tradeCount }) => (
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+        <div className="min-w-0 flex-1">
+          <Suspense fallback={null}>
+            <MarketTicker />
+          </Suspense>
+        </div>
+        {tradeCount > 0 && (
+          <div className="flex justify-end lg:shrink-0">
+            <DashboardPeriodPills />
+          </div>
+        )}
+      </div>
     ),
   },
   {

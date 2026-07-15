@@ -20,8 +20,16 @@ export function ThemeSettingsSync() {
     const synced = settings.theme;
     if (!synced) return;
     if (synced.preset && synced.preset !== currentTheme) setTheme(synced.preset);
-    if (synced.custom && JSON.stringify(synced.custom) !== JSON.stringify(customColors)) {
-      setCustomColors(synced.custom);
+    if (synced.custom) {
+      // setCustomColors MERGES the synced value into the local colors, so
+      // compare against the merged result: a synced value from an older schema
+      // (subset of today's keys) can never equal the full local object, and
+      // comparing raw synced.custom re-applied it on every pull — endless
+      // pull/push churn that flooded settings sync.
+      const merged = { ...customColors, ...synced.custom };
+      if (JSON.stringify(merged) !== JSON.stringify(customColors)) {
+        setCustomColors(synced.custom);
+      }
     }
     // Intentionally NOT keyed on currentTheme/customColors: this effect only
     // reacts to the synced value changing, never to local edits.

@@ -1218,7 +1218,10 @@ export default function Dashboard() {
         {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
             reorderable stack so widget visibility/order changes never affect it. */}
         <FreeAIBanner />
-        {tradeCount > 0 && (
+        {/* Pills normally render inside the market-prices widget row (ticker
+            left, pills right) — this standalone row is the fallback when that
+            widget is hidden via Customize. */}
+        {tradeCount > 0 && !visibleWidgets.some(w => w.id === 'market-prices') && (
           <div className="flex justify-end">
             <DashboardPeriodPills />
           </div>
