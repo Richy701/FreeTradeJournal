@@ -4,6 +4,10 @@ export type ChangelogItem = {
   type: ChangelogItemType
   text: string
   description?: string
+  /** Shown prominently in the What's New dialog; the rest collapse behind
+   *  "+N more". Aim for 3-4 per release. Without any flags, the dialog falls
+   *  back to the first three items. */
+  highlight?: boolean
 }
 
 export type ChangelogEntry = {
@@ -15,12 +19,68 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.62.0',
+    date: '2026-07-15',
+    summary: 'A deep reliability pass: cloud sync protects your data in every edge case, and every corner of the app now speaks your currency.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Cloud sync never loses local trades',
+        description: 'Two rare but serious sync gaps are closed: very large trade histories could stop syncing and then lose their newest entries, and opening the app on a brand-new device could overwrite your saved goals and risk limits with defaults. Unsynced changes are now protected and pushed as soon as they can be.',
+      },
+      {
+        type: 'fixed',
+        text: 'Offline edits survive your next login',
+        description: 'Changes made while offline used to be replaced by the older cloud copy when you reconnected. Local edits that haven\'t reached the cloud now win and sync up automatically.',
+      },
+      {
+        type: 'fixed',
+        text: 'Deleting your default account keeps your history',
+        description: 'Removing the default trading account could make older trades and journal entries invisible. They now move to your remaining account instead.',
+      },
+      {
+        type: 'fixed',
+        text: 'AI limits reset properly each day',
+        description: 'A counter bug could carry yesterday\'s maxed-out AI usage into today and wrongly show "Daily limit reached" all day. Also, failed AI requests no longer use up your quota.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Your currency, everywhere',
+        description: 'The Wrapped PDF report, dashboard header, CSV import preview, Trade Log stats, risk alerts, profile, weekly email, and AI coaching now all use your currency setting instead of assuming dollars.',
+      },
+      {
+        type: 'fixed',
+        text: 'Dashboard header matches the period filter',
+        description: 'The stat chips in the dashboard greeting now follow the same 7D/30D/90D period you picked, so the header and the cards below never show two different win rates.',
+      },
+      {
+        type: 'fixed',
+        text: 'Risk alerts react to new trades instantly',
+        description: 'The AI risk monitor now re-checks the moment you log a trade (and only looks at the account you\'re viewing), instead of waiting for a page reload.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Backups now include screenshots',
+        description: 'Exported backups bundle your journal screenshots and restore them on import, and "Delete All Data" now truly deletes everything, screenshots included.',
+      },
+      {
+        type: 'fixed',
+        text: 'Import insight works for every import',
+        description: 'The AI first-read after a CSV import now runs fresh for each import instead of re-showing the previous one, and its best/worst day math matches your local timezone.',
+      },
+    ],
+  },
+  {
     version: '2.61.0',
     date: '2026-07-15',
     summary: 'Trading Calendar upgrades plus a round of Journal fixes: pick entry dates, safer screenshots, your currency everywhere.',
     items: [
       {
         type: 'new',
+        highlight: true,
         text: 'Pick a date for journal entries',
         description: 'The journal editor now has a date field, so you can write yesterday\'s review today (or plan ahead) and the entry lands on the right day in the calendar.',
       },
@@ -86,6 +146,7 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'new',
+        highlight: true,
         text: 'Redesigned calendar day view',
         description: 'Clicking a day on the Trading Calendar now opens a clean overview: the day\'s P&L and win rate, every trade closed that day, and your journal notes — with quick buttons to add a note or log a trade when you want to.',
       },
@@ -2029,4 +2090,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.61.0'
+export const LATEST_CHANGELOG_VERSION = '2.62.0'

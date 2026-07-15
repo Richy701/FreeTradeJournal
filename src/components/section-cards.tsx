@@ -41,7 +41,7 @@ interface Trade {
 export function SectionCards() {
   // Get theme colors and demo data
   const { themeColors } = useThemePresets()
-  const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
+  const { formatCurrency: formatCurrencyFromSettings, getCurrencySymbol, settings } = useSettings()
   const { activeAccount } = useAccounts()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()
@@ -342,7 +342,7 @@ export function SectionCards() {
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium break-words" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
-                    {pfGood ? `$${metrics.profitFactor.toFixed(2)} earned per $1 lost` : 'Losing more than winning'}
+                    {pfGood ? `${getCurrencySymbol()}${metrics.profitFactor.toFixed(2)} earned per ${getCurrencySymbol()}1 lost` : 'Losing more than winning'}
                   </p>
                   <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
                 </div>

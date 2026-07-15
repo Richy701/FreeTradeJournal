@@ -143,7 +143,8 @@ function formatPrice(price: number, symbol?: string): string {
 
 export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
-  const { settings } = useSettings();
+  const { settings, getCurrencySymbol } = useSettings();
+  const currencySymbol = getCurrencySymbol();
   const { user, isDemo } = useAuth();
   const demoGuard = useDemoGuard();
   const { isPro, hasAIAccess } = useProStatus();
@@ -734,7 +735,8 @@ export default function TradeLog() {
       const rulesRaw = userStorage.getItem('riskRules');
       if (!rulesRaw) return;
       const rules: { id: string; type: string; value: number; enabled: boolean; violations?: number }[] = JSON.parse(rulesRaw);
-      const today = tradeDate.toISOString().split('T')[0];
+      const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const today = dayKey(tradeDate);
       const violations: { id: string; type: string; value: number; enabled: boolean; violations?: number }[] = [];
 
       for (const rule of rules) {
@@ -742,12 +744,12 @@ export default function TradeLog() {
 
         if (rule.type === 'maxLossPerDay' && newPnl < 0) {
           const todayPnl = trades
-            .filter(t => new Date(t.exitTime).toISOString().split('T')[0] === today)
+            .filter(t => dayKey(new Date(t.exitTime)) === today)
             .reduce((sum, t) => sum + t.pnl, 0) + newPnl;
           if (todayPnl < -rule.value) {
             violations.push(rule);
             toast.warning(`Daily loss limit breached`, {
-              description: `Today's P&L is -$${Math.abs(todayPnl).toFixed(2)}, exceeding your $${rule.value} limit.`,
+              description: `Today's P&L is -${currencySymbol}${Math.abs(todayPnl).toFixed(2)}, exceeding your ${currencySymbol}${rule.value} limit.`,
               duration: 6000,
             });
           }
@@ -756,7 +758,7 @@ export default function TradeLog() {
         if (rule.type === 'maxLossPerTrade' && newPnl < -rule.value) {
           violations.push(rule);
           toast.warning(`Per-trade loss limit breached`, {
-            description: `This trade lost $${Math.abs(newPnl).toFixed(2)}, exceeding your $${rule.value} limit.`,
+            description: `This trade lost ${currencySymbol}${Math.abs(newPnl).toFixed(2)}, exceeding your ${currencySymbol}${rule.value} limit.`,
             duration: 6000,
           });
         }
@@ -2152,11 +2154,11 @@ export default function TradeLog() {
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight tabular-nums"
                    style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                  {quickStats.totalPnL >= 0 ? '+' : '-'}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  {quickStats.totalPnL >= 0 ? '+' : '-'}{currencySymbol}{Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                    Avg {quickStats.totalTrades > 0 ? (quickStats.totalPnL / quickStats.totalTrades >= 0 ? '+' : '') + '$' + (quickStats.totalPnL / quickStats.totalTrades).toFixed(0) : '$0'} per trade
+                    Avg {quickStats.totalTrades > 0 ? (quickStats.totalPnL / quickStats.totalTrades >= 0 ? '+' : '-') + currencySymbol + Math.abs(quickStats.totalPnL / quickStats.totalTrades).toFixed(0) : currencySymbol + '0'} per trade
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {quickStats.totalTrades} trades recorded
@@ -2188,9 +2190,9 @@ export default function TradeLog() {
                         {Math.abs(quickStats.winRate - 50).toFixed(0)}pts {quickStats.winRate >= 50 ? 'above' : 'below'} 50%
                       </p>
                       <p className="text-xs">
-                        <span style={{ color: themeColors.profit }}>${quickStats.avgWin.toFixed(0)} avg win</span>
+                        <span style={{ color: themeColors.profit }}>{currencySymbol}{quickStats.avgWin.toFixed(0)} avg win</span>
                         {' / '}
-                        <span style={{ color: themeColors.loss }}>${quickStats.avgLoss.toFixed(0)} avg loss</span>
+                        <span style={{ color: themeColors.loss }}>{currencySymbol}{quickStats.avgLoss.toFixed(0)} avg loss</span>
                       </p>
                     </div>
                   </div>
@@ -2244,7 +2246,7 @@ export default function TradeLog() {
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium" style={{ color: themeColors.loss }}>
-                    Worst: ${quickStats.worstTrade.toFixed(0)}
+                    Worst: {quickStats.worstTrade < 0 ? '-' : ''}{currencySymbol}{Math.abs(quickStats.worstTrade).toFixed(0)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {quickStats.totalTrades} total trades
@@ -2304,12 +2306,12 @@ export default function TradeLog() {
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
                    style={{ backgroundColor: alpha(themeColors.profit, '10') }}>
                 <span className="text-muted-foreground">Avg win</span>
-                <span style={{ color: themeColors.profit }}>${quickStats.avgWin.toFixed(0)}</span>
+                <span style={{ color: themeColors.profit }}>{currencySymbol}{quickStats.avgWin.toFixed(0)}</span>
               </div>
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
                    style={{ backgroundColor: alpha(themeColors.loss, '10') }}>
                 <span className="text-muted-foreground">Avg loss</span>
-                <span style={{ color: themeColors.loss }}>${quickStats.avgLoss.toFixed(0)}</span>
+                <span style={{ color: themeColors.loss }}>{currencySymbol}{quickStats.avgLoss.toFixed(0)}</span>
               </div>
               <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
                 <span className="text-muted-foreground">PF</span>
@@ -2929,7 +2931,7 @@ export default function TradeLog() {
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Worst Trade</p>
                       <p className="text-lg font-bold" style={{ color: themeColors.loss }}>
-                        ${worstTrade.toFixed(2)}
+                        {worstTrade < 0 ? '-' : ''}{currencySymbol}{Math.abs(worstTrade).toFixed(2)}
                       </p>
                     </div>
                   </div>

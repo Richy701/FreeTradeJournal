@@ -10,7 +10,10 @@ export async function checkFirestoreData(userId: string) {
     const db = await getFirebaseFirestore();
     const { doc, getDoc } = await import('firebase/firestore');
 
-    const keys = ['trades', 'journalEntries', 'goals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding'];
+    // Every synced key — 'tradingGoals' is the REAL goals store ('goals' is a
+    // dead legacy key, kept for very old backups), and prop-firm data +
+    // settings were previously omitted entirely from recovery.
+    const keys = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'];
     const data: Record<string, any> = {};
 
     console.log('🔍 Checking Firestore for user:', userId);
@@ -48,7 +51,9 @@ export async function restoreFromFirestore(userId: string) {
     let restored = 0;
     for (const [key, value] of Object.entries(data)) {
       if (value) {
-        UserStorage.setItem(userId, key, value);
+        // skipSync + await: restoring must not race the reload or echo the
+        // same data straight back to the cloud it just came from.
+        await UserStorage.setItem(userId, key, value, true);
         console.log(`✅ Restored ${key}`);
         restored++;
       }

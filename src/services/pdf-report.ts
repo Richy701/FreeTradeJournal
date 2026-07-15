@@ -34,6 +34,8 @@ export interface PDFReportOptions {
   period: { start: Date; end: Date };
   reportType: string;
   accountName?: string;
+  /** Currency symbol for every monetary value in the report (defaults to $). */
+  currencySymbol?: string;
 }
 
 type RGB = [number, number, number];
@@ -147,8 +149,12 @@ function analyze(trades: Trade[]) {
   };
 }
 
+// Set per-report from options.currencySymbol at generation start — module
+// state is safe here because reports generate one at a time on the client.
+let CUR = '$';
+
 function fmtCurrency(v: number): string {
-  return `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${v < 0 ? '-' : ''}${CUR}${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function fmtHoldTime(minutes: number): string {
@@ -239,6 +245,7 @@ function drawWatermark(doc: any, text: string, x: number, y: number, size: numbe
 
 // ─── PDF Generator ──────────────────────────────────────────
 export async function generatePDFReport(options: PDFReportOptions): Promise<void> {
+  CUR = options.currencySymbol || '$';
   const { default: jsPDF } = await import('jspdf');
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });

@@ -199,11 +199,33 @@ export default function Settings() {
   });
   const [editForm, setEditForm] = useState<TradingAccount | null>(null);
 
-  const exportData = () => {
+  const exportData = async () => {
     const keys = ['trades','accounts','journalEntries','tradingGoals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions'];
     const raw: Record<string, any> = {};
     keys.forEach(k => { const v = userStorage.getItem(k); if (v) try { raw[k] = JSON.parse(v); } catch { raw[k] = v; } });
-    const blob = new Blob([JSON.stringify({ ...raw, exportDate: new Date().toISOString(), version: '2.0' }, null, 2)], { type: 'application/json' });
+
+    // Include journal screenshot bytes: idb: refs point into this device's
+    // IndexedDB, so a backup without them silently loses every screenshot.
+    const images: Record<string, string> = {};
+    try {
+      const { isImageRef, getImage } = await import('@/utils/image-store');
+      const entries = Array.isArray(raw.journalEntries) ? raw.journalEntries : [];
+      for (const entry of entries) {
+        for (const ref of entry?.screenshots || []) {
+          if (typeof ref === 'string' && isImageRef(ref)) {
+            const id = ref.slice(4);
+            if (!images[id]) {
+              const data = await getImage(id);
+              if (data) images[id] = data;
+            }
+          }
+        }
+      }
+    } catch { /* screenshots best-effort — the rest of the backup still exports */ }
+
+    const payload: Record<string, any> = { ...raw, exportDate: new Date().toISOString(), version: '2.1' };
+    if (Object.keys(images).length > 0) payload.images = images;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `ftj_backup_${new Date().toISOString().split('T')[0]}.json`;
@@ -218,31 +240,59 @@ export default function Settings() {
     if (!file) return;
     if (demoGuard('import data')) { event.target.value = ''; return; }
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (data.trades) userStorage.setItem('trades', JSON.stringify(data.trades));
-        if (data.accounts) userStorage.setItem('accounts', JSON.stringify(data.accounts));
-        if (data.journalEntries) userStorage.setItem('journalEntries', JSON.stringify(data.journalEntries));
-        if (data.tradingGoals) userStorage.setItem('tradingGoals', JSON.stringify(data.tradingGoals));
-        if (data.riskRules) userStorage.setItem('riskRules', JSON.stringify(data.riskRules));
-        if (data.settings) userStorage.setItem('settings', JSON.stringify(data.settings));
-        if (data.onboarding) userStorage.setItem('onboarding', JSON.stringify(data.onboarding));
-        if (data.onboardingCompleted !== undefined) userStorage.setItem('onboardingCompleted', String(data.onboardingCompleted));
-        if (data.propFirmAccounts) userStorage.setItem('propFirmAccounts', JSON.stringify(data.propFirmAccounts));
-        if (data.propFirmTransactions) userStorage.setItem('propFirmTransactions', JSON.stringify(data.propFirmTransactions));
+        const writes: Promise<void>[] = [];
+        if (data.trades) writes.push(userStorage.setItem('trades', JSON.stringify(data.trades)));
+        if (data.accounts) writes.push(userStorage.setItem('accounts', JSON.stringify(data.accounts)));
+        if (data.journalEntries) writes.push(userStorage.setItem('journalEntries', JSON.stringify(data.journalEntries)));
+        if (data.tradingGoals) writes.push(userStorage.setItem('tradingGoals', JSON.stringify(data.tradingGoals)));
+        if (data.riskRules) writes.push(userStorage.setItem('riskRules', JSON.stringify(data.riskRules)));
+        if (data.settings) writes.push(userStorage.setItem('settings', JSON.stringify(data.settings)));
+        if (data.onboarding) writes.push(userStorage.setItem('onboarding', JSON.stringify(data.onboarding)));
+        if (data.onboardingCompleted !== undefined) writes.push(userStorage.setItem('onboardingCompleted', String(data.onboardingCompleted)));
+        if (data.propFirmAccounts) writes.push(userStorage.setItem('propFirmAccounts', JSON.stringify(data.propFirmAccounts)));
+        if (data.propFirmTransactions) writes.push(userStorage.setItem('propFirmTransactions', JSON.stringify(data.propFirmTransactions)));
+
+        // Restore screenshot bytes bundled by v2.1 backups
+        if (data.images && typeof data.images === 'object') {
+          try {
+            const { putImage } = await import('@/utils/image-store');
+            for (const [id, dataUrl] of Object.entries(data.images)) {
+              if (typeof dataUrl === 'string') writes.push(putImage(id, dataUrl));
+            }
+          } catch { /* IndexedDB unavailable — refs stay unresolved but data imports */ }
+        }
+
+        // Imported settings are a deliberate local choice — mark dirty so a
+        // concurrent sync pull can't overwrite them before they push.
+        if (data.settings && user?.uid) {
+          const { markSettingsDirty } = await import('@/utils/user-storage');
+          markSettingsDirty(user.uid);
+        }
+
+        // Await everything — the old fire-and-forget writes raced the reload
+        // and could drop the tail of a large import.
+        await Promise.all(writes);
         const count = [data.trades?.length||0, data.accounts?.length||0, data.journalEntries?.length||0, data.tradingGoals?.length||0, data.propFirmAccounts?.length||0].reduce((a,b)=>a+b,0);
         toast.success(`Imported ${count} items!`);
-        setTimeout(() => window.location.reload(), 2000);
+        setTimeout(() => window.location.reload(), 800);
       } catch { toast.error('Error importing data. Check the file format.'); }
     };
     reader.readAsText(file);
     event.target.value = '';
   };
 
-  const clearAllData = () => {
+  const clearAllData = async () => {
     if (demoGuard('manage your data')) return;
-    ['trades','journalEntries','goals','tradingGoals','riskRules','accounts','settings'].forEach(k => userStorage.removeItem(k));
+    // clearUserData enumerates every user-scoped key (the old hand-kept list
+    // missed prop-firm and onboarding data); screenshots live in IndexedDB.
+    userStorage.clearUserData();
+    try {
+      const { clearAllImages } = await import('@/utils/image-store');
+      await clearAllImages();
+    } catch { /* best effort */ }
     window.location.reload();
   };
 
@@ -258,8 +308,14 @@ export default function Settings() {
       const fns = await getFirebaseFunctions();
       const deleteAccount = httpsCallable(fns, 'deleteUserAccount');
       await deleteAccount();
-      // Clear local data
-      ['trades','journalEntries','goals','tradingGoals','accounts','settings','riskRules','onboarding','propFirmAccounts','propFirmTransactions'].forEach(k => userStorage.removeItem(k));
+      // Clear ALL local data — every user-scoped key plus the IndexedDB
+      // screenshot store (the old key list left prop/onboarding data and
+      // every screenshot behind after "delete my account").
+      userStorage.clearUserData();
+      try {
+        const { clearAllImages } = await import('@/utils/image-store');
+        await clearAllImages();
+      } catch { /* best effort */ }
       toast.success('Account deleted successfully');
       navigate('/');
     } catch (err: any) {

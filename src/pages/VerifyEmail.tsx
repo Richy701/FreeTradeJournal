@@ -33,14 +33,21 @@ export default function VerifyEmail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll for verification every 3 seconds
+  // Poll for verification every 3 seconds. Uses auth.currentUser (the live
+  // Firebase object) rather than the context user — the context can briefly
+  // hold a spread copy without prototype methods, which made reload() a no-op
+  // and verification never auto-detect.
   useEffect(() => {
     if (!user || user.emailVerified) return;
 
     const interval = setInterval(async () => {
       try {
-        await user.reload();
-        if (user.emailVerified) {
+        const { getFirebaseAuth } = await import('@/lib/firebase-lazy');
+        const auth = await getFirebaseAuth();
+        const live = auth.currentUser;
+        if (!live) return;
+        await live.reload();
+        if (live.emailVerified) {
           setVerified(true);
           trackEvent('verify_email_completed');
           clearInterval(interval);

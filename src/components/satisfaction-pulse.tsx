@@ -6,7 +6,8 @@ import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
 import { triggerTestimonialDialog } from '@/lib/feedback-trigger';
 
-const PULSE_KEY = 'ftj-satisfaction-pulse';
+// uid-suffixed so survey timing is tracked per user, not per device
+const pulseKeyFor = (uid: string | undefined) => `ftj-satisfaction-pulse-${uid || 'anon'}`;
 const PULSE_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const MIN_TRADES = 5;
 const MIN_DAYS_SINCE_SIGNUP = 7;
@@ -31,7 +32,7 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
     const daysSinceSignup = (Date.now() - createdAt) / (1000 * 60 * 60 * 24);
     if (daysSinceSignup < MIN_DAYS_SINCE_SIGNUP) return;
 
-    const stored = localStorage.getItem(PULSE_KEY);
+    const stored = localStorage.getItem(pulseKeyFor(user?.uid)) ?? localStorage.getItem('ftj-satisfaction-pulse');
     if (stored) {
       const lastShown = parseInt(stored, 10);
       if (Date.now() - lastShown < PULSE_INTERVAL_MS) return;
@@ -45,7 +46,7 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
   function handleScore(value: number) {
     setScore(value);
     setSubmitted(true);
-    localStorage.setItem(PULSE_KEY, String(Date.now()));
+    localStorage.setItem(pulseKeyFor(user?.uid), String(Date.now()));
 
     trackEvent('nps_score_submitted', { score: value });
 
@@ -63,7 +64,7 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
 
   function dismiss() {
     setVisible(false);
-    localStorage.setItem(PULSE_KEY, String(Date.now()));
+    localStorage.setItem(pulseKeyFor(user?.uid), String(Date.now()));
     trackEvent('nps_dismissed');
   }
 

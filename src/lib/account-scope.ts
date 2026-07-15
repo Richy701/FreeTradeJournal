@@ -8,6 +8,13 @@
 // all) are treated as belonging to the user's default account.
 const LEGACY_ACCOUNT_IDS = ['default-main-account', 'default'];
 
+// True when a record has no real owning account and rides in the legacy
+// "default" bucket. Used when deleting the default account so these records
+// can be re-stamped instead of becoming invisible.
+export function isLegacyRecord(record: { accountId?: string | null }): boolean {
+  return !record.accountId || LEGACY_ACCOUNT_IDS.includes(record.accountId);
+}
+
 export function belongsToAccount(
   record: { accountId?: string | null },
   accountId: string,

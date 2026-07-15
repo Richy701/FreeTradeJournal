@@ -7,19 +7,19 @@ import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
 import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
 
-const SNOOZED_UNTIL_KEY = 'founder-offer-banner-snoozed-until';
-const DISMISSED_KEY = 'founder-offer-banner-dismissed';
+const snoozeKeyFor = (uid: string | undefined) => `founder-offer-banner-snoozed-until-${uid || 'anon'}`;
+const dismissKeyFor = (uid: string | undefined) => `founder-offer-banner-dismissed-${uid || 'anon'}`;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-function shouldShowBanner(): boolean {
+function shouldShowBanner(uid: string | undefined): boolean {
   // The banner removes itself when the offer stops being redeemable.
   if (Date.now() > LIFETIME_RETIRES_AT) return false;
 
   // Permanently dismissed (clicked the CTA)
-  if (localStorage.getItem(DISMISSED_KEY) === 'true') return false;
+  if (localStorage.getItem(dismissKeyFor(uid)) === 'true') return false;
 
   // Snoozed (clicked X) — hidden until snooze expires
-  const snoozedUntil = localStorage.getItem(SNOOZED_UNTIL_KEY);
+  const snoozedUntil = localStorage.getItem(snoozeKeyFor(uid));
   if (snoozedUntil && Date.now() < parseInt(snoozedUntil, 10)) return false;
 
   return true;
@@ -33,7 +33,7 @@ export function FounderOfferAnnouncement() {
   const { themeColors } = useThemePresets();
   const [isVisible, setIsVisible] = useState(false);
   const [mounted, setMounted] = useState(true);
-  const [show] = useState(() => shouldShowBanner());
+  const [show] = useState(() => shouldShowBanner(user?.uid));
   const bannerRef = useRef<HTMLDivElement>(null);
 
   const isPayingPro = isPro && !trialEndsAt;
@@ -69,14 +69,14 @@ export function FounderOfferAnnouncement() {
 
   // X = snooze for 24h
   const handleSnooze = () => {
-    localStorage.setItem(SNOOZED_UNTIL_KEY, String(Date.now() + ONE_DAY_MS));
+    localStorage.setItem(snoozeKeyFor(user?.uid), String(Date.now() + ONE_DAY_MS));
     dismiss();
   };
 
   // CTA = permanently dismissed
   const handleCta = () => {
     trackEvent('pricing_cta_clicked', { plan: 'lifetime', source: 'founder_banner' });
-    localStorage.setItem(DISMISSED_KEY, 'true');
+    localStorage.setItem(dismissKeyFor(user?.uid), 'true');
     dismiss();
   };
 

@@ -42,6 +42,16 @@ export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsigh
     if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
   }, [meta, updateFreeAiQuota]);
 
+  // Reset the run latch when the dialog closes so a SECOND qualifying import
+  // in the same session gets its own fresh analysis instead of silently
+  // re-showing the previous import's result.
+  useEffect(() => {
+    if (!open) {
+      startedRef.current = false;
+      setResult(null);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (!open || startedRef.current || trades.length === 0) return;
     startedRef.current = true;
@@ -70,7 +80,10 @@ export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsigh
       if (ts !== null) {
         if (first === null || ts < first) first = ts;
         if (last === null || ts > last) last = ts;
-        const day = new Date(ts).toISOString().slice(0, 10);
+        // Local day, matching the app's day-bucketing standard (the weekday
+        // below is already local — mixing UTC here skewed best/worst day)
+        const d = new Date(ts);
+        const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         byDay.set(day, (byDay.get(day) || 0) + pnl);
         const wd = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(ts).getDay()];
         const w = byWeekday.get(wd) || { count: 0, wins: 0, netPnl: 0 };

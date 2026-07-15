@@ -7,6 +7,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ProGate } from '@/components/pro-gate';
+import { useSettings } from '@/contexts/settings-context';
 import type { PDFReportOptions } from '@/services/pdf-report';
 
 interface Trade {
@@ -48,6 +49,7 @@ interface PDFReportDialogProps {
 type ReportPeriod = 'monthly' | 'quarterly' | 'yearly' | 'custom';
 
 export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, accountName }: PDFReportDialogProps) {
+  const { getCurrencySymbol } = useSettings();
   const [period, setPeriod] = useState<ReportPeriod>('monthly');
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -96,6 +98,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
         period: range,
         reportType: period,
         accountName,
+        currencySymbol: getCurrencySymbol(),
       };
       await generatePDFReport(options);
       toast.success('PDF report downloaded');

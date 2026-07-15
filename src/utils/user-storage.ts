@@ -136,6 +136,21 @@ export class UserStorage {
     });
     this.encryptionKeys.delete(userId);
     this.readyUsers.delete(userId);
+    // Raw (non user_-prefixed) per-user flags
+    try { localStorage.removeItem(SETTINGS_DIRTY_PREFIX + userId); } catch { /* ignore */ }
+    try { localStorage.removeItem('ftj_sync_dirty_' + userId); } catch { /* ignore */ }
+  }
+
+  // Drop the in-memory decrypted values and derived key for a user on logout.
+  // localStorage is left intact (their data is still there on next sign-in);
+  // this just stops plaintext + keys lingering in memory for the session.
+  static clearMemoryCache(userId: string): void {
+    const prefix = `user_${userId}_`;
+    for (const key of [...this.cache.keys()]) {
+      if (key.startsWith(prefix)) this.cache.delete(key);
+    }
+    this.encryptionKeys.delete(userId);
+    this.readyUsers.delete(userId);
   }
 
   static migrateUserData(userId: string): void {
@@ -195,7 +210,9 @@ export function useUserStorage() {
 
   return useMemo(() => ({
     getItem: (key: string) => UserStorage.getItem(userId, key),
-    setItem: (key: string, value: string) => UserStorage.setItem(userId, key, value),
+    // skipSync: write locally without pushing to cloud sync — for seeding
+    // defaults that must never race/overwrite the user's real cloud data.
+    setItem: (key: string, value: string, skipSync = false) => UserStorage.setItem(userId, key, value, skipSync),
     removeItem: (key: string) => UserStorage.removeItem(userId, key),
     clearUserData: () => userId && UserStorage.clearUserData(userId),
     migrateUserData: () => userId && UserStorage.migrateUserData(userId),

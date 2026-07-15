@@ -68,7 +68,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DashboardPeriodProvider } from '@/contexts/dashboard-period'
+import { DashboardPeriodProvider, useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
 
 function FreeAIBanner() {
@@ -207,10 +207,14 @@ export default function Dashboard() {
     percent: number;
   }>({ active: false, phase: '', percent: 0 })
   const [showWhatsNew, setShowWhatsNew] = useState(false)
+  // The version the user last dismissed — lets the dialog list releases they
+  // missed in between as compressed one-liners.
+  const [whatsNewSince, setWhatsNewSince] = useState<string | null>(null)
 
   useEffect(() => {
     const lastSeen = userStorage.getItem('lastSeenChangelog')
     if (lastSeen !== LATEST_CHANGELOG_VERSION) {
+      setWhatsNewSince(lastSeen)
       setShowWhatsNew(true)
       userStorage.setItem('lastSeenChangelog', LATEST_CHANGELOG_VERSION)
     }
@@ -310,7 +314,7 @@ export default function Dashboard() {
 
     // Referral nudge after a winning trade (max once per 7 days)
     if (pnl > 0 && user && !isDemo) {
-      const NUDGE_KEY = 'ftj-referral-nudge-at';
+      const NUDGE_KEY = `ftj-referral-nudge-at-${user.uid}`;
       const lastNudge = localStorage.getItem(NUDGE_KEY);
       const daysSinceNudge = lastNudge ? (Date.now() - Number(lastNudge)) / (1000 * 60 * 60 * 24) : Infinity;
       if (daysSinceNudge > 7) {
@@ -581,97 +585,8 @@ export default function Dashboard() {
     }
   }
 
-  // Compute dynamic header stats from trades (free plan: trailing 30-day window)
-  const headerInsight = useMemo((): React.ReactNode => {
-    const tradesData = analyticsData.trades
-    if (!tradesData || tradesData.length === 0) {
-      return (
-        <div className="flex flex-wrap items-center justify-start gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground">
-            No trades yet -- log your first trade to see live stats
-          </span>
-        </div>
-      )
-    }
-
-    const trades = tradesData.map((t: any) => ({
-      pnl: Number(t.pnl) || 0,
-      exitTime: new Date(t.exitTime),
-    }))
-
-    const totalPnl = trades.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
-    const wins = trades.filter((t: { pnl: number }) => t.pnl > 0).length
-    const winRate = Math.round((wins / trades.length) * 100)
-
-    const sorted = [...trades].sort((a: { exitTime: Date }, b: { exitTime: Date }) => b.exitTime.getTime() - a.exitTime.getTime())
-    let streak = 0
-    const streakPositive = sorted[0]?.pnl > 0
-    for (const t of sorted) {
-      if ((t.pnl > 0) === streakPositive && t.pnl !== 0) streak++
-      else break
-    }
-
-    const now = new Date()
-    const weekStart = new Date(now)
-    weekStart.setDate(now.getDate() - now.getDay())
-    weekStart.setHours(0, 0, 0, 0)
-    const thisWeek = trades.filter((t: { exitTime: Date }) => t.exitTime >= weekStart)
-    const weekPnl = thisWeek.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
-
-    const pnlColor = totalPnl >= 0 ? themeColors.profit : themeColors.loss
-    const weekPnlColor = weekPnl >= 0 ? themeColors.profit : themeColors.loss
-    const winRateColor = winRate >= 50 ? themeColors.profit : themeColors.loss
-
-    const chips: React.ReactNode[] = []
-
-    chips.push(
-      <span key="count" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
-        <ChartLineUp className="h-3 w-3" weight="bold" />
-        {trades.length} trades
-      </span>
-    )
-
-    if (streak >= 3 && streakPositive) {
-      chips.push(
-        <span key="streak" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '10'), color: themeColors.profit }}>
-          <TrendUp className="h-3 w-3" weight="bold" />
-          {streak}-trade win streak
-        </span>
-      )
-    }
-
-    if (thisWeek.length > 0) {
-      const sign = weekPnl >= 0 ? '+' : ''
-      chips.push(
-        <span key="week" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(weekPnlColor, '10'), color: weekPnlColor }}>
-          <CurrencyDollar className="h-3 w-3" weight="bold" />
-          {sign}${weekPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this week
-        </span>
-      )
-    } else {
-      const sign = totalPnl >= 0 ? '+' : ''
-      chips.push(
-        <span key="pnl" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(pnlColor, '10'), color: pnlColor }}>
-          <CurrencyDollar className="h-3 w-3" weight="bold" />
-          {sign}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} P&L
-        </span>
-      )
-    }
-
-    chips.push(
-      <span key="wr" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(winRateColor, '10'), color: winRateColor }}>
-        <Crosshair className="h-3 w-3" weight="bold" />
-        {winRate}% win rate
-      </span>
-    )
-
-    return (
-      <div className="flex flex-wrap items-center gap-1.5">
-        {chips}
-      </div>
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analyticsData, themeColors.profit, themeColors.loss, themeColors.primary, alpha])
+  // Header stat chips moved to <HeaderInsightChips/> (bottom of file) so they
+  // consume the dashboard period filter and never disagree with the cards.
 
   // No loading state needed - render content immediately
 
@@ -864,6 +779,9 @@ export default function Dashboard() {
 
       <ReferralBanner />
 
+      {/* Period provider wraps the header too, so the header chips and the
+          widget stack always report the same filtered window */}
+      <DashboardPeriodProvider>
       {/* Mobile-optimized Header Section */}
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
@@ -885,7 +803,7 @@ export default function Dashboard() {
             {/* Insight + action button */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="max-w-2xl">
-                {headerInsight}
+                <HeaderInsightChips trades={analyticsData.trades || []} />
               </div>
 
               {/* Quick Actions - inline with title on desktop */}
@@ -1213,7 +1131,6 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile-optimized Main Content — registry-driven, reorderable widget stack */}
-      <DashboardPeriodProvider>
       <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
             reorderable stack so widget visibility/order changes never affect it. */}
@@ -1332,7 +1249,7 @@ export default function Dashboard() {
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
                       <p className="text-base sm:text-lg font-bold break-words" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
-                        {totalPnl >= 0 ? '+' : ''}${totalPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatCurrencyFromSettings(totalPnl, true)}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
@@ -1344,13 +1261,13 @@ export default function Dashboard() {
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Best Trade</p>
                       <p className="text-base sm:text-lg font-bold break-words" style={{ color: themeColors.profit }}>
-                        +${bestTrade.toFixed(2)}
+                        {formatCurrencyFromSettings(bestTrade, true)}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-card px-4 py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Worst Trade</p>
                       <p className="text-base sm:text-lg font-bold break-words" style={{ color: themeColors.loss }}>
-                        ${worstTrade.toFixed(2)}
+                        {formatCurrencyFromSettings(worstTrade, true)}
                       </p>
                     </div>
                   </div>
@@ -1404,7 +1321,7 @@ export default function Dashboard() {
                                 : themeColors.loss
                             }}
                           >
-                            {parseFloat(trade.pnl) >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}
+                            {formatCurrencyFromSettings(parseFloat(trade.pnl), true)}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -1470,7 +1387,7 @@ export default function Dashboard() {
                                   : themeColors.loss
                               }}
                             >
-                              {parseFloat(trade.pnl) >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}
+                              {formatCurrencyFromSettings(parseFloat(trade.pnl), true)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1608,7 +1525,110 @@ export default function Dashboard() {
       </div>
       <AppFooter />
       <SatisfactionPulse tradeCount={tradeCount} />
-      <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} />
+      <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} sinceVersion={whatsNewSince} />
     </>
+  )
+}
+// Header stat chips — period-aware and currency-aware so the header never
+// disagrees with the metric cards below (both filter through the same
+// dashboard period and use the settings currency).
+function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
+  const { themeColors, alpha } = useThemePresets()
+  const { formatCurrency } = useSettings()
+  const { period } = useDashboardPeriod()
+
+  if (!allTrades || allTrades.length === 0) {
+    return (
+      <div className="flex flex-wrap items-center justify-start gap-2">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground">
+          No trades yet -- log your first trade to see live stats
+        </span>
+      </div>
+    )
+  }
+
+  const trades = filterTradesByPeriod(allTrades, period).map((t: any) => ({
+    pnl: Number(t.pnl) || 0,
+    exitTime: new Date(t.exitTime),
+  }))
+
+  if (trades.length === 0) {
+    return (
+      <div className="flex flex-wrap items-center justify-start gap-2">
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground">
+          No trades in this period
+        </span>
+      </div>
+    )
+  }
+
+  const totalPnl = trades.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
+  const wins = trades.filter((t: { pnl: number }) => t.pnl > 0).length
+  const winRate = Math.round((wins / trades.length) * 100)
+
+  const sorted = [...trades].sort((a, b) => b.exitTime.getTime() - a.exitTime.getTime())
+  let streak = 0
+  const streakPositive = sorted[0]?.pnl > 0
+  for (const t of sorted) {
+    if ((t.pnl > 0) === streakPositive && t.pnl !== 0) streak++
+    else break
+  }
+
+  const now = new Date()
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - now.getDay())
+  weekStart.setHours(0, 0, 0, 0)
+  const thisWeek = trades.filter((t: { exitTime: Date }) => t.exitTime >= weekStart)
+  const weekPnl = thisWeek.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
+
+  const pnlColor = totalPnl >= 0 ? themeColors.profit : themeColors.loss
+  const weekPnlColor = weekPnl >= 0 ? themeColors.profit : themeColors.loss
+  const winRateColor = winRate >= 50 ? themeColors.profit : themeColors.loss
+
+  const chips: React.ReactNode[] = []
+
+  chips.push(
+    <span key="count" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
+      <ChartLineUp className="h-3 w-3" weight="bold" />
+      {trades.length} trades
+    </span>
+  )
+
+  if (streak >= 3 && streakPositive) {
+    chips.push(
+      <span key="streak" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '10'), color: themeColors.profit }}>
+        <TrendUp className="h-3 w-3" weight="bold" />
+        {streak}-trade win streak
+      </span>
+    )
+  }
+
+  if (thisWeek.length > 0) {
+    chips.push(
+      <span key="week" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(weekPnlColor, '10'), color: weekPnlColor }}>
+        <CurrencyDollar className="h-3 w-3" weight="bold" />
+        {formatCurrency(weekPnl, true)} this week
+      </span>
+    )
+  } else {
+    chips.push(
+      <span key="pnl" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(pnlColor, '10'), color: pnlColor }}>
+        <CurrencyDollar className="h-3 w-3" weight="bold" />
+        {formatCurrency(totalPnl, true)} P&L
+      </span>
+    )
+  }
+
+  chips.push(
+    <span key="wr" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(winRateColor, '10'), color: winRateColor }}>
+      <Crosshair className="h-3 w-3" weight="bold" />
+      {winRate}% win rate
+    </span>
+  )
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {chips}
+    </div>
   )
 }

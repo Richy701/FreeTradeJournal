@@ -86,12 +86,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  // Defense-in-depth: real auth must always clear demo state, even when the
+  // caller forgot to exitDemoMode() first (typed URL, browser back, future
+  // signup links). A stranded isDemo=true blocks every save via demoGuard and
+  // makes logout skip the real signOut.
+  const clearDemoState = () => {
+    if (!isDemo) return;
+    clearDemoStorage();
+    setIsDemo(false);
+    delete document.documentElement.dataset.demo;
+  };
+
   const signUp = async (email: string, password: string, displayName?: string): Promise<User> => {
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
-    
+
     const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
     const userCredential = await createUserWithEmailAndPassword(authInstance, email, password);
+    clearDemoState();
 
     if (displayName && userCredential.user) {
       await updateProfile(userCredential.user, {
@@ -136,6 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const { signInWithEmailAndPassword } = await import('firebase/auth');
     const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
+    clearDemoState();
     return userCredential.user;
   };
 
@@ -146,6 +159,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } = await import('firebase/auth');
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(authInstance, provider);
+    clearDemoState();
 
     const additionalInfo = getAdditionalUserInfo(userCredential);
     if (additionalInfo?.isNewUser) {
@@ -179,9 +193,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
-    
+
+    // Drop the previous user's decrypted cache + derived key from memory —
+    // reads are uid-scoped so nothing leaks, but plaintext shouldn't linger.
+    const prevUid = user?.uid;
     const { signOut } = await import('firebase/auth');
     await signOut(authInstance);
+    if (prevUid) {
+      const { UserStorage } = await import('@/utils/user-storage');
+      UserStorage.clearMemoryCache(prevUid);
+    }
   };
   
   const enterDemoMode = () => {

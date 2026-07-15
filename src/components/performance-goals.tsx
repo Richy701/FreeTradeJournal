@@ -276,8 +276,10 @@ export function PerformanceGoals() {
     let baseGoals: any[]
     let baseRules: any[]
     let needPersist = false
+    let isSeed = false
 
     if (rawGoals === null && rawRules === null) {
+      isSeed = true
       baseGoals = [
         { id: '1', type: 'profit', period: 'monthly', target: 1000, createdAt: new Date().toISOString() },
         { id: '2', type: 'winRate', period: 'weekly', target: 60, createdAt: new Date().toISOString() }
@@ -310,9 +312,12 @@ export function PerformanceGoals() {
     setRiskRules(baseRules)
 
     // Demo mode is read-only — show the defaults without seeding storage.
+    // Seeded defaults write with skipSync: pushing them could overwrite the
+    // user's REAL cloud goals on a fresh device before the initial sync pull.
+    // They sync naturally on the user's first real edit.
     if (needPersist && !isDemo) {
-      userStorage.setItem('tradingGoals', JSON.stringify(baseGoals))
-      userStorage.setItem('riskRules', JSON.stringify(baseRules))
+      userStorage.setItem('tradingGoals', JSON.stringify(baseGoals), isSeed)
+      userStorage.setItem('riskRules', JSON.stringify(baseRules), isSeed)
     }
 
     try {

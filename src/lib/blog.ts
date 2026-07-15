@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 export interface BlogPost {
   slug: string;
@@ -57,8 +58,10 @@ export function getPost(slug: string): BlogPost | undefined {
   return posts.find((p) => p.slug === slug);
 }
 
-// Posts are repo-controlled content written by us, so rendering without a
-// sanitizer is safe — do not point this at user-supplied markdown.
+// Posts are repo-controlled content written by us, but sanitize anyway —
+// belt-and-braces so this can never become stored XSS if blog content ever
+// starts flowing from a CMS or external source.
 export function renderMarkdown(md: string): string {
-  return marked.parse(md, { async: false }) as string;
+  const html = marked.parse(md, { async: false }) as string;
+  return DOMPurify.sanitize(html);
 }

@@ -7,6 +7,7 @@ import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useSync } from '@/contexts/sync-context';
 import { getChangeVersion, onSyncChange, notifyDataChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
+import { isLegacyRecord } from '@/lib/account-scope';
 
 // Free-plan cap on trading accounts. Enforced here (the only write path) —
 // UI gates in Settings are messaging, not enforcement.
@@ -150,6 +151,9 @@ export function AccountProvider({ children }: AccountProviderProps) {
   };
 
   const addAccount = (accountData: Omit<TradingAccount, 'id' | 'createdAt'>): TradingAccount => {
+    if (demoGuard('manage accounts')) {
+      throw new Error('Not available in demo mode');
+    }
     if (!isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT) {
       toast.error(`Free plan is limited to ${FREE_TRADING_ACCOUNT_LIMIT} trading accounts. Upgrade to Pro for unlimited accounts.`);
       throw new Error('Free account limit reached');
@@ -203,11 +207,27 @@ export function AccountProvider({ children }: AccountProviderProps) {
       throw new Error('Cannot delete the last account');
     }
 
+    const remainingAccounts = accounts.filter(acc => acc.id !== id);
+    // Exactly one survivor must remain the default — deleting the default
+    // account previously left NO default, and legacy (accountId-less) records
+    // only resolve to a default account, so they vanished from every view.
+    const survivorDefault = remainingAccounts.find(acc => acc.isDefault) || remainingAccounts[0];
+    // Legacy-bucket records belonged to the account being deleted only if it
+    // was the default-id account (belongsToAccount maps them by id substring).
+    // Re-stamp them onto the surviving default instead of deleting them.
+    const deletedOwnedLegacy = id.includes('default');
+    const restamp = (record: any) =>
+      deletedOwnedLegacy && isLegacyRecord(record)
+        ? { ...record, accountId: survivorDefault.id }
+        : record;
+
     const savedTrades = UserStorage.getItem(userId, 'trades');
     if (savedTrades) {
       try {
         const allTrades = JSON.parse(savedTrades);
-        const filteredTrades = allTrades.filter((t: any) => t.accountId !== id);
+        const filteredTrades = allTrades
+          .filter((t: any) => t.accountId !== id)
+          .map(restamp);
         UserStorage.setItem(userId, 'trades', JSON.stringify(filteredTrades));
       } catch {
         // If parsing fails, leave trades as-is
@@ -215,25 +235,33 @@ export function AccountProvider({ children }: AccountProviderProps) {
     }
 
     // Journal entries are account-scoped too — purge exact matches only
-    // (legacy/unscoped entries stay; they belong to the default bucket).
+    // (legacy/unscoped entries are re-stamped, not deleted).
     const savedEntries = UserStorage.getItem(userId, 'journalEntries');
     if (savedEntries) {
       try {
         const allEntries = JSON.parse(savedEntries);
-        const filteredEntries = allEntries.filter((e: any) => e.accountId !== id);
+        const filteredEntries = allEntries
+          .filter((e: any) => e.accountId !== id)
+          .map(restamp);
         UserStorage.setItem(userId, 'journalEntries', JSON.stringify(filteredEntries));
       } catch {
         // If parsing fails, leave entries as-is
       }
     }
 
-    setAccounts(prev => prev.filter(acc => acc.id !== id));
+    setAccounts(prev => {
+      const remaining = prev.filter(acc => acc.id !== id);
+      if (!remaining.some(acc => acc.isDefault)) {
+        return remaining.map(acc =>
+          acc.id === survivorDefault.id ? { ...acc, isDefault: true } : acc
+        );
+      }
+      return remaining;
+    });
     notifyDataChange();
 
     if (activeAccount?.id === id) {
-      const remainingAccounts = accounts.filter(acc => acc.id !== id);
-      const newActive = remainingAccounts.find(acc => acc.isDefault) || remainingAccounts[0];
-      setActiveAccount(newActive);
+      setActiveAccount({ ...survivorDefault, isDefault: survivorDefault.isDefault || !remainingAccounts.some(a => a.isDefault) });
     }
   };
 

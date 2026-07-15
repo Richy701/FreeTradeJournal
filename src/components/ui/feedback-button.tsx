@@ -235,8 +235,9 @@ function FeedbackDialog({
 
       // A star rating is a sentiment signal — reset the NPS pulse timer so
       // SatisfactionPulse doesn't ask "how are we doing" right after they told us.
+      // (uid-suffixed key, matching satisfaction-pulse.tsx)
       if (type !== 'bug' && rating > 0) {
-        localStorage.setItem('ftj-satisfaction-pulse', String(Date.now()));
+        localStorage.setItem(`ftj-satisfaction-pulse-${user?.uid || 'anon'}`, String(Date.now()));
       }
 
       // If they loved it, invite them to leave a testimonial (never after a bug report)

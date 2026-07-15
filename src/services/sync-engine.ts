@@ -10,6 +10,15 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
 type ChangeListener = (key: string) => void;
 
+// Server rejects sync docs over ~1MB; stay safely under it. Oversized keys are
+// kept local-only (and dirty-protected) instead of failing every push.
+const MAX_SYNC_BYTES = 950_000;
+
+// Keys whose local edits couldn't be pushed yet (offline, pre-pull, oversized).
+// Persisted raw (not user_-prefixed) so it survives reloads and pulls can't
+// overwrite the unsynced local edits. Cleared per-key on successful push.
+const DIRTY_KEYS_PREFIX = 'ftj_sync_dirty_';
+
 export class SyncEngine {
   private uid: string;
   private db: Firestore | null = null;
@@ -29,9 +38,26 @@ export class SyncEngine {
   private stopped = false;
   private _initialPullDone = false;
   private initialPullCallbacks: Set<() => void> = new Set();
+  private dirtyKeys = new Set<string>();
 
   constructor(uid: string) {
     this.uid = uid;
+    try {
+      const raw = localStorage.getItem(DIRTY_KEYS_PREFIX + uid);
+      if (raw) JSON.parse(raw).forEach((k: string) => this.dirtyKeys.add(k));
+    } catch { /* corrupted flag — start clean */ }
+  }
+
+  private persistDirty() {
+    try { localStorage.setItem(DIRTY_KEYS_PREFIX + this.uid, JSON.stringify([...this.dirtyKeys])); } catch { /* ignore */ }
+  }
+
+  private markDirty(key: string) {
+    if (!this.dirtyKeys.has(key)) { this.dirtyKeys.add(key); this.persistDirty(); }
+  }
+
+  private clearDirty(key: string) {
+    if (this.dirtyKeys.delete(key)) this.persistDirty();
   }
 
   get status() { return this._status; }
@@ -94,7 +120,7 @@ export class SyncEngine {
 
         if (localData && !remoteValue) {
           // Local has data but remote doesn't - push to remote
-          await this.syncKey(key, localData);
+          await this.syncKey(key, localData, true);
         } else if (remoteValue && remoteValue !== localData) {
           // Remote has different data - pull to local (safety checks apply)
           const remoteIsEmpty = remoteValue === '[]' || remoteValue === '{}' || remoteValue === '';
@@ -110,6 +136,14 @@ export class SyncEngine {
           // flush it to remote after the pull (its earlier push was blocked).
           if (key === 'settings' && isSettingsDirty(this.uid)) {
             console.log('[Sync] Keeping local settings edit over remote (will flush)');
+            continue;
+          }
+
+          // Local edits that never reached the cloud (offline session, pre-pull
+          // edit, oversized push) win over the older remote copy — pulling here
+          // would silently delete them. They flush right after the pull.
+          if (this.dirtyKeys.has(key)) {
+            console.log(`[Sync] Keeping local unsynced ${key} over remote (will flush)`);
             continue;
           }
 
@@ -141,6 +175,14 @@ export class SyncEngine {
       if (isSettingsDirty(this.uid)) {
         const localSettings = UserStorage.getItem(this.uid, 'settings');
         if (localSettings) this.syncKey('settings', localSettings);
+      }
+
+      // Flush every other key with unsynced local edits (kept during the pull
+      // above). Successful pushes clear the dirty flag inside syncKey.
+      for (const key of [...this.dirtyKeys]) {
+        if (key === 'settings') continue;
+        const local = UserStorage.getItem(this.uid, key);
+        if (local) await this.syncKey(key, local);
       }
     } catch (err) {
       console.error('SyncEngine enable failed:', err);
@@ -180,6 +222,11 @@ export class SyncEngine {
         // authoritative so polling can't overwrite it with a stale remote.
         if (key === 'settings' && isSettingsDirty(this.uid)) continue;
 
+        // Never pull over local edits that haven't reached the cloud — when a
+        // push fails (offline, >1MB), pulling the older remote here would
+        // DELETE the very data the failed push was trying to save.
+        if (this.dirtyKeys.has(key)) continue;
+
         const remoteValue = remoteData[key];
         if (!remoteValue) continue;
 
@@ -212,43 +259,42 @@ export class SyncEngine {
     }
   }
 
-  /** Push a key to Firestore via Cloud Function (bypasses content blockers) */
-  async syncKey(key: string, data: string) {
+  /** Push a key to Firestore via Cloud Function (bypasses content blockers).
+   *  `internal` marks the engine's own post-remote-check migration push in
+   *  enable(), which is allowed to run before the initial pull completes. */
+  async syncKey(key: string, data: string, internal = false) {
     if (!SYNC_KEYS.includes(key as SyncKey)) return;
 
-    // CRITICAL: Block empty collections only BEFORE the initial pull — a fresh
-    // device writes default '[]' on mount, and pushing that would wipe the
-    // cloud copy. AFTER the pull, an empty array is a real user deletion and
-    // must propagate: blocking it made the 10s poll resurrect deleted trades.
-    const isEmpty = data === '[]' || data === '{}' || data === '' || data === 'null';
-    if (isEmpty && !this._initialPullDone &&
-        (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals')) {
-      console.warn(`[Sync] Blocked empty ${key} push before initial pull`);
+    // CRITICAL: Defer ALL external pushes until the initial pull completes.
+    // A fresh device seeds defaults on mount (settings, default account,
+    // default goals/risk rules, '[]' collections) and pushing ANY of those
+    // pre-pull would overwrite the user's real cloud data. Genuine user edits
+    // made in this window are marked dirty: the pull keeps them (local wins)
+    // and enable() flushes them right after. Seed-shaped writes (empty
+    // payloads, settings, default-only accounts) defer WITHOUT the dirty
+    // mark so the pull can still bring in the real cloud copy.
+    if (!this._initialPullDone && !internal) {
+      const isEmpty = data === '[]' || data === '{}' || data === '' || data === 'null';
+      let isSeedShaped = isEmpty || key === 'settings';
+      if (!isSeedShaped && key === 'accounts') {
+        try {
+          const parsed = JSON.parse(data);
+          isSeedShaped = Array.isArray(parsed) && parsed.every((a: any) => a.id?.startsWith('default-'));
+        } catch { /* parse error — treat as a real edit */ }
+      }
+      if (!isSeedShaped) this.markDirty(key);
+      console.warn(`[Sync] Deferred ${key} push until after initial pull${isSeedShaped ? '' : ' (kept as local edit)'}`);
       return;
     }
 
-    // CRITICAL: Never push settings before the initial pull completes.
-    // settings is a single last-write-wins blob, and a fresh device writes
-    // DEFAULT settings to storage on mount — pushing those before the pull
-    // would overwrite the user's real cloud settings on every new device.
-    // Blocked here, real settings sync from the first change after the pull.
-    if (key === 'settings' && !this._initialPullDone) {
-      console.warn('[Sync] Blocked settings push before initial pull');
+    // Oversized payloads are rejected server-side (~1MB doc cap). Keep the
+    // data local and dirty-protected instead of failing the push and letting
+    // the next poll pull the older, smaller remote copy over it.
+    if (data.length > MAX_SYNC_BYTES) {
+      console.warn(`[Sync] ${key} exceeds the sync size limit (${data.length} chars) — kept locally, not synced`);
+      this.markDirty(key);
+      this.setStatus('error');
       return;
-    }
-
-    // CRITICAL: Never sync default-only accounts before initial pull completes
-    // This prevents a race condition where a freshly created default account
-    // overwrites real accounts in Firestore on new devices / cleared cache
-    if (key === 'accounts' && !this._initialPullDone) {
-      try {
-        const parsed = JSON.parse(data);
-        const allDefaults = Array.isArray(parsed) && parsed.every((a: any) => a.id?.startsWith('default-'));
-        if (allDefaults) {
-          console.warn('[Sync] Blocked default-only accounts from syncing before initial pull');
-          return;
-        }
-      } catch { /* parse error, let it through */ }
     }
 
     try {
@@ -272,12 +318,16 @@ export class SyncEngine {
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');
-      // Push confirmed — the local settings edit is now safely in the cloud, so
-      // future loads can pull normally instead of forcing local to win.
+      // Push confirmed — the local edit is now safely in the cloud, so future
+      // pulls can proceed normally instead of forcing local to win.
       if (key === 'settings') clearSettingsDirty(this.uid);
+      this.clearDirty(key);
       console.log(`[Sync] Synced ${key} via Cloud Function`);
     } catch (err) {
       console.warn(`Sync write failed for ${key}:`, err);
+      // Protect the unpushed local edit from being pulled over (poll skips
+      // dirty keys); it re-flushes on the next enable() or successful push.
+      this.markDirty(key);
       this.setStatus('error');
     } finally {
       // Small delay before re-enabling snapshot processing for this key to avoid echo

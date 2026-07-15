@@ -72,6 +72,7 @@ export function AIJournalReview({ open, onOpenChange, entries, trades }: AIJourn
     try {
       // Day P&L per calendar date so the model can connect words to results
       const cutoff = Date.now() - PERIOD_DAYS * 24 * 60 * 60 * 1000;
+      const localDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const dayPnl: Record<string, number> = {};
       let wins = 0;
       let count = 0;
@@ -79,7 +80,7 @@ export function AIJournalReview({ open, onOpenChange, entries, trades }: AIJourn
       for (const t of trades) {
         const when = new Date(t.exitTime).getTime();
         if (Number.isNaN(when) || when < cutoff) continue;
-        const day = new Date(t.exitTime).toISOString().slice(0, 10);
+        const day = localDay(new Date(t.exitTime));
         dayPnl[day] = (dayPnl[day] || 0) + (Number(t.pnl) || 0);
         netPnl += Number(t.pnl) || 0;
         if (Number(t.pnl) > 0) wins++;
@@ -91,13 +92,13 @@ export function AIJournalReview({ open, onOpenChange, entries, trades }: AIJourn
         payload: {
           periodDays: PERIOD_DAYS,
           entries: windowed.map((e) => ({
-            date: new Date(e.date).toISOString().slice(0, 10),
+            date: localDay(new Date(e.date)),
             mood: e.mood,
             emotions: e.emotions || [],
             tags: e.tags || [],
             title: e.title,
             text: e.content,
-            dayPnl: dayPnl[new Date(e.date).toISOString().slice(0, 10)] ?? null,
+            dayPnl: dayPnl[localDay(new Date(e.date))] ?? null,
           })),
           stats: {
             tradeCount: count,

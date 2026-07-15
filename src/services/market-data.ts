@@ -259,6 +259,11 @@ export async function fetchQuotes(symbols: string[]): Promise<MarketQuote[]> {
 
   if (quotes.length > 0) {
     setCache(cacheKey, quotes)
+  } else if (resolutions.length > 0) {
+    // Every symbol failed (rate limit / upstream outage). Throw so the hook
+    // sets its error state and the ticker can SAY it's unavailable — silently
+    // returning [] made the strip vanish and left the error UI unreachable.
+    throw new Error('MARKET_DATA_UNAVAILABLE')
   }
   return quotes
 }

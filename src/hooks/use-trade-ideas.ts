@@ -233,7 +233,7 @@ function buildChartData(trades: ParsedTrade[]): ChartDataSet {
     const d = t.exitTime
     const weekStart = new Date(d)
     weekStart.setDate(d.getDate() - d.getDay())
-    const key = weekStart.toISOString().slice(0, 10)
+    const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}-${String(weekStart.getDate()).padStart(2, '0')}`
     const s = byWeek.get(key) || { totalPnl: 0, count: 0 }
     s.totalPnl += t.pnl
     s.count++
@@ -242,7 +242,10 @@ function buildChartData(trades: ParsedTrade[]): ChartDataSet {
   const weeklyPnl = [...byWeek.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([week, s]) => ({
-      week: new Date(week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      // Parse the local yyyy-mm-dd key as local components — new Date(str)
+      // would read it as UTC midnight and shift the label a day west of UTC.
+      week: new Date(Number(week.slice(0, 4)), Number(week.slice(5, 7)) - 1, Number(week.slice(8, 10)))
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       pnl: Math.round(s.totalPnl * 100) / 100,
       tradeCount: s.count,
     }))
@@ -250,7 +253,7 @@ function buildChartData(trades: ParsedTrade[]): ChartDataSet {
   // Daily activity (for contribution graph)
   const byDate = new Map<string, { count: number; totalPnl: number }>()
   for (const t of trades) {
-    const key = t.entryTime.toISOString().slice(0, 10)
+    const key = `${t.entryTime.getFullYear()}-${String(t.entryTime.getMonth() + 1).padStart(2, '0')}-${String(t.entryTime.getDate()).padStart(2, '0')}`
     const s = byDate.get(key) || { count: 0, totalPnl: 0 }
     s.count++
     s.totalPnl += t.pnl

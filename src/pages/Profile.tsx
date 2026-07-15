@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/settings-context';
+import { useDemoData } from '@/hooks/use-demo-data';
+import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,6 +44,9 @@ function getAccountAge(creationTime?: string) {
 export default function Profile() {
   const { user, logout } = useAuth();
   const { themeColors, alpha } = useThemePresets();
+  const { formatCurrency } = useSettings();
+  const { getTrades } = useDemoData();
+  const demoGuard = useDemoGuard();
   const navigate = useNavigate();
   const userStorage = useUserStorage();
 
@@ -50,32 +56,38 @@ export default function Profile() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
+  // Shown in the heading immediately after a save — the Firebase user object
+  // in context doesn't re-render on updateProfile.
+  const [savedName, setSavedName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) {
-    navigate('/login');
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   const activeBg = avatarColor || themeColors.primary;
-  const initials = getInitials(user.displayName || user.email || 'U');
+  const initials = getInitials(savedName || user.displayName || user.email || 'U');
 
-  const recentTrades = (() => {
-    try {
-      const all = JSON.parse(userStorage.getItem('trades') || '[]');
-      return [...all]
-        .sort((a: any, b: any) => new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime())
-        .slice(0, 5);
-    } catch { return []; }
+  // Account-scoped + demo-aware, matching every other surface — the raw
+  // localStorage read mixed all accounts' trades (and currencies) together.
+  const scopedTrades = (() => {
+    try { return getTrades() as any[]; } catch { return []; }
   })();
+
+  const recentTrades = [...scopedTrades]
+    .sort((a: any, b: any) => {
+      const ta = a.exitTime ? new Date(a.exitTime).getTime() : 0;
+      const tb = b.exitTime ? new Date(b.exitTime).getTime() : 0;
+      return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+    })
+    .slice(0, 5);
 
   const activeGoals = (() => {
     try {
       // Same store + progress math as the Goals page (`tradingGoals`); the
       // legacy `goals` key is dead and no user flow writes it.
       const goals = JSON.parse(userStorage.getItem('tradingGoals') || '[]') as any[];
-      const trades = JSON.parse(userStorage.getItem('trades') || '[]') as any[];
-      return computeGoalProgress(goals, trades)
+      return computeGoalProgress(goals, scopedTrades)
         .filter((g) => !g.achieved)
         .slice(0, 4);
     } catch { return []; }
@@ -127,12 +139,14 @@ export default function Profile() {
   }, [userStorage]);
 
   const handleSaveName = async () => {
+    if (demoGuard('update your name')) { setIsEditingName(false); return; }
     try {
       const { getFirebaseAuth } = await import('@/lib/firebase-lazy');
       const { updateProfile } = await import('firebase/auth');
       const auth = await getFirebaseAuth();
       if (auth.currentUser && displayName.trim()) {
         await updateProfile(auth.currentUser, { displayName: displayName.trim() });
+        setSavedName(displayName.trim());
         toast.success('Name updated');
       }
     } catch {
@@ -262,7 +276,7 @@ export default function Profile() {
                   </Button>
                 </div>
               ) : (
-                <h2 className="text-xl font-bold mb-1">{user.displayName || 'No name set'}</h2>
+                <h2 className="text-xl font-bold mb-1">{savedName || user.displayName || 'No name set'}</h2>
               )}
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground min-w-0">
                 <span className="truncate max-w-full">{user.email}</span>
@@ -402,7 +416,7 @@ export default function Profile() {
                         </p>
                       </div>
                       <span className={`text-sm font-semibold tabular-nums ${isWin ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {isWin ? '+' : ''}{pnl.toFixed(2)}
+                        {formatCurrency(pnl, true)}
                       </span>
                     </div>
                   );

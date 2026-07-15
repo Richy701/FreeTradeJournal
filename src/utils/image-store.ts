@@ -40,6 +40,23 @@ export function newImageId(): string {
   return 'img_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
 }
 
+// Wipe every stored screenshot blob. Used by delete-account / delete-all-data
+// flows — journal entries are removed there, so leaving the images behind
+// would strand user content on the device after a "delete everything".
+export async function clearAllImages(): Promise<void> {
+  try {
+    const db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // IndexedDB unavailable — nothing stored there to clear
+  }
+}
+
 export function isImageRef(value: string): boolean {
   return typeof value === 'string' && value.startsWith('idb:');
 }

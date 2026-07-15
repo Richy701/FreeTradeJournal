@@ -5,10 +5,18 @@ import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useAuth } from '@/contexts/auth-context';
+import { useSettings } from '@/contexts/settings-context';
+import { useDemoData } from '@/hooks/use-demo-data';
 import { useUserStorage } from '@/utils/user-storage';
 import { getAICache, setAICache } from '@/utils/ai-cache';
 import { trackEvent } from '@/lib/analytics';
 import DOMPurify from 'dompurify';
+
+// Local YYYY-MM-DD, matching the app's day-bucketing standard — a UTC key
+// mis-bucketed late-evening trades and skewed "today's loss" near midnight.
+function localDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 interface Trade {
   id: string;
@@ -127,8 +135,10 @@ function SampleRiskAlert() {
 
 export function AIRiskAlertMonitor() {
   const { themeColors, alpha } = useThemePresets();
+  const { getCurrencySymbol } = useSettings();
   const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { user, isDemo } = useAuth();
+  const { getTrades } = useDemoData();
   const userStorage = useUserStorage();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -137,12 +147,11 @@ export function AIRiskAlertMonitor() {
   const detectPatterns = useCallback(() => {
     if (!user || isDemo || !hasAIAccess) return;
 
-    const tradesRaw = userStorage.getItem('trades');
-    if (!tradesRaw) return;
-
+    // Account-scoped via useDemoData — the raw localStorage read mixed every
+    // account's trades into risk detection.
     let trades: Trade[];
     try {
-      trades = JSON.parse(tradesRaw);
+      trades = getTrades() as Trade[];
     } catch {
       return;
     }
@@ -154,7 +163,8 @@ export function AIRiskAlertMonitor() {
       new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime()
     );
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDayKey(new Date());
+    const sym = getCurrencySymbol();
     const detected: Alert[] = [];
 
     // Check consecutive losses (last 3+ trades)
@@ -182,7 +192,7 @@ export function AIRiskAlertMonitor() {
         const maxLossRule = rules.find((r: any) => r.type === 'maxLossPerDay' && r.enabled);
         if (maxLossRule) {
           const todayTrades = sorted.filter(t =>
-            new Date(t.exitTime).toISOString().split('T')[0] === today
+            localDayKey(new Date(t.exitTime)) === today
           );
           const todayPnl = todayTrades.reduce((s, t) => s + t.pnl, 0);
           if (todayPnl < -maxLossRule.value) {
@@ -190,7 +200,7 @@ export function AIRiskAlertMonitor() {
             if (!getAICache(cacheKey, THROTTLE_TTL)) {
               detected.push({
                 type: 'maxLossPerDay',
-                title: `Daily loss limit exceeded ($${Math.abs(todayPnl).toFixed(2)} / $${maxLossRule.value})`,
+                title: `Daily loss limit exceeded (${sym}${Math.abs(todayPnl).toFixed(2)} / ${sym}${maxLossRule.value})`,
                 advice: null,
               });
             }
@@ -223,19 +233,32 @@ export function AIRiskAlertMonitor() {
       // Auto-fetch AI advice for the first alert
       fetchAdvice(detected[0], sorted.slice(0, 10));
     }
-  }, [user, isDemo, hasAIAccess, userStorage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isDemo, hasAIAccess, userStorage, getTrades, getCurrencySymbol]);
 
   useEffect(() => {
     detectPatterns();
+  }, [detectPatterns]);
+
+  // A risk MONITOR must see trades as they happen — re-run detection when
+  // trades change anywhere (Trade Log, quick add, import, other tabs).
+  useEffect(() => {
+    const rerun = () => detectPatterns();
+    window.addEventListener('tradesUpdated', rerun);
+    window.addEventListener('storage', rerun);
+    return () => {
+      window.removeEventListener('tradesUpdated', rerun);
+      window.removeEventListener('storage', rerun);
+    };
   }, [detectPatterns]);
 
   const fetchAdvice = async (alert: Alert, recentTrades: Trade[]) => {
     setLoading(prev => new Set(prev).add(alert.type));
     trackEvent('ai_risk_alert_started', { violationType: alert.type });
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDayKey(new Date());
       const todayTrades = recentTrades.filter(t =>
-        new Date(t.exitTime).toISOString().split('T')[0] === today
+        localDayKey(new Date(t.exitTime)) === today
       );
       const todayPnl = todayTrades.reduce((s, t) => s + t.pnl, 0);
 
@@ -247,6 +270,7 @@ export function AIRiskAlertMonitor() {
       const response = await requestAIAssist({
         type: 'risk_alert',
         payload: {
+          currency: getCurrencySymbol(),
           violationType: alert.type,
           ruleValue: maxLossRule?.value || 0,
           actualValue: todayPnl,

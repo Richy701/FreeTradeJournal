@@ -70,7 +70,15 @@ export function ProProvider({ children }: ProProviderProps) {
   const cachedSub: SubscriptionInfo | null = (() => {
     if (!cached) return null;
     try {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      // TTL: the cache is only an optimistic bridge until the live snapshot
+      // arrives. Without expiry, a device that stays offline (or whose
+      // listener errors) kept Pro entitlement forever after a downgrade.
+      if (parsed?._cachedAt && Date.now() - parsed._cachedAt > 7 * 24 * 60 * 60 * 1000) {
+        if (uid) UserStorage.removeItem(uid, PRO_CACHE_KEY);
+        return null;
+      }
+      return parsed;
     } catch (err) {
       console.error('[ProProvider] Failed to parse cached subscription:', err);
       // Clear corrupted cache
@@ -152,7 +160,7 @@ export function ProProvider({ children }: ProProviderProps) {
               if (data.subscription) {
                 const sub = data.subscription as SubscriptionInfo;
                 setSubscription(sub);
-                UserStorage.setItem(uid, PRO_CACHE_KEY, JSON.stringify(sub));
+                UserStorage.setItem(uid, PRO_CACHE_KEY, JSON.stringify({ ...sub, _cachedAt: Date.now() }));
               } else {
                 setSubscription(null);
                 UserStorage.removeItem(uid, PRO_CACHE_KEY);

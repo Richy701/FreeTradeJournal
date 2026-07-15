@@ -6,7 +6,8 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics'
 
-const DISMISS_KEY = 'ftj-dismiss-referral-banner'
+// uid-suffixed: a shared browser must not hide the banner for every account
+const dismissKeyFor = (uid: string | undefined) => `ftj-dismiss-referral-banner-${uid || 'anon'}`
 
 interface ReferralStats {
   referralCount: number
@@ -22,11 +23,11 @@ export function ReferralBanner() {
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [copied, setCopied] = useState(false)
   const [dismissed, setDismissed] = useState(() => {
-    const dismissedAt = localStorage.getItem(DISMISS_KEY)
+    const dismissedAt = localStorage.getItem(dismissKeyFor(user?.uid)) ?? localStorage.getItem('ftj-dismiss-referral-banner')
     if (!dismissedAt) return false
     const daysSince = (Date.now() - Number(dismissedAt)) / (1000 * 60 * 60 * 24)
     if (daysSince > 7) {
-      localStorage.removeItem(DISMISS_KEY)
+      localStorage.removeItem(dismissKeyFor(user?.uid))
       return false
     }
     return true
@@ -87,7 +88,7 @@ export function ReferralBanner() {
   }, [referralLink, handleCopy])
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()))
+    localStorage.setItem(dismissKeyFor(user?.uid), String(Date.now()))
     setDismissed(true)
   }
 

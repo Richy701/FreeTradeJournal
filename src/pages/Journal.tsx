@@ -414,6 +414,16 @@ export default function Journal() {
             const refs: string[] = [];
             for (const s of e.screenshots) {
               if (typeof s === 'string' && s.startsWith('data:')) {
+                // Pro: migrate inline images to cloud storage (fb:) so they
+                // stay visible on every device — an idb: ref only exists in
+                // THIS browser's IndexedDB but syncs to all of them.
+                if (isPro && user?.uid) {
+                  try {
+                    refs.push(await uploadCloudImage(user.uid, s));
+                    changed = true;
+                    continue;
+                  } catch { /* fall through to local IndexedDB */ }
+                }
                 const id = newImageId();
                 try {
                   await putImage(id, s);
