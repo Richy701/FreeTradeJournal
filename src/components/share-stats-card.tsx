@@ -82,7 +82,7 @@ const F = 'system-ui, Helvetica, Arial, sans-serif';
 
 function fmt(value: number, currency: string): string {
   const sym = currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : currency === 'JPY' ? '¥' : '$';
-  const sign = value >= 0 ? '+' : '';
+  const sign = value >= 0 ? '+' : '-';
   return `${sign}${sym}${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -172,10 +172,10 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   rr(ctx, 0.5, 0.5, W - 1, H - 1, 20);
   ctx.stroke();
 
-  // -- Header: logo + brand + period --
+  // -- Header: logo + brand + period pill --
   const logoSize = 22;
   const logoX = PAD;
-  const logoY = 26;
+  const logoY = 28;
 
   ctx.fillStyle = '#FFC000';
   rr(ctx, logoX, logoY, logoSize, logoSize, 5);
@@ -191,20 +191,29 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(245,158,11,0.9)';
   ctx.font = `bold 12px ${F}`;
-  ctx.fillText('FreeTradeJournal', logoX + logoSize + 8, 42);
+  ctx.fillText('FreeTradeJournal', logoX + logoSize + 8, 44);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = `400 12px ${F}`;
-  ctx.textAlign = 'right';
-  ctx.fillText(periodLabel, W - PAD, 42);
+  // Period as a tinted pill so it reads as a badge, not floating text
+  ctx.font = `600 11px ${F}`;
+  const periodW = ctx.measureText(periodLabel.toUpperCase()).width;
+  const pillH = 22;
+  const pillW = periodW + 24;
+  const pillX = W - PAD - pillW;
+  ctx.fillStyle = `rgba(${accentRgb.r},${accentRgb.g},${accentRgb.b},0.12)`;
+  rr(ctx, pillX, logoY, pillW, pillH, pillH / 2);
+  ctx.fill();
+  ctx.fillStyle = accent;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(periodLabel.toUpperCase(), pillX + pillW / 2, logoY + pillH / 2 + 0.5);
   ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
 
   // -- User identity: initials circle + name --
-  let nameBottom = 52;
   if (userName) {
     const circleR = 17;
     const circleX = PAD + circleR;
-    const circleY = 80;
+    const circleY = 92;
 
     ctx.beginPath();
     ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
@@ -226,29 +235,29 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.font = `600 15px ${F}`;
     ctx.letterSpacing = '1.5px';
-    ctx.fillText(userName.toUpperCase(), PAD + circleR * 2 + 12, 86);
+    ctx.fillText(userName.toUpperCase(), PAD + circleR * 2 + 12, 98);
     ctx.letterSpacing = '0px';
-
-    nameBottom = 112;
   }
 
-  // -- Hero P&L --
+  // -- Hero P&L block: kicker, number, context line --
   const pnlColor = s.totalPnl >= 0 ? tc.profit : tc.loss;
 
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = `600 11px ${F}`;
+  ctx.letterSpacing = '1.5px';
+  ctx.fillText('NET P&L', PAD, 142);
+  ctx.letterSpacing = '0px';
+
   ctx.fillStyle = pnlColor;
-  ctx.font = `bold 46px ${F}`;
-  ctx.fillText(fmt(s.totalPnl, s.currency), PAD, nameBottom + 40);
+  ctx.font = `bold 54px ${F}`;
+  ctx.fillText(fmt(s.totalPnl, s.currency), PAD, 192);
 
-  ctx.textAlign = 'right';
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.font = `500 12px ${F}`;
-  ctx.fillText(`${s.totalTrades} trades`, W - PAD, nameBottom + 40);
-  ctx.textAlign = 'left';
-
-  const heroBottom = nameBottom + 58;
+  ctx.font = `500 13px ${F}`;
+  ctx.fillText(`${s.totalTrades} trades  ·  ${s.wins} wins  ·  ${s.losses} losses`, PAD, 216);
 
   // -- Win/Loss bar --
-  const barY = heroBottom + 14;
+  const barY = 236;
   const barH = 8;
   const barW = W - PAD * 2;
   const barR = 4;
@@ -277,7 +286,7 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   }
 
   // Bar labels
-  const labelY = barY + barH + 16;
+  const labelY = barY + barH + 17;
   ctx.font = `500 11px ${F}`;
   if (s.wins > 0) {
     ctx.fillStyle = tc.profit;
@@ -291,11 +300,9 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   }
   ctx.textAlign = 'left';
 
-  const barBottom = labelY + 12;
-
   // -- Equity curve --
-  const curveTop = barBottom + 8;
-  const curveH = 90;
+  const curveTop = 282;
+  const curveH = 120;
   const curveW = W - PAD * 2;
   const curveBottom = curveTop + curveH;
 
@@ -310,7 +317,7 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
 
     // Zero line
     const zeroY = toY(0);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -368,7 +375,7 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   }
 
   // -- Divider --
-  const divY = curveBottom + 18;
+  const divY = curveBottom + 22;
   const divGrad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
   divGrad.addColorStop(0, 'rgba(255,255,255,0)');
   divGrad.addColorStop(0.3, 'rgba(255,255,255,0.06)');
@@ -381,17 +388,17 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   ctx.lineTo(W - PAD, divY);
   ctx.stroke();
 
-  // -- Stat cards (3) --
+  // -- Stat cards (3): win rate leads --
   const pf = s.profitFactor === Infinity ? '99+' : s.profitFactor.toFixed(1);
   const cards = [
-    { label: 'Best Trade', value: fmt(s.bestTrade, s.currency), color: tc.profit },
+    { label: 'Win Rate', value: `${s.winRate}%`, color: s.winRate >= 50 ? tc.profit : tc.loss },
     { label: 'Profit Factor', value: pf, color: s.profitFactor >= 1.5 ? tc.profit : s.profitFactor >= 1 ? accent : tc.loss },
-    { label: 'Avg Win', value: fmt(s.avgWin, s.currency), color: tc.profit },
+    { label: 'Best Trade', value: fmt(s.bestTrade, s.currency), color: tc.profit },
   ];
   const cardGap = 14;
   const cardW = (W - PAD * 2 - cardGap * (cards.length - 1)) / cards.length;
-  const cardH = 110;
-  const cardY = divY + 20;
+  const cardH = 108;
+  const cardY = divY + 24;
 
   for (let i = 0; i < cards.length; i++) {
     const c = cards[i];
@@ -406,25 +413,43 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
     rr(ctx, cx, cardY, cardW, cardH, 14);
     ctx.stroke();
 
-    ctx.fillStyle = c.color;
-    ctx.font = `bold 22px ${F}`;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `600 11px ${F}`;
     ctx.textAlign = 'center';
-    ctx.fillText(c.value, cx + cardW / 2, cardY + 50);
+    ctx.fillText(c.label.toUpperCase(), cx + cardW / 2, cardY + 34);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = `400 12px ${F}`;
-    ctx.fillText(c.label, cx + cardW / 2, cardY + 78);
+    ctx.fillStyle = c.color;
+    // Long currency values (e.g. JPY) shrink instead of overflowing the card
+    ctx.font = `bold 26px ${F}`;
+    if (ctx.measureText(c.value).width > cardW - 24) ctx.font = `bold 21px ${F}`;
+    ctx.fillText(c.value, cx + cardW / 2, cardY + 74);
 
     ctx.textAlign = 'left';
   }
 
-  // -- Footer --
-  const footY = H - 26;
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = `500 11px ${F}`;
+  // -- Footer band: centered mini logo + url --
+  const footY = H - 42;
+  ctx.font = `500 12px ${F}`;
+  const urlText = 'freetradejournal.com';
+  const urlW = ctx.measureText(urlText).width;
+  const miniLogo = 16;
+  const totalW = miniLogo + 8 + urlW;
+  const startX = (W - totalW) / 2;
+
+  ctx.fillStyle = '#FFC000';
+  rr(ctx, startX, footY - 12, miniLogo, miniLogo, 4);
+  ctx.fill();
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold 7px ${F}`;
   ctx.textAlign = 'center';
-  ctx.fillText('freetradejournal.com', W / 2, footY);
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FTJ', startX + miniLogo / 2, footY - 12 + miniLogo / 2 + 0.5);
+
   ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = `500 12px ${F}`;
+  ctx.fillText(urlText, startX + miniLogo + 8, footY);
 }
 
 export function ShareStatsCard({ children }: { children?: React.ReactNode }) {

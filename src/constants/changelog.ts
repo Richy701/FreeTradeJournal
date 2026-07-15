@@ -17,7 +17,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.60.0',
     date: '2026-07-15',
-    summary: 'A sharper Trading Wrapped PDF and a redesigned report dialog.',
+    summary: 'A sharper Trading Wrapped PDF, redesigned report dialog, and a better Share Stats card.',
     items: [
       {
         type: 'improved',
@@ -33,6 +33,11 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         text: 'Clearer AI risk alerts',
         description: 'Risk alert advice on the Trade Log now reads as tidy sections with proper headings and numbered steps instead of one long block of text.',
+      },
+      {
+        type: 'improved',
+        text: 'Share Stats card redesigned',
+        description: 'The shareable stats image now uses the full canvas: a labelled net P&L headline with your trade counts, a bigger equity curve, win rate front and center, and a proper branded footer.',
       },
     ],
   },
