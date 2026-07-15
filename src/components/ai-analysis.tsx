@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProGate } from '@/components/pro-gate';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useSettings } from '@/contexts/settings-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useAuth } from '@/contexts/auth-context';
+import { useAccounts } from '@/contexts/account-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import { getDemoAIResponse, DEMO_AI_TRADE_COUNT, DEMO_AI_USAGE } from '@/lib/demo-ai';
 import { trackEvent } from '@/lib/analytics';
@@ -38,11 +40,17 @@ type Period = 'recent' | 'last30' | 'all';
 
 const CACHE_KEY = 'ftj-ai-analysis-cache';
 
-// Scope the cache per user (matching UserStorage's `user_<uid>_` scheme) so one
-// account's private analysis can never surface for another user — including the
-// demo user — and so clearDemoStorage()/clearUserData() also wipe it.
-function scopedCacheKey(uid: string | null): string {
-  return uid ? `user_${uid}_${CACHE_KEY}` : `guest_${CACHE_KEY}`;
+// Cap what a single analysis ships to the backend — "All trades" on a large
+// log would otherwise send thousands of rows in one request body.
+const MAX_ANALYSIS_TRADES = 200;
+
+// Scope the cache per user (matching UserStorage's `user_<uid>_` scheme) AND
+// per trading account, so one account's private analysis can never surface for
+// another user or after an account switch. clearUserData() still wipes it
+// (prefix match on `user_<uid>_`).
+function scopedCacheKey(uid: string | null, accountId?: string | null): string {
+  const base = uid ? `user_${uid}_${CACHE_KEY}` : `guest_${CACHE_KEY}`;
+  return accountId ? `${base}_${accountId}` : base;
 }
 
 interface CachedAnalysis {
@@ -53,9 +61,9 @@ interface CachedAnalysis {
   tradeCount: number;
 }
 
-function getCachedAnalysis(uid: string | null): CachedAnalysis | null {
+function getCachedAnalysis(uid: string | null, accountId?: string | null): CachedAnalysis | null {
   try {
-    const raw = localStorage.getItem(scopedCacheKey(uid));
+    const raw = localStorage.getItem(scopedCacheKey(uid, accountId));
     if (!raw) return null;
     const cached = JSON.parse(raw) as CachedAnalysis;
     if (Date.now() - cached.timestamp > 24 * 60 * 60 * 1000) return null;
@@ -65,8 +73,8 @@ function getCachedAnalysis(uid: string | null): CachedAnalysis | null {
   }
 }
 
-function setCachedAnalysis(uid: string | null, data: CachedAnalysis) {
-  localStorage.setItem(scopedCacheKey(uid), JSON.stringify(data));
+function setCachedAnalysis(uid: string | null, accountId: string | null | undefined, data: CachedAnalysis) {
+  localStorage.setItem(scopedCacheKey(uid, accountId), JSON.stringify(data));
 }
 
 function filterTrades(trades: Trade[], period: Period): Trade[] {
@@ -223,6 +231,8 @@ const SAMPLE_SECTIONS = [
 ];
 
 function SampleAnalysisPreview() {
+  const { getCurrencySymbol } = useSettings();
+  const sym = getCurrencySymbol();
   return (
     <div>
       <CardHeader className="pb-3">
@@ -239,7 +249,10 @@ function SampleAnalysisPreview() {
       <CardContent>
         <div className="space-y-3">
           {SAMPLE_SECTIONS.map((section, i) => (
-            <AnalysisSection key={i} section={section} />
+            <AnalysisSection
+              key={i}
+              section={{ ...section, content: section.content.replace(/\$/g, sym).replace(/ EST\b/g, '') }}
+            />
           ))}
           <p className="text-xs text-muted-foreground pt-2 text-right">
             Based on 38 trades · Sample output — your analysis will use your real trades
@@ -252,11 +265,15 @@ function SampleAnalysisPreview() {
 
 export function AIAnalysis({ trades }: AIAnalysisProps) {
   const { themeColors, alpha } = useThemePresets();
+  const { getCurrencySymbol } = useSettings();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { user, isDemo } = useAuth();
-  const { streamText, isStreaming, startStream, meta } = useStreamingAI();
+  const { activeAccount } = useAccounts();
+  const { streamText, isStreaming, startStream, meta, abort } = useStreamingAI();
   const [period, setPeriod] = useState<Period>('last30');
   const [result, setResult] = useState<CachedAnalysis | null>(null);
+
+  useEffect(() => () => abort(), [abort]);
 
   useEffect(() => {
     // In demo mode, auto-show the shared canned analysis (single source of
@@ -272,16 +289,29 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
       });
       return;
     }
-    const cached = getCachedAnalysis(user?.uid ?? null);
-    if (cached) {
-      setResult(cached);
-      setPeriod(cached.period);
-    }
-  }, [isDemo, user?.uid]);
+    // Account-scoped: switching accounts must never keep showing the previous
+    // account's analysis, so a missing cache clears the panel.
+    const cached = getCachedAnalysis(user?.uid ?? null, activeAccount?.id);
+    setResult(cached);
+    if (cached) setPeriod(cached.period);
+  }, [isDemo, user?.uid, activeAccount?.id]);
 
   useEffect(() => {
     if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
-  }, [meta]);
+  }, [meta, updateFreeAiQuota]);
+
+  // `meta` lands after handleAnalyze's closure has already cached a fallback
+  // usage object — patch the real numbers in once they arrive.
+  useEffect(() => {
+    if (!meta?.usage) return;
+    setResult(prev => {
+      if (!prev) return prev;
+      const next = { ...prev, usage: meta.usage };
+      if (!isDemo) setCachedAnalysis(user?.uid ?? null, activeAccount?.id, next);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta?.usage]);
 
   if (!hasAIAccess) {
     return (
@@ -315,9 +345,15 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
 
     trackEvent('ai_analysis_started', { period, tradeCount: filteredTrades.length });
 
+    // Most recent trades first, capped — see MAX_ANALYSIS_TRADES.
+    const payloadTrades = [...filteredTrades]
+      .sort((a, b) => new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime())
+      .slice(0, MAX_ANALYSIS_TRADES);
+
     try {
       const analysis = await startStream('analysis', {
-        trades: filteredTrades.map(t => ({
+        currency: getCurrencySymbol(),
+        trades: payloadTrades.map(t => ({
           symbol: t.symbol,
           side: t.side,
           entryPrice: t.entryPrice,
@@ -338,11 +374,11 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
         usage: meta?.usage || { used: 0, limit: 10, remaining: 10 },
         timestamp: Date.now(),
         period,
-        tradeCount: filteredTrades.length,
+        tradeCount: payloadTrades.length,
       };
-      setCachedAnalysis(user?.uid ?? null, cached);
+      setCachedAnalysis(user?.uid ?? null, activeAccount?.id, cached);
       setResult(cached);
-      trackEvent('ai_analysis_succeeded', { period, tradeCount: filteredTrades.length });
+      trackEvent('ai_analysis_succeeded', { period, tradeCount: payloadTrades.length });
     } catch (err: any) {
       const msg = err?.message || 'Failed to analyze trades';
       trackEvent('ai_analysis_error', { period, message: msg });
@@ -385,7 +421,10 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => { setResult(null); localStorage.removeItem(CACHE_KEY); }}
+                  onClick={() => {
+                    setResult(null);
+                    localStorage.removeItem(scopedCacheKey(user?.uid ?? null, activeAccount?.id));
+                  }}
                 >
                   <ArrowCounterClockwise className="mr-1.5 h-3.5 w-3.5" />
                   New
@@ -441,6 +480,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 <span className="text-xs text-muted-foreground sm:ml-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {filteredTrades.length} trade{filteredTrades.length !== 1 ? 's' : ''} in this period
                   {filteredTrades.length < 3 && ' — need at least 3'}
+                  {filteredTrades.length > MAX_ANALYSIS_TRADES && ` — the ${MAX_ANALYSIS_TRADES} most recent are analysed`}
                 </span>
               </div>
             </div>

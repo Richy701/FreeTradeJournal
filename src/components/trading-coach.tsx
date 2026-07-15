@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AIFeedback } from '@/components/ui/ai-feedback'
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Heartbeat, Clock, Scales, Fire, Snowflake, GraduationCap, ChartPie, ChatCircle, PaperPlaneTilt, X, type Icon } from '@phosphor-icons/react'
 import { Button } from "@/components/ui/button"
@@ -386,13 +387,18 @@ const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
 
 export function TradingCoach() {
   const { themeColors, alpha } = useThemePresets()
-  const { getTrades } = useDemoData()
+  const { getCurrencySymbol, formatCurrency } = useSettings()
+  const { getTrades, isDemo } = useDemoData()
   const { isPro, hasAIAccess, freeAiQuota, updateFreeAiQuota } = useProStatus()
+  const userStorage = useUserStorage()
   const [aiTips, setAiTips] = useState<any[] | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  // User-scoped (raw localStorage survived logout, leaking one user's coach
+  // state to the next login on a shared browser). Legacy raw keys are read as
+  // a fallback once and migrated on the next write.
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('dismissedCoachTips')
+      const stored = userStorage.getItem('dismissedCoachTips') ?? localStorage.getItem('dismissedCoachTips')
       return stored ? new Set(JSON.parse(stored)) : new Set()
     } catch {
       return new Set()
@@ -403,16 +409,17 @@ export function TradingCoach() {
   const [chatOpen, setChatOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
     try {
-      const stored = localStorage.getItem(CHAT_CACHE_KEY)
+      const stored = userStorage.getItem(CHAT_CACHE_KEY) ?? localStorage.getItem(CHAT_CACHE_KEY)
       return stored ? JSON.parse(stored) : []
     } catch { return [] }
   })
   const [chatInput, setChatInput] = useState('')
-  const { streamText, isStreaming: chatStreaming, startStream, meta: chatMeta } = useStreamingAI()
+  const { streamText, isStreaming: chatStreaming, startStream, meta: chatMeta, abort } = useStreamingAI()
   const chatEndRef = useRef<HTMLDivElement>(null)
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const chatInputRef = useRef<HTMLInputElement>(null)
-  const userStorage = useUserStorage()
+
+  useEffect(() => () => abort(), [abort])
 
   // Get trades from demo data or localStorage
   const trades = useMemo(() => {
@@ -575,14 +582,15 @@ export function TradingCoach() {
     }
   }, [finishingText, chatStreaming, typedStream])
 
-  // Persist chat history
+  // Persist chat history (user-scoped; drop the legacy shared key)
   useEffect(() => {
     if (chatMessages.length > 0) {
       try {
-        localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify(chatMessages.slice(-20)))
+        userStorage.setItem(CHAT_CACHE_KEY, JSON.stringify(chatMessages.slice(-20)))
+        localStorage.removeItem(CHAT_CACHE_KEY)
       } catch {}
     }
-  }, [chatMessages])
+  }, [chatMessages, userStorage])
 
   // Keep the chat pinned to its latest message by scrolling ONLY the inner
   // message list — never scrollIntoView, which would also scroll the page/window.
@@ -637,6 +645,7 @@ export function TradingCoach() {
     try { rules = rulesRaw ? JSON.parse(rulesRaw) : [] } catch {}
 
     return {
+      currency: getCurrencySymbol(),
       stats: {
         winRate: trades.length > 0 ? (wins / trades.length) * 100 : 0,
         totalPnl,
@@ -675,7 +684,7 @@ export function TradingCoach() {
       rules: rules.map((r: any) => ({ type: r.type, value: r.value })),
       tiltFactors: tiltScore.factors,
     }
-  }, [trades, userStorage, tiltScore.factors, chatAggregates])
+  }, [trades, userStorage, tiltScore.factors, chatAggregates, getCurrencySymbol])
 
   const sendChatMessage = useCallback(async (message: string) => {
     if (!message.trim() || chatStreaming || finishingText) return
@@ -714,8 +723,13 @@ export function TradingCoach() {
 
   const clearChat = useCallback(() => {
     setChatMessages([])
+    // Also drop any reply still being typed out, or the commit effect would
+    // re-add it to the thread the user just cleared.
+    setFinishingText(null)
+    setTypedStream('')
+    userStorage.removeItem(CHAT_CACHE_KEY)
     localStorage.removeItem(CHAT_CACHE_KEY)
-  }, [])
+  }, [userStorage])
 
   // Advanced pattern detection
   const detectTradingPatterns = (trades: Trade[]) => {
@@ -993,11 +1007,18 @@ export function TradingCoach() {
   const aiFetchedRef = useRef<string | null>(null)
   useEffect(() => {
     if (!hasAIAccess || trades.length < 1 || !metrics) return
+    // Demo mode has no real backend user — skip the (silently failing)
+    // callable and let the client-side tips render instead.
+    if (isDemo) return
 
-    // Check cache first
-    const cached = getAICache<any[]>(AI_COACH_CACHE_KEY, AI_COACH_TTL)
-    if (cached && aiFetchedRef.current === tradeFingerprint) {
-      setAiTips(cached)
+    // Honor a fresh cache that matches the CURRENT trade data — the cache
+    // stores its fingerprint so a fresh mount can trust it. (Previously the
+    // in-memory ref was required to match, which is impossible on mount, so
+    // every page visit refetched and burned a free AI credit.)
+    const cached = getAICache<{ fp: string; tips: any[] }>(AI_COACH_CACHE_KEY, AI_COACH_TTL)
+    if (cached && !Array.isArray(cached) && cached.fp === tradeFingerprint) {
+      aiFetchedRef.current = tradeFingerprint
+      setAiTips(cached.tips)
       return
     }
 
@@ -1044,6 +1065,7 @@ export function TradingCoach() {
         const response = await requestAIAssist({
           type: 'coaching_tips',
           payload: {
+            currency: getCurrencySymbol(),
             trades: trades.slice(-15).map((t: Trade) => ({
               symbol: t.symbol,
               side: t.side || 'long',
@@ -1075,7 +1097,7 @@ export function TradingCoach() {
             key: `ai-tip-${i}`,
           }))
           setAiTips(tipsWithKeys)
-          setAICache(AI_COACH_CACHE_KEY, tipsWithKeys)
+          setAICache(AI_COACH_CACHE_KEY, { fp: tradeFingerprint, tips: tipsWithKeys })
         }
       } catch {
         // Silently fall back to client-side tips
@@ -1085,7 +1107,8 @@ export function TradingCoach() {
     }
 
     fetchAITips()
-  }, [hasAIAccess, trades.length, tradeFingerprint, metrics])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAIAccess, isDemo, trades.length, tradeFingerprint, metrics])
 
   // Generate smarter coaching tips based on advanced analysis
   const coachingTips = useMemo(() => {
@@ -1224,7 +1247,7 @@ export function TradingCoach() {
         icon: TrendDown,
         type: 'critical',
         title: "High Drawdown Risk",
-        message: `Your max drawdown is ${metrics.maxDrawdown.toFixed(2)}. This is too high relative to profits. Reduce position sizes.`,
+        message: `Your max drawdown is ${formatCurrency(metrics.maxDrawdown, false)}. This is too high relative to profits. Reduce position sizes.`,
         key: "drawdown"
       })
     }
@@ -1397,9 +1420,10 @@ export function TradingCoach() {
     next.add(key)
     setDismissedTips(next)
     try {
-      localStorage.setItem('dismissedCoachTips', JSON.stringify([...next]))
+      userStorage.setItem('dismissedCoachTips', JSON.stringify([...next]))
+      localStorage.removeItem('dismissedCoachTips')
     } catch {}
-  }, [dismissedTips])
+  }, [dismissedTips, userStorage])
 
   const hasCritical = visibleTips.some((t) => t.type === 'critical')
 

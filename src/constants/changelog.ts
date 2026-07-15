@@ -15,6 +15,108 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.61.0',
+    date: '2026-07-15',
+    summary: 'Trading Calendar upgrades plus a round of Journal fixes: pick entry dates, safer screenshots, your currency everywhere.',
+    items: [
+      {
+        type: 'new',
+        text: 'Pick a date for journal entries',
+        description: 'The journal editor now has a date field, so you can write yesterday\'s review today (or plan ahead) and the entry lands on the right day in the calendar.',
+      },
+      {
+        type: 'fixed',
+        text: 'Journal screenshots are safer when editing',
+        description: 'Editing an entry on a device that couldn\'t load one of its screenshots used to silently remove that screenshot on save. Unloadable screenshots now stay attached, with a note in the editor.',
+      },
+      {
+        type: 'fixed',
+        text: 'Journal shows amounts in your currency',
+        description: 'Trade P&L shown in the journal — the trade picker, linked-trade badges, and the Sentiment vs. P&L card — now uses your currency setting, with correctly placed minus signs.',
+      },
+      {
+        type: 'improved',
+        text: 'Linking a trade keeps what you wrote',
+        description: 'Selecting a trade in the journal editor no longer overwrites a title, tags, or emotions you\'ve already filled in — it only suggests values for empty fields.',
+      },
+      {
+        type: 'improved',
+        text: 'Journal stays in step with your accounts',
+        description: 'The trade picker now only lists trades from your active account, the journal refreshes when trades change elsewhere, and the free-limit banner counts entries the same way the limit does.',
+      },
+      {
+        type: 'fixed',
+        text: 'Risk limits watch the right trade',
+        description: 'The per-trade loss limit was checking an arbitrary trade instead of your most recent one, and breach alerts could repeat endlessly once a limit was crossed. Alerts now fire once, when the breach actually happens, and the per-trade meter tracks today\'s trades.',
+      },
+      {
+        type: 'fixed',
+        text: 'Goals track the account you\'re viewing',
+        description: 'Goal progress and risk usage on the Goals page mixed trades from every account. They now follow your active account, matching the rest of the app — and the page works properly in the demo.',
+      },
+      {
+        type: 'fixed',
+        text: 'Goal coaching sees your real progress',
+        description: 'The AI Goal Coach was told every goal was at zero progress regardless of your actual numbers, and could coach against outdated targets. It now reads your live progress and the goals as they are right now.',
+      },
+      {
+        type: 'fixed',
+        text: 'AI analysis stays with its account',
+        description: 'Switching trading accounts could keep showing the previous account\'s AI Trade Analysis, and the New button didn\'t actually discard the old result. Both fixed, and the usage counter now shows real numbers.',
+      },
+      {
+        type: 'fixed',
+        text: 'Coach tips stop re-spending AI credits',
+        description: 'The AI Coach page refetched coaching tips on every visit even when a fresh result was cached, quietly using up free AI queries. Cached tips are now reused for 24 hours unless your trades change.',
+      },
+      {
+        type: 'improved',
+        text: 'Coach and Goals speak your currency',
+        description: 'Coaching tips, goal targets, risk limits, and AI analysis now use your currency setting instead of assuming dollars.',
+      },
+      {
+        type: 'fixed',
+        text: 'Euro symbol leads the number',
+        description: 'Euro amounts used to show the symbol after the number (1,234.56€) in some places while other currencies led with it. Euro now reads €1,234.56 everywhere.',
+      },
+      {
+        type: 'fixed',
+        text: 'Journal filters behave predictably',
+        description: 'Filtering by P&L now correctly hides entries without a linked trade, and a date filter works with just a start or just an end date.',
+      },
+      {
+        type: 'new',
+        text: 'Redesigned calendar day view',
+        description: 'Clicking a day on the Trading Calendar now opens a clean overview: the day\'s P&L and win rate, every trade closed that day, and your journal notes — with quick buttons to add a note or log a trade when you want to.',
+      },
+      {
+        type: 'improved',
+        text: 'Redesigned day hover preview',
+        description: 'Hovering a day on the Trading Calendar now shows a compact, steady summary — P&L, trades, win rate, and averages — instead of a bulky card that could flicker or vanish.',
+      },
+      {
+        type: 'improved',
+        text: 'Trading Calendar uses your currency',
+        description: 'Day cells, weekly totals, and monthly stats now show amounts in the currency from your settings instead of always showing dollars.',
+      },
+      {
+        type: 'fixed',
+        text: 'Journal markers land on the right day',
+        description: 'Depending on your timezone, the journal book icon could appear on the day before or after the entry. Calendar days now match your local time.',
+      },
+      {
+        type: 'fixed',
+        text: 'Calendar updates as you log trades',
+        description: 'The Trading Calendar now refreshes immediately after you add, edit, or import trades — no more page reload to see today\'s results.',
+      },
+      {
+        type: 'improved',
+        text: 'Trade Distribution legend fits every symbol',
+        description: 'With many symbols in play, the last entries in the Trade Distribution legend could get cut off. Each symbol is now a single compact line so all of them stay visible.',
+      },
+    ],
+  },
+  {
     version: '2.60.0',
     date: '2026-07-15',
     summary: 'A sharper Trading Wrapped PDF, redesigned report dialog, and a better Share Stats card.',
@@ -1927,4 +2029,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.60.0'
+export const LATEST_CHANGELOG_VERSION = '2.61.0'

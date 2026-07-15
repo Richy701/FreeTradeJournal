@@ -194,17 +194,10 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       maximumFractionDigits: 2
     });
 
-    // Handle different currency symbol positions
-    if (['USD', 'CAD', 'AUD'].includes(effectiveCurrency)) {
-      const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
-      return `${sign}${symbol}${formatted}`;
-    } else if (effectiveCurrency === 'EUR') {
-      const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
-      return `${sign}${formatted}${symbol}`;
-    } else {
-      const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
-      return `${sign}${symbol}${formatted}`;
-    }
+    // Symbol always leads, EUR included ("+€1,234.56") — the suffix position
+    // read as a glitch next to prefix-style USD/GBP everywhere else in the app.
+    const sign = showSign && amount !== 0 ? (amount > 0 ? '+' : '-') : '';
+    return `${sign}${symbol}${formatted}`;
   }, [effectiveCurrency]);
 
   const value: SettingsContextType = useMemo(() => ({

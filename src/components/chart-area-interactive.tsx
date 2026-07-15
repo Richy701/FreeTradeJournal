@@ -51,17 +51,17 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-// EUR is the app's only suffix-position currency (matches settings-context formatCurrency).
+// Symbol always leads, EUR included (matches settings-context formatCurrency).
 const fmtMoney = (n: number, symbol: string, withSign = false) => {
   const sign = withSign && n > 0 ? '+' : n < 0 ? '-' : ''
   const formatted = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
+  return `${sign}${symbol}${formatted}`
 }
 
 const fmtMoneyShort = (n: number, symbol: string, withSign = false) => {
   const sign = withSign && n > 0 ? '+' : n < 0 ? '-' : ''
   const formatted = Math.abs(Math.round(n)).toLocaleString('en-US')
-  return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
+  return `${sign}${symbol}${formatted}`
 }
 
 // Axis ticks: k-notation above $1,000 ($10.6k) so labels stay short.
@@ -72,7 +72,7 @@ const fmtMoneyAxis = (n: number, symbol: string) => {
   const num = abs >= 1000
     ? `${(abs / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 })}k`
     : Math.round(abs).toLocaleString('en-US')
-  return symbol === '€' ? `${sign}${num}${symbol}` : `${sign}${symbol}${num}`
+  return `${sign}${symbol}${num}`
 }
 
 // Hover card: which trade, what it made, and where the running total stands.

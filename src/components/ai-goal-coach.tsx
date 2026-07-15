@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Brain, SpinnerGap, ArrowCounterClockwise, Target, Trophy, TrendUp, Lightbulb } from '@phosphor-icons/react';
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics';
@@ -7,10 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useSettings } from '@/contexts/settings-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import { useUserStorage } from '@/utils/user-storage';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { onSyncChange } from '@/contexts/sync-context';
+import { computeGoalProgress } from '@/lib/goal-progress';
 import { getAICache, setAICache, clearAICache } from '@/utils/ai-cache';
 import DOMPurify from 'dompurify';
 
@@ -97,6 +100,8 @@ const GOAL_COACH_SAMPLE_SECTIONS = [
 
 function GoalCoachSamplePreview() {
   const { themeColors, alpha } = useThemePresets();
+  const { getCurrencySymbol } = useSettings();
+  const sym = getCurrencySymbol();
   return (
     <div>
       <CardHeader className="pb-3">
@@ -122,7 +127,7 @@ function GoalCoachSamplePreview() {
                   <h3 className="font-semibold text-sm text-foreground">{section.title}</h3>
                 </div>
                 <div className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_li]:py-0.5"
-                  dangerouslySetInnerHTML={{ __html: renderContent(section.content) }}
+                  dangerouslySetInnerHTML={{ __html: renderContent(section.content.replace(/\$/g, sym)) }}
                 />
               </div>
             );
@@ -138,22 +143,40 @@ function GoalCoachSamplePreview() {
 
 export function AIGoalCoach() {
   const { themeColors, alpha } = useThemePresets();
+  const { getCurrencySymbol } = useSettings();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
-  const { streamText, isStreaming, startStream, meta } = useStreamingAI();
+  const { streamText, isStreaming, startStream, meta, abort } = useStreamingAI();
   const userStorage = useUserStorage();
   const { getTrades } = useDemoData();
   const [result, setResult] = useState<string | null>(null);
+  // Guards a slow first request from overwriting a newer one (double-click),
+  // and lets unmount abort an in-flight stream.
+  const callSeq = useRef(0);
 
+  useEffect(() => () => abort(), [abort]);
+
+  // Refresh the data snapshot when goals/trades change elsewhere (sync pull,
+  // other tabs, Trade Log writes) so coaching isn't built on a mount-time read.
+  const [dataVersion, setDataVersion] = useState(0);
   useEffect(() => {
-    const cached = getAICache<string>(CACHE_KEY, CACHE_TTL);
-    if (cached) setResult(cached);
+    const bump = () => setDataVersion(v => v + 1);
+    window.addEventListener('storage', bump);
+    window.addEventListener('tradesUpdated', bump);
+    const offSync = onSyncChange(bump);
+    return () => {
+      window.removeEventListener('storage', bump);
+      window.removeEventListener('tradesUpdated', bump);
+      offSync?.();
+    };
   }, []);
 
   useEffect(() => {
     if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
-  }, [meta]);
+  }, [meta, updateFreeAiQuota]);
 
-  const goalData = useMemo(() => {
+  // Fresh read every call — goals edited moments ago in the component above
+  // must reach the model, so nothing here is cached beyond the render.
+  const buildGoalData = useCallback(() => {
     const trades = getTrades();
     const goalsRaw = userStorage.getItem('tradingGoals');
     const rulesRaw = userStorage.getItem('riskRules');
@@ -161,6 +184,10 @@ export function AIGoalCoach() {
     let rules: any[] = [];
     try { goals = goalsRaw ? JSON.parse(goalsRaw) : []; } catch { /* corrupted */ }
     try { rules = rulesRaw ? JSON.parse(rulesRaw) : []; } catch { /* corrupted */ }
+
+    // `current` is never persisted on stored goals — derive real progress the
+    // same way the Goals UI does, or the model is told every goal is at 0%.
+    const progress = computeGoalProgress(goals as any[], trades as any[]);
 
     // Compute basic stats
     let wins = 0, totalPnl = 0, grossWins = 0, grossLosses = 0, rrSum = 0, rrCount = 0;
@@ -180,7 +207,8 @@ export function AIGoalCoach() {
     const daysSinceStart = Math.max(1, Math.round((Date.now() - firstTradeDate.getTime()) / (1000 * 60 * 60 * 24)));
 
     return {
-      goals: goals.map((g: any) => ({
+      currency: getCurrencySymbol(),
+      goals: progress.map(g => ({
         type: g.type,
         period: g.period,
         target: g.target,
@@ -202,18 +230,39 @@ export function AIGoalCoach() {
       tradeCount: trades.length,
       daysSinceStart,
     };
-  }, [getTrades, userStorage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getTrades, userStorage, getCurrencySymbol, dataVersion]);
+
+  const goalData = useMemo(() => buildGoalData(), [buildGoalData]);
+
+  // Cache is only valid for the goals/trades it was generated from.
+  const cacheFingerprint = (d: ReturnType<typeof buildGoalData>) =>
+    `${d.goals.map(g => `${g.type}:${g.period}:${g.target}`).join('|')}#${d.tradeCount}`;
+
+  useEffect(() => {
+    const cached = getAICache<{ fp: string; text: string }>(CACHE_KEY, CACHE_TTL);
+    if (cached && typeof cached === 'object' && cached.fp === cacheFingerprint(goalData)) {
+      setResult(cached.text);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCoach = async () => {
     trackEvent('ai_goal_coach_started');
+    const seq = ++callSeq.current;
     try {
+      const data = buildGoalData();
       const coachResult = await startStream('assist', {
         type: 'goal_coach',
-        payload: goalData,
+        payload: data,
       });
 
+      // A newer call (or an abort) superseded this one — don't cache its
+      // possibly-truncated output.
+      if (seq !== callSeq.current || !coachResult) return;
+
       setResult(coachResult);
-      setAICache(CACHE_KEY, coachResult);
+      setAICache(CACHE_KEY, { fp: cacheFingerprint(data), text: coachResult });
       trackEvent('ai_goal_coach_used');
     } catch (err: any) {
       trackEvent('ai_goal_coach_error', { message: err?.message });

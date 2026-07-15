@@ -1,8 +1,10 @@
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
 import { toast } from "sonner"
 import { calculateGrossPnl } from "@/lib/pnl"
 import { belongsToAccount } from "@/lib/account-scope"
 import { useThemePresets } from '@/contexts/theme-presets'
+import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { notifyDataChange } from '@/contexts/sync-context'
@@ -38,7 +40,6 @@ import {
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 
 // Define interfaces
 interface Trade {
@@ -84,32 +85,50 @@ const MONTHS = [
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-// Safe YYYY-MM-DD key from any stored date value. Returns null for unparseable
-// dates so a bad journal/trade record can't throw on .toISOString() and blank
-// the dashboard.
+// Local-time YYYY-MM-DD key. Trades are bucketed into cells by LOCAL day
+// (exitTime.toDateString()), so journal keys must be local too — a UTC key
+// puts an evening entry on the wrong cell for anyone west of UTC.
+function localDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Safe local date key from any stored date value. Returns null for unparseable
+// dates so a bad journal/trade record can't throw and blank the dashboard.
 function safeDateKey(value: unknown): string | null {
   const d = new Date(value as any)
-  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0]
+  return isNaN(d.getTime()) ? null : localDateKey(d)
 }
 
 export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors, alpha } = useThemePresets()
+  const { formatCurrency, getCurrencySymbol } = useSettings()
   const { activeAccount } = useAccounts()
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
   const demoGuard = useDemoGuard()
   const userStorage = useUserStorage()
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Refresh when trades/journal change anywhere (Trade Log, CSV import, other tabs)
+  useEffect(() => {
+    const handleDataChange = () => setRefreshKey(prev => prev + 1)
+    window.addEventListener('storage', handleDataChange)
+    window.addEventListener('tradesUpdated', handleDataChange)
+    return () => {
+      window.removeEventListener('storage', handleDataChange)
+      window.removeEventListener('tradesUpdated', handleDataChange)
+    }
+  }, [])
   
   // State for current viewing month/year
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [isAnimating, setIsAnimating] = useState(false)
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear())
   const [isTradeDialogOpen, setIsTradeDialogOpen] = useState(false)
+  const [dayDialogView, setDayDialogView] = useState<'overview' | 'journal' | 'trade'>('overview')
   const [selectedDateForTrade, setSelectedDateForTrade] = useState<Date | null>(null)
   const [journalNote, setJournalNote] = useState("")
   const [journalTitle, setJournalTitle] = useState("")
@@ -164,7 +183,7 @@ export function CalendarHeatmap() {
     } catch {
       return []
     }
-  }, [activeAccount, isDemo, getTrades])
+  }, [activeAccount, isDemo, getTrades, refreshKey])
 
   // Get journal entries from demo data or localStorage
   const journalEntries = useMemo(() => {
@@ -194,7 +213,7 @@ export function CalendarHeatmap() {
     })
     
     return journalByDate
-  }, [isDemo, getJournalEntries, isTradeDialogOpen])
+  }, [isDemo, getJournalEntries, isTradeDialogOpen, refreshKey])
 
   // Navigation functions with animation
   const navigateWithAnimation = (callback: () => void) => {
@@ -252,7 +271,7 @@ export function CalendarHeatmap() {
     
     // Load existing journal entries for this date
     const entries = getJournalEntries()
-    const dateKey = date.toISOString().split('T')[0]
+    const dateKey = localDateKey(date)
     const dayEntries = entries.filter((entry: any) => {
       const entryDate = safeDateKey(entry.date)
       return entryDate !== null && entryDate === dateKey
@@ -265,7 +284,8 @@ export function CalendarHeatmap() {
     setJournalMood('neutral')
     setJournalTags("")
     setSelectedTradeId("none")
-    
+
+    setDayDialogView('overview')
     setIsTradeDialogOpen(true)
   }
 
@@ -302,7 +322,7 @@ export function CalendarHeatmap() {
     setIsTradeDialogOpen(false)
     
     // Update the selected date entries to reflect the new entry
-    const dateKey = selectedDateForTrade.toISOString().split('T')[0]
+    const dateKey = localDateKey(selectedDateForTrade)
     const updatedDayEntries = [...(journalEntries[dateKey] || []), journalEntry]
     setSelectedDateEntries(updatedDayEntries)
     
@@ -377,6 +397,66 @@ export function CalendarHeatmap() {
     
     setIsTradeDialogOpen(false)
   }
+
+  // Trades closed on the day currently open in the dialog (same local-day
+  // bucketing as the calendar cells)
+  const selectedDateTrades = useMemo(() => {
+    if (!selectedDateForTrade) return []
+    const dateStr = selectedDateForTrade.toDateString()
+    return trades.filter((trade: Trade) => trade.exitTime.toDateString() === dateStr)
+  }, [selectedDateForTrade, trades])
+
+  // Custom hover tooltip — one fixed element instead of 42 Radix popovers.
+  // Pointer-transparent and focus-free, so it can't swallow the pointer or
+  // steal focus from the cell (both caused the old popover to flicker).
+  const [hoverDay, setHoverDay] = useState<DayData | null>(null)
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number; above: boolean } | null>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showDayTooltip = (day: DayData, el: HTMLElement) => {
+    if (day.trades === 0) return
+    const rect = el.getBoundingClientRect()
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    // Small delay so sweeping the mouse across the grid doesn't strobe
+    hoverTimer.current = setTimeout(() => {
+      const above = rect.top > 150
+      setHoverPos({
+        x: rect.left + rect.width / 2,
+        y: above ? rect.top - 8 : rect.bottom + 8,
+        above,
+      })
+      setHoverDay(day)
+    }, 80)
+  }
+
+  const hideDayTooltip = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    setHoverDay(null)
+    setHoverPos(null)
+  }
+
+  // Fixed-position coords go stale the moment the page scrolls or resizes
+  useEffect(() => {
+    const hide = () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+      setHoverDay(null)
+      setHoverPos(null)
+    }
+    window.addEventListener('scroll', hide, true)
+    window.addEventListener('resize', hide)
+    return () => {
+      window.removeEventListener('scroll', hide, true)
+      window.removeEventListener('resize', hide)
+      if (hoverTimer.current) clearTimeout(hoverTimer.current)
+    }
+  }, [])
+
+  const selectedDatePnl = selectedDateTrades.reduce((sum: number, t: Trade) => sum + t.pnl, 0)
+  const selectedDateWins = selectedDateTrades.filter((t: Trade) => t.pnl > 0).length
+  const selectedDateLosses = selectedDateTrades.filter((t: Trade) => t.pnl < 0).length
+  const selectedDateWinRate = selectedDateTrades.length > 0
+    ? Math.round((selectedDateWins / selectedDateTrades.length) * 100)
+    : 0
 
   // Keyboard navigation
   useEffect(() => {
@@ -613,30 +693,14 @@ export function CalendarHeatmap() {
     return max > 0 ? max : 1
   }, [calendarData])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
-  }
-
-  const formatCurrencyMobile = (amount: number) => {
-    const abs = Math.abs(amount)
-    if (abs >= 1000) {
-      return `$${(amount/1000).toFixed(1)}k`
-    } else if (abs >= 100) {
-      return `$${Math.round(amount)}`
-    } else {
-      return `$${amount.toFixed(0)}`
-    }
-  }
-
-  // Compact signed P&L for the slim weekly-total column (e.g. +$820, -$1.2k)
-  const formatWeekPnl = (n: number) => {
-    const sign = n > 0 ? '+' : n < 0 ? '-' : ''
+  // Compact P&L for tight spots (day cells, weekly column, mobile popover) —
+  // uses the account currency, symbol always in front (e.g. +€820, -€1.2k)
+  const fmtCompact = (n: number, signed = true) => {
+    const symbol = getCurrencySymbol()
+    const sign = signed && n > 0 ? '+' : n < 0 ? '-' : ''
     const a = Math.abs(n)
-    if (a >= 1000) return `${sign}$${(a / 1000).toFixed(1)}k`
-    return `${sign}$${a.toFixed(0)}`
+    const num = a >= 1000 ? `${(a / 1000).toFixed(1)}k` : a.toFixed(0)
+    return `${sign}${symbol}${num}`
   }
 
   const today = new Date()
@@ -846,13 +910,12 @@ export function CalendarHeatmap() {
                 {week.map((day) => {
                   const isToday = day.date.toDateString() === today.toDateString()
                   const hasData = day.trades > 0
-                  const dateKey = day.date.toISOString().split('T')[0]
+                  const dateKey = localDateKey(day.date)
                   const hasJournal = journalEntries[dateKey] && journalEntries[dateKey].length > 0
                   
                   return (
-                    <Popover key={day.date.toISOString()} open={isPopoverOpen && selectedDay?.date.toISOString() === day.date.toISOString()}>
-                      <PopoverTrigger asChild>
                         <div
+                          key={day.date.toISOString()}
                           role="button"
                           tabIndex={day.isCurrentMonth ? 0 : -1}
                           className={cn(
@@ -871,30 +934,15 @@ export function CalendarHeatmap() {
                               borderColor: themeColors.primary
                             })
                           }}
-                          onMouseEnter={() => {
-                            if (hasData) {
-                              setSelectedDay(day)
-                              setIsPopoverOpen(true)
-                            }
-                          }}
-                          onMouseLeave={() => {
-                            setIsPopoverOpen(false)
-                            setSelectedDay(null)
-                          }}
+                          onMouseEnter={(e) => showDayTooltip(day, e.currentTarget)}
+                          onMouseLeave={hideDayTooltip}
                           // Keyboard parity with hover: focusing a day shows
-                          // the same summary popover the mouse gets.
-                          onFocus={() => {
-                            if (hasData) {
-                              setSelectedDay(day)
-                              setIsPopoverOpen(true)
-                            }
-                          }}
-                          onBlur={() => {
-                            setIsPopoverOpen(false)
-                            setSelectedDay(null)
-                          }}
+                          // the same summary tooltip the mouse gets.
+                          onFocus={(e) => showDayTooltip(day, e.currentTarget)}
+                          onBlur={hideDayTooltip}
                           onClick={() => {
                             if (day.isCurrentMonth) {
+                              hideDayTooltip()
                               handleDateClick(day.date)
                             }
                           }}
@@ -934,10 +982,7 @@ export function CalendarHeatmap() {
                                 </div>
                                 {/* Desktop */}
                                 <div className={cn("hidden sm:block text-xl font-black tracking-tighter leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
-                                  {day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl) >= 1000
-                                    ? `${(Math.abs(day.pnl) / 1000).toFixed(1)}k`
-                                    : Math.abs(day.pnl).toFixed(0)
-                                  }
+                                  {fmtCompact(day.pnl)}
                                 </div>
                               </div>
                             )}
@@ -982,87 +1027,6 @@ export function CalendarHeatmap() {
                             </div>
                           )}
                         </div>
-                      </PopoverTrigger>
-                      {hasData && (
-                        <PopoverContent className="w-[90vw] max-w-64 p-0 border-0 shadow-xl" side="bottom" align="center">
-                          <div className="bg-card/95 backdrop-blur-md rounded-lg border p-4 space-y-3">
-                            <div className="flex items-center justify-between pb-2 border-b border-border/70">
-                              <div className="flex items-center gap-2">
-                                <div 
-                                  className="w-3 h-3 rounded-full"
-                                  style={{backgroundColor: day.pnl > 0 ? themeColors.profit : day.pnl < 0 ? themeColors.loss : breakevenColor}}
-                                />
-                                <div className="font-semibold text-sm">
-                                  {day.date.toLocaleDateString('en-US', { 
-                                    month: 'short', 
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
-                                </div>
-                              </div>
-                              <div
-                                className="text-xs sm:text-sm font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-md"
-                                style={{
-                                  color: isLightColor(day.pnl >= 0 ? themeColors.profit : themeColors.loss) ? '#000' : '#fff',
-                                  backgroundColor: day.pnl >= 0 ? themeColors.profit : themeColors.loss
-                                }}
-                              >
-                                <span className="hidden sm:inline">{formatCurrency(day.pnl)}</span>
-                                <span className="sm:hidden">{formatCurrencyMobile(day.pnl)}</span>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div className="space-y-1">
-                                <div className="text-muted-foreground text-xs font-medium">Trades</div>
-                                <div className="font-bold text-lg">{day.trades}</div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-muted-foreground text-xs font-medium">Win Rate</div>
-                                <div className="font-bold text-lg">{day.winRate.toFixed(0)}%</div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-muted-foreground text-xs font-medium">W/L Ratio</div>
-                                <div className="font-bold text-lg flex items-center gap-1">
-                                  <span style={{color: themeColors.profit}}>{day.winningTrades}</span>
-                                  <span className="text-muted-foreground text-sm">/</span>
-                                  <span style={{color: themeColors.loss}}>{day.losingTrades}</span>
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="text-muted-foreground text-xs font-medium">R:R</div>
-                                <div
-                                  className={`font-bold text-lg${day.rr === Infinity ? ' cursor-help' : ''}`}
-                                  title={day.rr === Infinity ? 'No losing trades' : undefined}
-                                >
-                                  {day.rr === 0 ? '-' : day.rr === Infinity ? '∞' : day.rr.toFixed(2)}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Additional stats */}
-                            {(day.avgWin > 0 || day.avgLoss > 0) && (
-                              <div className="pt-2 border-t border-border/70">
-                                <div className="grid grid-cols-2 gap-4 text-xs">
-                                  {day.avgWin > 0 && (
-                                    <div>
-                                      <div className="text-muted-foreground font-medium">Avg Win</div>
-                                      <div className="font-semibold" style={{color: themeColors.profit}}>{formatCurrency(day.avgWin)}</div>
-                                    </div>
-                                  )}
-                                  {day.avgLoss > 0 && (
-                                    <div>
-                                      <div className="text-muted-foreground font-medium">Avg Loss</div>
-                                      <div className="font-semibold" style={{color: themeColors.loss}}>{formatCurrency(-day.avgLoss)}</div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      )}
-                    </Popover>
                   )
                 })}
                 </div>
@@ -1074,7 +1038,7 @@ export function CalendarHeatmap() {
                         className="text-[10px] sm:text-sm font-bold tabular-nums leading-none text-center px-0.5 truncate max-w-full block"
                         style={{ color: wt.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                       >
-                        {formatWeekPnl(wt.pnl)}
+                        {fmtCompact(wt.pnl)}
                       </span>
                       <span className="hidden sm:block text-[10px] text-muted-foreground mt-1 tabular-nums">
                         {wt.trades} trade{wt.trades !== 1 ? 's' : ''}
@@ -1119,6 +1083,77 @@ export function CalendarHeatmap() {
         </div>
       </CardContent>
       
+      {/* Day hover tooltip */}
+      {hoverDay && hoverPos && createPortal(
+        <div
+          role="tooltip"
+          className="fixed z-50 w-56 pointer-events-none animate-in fade-in zoom-in-95 duration-150"
+          style={{
+            left: hoverPos.x,
+            top: hoverPos.y,
+            transform: `translate(-50%, ${hoverPos.above ? '-100%' : '0'})`,
+          }}
+        >
+          <div className="rounded-xl border border-border/70 bg-card/95 backdrop-blur-md shadow-xl p-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold">
+                {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded-md tabular-nums"
+                style={{
+                  backgroundColor: roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor,
+                  color: isLightColor(roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor) ? '#000' : '#fff',
+                }}
+              >
+                {fmtCompact(hoverDay.pnl)}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Trades</div>
+                <div className="text-sm font-bold tabular-nums">{hoverDay.trades}</div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Win rate</div>
+                <div className="text-sm font-bold tabular-nums">{hoverDay.winRate.toFixed(0)}%</div>
+              </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">W / L</div>
+                <div className="text-sm font-bold tabular-nums">
+                  <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}</span>
+                  <span className="text-muted-foreground font-normal mx-0.5">/</span>
+                  <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}</span>
+                </div>
+              </div>
+            </div>
+
+            {(hoverDay.rr > 0 || hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
+              <div className="text-[11px] text-muted-foreground tabular-nums">
+                {hoverDay.rr > 0 && (
+                  <>R:R {hoverDay.rr === Infinity ? '∞' : hoverDay.rr.toFixed(2)}</>
+                )}
+                {(hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
+                  <>
+                    {hoverDay.rr > 0 && ' · '}
+                    Avg{' '}
+                    {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
+                    {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span className="text-muted-foreground"> / </span>}
+                    {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
+              Click for full day view
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Trade Entry & Journal Modal */}
       <Dialog open={isTradeDialogOpen} onOpenChange={setIsTradeDialogOpen}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90svh] overflow-y-auto p-0">
@@ -1146,33 +1181,68 @@ export function CalendarHeatmap() {
           </div>
 
           <div className="px-5 pb-5 sm:px-6 sm:pb-6 mt-4">
-          <Tabs defaultValue="journal" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
-              <TabsTrigger
-                value="journal"
-                className="text-xs sm:text-sm gap-1.5 flex items-center justify-center"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Journal
-              </TabsTrigger>
-              <TabsTrigger
-                value="trade"
-                className="text-xs sm:text-sm gap-1.5 flex items-center justify-center"
-              >
-                <ChartBar className="h-3.5 w-3.5" />
-                Add Trade
-              </TabsTrigger>
-            </TabsList>
+          {/* -- Day overview -- */}
+          {dayDialogView === 'overview' && (
+            <div className="space-y-4">
+              {selectedDateTrades.length > 0 && (
+                <div className="rounded-xl border bg-card/50 p-4">
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">Day P&L</div>
+                      <div
+                        className="text-2xl font-bold tabular-nums leading-none"
+                        style={{ color: selectedDatePnl >= 0 ? themeColors.profit : themeColors.loss }}
+                      >
+                        {formatCurrency(selectedDatePnl)}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground space-y-1">
+                      <div>{selectedDateTrades.length} trade{selectedDateTrades.length !== 1 ? 's' : ''} · {selectedDateWinRate}% win</div>
+                      <div className="font-semibold tabular-nums">
+                        <span style={{ color: themeColors.profit }}>{selectedDateWins}W</span>
+                        <span className="text-muted-foreground font-normal mx-1">/</span>
+                        <span style={{ color: themeColors.loss }}>{selectedDateLosses}L</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            <TabsContent value="journal" className="space-y-4 mt-0">
-              {/* -- Existing entries for this day -- */}
+              {selectedDateTrades.length > 0 && (
+                <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ChartBar className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                    <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Trades</span>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedDateTrades.map((trade: Trade) => (
+                      <div key={trade.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-medium truncate">{trade.symbol}</span>
+                          <span
+                            className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
+                            style={{ color: trade.side === 'long' ? themeColors.profit : themeColors.loss }}
+                          >
+                            {trade.side}
+                          </span>
+                        </div>
+                        <span
+                          className="text-sm font-semibold tabular-nums shrink-0"
+                          style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
+                        >
+                          {formatCurrency(trade.pnl)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedDateEntries.length > 0 && (
                 <div className="rounded-xl border bg-card/50 p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                    <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">
-                      {selectedDateEntries.length} {selectedDateEntries.length === 1 ? 'entry' : 'entries'} this day
-                    </span>
+                    <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Journal</span>
                   </div>
                   <div className="space-y-2">
                     {selectedDateEntries.map((entry: any, i: number) => (
@@ -1191,6 +1261,41 @@ export function CalendarHeatmap() {
                   </div>
                 </div>
               )}
+
+              {selectedDateTrades.length === 0 && selectedDateEntries.length === 0 && (
+                <div className="rounded-xl border border-dashed bg-card/30 p-6 text-center text-sm text-muted-foreground">
+                  Nothing logged for this day yet.
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1 gap-2" onClick={() => setDayDialogView('journal')}>
+                  <PencilSimple className="h-3.5 w-3.5" />
+                  Add note
+                </Button>
+                <Button
+                  className="flex-1 gap-2 shadow-sm"
+                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                  onClick={() => setDayDialogView('trade')}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Log trade
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* -- Journal form -- */}
+          {dayDialogView === 'journal' && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setDayDialogView('overview')}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                <CaretLeft className="h-3 w-3" />
+                Back to day
+              </button>
 
               {/* -- Entry Card -- */}
               <div className="rounded-xl border bg-card/50 p-4 space-y-3">
@@ -1246,7 +1351,7 @@ export function CalendarHeatmap() {
                       <SelectItem value="none">No trade linked</SelectItem>
                       {trades.map((trade: any) => (
                         <SelectItem key={trade.id} value={trade.id} className="text-xs">
-                          {trade.symbol} {trade.side.toUpperCase()} • {trade.pnl > 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                          {trade.symbol} {trade.side.toUpperCase()} • {formatCurrency(trade.pnl)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1272,7 +1377,10 @@ export function CalendarHeatmap() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="journal-tags" className="text-xs text-muted-foreground">Tag</Label>
+                    <Label htmlFor="journal-tags" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Tag className="h-3 w-3" />
+                      Tag
+                    </Label>
                     <Input
                       id="journal-tags"
                       placeholder="strategy, analysis..."
@@ -1291,7 +1399,7 @@ export function CalendarHeatmap() {
                   Full journal
                 </Link>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setIsTradeDialogOpen(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => setDayDialogView('overview')}>
                     Cancel
                   </Button>
                   <Button
@@ -1305,9 +1413,21 @@ export function CalendarHeatmap() {
                   </Button>
                 </div>
               </div>
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="trade" className="space-y-4 mt-0">
+          {/* -- Trade form -- */}
+          {dayDialogView === 'trade' && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setDayDialogView('overview')}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                <CaretLeft className="h-3 w-3" />
+                Back to day
+              </button>
+
               {/* -- Setup Card -- */}
               <div className="rounded-xl border bg-card/50 p-4 space-y-3">
                 <div className="flex items-center gap-2">
@@ -1485,7 +1605,7 @@ export function CalendarHeatmap() {
                   Full trade log
                 </button>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setIsTradeDialogOpen(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => setDayDialogView('overview')}>
                     Cancel
                   </Button>
                   <Button
@@ -1500,8 +1620,8 @@ export function CalendarHeatmap() {
                   </Button>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
           </div>
         </DialogContent>
       </Dialog>

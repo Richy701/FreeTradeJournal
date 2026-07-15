@@ -35,8 +35,9 @@ import {
   Brain
 } from '@phosphor-icons/react';
 import { AIJournalReview } from '@/components/ai-journal-review';
-import { format, isWithinInterval, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useSettings } from '@/contexts/settings-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useAccounts } from '@/contexts/account-context';
@@ -222,6 +223,21 @@ function templateInsert(type: keyof typeof TEMPLATE_BODIES): string {
 
 const mockEntries: JournalEntry[] = [];
 
+// Local YYYY-MM-DD for <input type="date"> values and same-day checks —
+// deliberately local time, matching how the calendar buckets days.
+function toLocalDateInput(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Parse a date-input value as LOCAL noon (new Date('yyyy-mm-dd') would parse
+// UTC midnight and land on the previous day west of UTC).
+function parseLocalDateInput(s: string): Date | null {
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 // Mirrors the trade-log account filter: an entry belongs to the active account,
 // and legacy account-less entries fall back to a "default" account.
 function matchesActiveAccount(
@@ -234,6 +250,7 @@ function matchesActiveAccount(
 
 export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
+  const { formatCurrency } = useSettings();
   const { isDemo, user } = useAuth();
   const demoGuard = useDemoGuard();
   const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
@@ -259,6 +276,23 @@ export default function Journal() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  // Screenshot refs on the entry being edited that couldn't be resolved on this
+  // device (evicted IndexedDB, other-device idb: refs). Kept verbatim on save so
+  // an unrelated edit can never silently destroy them.
+  const [unresolvedRefs, setUnresolvedRefs] = useState<string[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Reload entries/trades when they change elsewhere (Trade Log, CSV import,
+  // dashboard calendar quick-add, other tabs).
+  useEffect(() => {
+    const handleDataChange = () => setRefreshKey(prev => prev + 1);
+    window.addEventListener('storage', handleDataChange);
+    window.addEventListener('tradesUpdated', handleDataChange);
+    return () => {
+      window.removeEventListener('storage', handleDataChange);
+      window.removeEventListener('tradesUpdated', handleDataChange);
+    };
+  }, []);
   
   // Filter states
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
@@ -284,7 +318,8 @@ export default function Journal() {
     emotions: [] as string[],
     mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
     tradeId: '',
-    entryType: 'general' as 'general' | 'pre-trade' | 'post-trade'
+    entryType: 'general' as 'general' | 'pre-trade' | 'post-trade',
+    entryDate: toLocalDateInput(new Date())
   });
 
   // Ask the writing coach about the current draft (or for starters if empty).
@@ -293,11 +328,12 @@ export default function Journal() {
     setCoachLoading(true);
     trackEvent('ai_journal_assist_started', { hasDraft: newEntry.content.trim().length > 0 });
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      // Local day, matching the calendar's day bucketing
+      const today = toLocalDateInput(new Date());
       let dayPnl = 0;
       let tradeCount = 0;
       for (const t of trades) {
-        if (new Date(t.exitTime).toISOString().slice(0, 10) !== today) continue;
+        if (toLocalDateInput(new Date(t.exitTime)) !== today) continue;
         dayPnl += Number(t.pnl) || 0;
         tradeCount++;
       }
@@ -419,12 +455,12 @@ export default function Journal() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, activeAccount, accountsLoading]);
+  }, [isDemo, activeAccount, accountsLoading, refreshKey]);
 
-  // Load trades from localStorage or demo data with loading state
+  // Load trades scoped to the active account (mirrors the entry scoping above);
+  // re-runs on account switch and when trades change elsewhere.
   useEffect(() => {
     const loadTrades = async () => {
-      setIsLoadingTrades(true);
       try {
         if (isDemo) {
           const demoTrades = getDemoTrades().map((trade: any) => ({
@@ -437,15 +473,20 @@ export default function Journal() {
           return;
         }
 
+        if (accountsLoading) return;
+
         const storedTrades = userStorage.getItem('trades');
         if (storedTrades) {
-          const parsedTrades = JSON.parse(storedTrades).map((trade: any) => ({
-            ...trade,
-            entryTime: new Date(trade.entryTime),
-            exitTime: new Date(trade.exitTime)
-          }));
+          const parsedTrades = JSON.parse(storedTrades)
+            .filter((trade: any) => !activeAccount || belongsToAccount(trade, activeAccount.id))
+            .map((trade: any) => ({
+              ...trade,
+              entryTime: new Date(trade.entryTime),
+              exitTime: new Date(trade.exitTime)
+            }));
           setTrades(parsedTrades);
-          
+        } else {
+          setTrades([]);
         }
       } catch (error) {
         console.error('Error loading trades:', error);
@@ -454,7 +495,8 @@ export default function Journal() {
     };
 
     loadTrades();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, activeAccount, accountsLoading, refreshKey]);
 
   // Deep link: /journal?trade=<id>. If this trade already has a journal entry,
   // open it for editing instead of starting a blank one (which previously created
@@ -491,7 +533,10 @@ export default function Journal() {
     } catch {
       all = [];
     }
-    const others = all.filter((e: any) => e.accountId !== currentId);
+    // Exclude by id as well as accountId so an entry can never appear twice
+    // (e.g. if the active account is briefly null and currentId is undefined).
+    const mineIds = new Set(currentAccountEntries.map(e => e.id));
+    const others = all.filter((e: any) => e.accountId !== currentId && !mineIds.has(e.id));
     const mine = currentAccountEntries.map(e => ({ ...e, accountId: e.accountId || currentId }));
     const merged = [...others, ...mine];
     await userStorage.setItem('journalEntries', JSON.stringify(merged));
@@ -499,22 +544,30 @@ export default function Journal() {
   };
 
   // Resolve stored screenshot refs into editable previews. Carries `ref` so an
-  // unchanged image isn't re-uploaded/re-written on save.
-  const resolveScreenshots = async (refs: string[]): Promise<UploadedImage[]> => {
-    const out: UploadedImage[] = [];
+  // unchanged image isn't re-uploaded/re-written on save. Refs that CAN'T be
+  // resolved on this device (evicted IndexedDB, refs synced from another
+  // device) are returned separately and preserved verbatim on save — treating
+  // them as "removed" would permanently delete them on an unrelated edit.
+  const resolveScreenshots = async (
+    refs: string[]
+  ): Promise<{ images: UploadedImage[]; unresolved: string[] }> => {
+    const images: UploadedImage[] = [];
+    const unresolved: string[] = [];
     for (const refStr of refs) {
       if (isImageRef(refStr)) {
         const id = refStr.slice(4);
         const data = await getImage(id);
-        if (data) out.push({ id, dataUrl: data, ref: refStr });
+        if (data) images.push({ id, dataUrl: data, ref: refStr });
+        else unresolved.push(refStr);
       } else if (isCloudRef(refStr)) {
         const url = await resolveImageRef(refStr);
-        if (url) out.push({ id: newImageId(), dataUrl: url, ref: refStr });
+        if (url) images.push({ id: newImageId(), dataUrl: url, ref: refStr });
+        else unresolved.push(refStr);
       } else if (refStr && refStr.startsWith('data:')) {
-        out.push({ id: newImageId(), dataUrl: refStr });
+        images.push({ id: newImageId(), dataUrl: refStr });
       }
     }
-    return out;
+    return { images, unresolved };
   };
 
   const handleAddEntry = async () => {
@@ -531,6 +584,9 @@ export default function Journal() {
 
     setIsSubmitting(true);
 
+    // Track refs stored during THIS save so they can be cleaned up if the
+    // entry write itself fails (otherwise they'd be orphaned in storage).
+    const newlyStored: string[] = [];
     try {
       // Persist screenshots and keep only lightweight refs in the entry.
       // Pro: upload to Firebase Storage (cross-device) with a local IndexedDB
@@ -553,14 +609,28 @@ export default function Journal() {
           await putImage(img.id, img.dataUrl);
           stored = `idb:${img.id}`;
         }
+        newlyStored.push(stored);
         screenshots.push(stored);
       }
+      // Refs that couldn't be previewed on this device ride along untouched.
+      screenshots.push(...unresolvedRefs);
+
+      // Resolve the entry date from the editor's date field: keep the original
+      // timestamp when the day is unchanged, otherwise stamp local noon of the
+      // picked day so it lands on the right calendar cell in every timezone.
+      const pickedDate = parseLocalDateInput(newEntry.entryDate);
+      const baseDate = editingEntry ? new Date(editingEntry.date) : new Date();
+      const entryDate =
+        !pickedDate || toLocalDateInput(baseDate) === newEntry.entryDate
+          ? baseDate
+          : pickedDate;
 
       if (editingEntry) {
         const updatedEntry: JournalEntry = {
           ...editingEntry,
           title: newEntry.title,
           content: newEntry.content,
+          date: entryDate,
           tags: newEntry.tags.split(',').map(tag => tag.trim()).filter(Boolean),
           emotions: newEntry.emotions.length > 0 ? newEntry.emotions : undefined,
           mood: newEntry.mood,
@@ -576,13 +646,18 @@ export default function Journal() {
         // Persist first; only update UI once the write durably lands.
         await persistEntries(updatedEntries);
 
-        // Clean up screenshots removed during this edit.
+        // Clean up screenshots removed during this edit. Best-effort: the entry
+        // is already saved, so a failed delete must not fall through to the
+        // catch (which would toast an error and remove this save's images).
         const removed = (editingEntry.screenshots || []).filter(
           r => !screenshots.includes(r)
         );
+        newlyStored.length = 0;
         for (const r of removed) {
-          if (isImageRef(r)) await deleteImage(r.slice(4));
-          else if (isCloudRef(r)) await deleteCloudImage(r);
+          try {
+            if (isImageRef(r)) await deleteImage(r.slice(4));
+            else if (isCloudRef(r)) await deleteCloudImage(r);
+          } catch { /* orphan is better than data loss */ }
         }
 
         setEntries(updatedEntries);
@@ -592,7 +667,7 @@ export default function Journal() {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           title: newEntry.title,
           content: newEntry.content,
-          date: new Date(),
+          date: entryDate,
           tags: newEntry.tags.split(',').map(tag => tag.trim()).filter(Boolean),
           emotions: newEntry.emotions.length > 0 ? newEntry.emotions : undefined,
           mood: newEntry.mood,
@@ -607,14 +682,23 @@ export default function Journal() {
         setEntries(updatedEntries);
       }
 
-      setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
+      setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general', entryDate: toLocalDateInput(new Date()) });
       setSelectedTrade(null);
       setUploadedImages([]);
+      setUnresolvedRefs([]);
       setShowNewEntry(false);
       trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new' });
       toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
     } catch (err) {
       console.error('Failed to save journal entry:', err);
+      // The entry itself didn't land — clean up images stored during this save
+      // so they aren't orphaned in IndexedDB / cloud storage.
+      for (const r of newlyStored) {
+        try {
+          if (isImageRef(r)) await deleteImage(r.slice(4));
+          else if (isCloudRef(r)) await deleteCloudImage(r);
+        } catch { /* best effort */ }
+      }
       toast.error('Could not save your entry — your device storage may be full. Try removing a screenshot and saving again.');
     } finally {
       setIsSubmitting(false);
@@ -629,18 +713,23 @@ export default function Journal() {
       const selectedTrade = trades.find(t => t.id === tradeId);
       if (selectedTrade) {
         setSelectedTrade(selectedTrade);
-        
-        // Auto-populate fields based on trade
+
+        // Suggest fields from the trade, but never overwrite what the user
+        // already typed or chose — only fill blanks/defaults.
         const isWinning = selectedTrade.pnl > 0;
         const suggestedMood = isWinning ? 'bullish' : 'bearish';
         const suggestedTitle = `${selectedTrade.symbol} ${selectedTrade.side.toUpperCase()} - ${isWinning ? 'Win' : 'Loss'}`;
-        
+
         setNewEntry(prev => ({
           ...prev,
-          title: suggestedTitle,
-          mood: suggestedMood,
-          tags: [selectedTrade.symbol, selectedTrade.strategy || '', isWinning ? 'winner' : 'loser'].filter(Boolean).join(', '),
-          emotions: isWinning ? ['confident', 'satisfied'] : ['disappointed', 'frustrated']
+          title: prev.title.trim() ? prev.title : suggestedTitle,
+          mood: prev.mood === 'neutral' ? suggestedMood : prev.mood,
+          tags: prev.tags.trim()
+            ? prev.tags
+            : [selectedTrade.symbol, selectedTrade.strategy || '', isWinning ? 'winner' : 'loser'].filter(Boolean).join(', '),
+          emotions: prev.emotions.length > 0
+            ? prev.emotions
+            : isWinning ? ['confident', 'satisfied'] : ['disappointed', 'frustrated']
         }));
       }
     } else {
@@ -650,10 +739,8 @@ export default function Journal() {
 
   const formatTradeOption = (trade: Trade) => {
     const isWin = trade.pnl > 0;
-    const pnlColor = isWin ? themeColors.profit : themeColors.loss;
-    const pnlPrefix = isWin ? '+' : '';
     return {
-      label: `${trade.symbol} ${trade.side.toUpperCase()} • ${pnlPrefix}$${trade.pnl.toFixed(2)} • ${format(trade.entryTime, 'MMM dd')}`,
+      label: `${trade.symbol} ${trade.side.toUpperCase()} • ${formatCurrency(trade.pnl, true)} • ${format(trade.entryTime, 'MMM dd')}`,
       value: trade.id,
       trade,
       isWin
@@ -668,9 +755,11 @@ export default function Journal() {
       emotions: [],
       mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
       tradeId: tradeId || '',
-      entryType: type
+      entryType: type,
+      entryDate: toLocalDateInput(new Date())
     });
     setUploadedImages([]);
+    setUnresolvedRefs([]);
     setSelectedTrade(null);
     setShowNewEntry(true);
   };
@@ -769,7 +858,8 @@ export default function Journal() {
       emotions: entry.emotions || [],
       mood: entry.mood,
       tradeId: entry.tradeId || '',
-      entryType: entry.entryType
+      entryType: entry.entryType,
+      entryDate: toLocalDateInput(new Date(entry.date))
     });
     setUploadedImages([]);
     const linkedTrade = getLinkedTrade(entry.tradeId);
@@ -777,10 +867,14 @@ export default function Journal() {
     setShowNewEntry(true);
     // Resolve stored screenshot refs into editable previews. Block saving until
     // they're loaded so a fast save can't drop the entry's existing screenshots.
+    setUnresolvedRefs([]);
     if ((entry.screenshots || []).length > 0) {
       setImagesLoading(true);
       resolveScreenshots(entry.screenshots || [])
-        .then(imgs => setUploadedImages(imgs))
+        .then(({ images, unresolved }) => {
+          setUploadedImages(images);
+          setUnresolvedRefs(unresolved);
+        })
         .finally(() => setImagesLoading(false));
     }
   };
@@ -790,12 +884,16 @@ export default function Journal() {
     if (confirm('Are you sure you want to delete this journal entry?')) {
       const target = entries.find(entry => entry.id === entryId);
       const updatedEntries = entries.filter(entry => entry.id !== entryId);
-      setEntries(updatedEntries);
       try {
+        // Persist first — if the write fails, the entry stays visible instead
+        // of looking deleted until the next reload.
         await persistEntries(updatedEntries);
+        setEntries(updatedEntries);
         for (const r of target?.screenshots || []) {
-          if (isImageRef(r)) await deleteImage(r.slice(4));
-          else if (isCloudRef(r)) await deleteCloudImage(r);
+          try {
+            if (isImageRef(r)) await deleteImage(r.slice(4));
+            else if (isCloudRef(r)) await deleteCloudImage(r);
+          } catch { /* entry is gone; an orphaned image is acceptable */ }
         }
       } catch (err) {
         console.error('Failed to delete journal entry:', err);
@@ -806,8 +904,9 @@ export default function Journal() {
 
   const cancelEdit = () => {
     setEditingEntry(null);
-    setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general' });
+    setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general', entryDate: toLocalDateInput(new Date()) });
     setUploadedImages([]);
+    setUnresolvedRefs([]);
     setImagesLoading(false);
     setSelectedTrade(null);
     setShowNewEntry(false);
@@ -838,15 +937,19 @@ export default function Journal() {
       
       if (!matchesSearch) return false;
       
-      // Date range filter
-      if (dateRange.start && dateRange.end) {
+      // Date range filter — either bound works on its own, both parsed as
+      // local days so the boundary matches what the date picker shows.
+      if (dateRange.start || dateRange.end) {
         const entryDate = new Date(entry.date);
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
-        endDate.setHours(23, 59, 59, 999); // Include the entire end day
-        
-        if (!isWithinInterval(entryDate, { start: startDate, end: endDate })) {
-          return false;
+        const startDate = dateRange.start ? parseLocalDateInput(dateRange.start) : null;
+        if (startDate) {
+          startDate.setHours(0, 0, 0, 0);
+          if (entryDate < startDate) return false;
+        }
+        const endDate = dateRange.end ? parseLocalDateInput(dateRange.end) : null;
+        if (endDate) {
+          endDate.setHours(23, 59, 59, 999); // Include the entire end day
+          if (entryDate > endDate) return false;
         }
       }
       
@@ -864,16 +967,14 @@ export default function Journal() {
         if (!hasAllTags) return false;
       }
       
-      // P&L range filter
-      if ((pnlRange.min || pnlRange.max) && entry.tradeId) {
+      // P&L range filter — entries without a linked trade have no P&L, so a
+      // P&L filter excludes them (previously they slipped through unfiltered).
+      if (pnlRange.min || pnlRange.max) {
         const linkedTrade = getLinkedTrade(entry.tradeId);
-        if (linkedTrade) {
-          const pnl = linkedTrade.pnl;
-          if (pnlRange.min && pnl < parseFloat(pnlRange.min)) return false;
-          if (pnlRange.max && pnl > parseFloat(pnlRange.max)) return false;
-        } else {
-          return false; // No linked trade, so can't filter by P&L
-        }
+        if (!linkedTrade) return false;
+        const pnl = linkedTrade.pnl;
+        if (pnlRange.min && pnl < parseFloat(pnlRange.min)) return false;
+        if (pnlRange.max && pnl > parseFloat(pnlRange.max)) return false;
       }
       
       // Mood filter
@@ -948,7 +1049,7 @@ export default function Journal() {
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (dateRange.start && dateRange.end) count++;
+    if (dateRange.start || dateRange.end) count++;
     if (selectedMarket !== 'all') count++;
     if (selectedTags.length > 0) count++;
     if (pnlRange.min || pnlRange.max) count++;
@@ -1076,7 +1177,7 @@ export default function Journal() {
               <p className="text-sm font-semibold text-foreground">
                 {atFreeJournalLimit
                   ? `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries`
-                  : `You're approaching the free journal limit — ${entries.length} of ${FREE_JOURNAL_ENTRY_LIMIT} entries used`}
+                  : `You're approaching the free journal limit — ${totalEntryCount} of ${FREE_JOURNAL_ENTRY_LIMIT} entries used across your accounts`}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 {atFreeJournalLimit
@@ -1168,7 +1269,7 @@ export default function Journal() {
                             className="text-xl font-bold tabular-nums"
                             style={{ color }}
                           >
-                            {stat.avg >= 0 ? '+' : ''}${stat.avg.toFixed(2)}
+                            {formatCurrency(stat.avg, true)}
                           </p>
                           <p className="text-[10px] text-muted-foreground">{stat.count} linked {stat.count === 1 ? 'trade' : 'trades'}</p>
                         </>
@@ -1388,7 +1489,7 @@ export default function Journal() {
                         className="text-sm font-bold"
                         style={{ color: selectedTrade.pnl > 0 ? themeColors.profit : themeColors.loss }}
                       >
-                        {selectedTrade.pnl > 0 ? '+' : ''}${selectedTrade.pnl.toFixed(2)}
+                        {formatCurrency(selectedTrade.pnl, true)}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -1408,17 +1509,33 @@ export default function Journal() {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Tag className="h-3 w-3" />
-                    Tags
-                  </label>
-                  <Input
-                    placeholder="e.g., EUR/USD, analysis, strategy"
-                    value={newEntry.tags}
-                    onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-                    className="bg-background/60 border-border/50 h-11"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label htmlFor="journal-date" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Calendar className="h-3 w-3" />
+                      Date
+                    </label>
+                    <Input
+                      id="journal-date"
+                      type="date"
+                      value={newEntry.entryDate}
+                      onChange={(e) => setNewEntry({ ...newEntry, entryDate: e.target.value })}
+                      className="bg-background/60 border-border/50 h-11"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="journal-tags-input" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Tag className="h-3 w-3" />
+                      Tags
+                    </label>
+                    <Input
+                      id="journal-tags-input"
+                      placeholder="e.g., EUR/USD, analysis, strategy"
+                      value={newEntry.tags}
+                      onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
+                      className="bg-background/60 border-border/50 h-11"
+                    />
+                  </div>
                 </div>
             </div>
 
@@ -1550,6 +1667,12 @@ export default function Journal() {
                       </div>
                     ))}
                   </div>
+                )}
+
+                {unresolvedRefs.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {unresolvedRefs.length} existing screenshot{unresolvedRefs.length !== 1 ? 's' : ''} can't be previewed on this device — {unresolvedRefs.length === 1 ? 'it stays' : 'they stay'} attached to the entry when you save.
+                  </p>
                 )}
             </div>
 
@@ -1886,8 +2009,10 @@ export default function Journal() {
                           mood: 'neutral' as const,
                           tradeId: '',
                           entryType: 'general' as const,
+                          entryDate: toLocalDateInput(new Date()),
                         });
                         setUploadedImages([]);
+                        setUnresolvedRefs([]);
                         setSelectedTrade(null);
                         setShowNewEntry(true);
                       },
@@ -1964,7 +2089,7 @@ export default function Journal() {
                                   borderColor: linkedTrade.pnl > 0 ? `${alpha(themeColors.profit, '30')}` : `${alpha(themeColors.loss, '30')}`
                                 }}
                               >
-                                {linkedTrade.symbol} {linkedTrade.pnl > 0 ? '+' : ''}${linkedTrade.pnl.toFixed(2)}
+                                {linkedTrade.symbol} {formatCurrency(linkedTrade.pnl, true)}
                               </Badge>
                             )}
                             <Badge

@@ -45,7 +45,7 @@ export default function TradeIdeas() {
     const symbol = getCurrencySymbol()
     const sign = v < 0 ? '-' : ''
     const formatted = Math.abs(Math.round(v)).toLocaleString('en-US')
-    return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
+    return `${sign}${symbol}${formatted}`
   }
   const gradientId = useId().replace(/:/g, '')
 

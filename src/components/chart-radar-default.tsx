@@ -73,12 +73,12 @@ function generatePairColors(primary: string, profit: string, loss: string): stri
 export function ChartRadarDefault() {
   const { themeColors } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
-  // Compact currency for bar labels — no decimals, EUR keeps its suffix position
+  // Compact currency for bar labels — no decimals, symbol always in front
   const fmtCompact = (n: number) => {
     const symbol = getCurrencySymbol()
     const sign = n > 0 ? '+' : n < 0 ? '-' : ''
     const formatted = Math.abs(Math.round(n)).toLocaleString('en-US')
-    return symbol === '€' ? `${sign}${formatted}${symbol}` : `${sign}${symbol}${formatted}`
+    return `${sign}${symbol}${formatted}`
   }
   const pairColors = useMemo(
     () => generatePairColors(themeColors.primary, themeColors.profit, themeColors.loss),
@@ -408,19 +408,17 @@ export function ChartRadarDefault() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              <div className="shrink-0 space-y-2.5 max-w-[45%]">
+              <div className="shrink-0 space-y-2 max-w-[45%]">
                 {pieData.map((entry: any) => (
-                  <div key={entry.pair} className="text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-[2px] shrink-0" style={{ backgroundColor: entry.fill }} />
-                      <span className="text-foreground font-medium truncate">{entry.pair}</span>
-                      <span className="text-foreground font-semibold tabular-nums">
-                        {totalTrades > 0 ? Math.round((entry.trades / totalTrades) * 100) : 0}%
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground tabular-nums mt-0.5 pl-[18px]">
-                      {entry.trades} {entry.trades === 1 ? 'trade' : 'trades'}
-                    </p>
+                  <div key={entry.pair} className="flex items-center gap-2 text-xs">
+                    <span className="h-2.5 w-2.5 rounded-[2px] shrink-0" style={{ backgroundColor: entry.fill }} />
+                    <span className="text-foreground font-medium truncate">{entry.pair}</span>
+                    <span className="text-foreground font-semibold tabular-nums">
+                      {totalTrades > 0 ? Math.round((entry.trades / totalTrades) * 100) : 0}%
+                    </span>
+                    <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
+                      · {entry.trades} {entry.trades === 1 ? 'trade' : 'trades'}
+                    </span>
                   </div>
                 ))}
               </div>

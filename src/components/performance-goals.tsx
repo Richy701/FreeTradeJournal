@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useUserStorage } from '@/utils/user-storage'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
+import { useDemoData } from '@/hooks/use-demo-data'
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context'
 import { Target, Trophy, ChartLineUp, Gauge, Warning, Medal, Fire, Star, CurrencyDollar, Percent, Lightning, Scales, ChartLine, Calendar, CalendarDots, ArrowCounterClockwise, Pen, Check, Trash, ArrowSquareOut, type Icon } from '@phosphor-icons/react'
 import { Badge } from "@/components/ui/badge"
@@ -59,7 +61,12 @@ interface RiskRule {
   violations?: number
 }
 
-const todayKey = () => new Date().toISOString().split('T')[0]
+// Local day, matching how the rest of the app buckets days (a UTC key would
+// reset breach counters at UTC midnight, mid-session for US traders).
+const todayKey = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 // One-time migration of stored data into the new model:
 //  - drop the dead rule types (maxRiskPerTrade, maxOpenTrades)
@@ -108,11 +115,11 @@ function getGoalLabel(type: string): string {
 }
 
 // Helper: format current value for display
-function formatCurrentValue(goal: { type: string; current?: number }): string {
+function formatCurrentValue(goal: { type: string; current?: number }, sym: string): string {
   const val = goal.current ?? 0
   switch (goal.type) {
     case 'profit':
-      return `$${val.toFixed(0)}`
+      return `${sym}${val.toFixed(0)}`
     case 'winRate':
       return `${val.toFixed(1)}%`
     case 'riskReward':
@@ -208,9 +215,11 @@ function CircularProgress({ percentage, size = 64, strokeWidth = 6, color, achie
 
 export function PerformanceGoals() {
   const { themeColors, alpha } = useThemePresets()
-  const { settings, formatCurrency } = useSettings()
+  const { settings, formatCurrency, getCurrencySymbol } = useSettings()
+  const currencySymbol = getCurrencySymbol()
   const userStorage = useUserStorage()
   const demoGuard = useDemoGuard()
+  const { getTrades, isDemo } = useDemoData()
   // Re-read storage when sync (or a local write) bumps the change version, so
   // goal/risk progress reflects trades added/edited elsewhere without a reload.
   const [dataVersion, setDataVersion] = useState(() => getChangeVersion())
@@ -246,7 +255,7 @@ export function PerformanceGoals() {
   const formatTarget = (goal: Goal) => {
     switch (goal.type) {
       case 'profit':
-        return `$${goal.target}`
+        return `${currencySymbol}${goal.target}`
       case 'winRate':
         return `${goal.target}%`
       case 'trades':
@@ -300,7 +309,8 @@ export function PerformanceGoals() {
     })))
     setRiskRules(baseRules)
 
-    if (needPersist) {
+    // Demo mode is read-only — show the defaults without seeding storage.
+    if (needPersist && !isDemo) {
       userStorage.setItem('tradingGoals', JSON.stringify(baseGoals))
       userStorage.setItem('riskRules', JSON.stringify(baseRules))
     }
@@ -311,22 +321,23 @@ export function PerformanceGoals() {
     } catch {
       setPropAccounts([])
     }
-  }, [])
+    // dataVersion: re-read after a cloud-sync pull so goals/rules edited on
+    // another device show up without a reload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataVersion])
 
-  // Get trades and calculate current progress
+  // Trades via useDemoData: demo-aware AND scoped to the active account (the
+  // raw localStorage read mixed every account's trades into goal progress).
   const trades = useMemo(() => {
-    const storedTrades = userStorage.getItem('trades')
-    if (!storedTrades) return []
-
     try {
-      return JSON.parse(storedTrades).map((trade: any) => ({
+      return getTrades().map((trade: any) => ({
         ...trade,
         exitTime: trade.exitTime ? new Date(trade.exitTime) : new Date()
       }))
     } catch {
       return []
     }
-  }, [userStorage, dataVersion])
+  }, [getTrades, dataVersion])
 
   // Calculate goal progress (pure — no side effects in render). Shared with
   // the Profile "Active Goals" widget so both surfaces show the same numbers.
@@ -352,62 +363,65 @@ export function PerformanceGoals() {
     })
   }, [goalProgress])
 
-  // Check risk rule violations
+  // Breach state per rule id from the previous check, so alerts fire on the
+  // TRANSITION into breach — not again on every re-render/sync tick while the
+  // (often lifetime-scoped) condition still holds. A rule id first seen while
+  // already breached is baselined silently instead of toasting on page load.
+  const breachStateRef = useRef<Record<string, boolean>>({})
+
   const checkRiskRules = () => {
     const now = new Date()
-    const todayStart = new Date(now.setHours(0, 0, 0, 0))
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const todayTrades = trades.filter((t: any) => t.exitTime >= todayStart)
-    let mutated = false
+    const prev = breachStateRef.current
+    const next: Record<string, boolean> = {}
+    let newBreaches = false
 
-    riskRules.forEach(rule => {
-      if (!rule.enabled) return
+    const updatedRules = riskRules.map(rule => {
+      if (!rule.enabled) return rule
 
-      let violated = false
+      let breached = false
+      let description = ''
 
       switch (rule.type) {
         case 'maxLossPerDay': {
           const todayLoss = Math.abs(Math.min(0, todayTrades.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0)))
-          if (todayLoss > rule.value) {
-            violated = true
-            toast.error(`Risk Limit Hit`, {
-              description: `Daily loss limit of $${rule.value} exceeded.`,
-              duration: 5000
-            })
-          }
+          breached = todayLoss > rule.value
+          description = `Daily loss limit of ${currencySymbol}${rule.value} exceeded.`
           break
         }
         case 'maxLossPerTrade': {
-          const lastTrade = trades[trades.length - 1]
-          if (lastTrade && Math.abs(lastTrade.pnl) > rule.value && lastTrade.pnl < 0) {
-            violated = true
-            toast.error(`Risk Limit Hit`, {
-              description: `Trade loss exceeded the $${rule.value} limit.`,
-              duration: 5000
-            })
-          }
+          // Latest trade by exit time — storage order is NOT chronological
+          // (Trade Log appends new trades, the calendar quick-add prepends).
+          const latest = trades.reduce(
+            (a: any, b: any) => (!a || b.exitTime > a.exitTime ? b : a),
+            null
+          )
+          breached = !!latest && latest.pnl < 0 && Math.abs(latest.pnl) > rule.value
+          description = `Trade loss exceeded the ${currencySymbol}${rule.value} limit.`
           break
         }
         case 'maxDrawdown': {
           const dd = computeMaxDrawdown(trades)
-          if (dd > rule.value) {
-            violated = true
-            toast.error(`Risk Limit Hit`, {
-              description: `Drawdown of $${dd.toFixed(0)} exceeded the $${rule.value} limit.`,
-              duration: 5000
-            })
-          }
+          breached = dd > rule.value
+          description = `Drawdown of ${currencySymbol}${dd.toFixed(0)} exceeded the ${currencySymbol}${rule.value} limit.`
           break
         }
       }
 
-      if (violated) {
-        rule.violations = (rule.violations || 0) + 1
-        mutated = true
+      next[rule.id] = breached
+      if (breached && prev[rule.id] === false) {
+        newBreaches = true
+        toast.error('Risk Limit Hit', { description, duration: 5000 })
+        return { ...rule, violations: (rule.violations || 0) + 1 }
       }
+      return rule
     })
 
-    if (mutated) {
-      userStorage.setItem('riskRules', JSON.stringify(riskRules))
+    breachStateRef.current = next
+    if (newBreaches) {
+      setRiskRules(updatedRules)
+      userStorage.setItem('riskRules', JSON.stringify(updatedRules))
     }
   }
 
@@ -513,12 +527,27 @@ export function PerformanceGoals() {
     setShowRuleDialog(false)
 
     toast.success(existingRule ? 'Risk Limit Updated' : 'Risk Limit Added', {
-      description: `${getRuleLabel(rule.type)} set to $${rule.value}.`
+      description: `${getRuleLabel(rule.type)} set to ${currencySymbol}${rule.value}.`
     })
   }
 
   const resetGoalProgress = (id: string) => {
     if (demoGuard('manage goals')) return
+
+    // If the current period still satisfies the target, clearing the flag
+    // would just re-achieve (and re-celebrate) on the next render — explain
+    // instead of silently looking broken.
+    const goal = goals.find(g => g.id === id)
+    if (goal) {
+      const live = computeGoalProgress([{ ...goal, achieved: false }], trades)[0]
+      if (live?.achieved) {
+        toast.info('Target still met this period', {
+          description: 'This goal is currently satisfied, so it would immediately re-achieve. It starts fresh when the period rolls over.'
+        })
+        return
+      }
+    }
+
     const updatedGoals = goals.map(g =>
       g.id === id ? { ...g, achieved: false, achievedAt: undefined } : g
     )
@@ -562,8 +591,10 @@ export function PerformanceGoals() {
   const riskTodayStart = new Date(nowForRisk.getFullYear(), nowForRisk.getMonth(), nowForRisk.getDate())
   const riskTodayTrades = trades.filter((t: any) => new Date(t.exitTime) >= riskTodayStart)
   const riskTodayLoss = Math.abs(Math.min(0, riskTodayTrades.reduce((s: number, t: any) => s + (t.pnl || 0), 0)))
-  const worstTradeLoss = trades.length > 0
-    ? Math.abs(Math.min(0, ...trades.map((t: any) => t.pnl || 0)))
+  // Today's worst single-trade loss (was lifetime worst, which kept the
+  // per-trade bar pinned red forever after one bad trade ever).
+  const worstTradeLoss = riskTodayTrades.length > 0
+    ? Math.abs(Math.min(0, ...riskTodayTrades.map((t: any) => t.pnl || 0)))
     : 0
   const overallDrawdown = computeMaxDrawdown(trades)
 
@@ -690,7 +721,7 @@ export function PerformanceGoals() {
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {formatCurrentValue(goal)} / {formatTarget(goal)}
+                        {formatCurrentValue(goal, currencySymbol)} / {formatTarget(goal)}
                       </div>
                       {goal.achieved && (
                         <div className="flex items-center gap-1 text-xs" style={{ color: themeColors.profit }}>
@@ -790,14 +821,14 @@ export function PerformanceGoals() {
                 <p className="text-[11px] text-muted-foreground">From your account settings</p>
               </div>
             </div>
-            <a
-              href="/settings"
+            <Link
+              to="/settings"
               className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
               style={{ color: themeColors.primary }}
             >
               Adjust in Settings
               <ArrowSquareOut className="h-3 w-3" />
-            </a>
+            </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
@@ -899,11 +930,11 @@ export function PerformanceGoals() {
                           {getRuleLabel(rule.type)}
                         </span>
                         <span className="text-sm text-muted-foreground">
-                          ${rule.value}
+                          {currencySymbol}{rule.value}
                         </span>
                         {current !== null && rule.enabled && (
                           <span className="text-xs" style={{ color: barColor }}>
-                            ${current.toFixed(0)} used
+                            {currencySymbol}{current.toFixed(0)} used
                           </span>
                         )}
                       </div>
@@ -954,14 +985,14 @@ export function PerformanceGoals() {
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-muted-foreground">Prop firm limits</p>
-              <a
-                href="/prop-tracker"
+              <Link
+                to="/prop-tracker"
                 className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
                 style={{ color: themeColors.primary }}
               >
                 Manage in Prop Tracker
                 <ArrowSquareOut className="h-3 w-3" />
-              </a>
+              </Link>
             </div>
             {activePropAccounts.map(acc => (
               <div key={acc.id} className="rounded-lg border border-border p-3.5 flex items-center justify-between gap-3">
@@ -1071,9 +1102,9 @@ export function PerformanceGoals() {
                   <Label className="text-sm font-semibold">Popular Goals</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
-                      { type: 'profit', period: 'monthly', target: 1000, label: 'Make $1,000 this month', icon: CurrencyDollar },
+                      { type: 'profit', period: 'monthly', target: 1000, label: `Make ${currencySymbol}1,000 this month`, icon: CurrencyDollar },
                       { type: 'winRate', period: 'weekly', target: 70, label: '70% win rate this week', icon: Target },
-                      { type: 'profit', period: 'daily', target: 100, label: '$100 daily profit goal', icon: ChartLineUp },
+                      { type: 'profit', period: 'daily', target: 100, label: `${currencySymbol}100 daily profit goal`, icon: ChartLineUp },
                       { type: 'trades', period: 'weekly', target: 20, label: '20 trades this week', icon: Lightning },
                       { type: 'riskReward', period: 'monthly', target: 2, label: '2:1 risk/reward ratio', icon: Scales },
                       { type: 'trades', period: 'monthly', target: 50, label: '50 trades this month', icon: Lightning }
@@ -1188,7 +1219,7 @@ export function PerformanceGoals() {
               <div className="space-y-2">
                 <Label>
                   Target {newGoal.type === 'winRate' ? '(%)' :
-                    newGoal.type === 'profit' ? '($)' :
+                    newGoal.type === 'profit' ? `(${currencySymbol})` :
                       newGoal.type === 'riskReward' ? '(ratio)' : '(count)'}
                 </Label>
                 <Input
@@ -1238,14 +1269,14 @@ export function PerformanceGoals() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="maxLossPerDay">Max Daily Loss ($)</SelectItem>
-                    <SelectItem value="maxLossPerTrade">Max Loss Per Trade ($)</SelectItem>
-                    <SelectItem value="maxDrawdown">Max Drawdown ($)</SelectItem>
+                    <SelectItem value="maxLossPerDay">Max Daily Loss ({currencySymbol})</SelectItem>
+                    <SelectItem value="maxLossPerTrade">Max Loss Per Trade ({currencySymbol})</SelectItem>
+                    <SelectItem value="maxDrawdown">Max Drawdown ({currencySymbol})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Value ($)</Label>
+                <Label>Value ({currencySymbol})</Label>
                 <Input
                   type="number"
                   min={0}
