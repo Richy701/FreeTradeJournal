@@ -4,7 +4,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
-import { calculateGrossPnl, getFuturesMultiplier } from '@/lib/pnl';
+import { calculateGrossPnl, getFuturesMultiplier, computePnlPercentage } from '@/lib/pnl';
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -534,11 +534,7 @@ export default function TradeLog() {
     }
 
     const pnl = grossPnL - commission - (fees || 0) - swap - spreadCost;
-    const contractMultiplier = customMultiplier && customMultiplier > 0
-      ? customMultiplier
-      : market === 'futures' ? getFuturesMultiplier(symbol) : 1;
-    const investment = entryPrice * (market === 'forex' ? 100000 * lotSize : lotSize * contractMultiplier);
-    const pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
+    const pnlPercentage = computePnlPercentage({ pnl, symbol, market, entryPrice, quantity: lotSize, customMultiplier });
     
     // Calculate Risk-Reward ratio properly
     let riskReward = 0;
@@ -583,8 +579,7 @@ export default function TradeLog() {
 
     if (data.useManualPnL && data.manualPnL !== undefined) {
       pnl = data.manualPnL;
-      const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
-      pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
+      pnlPercentage = computePnlPercentage({ pnl, symbol: data.symbol || '', market: data.market || 'forex', entryPrice: data.entryPrice, quantity: data.lotSize, customMultiplier: data.customMultiplier });
 
       if (stopLoss) {
         const risk = data.side === 'long'
@@ -599,8 +594,7 @@ export default function TradeLog() {
       // the commission/fees/swap the user adds. This prevents the P&L from jumping
       // to a wrong value on edit.
       pnl = editingTrade.brokerPnL - (data.commission || 0) - (data.fees || 0) - (data.swap || 0);
-      const investment = data.entryPrice * data.lotSize * (data.market === 'forex' ? 100000 : 1);
-      pnlPercentage = investment > 0 ? (pnl / investment) * 100 : 0;
+      pnlPercentage = computePnlPercentage({ pnl, symbol: data.symbol || '', market: data.market || 'forex', entryPrice: data.entryPrice, quantity: data.lotSize, customMultiplier: data.customMultiplier });
       riskReward = calculatePnL(calcData).riskReward;
     } else {
       const calculated = calculatePnL(calcData);

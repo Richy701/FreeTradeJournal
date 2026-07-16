@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { toast } from "sonner"
-import { calculateGrossPnl } from "@/lib/pnl"
+import { calculateGrossPnl, computePnlPercentage } from "@/lib/pnl"
 import { belongsToAccount } from "@/lib/account-scope"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -10,6 +10,8 @@ import { useDemoData } from '@/hooks/use-demo-data'
 import { notifyDataChange } from '@/contexts/sync-context'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
+import { useProStatus } from '@/contexts/pro-context'
+import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing'
 import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
 import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/react'
@@ -105,6 +107,7 @@ export function CalendarHeatmap() {
   const { formatCurrency, getCurrencySymbol } = useSettings()
   const { activeAccount } = useAccounts()
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
+  const { isPro } = useProStatus()
   const demoGuard = useDemoGuard()
   const userStorage = useUserStorage()
   const [refreshKey, setRefreshKey] = useState(0)
@@ -293,8 +296,23 @@ export function CalendarHeatmap() {
     if (!selectedDateForTrade || !journalNote.trim()) return
     if (demoGuard('save journal entries')) return
 
-    let entries = getJournalEntries()
-    
+    // Read ALL entries from localStorage — getJournalEntries() is filtered to
+    // the active account, and writing that subset back over the key would
+    // silently destroy every other account's journal entries.
+    let allEntries: any[] = []
+    try {
+      const saved = userStorage.getItem('journalEntries')
+      if (saved) allEntries = JSON.parse(saved)
+    } catch { /* empty */ }
+
+    // Same free cap as the Journal page — the count is across all accounts.
+    if (!isPro && !isDemo && allEntries.length >= FREE_JOURNAL_ENTRY_LIMIT) {
+      toast.error(
+        `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries. Your existing entries are safe — upgrade to Pro for unlimited journaling.`
+      )
+      return
+    }
+
     // Always create a new journal entry (no longer replace existing ones)
     const journalEntry = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Ensure unique ID
@@ -304,13 +322,14 @@ export function CalendarHeatmap() {
       tags: journalTags.split(',').map(tag => tag.trim()).filter(Boolean),
       mood: journalMood,
       entryType: 'general' as const,
-      tradeId: selectedTradeId === "none" ? undefined : selectedTradeId || undefined
+      tradeId: selectedTradeId === "none" ? undefined : selectedTradeId || undefined,
+      accountId: activeAccount?.id // undefined = legacy-default bucket, still visible on default accounts
     }
-    
+
     // Add new entry to the beginning of the array
-    entries.unshift(journalEntry)
-    
-    userStorage.setItem('journalEntries', JSON.stringify(entries))
+    allEntries.unshift(journalEntry)
+
+    userStorage.setItem('journalEntries', JSON.stringify(allEntries))
     notifyDataChange()
 
     // Reset form
@@ -330,11 +349,15 @@ export function CalendarHeatmap() {
   }
 
   const handleSaveTrade = () => {
-    if (!selectedDateForTrade || !tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice) return
+    // Prices OR a manual P&L are enough — the form shows a P&L field, so a
+    // P&L-only save must work here exactly like the Dashboard quick-add.
+    const hasPrices = Boolean(tradeForm.entryPrice && tradeForm.exitPrice)
+    const hasManualPnl = tradeForm.pnl.trim() !== ''
+    if (!selectedDateForTrade || !tradeForm.symbol || (!hasPrices && !hasManualPnl)) return
     if (demoGuard('save your trades')) return
 
-    const entryPrice = parseFloat(tradeForm.entryPrice)
-    const exitPrice = parseFloat(tradeForm.exitPrice)
+    const entryPrice = parseFloat(tradeForm.entryPrice) || 0
+    const exitPrice = parseFloat(tradeForm.exitPrice) || 0
     const lotSize = parseFloat(tradeForm.lotSize) || 1
     // Manual P&L wins; otherwise use the shared calculation (same math as the
     // Trade Log form) so every entry path agrees on contract multipliers.
@@ -363,7 +386,7 @@ export function CalendarHeatmap() {
       commission: 0,
       swap: 0,
       pnl,
-      pnlPercentage: entryPrice > 0 ? (pnl / (entryPrice * lotSize)) * 100 : 0,
+      pnlPercentage: computePnlPercentage({ pnl, symbol: tradeForm.symbol, market: tradeForm.market, entryPrice, quantity: lotSize }),
       notes: tradeForm.notes,
       strategy: tradeForm.strategy,
       market: tradeForm.market,
@@ -874,7 +897,7 @@ export function CalendarHeatmap() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4 px-2 sm:px-6">
+      <CardContent className="pt-4 sm:pt-4 px-2 sm:px-6">
         <div className="space-y-3">
           {/* Day headers */}
           <div className="flex gap-1 sm:gap-3 mb-2">
@@ -1611,7 +1634,7 @@ export function CalendarHeatmap() {
                   <Button
                     size="sm"
                     onClick={handleSaveTrade}
-                    disabled={!tradeForm.symbol || !tradeForm.entryPrice || !tradeForm.exitPrice}
+                    disabled={!tradeForm.symbol || (!(tradeForm.entryPrice && tradeForm.exitPrice) && tradeForm.pnl.trim() === '')}
                     className="shadow-sm gap-2 px-5"
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >

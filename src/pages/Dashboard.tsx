@@ -1,6 +1,6 @@
 import { useThemePresets } from '@/contexts/theme-presets'
 import { trackEvent } from '@/lib/analytics'
-import { calculateGrossPnl } from '@/lib/pnl'
+import { calculateGrossPnl, computePnlPercentage } from '@/lib/pnl'
 import { belongsToAccount } from '@/lib/account-scope'
 import { useAuth } from '@/contexts/auth-context'
 import { useProStatus } from '@/contexts/pro-context'
@@ -291,7 +291,7 @@ export default function Dashboard() {
       commission: 0,
       swap: 0,
       pnl,
-      pnlPercentage: entryPrice > 0 ? (pnl / (entryPrice * lotSize)) * 100 : 0,
+      pnlPercentage: computePnlPercentage({ pnl, symbol: tradeForm.symbol, market: tradeForm.market, entryPrice, quantity: lotSize }),
       notes: tradeForm.notes,
       strategy: tradeForm.strategy,
       emotions: tradeForm.emotions || undefined,

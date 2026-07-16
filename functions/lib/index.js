@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -193,7 +193,9 @@ exports.sendPasswordResetLink = functions.https.onCall(async (data) => {
     }
     const normalizedEmail = email.trim().toLowerCase();
     // Rate limit: 3 reset requests per 10 minutes per email
-    const rateLimitRef = db.collection("passwordResetRateLimit").doc(Buffer.from(normalizedEmail).toString("base64"));
+    // base64url, not base64: standard encoding can contain "/", which splits the
+    // doc id into an invalid path and permanently breaks reset for that email.
+    const rateLimitRef = db.collection("passwordResetRateLimit").doc(Buffer.from(normalizedEmail).toString("base64url"));
     await db.runTransaction(async (tx) => {
         const snap = await tx.get(rateLimitRef);
         const data = snap.data() || {};
@@ -238,7 +240,7 @@ exports.sendEmailVerificationLink = functions.https.onCall(async (data, context)
         throw new functions.https.HttpsError("invalid-argument", "No email on account.");
     }
     // Rate limit: 3 requests per 10 minutes per email
-    const rateLimitRef = db.collection("emailVerificationRateLimit").doc(Buffer.from(email).toString("base64"));
+    const rateLimitRef = db.collection("emailVerificationRateLimit").doc(Buffer.from(email).toString("base64url"));
     await db.runTransaction(async (tx) => {
         const snap = await tx.get(rateLimitRef);
         const existing = snap.data() || {};
@@ -1114,7 +1116,7 @@ exports.sendFeedback = functions.https.onCall(async (data, context) => {
         const followUpBadge = wantFollowUp ? `<span style="background:#f59e0b;color:#1a1305;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700">WANTS REPLY</span>` : "";
         const pageInfo = page ? `<p style="margin:0 0 4px;color:#666;font-size:13px">Page: <strong>${escapeHtml(page)}</strong></p>` : "";
         const diagRows = diagnostics
-            ? Object.entries(diagnostics).map(([k, v]) => `<tr><td style="padding:2px 12px 2px 0;color:#999;white-space:nowrap;vertical-align:top">${k}</td>`
+            ? Object.entries(diagnostics).map(([k, v]) => `<tr><td style="padding:2px 12px 2px 0;color:#999;white-space:nowrap;vertical-align:top">${escapeHtml(k)}</td>`
                 + `<td style="color:#444;word-break:break-word">${String(v).replace(/</g, "&lt;").replace(/>/g, "&gt;")}</td></tr>`).join("")
             : "";
         const diagBlock = diagRows
@@ -1212,7 +1214,7 @@ exports.submitTestimonial = functions.https.onCall(async (data, context) => {
       <div style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#111">
         <h2 style="margin:0 0 8px">New Testimonial — needs approval</h2>
         <p style="margin:0 0 16px;color:#666;font-size:14px">
-          From <strong>${name || "Anonymous"}</strong>${role ? ` · ${role}` : ""} · ${userEmail}
+          From <strong>${escapeHtml(name || "Anonymous")}</strong>${role ? ` · ${escapeHtml(role)}` : ""} · ${escapeHtml(userEmail)}
         </p>
         <blockquote style="margin:0 0 16px;padding:16px;background:#f5f5f5;border-left:4px solid #f59e0b;border-radius:4px;font-size:15px;line-height:1.6;font-style:italic">
           "${quote.trim().replace(/</g, "&lt;").replace(/>/g, "&gt;")}"
@@ -1777,7 +1779,11 @@ function generateUnsubscribeToken(uid) {
     return hmac.digest("hex");
 }
 function verifyUnsubscribeToken(uid, token) {
-    return generateUnsubscribeToken(uid) === token;
+    // Hash both sides so timingSafeEqual gets equal-length buffers regardless
+    // of what the caller sent.
+    const expected = crypto.createHash("sha256").update(generateUnsubscribeToken(uid)).digest();
+    const provided = crypto.createHash("sha256").update(token).digest();
+    return crypto.timingSafeEqual(expected, provided);
 }
 function getUnsubscribeUrl(uid) {
     const token = generateUnsubscribeToken(uid);
@@ -2106,8 +2112,10 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     // Idempotency: Stripe re-delivers events. The Firestore entitlement writes
     // are idempotent, but side effects (welcome emails, analytics) are not —
     // claim the event id first and skip if it was already processed.
+    // The claim MUST be released if processing fails, or Stripe's retries all
+    // read as duplicates and a paid entitlement is dropped forever.
+    const claimRef = db.collection("stripeEvents").doc(event.id);
     try {
-        const claimRef = db.collection("stripeEvents").doc(event.id);
         const alreadyProcessed = await db.runTransaction(async (tx) => {
             const snap = await tx.get(claimRef);
             if (snap.exists)
@@ -2231,6 +2239,14 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 // past_due keeps Pro during Stripe's dunning retries (see client
                 // isActivePro); dunning failure moves to cancelled/unpaid → not pro.
                 const isPro = status === "active" || status === "on_trial" || status === "past_due";
+                // Lifetime owners keep Pro forever: a leftover subscription (bought
+                // monthly, then bought lifetime) renewing or churning must not
+                // overwrite the lifetime entitlement.
+                const existing = (await db.collection("users").doc(firebaseUid).get()).data();
+                if (existing?.subscription?.planType === "lifetime") {
+                    console.log(`subscription.updated for ${firebaseUid} ignored — user owns lifetime`);
+                    break;
+                }
                 await db.collection("users").doc(firebaseUid).set({
                     isPro,
                     subscription: {
@@ -2287,6 +2303,12 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 const firebaseUid = sub.metadata?.firebase_uid;
                 if (!firebaseUid) {
                     console.error("No firebase_uid in subscription metadata");
+                    break;
+                }
+                // Lifetime owners keep Pro forever — see subscription.updated.
+                const existingDoc = (await db.collection("users").doc(firebaseUid).get()).data();
+                if (existingDoc?.subscription?.planType === "lifetime") {
+                    console.log(`subscription.deleted for ${firebaseUid} ignored — user owns lifetime`);
                     break;
                 }
                 await db.collection("users").doc(firebaseUid).set({
@@ -2367,6 +2389,14 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     catch (err) {
         console.error("Error processing webhook:", err.message);
         getPostHog().captureException(err);
+        // Release the idempotency claim so Stripe's retry gets processed rather
+        // than skipped as a duplicate.
+        try {
+            await claimRef.delete();
+        }
+        catch (releaseErr) {
+            console.error(`Failed to release claim for ${event.id} — this event will NOT be retried:`, releaseErr);
+        }
         res.status(500).send("Webhook handler error");
         return;
     }
@@ -3641,6 +3671,32 @@ exports.getSyncData = functions.https.onCall(async (_data, context) => {
         throw new functions.https.HttpsError("internal", "Failed to get sync data.");
     }
 });
+// "Delete All Data" support: without this, a Pro user's local wipe is undone
+// on the next load by auto-restore pulling the untouched cloud copy back.
+// Deletes every sync doc and the user's Storage screenshots; keeps the
+// account, entitlements, and settings intact. Errors throw (no partial
+// success) so the client can abort the local wipe if the cloud clear failed.
+exports.clearSyncData = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    const uid = context.auth.uid;
+    try {
+        const snapshot = await db.collection("users").doc(uid).collection("sync").get();
+        if (snapshot.docs.length > 0) {
+            const batch = db.batch();
+            snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+            await batch.commit();
+        }
+        await admin.storage().bucket().deleteFiles({ prefix: `users/${uid}/journal/` });
+        console.log(`[clearSyncData] Cleared ${snapshot.docs.length} sync docs + journal Storage for ${uid}`);
+        return { success: true, cleared: snapshot.docs.length };
+    }
+    catch (err) {
+        console.error(`[clearSyncData] Error for ${uid}:`, err.message);
+        throw new functions.https.HttpsError("internal", "Failed to clear cloud data.");
+    }
+});
 // ─── Delete User Account ──────────────────────────────────
 exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
     if (!context.auth) {
@@ -3725,6 +3781,15 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
     catch (err) {
         console.error(`[deleteUserAccount] Resend cleanup error:`, err.message);
         // Continue with deletion even if Resend fails
+    }
+    // 5b. Delete Firebase Storage screenshots (journal images can contain
+    // broker statements — they must not outlive the account)
+    try {
+        await admin.storage().bucket().deleteFiles({ prefix: `users/${uid}/` });
+        console.log(`[deleteUserAccount] Deleted Storage files under users/${uid}/`);
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Storage cleanup error:`, err.message);
     }
     // 6. Delete main user document (guarded — the Auth deletion below must
     // still run even if this fails, or the user can sign back into a ghost)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateGrossPnl, getFuturesMultiplier, futuresBaseSymbol } from './pnl';
+import { calculateGrossPnl, getFuturesMultiplier, futuresBaseSymbol, computePnlPercentage, forexQuoteCurrency } from './pnl';
 
 describe('getFuturesMultiplier', () => {
   it('resolves plain base symbols', () => {
@@ -115,5 +115,69 @@ describe('calculateGrossPnl — indices and overrides', () => {
       symbol: 'ES', market: 'futures', side: 'long',
       entryPrice: 100, exitPrice: 110, quantity: 5, customMultiplier: 7,
     })).toBe(350);
+  });
+});
+
+describe('forexQuoteCurrency — broker-suffixed and odd symbols', () => {
+  it('reads the quote from positions 3-6, ignoring broker suffixes', () => {
+    expect(forexQuoteCurrency('EURUSD')).toBe('USD');
+    expect(forexQuoteCurrency('EURUSDm')).toBe('USD');
+    expect(forexQuoteCurrency('EURUSD.a')).toBe('USD');
+    expect(forexQuoteCurrency('USDJPYm')).toBe('JPY');
+    expect(forexQuoteCurrency('XAUUSDm')).toBe('USD');
+  });
+
+  it('returns null instead of a bogus code for non-pair symbols', () => {
+    // The old slice(-3) logic returned 'OLD' / 'SDM' and wrongly divided
+    expect(forexQuoteCurrency('GOLD')).toBe(null);
+    expect(forexQuoteCurrency('US30')).toBe(null);
+  });
+
+  it('suffixed USD-quote pairs are NOT divided by the exit rate', () => {
+    expect(calculateGrossPnl({
+      symbol: 'EURUSDm', market: 'forex', side: 'long',
+      entryPrice: 1.0800, exitPrice: 1.0850, quantity: 1,
+    })).toBeCloseTo(500, 2);
+  });
+
+  it('suffixed JPY-quote pairs still convert at the exit rate', () => {
+    expect(calculateGrossPnl({
+      symbol: 'USDJPYm', market: 'forex', side: 'long',
+      entryPrice: 150.00, exitPrice: 151.00, quantity: 1,
+    })).toBeCloseTo(100000 / 151, 2);
+  });
+});
+
+describe('computePnlPercentage — one formula for every entry path', () => {
+  it('futures: notional includes the contract multiplier', () => {
+    // ES 1 contract at 5000 = $250,000 notional; $500 pnl = 0.2%
+    expect(computePnlPercentage({
+      pnl: 500, symbol: 'ES', market: 'futures', entryPrice: 5000, quantity: 1,
+    })).toBeCloseTo(0.2, 5);
+  });
+
+  it('forex: notional includes the 100k lot size', () => {
+    // EURUSD 0.1 lot at 1.10 = $11,000 notional; $50 pnl ≈ 0.4545%
+    expect(computePnlPercentage({
+      pnl: 50, symbol: 'EURUSD', market: 'forex', entryPrice: 1.10, quantity: 0.1,
+    })).toBeCloseTo(0.4545, 3);
+  });
+
+  it('spot metals: notional uses real lot units', () => {
+    // XAUUSD 1 lot (100oz) at 2300 = $230,000; $1,000 pnl ≈ 0.4348%
+    expect(computePnlPercentage({
+      pnl: 1000, symbol: 'XAUUSD', market: 'forex', entryPrice: 2300, quantity: 1,
+    })).toBeCloseTo(0.4348, 3);
+  });
+
+  it('customMultiplier overrides the symbol lookup', () => {
+    expect(computePnlPercentage({
+      pnl: 70, symbol: 'ES', market: 'futures', entryPrice: 100, quantity: 7, customMultiplier: 1,
+    })).toBeCloseTo(10, 5);
+  });
+
+  it('returns 0 when notional cannot be established', () => {
+    expect(computePnlPercentage({ pnl: 100, symbol: 'ES', market: 'futures', entryPrice: 0, quantity: 1 })).toBe(0);
+    expect(computePnlPercentage({ pnl: 100, symbol: 'ES', market: 'futures', entryPrice: 5000, quantity: 0 })).toBe(0);
   });
 });

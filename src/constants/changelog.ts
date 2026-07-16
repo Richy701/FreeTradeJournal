@@ -19,6 +19,34 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.63.1',
+    date: '2026-07-16',
+    summary: 'Calendar notes are now safe with multiple accounts, and P&L percentages are consistent everywhere.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Calendar notes no longer touch other accounts',
+        description: 'Saving a quick note from the dashboard calendar could remove journal entries belonging to your other trading accounts, and the note itself could land on the wrong account. Notes now save to the account you are on and leave everything else alone.',
+      },
+      {
+        type: 'fixed',
+        text: 'One P&L percentage, everywhere',
+        description: 'The percentage shown next to a trade could differ wildly depending on whether it was added from the Trade Log, the dashboard quick-log, or the calendar — futures and forex position sizes were counted differently in each. All entry paths now share one calculation.',
+      },
+      {
+        type: 'fixed',
+        text: 'Accurate P&L for broker-suffixed symbols',
+        description: 'Symbols with broker suffixes like EURUSDm or EURUSD.a were treated as exotic pairs and had their P&L wrongly converted. They are now recognised as the standard pairs they are.',
+      },
+      {
+        type: 'improved',
+        text: 'Log a P&L-only trade from the calendar',
+        description: 'The calendar day dialog now saves a trade with just a symbol and profit or loss, the same as the dashboard quick-log — no more disabled save button when you skip the prices.',
+      },
+    ],
+  },
+  {
     version: '2.63.0',
     date: '2026-07-16',
     summary: 'The Tilt Meter now knows your usual trading hours and flags entries outside them.',
@@ -2103,4 +2131,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.63.0'
+export const LATEST_CHANGELOG_VERSION = '2.63.1'

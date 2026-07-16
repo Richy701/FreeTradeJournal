@@ -52,6 +52,29 @@ const SPOT_METAL_LOT_UNITS: Record<string, number> = {
 
 const FOREX_UNITS_PER_LOT = 100000;
 
+// ISO codes we accept as a quote currency. Broker symbols carry suffixes
+// (EURUSDm, EURUSD.a) whose trailing letters would otherwise be mistaken for
+// the quote ("SDM"), wrongly triggering quote→USD conversion on every trade.
+const CURRENCY_CODES = new Set([
+  'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD',
+  'SEK', 'NOK', 'DKK', 'SGD', 'HKD', 'MXN', 'ZAR', 'TRY',
+  'PLN', 'CZK', 'HUF', 'CNH', 'CNY',
+]);
+
+/** Quote currency of a forex-style symbol, or null when we can't tell.
+    Prefers the 3-letter code at positions 3-6 (EURUSDm → USD) and only falls
+    back to the last 3 letters when they form a known code. */
+export function forexQuoteCurrency(symbol: string): string | null {
+  const letters = (symbol || '').toUpperCase().replace(/[^A-Z]/g, '');
+  const base = letters.slice(0, 3);
+  const quote = letters.slice(3, 6);
+  if (letters.length >= 6 && (CURRENCY_CODES.has(base) || SPOT_METAL_LOT_UNITS[base]) && CURRENCY_CODES.has(quote)) {
+    return quote;
+  }
+  const tail = letters.slice(-3);
+  return CURRENCY_CODES.has(tail) ? tail : null;
+}
+
 /** Strip the month/year code from a futures contract name (MNQH6 → MNQ, ESU24 → ES). */
 export function futuresBaseSymbol(contractName: string): string {
   return contractName.trim().toUpperCase().replace(/[FGHJKMNQUVXZ]\d{1,2}$/, '');
@@ -105,8 +128,10 @@ export function calculateGrossPnl(input: GrossPnlInput): number {
     const unitsPerLot = metal ? SPOT_METAL_LOT_UNITS[metal] : FOREX_UNITS_PER_LOT;
     const pnlInQuoteCurrency = diff * unitsPerLot * quantity;
 
-    // Quote currency is the last 3 letters (EURUSD → USD, USDJPY → JPY).
-    const quote = sym.replace(/[^A-Z]/g, '').slice(-3);
+    // Convert only when we positively identify a non-USD quote currency —
+    // unknown/suffixed symbols stay unconverted rather than being divided by
+    // an unrelated exit price.
+    const quote = forexQuoteCurrency(sym);
     if (quote && quote !== 'USD' && exitPrice > 0) {
       return pnlInQuoteCurrency / exitPrice;
     }
@@ -119,4 +144,44 @@ export function calculateGrossPnl(input: GrossPnlInput): number {
 
   // indices, stocks, anything else: price difference × quantity
   return diff * quantity;
+}
+
+export interface PnlPercentageInput {
+  pnl: number;
+  symbol: string;
+  market: string;
+  entryPrice: number;
+  /** Lots for forex, contracts for futures/indices. */
+  quantity: number;
+  customMultiplier?: number;
+}
+
+/**
+ * P&L as a percentage of the position's notional value at entry. This is THE
+ * definition — every entry path (TradeLog calculated/manual/edit, Dashboard
+ * quick-add, calendar quick-add) must use it. Historical bug: three inline
+ * formulas disagreed by up to 500x because two dropped the futures contract
+ * multiplier and the forex 100k lot size from the denominator.
+ *
+ * Returns 0 when the notional can't be established (no entry price/quantity).
+ */
+export function computePnlPercentage(input: PnlPercentageInput): number {
+  const { pnl, symbol, market, entryPrice, quantity, customMultiplier } = input;
+  if (!(entryPrice > 0) || !(quantity > 0)) return 0;
+
+  const sym = (symbol || '').toUpperCase();
+  let unitsPerContract: number;
+  if (customMultiplier && customMultiplier > 0) {
+    unitsPerContract = customMultiplier;
+  } else if (market === 'forex') {
+    const metal = Object.keys(SPOT_METAL_LOT_UNITS).find(m => sym.startsWith(m));
+    unitsPerContract = metal ? SPOT_METAL_LOT_UNITS[metal] : FOREX_UNITS_PER_LOT;
+  } else if (market === 'futures') {
+    unitsPerContract = getFuturesMultiplier(sym);
+  } else {
+    unitsPerContract = 1;
+  }
+
+  const notional = entryPrice * unitsPerContract * quantity;
+  return notional > 0 ? (pnl / notional) * 100 : 0;
 }
