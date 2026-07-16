@@ -190,6 +190,49 @@ function computeTiltScore(trades: Trade[], themeColors: { profit: string; loss: 
     factors.push(`Position size increased after ${sizeEscalations} loss(es)`)
   }
 
+  // Factor 5: Entries outside the trader's usual hours (0-20 pts)
+  // Baseline = entry-hour distribution of older trades (local clock, same as
+  // the session aggregates). Recent entries at hours the trader rarely touches
+  // score points, doubled when they follow a loss — the "revenge-firing at a
+  // time you never trade" pattern. Needs enough history to know what "usual"
+  // means, so the baseline excludes the recent window being judged.
+  const offHoursWindow = sorted.slice(0, 6)
+  const hourBaseline = sorted.slice(6)
+  const hourCounts = new Array(24).fill(0)
+  let baselineSize = 0
+  for (const t of hourBaseline) {
+    if (!t.entryTime) continue
+    const when = new Date(t.entryTime)
+    if (isNaN(when.getTime())) continue
+    hourCounts[when.getHours()]++
+    baselineSize++
+  }
+  if (baselineSize >= 20) {
+    const rareThreshold = Math.max(1, baselineSize * 0.03)
+    let offHours = 0
+    let offHoursAfterLoss = 0
+    for (let i = 0; i < offHoursWindow.length; i++) {
+      const t = offHoursWindow[i]
+      if (!t.entryTime) continue
+      const when = new Date(t.entryTime)
+      if (isNaN(when.getTime())) continue
+      if (hourCounts[when.getHours()] < rareThreshold) {
+        offHours++
+        const prev = sorted[i + 1]
+        if (prev && prev.pnl < 0) offHoursAfterLoss++
+      }
+    }
+    if (offHours > 0) {
+      const pts = Math.min(20, offHours * 5 + offHoursAfterLoss * 5)
+      score += pts
+      factors.push(
+        offHoursAfterLoss > 0
+          ? `${offHours} entr${offHours === 1 ? 'y' : 'ies'} at hours you don't normally trade (${offHoursAfterLoss} right after a loss)`
+          : `${offHours} entr${offHours === 1 ? 'y' : 'ies'} at hours you don't normally trade`
+      )
+    }
+  }
+
   score = Math.min(100, Math.max(0, score))
 
   let label: string

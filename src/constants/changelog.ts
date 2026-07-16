@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.63.0',
+    date: '2026-07-16',
+    summary: 'The Tilt Meter now knows your usual trading hours and flags entries outside them.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Tilt Meter learns your trading hours',
+        description: 'The Tilt Meter now builds a picture of when you normally trade from your own history. Entries at hours you rarely touch raise your tilt score, and count double when they come right after a loss — the classic sign of revenge trading outside your window. Needs at least 20 logged trades before it kicks in.',
+      },
+    ],
+  },
+  {
     version: '2.62.0',
     date: '2026-07-15',
     summary: 'A deep reliability pass: cloud sync protects your data in every edge case, and every corner of the app now speaks your currency.',
@@ -2090,4 +2103,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.62.0'
+export const LATEST_CHANGELOG_VERSION = '2.63.0'
