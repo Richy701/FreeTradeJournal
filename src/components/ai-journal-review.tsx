@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
+import { useSettings } from '@/contexts/settings-context';
 import { ProGate } from '@/components/pro-gate';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { renderReviewMarkdown } from '@/components/ai-trade-review';
@@ -48,6 +49,7 @@ interface AIJournalReviewProps {
 export function AIJournalReview({ open, onOpenChange, entries, trades }: AIJournalReviewProps) {
   const { themeColors, alpha } = useThemePresets();
   const { updateFreeAiQuota } = useProStatus();
+  const { getCurrencySymbol } = useSettings();
   const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const [review, setReview] = useState<string | null>(null);
 
@@ -90,6 +92,7 @@ export function AIJournalReview({ open, onOpenChange, entries, trades }: AIJourn
       const result = await startStream('assist', {
         type: 'journal_review',
         payload: {
+          currency: getCurrencySymbol(),
           periodDays: PERIOD_DAYS,
           entries: windowed.map((e) => ({
             date: localDay(new Date(e.date)),

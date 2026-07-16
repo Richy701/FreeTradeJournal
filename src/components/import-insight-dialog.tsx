@@ -10,6 +10,7 @@ import { Brain } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
+import { useSettings } from '@/contexts/settings-context';
 import { renderReviewMarkdown } from '@/components/ai-trade-review';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { trackEvent } from '@/lib/analytics';
@@ -34,6 +35,7 @@ interface ImportInsightDialogProps {
 export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsightDialogProps) {
   const { themeColors, alpha } = useThemePresets();
   const { updateFreeAiQuota } = useProStatus();
+  const { getCurrencySymbol } = useSettings();
   const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const [result, setResult] = useState<string | null>(null);
   const startedRef = useRef(false);
@@ -108,6 +110,7 @@ export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsigh
     startStream('assist', {
       type: 'import_insight',
       payload: {
+        currency: getCurrencySymbol(),
         stats: {
           tradeCount: trades.length,
           firstDate: first ? new Date(first).toISOString() : null,

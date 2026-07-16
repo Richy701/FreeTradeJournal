@@ -742,17 +742,31 @@ exports.sendWeeklyDigestEmails = functions.pubsub
         if (isEntitledPro(data)) {
             try {
                 const tradesDoc = await db.collection("users").doc(doc.id).collection("sync").doc("trades").get();
+                const symbols = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CAD: "C$", AUD: "A$", CHF: "CHF", CNY: "¥" };
                 // Use the user's currency from synced settings (falls back to $)
                 let curSym = "$";
                 try {
                     const settingsDoc = await db.collection("users").doc(doc.id).collection("sync").doc("settings").get();
                     if (settingsDoc.exists) {
                         const s = JSON.parse(settingsDoc.data()?.data || "{}");
-                        const symbols = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CAD: "C$", AUD: "A$", CHF: "CHF", CNY: "¥" };
                         curSym = symbols[s.currency] || "$";
                     }
                 }
                 catch { /* default $ */ }
+                // Account-level currency overrides the global setting (same rule as
+                // the app). A multi-currency week renders per currency instead of
+                // summing euros and dollars into one meaningless number.
+                const accountCur = {};
+                try {
+                    const accountsDoc = await db.collection("users").doc(doc.id).collection("sync").doc("accounts").get();
+                    if (accountsDoc.exists) {
+                        for (const a of JSON.parse(accountsDoc.data()?.data || "[]")) {
+                            if (a?.id && a?.currency)
+                                accountCur[a.id] = symbols[a.currency] || a.currency;
+                        }
+                    }
+                }
+                catch { /* global fallback */ }
                 if (tradesDoc.exists) {
                     const allTrades = JSON.parse(tradesDoc.data()?.data || "[]");
                     const weekTrades = allTrades.filter((t) => {
@@ -763,11 +777,19 @@ exports.sendWeeklyDigestEmails = functions.pubsub
                     if (tradeCount > 0) {
                         const wins = weekTrades.filter((t) => Number(t.pnl) > 0).length;
                         winRate = Math.round((wins / tradeCount) * 100);
-                        const totalPnl = weekTrades.reduce((s, t) => s + (Number(t.pnl) || 0), 0);
-                        const best = weekTrades.reduce((max, t) => Math.max(max, Number(t.pnl) || 0), -Infinity);
-                        const sym = totalPnl >= 0 ? "+" : "-";
-                        pnl = `${sym}${curSym}${Math.abs(totalPnl).toFixed(2)}`;
-                        bestTrade = best > 0 ? `+${curSym}${best.toFixed(2)}` : `${curSym}${best.toFixed(2)}`;
+                        const symOf = (t) => (t.accountId && accountCur[t.accountId]) || curSym;
+                        const totals = {};
+                        for (const t of weekTrades) {
+                            const cs = symOf(t);
+                            totals[cs] = (totals[cs] || 0) + (Number(t.pnl) || 0);
+                        }
+                        pnl = Object.entries(totals)
+                            .map(([cs, v]) => `${v >= 0 ? "+" : "-"}${cs}${Math.abs(v).toFixed(2)}`)
+                            .join(" · ");
+                        const bestT = weekTrades.reduce((max, t) => (Number(t.pnl) || 0) > (max ? (Number(max.pnl) || 0) : -Infinity) ? t : max, null);
+                        const best = Number(bestT?.pnl) || 0;
+                        const bcs = bestT ? symOf(bestT) : curSym;
+                        bestTrade = best > 0 ? `+${bcs}${best.toFixed(2)}` : `${bcs}${best.toFixed(2)}`;
                     }
                 }
             }
@@ -2589,9 +2611,10 @@ exports.analyzeTradesAI = functions.https.onCall(async (data, context) => {
             return current;
         });
     }
-    // 4. Validate input
+    // 4. Validate input (refund the already-charged unit — the call did nothing)
     const request = data;
     if (!request.trades || !Array.isArray(request.trades) || request.trades.length === 0) {
+        await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
         throw new functions.https.HttpsError("invalid-argument", "No trades provided.");
     }
     // Cap at 50 trades to keep prompt size reasonable
@@ -2603,7 +2626,7 @@ exports.analyzeTradesAI = functions.https.onCall(async (data, context) => {
         const holdStr = hold >= 60 ? `${Math.floor(hold / 60)}h ${hold % 60}m` : `${hold}m`;
         const entryHour = new Date(t.entryTime).getUTCHours();
         const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(t.entryTime).getUTCDay()];
-        return `${i + 1}. ${t.symbol} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${t.strategy}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${t.emotions}` : ""}`;
+        return `${i + 1}. ${clip(t.symbol, 20)} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${clip(t.strategy, 80)}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${clip(t.emotions, 120)}` : ""}`;
     }).join("\n");
     // Aggregate emotion patterns for analysis
     const emotionCounts = {};
@@ -2716,6 +2739,8 @@ Give me a thorough analysis of my trading.`;
     // 6. Call OpenAI
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey || apiKey === "your-openai-api-key-here") {
+        // The quota unit was already charged — give it back, the user got nothing.
+        await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
         throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
     }
     const openai = new openai_1.default({ apiKey });
@@ -2734,6 +2759,7 @@ Give me a thorough analysis of my trading.`;
     }
     catch (err) {
         console.error("OpenAI API error:", err.message);
+        await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
         throw new functions.https.HttpsError("internal", "Failed to generate analysis. Please try again.");
     }
     return {
@@ -3064,11 +3090,19 @@ function payloadCurrency(payload) {
     const c = payload?.currency;
     return typeof c === "string" && c.length > 0 && c.length <= 3 ? c : "$";
 }
+// Hard cap on user-controlled strings interpolated into prompts. Without it,
+// a hostile caller can pack 100KB into a "symbol" and burn flagship-model
+// tokens at 10MB-payload scale while staying inside their call quota.
+function clip(value, max) {
+    const s = typeof value === "string" ? value : value == null ? "" : String(value);
+    return s.length > max ? s.slice(0, max) + "…" : s;
+}
 function buildGoalCoachPrompt(payload) {
     const { goals, riskRules, stats, tradeCount, daysSinceStart } = payload;
     const cur = payloadCurrency(payload);
-    const goalsSummary = (goals || []).map((g) => `- ${g.type} (${g.period}): target ${g.target}, current ${g.current?.toFixed?.(2) ?? g.current}, ${g.achieved ? "ACHIEVED" : `${g.percentComplete?.toFixed(0)}% complete`}`).join("\n");
-    const rulesSummary = (riskRules || []).map((r) => `- ${r.type}: limit ${r.value}, violations: ${r.violations || 0}`).join("\n");
+    // Cap list sizes and free-text fields — both arrays are user-controlled.
+    const goalsSummary = (goals || []).slice(0, 50).map((g) => `- ${clip(g.type, 60)} (${clip(g.period, 20)}): target ${clip(g.target, 20)}, current ${g.current?.toFixed?.(2) ?? clip(g.current, 20)}, ${g.achieved ? "ACHIEVED" : `${g.percentComplete?.toFixed(0)}% complete`}`).join("\n");
+    const rulesSummary = (riskRules || []).slice(0, 50).map((r) => `- ${clip(r.type, 60)}: limit ${clip(r.value, 20)}, violations: ${r.violations || 0}`).join("\n");
     return {
         system: `You are an elite trading goal coach. Analyse the trader's goal progress and provide specific coaching advice. Structure your response:
 
@@ -3250,7 +3284,11 @@ ${tiltBlock ? "\n" + tiltBlock + "\n" : ""}${groupBlocks ? "\n" + groupBlocks + 
 }
 function buildPropTrackerPrompt(payload) {
     const cur = payloadCurrency(payload);
-    const { accounts, transactions } = payload;
+    const { accounts: rawAccounts, transactions: rawTransactions } = payload;
+    // Cap the enumerated arrays and free-text fields — an unbounded payload
+    // otherwise flows verbatim into the prompt.
+    const accounts = (rawAccounts || []).slice(0, 20).map(a => ({ ...a, firmName: clip(a.firmName, 60) }));
+    const transactions = (rawTransactions || []).slice(0, 300).map(t => ({ ...t, description: clip(t.description, 120), type: clip(t.type, 30) }));
     // Compute cross-account patterns
     const firmStats = {};
     for (const a of accounts) {
@@ -3878,6 +3916,10 @@ exports.aiStream = functions.https.onRequest(async (req, res) => {
     let featureType;
     let usedToday = 0;
     let limit;
+    // A free-tier unit is charged above and a Pro unit inside each branch —
+    // refund them when the request dies before anything reaches OpenAI.
+    let chargedFeature = null;
+    const refundStreamCharges = () => refundAiUsage(uid, chargedFeature, userIsPro);
     if (endpoint === "analysis") {
         featureType = "ai_analysis";
         model = FEATURE_MODELS.ai_analysis;
@@ -3908,8 +3950,11 @@ exports.aiStream = functions.https.onRequest(async (req, res) => {
                 return;
             }
         }
+        if (userIsPro)
+            chargedFeature = featureType;
         const request = reqData;
         if (!request.trades || !Array.isArray(request.trades) || request.trades.length === 0) {
+            await refundStreamCharges();
             res.status(400).json({ error: "No trades provided." });
             return;
         }
@@ -3920,7 +3965,7 @@ exports.aiStream = functions.https.onRequest(async (req, res) => {
             const holdStr = hold >= 60 ? `${Math.floor(hold / 60)}h ${hold % 60}m` : `${hold}m`;
             const entryHour = new Date(t.entryTime).getUTCHours();
             const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(t.entryTime).getUTCDay()];
-            return `${i + 1}. ${t.symbol} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${t.strategy}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${t.emotions}` : ""}`;
+            return `${i + 1}. ${clip(t.symbol, 20)} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${clip(t.strategy, 80)}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${clip(t.emotions, 120)}` : ""}`;
         }).join("\n");
         const emotionCounts = {};
         for (const t of trades) {
@@ -4024,6 +4069,7 @@ Give me a thorough analysis of my trading.`;
     else {
         const request = reqData;
         if (!request.type || !request.payload) {
+            await refundStreamCharges();
             res.status(400).json({ error: "Missing type or payload." });
             return;
         }
@@ -4042,6 +4088,7 @@ Give me a thorough analysis of my trading.`;
         };
         const builder = promptBuilders[request.type];
         if (!builder) {
+            await refundStreamCharges();
             res.status(400).json({ error: `Unknown type: ${request.type}` });
             return;
         }
@@ -4073,8 +4120,20 @@ Give me a thorough analysis of my trading.`;
                 res.status(429).json({ error: err.message });
                 return;
             }
+            chargedFeature = featureType;
         }
-        const prompt = builder(request.payload);
+        // A malformed payload can make a builder throw (e.g. pnl.toFixed on
+        // undefined) — that must refund and 400, not escape as an unhandled 500.
+        let prompt;
+        try {
+            prompt = builder(request.payload);
+        }
+        catch (err) {
+            console.error(`aiStream: ${request.type} prompt builder threw:`, err?.message);
+            await refundStreamCharges();
+            res.status(400).json({ error: "Invalid payload for this feature." });
+            return;
+        }
         systemPrompt = prompt.system + (JSON_OUTPUT_TYPES.has(request.type) ? "" : PLAIN_ENGLISH_STYLE);
         userPrompt = prompt.user;
         maxTokens = prompt.maxTokens;
@@ -4082,6 +4141,7 @@ Give me a thorough analysis of my trading.`;
     }
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey || apiKey === "your-openai-api-key-here") {
+        await refundStreamCharges();
         res.status(500).json({ error: "OpenAI API key not configured." });
         return;
     }

@@ -19,6 +19,14 @@ function daysAgo(days: number, time?: string): Date {
   return d
 }
 
+// LOCAL date-only key. PropTracker parses date-only strings ("YYYY-MM-DD");
+// a full ISO string concatenated with "T12:00:00" there produced Invalid Date
+// across every demo card. And toISOString() is UTC — for UTC+ visitors the
+// "today" key landed on yesterday, hiding the demo daily-loss bar.
+function localDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // Demo user data
 export const DEMO_USER = {
   uid: 'demo-user',
@@ -1299,7 +1307,7 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
     accountSize: 100000,
     accountType: 'funded',
     status: 'active',
-    startDate: daysAgo(30).toISOString(),
+    startDate: localDayKey(daysAgo(30)),
     notes: 'Phase 1 passed on first attempt. Currently in funded phase.',
     challengeRules: {
       profitTarget: 10000,
@@ -1312,7 +1320,7 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
       highWaterMark: 107200,
       tradingDaysCount: 18,
       todayPnL: -860,
-      lastUpdated: daysAgo(0).toISOString().split('T')[0],
+      lastUpdated: localDayKey(daysAgo(0)),
     },
     createdAt: daysAgo(30).toISOString(),
   },
@@ -1322,8 +1330,8 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
     accountSize: 50000,
     accountType: 'evaluation',
     status: 'passed',
-    startDate: daysAgo(60).toISOString(),
-    endDate: daysAgo(20).toISOString(),
+    startDate: localDayKey(daysAgo(60)),
+    endDate: localDayKey(daysAgo(20)),
     notes: 'Passed evaluation. Waiting for funded account activation.',
     createdAt: daysAgo(60).toISOString(),
   },
@@ -1333,8 +1341,8 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
     accountSize: 50000,
     accountType: 'evaluation',
     status: 'failed',
-    startDate: daysAgo(90).toISOString(),
-    endDate: daysAgo(75).toISOString(),
+    startDate: localDayKey(daysAgo(90)),
+    endDate: localDayKey(daysAgo(75)),
     notes: 'Hit max drawdown on a bad week. Reset and restarted.',
     createdAt: daysAgo(90).toISOString(),
   },
@@ -1344,7 +1352,7 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
     accountSize: 20000,
     accountType: 'instant',
     status: 'active',
-    startDate: daysAgo(45).toISOString(),
+    startDate: localDayKey(daysAgo(45)),
     notes: 'Bootcamp plan. Steady progress.',
     challengeRules: {
       profitTarget: 1600,
@@ -1355,7 +1363,7 @@ export const DEMO_PROP_ACCOUNTS: PropFirmAccount[] = [
       currentBalance: 20840,
       highWaterMark: 20840,
       tradingDaysCount: 12,
-      lastUpdated: daysAgo(1).toISOString().split('T')[0],
+      lastUpdated: localDayKey(daysAgo(1)),
     },
     createdAt: daysAgo(45).toISOString(),
   },

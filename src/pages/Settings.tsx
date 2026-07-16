@@ -286,6 +286,21 @@ export default function Settings() {
 
   const clearAllData = async () => {
     if (demoGuard('manage your data')) return;
+    // Pro users have a cloud copy: it MUST be cleared first, or auto-restore
+    // pulls everything back on reload — while the IndexedDB screenshots we
+    // deleted below are gone for good. If the cloud clear fails, abort before
+    // touching anything local so the two never diverge.
+    if (isPro) {
+      try {
+        const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+        const { httpsCallable } = await import('firebase/functions');
+        const fns = await getFirebaseFunctions();
+        await httpsCallable(fns, 'clearSyncData')();
+      } catch {
+        toast.error('Could not clear your cloud backup — nothing was deleted. Check your connection and try again.');
+        return;
+      }
+    }
     // clearUserData enumerates every user-scoped key (the old hand-kept list
     // missed prop-firm and onboarding data); screenshots live in IndexedDB.
     userStorage.clearUserData();

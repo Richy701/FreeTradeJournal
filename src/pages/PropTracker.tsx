@@ -777,6 +777,15 @@ export default function PropTracker() {
     }
   }, [accounts, transactions])
 
+  // One currency across every account → label aggregate stats with it; mixed
+  // currencies keep the "$" fallback (an honest multi-currency total needs FX
+  // conversion, which we don't do).
+  const aggregateCurrency = useMemo<PropCurrency | undefined>(() => {
+    if (accounts.length === 0) return undefined
+    const first = accounts[0].currency
+    return accounts.every(a => a.currency === first) ? first : undefined
+  }, [accounts])
+
   const subtitleParts = useMemo(() => {
     if (accounts.length === 0) return null
     return {
@@ -784,7 +793,7 @@ export default function PropTracker() {
         `${accounts.length} account${accounts.length !== 1 ? 's' : ''}`,
         stats.activeCount > 0 ? `${stats.activeCount} active` : null,
       ].filter(Boolean).join(' · '),
-      net: transactions.length > 0 ? `${stats.netPnL >= 0 ? '+' : ''}${fmt(stats.netPnL)} P&L` : null,
+      net: transactions.length > 0 ? `${stats.netPnL >= 0 ? '+' : '-'}${fmt(stats.netPnL, aggregateCurrency)} P&L` : null,
       netColor: stats.netPnL >= 0 ? themeColors.profit : themeColors.loss,
     }
   }, [accounts, stats, transactions, themeColors])
@@ -839,7 +848,7 @@ export default function PropTracker() {
     {
       icon: CurrencyDollar,
       label: 'Total Invested',
-      value: hasData ? fmt(stats.totalInvested) : '—',
+      value: hasData ? fmt(stats.totalInvested, aggregateCurrency) : '—',
       // Neutral, not loss-red: fees paid are an investment, not a losing trade.
       valueColor: hasData ? 'hsl(var(--foreground))' : 'var(--muted-foreground)',
       subtitle: 'All fees paid',
@@ -847,14 +856,14 @@ export default function PropTracker() {
     {
       icon: Wallet,
       label: 'Total Earned',
-      value: hasData ? fmt(stats.totalEarned) : '—',
+      value: hasData ? fmt(stats.totalEarned, aggregateCurrency) : '—',
       valueColor: hasData ? themeColors.profit : 'var(--muted-foreground)',
       subtitle: 'All payouts received',
     },
     {
       icon: stats.netPnL >= 0 ? TrendUp : TrendDown,
       label: 'P&L',
-      value: hasData ? (stats.netPnL >= 0 ? '+' : '-') + fmt(stats.netPnL) : '—',
+      value: hasData ? (stats.netPnL >= 0 ? '+' : '-') + fmt(stats.netPnL, aggregateCurrency) : '—',
       valueColor: hasData ? (stats.netPnL >= 0 ? themeColors.profit : themeColors.loss) : 'var(--muted-foreground)',
       subtitle: hasData
         ? (stats.roi !== null ? `${stats.roi >= 0 ? '+' : ''}${stats.roi.toFixed(1)}% ROI` : 'Profitable overall')
@@ -1389,7 +1398,7 @@ export default function PropTracker() {
                           <Calculator className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="text-2xl font-bold tabular-nums" style={{ color: costColor ?? 'var(--muted-foreground)' }}>
-                          {successStats.avgCostToFund !== null ? fmt(successStats.avgCostToFund) : '--'}
+                          {successStats.avgCostToFund !== null ? fmt(successStats.avgCostToFund, aggregateCurrency) : '--'}
                         </p>
                         <p className="text-[10px] text-muted-foreground">Per funded account</p>
                       </div>
@@ -1412,7 +1421,7 @@ export default function PropTracker() {
                           <Warning className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <p className="text-2xl font-bold tabular-nums" style={{ color: wastedColor ?? 'var(--muted-foreground)' }}>
-                          {successStats.totalWastedOnFailed > 0 ? fmt(successStats.totalWastedOnFailed) : '--'}
+                          {successStats.totalWastedOnFailed > 0 ? fmt(successStats.totalWastedOnFailed, aggregateCurrency) : '--'}
                         </p>
                         <p className="text-[10px] text-muted-foreground">Across {successStats.failed} failed</p>
                       </div>
@@ -1471,7 +1480,7 @@ export default function PropTracker() {
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="text-sm text-muted-foreground whitespace-nowrap">If I lose</label>
                   <div className="relative max-w-[120px] sm:max-w-[160px]">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{currencySymbol(aggregateCurrency)}</span>
                     <Input
                       type="number"
                       inputMode="decimal"
@@ -1660,7 +1669,7 @@ export default function PropTracker() {
                           return (
                             <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
                               <p className="font-medium text-foreground">{d.fullName}</p>
-                              <p className="text-muted-foreground tabular-nums">{fmt(d.invested)}</p>
+                              <p className="text-muted-foreground tabular-nums">{fmt(d.invested, aggregateCurrency)}</p>
                             </div>
                           )
                         }}
@@ -1676,7 +1685,7 @@ export default function PropTracker() {
                           <div className="flex items-center gap-2">
                             <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                             <span className="text-xs text-muted-foreground flex-1 truncate">{d.fullName}</span>
-                            <span className="text-xs font-semibold tabular-nums">{fmt(d.invested)}</span>
+                            <span className="text-xs font-semibold tabular-nums">{fmt(d.invested, aggregateCurrency)}</span>
                           </div>
                           <div className="ml-[18px] h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${d.color}15` }}>
                             <div
@@ -1711,7 +1720,7 @@ export default function PropTracker() {
                     return (
                       <div className="text-right">
                         <p className="text-lg font-bold tabular-nums leading-none" style={{ color: final >= 0 ? themeColors.profit : themeColors.loss }}>
-                          {final >= 0 ? '+' : ''}{fmt(final)}
+                          {final >= 0 ? '+' : '-'}{fmt(final, aggregateCurrency)}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">cumulative</p>
                       </div>
@@ -1742,7 +1751,7 @@ export default function PropTracker() {
                               <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
                                 <p className="text-muted-foreground">{payload[0].payload.date}</p>
                                 <p className="font-semibold tabular-nums" style={{ color: v >= 0 ? themeColors.profit : themeColors.loss }}>
-                                  {v >= 0 ? '+' : ''}{fmt(v)}
+                                  {v >= 0 ? '+' : '-'}{fmt(v, aggregateCurrency)}
                                 </p>
                               </div>
                             )

@@ -74,7 +74,9 @@ export function ProProvider({ children }: ProProviderProps) {
       // TTL: the cache is only an optimistic bridge until the live snapshot
       // arrives. Without expiry, a device that stays offline (or whose
       // listener errors) kept Pro entitlement forever after a downgrade.
-      if (parsed?._cachedAt && Date.now() - parsed._cachedAt > 7 * 24 * 60 * 60 * 1000) {
+      // Caches written before the TTL existed have no _cachedAt — treat those
+      // as expired too, or they're exempt from expiry forever.
+      if (!parsed?._cachedAt || Date.now() - parsed._cachedAt > 7 * 24 * 60 * 60 * 1000) {
         if (uid) UserStorage.removeItem(uid, PRO_CACHE_KEY);
         return null;
       }

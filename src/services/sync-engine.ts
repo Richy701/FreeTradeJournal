@@ -60,6 +60,17 @@ export class SyncEngine {
     if (this.dirtyKeys.delete(key)) this.persistDirty();
   }
 
+  // The ledger in localStorage is shared across tabs; the in-memory set is
+  // per-engine. Re-reading before each pull means tab B honors a dirty mark
+  // tab A just wrote (and drops marks tab A cleared after a successful push) —
+  // without this, tab B pulls remote over tab A's unsynced edit.
+  private reloadDirtyFromStorage() {
+    try {
+      const raw = localStorage.getItem(DIRTY_KEYS_PREFIX + this.uid);
+      this.dirtyKeys = new Set(raw ? JSON.parse(raw) : []);
+    } catch { /* corrupted ledger — keep the in-memory set */ }
+  }
+
   get status() { return this._status; }
   get lastSyncTime() { return this._lastSyncTime; }
   get initialPullDone() { return this._initialPullDone; }
@@ -214,6 +225,8 @@ export class SyncEngine {
       const result = await getSyncDataFn({}) as { data: { data: Record<string, string> } };
       const remoteData = result.data.data;
 
+      this.reloadDirtyFromStorage();
+
       for (const key of SYNC_KEYS) {
         // Skip keys we're currently writing
         if (this.writingKeys.has(key)) continue;
@@ -314,7 +327,19 @@ export class SyncEngine {
       // allowEmpty tells the server this is a deliberate post-pull write, so
       // an empty array (user deleted everything) is accepted instead of being
       // blocked by the server's fresh-device guard.
-      await syncDataFn({ key, value: data, allowEmpty: this._initialPullDone });
+      const result = await syncDataFn({ key, value: data, allowEmpty: this._initialPullDone }) as {
+        data?: { success?: boolean; reason?: string };
+      };
+
+      // The server soft-declines some writes ({success:false} without
+      // throwing). Clearing the dirty flag on those would let the next poll
+      // pull the stale remote back over the local edit.
+      if (result.data?.success === false) {
+        console.warn(`[Sync] Server declined ${key} write (${result.data.reason}) — kept locally`);
+        this.markDirty(key);
+        this.setStatus('error');
+        return;
+      }
 
       this._lastSyncTime = Date.now();
       this.setStatus('synced');

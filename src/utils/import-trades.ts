@@ -68,7 +68,12 @@ const FUTURES_PREFIXES = [
   'CL', 'MCL', 'NG', 'RB', 'GC', 'MGC', 'SI', 'HG',
   'ZC', 'ZS', 'ZW', 'ZN', 'ZB', 'M6E', 'M6B',
   'NAS100', 'SPX500', 'US30', 'US100', 'GER40', 'UK100',
-  'XAUUSD', 'XAGUSD', 'XPTUSD', 'XPDUSD',   // Metals
+  // XAUUSD/XAGUSD deliberately NOT here: they're spot-metal broker symbols
+  // whose lot math (100oz / 5,000oz per lot) lives in pnl.ts under the forex
+  // path. Classifying them futures gave them a 1x multiplier — a $10 gold
+  // move on 1 lot recomputed as $10 instead of $1,000. GC/SI (real futures)
+  // stay above.
+  'XPTUSD', 'XPDUSD',                       // Metals (no spot-lot handling)
   'USOIL', 'UKOIL', 'NATGAS',               // Energy
 ];
 

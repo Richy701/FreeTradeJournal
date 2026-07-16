@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useThemePresets } from '@/contexts/theme-presets';
+import { useSettings } from '@/contexts/settings-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { getAICache, setAICache } from '@/utils/ai-cache';
 import { trackEvent } from '@/lib/analytics';
@@ -33,6 +34,7 @@ const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
   const { themeColors, alpha } = useThemePresets();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { getCurrencySymbol } = useSettings();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [prompts, setPrompts] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
       const response = await requestAIAssist({
         type: 'journal_prompts',
         payload: {
+          currency: getCurrencySymbol(),
           symbol: trade.symbol,
           side: trade.side,
           pnl: trade.pnl,

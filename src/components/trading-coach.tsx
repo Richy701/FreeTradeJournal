@@ -218,8 +218,13 @@ function computeTiltScore(trades: Trade[], themeColors: { profit: string; loss: 
       if (isNaN(when.getTime())) continue
       if (hourCounts[when.getHours()] < rareThreshold) {
         offHours++
+        // Chronology guard (same as factor 3): with overlapping positions,
+        // exit-time order ≠ entry order, so only count "after a loss" when the
+        // losing trade actually closed before this entry was opened.
         const prev = sorted[i + 1]
-        if (prev && prev.pnl < 0) offHoursAfterLoss++
+        if (prev && prev.pnl < 0 && prev.exitTime && new Date(prev.exitTime).getTime() <= when.getTime()) {
+          offHoursAfterLoss++
+        }
       }
     }
     if (offHours > 0) {

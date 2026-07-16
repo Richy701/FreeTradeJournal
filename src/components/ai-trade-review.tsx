@@ -7,6 +7,7 @@ import { AIFeedback } from '@/components/ui/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
+import { useSettings } from '@/contexts/settings-context';
 import { getAICache, setAICache } from '@/utils/ai-cache';
 import DOMPurify from 'dompurify';
 
@@ -53,6 +54,7 @@ export function renderReviewMarkdown(md: string): string {
 export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeReviewProps) {
   const { themeColors, alpha } = useThemePresets();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { getCurrencySymbol } = useSettings();
   const { streamText, isStreaming, startStream, meta } = useStreamingAI();
   const [review, setReview] = useState<string | null>(null);
 
@@ -77,6 +79,7 @@ export function AITradeReview({ trade, surroundingTrades, onClose }: AITradeRevi
       const result = await startStream('assist', {
         type: 'trade_review',
         payload: {
+          currency: getCurrencySymbol(),
           symbol: trade.symbol,
           side: trade.side,
           entryPrice: trade.entryPrice,

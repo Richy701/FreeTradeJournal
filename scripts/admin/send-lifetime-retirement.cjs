@@ -38,6 +38,9 @@ const atFlag = process.argv.indexOf('--at');
 const SCHEDULED_AT = atFlag !== -1 ? process.argv[atFlag + 1] : '2026-07-21T13:00:00Z';
 const limitFlag = process.argv.indexOf('--limit');
 const LIMIT = limitFlag !== -1 ? parseInt(process.argv[limitFlag + 1], 10) : Infinity;
+if (Number.isNaN(LIMIT) || LIMIT < 1) {
+  throw new Error('--limit requires a positive number (a bare --limit would silently target nobody)');
+}
 
 const SUBJECT = 'Lifetime Pro retires August 7 — final call at $149';
 const CAMPAIGN = 'lifetime_retirement_2026_07';
@@ -140,10 +143,18 @@ async function scheduleOne(uid, email, firstName) {
   for (const u of targets) {
     try {
       const emailId = await scheduleOne(u.uid, u.email, u.firstName);
-      await db.collection('users').doc(u.uid).set(
-        { lifetimeRetirementEmailId: emailId, lifetimeRetirementScheduledAt: SCHEDULED_AT },
-        { merge: true }
-      );
+      try {
+        await db.collection('users').doc(u.uid).set(
+          { lifetimeRetirementEmailId: emailId, lifetimeRetirementScheduledAt: SCHEDULED_AT },
+          { merge: true }
+        );
+      } catch (writeErr) {
+        // Email is queued but unrecorded — a re-run would schedule a duplicate.
+        // Scheduled sends are cancellable until they fire, so undo the send
+        // and let a re-run retry this user cleanly.
+        await resend.emails.cancel(emailId).catch(() => {});
+        throw new Error(`${u.email}: Firestore flag write failed (${writeErr.message}) — scheduled email cancelled`);
+      }
       ok++;
       if (ok % 100 === 0) console.log(`  scheduled ${ok}/${targets.length}…`);
     } catch (e) {

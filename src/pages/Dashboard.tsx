@@ -119,7 +119,7 @@ export default function Dashboard() {
   const demoGuard = useDemoGuard()
   const { isPro, hasAIAccess } = useProStatus()
   const { activeAccount } = useAccounts()
-  const { formatCurrency: formatCurrencyFromSettings, settings } = useSettings()
+  const { formatCurrency: formatCurrencyFromSettings, settings, getCurrencySymbol } = useSettings()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const userStorage = useUserStorage()
   const [dataVersion, setDataVersion] = useState(0)
@@ -213,11 +213,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     const lastSeen = userStorage.getItem('lastSeenChangelog')
+    // Brand-new users (no lastSeen) have nothing "new" to catch up on — and
+    // the dialog was stacking on top of the first-trade prompt at the exact
+    // activation moment. Stamp the current version silently instead.
+    // Same when the first-trade prompt is opening: never cover it.
+    const arrivedForFirstTrade = Boolean((location.state as { promptFirstTrade?: boolean } | null)?.promptFirstTrade)
+    if (!lastSeen || arrivedForFirstTrade) {
+      userStorage.setItem('lastSeenChangelog', LATEST_CHANGELOG_VERSION)
+      return
+    }
     if (lastSeen !== LATEST_CHANGELOG_VERSION) {
       setWhatsNewSince(lastSeen)
       setShowWhatsNew(true)
       userStorage.setItem('lastSeenChangelog', LATEST_CHANGELOG_VERSION)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userStorage])
 
   const [tradeForm, setTradeForm] = useState({
@@ -916,7 +926,7 @@ export default function Dashboard() {
                     <div className="space-y-1.5">
                       <Label htmlFor="trade-pnl" className="text-sm font-medium">Profit / Loss</Label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground pointer-events-none">$</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground pointer-events-none">{getCurrencySymbol()}</span>
                         <Input
                           id="trade-pnl"
                           type="number"

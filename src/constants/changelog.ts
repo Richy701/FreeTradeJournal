@@ -19,6 +19,39 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.63.2',
+    date: '2026-07-16',
+    summary: 'Delete All Data now clears your cloud backup, every AI feature speaks your currency, and broker imports got a correctness pass.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Delete All Data clears the cloud too',
+        description: 'For Pro users, deleting all data wiped this device but left the cloud backup — everything quietly came back on the next load while journal screenshots were lost. Deleting now clears the cloud copy and screenshots as well, and stops safely if the cloud cannot be reached.',
+      },
+      {
+        type: 'fixed',
+        text: 'AI features use your currency',
+        description: 'Trade review, journal review, journal starters, import insight, and the PropTracker analysis quoted every figure in dollars regardless of your currency setting. They now use the same currency as the rest of the app.',
+      },
+      {
+        type: 'fixed',
+        text: 'Broker import accuracy',
+        description: 'Several import edge cases produced wrong numbers: Interactive Brokers futures trades could under-report P&L by the contract multiplier, European files with semicolons and US decimals (or the reverse) could be off by 100x, gold and silver used the wrong lot size, and losses written with a special minus sign imported as gains. All fixed — existing trades are untouched.',
+      },
+      {
+        type: 'fixed',
+        text: 'PropTracker totals: correct sign and currency',
+        description: 'A losing portfolio total displayed without its minus sign, and totals always showed "$" even when every account used another currency. Totals now carry the right sign, and single-currency portfolios are labelled in that currency.',
+      },
+      {
+        type: 'fixed',
+        text: 'Weekly recap email respects account currencies',
+        description: 'The weekly recap summed all accounts as dollars. It now uses each account\'s own currency and lists multi-currency weeks separately instead of mixing them into one number.',
+      },
+    ],
+  },
+  {
     version: '2.63.1',
     date: '2026-07-16',
     summary: 'Calendar notes are now safe with multiple accounts, and P&L percentages are consistent everywhere.',
@@ -2131,4 +2164,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.63.1'
+export const LATEST_CHANGELOG_VERSION = '2.63.2'

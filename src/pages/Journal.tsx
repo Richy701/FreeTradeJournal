@@ -250,7 +250,7 @@ function matchesActiveAccount(
 
 export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
-  const { formatCurrency } = useSettings();
+  const { formatCurrency, getCurrencySymbol } = useSettings();
   const { isDemo, user } = useAuth();
   const demoGuard = useDemoGuard();
   const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
@@ -341,6 +341,7 @@ export default function Journal() {
       const response = await requestAIAssist({
         type: 'journal_assist',
         payload: {
+          currency: getCurrencySymbol(),
           draft: newEntry.content.slice(0, 1200),
           mood: newEntry.mood,
           entryType: newEntry.entryType,

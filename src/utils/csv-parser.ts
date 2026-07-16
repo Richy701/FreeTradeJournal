@@ -78,7 +78,13 @@ function parseCSVLine(line: string, delimiter: string = ','): string[] {
     const char = line[i];
 
     if (char === '"') {
-      inQuotes = !inQuotes;
+      // RFC 4180 escaped quote: "" inside a quoted field is a literal quote.
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
     } else if (char === delimiter && !inQuotes) {
       result.push(current.trim());
       current = '';
@@ -89,6 +95,25 @@ function parseCSVLine(line: string, delimiter: string = ','): string[] {
 
   result.push(current.trim());
   return result.map(field => field.replace(/^["']|["']$/g, ''));
+}
+
+// Decide comma-vs-dot decimals from the VALUES, not the delimiter. A
+// semicolon-delimited file with US decimals had its dots stripped (100x
+// blowup) and a comma-delimited EU file with quoted "1234,56" fields lost its
+// commas the same way. Falls back to the old delimiter heuristic when the
+// sample gives no evidence either way.
+function detectDecimalComma(lines: string[], delimiter: string): boolean {
+  let commaScore = 0;
+  let dotScore = 0;
+  for (const line of lines.slice(0, 50)) {
+    for (const field of parseCSVLine(line, delimiter)) {
+      const v = field.replace(/[$£€¥₹\s()]/g, '');
+      if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(v) || /^-?\d+,\d{1,2}$/.test(v)) commaScore++;
+      else if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(v) || /^-?\d+\.\d{1,2}$/.test(v)) dotScore++;
+    }
+  }
+  if (commaScore === 0 && dotScore === 0) return delimiter === ';';
+  return commaScore > dotScore;
 }
 
 export function findColumnIndex(headers: string[], possibleNames: string[]): number {
@@ -120,7 +145,9 @@ export function findColumnIndex(headers: string[], possibleNames: string[]): num
 // Normalize a numeric string to a JS-parseable form. When `decimalComma` is set
 // (European exports), "1.234,56" → "1234.56"; otherwise "1,234.56" → "1234.56".
 function cleanNumeric(value: string, decimalComma: boolean = false): string {
-  let s = (value || '').replace(/[$£€¥₹\s]/g, '');
+  // Unicode minus (U+2212) appears in some broker exports — without this a
+  // loss imports as a gain.
+  let s = (value || '').replace(/−/g, '-').replace(/[$£€¥₹\s]/g, '');
   // Accounting-style negatives wrap the value in parentheses ("(75.90)" = -75.90).
   // NinjaTrader and other exports use these for losses; stripping the parens
   // without honoring the sign would flip every loss into a gain.
@@ -152,7 +179,9 @@ function formatLocalDateTime(date: Date): string {
 // null if it isn't a clock. Handles AM/PM, which broker exports commonly use and
 // which a naive split(':') mangles (seconds become NaN, every PM collapses to AM).
 function parseClock(timePart: string): { h: number; m: number; s: number } | null {
-  const m = timePart.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  // Fractional seconds ("22:42:07.123") are accepted and truncated — without
+  // this a Tradovate fill time with ms lost its whole clock and landed at midnight.
+  const m = timePart.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*(AM|PM)?$/i);
   if (!m) return null;
   let h = parseInt(m[1], 10);
   const ap = (m[4] || '').toUpperCase();
@@ -354,17 +383,20 @@ function parseIBKRClosedPositions(lines: string[], headers: string[]): CSVParseR
       // SELL to close = was long; BUY to close = was short
       const side: 'long' | 'short' = buySell === 'SELL' ? 'long' : 'short';
 
-      // Calculate entry price if not directly available
+      // Calculate entry price if not directly available. The price move is
+      // pnl / (contracts × $-per-point) — dropping the futures multiplier
+      // reconstructed an ES entry 490 points away from reality.
       let entryPrice = openPrice;
       let exitPrice = closePrice;
+      const perUnit = quantity * getFuturesMultiplier(symbol);
       if (isNaN(entryPrice) && !isNaN(exitPrice) && quantity > 0) {
         entryPrice = side === 'long'
-          ? exitPrice - pnl / quantity
-          : exitPrice + pnl / quantity;
+          ? exitPrice - pnl / perUnit
+          : exitPrice + pnl / perUnit;
       } else if (isNaN(exitPrice) && !isNaN(entryPrice) && quantity > 0) {
         exitPrice = side === 'long'
-          ? entryPrice + pnl / quantity
-          : entryPrice - pnl / quantity;
+          ? entryPrice + pnl / perUnit
+          : entryPrice - pnl / perUnit;
       }
 
       dates.push(date);
@@ -454,10 +486,12 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
           const open = queue[0];
           const matched = Math.min(remaining, open.quantity);
 
+          // Fallback P&L needs the contract multiplier — a 10-point ES winner
+          // is $500/contract, not $10.
           const pnl = !isNaN(pnlRaw) ? pnlRaw * (matched / quantity)
             : isLong
-              ? (price - open.price) * matched
-              : (open.price - price) * matched;
+              ? (price - open.price) * matched * getFuturesMultiplier(symbol)
+              : (open.price - price) * matched * getFuturesMultiplier(symbol);
 
           dates.push(date);
           result.trades.push({
@@ -485,7 +519,8 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
       // Rows with no indicator treated as complete trades if they have P&L
       else if (!indicator && !isNaN(pnlRaw) && pnlRaw !== 0) {
         const side: 'long' | 'short' = buySell === 'SELL' ? 'long' : 'short';
-        const entryPrice = side === 'long' ? price - pnlRaw / quantity : price + pnlRaw / quantity;
+        const perUnit = quantity * getFuturesMultiplier(symbol);
+        const entryPrice = side === 'long' ? price - pnlRaw / perUnit : price + pnlRaw / perUnit;
         dates.push(date);
         result.trades.push({
           symbol, side,
@@ -595,7 +630,7 @@ function parseTradovateOrders(lines: string[], headers: string[]): CSVParseResul
 
     const priceIdx = col.avgPrice >= 0 ? col.avgPrice : col.avgPrice2;
     const qtyIdx = col.filledQty >= 0 ? col.filledQty : col.filledQty2;
-    const price = parseFloat(fields[priceIdx] || '');
+    const price = parseFloat(cleanNumeric(fields[priceIdx] || ''));
     const qty = parseInt(fields[qtyIdx] || '', 10);
 
     if (!price || isNaN(price) || !qty || qty <= 0) {
@@ -795,8 +830,8 @@ function parseTradovatePerformance(lines: string[], headers: string[]): CSVParse
       const fields = parseCSVLine(line);
       const symbol = (fields[col.symbol] || '').trim();
       const qty = Math.abs(parseInt(fields[col.qty] || '', 10) || 0);
-      const buyPrice = parseFloat(fields[col.buyPrice] || '');
-      const sellPrice = parseFloat(fields[col.sellPrice] || '');
+      const buyPrice = parseFloat(cleanNumeric(fields[col.buyPrice] || ''));
+      const sellPrice = parseFloat(cleanNumeric(fields[col.sellPrice] || ''));
       const pnl = parseTradovatePnl(fields[col.pnl] || '');
       const boughtStr = (fields[col.bought] || '').trim();
       const soldStr = (fields[col.sold] || '').trim();
@@ -917,7 +952,7 @@ function parseTopStepOrders(lines: string[], headers: string[]): CSVParseResult 
     // Skip non-filled orders (cancelled, rejected, etc.)
     if (status !== 'Filled') continue;
 
-    const executePrice = parseFloat(fields[col.executePrice]);
+    const executePrice = parseFloat(cleanNumeric(fields[col.executePrice] || ''));
     if (!executePrice || isNaN(executePrice)) {
       result.errors.push(`Row ${i + 1}: Filled order with no execute price`);
       result.summary.failed++;
@@ -1170,8 +1205,8 @@ function parseMT5DealHistory(lines: string[], headerRow: number): CSVParseResult
       const leg: Leg = {
         isOpen,
         isBuy,
-        price:      col.price >= 0 ? parseFloat(fields[col.price]) || 0 : 0,
-        lots:       col.lots >= 0 ? Math.abs(parseFloat(fields[col.lots]) || 0) : 0,
+        price:      col.price >= 0 ? parseFloat(cleanNumeric(fields[col.price] || '')) || 0 : 0,
+        lots:       col.lots >= 0 ? Math.abs(parseFloat(cleanNumeric(fields[col.lots] || '')) || 0) : 0,
         profit:     col.profit >= 0 ? parseCurrency(fields[col.profit] || '0') : 0,
         commission: col.commission >= 0 ? parseCurrency(fields[col.commission] || '0') : 0,
         swap:       col.swap >= 0 ? parseCurrency(fields[col.swap] || '0') : 0,
@@ -1352,9 +1387,9 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): 
     // Sniff the delimiter (comma / semicolon / tab) and whether numbers use a
     // decimal comma (European exports). Then skip any preamble rows.
     const delimiter = detectDelimiter(rawLines);
-    const decimalComma = delimiter === ';';
     const headerRow = findStandardHeaderRow(rawLines, delimiter);
     const lines = rawLines.slice(headerRow);
+    const decimalComma = detectDecimalComma(lines.slice(1), delimiter);
 
     const headers = parseCSVLine(lines[0], delimiter);
 
@@ -1575,9 +1610,9 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
     // Use the same delimiter + preamble detection as parseCSVHeaders so the
     // mapped column indices line up and data starts after the real header row.
     const delimiter = detectDelimiter(rawLines);
-    const decimalComma = delimiter === ';';
     const headerRow = findStandardHeaderRow(rawLines, delimiter);
     const lines = rawLines.slice(headerRow);
+    const decimalComma = detectDecimalComma(lines.slice(1), delimiter);
 
     // NinjaTrader's "Profit" is already net of commissions — detect it from the
     // header row so the importer doesn't double-subtract the Commission column,

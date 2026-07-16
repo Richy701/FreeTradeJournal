@@ -92,9 +92,15 @@ export async function requestPropAnalysis(
   const { httpsCallable } = await import('firebase/functions');
 
   const aiAssist = httpsCallable<unknown, PropAnalysisResponse>(fns, 'aiAssist');
+  // Uniform account currency → send its symbol so the analysis doesn't talk
+  // dollars to a EUR-only trader; mixed currencies keep the "$" fallback
+  // (per-account symbols are already in the accounts data).
+  const SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', CAD: 'C$', AUD: 'A$', CHF: 'CHF' };
+  const codes = new Set(accounts.map((a) => a.currency || 'USD'));
+  const currency = codes.size === 1 ? SYMBOLS[[...codes][0]] || '$' : '$';
   const result = await aiAssist({
     type: 'prop_tracker',
-    payload: { accounts, transactions },
+    payload: { accounts, transactions, currency },
   });
   return result.data;
 }

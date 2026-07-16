@@ -13,6 +13,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useLoggingStreak } from '@/hooks/use-logging-streak';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { useAccounts } from '@/contexts/account-context';
 import { toast } from 'sonner';
 import { startOfMonth, startOfQuarter, startOfYear } from 'date-fns';
 
@@ -39,10 +40,14 @@ interface StatsSnapshot {
 }
 
 function useStatsSnapshot(period: Period): StatsSnapshot {
-  const { getTrades } = useDemoData();
+  const { getAnalyticsTrades } = useDemoData();
   const { settings } = useSettings();
+  const { activeAccount } = useAccounts();
 
-  let trades = getTrades();
+  // Analytics-windowed: free accounts share stats over the same trailing
+  // 30 days every other analytics card shows — "all time" here quietly
+  // bypassed the free window (a Pro claim on the pricing page).
+  let trades = getAnalyticsTrades().trades;
 
   if (period !== 'all') {
     const now = new Date();
@@ -71,7 +76,8 @@ function useStatsSnapshot(period: Period): StatsSnapshot {
   let cum = 0;
   const equityCurve = sorted.map((t: any) => { cum += Number(t.pnl) || 0; return cum; });
 
-  return { totalTrades, wins, losses, winRate, totalPnl, bestTrade, profitFactor, avgWin, currency: settings.currency || 'USD', equityCurve };
+  // Account currency overrides the global setting — same rule as formatCurrency.
+  return { totalTrades, wins, losses, winRate, totalPnl, bestTrade, profitFactor, avgWin, currency: activeAccount?.currency || settings.currency || 'USD', equityCurve };
 }
 
 const W = 640;
@@ -81,7 +87,8 @@ const PAD = 36;
 const F = 'system-ui, Helvetica, Arial, sans-serif';
 
 function fmt(value: number, currency: string): string {
-  const sym = currency === 'GBP' ? '£' : currency === 'EUR' ? '€' : currency === 'JPY' ? '¥' : '$';
+  const symbols: Record<string, string> = { GBP: '£', EUR: '€', JPY: '¥', CAD: 'C$', AUD: 'A$', CHF: 'CHF' };
+  const sym = symbols[currency] || '$';
   const sign = value >= 0 ? '+' : '-';
   return `${sign}${sym}${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
