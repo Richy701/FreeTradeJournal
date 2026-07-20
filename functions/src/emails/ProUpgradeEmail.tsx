@@ -1,10 +1,16 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, Eyebrow, FeatureList, styles } from './components'
+import { EmailShell, EmailButton, Eyebrow, FeatureList, ReceiptBlock, ReceiptRow, styles } from './components'
 import { URLS } from './facts'
+
+export interface ReceiptDetails {
+  rows: ReceiptRow[]
+  receiptUrl?: string
+}
 
 interface ProUpgradeEmailProps {
   firstName: string
   planLabel: string
+  receipt?: ReceiptDetails
 }
 
 const features = [
@@ -14,7 +20,7 @@ const features = [
   { label: 'No limits', desc: 'Unlimited journal entries, trading accounts, and data exports.' },
 ]
 
-export function ProUpgradeEmail({ firstName, planLabel }: ProUpgradeEmailProps) {
+export function ProUpgradeEmail({ firstName, planLabel, receipt }: ProUpgradeEmailProps) {
   return (
     <EmailShell preview="You are Pro. Every feature is unlocked and ready to use.">
       <Section style={styles.content}>
@@ -27,6 +33,13 @@ export function ProUpgradeEmail({ firstName, planLabel }: ProUpgradeEmailProps) 
         </Text>
         <EmailButton href={URLS.dashboard}>Go to your dashboard</EmailButton>
       </Section>
+
+      {receipt && receipt.rows.length > 0 && (
+        <>
+          <Hr style={styles.divider} />
+          <ReceiptBlock heading="Your receipt" rows={receipt.rows} receiptUrl={receipt.receiptUrl} />
+        </>
+      )}
 
       <Hr style={styles.divider} />
 

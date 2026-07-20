@@ -116,7 +116,7 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
             className="font-bold"
             style={{ color: outcome === 'profit' ? themeColors.profit : outcome === 'loss' ? themeColors.loss : themeColors.primary }}
           >
-            {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+            {(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
           </span>
         </div>
 

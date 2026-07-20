@@ -2571,7 +2571,7 @@ export default function TradeLog() {
                           className="font-bold text-base"
                           style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                         >
-                          {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                          {(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
                         </TableCell>
                         <TableCell className="font-medium text-sm text-muted-foreground">
                           {trade.riskReward ? `${trade.riskReward.toFixed(2)}:1` : '-'}
@@ -2676,7 +2676,7 @@ export default function TradeLog() {
                           className="font-bold text-xl"
                           style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                         >
-                          {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                          {(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
                         </div>
                       </div>
                       

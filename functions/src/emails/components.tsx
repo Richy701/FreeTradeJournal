@@ -355,6 +355,70 @@ const stepTextStyle: React.CSSProperties = {
   margin: 0,
 }
 
+// ─── Receipt block (payment confirmation) ───────────────────
+
+export interface ReceiptRow {
+  label: string
+  value: string
+}
+
+export function ReceiptBlock({ heading, rows, receiptUrl }: {
+  heading: string
+  rows: ReceiptRow[]
+  /** Stripe hosted receipt — the compliance-grade copy. */
+  receiptUrl?: string
+}) {
+  return (
+    <Section style={styles.content}>
+      <SectionLabel>{heading}</SectionLabel>
+      <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%" style={receiptBoxStyle}>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={row.label}>
+              <td style={{ ...receiptCellStyle, borderTop: i === 0 ? 'none' : `1px solid ${tone.insetBorder}` }}>
+                <Text style={receiptLabelStyle}>{row.label}</Text>
+              </td>
+              <td style={{ ...receiptCellStyle, textAlign: 'right' as const, borderTop: i === 0 ? 'none' : `1px solid ${tone.insetBorder}` }}>
+                <Text style={receiptValueStyle}>{row.value}</Text>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {receiptUrl && (
+        <Text style={{ ...styles.fine, margin: '12px 0 0' }}>
+          <Link href={receiptUrl} style={{ color: tone.muted, textDecoration: 'underline' }}>
+            View or download your receipt
+          </Link>
+        </Text>
+      )}
+    </Section>
+  )
+}
+
+const receiptBoxStyle: React.CSSProperties = {
+  backgroundColor: tone.inset,
+  border: `1px solid ${tone.insetBorder}`,
+  borderRadius: '10px',
+  borderCollapse: 'separate' as const,
+}
+const receiptCellStyle: React.CSSProperties = {
+  padding: '12px 16px',
+}
+const receiptLabelStyle: React.CSSProperties = {
+  fontSize: '13px',
+  color: tone.muted,
+  margin: 0,
+  lineHeight: '1.5',
+}
+const receiptValueStyle: React.CSSProperties = {
+  fontSize: '13px',
+  fontWeight: 600,
+  color: tone.heading,
+  margin: 0,
+  lineHeight: '1.5',
+}
+
 // ─── Stat grid (weekly digest) ──────────────────────────────
 
 export interface Stat {

@@ -104,10 +104,115 @@ async function sendWelcomeEmail(email: string, name?: string) {
   });
 }
 
-async function sendProUpgradeEmail(email: string, name: string | undefined, planType: string) {
+interface EmailReceipt {
+  rows: { label: string; value: string }[];
+  receiptUrl?: string;
+}
+
+// Currencies Stripe charges in whole units, not cents.
+const ZERO_DECIMAL_CURRENCIES = new Set(["jpy", "krw", "vnd", "clp", "pyg", "rwf", "ugx", "vuv", "xaf", "xof", "xpf", "bif", "djf", "gnf", "kmf", "mga"]);
+
+function formatStripeAmount(amount: number | null | undefined, currency: string | null | undefined): string | null {
+  if (amount == null || !currency) return null;
+  const divisor = ZERO_DECIMAL_CURRENCIES.has(currency.toLowerCase()) ? 1 : 100;
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(amount / divisor);
+  } catch {
+    return null;
+  }
+}
+
+function paymentMethodLabel(charge: Stripe.Charge | null): string | null {
+  const details = charge?.payment_method_details;
+  if (!details) return null;
+  if (details.card?.last4) return `Card ending ${details.card.last4}`;
+  if (details.type === "link") return "Link";
+  if (details.type === "paypal") return "PayPal";
+  if (details.type) return details.type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return null;
+}
+
+function buildReceipt(opts: {
+  amount: string | null;
+  planLabel: string;
+  charge: Stripe.Charge | null;
+  fallbackReceiptUrl?: string | null;
+}): EmailReceipt | undefined {
+  const rows: { label: string; value: string }[] = [];
+  if (opts.amount) rows.push({ label: "Amount paid", value: opts.amount });
+  rows.push({ label: "Plan", value: opts.planLabel });
+  rows.push({ label: "Date", value: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) });
+  const method = paymentMethodLabel(opts.charge);
+  if (method) rows.push({ label: "Payment method", value: method });
+  const receiptUrl = opts.charge?.receipt_url || opts.fallbackReceiptUrl || undefined;
+  if (rows.length === 0) return undefined;
+  return { rows, receiptUrl };
+}
+
+async function chargeFromPaymentIntent(piId: string | Stripe.PaymentIntent | null | undefined): Promise<Stripe.Charge | null> {
+  if (!piId) return null;
+  const id = typeof piId === "string" ? piId : piId.id;
+  const pi = await getStripe().paymentIntents.retrieve(id, { expand: ["latest_charge"] });
+  const charge = pi.latest_charge;
+  return charge && typeof charge !== "string" ? charge : null;
+}
+
+function planLabelFor(planType: string): string {
+  return planType === "lifetime" ? "Lifetime" : planType === "yearly" ? "Pro (Yearly)" : "Pro (Monthly)";
+}
+
+/** Receipt details for a completed checkout (one-time or first subscription payment). Never throws. */
+async function receiptFromCheckoutSession(session: Stripe.Checkout.Session, planType: string): Promise<EmailReceipt | undefined> {
+  try {
+    let charge: Stripe.Charge | null = null;
+    let fallbackReceiptUrl: string | null = null;
+    if (session.mode === "payment") {
+      charge = await chargeFromPaymentIntent(session.payment_intent as string | null);
+    } else if (session.invoice) {
+      const invoiceId = typeof session.invoice === "string" ? session.invoice : session.invoice.id;
+      const invoice = await getStripe().invoices.retrieve(invoiceId, { expand: ["payment_intent.latest_charge"] });
+      const pi = invoice.payment_intent;
+      if (pi && typeof pi !== "string" && pi.latest_charge && typeof pi.latest_charge !== "string") {
+        charge = pi.latest_charge;
+      }
+      fallbackReceiptUrl = invoice.hosted_invoice_url || null;
+    }
+    return buildReceipt({
+      amount: formatStripeAmount(session.amount_total, session.currency),
+      planLabel: planLabelFor(planType),
+      charge,
+      fallbackReceiptUrl,
+    });
+  } catch (err) {
+    console.error("Failed to build checkout receipt:", err);
+    return undefined;
+  }
+}
+
+/** Receipt details for a subscription's latest invoice (trial → paid conversion). Never throws. */
+async function receiptFromLatestInvoice(sub: Stripe.Subscription, planType: string): Promise<EmailReceipt | undefined> {
+  try {
+    if (!sub.latest_invoice) return undefined;
+    const invoiceId = typeof sub.latest_invoice === "string" ? sub.latest_invoice : sub.latest_invoice.id;
+    const invoice = await getStripe().invoices.retrieve(invoiceId, { expand: ["payment_intent.latest_charge"] });
+    const pi = invoice.payment_intent;
+    const charge = pi && typeof pi !== "string" && pi.latest_charge && typeof pi.latest_charge !== "string" ? pi.latest_charge : null;
+    return buildReceipt({
+      amount: formatStripeAmount(invoice.amount_paid, invoice.currency),
+      planLabel: planLabelFor(planType),
+      charge,
+      fallbackReceiptUrl: invoice.hosted_invoice_url,
+    });
+  } catch (err) {
+    console.error("Failed to build invoice receipt:", err);
+    return undefined;
+  }
+}
+
+async function sendProUpgradeEmail(email: string, name: string | undefined, planType: string, receipt?: EmailReceipt) {
   const firstName = name?.split(" ")[0] || "trader";
-  const planLabel = planType === "lifetime" ? "Lifetime" : planType === "yearly" ? "Pro (Yearly)" : "Pro (Monthly)";
-  const html = await render(React.createElement(ProUpgradeEmail, { firstName, planLabel }));
+  const planLabel = planLabelFor(planType);
+  const html = await render(React.createElement(ProUpgradeEmail, { firstName, planLabel, receipt }));
   await getResend().emails.send({
     from: FROM_EMAIL,
     to: email,
@@ -2479,7 +2584,8 @@ export const stripeWebhook = functions.https.onRequest(
               if (subscriptionData.status === "on_trial" && subscriptionData.currentPeriodEnd) {
                 await sendTrialStartedEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.currentPeriodEnd);
               } else {
-                await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.planType);
+                const receipt = await receiptFromCheckoutSession(session, subscriptionData.planType);
+                await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, subscriptionData.planType, receipt);
               }
             }
           } catch (emailErr) {
@@ -2559,7 +2665,8 @@ export const stripeWebhook = functions.https.onRequest(
               const userRecord = await admin.auth().getUser(firebaseUid);
               if (userRecord.email) {
                 const planType = getPlanTypeFromPriceId(priceId);
-                await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, planType);
+                const receipt = await receiptFromLatestInvoice(sub, planType);
+                await sendProUpgradeEmail(userRecord.email, userRecord.displayName || undefined, planType, receipt);
               }
             } catch (emailErr) {
               console.error("Failed to send trial conversion email:", emailErr);

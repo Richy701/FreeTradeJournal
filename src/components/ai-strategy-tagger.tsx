@@ -272,7 +272,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
                           className="text-sm font-medium"
                           style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                         >
-                          {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
+                          {(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
                         </span>
                       </div>
                     </label>
