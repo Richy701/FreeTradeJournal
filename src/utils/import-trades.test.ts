@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildImportedTrades } from './import-trades';
+import { buildImportedTrades, detectMarketFromSymbol } from './import-trades';
 import type { ParsedTrade } from './csv-parser';
 
 const baseTrade: ParsedTrade = {
@@ -38,5 +38,29 @@ describe('buildImportedTrades — commission handling', () => {
     const [t] = buildImportedTrades([{ ...baseTrade, pnl: '-75.90', pnlIsNet: true }], opts);
     expect(t.pnl).toBeCloseTo(-75.9, 2);
     expect(t.brokerPnL - t.commission - t.fees).toBeCloseTo(t.pnl, 2);
+  });
+});
+
+describe('detectMarketFromSymbol', () => {
+  it('classifies plain stock tickers as indices, not forex', () => {
+    // DAS/stock imports (Stella's SPCX/TSLA case) were all labeled FOREX
+    expect(detectMarketFromSymbol('TSLA')).toBe('indices');
+    expect(detectMarketFromSymbol('SPCX')).toBe('indices');
+    expect(detectMarketFromSymbol('AAPL')).toBe('indices');
+    expect(detectMarketFromSymbol('F')).toBe('indices');
+  });
+
+  it('keeps known forex pairs and currency-pair shapes as forex', () => {
+    expect(detectMarketFromSymbol('EURUSD')).toBe('forex');
+    expect(detectMarketFromSymbol('EUR/USD')).toBe('forex');
+    expect(detectMarketFromSymbol('EURUSD.a')).toBe('forex'); // broker suffix
+    expect(detectMarketFromSymbol('USDHUF')).toBe('forex');   // exotic, not in explicit list
+    expect(detectMarketFromSymbol('XAUUSD')).toBe('forex');   // spot gold stays on forex lot math
+  });
+
+  it('keeps futures and index ETFs unchanged', () => {
+    expect(detectMarketFromSymbol('MNQU5')).toBe('futures');
+    expect(detectMarketFromSymbol('ES')).toBe('futures');
+    expect(detectMarketFromSymbol('SPY')).toBe('indices');
   });
 });

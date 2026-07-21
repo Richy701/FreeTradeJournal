@@ -87,13 +87,32 @@ const FOREX_PAIRS = new Set([
   'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR',
 ]);
 
+// ISO codes that can form a currency pair, plus XAU/XAG: spot metals price and
+// trade like forex pairs and their lot math lives in pnl.ts under the forex path.
+const CURRENCY_CODES = new Set([
+  'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD',
+  'SEK', 'NOK', 'DKK', 'SGD', 'MXN', 'ZAR', 'HKD', 'CNH', 'CNY',
+  'TRY', 'PLN', 'HUF', 'CZK',
+  'XAU', 'XAG',
+]);
+
 export function detectMarketFromSymbol(symbol: string): ImportMarket {
   const upper = (symbol || '').toUpperCase();
   // Handle month/year codes like MNQU5, ESU24 via prefix match.
   if (FUTURES_PREFIXES.some(fut => upper.startsWith(fut))) return 'futures';
   if (INDEX_SYMBOLS.has(upper)) return 'indices';
   if (FOREX_PAIRS.has(upper)) return 'forex';
-  return 'forex'; // default for currency-pair-like symbols
+  // Currency-pair shape — two currency codes back to back, tolerating separators
+  // and broker suffixes ("EUR/USD", "EURUSD.a", "USDSEKm").
+  const letters = upper.replace(/[^A-Z]/g, '');
+  if (letters.length >= 6 && CURRENCY_CODES.has(letters.slice(0, 3)) && CURRENCY_CODES.has(letters.slice(3, 6))) {
+    return 'forex';
+  }
+  // Plain short tickers (AAPL, TSLA, DAS/stock imports) are equities: price-diff
+  // × quantity math, which is the indices path. The old forex default applied
+  // pip math to them and labeled every imported stock trade FOREX.
+  if (/^[A-Z]{1,5}$/.test(upper)) return 'indices';
+  return 'forex'; // default for anything else currency-pair-like
 }
 
 // Convert parsed CSV rows into stored trades. Broker P&L is gross (before costs):
