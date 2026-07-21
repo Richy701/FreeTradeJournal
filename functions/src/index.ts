@@ -668,30 +668,38 @@ export const sendTrialEndingEmails = functions.pubsub
     const oneDayFromNow = new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString();
     const threeDaysFromNow = new Date(now + 3 * 24 * 60 * 60 * 1000).toISOString();
 
-    const snapshot = await db
-      .collection("users")
-      .where("subscription.status", "==", "on_trial")
-      .where("subscription.currentPeriodEnd", ">=", oneDayFromNow)
-      .where("subscription.currentPeriodEnd", "<=", threeDaysFromNow)
-      .get();
-
+    // Each pass is isolated: a failure in the Stripe-trial query (e.g. the
+    // missing composite index that crashed this function daily until
+    // 2026-07-21) must never block the signup-trial pass below.
     let sent = 0;
-    for (const doc of snapshot.docs) {
-      if (sent >= MAX_SENDS) break;
-      const data = doc.data();
-      if (data.trialEndingEmailSentAt || data.emailOptOut) continue;
+    try {
+      const snapshot = await db
+        .collection("users")
+        .where("subscription.status", "==", "on_trial")
+        .where("subscription.currentPeriodEnd", ">=", oneDayFromNow)
+        .where("subscription.currentPeriodEnd", "<=", threeDaysFromNow)
+        .get();
 
-      try {
-        const userRecord = await admin.auth().getUser(doc.id);
-        if (!userRecord.email) continue;
-        await sendTrialEndingEmail(userRecord.email, userRecord.displayName || undefined, data.subscription.currentPeriodEnd);
-        await doc.ref.update({ trialEndingEmailSentAt: admin.firestore.FieldValue.serverTimestamp() });
-        sent++;
-        console.log(`Trial ending email sent to ${doc.id}`);
-      } catch (err) {
-        console.error(`Failed to send trial ending email for ${doc.id}:`, err);
-        reportError(err, { fn: "sendTrialEndingEmails", uid: doc.id });
+      for (const doc of snapshot.docs) {
+        if (sent >= MAX_SENDS) break;
+        const data = doc.data();
+        if (data.trialEndingEmailSentAt || data.emailOptOut) continue;
+
+        try {
+          const userRecord = await admin.auth().getUser(doc.id);
+          if (!userRecord.email) continue;
+          await sendTrialEndingEmail(userRecord.email, userRecord.displayName || undefined, data.subscription.currentPeriodEnd);
+          await doc.ref.update({ trialEndingEmailSentAt: admin.firestore.FieldValue.serverTimestamp() });
+          sent++;
+          console.log(`Trial ending email sent to ${doc.id}`);
+        } catch (err) {
+          console.error(`Failed to send trial ending email for ${doc.id}:`, err);
+          reportError(err, { fn: "sendTrialEndingEmails", uid: doc.id });
+        }
       }
+    } catch (err) {
+      console.error("Stripe-trial pass failed:", err);
+      reportError(err, { fn: "sendTrialEndingEmails", stage: "stripeTrialQuery" });
     }
 
     console.log(`Trial ending: sent ${sent} emails`);
