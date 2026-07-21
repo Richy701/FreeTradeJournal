@@ -2430,6 +2430,12 @@ export const createCheckoutSession = functions.https.onCall(
       }
     }
 
+    // Stripe Tax stays off until tax registrations exist in the dashboard —
+    // flipping STRIPE_AUTOMATIC_TAX=true without them makes Stripe collect
+    // nothing while looking enabled. Prices also need a tax behavior
+    // (inclusive/exclusive) set in the dashboard before enabling.
+    const automaticTax = process.env.STRIPE_AUTOMATIC_TAX === "true";
+
     const buildSessionParams = (
       customerId: string,
       promoId?: string,
@@ -2446,6 +2452,14 @@ export const createCheckoutSession = functions.https.onCall(
           : { allow_promotion_codes: true }),
         metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
       };
+      if (automaticTax) {
+        params.automatic_tax = { enabled: true };
+        // Tax needs a customer address: require it at checkout and save it
+        // back to the customer (customer_update is mandatory when passing an
+        // existing customer with automatic_tax).
+        params.billing_address_collection = "required";
+        params.customer_update = { address: "auto" };
+      }
       if (!isLifetime) {
         params.subscription_data = {
           metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
