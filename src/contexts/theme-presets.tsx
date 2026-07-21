@@ -1009,12 +1009,14 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
       appliedOverridesRef.current = []
     }
 
-    // On public pages or in demo mode, reset CSS variables to amber/gold defaults
-    const publicPaths = ['/', '/privacy', '/terms', '/cookies', '/documentation', '/login', '/signup', '/onboarding']
-    const isPublicPage = publicPaths.some(p => pathname === p)
+    // Theme presets apply only on app routes — every public/marketing page
+    // (including future ones) stays brand-amber without a list to keep in
+    // sync. Mirrored in public/theme-init.js for the pre-paint pass.
+    const appPaths = ['/dashboard', '/coach', '/trades', '/goals', '/journal', '/ideas', '/settings', '/profile', '/prop-tracker']
+    const isAppPage = appPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
     const isInDemo = isDemo || !!document.documentElement.dataset.demo
 
-    if (isPublicPage || isInDemo) {
+    if (!isAppPage || isInDemo) {
       // Reset to CSS-defined defaults (remove inline overrides)
       cleanupOverrides()
       root.style.removeProperty('--primary')
