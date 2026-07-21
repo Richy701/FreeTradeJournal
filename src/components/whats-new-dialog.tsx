@@ -96,7 +96,11 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+      {/* p-0 alone doesn't beat the base dialog's sm:p-6 (twMerge keeps other
+          breakpoints) — without sm:p-0 the hero renders inset in a gutter.
+          outline-none: this dialog auto-opens, so the browser paints its
+          default focus outline around the programmatically-focused content. */}
+      <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 sm:p-0 overflow-hidden outline-none">
         {/* Hero — layered primary glow, oversized version, summary as copy */}
         <div
           className="relative px-6 pt-7 pb-6 overflow-hidden"
@@ -122,7 +126,7 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
               </h2>
             </DialogTitle>
             <DialogDescription asChild>
-              <p className="text-sm text-foreground/70 leading-relaxed mt-3 max-w-[38ch]">
+              <p className="text-sm text-foreground/70 leading-relaxed mt-3 max-w-[52ch] text-pretty">
                 {release.summary}
               </p>
             </DialogDescription>
