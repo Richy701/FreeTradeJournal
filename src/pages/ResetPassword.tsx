@@ -23,7 +23,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { verifyPasswordResetCode, confirmPasswordReset, applyActionCode } = useAuth();
+  const { verifyPasswordResetCode, confirmPasswordReset, applyActionCode, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,7 +34,12 @@ export default function ResetPassword() {
 
     if (mode === 'verifyEmail') {
       applyActionCode(oobCode)
-        .then(() => setPageState('emailVerified'))
+        .then(() => {
+          setPageState('emailVerified');
+          // If this tab already has a session, sync the fresh emailVerified
+          // flag into context so route guards don't bounce on a stale copy
+          refreshUser().catch(() => {});
+        })
         .catch(() => setPageState('invalid'));
       return;
     }

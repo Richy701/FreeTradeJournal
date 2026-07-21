@@ -79,6 +79,35 @@ function getPostHog() {
     }
     return _posthog;
 }
+// Server-side crash telemetry: caught errors go to PostHog error tracking
+// (same project as the client) tagged with the function name so they can be
+// attributed and alerted on. Must never throw — reporting can't be allowed to
+// break the path it instruments.
+function reportError(err, context) {
+    try {
+        getPostHog().captureException(err instanceof Error ? err : new Error(String(err)), context.uid ?? "server", context);
+    }
+    catch (phErr) {
+        console.error("PostHog: failed to capture exception:", phErr);
+    }
+}
+// Wraps an onCall handler so unexpected errors are reported before Firebase
+// converts them into a generic "internal" for the client. Intentional
+// HttpsErrors (unauthenticated, rate limits, quota) are user-facing outcomes,
+// not crashes — those pass through unreported.
+function reported(fn, handler) {
+    return async (data, context) => {
+        try {
+            return await handler(data, context);
+        }
+        catch (err) {
+            if (!(err instanceof functions.https.HttpsError)) {
+                reportError(err, { fn, uid: context.auth?.uid });
+            }
+            throw err;
+        }
+    };
+}
 // ─── Resend Email Helper ────────────────────────────────────
 let _resend;
 function getResend() {
@@ -494,6 +523,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     }
     catch (err) {
         console.error("Failed to write user to Firestore:", err);
+        reportError(err, { fn: "onUserCreated", uid: user.uid, stage: "firestoreWrite" });
     }
     // Identify user and capture signup event
     try {
@@ -542,6 +572,7 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     }
     catch (err) {
         console.error("Failed to send welcome email:", err);
+        reportError(err, { fn: "onUserCreated", uid: user.uid, stage: "welcomeEmail" });
     }
     // Create Resend contact + fire signup event for automation drip sequences
     const firstName = (user.displayName || user.email).split(" ")[0];
@@ -590,6 +621,7 @@ exports.sendDay3NudgeEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send day-3 nudge:`, err);
+            reportError(err, { fn: "sendDay3NudgeEmails", uid: doc.id });
         }
     }
     console.log(`Day-3 nudge: sent ${sent} emails`);
@@ -628,6 +660,7 @@ exports.sendTrialEndingEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send trial ending email for ${doc.id}:`, err);
+            reportError(err, { fn: "sendTrialEndingEmails", uid: doc.id });
         }
     }
     console.log(`Trial ending: sent ${sent} emails`);
@@ -668,6 +701,7 @@ exports.sendTrialEndingEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send signup-trial ending email for ${doc.id}:`, err);
+            reportError(err, { fn: "sendTrialEndingEmails", uid: doc.id, stage: "signupTrial" });
         }
     }
     console.log(`Signup-trial ending: sent ${signupSent} emails`);
@@ -712,6 +746,7 @@ exports.sendDay7NudgeEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send day-7 nudge:`, err);
+            reportError(err, { fn: "sendDay7NudgeEmails", uid: doc.id });
         }
     }
     console.log(`Day-7 nudge: sent ${sent} emails`);
@@ -757,6 +792,7 @@ exports.sendDay14UpgradeEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send day-14 upgrade pitch:`, err);
+            reportError(err, { fn: "sendDay14UpgradeEmails", uid: doc.id });
         }
     }
     console.log(`Day-14 upgrade pitch: sent ${sent} emails`);
@@ -801,6 +837,7 @@ exports.sendDay21BackupEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send day-21 backup email:`, err);
+            reportError(err, { fn: "sendDay21BackupEmails", uid: doc.id });
         }
     }
     console.log(`Day-21 backup: sent ${sent} emails`);
@@ -918,6 +955,7 @@ exports.sendWeeklyDigestEmails = functions.pubsub
         }
         catch (err) {
             console.error(`Failed to send weekly digest:`, err);
+            reportError(err, { fn: "sendWeeklyDigestEmails", uid: doc.id });
         }
     }
     console.log(`Weekly digest: sent ${sent} emails`);
@@ -1100,6 +1138,7 @@ exports.sendActivationReport = functions
     }
     catch (err) {
         console.error("Failed to send activation report:", err);
+        reportError(err, { fn: "sendActivationReport" });
     }
     return null;
 });
@@ -2035,7 +2074,7 @@ function mapStripeStatus(stripeStatus) {
     };
     return statusMap[stripeStatus] || "expired";
 }
-exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
+exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutSession", async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
@@ -2196,8 +2235,8 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         }
     }
     return { url: session.url };
-});
-exports.createPortalSession = functions.https.onCall(async (_data, context) => {
+}));
+exports.createPortalSession = functions.https.onCall(reported("createPortalSession", async (_data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
@@ -2213,7 +2252,7 @@ exports.createPortalSession = functions.https.onCall(async (_data, context) => {
         return_url: `${process.env.APP_URL}/settings?tab=subscription`,
     });
     return { url: session.url };
-});
+}));
 exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     if (req.method !== "POST") {
         res.status(405).send("Method Not Allowed");
@@ -2514,7 +2553,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     }
     catch (err) {
         console.error("Error processing webhook:", err.message);
-        getPostHog().captureException(err);
+        reportError(err, { fn: "stripeWebhook", eventType: event.type });
         // Release the idempotency claim so Stripe's retry gets processed rather
         // than skipped as a duplicate.
         try {
@@ -2678,7 +2717,7 @@ exports.getFreeAIQuota = functions.https.onCall(async (_data, context) => {
     const used = (data?.month === monthStr ? data?.count : 0) || 0;
     return { used, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT - used };
 });
-exports.analyzeTradesAI = functions.https.onCall(async (data, context) => {
+exports.analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI", async (data, context) => {
     // 1. Auth check
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
@@ -2863,6 +2902,7 @@ Give me a thorough analysis of my trading.`;
     }
     catch (err) {
         console.error("OpenAI API error:", err.message);
+        reportError(err, { fn: "analyzeTradesAI", uid });
         await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
         throw new functions.https.HttpsError("internal", "Failed to generate analysis. Please try again.");
     }
@@ -2875,7 +2915,7 @@ Give me a thorough analysis of my trading.`;
         },
         ...(freeUsage && { freeUsage }),
     };
-});
+}));
 // ─── CSV Column Mapping (Pro) ───────────────────────────────
 // Maps an unrecognized broker CSV's columns to our import roles using the LLM.
 // Pro-only: a paid convenience for the long tail of broker exports our heuristic
@@ -2886,7 +2926,7 @@ const CSV_MAPPING_ROLES = [
     "symbol", "side", "openPrice", "closePrice",
     "quantity", "pnl", "openTime", "closeTime", "commission", "fees",
 ];
-exports.suggestCsvMapping = functions.https.onCall(async (data, context) => {
+exports.suggestCsvMapping = functions.https.onCall(reported("suggestCsvMapping", async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
     }
@@ -2967,6 +3007,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
     }
     catch (err) {
         console.error("CSV mapping AI error:", err.message);
+        reportError(err, { fn: "suggestCsvMapping", uid });
         throw new functions.https.HttpsError("internal", "Failed to generate a mapping. Please map columns manually.");
     }
     // Sanitize: keep only roles whose value is an actual header (or null), so a
@@ -2985,7 +3026,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
         confidence,
         usage: { used: usedToday + 1, limit, remaining: limit - (usedToday + 1) },
     };
-});
+}));
 function buildJournalPromptsPrompt(payload) {
     const cur = payloadCurrency(payload);
     const { symbol, side, pnl, entryPrice, exitPrice, strategy, riskReward, holdTimeMinutes } = payload;
@@ -3485,7 +3526,7 @@ Give me an honest coaching breakdown with a score.`,
         temperature: 0.4,
     };
 }
-exports.aiAssist = functions.https.onCall(async (data, context) => {
+exports.aiAssist = functions.https.onCall(reported("aiAssist", async (data, context) => {
     // 1. Auth check
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
@@ -3589,6 +3630,7 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
         if (err instanceof functions.https.HttpsError)
             throw err;
         console.error("OpenAI API error:", err.message);
+        reportError(err, { fn: "aiAssist", uid, feature: featureType });
         throw new functions.https.HttpsError("internal", "AI request failed. Please try again.");
     }
     return {
@@ -3600,9 +3642,9 @@ exports.aiAssist = functions.https.onCall(async (data, context) => {
         },
         ...(freeUsage && { freeUsage }),
     };
-});
+}));
 // ─── Screenshot Parser (vision model) ──────────────────────
-exports.parseScreenshot = functions.https.onCall(async (data, context) => {
+exports.parseScreenshot = functions.https.onCall(reported("parseScreenshot", async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
     }
@@ -3693,6 +3735,7 @@ Return only valid JSON with no extra text.`;
     }
     catch (err) {
         console.error("OpenAI Vision error:", err.message);
+        reportError(err, { fn: "parseScreenshot", uid });
         throw new functions.https.HttpsError("internal", "Failed to parse screenshot. Please try again.");
     }
     let parsed;
@@ -3706,7 +3749,7 @@ Return only valid JSON with no extra text.`;
         transactions: parsed.transactions || [],
         usage: { used: usedToday + 1, limit: LIMIT, remaining: LIMIT - (usedToday + 1) },
     };
-});
+}));
 // ─── Cloud Sync Proxy (bypasses content blockers) ──────────
 // Must match the client list in src/services/sync-engine.ts — a key missing
 // here is silently rejected as "Invalid sync key" ('settings' was missing for
@@ -4280,6 +4323,7 @@ Give me a thorough analysis of my trading.`;
     }
     catch (err) {
         console.error("OpenAI streaming error:", err.message);
+        reportError(err, { fn: "aiStream", uid, feature: featureType ?? undefined });
         // The stream never delivered — refund the quota unit charged above.
         await refundAiUsage(uid, userIsPro ? featureType : null, userIsPro);
         res.write(`data: ${JSON.stringify({ error: "AI request failed. Please try again." })}\n\n`);

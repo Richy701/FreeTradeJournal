@@ -44,6 +44,45 @@ function getPostHog(): PostHog {
   return _posthog;
 }
 
+// Server-side crash telemetry: caught errors go to PostHog error tracking
+// (same project as the client) tagged with the function name so they can be
+// attributed and alerted on. Must never throw — reporting can't be allowed to
+// break the path it instruments.
+function reportError(
+  err: unknown,
+  context: { fn: string; uid?: string } & Record<string, unknown>,
+): void {
+  try {
+    getPostHog().captureException(
+      err instanceof Error ? err : new Error(String(err)),
+      context.uid ?? "server",
+      context,
+    );
+  } catch (phErr) {
+    console.error("PostHog: failed to capture exception:", phErr);
+  }
+}
+
+// Wraps an onCall handler so unexpected errors are reported before Firebase
+// converts them into a generic "internal" for the client. Intentional
+// HttpsErrors (unauthenticated, rate limits, quota) are user-facing outcomes,
+// not crashes — those pass through unreported.
+function reported<D>(
+  fn: string,
+  handler: (data: D, context: functions.https.CallableContext) => Promise<unknown>,
+) {
+  return async (data: D, context: functions.https.CallableContext) => {
+    try {
+      return await handler(data, context);
+    } catch (err) {
+      if (!(err instanceof functions.https.HttpsError)) {
+        reportError(err, { fn, uid: context.auth?.uid });
+      }
+      throw err;
+    }
+  };
+}
+
 // ─── Resend Email Helper ────────────────────────────────────
 
 let _resend: Resend;
@@ -507,6 +546,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     }, { merge: true });
   } catch (err) {
     console.error("Failed to write user to Firestore:", err);
+    reportError(err, { fn: "onUserCreated", uid: user.uid, stage: "firestoreWrite" });
   }
 
   // Identify user and capture signup event
@@ -554,6 +594,7 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
     console.log(`Welcome email sent`);
   } catch (err) {
     console.error("Failed to send welcome email:", err);
+    reportError(err, { fn: "onUserCreated", uid: user.uid, stage: "welcomeEmail" });
   }
 
   // Create Resend contact + fire signup event for automation drip sequences
@@ -608,6 +649,7 @@ export const sendDay3NudgeEmails = functions.pubsub
         console.log(`Day-3 nudge sent`);
       } catch (err) {
         console.error(`Failed to send day-3 nudge:`, err);
+        reportError(err, { fn: "sendDay3NudgeEmails", uid: doc.id });
       }
     }
 
@@ -648,6 +690,7 @@ export const sendTrialEndingEmails = functions.pubsub
         console.log(`Trial ending email sent to ${doc.id}`);
       } catch (err) {
         console.error(`Failed to send trial ending email for ${doc.id}:`, err);
+        reportError(err, { fn: "sendTrialEndingEmails", uid: doc.id });
       }
     }
 
@@ -687,6 +730,7 @@ export const sendTrialEndingEmails = functions.pubsub
         signupSent++;
       } catch (err) {
         console.error(`Failed to send signup-trial ending email for ${doc.id}:`, err);
+        reportError(err, { fn: "sendTrialEndingEmails", uid: doc.id, stage: "signupTrial" });
       }
     }
 
@@ -734,6 +778,7 @@ export const sendDay7NudgeEmails = functions.pubsub
         console.log(`Day-7 nudge sent`);
       } catch (err) {
         console.error(`Failed to send day-7 nudge:`, err);
+        reportError(err, { fn: "sendDay7NudgeEmails", uid: doc.id });
       }
     }
 
@@ -782,6 +827,7 @@ export const sendDay14UpgradeEmails = functions.pubsub
         console.log(`Day-14 upgrade pitch sent`);
       } catch (err) {
         console.error(`Failed to send day-14 upgrade pitch:`, err);
+        reportError(err, { fn: "sendDay14UpgradeEmails", uid: doc.id });
       }
     }
 
@@ -829,6 +875,7 @@ export const sendDay21BackupEmails = functions.pubsub
         console.log(`Day-21 backup email sent`);
       } catch (err) {
         console.error(`Failed to send day-21 backup email:`, err);
+        reportError(err, { fn: "sendDay21BackupEmails", uid: doc.id });
       }
     }
 
@@ -949,6 +996,7 @@ export const sendWeeklyDigestEmails = functions.pubsub
         sent++;
       } catch (err) {
         console.error(`Failed to send weekly digest:`, err);
+        reportError(err, { fn: "sendWeeklyDigestEmails", uid: doc.id });
       }
     }
 
@@ -1145,6 +1193,7 @@ export const sendActivationReport = functions
       console.log(`Activation report sent: post-deploy ${postAct}/${postN}, excluded throttled ${excludedThrottled}`);
     } catch (err) {
       console.error("Failed to send activation report:", err);
+      reportError(err, { fn: "sendActivationReport" });
     }
     return null;
   });
@@ -2238,7 +2287,7 @@ function mapStripeStatus(stripeStatus: string): string {
 }
 
 export const createCheckoutSession = functions.https.onCall(
-  async (data, context) => {
+  reported("createCheckoutSession", async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
@@ -2427,11 +2476,11 @@ export const createCheckoutSession = functions.https.onCall(
     }
 
     return { url: session.url };
-  },
+  }),
 );
 
 export const createPortalSession = functions.https.onCall(
-  async (_data, context) => {
+  reported("createPortalSession", async (_data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
     }
@@ -2454,7 +2503,7 @@ export const createPortalSession = functions.https.onCall(
     });
 
     return { url: session.url };
-  },
+  }),
 );
 
 export const stripeWebhook = functions.https.onRequest(
@@ -2785,7 +2834,7 @@ export const stripeWebhook = functions.https.onRequest(
       }
     } catch (err: any) {
       console.error("Error processing webhook:", err.message);
-      getPostHog().captureException(err);
+      reportError(err, { fn: "stripeWebhook", eventType: event.type });
       // Release the idempotency claim so Stripe's retry gets processed rather
       // than skipped as a duplicate.
       try {
@@ -2992,7 +3041,7 @@ export const getFreeAIQuota = functions.https.onCall(async (_data, context) => {
   return { used, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT - used };
 });
 
-export const analyzeTradesAI = functions.https.onCall(async (data, context) => {
+export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI", async (data, context) => {
   // 1. Auth check
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -3191,6 +3240,7 @@ Give me a thorough analysis of my trading.`;
     analysis = completion.choices[0]?.message?.content || "No analysis generated.";
   } catch (err: any) {
     console.error("OpenAI API error:", err.message);
+    reportError(err, { fn: "analyzeTradesAI", uid });
     await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
     throw new functions.https.HttpsError(
       "internal",
@@ -3207,7 +3257,7 @@ Give me a thorough analysis of my trading.`;
     },
     ...(freeUsage && { freeUsage }),
   };
-});
+}));
 
 // ─── CSV Column Mapping (Pro) ───────────────────────────────
 // Maps an unrecognized broker CSV's columns to our import roles using the LLM.
@@ -3220,7 +3270,7 @@ const CSV_MAPPING_ROLES = [
   "quantity", "pnl", "openTime", "closeTime", "commission", "fees",
 ] as const;
 
-export const suggestCsvMapping = functions.https.onCall(async (data, context) => {
+export const suggestCsvMapping = functions.https.onCall(reported("suggestCsvMapping", async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
   }
@@ -3311,6 +3361,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
     parsed = JSON.parse(completion.choices[0]?.message?.content || "{}");
   } catch (err: any) {
     console.error("CSV mapping AI error:", err.message);
+    reportError(err, { fn: "suggestCsvMapping", uid });
     throw new functions.https.HttpsError("internal", "Failed to generate a mapping. Please map columns manually.");
   }
 
@@ -3331,7 +3382,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
     confidence,
     usage: { used: usedToday + 1, limit, remaining: limit - (usedToday + 1) },
   };
-});
+}));
 
 // ─── AI Assist (Multi-purpose) ──────────────────────────────
 
@@ -3924,7 +3975,7 @@ Give me an honest coaching breakdown with a score.`,
   };
 }
 
-export const aiAssist = functions.https.onCall(async (data, context) => {
+export const aiAssist = functions.https.onCall(reported("aiAssist", async (data, context) => {
   // 1. Auth check
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
@@ -4041,6 +4092,7 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
     await refundAiUsage(uid, userIsPro ? featureType : null, userIsPro);
     if (err instanceof functions.https.HttpsError) throw err;
     console.error("OpenAI API error:", err.message);
+    reportError(err, { fn: "aiAssist", uid, feature: featureType });
     throw new functions.https.HttpsError("internal", "AI request failed. Please try again.");
   }
 
@@ -4053,11 +4105,11 @@ export const aiAssist = functions.https.onCall(async (data, context) => {
     },
     ...(freeUsage && { freeUsage }),
   };
-});
+}));
 
 // ─── Screenshot Parser (vision model) ──────────────────────
 
-export const parseScreenshot = functions.https.onCall(async (data, context) => {
+export const parseScreenshot = functions.https.onCall(reported("parseScreenshot", async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
   }
@@ -4164,6 +4216,7 @@ Return only valid JSON with no extra text.`;
     result = completion.choices[0]?.message?.content || "{}";
   } catch (err: any) {
     console.error("OpenAI Vision error:", err.message);
+    reportError(err, { fn: "parseScreenshot", uid });
     throw new functions.https.HttpsError("internal", "Failed to parse screenshot. Please try again.");
   }
 
@@ -4179,7 +4232,7 @@ Return only valid JSON with no extra text.`;
     transactions: parsed.transactions || [],
     usage: { used: usedToday + 1, limit: LIMIT, remaining: LIMIT - (usedToday + 1) },
   };
-});
+}));
 
 // ─── Cloud Sync Proxy (bypasses content blockers) ──────────
 
@@ -4788,6 +4841,7 @@ Give me a thorough analysis of my trading.`;
     res.end();
   } catch (err: any) {
     console.error("OpenAI streaming error:", err.message);
+    reportError(err, { fn: "aiStream", uid, feature: featureType ?? undefined });
     // The stream never delivered — refund the quota unit charged above.
     await refundAiUsage(uid, userIsPro ? featureType! : null, userIsPro);
     res.write(`data: ${JSON.stringify({ error: "AI request failed. Please try again." })}\n\n`);

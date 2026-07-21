@@ -7,7 +7,7 @@ import { Envelope, SpinnerGap, Check, ArrowCounterClockwise } from '@phosphor-ic
 import { toast } from 'sonner';
 
 export default function VerifyEmail() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resending, setResending] = useState(false);
@@ -18,10 +18,12 @@ export default function VerifyEmail() {
       navigate('/login', { replace: true });
       return;
     }
-    if (user.emailVerified) {
+    // Skip when the poll below just detected verification — it shows a brief
+    // success state before navigating itself.
+    if (user.emailVerified && !verified) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, verified, navigate]);
 
   // Funnel instrumentation: the verify-email wall is a suspected major
   // drop-off point (Google signups skip it entirely) — track entry and exit.
@@ -33,21 +35,17 @@ export default function VerifyEmail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll for verification every 3 seconds. Uses auth.currentUser (the live
-  // Firebase object) rather than the context user — the context can briefly
-  // hold a spread copy without prototype methods, which made reload() a no-op
-  // and verification never auto-detect.
+  // Poll for verification every 3 seconds. refreshUser() reloads the live
+  // Firebase user AND pushes it into the auth context — navigating on the live
+  // object alone left ProtectedRoute reading a stale context snapshot with
+  // emailVerified=false, bouncing users back here in an infinite redirect loop.
   useEffect(() => {
     if (!user || user.emailVerified) return;
 
     const interval = setInterval(async () => {
       try {
-        const { getFirebaseAuth } = await import('@/lib/firebase-lazy');
-        const auth = await getFirebaseAuth();
-        const live = auth.currentUser;
-        if (!live) return;
-        await live.reload();
-        if (live.emailVerified) {
+        const live = await refreshUser();
+        if (live?.emailVerified) {
           setVerified(true);
           trackEvent('verify_email_completed');
           clearInterval(interval);
@@ -59,6 +57,9 @@ export default function VerifyEmail() {
     }, 3000);
 
     return () => clearInterval(interval);
+    // refreshUser is recreated each provider render — including it would reset
+    // the interval on every re-render (e.g. each resend-cooldown tick)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   // Countdown timer for resend cooldown

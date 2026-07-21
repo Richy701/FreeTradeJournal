@@ -18,6 +18,7 @@ interface AuthContextType {
   verifyPasswordResetCode: (oobCode: string) => Promise<string>;
   confirmPasswordReset: (oobCode: string, newPassword: string) => Promise<void>;
   applyActionCode: (oobCode: string) => Promise<void>;
+  refreshUser: () => Promise<User | null>;
   enterDemoMode: () => void;
   exitDemoMode: () => void;
 }
@@ -256,6 +257,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await firebaseApply(authInstance, oobCode);
   };
 
+  // Reload the live Firebase user and push it into context state. The context
+  // can hold a stale snapshot (e.g. the post-signup spread copy above) whose
+  // emailVerified never updates — reload() mutates auth.currentUser only, so
+  // guards like ProtectedRoute keep reading the old value and bounce verified
+  // users back to /verify-email in a redirect loop.
+  const refreshUser = async (): Promise<User | null> => {
+    const authInstance = auth || await initAuth();
+    const live = authInstance?.currentUser ?? null;
+    if (!live) return null;
+    await live.reload();
+    setUser(live);
+    return live;
+  };
+
   const value: AuthContextType = useMemo(() => ({
     user,
     loading,
@@ -268,9 +283,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     verifyPasswordResetCode,
     confirmPasswordReset,
     applyActionCode,
+    refreshUser,
     enterDemoMode,
     exitDemoMode
-  }), [user, loading, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, enterDemoMode, exitDemoMode]);
+  }), [user, loading, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, refreshUser, enterDemoMode, exitDemoMode]);
 
   return (
     <AuthContext.Provider value={value}>

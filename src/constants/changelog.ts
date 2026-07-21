@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.64.1',
+    date: '2026-07-21',
+    summary: 'Verifying your email now takes you straight into the app instead of leaving you stuck on the confirmation screen.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Email verification no longer gets stuck',
+        description: 'After clicking the verification link, some new accounts were bounced back to the "verify your email" screen in an endless loop even though the email was confirmed. Verification is now picked up correctly and you land on your dashboard.',
+      },
+    ],
+  },
+  {
     version: '2.64.0',
     date: '2026-07-21',
     summary: 'Stock trades import properly: DAS Trader exports are now supported, and stock tickers get the right market and P&L math.',
@@ -2183,4 +2196,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.64.0'
+export const LATEST_CHANGELOG_VERSION = '2.64.1'
