@@ -720,11 +720,24 @@ export const sendTrialEndingEmails = functions.pubsub
       if (data.signupTrialEndingSentAt || data.emailOptOut || data.signupThrottled) continue;
       // Already converted to a paid plan — the trial expiry is moot
       if (hasActiveSubscription(data)) continue;
-      const email = data.email;
+      // Some user docs lack the email field — fall back to Firebase Auth
+      // (the 2026-07-23 wave had 238 such docs; skipping them silently
+      // dropped ~15% of the cohort).
+      let email = data.email;
+      let displayName = data.displayName;
+      if (!email) {
+        try {
+          const userRecord = await admin.auth().getUser(doc.id);
+          email = userRecord.email;
+          displayName = displayName || userRecord.displayName;
+        } catch {
+          // Auth user deleted — nothing to send to
+        }
+      }
       if (!email) continue;
 
       try {
-        const firstName = (data.displayName || email).split(" ")[0];
+        const firstName = (displayName || email).split(" ")[0];
         const trialEndDate = new Date(data.trialProExpiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
         const html = await render(React.createElement(SignupTrialEndingEmail, { firstName, trialEndDate, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
         await getResend().emails.send({
