@@ -883,6 +883,217 @@ function parseTradovatePerformance(lines: string[], headers: string[]): CSVParse
   return result;
 }
 
+// ─── DAS Trader Detection & Parsing ────────────────────────
+
+// DAS Trader (Pro / simulator) exports its Trades window as one EXECUTION per
+// row with a single Price column — no entry/exit pair and no P&L:
+//   Time,Symbol,Side,Price,Qty,Route,Broker,Account,Type,Cloid,Liq
+// Side values are B (buy), S (sell), SS (short sell), BC (buy to cover).
+// Daily exports often carry a Time-only clock ("09:31:05") — the trading date
+// lives in the FILENAME (e.g. "July20.csv"), so parseCSV threads it through as
+// a date hint. Fills must be FIFO-paired into round-trip trades; without this
+// the generic path mapped the one Price column to both entry AND exit
+// (P/L = 0 on every row).
+function isDASTraderFormat(headers: string[]): boolean {
+  const h = headers.map(x => x.trim().toLowerCase());
+  const hasCore = ['time', 'symbol', 'side', 'price'].every(c => h.includes(c))
+    && (h.includes('qty') || h.includes('shares') || h.includes('quantity'));
+  if (!hasCore) return false;
+  // A single bare "Price" column is the DAS signature — a round-trip export
+  // (entry+exit or P&L columns present) must keep using the generic path.
+  const hasRoundTrip = h.some(x =>
+    x.includes('open price') || x.includes('close price') ||
+    x.includes('entry') || x.includes('exit') ||
+    x === 'pnl' || x === 'p&l' || x.includes('profit') || x.includes('realized')
+  );
+  return !hasRoundTrip;
+}
+
+// Extract a trading date from a DAS daily-export filename: "July20.csv",
+// "Jul 20 2026.csv", "2026-07-20.csv", "07-20-2026.csv". Returns null when the
+// name carries no recognizable date.
+export function dateFromFileName(fileName: string): { y: number; m: number; d: number } | null {
+  const base = (fileName || '').replace(/\.[^.]+$/, '');
+  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+  const named = base.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s_-]*(\d{1,2})(?:[\s_,-]*(\d{4}))?/i);
+  if (named) {
+    const m = MONTHS.indexOf(named[1].toLowerCase()) + 1;
+    const d = parseInt(named[2], 10);
+    let y = named[3] ? parseInt(named[3], 10) : new Date().getFullYear();
+    // No explicit year: a date landing in the future means it was last year
+    // (importing "Dec31" in January).
+    if (!named[3] && new Date(y, m - 1, d).getTime() > Date.now() + 86400000) y -= 1;
+    if (d >= 1 && d <= 31) return { y, m, d };
+  }
+
+  const iso = base.match(/(20\d{2})[-_.](\d{1,2})[-_.](\d{1,2})/);
+  if (iso) return { y: +iso[1], m: +iso[2], d: +iso[3] };
+
+  const us = base.match(/(\d{1,2})[-_.](\d{1,2})[-_.](20\d{2})/);
+  if (us) return { y: +us[3], m: +us[1], d: +us[2] };
+
+  return null;
+}
+
+function parseDASTrades(lines: string[], headers: string[], fileName?: string): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false, trades: [], errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.trim().toLowerCase());
+  const col = {
+    time:   h.indexOf('time'),
+    date:   h.indexOf('date'),
+    symbol: h.indexOf('symbol'),
+    side:   h.indexOf('side'),
+    price:  h.indexOf('price'),
+    qty:    h.findIndex(x => x === 'qty' || x === 'shares' || x === 'quantity'),
+  };
+
+  const hint = fileName ? dateFromFileName(fileName) : null;
+
+  // Resolve a fill's timestamp: full date-times parse directly; a bare clock
+  // anchors to the Date column, else the filename date, else today.
+  const resolveTime = (timeRaw: string, dateRaw: string): string => {
+    const clock = parseClock(timeRaw);
+    if (clock) {
+      if (dateRaw) {
+        const day = parseDateString(dateRaw);
+        return `${day.slice(0, 10)}T${String(clock.h).padStart(2, '0')}:${String(clock.m).padStart(2, '0')}:${String(clock.s).padStart(2, '0')}`;
+      }
+      const base = hint ? new Date(hint.y, hint.m - 1, hint.d) : new Date();
+      return formatLocalDateTime(new Date(base.getFullYear(), base.getMonth(), base.getDate(), clock.h, clock.m, clock.s));
+    }
+    return parseDateString(timeRaw || dateRaw);
+  };
+
+  type Fill = { symbol: string; signedQty: number; price: number; time: string };
+  const fills: Fill[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const fields = parseCSVLine(line);
+    if (fields.every(f => !f.trim())) continue;
+    result.summary.totalRows++;
+
+    const symbol = (fields[col.symbol] || '').trim().toUpperCase();
+    const sideRaw = (fields[col.side] || '').trim().toUpperCase();
+    const price = parseFloat(cleanNumeric(fields[col.price] || ''));
+    const qty = Math.abs(parseFloat(cleanNumeric(fields[col.qty] || '')) || 0);
+
+    if (!symbol || !sideRaw || !qty || !isFinite(price) || price <= 0) {
+      result.errors.push(`Row ${i + 1}: Missing symbol, side, price, or quantity`);
+      result.summary.failed++;
+      continue;
+    }
+
+    // B / BC / Buy add to position; S / SS / Sell / Short reduce it. Direction
+    // of each round-trip comes from the net position sign, not the side label.
+    const isBuy = sideRaw === 'B' || sideRaw === 'BC' || sideRaw.startsWith('BUY') || sideRaw === 'COVER';
+    const isSell = sideRaw === 'S' || sideRaw === 'SS' || sideRaw.startsWith('SELL') || sideRaw.startsWith('SHORT') || sideRaw === 'SHT';
+    if (!isBuy && !isSell) {
+      result.errors.push(`Row ${i + 1}: Unrecognized side "${sideRaw}"`);
+      result.summary.failed++;
+      continue;
+    }
+
+    fills.push({
+      symbol,
+      signedQty: isBuy ? qty : -qty,
+      price,
+      time: resolveTime(
+        col.time >= 0 ? (fields[col.time] || '').trim() : '',
+        col.date >= 0 ? (fields[col.date] || '').trim() : ''
+      ),
+    });
+  }
+
+  // Chronological order is what makes FIFO pairing correct.
+  fills.sort((a, b) => a.time.localeCompare(b.time));
+
+  const groups = new Map<string, Fill[]>();
+  for (const f of fills) {
+    if (!groups.has(f.symbol)) groups.set(f.symbol, []);
+    groups.get(f.symbol)!.push(f);
+  }
+
+  const dates: string[] = [];
+
+  for (const [symbol, symbolFills] of groups) {
+    // Net-position FIFO, same model as the Tradovate orders parser. DAS is an
+    // equities platform: $1 price move on 1 share = $1, no multiplier (and
+    // getFuturesMultiplier would prefix-match tickers like SIEB to futures).
+    type OpenEntry = { price: number; qty: number; time: string };
+    const openQueue: OpenEntry[] = [];
+    let position = 0;
+
+    for (const fill of symbolFills) {
+      const prevPosition = position;
+      const isClosing = prevPosition !== 0 && Math.sign(fill.signedQty) !== Math.sign(prevPosition);
+
+      if (isClosing) {
+        const closingQty = Math.min(Math.abs(fill.signedQty), Math.abs(prevPosition));
+        const isLong = prevPosition > 0;
+
+        let remaining = closingQty;
+        while (remaining > 0 && openQueue.length > 0) {
+          const open = openQueue[0];
+          const matched = Math.min(remaining, open.qty);
+          const pnl = isLong
+            ? (fill.price - open.price) * matched
+            : (open.price - fill.price) * matched;
+
+          dates.push(fill.time);
+          result.trades.push({
+            symbol,
+            side: isLong ? 'long' : 'short',
+            entryPrice: open.price.toFixed(6),
+            exitPrice: fill.price.toFixed(6),
+            quantity: matched.toString(),
+            pnl: pnl.toFixed(2),
+            date: fill.time,
+            entryDate: open.time,
+            exitDate: fill.time,
+          });
+          result.summary.successfulParsed++;
+
+          remaining -= matched;
+          open.qty -= matched;
+          if (open.qty <= 0) openQueue.shift();
+        }
+
+        // Position flipped through zero: the overflow opens in the new direction.
+        const overflow = Math.abs(fill.signedQty) - closingQty;
+        if (overflow > 0) {
+          openQueue.push({ price: fill.price, qty: overflow, time: fill.time });
+        }
+      } else {
+        openQueue.push({ price: fill.price, qty: Math.abs(fill.signedQty), time: fill.time });
+      }
+
+      position = prevPosition + fill.signedQty;
+    }
+
+    const unmatched = openQueue.reduce((s, o) => s + o.qty, 0);
+    if (unmatched > 0) {
+      result.errors.push(`${symbol}: ${unmatched} share(s) still open (no matching close)`);
+    }
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) {
+    result.errors.push('No completed trades found. DAS exports need both the opening and closing fills of each trade.');
+  }
+  return result;
+}
+
 // ─── TopStep Detection ───────────────────────────────────────
 
 // Detect if this is a TopStep order-level export
@@ -1319,7 +1530,7 @@ function findStandardHeaderRow(lines: string[], delimiter: string): number {
     if (
       isIBKRClosedPositions(headers) || isIBKRTradesFormat(headers) ||
       isTopStepOrderFormat(headers) || isTradovateFormat(headers) ||
-      isTradovatePerformanceFormat(headers)
+      isTradovatePerformanceFormat(headers) || isDASTraderFormat(headers)
     ) return i;
   }
 
@@ -1354,7 +1565,7 @@ function isNinjaTraderGrid(headers: string[]): boolean {
   return hasMarketPos && hasProfit && hasCommission;
 }
 
-export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): CSVParseResult {
+export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fileName?: string }): CSVParseResult {
   // Strip BOM character that some exports (e.g. Topstep) include
   csvContent = csvContent.replace(/^\uFEFF/, '');
 
@@ -1407,6 +1618,7 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean }): 
       if (isTopStepOrderFormat(headers)) return parseTopStepOrders(lines, headers);
       if (isTradovateFormat(headers)) return parseTradovateOrders(lines, headers);
       if (isTradovatePerformanceFormat(headers)) return parseTradovatePerformance(lines, headers);
+      if (isDASTraderFormat(headers)) return parseDASTrades(lines, headers, options?.fileName);
     }
 
     // NinjaTrader's "Profit" is already net of commissions — flag it so the

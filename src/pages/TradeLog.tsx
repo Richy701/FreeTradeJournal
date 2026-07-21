@@ -776,7 +776,9 @@ export default function TradeLog() {
 
     try {
       const content = await validateCSVFile(file);
-      let result = parseCSV(content);
+      // fileName: DAS daily exports carry a time-only clock — the trading date
+      // lives in the filename (e.g. "July20.csv").
+      let result = parseCSV(content, { fileName: file.name });
 
       // If auto-detect failed, try to rescue the import silently before bothering
       // the user: replay a mapping they previously confirmed for this file shape,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCSV, findColumnIndex, parseCSVHeaders } from './csv-parser';
+import { parseCSV, findColumnIndex, parseCSVHeaders, dateFromFileName } from './csv-parser';
 
 describe('findColumnIndex', () => {
   it('prefers an exact header match over a substring collision', () => {
@@ -375,5 +375,85 @@ describe('parseCSV — silent numeric/date corruption regressions', () => {
     ].join('\n');
     const [t] = parseCSV(csv).trades;
     expect(t.pnl).toBe('-400.00');
+  });
+});
+
+describe('parseCSV — DAS Trader execution export', () => {
+  const DAS_CSV = [
+    'Time,Symbol,Side,Price,Qty,Route,Broker,Account,Type,Cloid,Liq',
+    '09:31:05,TSLA,B,372.50,100,SMAT,DAS,SIM1,Market,C1,R',
+    '09:45:12,TSLA,S,375.20,100,SMAT,DAS,SIM1,Market,C2,A',
+    '10:02:33,SPCX,B,121.43,200,SMAT,DAS,SIM1,Limit,C3,R',
+    '10:15:47,SPCX,S,121.50,100,SMAT,DAS,SIM1,Limit,C4,A',
+    '10:20:05,SPCX,S,121.80,100,SMAT,DAS,SIM1,Limit,C5,A',
+    '11:05:00,AMD,SS,142.10,50,SMAT,DAS,SIM1,Market,C6,R',
+    '11:30:00,AMD,B,141.20,50,SMAT,DAS,SIM1,Market,C7,A',
+  ].join('\n');
+
+  it('FIFO-pairs fills into round trips with real entry/exit and P&L', () => {
+    const r = parseCSV(DAS_CSV);
+    expect(r.success, `errors: ${r.errors.join('; ')}`).toBe(true);
+    expect(r.trades.length).toBe(4);
+
+    const tsla = r.trades.find(t => t.symbol === 'TSLA')!;
+    expect(tsla.side).toBe('long');
+    expect(parseFloat(tsla.entryPrice)).toBeCloseTo(372.5, 2);
+    expect(parseFloat(tsla.exitPrice)).toBeCloseTo(375.2, 2);
+    expect(tsla.pnl).toBe('270.00'); // 2.70 x 100 shares, no futures multiplier
+
+    // Partial exits: one 200-share open split across two closes
+    const spcx = r.trades.filter(t => t.symbol === 'SPCX');
+    expect(spcx.map(t => t.pnl).sort()).toEqual(['37.00', '7.00']);
+    expect(spcx.every(t => t.entryPrice !== t.exitPrice)).toBe(true);
+
+    // SS (short sell) then B (cover) = a short trade
+    const amd = r.trades.find(t => t.symbol === 'AMD')!;
+    expect(amd.side).toBe('short');
+    expect(amd.pnl).toBe('45.00'); // 0.90 x 50
+  });
+
+  it('anchors time-only clocks to the date in the filename', () => {
+    const r = parseCSV(DAS_CSV, { fileName: 'July20.csv' });
+    const year = new Date().getFullYear();
+    expect(r.trades[0].entryDate!.startsWith(`${year}-07-20T`)).toBe(true);
+    expect(r.trades[0].exitDate!.startsWith(`${year}-07-20T`)).toBe(true);
+  });
+
+  it('does NOT hijack round-trip exports that happen to have Time/Symbol/Side columns', () => {
+    const csv = [
+      'Time,Symbol,Side,Entry Price,Exit Price,Qty,Profit',
+      '2026-07-20 09:31:05,TSLA,buy,372.50,375.20,100,270',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.trades.length).toBe(1);
+    expect(r.trades[0].entryPrice).not.toBe(r.trades[0].exitPrice);
+    expect(parseFloat(r.trades[0].pnl)).toBeCloseTo(270, 2);
+  });
+
+  it('reports still-open positions instead of inventing trades', () => {
+    const csv = [
+      'Time,Symbol,Side,Price,Qty,Route,Broker,Account,Type,Cloid,Liq',
+      '09:31:05,TSLA,B,372.50,100,SMAT,DAS,SIM1,Market,C1,R',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(false);
+    expect(r.errors.some(e => e.includes('still open'))).toBe(true);
+  });
+});
+
+describe('dateFromFileName', () => {
+  it('parses month-name filenames like DAS daily exports', () => {
+    const year = new Date().getFullYear();
+    expect(dateFromFileName('July20.csv')).toEqual({ y: year, m: 7, d: 20 });
+    expect(dateFromFileName('Jul 20 2026.csv')).toEqual({ y: 2026, m: 7, d: 20 });
+  });
+
+  it('parses numeric dates in either order', () => {
+    expect(dateFromFileName('2026-07-20.csv')).toEqual({ y: 2026, m: 7, d: 20 });
+    expect(dateFromFileName('07-20-2026.csv')).toEqual({ y: 2026, m: 7, d: 20 });
+  });
+
+  it('returns null when the filename has no date', () => {
+    expect(dateFromFileName('my-trades.csv')).toBeNull();
   });
 });

@@ -19,6 +19,25 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.64.0',
+    date: '2026-07-21',
+    summary: 'Stock trades import properly: DAS Trader exports are now supported, and stock tickers get the right market and P&L math.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'DAS Trader import support',
+        description: 'CSV exports from DAS Trader (including the simulator) now import as complete trades. DAS files list each fill on its own row, so the importer pairs your buys and sells into round trips with real entry and exit prices and correct profit or loss — including short sells, partial exits, and position flips. Daily exports whose rows only carry a clock time pick up the trading date from the file name.',
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Stock tickers no longer labelled Forex',
+        description: 'Imported stock trades were tagged as Forex and had currency-pair math applied to them. Stock symbols are now recognised and their profit or loss is calculated the way shares work: price move times share count.',
+      },
+    ],
+  },
+  {
     version: '2.63.2',
     date: '2026-07-16',
     summary: 'Delete All Data now clears your cloud backup, every AI feature speaks your currency, and broker imports got a correctness pass.',
@@ -2164,4 +2183,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.63.2'
+export const LATEST_CHANGELOG_VERSION = '2.64.0'
