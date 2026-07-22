@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.64.2',
+    date: '2026-07-22',
+    summary: 'A note on free trials: from today, the 14-day Pro trial is one per person. Please play fair so trials can stay card-free.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Free trials are now one per person',
+        description: 'FreeTradeJournal is built and run by one person — me. Every new account gets 14 days of full Pro, free, with no card required, because I hate being asked for a card just to try something. Recently a few people have been deleting their accounts and signing back up to restart the trial, over and over. As of today that door is closed: the trial is one per person. It stays generous and card-free only if it is not abused — if this keeps happening, new trials will require a card up front, and that punishes everyone because of a few. Play fair. That is all I ask. — Richy',
+      },
+    ],
+  },
+  {
     version: '2.64.1',
     date: '2026-07-21',
     summary: 'Verifying your email now takes you straight into the app instead of leaving you stuck on the confirmation screen.',
@@ -2196,4 +2209,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.64.1'
+export const LATEST_CHANGELOG_VERSION = '2.64.2'

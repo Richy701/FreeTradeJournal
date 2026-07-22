@@ -426,6 +426,14 @@ function normalizeEmail(email: string): string {
   return `${local.split("+")[0]}@${domain}`;
 }
 
+// Deleting an account must not reset the signup trial: deleteUserAccount writes
+// a tombstone keyed by a hash of the normalized email (no raw PII retained after
+// deletion), and onUserCreated checks it before granting trialProExpiresAt.
+function trialTombstoneRef(email: string) {
+  const hash = crypto.createHash("sha256").update(normalizeEmail(email)).digest("hex");
+  return db.collection("trialTombstones").doc(hash);
+}
+
 // ─── Signup Velocity Guard (anti-abuse) ─────────────────────
 
 // Firebase Auth account creation itself can't be blocked from a plain onCreate
@@ -532,6 +540,21 @@ const SIGNUP_TRIAL_DAYS = 14;
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const throttleReason = await checkSignupVelocity(user.email || undefined);
 
+  // Delete-and-resignup must not mint a fresh trial: a tombstone written by
+  // deleteUserAccount marks this email as having already used it. Fails open —
+  // a lookup error must never cost a genuinely new user their trial.
+  let trialAlreadyUsed = false;
+  if (user.email) {
+    try {
+      trialAlreadyUsed = (await trialTombstoneRef(user.email).get()).exists;
+      if (trialAlreadyUsed) {
+        console.log(`Trial tombstone hit for ${user.uid} — no signup trial granted`);
+      }
+    } catch (err) {
+      console.error("Trial tombstone lookup failed (failing open):", err);
+    }
+  }
+
   // Write user record to Firestore for email scheduling
   try {
     await db.collection("users").doc(user.uid).set({
@@ -539,9 +562,15 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
       normalizedEmail: user.email ? normalizeEmail(user.email) : null,
       displayName: user.displayName || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      trialProExpiresAt: new Date(
-        Date.now() + SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000
-      ).toISOString(),
+      // hadTrial also blocks the Stripe card trial in createCheckoutSession,
+      // so a returning user can't stack the 14-day checkout trial either.
+      ...(trialAlreadyUsed
+        ? { hadTrial: true }
+        : {
+            trialProExpiresAt: new Date(
+              Date.now() + SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          }),
       ...(throttleReason ? { signupThrottled: true } : {}),
     }, { merge: true });
   } catch (err) {
@@ -4515,6 +4544,20 @@ export const deleteUserAccount = functions.https.onCall(async (_data, context) =
     console.log(`[deleteUserAccount] Deleted Storage files under users/${uid}/`);
   } catch (err: any) {
     console.error(`[deleteUserAccount] Storage cleanup error:`, err.message);
+  }
+
+  // 5c. Trial tombstone: remember — by email hash only, no raw PII — that this
+  // email already used its signup trial, so delete-and-resignup can't reset it.
+  try {
+    if (email !== "unknown") {
+      await trialTombstoneRef(email).set({
+        trialUsed: true,
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      console.log(`[deleteUserAccount] Wrote trial tombstone`);
+    }
+  } catch (err: any) {
+    console.error(`[deleteUserAccount] Trial tombstone error:`, err.message);
   }
 
   // 6. Delete main user document (guarded — the Auth deletion below must
