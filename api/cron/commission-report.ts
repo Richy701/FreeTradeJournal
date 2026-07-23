@@ -301,18 +301,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'FreeTradeJournal internal report.',
   );
 
-  // ─── Send both via Resend batch ────────────────────────────
+  // ─── Send via Resend batch ─────────────────────────────────
+  // PARTNER_REPORT_PAUSED=true holds the partner's copy (internal report
+  // still sends); unset or delete the var to resume. PARTNER_REPORT_TO must
+  // stay set while paused — it also drives the self-referral exclusion.
+  const partnerPaused = process.env.PARTNER_REPORT_PAUSED === 'true';
   const weekOf = day(weekStart);
   const emailRes = await fetch('https://api.resend.com/emails/batch', {
     method: 'POST',
     headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify([
-      {
-        from: FROM_EMAIL,
-        to: PARTNER_REPORT_TO,
-        subject: `Your FreeTradeJournal partner update`,
-        html: partnerHtml,
-      },
+      ...(partnerPaused
+        ? []
+        : [{
+            from: FROM_EMAIL,
+            to: PARTNER_REPORT_TO,
+            subject: `Your FreeTradeJournal partner update`,
+            html: partnerHtml,
+          }]),
       {
         from: FROM_EMAIL,
         to: REPORT_TO,
@@ -331,5 +337,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     referrals: rows.length,
     newThisWeek,
     commissionCents: Math.round(totalNet * COMMISSION_RATE),
+    partnerEmailSent: !partnerPaused,
   });
 }
