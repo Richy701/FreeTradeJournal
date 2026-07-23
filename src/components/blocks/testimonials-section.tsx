@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Star } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import { posthog } from '@/lib/posthog';
 
 interface Testimonial {
   id: string;
@@ -34,7 +35,13 @@ export function TestimonialsSection() {
         if (cancelled) return;
         const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Testimonial));
         setTestimonials(docs.length > 0 ? docs : FALLBACK_TESTIMONIALS);
-      } catch {
+      } catch (err) {
+        // A silent failure here hid the section from every visitor for months
+        // (missing composite index) — keep the graceful fallback but report it.
+        console.error('Testimonials fetch failed:', err);
+        posthog.captureException(err instanceof Error ? err : new Error(String(err)), {
+          source: 'testimonials-section',
+        });
         if (!cancelled) setTestimonials(FALLBACK_TESTIMONIALS);
       } finally {
         if (!cancelled) setLoading(false);
