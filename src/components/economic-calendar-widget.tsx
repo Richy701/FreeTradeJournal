@@ -52,11 +52,14 @@ export function EconomicCalendarWidget() {
 
   return (
     <div className="rounded-xl border bg-card/50 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-        <CalendarBlank className="h-4 w-4" style={{ color: themeColors.primary }} />
-        <span className="text-sm font-semibold text-foreground">Economic Calendar</span>
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+        <div className="flex items-center gap-2">
+          <CalendarBlank className="h-4 w-4" style={{ color: themeColors.primary }} />
+          <span className="text-sm font-semibold text-foreground">Economic Calendar</span>
+        </div>
+        <span className="text-[11px] text-muted-foreground">Medium &amp; high impact</span>
       </div>
-      <div className="px-2 pb-3">
+      <div className="border-t border-border/50">
         <div className="relative" style={{ height: 440 }}>
           <div
             ref={containerRef}
