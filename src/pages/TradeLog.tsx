@@ -134,7 +134,11 @@ interface TradeFormData {
 
 // Forex quotes need their full precision (1.08523, not 1.09); JPY-style pairs
 // quote to 3 decimals. Futures/indices stay at 2.
-function formatPrice(price: number, symbol?: string): string {
+// Stored trades can carry null/NaN prices (manual-P&L trades saved without
+// prices round-trip NaN → JSON null) — render those as '-' instead of crashing
+// the whole table on null.toFixed.
+function formatPrice(price: number | null | undefined, symbol?: string): string {
+  if (price == null || !Number.isFinite(price)) return '-';
   if (symbol && detectMarketFromSymbol(symbol) === 'forex') {
     return price.toFixed(/JPY|HUF|THB/.test(symbol.toUpperCase()) ? 3 : 5);
   }
@@ -607,15 +611,30 @@ export default function TradeLog() {
       riskReward = data.manualRR;
     }
 
+    // Empty number inputs come through as NaN (parseFloat('')), which
+    // JSON.stringify turns into null in storage — and null prices crash
+    // renders on reload. Store finite numbers only.
+    const finite = (v: number | undefined): number => (Number.isFinite(v) ? (v as number) : 0);
+    const finiteOpt = (v: number | undefined): number | undefined => (Number.isFinite(v) ? v : undefined);
+
     const newTrade: Trade = {
       id: editingTrade?.id || Date.now().toString(),
       ...data,
-      stopLoss,
-      takeProfit,
+      entryPrice: finite(data.entryPrice),
+      exitPrice: finite(data.exitPrice),
+      lotSize: finite(data.lotSize),
+      spread: finite(data.spread),
+      commission: finite(data.commission),
+      fees: finite(data.fees),
+      swap: finite(data.swap),
+      manualPnL: finiteOpt(data.manualPnL),
+      customMultiplier: finiteOpt(data.customMultiplier),
+      stopLoss: finiteOpt(stopLoss),
+      takeProfit: finiteOpt(takeProfit),
       brokerPnL: editingTrade?.brokerPnL,
-      pnl,
-      pnlPercentage,
-      riskReward,
+      pnl: finite(pnl),
+      pnlPercentage: finite(pnlPercentage),
+      riskReward: finite(riskReward),
       entryTime: new Date(data.entryTime),
       exitTime: new Date(data.exitTime),
       accountId: activeAccount?.id, // undefined = legacy-default bucket, still visible on default accounts

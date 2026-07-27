@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.64.3',
+    date: '2026-07-27',
+    summary: 'Fixed a crash that stopped the Trade Log page from opening for some traders.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Trade Log no longer crashes on trades saved without prices',
+        description: 'If a trade was saved with the profit entered manually and the price boxes left empty, the Trade Log page could crash every time it tried to display that trade. Those trades now show a dash where the price would be, and the page opens normally again. Your trades were never lost — the page just could not display them.',
+      },
+    ],
+  },
+  {
     version: '2.64.2',
     date: '2026-07-22',
     summary: 'A note on free trials: from today, the 14-day Pro trial is one per person. Please play fair so trials can stay card-free.',
@@ -2209,4 +2222,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.64.2'
+export const LATEST_CHANGELOG_VERSION = '2.64.3'

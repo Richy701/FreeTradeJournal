@@ -13,7 +13,7 @@ import { PropTrackerRoute } from '@/components/PropTrackerRoute';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { ScrollToTop } from '@/components/scroll-to-top';
-const FeedbackListener = lazy(() => import('@/components/feedback-listener').then(m => ({ default: m.FeedbackListener })));
+const FeedbackListener = lazyWithRetry(() => import('@/components/feedback-listener').then(m => ({ default: m.FeedbackListener })));
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
 import { Toaster } from 'sonner';
@@ -21,9 +21,9 @@ const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ defa
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
 // Consent banner and PWA prompts render on delay/conditions anyway — lazy-load
 // them so their framer-motion + icon imports stay out of the entry bundle.
-const CookieConsent = lazy(() => import('@/components/CookieConsent').then(m => ({ default: m.CookieConsent })));
-const PWAInstallPrompt = lazy(() => import('@/components/PWAInstallPrompt').then(m => ({ default: m.PWAInstallPrompt })));
-const PWAUpdateNotification = lazy(() => import('@/components/PWAUpdateNotification').then(m => ({ default: m.PWAUpdateNotification })));
+const CookieConsent = lazyWithRetry(() => import('@/components/CookieConsent').then(m => ({ default: m.CookieConsent })));
+const PWAInstallPrompt = lazyWithRetry(() => import('@/components/PWAInstallPrompt').then(m => ({ default: m.PWAInstallPrompt })));
+const PWAUpdateNotification = lazyWithRetry(() => import('@/components/PWAUpdateNotification').then(m => ({ default: m.PWAUpdateNotification })));
 import { PostHogProvider } from 'posthog-js/react';
 import { posthog } from '@/lib/posthog';
 import { PostHogTracker } from '@/components/PostHogTracker';
