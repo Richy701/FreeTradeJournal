@@ -19,6 +19,36 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.66.0',
+    date: '2026-07-27',
+    summary: 'A smarter logging streak that survives weekends, plus a cleaner dashboard and journal date picker.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Your logging streak no longer resets over the weekend',
+        description: 'The streak counter in the sidebar counts trading days now, so markets being closed on Saturday and Sunday no longer breaks your run. Days where you only wrote a journal entry count too, your personal best is shown next to the current streak, and you get a shout-out when you hit 7, 30, 100, or 365 days.',
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Streak on the dashboard',
+        description: 'Once your streak reaches 2 days it shows as a chip in the dashboard header, next to your trade count and win rate.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Journal dates get the proper calendar',
+        description: 'The date fields in the journal editor and filters now open the same styled calendar as the rest of the app instead of the plain browser one.',
+      },
+      {
+        type: 'improved',
+        text: 'A calmer dashboard for free accounts',
+        description: 'Fewer stacked banners at the top of the dashboard: the duplicate upgrade strip is gone and the invite-friends card is now a compact one-liner that appears once you have a few trades logged.',
+      },
+    ],
+  },
+  {
     version: '2.65.0',
     date: '2026-07-27',
     summary: 'Referral rewards now keep growing: every tier of referrals earns you more free Pro time.',
@@ -2235,4 +2265,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.65.0'
+export const LATEST_CHANGELOG_VERSION = '2.66.0'

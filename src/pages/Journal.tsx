@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { trackEvent } from '@/lib/analytics';
 import { belongsToAccount } from '@/lib/account-scope';
@@ -1522,16 +1523,15 @@ export default function Journal() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label htmlFor="journal-date" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                       <Calendar className="h-3 w-3" />
                       Date
-                    </label>
-                    <Input
-                      id="journal-date"
-                      type="date"
-                      value={newEntry.entryDate}
-                      onChange={(e) => setNewEntry({ ...newEntry, entryDate: e.target.value })}
-                      className="bg-background/60 border-border/50 h-11"
+                    </span>
+                    <DatePicker
+                      date={newEntry.entryDate ? parseLocalDateInput(newEntry.entryDate) ?? undefined : undefined}
+                      onDateChange={(d) => setNewEntry({ ...newEntry, entryDate: d ? toLocalDateInput(d) : '' })}
+                      placeholder="Pick a date"
+                      className="w-full bg-background/60 border-border/50 h-11"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1815,16 +1815,16 @@ export default function Journal() {
                       Date Range
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                      <DatePicker
+                        date={dateRange.start ? parseLocalDateInput(dateRange.start) ?? undefined : undefined}
+                        onDateChange={(d) => setDateRange({ ...dateRange, start: d ? toLocalDateInput(d) : '' })}
+                        placeholder="Start date"
                         className="bg-background/50 border-muted-foreground/20 w-full"
                       />
-                      <Input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                      <DatePicker
+                        date={dateRange.end ? parseLocalDateInput(dateRange.end) ?? undefined : undefined}
+                        onDateChange={(d) => setDateRange({ ...dateRange, end: d ? toLocalDateInput(d) : '' })}
+                        placeholder="End date"
                         className="bg-background/50 border-muted-foreground/20 w-full"
                       />
                     </div>

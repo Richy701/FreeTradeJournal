@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar } from '@phosphor-icons/react'
+import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
@@ -31,8 +31,8 @@ import { MARKET_INSTRUMENTS, quantityLabelForMarket, type MarketType } from '@/c
 import { PropFirmSelect } from '@/components/prop-firm-select'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
-import { ProNudgeBanner } from '@/components/pro-nudge-banner'
 import { ReferralBanner } from '@/components/referral-banner'
+import { useLoggingStreak } from '@/hooks/use-logging-streak'
 import { GettingStartedChecklist } from '@/components/getting-started-checklist'
 import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
 import { recordFirstTradeIfNeeded } from '@/lib/first-trade'
@@ -689,7 +689,6 @@ export default function Dashboard() {
       <SiteHeader />
 
       <GettingStartedChecklist refreshKey={dataVersion} />
-      <ProNudgeBanner />
 
       <ImportInsightDialog
         open={!!importInsightTrades}
@@ -1548,6 +1547,7 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
   const { themeColors, alpha } = useThemePresets()
   const { formatCurrency } = useSettings()
   const { period } = useDashboardPeriod()
+  const { streak: loggingStreak } = useLoggingStreak()
 
   if (!allTrades || allTrades.length === 0) {
     return (
@@ -1605,6 +1605,15 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
       {trades.length} trades
     </span>
   )
+
+  if (loggingStreak >= 2) {
+    chips.push(
+      <span key="logstreak" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
+        <Fire className="h-3 w-3" weight="bold" />
+        {loggingStreak}-day logging streak
+      </span>
+    )
+  }
 
   if (streak >= 3 && streakPositive) {
     chips.push(

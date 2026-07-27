@@ -28,7 +28,7 @@ import { FeedbackButton } from '@/components/ui/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProBadge } from '@/components/pro-badge'
 import { useProStatus } from '@/contexts/pro-context'
-import { useLoggingStreak } from '@/hooks/use-logging-streak'
+import { useLoggingStreak, isWeekend } from '@/hooks/use-logging-streak'
 
 import { NavMain } from "@/components/nav-main"
 import { AccountSwitcher } from "@/components/account-switcher"
@@ -93,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const trialDaysLeft = trialEndsAt
     ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
     : null
-  const { streak, loggedToday } = useLoggingStreak()
+  const { streak, bestStreak, loggedToday } = useLoggingStreak()
   const { pathname } = useLocation()
   const { isMobile, setOpenMobile } = useSidebar()
   const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
@@ -154,9 +154,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="font-semibold tabular-nums" style={{ color: themeColors.primary }}>
               {streak}-day streak
             </span>
-            {!loggedToday && (
+            {!loggedToday && !isWeekend(new Date()) ? (
               <span className="text-xs text-muted-foreground ml-auto">Log today!</span>
-            )}
+            ) : bestStreak > streak ? (
+              <span className="text-xs text-muted-foreground ml-auto tabular-nums">Best: {bestStreak}</span>
+            ) : null}
           </div>
           {!isPro && streak >= 7 && !localStorage.getItem(`pro-nudge-streak-${user.uid}`) && (
             <Link
