@@ -6,13 +6,30 @@ import { useThemePresets } from '@/contexts/theme-presets';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
 
+interface ReferralTier {
+  count: number;
+  days: number;
+}
+
 interface ReferralStats {
   referralCount: number;
   referralCode: string;
   rewardThreshold: number;
+  nextTierDays?: number;
   referralProExpiresAt: string | null;
   rewardEarned: boolean;
+  tiers?: ReferralTier[];
+  tiersGranted?: number[];
 }
+
+// Mirrors REFERRAL_TIERS in functions/src/index.ts — fallback for when the
+// stats call fails or an older function build doesn't return tiers yet.
+const DEFAULT_TIERS: ReferralTier[] = [
+  { count: 3, days: 14 },
+  { count: 10, days: 30 },
+  { count: 25, days: 90 },
+  { count: 50, days: 180 },
+];
 
 export function ReferralCard() {
   const { user, isDemo } = useAuth();
@@ -78,7 +95,10 @@ export function ReferralCard() {
   if (!user || isDemo || loading) return null;
 
   const count = stats?.referralCount || 0;
-  const threshold = 3;
+  const tiers = stats?.tiers?.length ? stats.tiers : DEFAULT_TIERS;
+  const granted = stats?.tiersGranted ?? [];
+  const nextTier = tiers.find((t) => !granted.includes(t.count));
+  const threshold = nextTier?.count ?? tiers[tiers.length - 1].count;
   const remaining = Math.max(0, threshold - count);
   const progress = Math.min(count / threshold, 1);
 
@@ -87,28 +107,28 @@ export function ReferralCard() {
       <div>
         <p className="text-sm font-medium">Invite Friends</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {stats?.rewardEarned
-            ? 'You earned 14 days of Pro. Keep sharing to help fellow traders.'
-            : `Refer ${threshold} friends, get 14 days of Pro free.`
-          }
+          {nextTier
+            ? `Refer friends, earn free Pro — ${nextTier.days} days at ${nextTier.count} referrals, and bigger rewards at every tier after.`
+            : 'You reached every referral tier. Keep sharing to help fellow traders.'}
         </p>
       </div>
 
-      {/* Progress toward reward */}
-      {stats?.rewardEarned ? (
+      {/* Earned so far */}
+      {stats?.rewardEarned && stats.referralProExpiresAt && (
         <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-amber-500/10 border border-amber-500/20">
           <Crown className="h-4 w-4 text-amber-500 shrink-0" />
           <div className="flex-1">
-            <span className="text-sm font-medium text-amber-500">14 days of Pro earned</span>
-            {stats.referralProExpiresAt && (
-              <p className="text-xs text-muted-foreground">
-                Expires {new Date(stats.referralProExpiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
-            )}
+            <span className="text-sm font-medium text-amber-500">Free Pro earned</span>
+            <p className="text-xs text-muted-foreground">
+              Yours until {new Date(stats.referralProExpiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
           </div>
           <span className="text-xs font-medium text-muted-foreground">{count} referred</span>
         </div>
-      ) : (
+      )}
+
+      {/* Progress toward the next tier — always shown while one remains */}
+      {nextTier && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5">
@@ -116,7 +136,7 @@ export function ReferralCard() {
               <span className="font-medium">{count} / {threshold} friends</span>
             </span>
             <span className="text-muted-foreground">
-              {remaining} more for free Pro
+              {remaining} more for {nextTier.days} days of Pro
             </span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -125,6 +145,9 @@ export function ReferralCard() {
               style={{ width: `${progress * 100}%`, backgroundColor: themeColors.primary }}
             />
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            {tiers.map((t) => `${t.days} days at ${t.count}`).join(' · ')}{' '}referrals
+          </p>
         </div>
       )}
 

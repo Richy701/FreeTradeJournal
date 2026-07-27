@@ -46,7 +46,7 @@ const AFFILIATE_FAQS = [
   },
 ];
 
-type Market = 'Futures' | 'Forex' | 'Forex + Futures';
+type Market = 'Futures' | 'Forex' | 'Forex + Futures' | 'Social Trading' | 'Charting';
 
 interface PropFirm {
   id: string;
@@ -116,7 +116,32 @@ const MARKET_STYLES: Record<Market, string> = {
   Forex: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
   Futures: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
   'Forex + Futures': 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+  'Social Trading': 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  Charting: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
 };
+
+// Trading apps we use and recommend — same card layout as the prop firms,
+// rendered in their own section so the firm list stays purely prop firms.
+const APPS: PropFirm[] = [
+  {
+    id: 'tradingview',
+    name: 'TradingView',
+    logo: '/images/partners/tradingview.png',
+    market: 'Charting',
+    blurb: 'The charting platform most of our users already trade from. Real-time data across forex, futures, stocks, and crypto, with the best charting tools in the business.',
+    discount: '$15 off your first paid plan',
+    url: 'https://www.tradingview.com/?aff_id=169113',
+  },
+  {
+    id: 'involio',
+    name: 'Involio',
+    logo: '/images/partners/involio.png',
+    market: 'Social Trading',
+    blurb: 'A social trading network where shared track records are verified against real broker data. Follow traders with proven results, share your own, and cut through the fake-guru noise.',
+    discount: '',
+    url: 'https://invoapp.com/join/richy701',
+  },
+];
 
 function CopyButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -286,6 +311,29 @@ export default function Affiliate() {
             <div className="flex flex-col gap-4">
               {FIRMS.map((firm) => (
                 <FirmRow key={firm.id} firm={firm} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 sm:px-6 bg-background">
+          <div className="container mx-auto max-w-4xl">
+            <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Apps we use</p>
+                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                  Beyond the<br />
+                  <span className="text-amber-500">journal.</span>
+                </h2>
+              </div>
+              <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
+                Trading apps we genuinely use alongside FreeTradeJournal.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {APPS.map((app) => (
+                <FirmRow key={app.id} firm={app} />
               ))}
             </div>
           </div>

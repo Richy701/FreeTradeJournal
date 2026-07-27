@@ -1498,6 +1498,44 @@ exports.recordReferral = functions.https.onCall(async (data, context) => {
     }
     return { ok: true };
 });
+// ─── Referral Reward Tiers ──────────────────────────────────
+// Repeatable ladder: each tier crossed ADDS Pro days on top of the current
+// entitlement, extending from whichever is later — now or the existing expiry.
+// Granted tiers are recorded in referralTiersGranted so a recount can never
+// double-grant. Legacy rewardees (referralProExpiresAt set before tiers
+// existed) are treated as having the 3-referral tier already.
+const REFERRAL_TIERS = [
+    { count: 3, days: 14 },
+    { count: 10, days: 30 },
+    { count: 25, days: 90 },
+    { count: 50, days: 180 },
+];
+function referralTiersGrantedOf(data) {
+    return data?.referralTiersGranted || (data?.referralProExpiresAt ? [3] : []);
+}
+// Returns the Firestore update (possibly empty) for tiers newly crossed at
+// newCount, and the total days granted. Shared by the live counting path in
+// markFirstTrade and the deferred-referral processor so they can't drift.
+function computeReferralTierGrant(referrerData, newCount) {
+    const granted = referralTiersGrantedOf(referrerData);
+    const crossed = REFERRAL_TIERS.filter((t) => newCount >= t.count && !granted.includes(t.count));
+    if (crossed.length === 0)
+        return { update: {}, grantedDays: 0 };
+    const grantedDays = crossed.reduce((sum, t) => sum + t.days, 0);
+    const existing = referrerData?.referralProExpiresAt
+        ? new Date(referrerData.referralProExpiresAt).getTime()
+        : 0;
+    const base = Math.max(Date.now(), existing);
+    return {
+        update: {
+            // Entitlement comes from the expiry date alone (isEntitledPro + client
+            // pro-context) — never write isPro, which the Stripe webhook owns.
+            referralProExpiresAt: new Date(base + grantedDays * 24 * 60 * 60 * 1000).toISOString(),
+            referralTiersGranted: [...granted, ...crossed.map((t) => t.count)],
+        },
+        grantedDays,
+    };
+}
 // ─── Get Referral Stats ─────────────────────────────────────
 exports.getReferralStats = functions.https.onCall(async (_data, context) => {
     if (!context.auth) {
@@ -1508,13 +1546,18 @@ exports.getReferralStats = functions.https.onCall(async (_data, context) => {
     const data = userDoc.data() || {};
     const referralCount = data.referralCount || 0;
     const referralProExpiresAt = data.referralProExpiresAt || null;
-    const rewardThreshold = 3;
+    const tiersGranted = referralTiersGrantedOf(data);
+    const nextTier = REFERRAL_TIERS.find((t) => !tiersGranted.includes(t.count));
     return {
         referralCount,
         referralCode: uid,
-        rewardThreshold,
+        // Next unearned tier's threshold (legacy clients read this as "the" goal)
+        rewardThreshold: nextTier?.count ?? REFERRAL_TIERS[REFERRAL_TIERS.length - 1].count,
+        nextTierDays: nextTier?.days ?? 0,
         referralProExpiresAt,
-        rewardEarned: referralCount >= rewardThreshold && !!referralProExpiresAt,
+        rewardEarned: tiersGranted.length > 0 && !!referralProExpiresAt,
+        tiers: REFERRAL_TIERS,
+        tiersGranted,
     };
 });
 // ─── Mark First Trade (client can't write users doc directly) ──
@@ -1593,37 +1636,33 @@ exports.markFirstTrade = functions.https.onCall(async (_data, context) => {
             }
             // All checks passed — mark as counted
             await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
-            const REFERRAL_REWARD_THRESHOLD = 3;
-            const REFERRAL_REWARD_DAYS = 14;
             const referrerDoc = await db.collection("users").doc(referrerUid).get();
             if (!referrerDoc.exists)
                 return { ok: true };
             const prevCount = referrerDoc.data()?.referralCount || 0;
             const newCount = prevCount + 1;
+            const { update: tierUpdate, grantedDays } = computeReferralTierGrant(referrerDoc.data(), newCount);
             const referrerUpdate = {
                 referralCount: admin.firestore.FieldValue.increment(1),
+                ...tierUpdate,
             };
-            if (newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt) {
-                const expiresAt = new Date(Date.now() + REFERRAL_REWARD_DAYS * 24 * 60 * 60 * 1000).toISOString();
-                // Entitlement comes from the expiry date alone (isEntitledPro + client
-                // pro-context) — never write isPro, which the Stripe webhook owns.
-                // Writing it here left rewardees server-side Pro forever.
-                referrerUpdate.referralProExpiresAt = expiresAt;
-            }
             await db.collection("users").doc(referrerUid).set(referrerUpdate, { merge: true });
             // Notify the referrer
             const referrerEmail = referrerDoc.data()?.email;
             const newUserName = userRecord.displayName || userRecord.email || "Someone";
             if (referrerEmail) {
-                const rewardEarned = newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt;
+                const rewardEarned = grantedDays > 0;
+                const grantedAfter = tierUpdate.referralTiersGranted
+                    ?? referralTiersGrantedOf(referrerDoc.data());
+                const nextTier = REFERRAL_TIERS.find((t) => !grantedAfter.includes(t.count) && t.count > newCount);
                 const subject = rewardEarned
-                    ? `You earned 14 days of Pro! ${newUserName} was your 3rd referral`
+                    ? `You earned ${grantedDays} days of Pro! ${newUserName} was referral #${newCount}`
                     : `${newUserName} just started trading with your link`;
                 const html = await (0, components_1.render)(React.createElement(ReferralEmail_1.ReferralEmail, {
                     rewardEarned,
                     newUserName,
-                    remaining: Math.max(REFERRAL_REWARD_THRESHOLD - newCount, 0),
-                    rewardDays: REFERRAL_REWARD_DAYS,
+                    remaining: nextTier ? Math.max(nextTier.count - newCount, 0) : 0,
+                    rewardDays: rewardEarned ? grantedDays : (nextTier?.days ?? 0),
                 }));
                 await getResend().emails.send({
                     from: FROM_EMAIL,
@@ -1731,20 +1770,13 @@ exports.processDeferredReferrals = functions.pubsub
         }
         // All checks passed — count it
         await db.collection("users").doc(uid).set({ referralCounted: true }, { merge: true });
-        const REFERRAL_REWARD_THRESHOLD = 3;
-        const REFERRAL_REWARD_DAYS = 14;
         const prevCount = referrerDoc.data()?.referralCount || 0;
         const newCount = prevCount + 1;
+        const { update: tierUpdate } = computeReferralTierGrant(referrerDoc.data(), newCount);
         const referrerUpdate = {
             referralCount: admin.firestore.FieldValue.increment(1),
+            ...tierUpdate,
         };
-        if (newCount >= REFERRAL_REWARD_THRESHOLD && !referrerDoc.data()?.referralProExpiresAt) {
-            const expiresAt = new Date(Date.now() + REFERRAL_REWARD_DAYS * 24 * 60 * 60 * 1000).toISOString();
-            // Entitlement comes from the expiry date alone (isEntitledPro + client
-            // pro-context) — never write isPro, which the Stripe webhook owns.
-            // Writing it here left rewardees server-side Pro forever.
-            referrerUpdate.referralProExpiresAt = expiresAt;
-        }
         await db.collection("users").doc(referrerUid).set(referrerUpdate, { merge: true });
         processed++;
         console.log(`Deferred referral counted: ${uid} → referrer ${referrerUid} (now ${newCount})`);

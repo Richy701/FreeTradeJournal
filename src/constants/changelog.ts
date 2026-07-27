@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.65.0',
+    date: '2026-07-27',
+    summary: 'Referral rewards now keep growing: every tier of referrals earns you more free Pro time.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Referral rewards now come in tiers',
+        description: 'Referring friends used to earn one reward and stop. Now the rewards keep coming: 3 referrals earns 14 days of Pro, 10 earns another 30 days, 25 earns another 90, and 50 earns another 180 — each new tier stacks on top of the Pro time you already have. If you earned the old reward, your referrals still count toward the new tiers. A referral counts when your friend signs up with your link and logs their first trade. Find your link under Invite Friends on your profile.',
+      },
+    ],
+  },
+  {
     version: '2.64.3',
     date: '2026-07-27',
     summary: 'Fixed a crash that stopped the Trade Log page from opening for some traders.',
@@ -2222,4 +2235,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.64.3'
+export const LATEST_CHANGELOG_VERSION = '2.65.0'

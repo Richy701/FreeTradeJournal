@@ -120,7 +120,7 @@ export function ReferralBanner() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="text-sm sm:text-base font-semibold text-foreground">
-                  Invite friends, earn 14 days of Pro free
+                  Invite friends, earn free Pro — rewards grow with every tier
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                   Share your link with {remaining} more friend{remaining !== 1 ? 's' : ''} who sign up and log a trade.
