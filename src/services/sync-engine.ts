@@ -1,9 +1,7 @@
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-lazy';
-import { UserStorage, isSettingsDirty, clearSettingsDirty } from '@/utils/user-storage';
+import { UserStorage, isSettingsDirty, clearSettingsDirty, SYNC_KEYS, SYNC_DIRTY_PREFIX } from '@/utils/user-storage';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
-// Keys we sync between localStorage and Firestore
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
 type SyncKey = typeof SYNC_KEYS[number];
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
@@ -14,10 +12,12 @@ type ChangeListener = (key: string) => void;
 // kept local-only (and dirty-protected) instead of failing every push.
 const MAX_SYNC_BYTES = 950_000;
 
-// Keys whose local edits couldn't be pushed yet (offline, pre-pull, oversized).
-// Persisted raw (not user_-prefixed) so it survives reloads and pulls can't
-// overwrite the unsynced local edits. Cleared per-key on successful push.
-const DIRTY_KEYS_PREFIX = 'ftj_sync_dirty_';
+// Keys whose local edits couldn't be pushed yet (offline, pre-pull, oversized,
+// or written while no engine was running — see markSyncKeyDirtyOffline in
+// user-storage.ts). Persisted raw (not user_-prefixed) so it survives reloads
+// and pulls can't overwrite the unsynced local edits. Cleared per-key on
+// successful push.
+const DIRTY_KEYS_PREFIX = SYNC_DIRTY_PREFIX;
 
 export class SyncEngine {
   private uid: string;

@@ -35,6 +35,45 @@ export function isSettingsDirty(uid: string | null): boolean {
   try { return localStorage.getItem(SETTINGS_DIRTY_PREFIX + uid) === '1'; } catch { return false; }
 }
 
+// Keys mirrored to Firestore for Pro cloud sync, and the ledger of keys whose
+// local edits haven't reached the cloud. Both live here (not sync-engine.ts)
+// because offline dirty-marking below needs them and the engine already
+// imports from this module — the engine re-exports nothing; it imports these.
+export const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
+export const SYNC_DIRTY_PREFIX = 'ftj_sync_dirty_';
+
+// Records a local edit to a synced key made while the sync engine is NOT
+// running (free user, lapsed Pro). Without a dirty mark the edit leaves no
+// trace, and if the user later upgrades, the initial pull would overwrite it
+// with the cloud snapshot frozen at downgrade time. The engine honors this
+// ledger on its next start: marked keys skip the pull and flush local → cloud.
+//
+// Mirrors the engine's pre-pull seed-shape rules so mount-time default seeding
+// can never block a real pull: empty payloads, `settings` (protected by
+// markSettingsDirty above), and default-only accounts are not marked.
+export function markSyncKeyDirtyOffline(uid: string, key: string, value: string): void {
+  if (!(SYNC_KEYS as readonly string[]).includes(key)) return;
+  if (key === 'settings') return;
+  if (value === '[]' || value === '{}' || value === '' || value === 'null') return;
+  if (key === 'accounts') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed) && parsed.every((a: { id?: string }) => a.id?.startsWith('default-'))) return;
+    } catch { /* parse error — treat as a real edit */ }
+  }
+  const ledgerKey = SYNC_DIRTY_PREFIX + uid;
+  let keys: string[] = [];
+  try {
+    const raw = localStorage.getItem(ledgerKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) keys = parsed;
+  } catch { /* corrupted ledger — rebuild from this mark */ }
+  if (!keys.includes(key)) {
+    keys.push(key);
+    try { localStorage.setItem(ledgerKey, JSON.stringify(keys)); } catch { /* ignore */ }
+  }
+}
+
 export class UserStorage {
   private static cache = new Map<string, string>();
   private static encryptionKeys = new Map<string, CryptoKey>();
@@ -108,8 +147,15 @@ export class UserStorage {
     // surface them instead of silently dropping data.
     localStorage.setItem(scopedKey, toWrite);
     // Never push the demo sandbox to the cloud — it's a throwaway fake user.
-    if (syncRef && userId && userId !== 'demo-user' && !skipSync) {
-      syncRef.syncKey(key, value);
+    if (userId && userId !== 'demo-user' && !skipSync) {
+      if (syncRef) {
+        syncRef.syncKey(key, value);
+      } else {
+        // No engine running (free user, or Pro before the engine wires up) —
+        // leave a dirty mark so a future sync start can't pull a stale cloud
+        // copy over this edit.
+        markSyncKeyDirtyOffline(userId, key, value);
+      }
     }
   }
 
@@ -138,7 +184,7 @@ export class UserStorage {
     this.readyUsers.delete(userId);
     // Raw (non user_-prefixed) per-user flags
     try { localStorage.removeItem(SETTINGS_DIRTY_PREFIX + userId); } catch { /* ignore */ }
-    try { localStorage.removeItem('ftj_sync_dirty_' + userId); } catch { /* ignore */ }
+    try { localStorage.removeItem(SYNC_DIRTY_PREFIX + userId); } catch { /* ignore */ }
   }
 
   // Drop the in-memory decrypted values and derived key for a user on logout.
