@@ -19,6 +19,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.67.0',
+    date: '2026-07-28',
+    summary: 'The coach now reads your journal entries as you save them, and Goals suggests starting targets from your own trading history.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'The coach reacts to your journal entries',
+        description: 'When you save a substantial journal entry, the coach reads it and responds with one observation about what you wrote and one question worth sitting with before your next session. It appears right after saving — no button to press — and you can turn it off with one click if it’s not for you.',
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Goal suggestions built from your own trading',
+        description: 'The Goals page no longer starts you from a blank form. Once you have a few trades logged, it suggests starting targets based on your actual numbers — like beating your average monthly profit or nudging up your win rate — and one click sets the goal.',
+      },
+    ],
+  },
+  {
+    version: '2.66.1',
+    date: '2026-07-28',
+    summary: 'Clearer guidance when a CSV import fails because the file is the wrong kind of export.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Imports now tell you when the file is the wrong export type',
+        description: 'If you upload an open-positions snapshot, an account statement, or an order history instead of a closed-trades report, the importer now says so in plain language and tells you which report to export from your broker instead of showing a generic error.',
+      },
+    ],
+  },
+  {
     version: '2.66.0',
     date: '2026-07-27',
     summary: 'A smarter logging streak that survives weekends, plus a cleaner dashboard and journal date picker.',
@@ -2265,4 +2297,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.66.0'
+export const LATEST_CHANGELOG_VERSION = '2.67.0'

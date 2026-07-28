@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCSV, findColumnIndex, parseCSVHeaders, dateFromFileName } from './csv-parser';
+import { parseCSV, findColumnIndex, parseCSVHeaders, dateFromFileName, detectNonTradeExport } from './csv-parser';
 
 describe('findColumnIndex', () => {
   it('prefers an exact header match over a substring collision', () => {
@@ -455,5 +455,44 @@ describe('dateFromFileName', () => {
 
   it('returns null when the filename has no date', () => {
     expect(dateFromFileName('my-trades.csv')).toBeNull();
+  });
+});
+
+describe('detectNonTradeExport', () => {
+  it('flags an open-positions snapshot (unrealized P/L, no realized result)', () => {
+    expect(detectNonTradeExport(['Symbol', 'Position', 'Avg Price', 'Current Price', 'Market Value', 'Unrealized P/L']))
+      .toBe('open-positions');
+  });
+
+  it('flags an account statement (balances and transfers, no instrument)', () => {
+    expect(detectNonTradeExport(['Date', 'Description', 'Deposit', 'Withdrawal', 'Balance']))
+      .toBe('account-statement');
+  });
+
+  it('flags an order history (order lifecycle columns, no realized result)', () => {
+    expect(detectNonTradeExport(['Order ID', 'Symbol', 'Side', 'Qty', 'Limit Price', 'Status', 'Time in Force']))
+      .toBe('order-history');
+  });
+
+  it('never flags a file that carries a realized result column', () => {
+    expect(detectNonTradeExport(['Symbol', 'Side', 'Qty', 'Entry', 'Exit', 'Realized P/L', 'Status']))
+      .toBeNull();
+    expect(detectNonTradeExport(['Ticket', 'Symbol', 'Profit', 'Balance', 'Deposit', 'Withdrawal']))
+      .toBeNull();
+  });
+
+  it('stays null for an ordinary unrecognized trade export', () => {
+    expect(detectNonTradeExport(['Instrument', 'Direction', 'Entry Price', 'Exit Price', 'Contracts', 'Result']))
+      .toBeNull();
+  });
+
+  it('surfaces the plain-English message from parseCSV on a wrong file', () => {
+    const csv = [
+      'Symbol,Position,Avg Price,Current Price,Market Value,Unrealized P/L',
+      'AAPL,100,180.50,182.10,18210.00,160.00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(false);
+    expect(r.errors[0]).toContain('open positions');
   });
 });

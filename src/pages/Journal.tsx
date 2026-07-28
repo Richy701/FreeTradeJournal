@@ -36,6 +36,7 @@ import {
   Brain
 } from '@phosphor-icons/react';
 import { AIJournalReview } from '@/components/ai-journal-review';
+import { AIJournalOnSave, type OnSaveCoachData } from '@/components/ai-journal-onsave';
 import { format } from 'date-fns';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
@@ -265,6 +266,7 @@ export default function Journal() {
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
   const [showNewEntry, setShowNewEntry] = useState(false);
   const [aiReviewOpen, setAiReviewOpen] = useState(false);
+  const [onSaveCoachData, setOnSaveCoachData] = useState<OnSaveCoachData | null>(null);
   // In-editor writing coach: 2-3 AI follow-up questions on the current draft
   const [coachQuestions, setCoachQuestions] = useState<string | null>(null);
   const [coachLoading, setCoachLoading] = useState(false);
@@ -701,6 +703,37 @@ export default function Journal() {
       setShowNewEntry(false);
       trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new' });
       toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
+
+      // On-save coach: the entry is durably saved, so let the coach react to
+      // substantial NEW entries automatically. Locals (newEntry, selectedTrade)
+      // are still the pre-reset values within this call.
+      if (
+        !editingEntry &&
+        hasAIAccess &&
+        !isDemo &&
+        newEntry.content.trim().length >= 80 &&
+        userStorage.getItem('journalOnSaveCoachDisabled') !== '1'
+      ) {
+        const today = toLocalDateInput(new Date());
+        let dayPnl = 0;
+        let tradeCount = 0;
+        for (const t of trades) {
+          if (toLocalDateInput(new Date(t.exitTime)) !== today) continue;
+          dayPnl += Number(t.pnl) || 0;
+          tradeCount++;
+        }
+        setOnSaveCoachData({
+          content: newEntry.content,
+          mood: newEntry.mood,
+          emotions: newEntry.emotions,
+          entryType: newEntry.entryType,
+          currency: getCurrencySymbol(),
+          dayStats: { tradeCount, dayPnl },
+          trade: selectedTrade
+            ? { symbol: selectedTrade.symbol, side: selectedTrade.side, pnl: Number(selectedTrade.pnl) || 0 }
+            : undefined,
+        });
+      }
     } catch (err) {
       console.error('Failed to save journal entry:', err);
       // The entry itself didn't land — clean up images stored during this save
@@ -2230,6 +2263,15 @@ export default function Journal() {
         onOpenChange={setAiReviewOpen}
         entries={entries}
         trades={trades}
+      />
+
+      <AIJournalOnSave
+        data={onSaveCoachData}
+        onClose={() => setOnSaveCoachData(null)}
+        onDisable={() => {
+          userStorage.setItem('journalOnSaveCoachDisabled', '1');
+          setOnSaveCoachData(null);
+        }}
       />
 
       {/* Image Lightbox */}

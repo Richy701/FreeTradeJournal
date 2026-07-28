@@ -1565,6 +1565,50 @@ function isNinjaTraderGrid(headers: string[]): boolean {
   return hasMarketPos && hasProfit && hasCommission;
 }
 
+// Wrong-file detection: people upload open-position snapshots, account
+// statements, or order histories — files that can never map to closed trades
+// because the required columns (close price, realized P&L) don't exist in
+// them. Only consulted after parsing has already failed, so a match means
+// "wrong export type", not "unrecognized format".
+export type NonTradeExportKind = 'open-positions' | 'account-statement' | 'order-history';
+
+export const NON_TRADE_EXPORT_MESSAGES: Record<NonTradeExportKind, string> = {
+  'open-positions': 'This file looks like a snapshot of your open positions — it has no closing prices or final profit. In your broker, export your closed trades (sometimes called trade history or realized P&L) and import that instead.',
+  'account-statement': 'This file looks like an account statement — deposits, withdrawals and balances, not trades. In your broker, export your closed trades (sometimes called trade history) and import that instead.',
+  'order-history': 'This file looks like a list of individual orders, not completed trades. In your broker, export your closed trades or trade history report and import that instead.',
+};
+
+export function detectNonTradeExport(headers: string[]): NonTradeExportKind | null {
+  const h = headers.map(x => x.trim().toLowerCase());
+  const anyCol = (...terms: string[]) => terms.some(t => h.some(col => col.includes(t)));
+
+  // A realized-result column means the file is the right kind and just needs
+  // column mapping — never steer those users away.
+  const hasRealizedResult = h.some(col =>
+    (col.includes('pnl') || col.includes('p&l') || col.includes('p/l') ||
+     col.includes('profit') || col.includes('realized') || col.includes('realised') ||
+     col.includes('gain')) &&
+    !col.includes('unrealized') && !col.includes('unrealised')
+  );
+  if (hasRealizedResult) return null;
+
+  if (anyCol('unrealized', 'unrealised', 'market value', 'current price', 'last price')) {
+    return 'open-positions';
+  }
+
+  const statementSignals = ['balance', 'deposit', 'withdrawal', 'credit', 'debit']
+    .filter(t => h.some(col => col.includes(t))).length;
+  const hasInstrument = anyCol('symbol', 'instrument', 'ticker', 'contract', 'market');
+  if (statementSignals >= 2 && !hasInstrument) return 'account-statement';
+
+  if (anyCol('time in force', 'order status', 'order state') ||
+      (anyCol('status') && anyCol('limit price', 'stop price', 'order type'))) {
+    return 'order-history';
+  }
+
+  return null;
+}
+
 export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fileName?: string }): CSVParseResult {
   // Strip BOM character that some exports (e.g. Topstep) include
   csvContent = csvContent.replace(/^\uFEFF/, '');
@@ -1645,6 +1689,8 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fil
     const missingColumns = requiredColumns.filter(col => columnIndices[col as keyof typeof columnIndices] === -1);
 
     if (missingColumns.length > 0) {
+      const wrongFile = detectNonTradeExport(headers);
+      if (wrongFile) result.errors.push(NON_TRADE_EXPORT_MESSAGES[wrongFile]);
       result.errors.push(`Missing required columns: ${missingColumns.join(', ')}`);
       result.errors.push(`Available columns: ${headers.join(', ')}`);
       return result;

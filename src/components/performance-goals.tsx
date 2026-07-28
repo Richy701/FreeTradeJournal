@@ -131,6 +131,82 @@ function formatCurrentValue(goal: { type: string; current?: number }, sym: strin
   }
 }
 
+// Round up to a "nice" target number (1 / 2 / 2.5 / 5 steps per decade).
+function niceCeil(x: number): number {
+  if (x <= 0) return 0
+  const mag = Math.pow(10, Math.floor(Math.log10(x)))
+  for (const step of [1, 2, 2.5, 5, 10]) {
+    if (mag * step >= x) return mag * step
+  }
+  return mag * 10
+}
+
+interface GoalSuggestion {
+  type: Goal['type']
+  period: Goal['period']
+  target: number
+  headline: string
+  detail: string
+}
+
+// Starter goals derived from the trader's own history, shown in the empty
+// state so the first goal is one click instead of a blank form. Only offered
+// once there's enough history to say something honest about.
+function computeGoalSuggestions(trades: { pnl?: unknown; exitTime: Date }[], sym: string): GoalSuggestion[] {
+  if (trades.length < 5) return []
+  const out: GoalSuggestion[] = []
+
+  const byMonth = new Map<string, number>()
+  const weeks = new Set<number>()
+  let wins = 0
+  for (const t of trades) {
+    const pnl = Number(t.pnl) || 0
+    const d = new Date(t.exitTime)
+    const monthKey = `${d.getFullYear()}-${d.getMonth()}`
+    byMonth.set(monthKey, (byMonth.get(monthKey) || 0) + pnl)
+    weeks.add(Math.floor(d.getTime() / (7 * 24 * 60 * 60 * 1000)))
+    if (pnl > 0) wins++
+  }
+
+  const avgMonth = [...byMonth.values()].reduce((a, b) => a + b, 0) / byMonth.size
+  if (avgMonth > 0) {
+    const target = niceCeil(avgMonth * 1.15)
+    out.push({
+      type: 'profit',
+      period: 'monthly',
+      target,
+      headline: `Your average month is +${sym}${Math.round(avgMonth).toLocaleString()}`,
+      detail: `Beat it with a ${sym}${target.toLocaleString()} monthly profit target.`,
+    })
+  }
+
+  const winRate = (wins / trades.length) * 100
+  if (trades.length >= 10 && winRate >= 30 && winRate < 65) {
+    const target = Math.min(70, Math.ceil((winRate + 5) / 5) * 5)
+    out.push({
+      type: 'winRate',
+      period: 'weekly',
+      target,
+      headline: `You win ${winRate.toFixed(0)}% of your trades`,
+      detail: `Aim for ${target}% each week by skipping the setups you already know are marginal.`,
+    })
+  }
+
+  const avgPerWeek = trades.length / Math.max(1, weeks.size)
+  if (avgPerWeek >= 2) {
+    const target = Math.max(3, Math.round(avgPerWeek))
+    out.push({
+      type: 'trades',
+      period: 'weekly',
+      target,
+      headline: `You average ${Math.round(avgPerWeek)} trades a week`,
+      detail: `A steady ${target}-trade week keeps you showing up without overtrading.`,
+    })
+  }
+
+  return out.slice(0, 3)
+}
+
 // Helper: icon for risk rule type
 function getRuleIcon(type: string): Icon {
   const icons: Record<string, Icon> = {
@@ -348,6 +424,19 @@ export function PerformanceGoals() {
   // the Profile "Active Goals" widget so both surfaces show the same numbers.
   const goalProgress = useMemo(() => computeGoalProgress(goals, trades), [goals, trades])
 
+  // Empty-state goal suggestions from the trader's own trade history.
+  const goalSuggestions = useMemo(
+    () => (goalProgress.length === 0 ? computeGoalSuggestions(trades, currencySymbol) : []),
+    [goalProgress.length, trades, currencySymbol]
+  )
+  const suggestionsShownRef = useRef(false)
+  useEffect(() => {
+    if (goalSuggestions.length > 0 && !suggestionsShownRef.current) {
+      suggestionsShownRef.current = true
+      trackEvent('goal_suggestions_shown', { count: goalSuggestions.length })
+    }
+  }, [goalSuggestions.length])
+
   // Detect *newly* achieved goals and celebrate + persist (side effect lives
   // here, not inside the render-time useMemo above).
   useEffect(() => {
@@ -483,6 +572,7 @@ export function PerformanceGoals() {
   }
 
   const openAddGoal = () => {
+    trackEvent('goal_dialog_opened')
     setEditingGoal(null)
     setNewGoal({ type: 'profit', period: 'monthly', target: 1000 })
     setShowGoalDialog(true)
@@ -659,22 +749,63 @@ export function PerformanceGoals() {
         </div>
 
         {goalProgress.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-12 px-6 text-center">
-            <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
-              <Target className="h-6 w-6" style={{ color: themeColors.primary }} />
+          goalSuggestions.length > 0 ? (
+            <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-8 px-6">
+              <div className="text-center mb-6">
+                <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
+                  <Target className="h-6 w-6" style={{ color: themeColors.primary }} />
+                </div>
+                <h3 className="text-sm font-semibold mb-1">Start from your own numbers</h3>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  These come from your last {trades.length} trades. Pick one to start with — you can change the target any time.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                {goalSuggestions.map(s => (
+                  <div key={s.type} className="rounded-lg border border-border bg-card p-4 flex flex-col">
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      {getGoalLabel(s.type)}
+                    </span>
+                    <p className="text-sm font-semibold mt-1.5">{s.headline}</p>
+                    <p className="text-xs text-muted-foreground mt-1 flex-1">{s.detail}</p>
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => {
+                        trackEvent('goal_suggestion_accepted', { type: s.type, period: s.period })
+                        createGoal({ type: s.type, period: s.period, target: s.target })
+                      }}
+                      style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
+                    >
+                      Set this goal
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="text-center mt-4">
+                <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={openAddGoal}>
+                  or create your own
+                </Button>
+              </div>
             </div>
-            <h3 className="text-sm font-semibold mb-1">No goals set yet</h3>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">
-              Goals give your trading direction. Set a profit target, win rate, or trade count and track your progress over time.
-            </p>
-            <Button
-              size="sm"
-              onClick={openAddGoal}
-              style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
-            >
-              Set your first goal
-            </Button>
-          </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-12 px-6 text-center">
+              <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
+                <Target className="h-6 w-6" style={{ color: themeColors.primary }} />
+              </div>
+              <h3 className="text-sm font-semibold mb-1">No goals set yet</h3>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">
+                Goals give your trading direction. Set a profit target, win rate, or trade count and track your progress over time.
+              </p>
+              <Button
+                size="sm"
+                onClick={openAddGoal}
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
+              >
+                Set your first goal
+              </Button>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {goalProgress.map(goal => {

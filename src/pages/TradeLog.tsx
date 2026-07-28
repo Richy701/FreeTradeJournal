@@ -46,7 +46,7 @@ import {
 import { Pie, PieChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker, DatePicker } from '@/components/ui/date-picker';
-import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, type CSVParseResult } from '@/utils/csv-parser';
+import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
@@ -821,15 +821,23 @@ export default function TradeLog() {
         // Telemetry: surface unsupported formats proactively. Column names only —
         // no row/trade data — so this carries no PII.
         const headers = parseCSVHeaders(content);
+        const wrongFileKind = detectNonTradeExport(headers);
         trackEvent('csv_import_failed', {
           source: 'tradelog',
           signature: headerSignature(headers),
           column_count: headers.length,
           headers: headers.slice(0, 40),
           error: result.errors[0],
+          wrong_file_kind: wrongFileKind,
         });
-        // Nudge free users toward the Pro AI auto-mapper.
-        if (!isPro && !isDemo) {
+        if (wrongFileKind) {
+          // Column mapping can't rescue these — the closing data isn't in the file.
+          toast('This doesn’t look like a closed-trades export', {
+            description: NON_TRADE_EXPORT_MESSAGES[wrongFileKind],
+            duration: 10000,
+          });
+        } else if (!isPro && !isDemo) {
+          // Nudge free users toward the Pro AI auto-mapper.
           toast('Unrecognized format', {
             description: 'Map the columns below — or upgrade to Pro to auto-map any broker with AI.',
           });

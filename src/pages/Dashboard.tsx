@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
-import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, type CSVParseResult } from '@/utils/csv-parser'
+import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
@@ -397,15 +397,23 @@ export default function Dashboard() {
         // Telemetry: surface unsupported formats proactively. Column names only —
         // no row/trade data — so this carries no PII.
         const headers = parseCSVHeaders(content);
+        const wrongFileKind = detectNonTradeExport(headers);
         trackEvent('csv_import_failed', {
           source: 'dashboard',
           signature: headerSignature(headers),
           column_count: headers.length,
           headers: headers.slice(0, 40),
           error: result.errors[0],
+          wrong_file_kind: wrongFileKind,
         });
-        // Nudge free users toward the Pro AI auto-mapper.
-        if (!isPro && !isDemo) {
+        if (wrongFileKind) {
+          // Column mapping can't rescue these — the closing data isn't in the file.
+          toast('This doesn’t look like a closed-trades export', {
+            description: NON_TRADE_EXPORT_MESSAGES[wrongFileKind],
+            duration: 10000,
+          });
+        } else if (!isPro && !isDemo) {
+          // Nudge free users toward the Pro AI auto-mapper.
           toast('Unrecognized format', {
             description: 'Map the columns below — or upgrade to Pro to auto-map any broker with AI.',
           });
