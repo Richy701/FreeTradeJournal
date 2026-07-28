@@ -4,6 +4,7 @@ import React from "react";
 import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { LIFETIME_RETIRES_AT } from "@/constants/pricing";
 
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -267,7 +268,9 @@ function HeroGeometric({
                             animate="visible"
                             className="text-xs text-muted-foreground mt-2"
                         >
-                            Every new account starts with 14 days of Pro free · Cancel anytime
+                            {Date.now() < LIFETIME_RETIRES_AT
+                                ? 'Every new account starts with 14 days of Pro free · Cancel anytime'
+                                : 'Try Pro free for 14 days · Cancel anytime'}
                         </motion.p>
                       </>
                     )}

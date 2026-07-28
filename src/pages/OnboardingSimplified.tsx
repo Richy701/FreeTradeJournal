@@ -6,6 +6,7 @@ import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { trackEvent } from '@/lib/analytics';
 import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
+import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -630,7 +631,9 @@ export default function OnboardingSimplified() {
                   Your account is ready. Start logging trades, and your AI Coach is in the sidebar whenever you want feedback.
                 </motion.p>
                 <motion.p variants={activeFadeUpItem} className="text-sm font-medium">
-                  Your first 14 days include every Pro feature — unlimited AI coaching, cloud sync, and full analytics. No card needed.
+                  {Date.now() < LIFETIME_RETIRES_AT
+                    ? 'Your first 14 days include every Pro feature — unlimited AI coaching, cloud sync, and full analytics. No card needed.'
+                    : 'Want every Pro feature — unlimited AI coaching, cloud sync, and full analytics? Any Pro plan starts with 14 days free.'}
                 </motion.p>
               </div>
 

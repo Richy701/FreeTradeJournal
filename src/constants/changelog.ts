@@ -19,6 +19,25 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.68.0',
+    date: '2026-07-28',
+    summary: 'From August 8, new-account trials will need a card up front. The free plan stays free, and anyone already on a trial keeps every day of it.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Trials require a card from August 8',
+        description: 'A week ago I asked people to stop deleting accounts and signing back up to restart the free trial, and I warned what would happen if it kept up: trials would need a card. It kept up. So here is exactly what changes. Accounts created on or after August 8 no longer start with the automatic 14-day Pro trial. Instead, the trial moves to checkout: pick the monthly or yearly plan on the Pricing page, enter a card, and the first 14 days are completely free. Your card is not charged until the trial ends, and you can cancel any time before then from Settings, then Subscription — cancel by day 14 and you pay nothing at all, your account simply continues on the free plan. It is the same 14 days of full Pro as before; the only difference is the card up front, because a card is the one thing that cannot be recreated with a fresh email address. I would rather have kept it card-free, and I am sorry the few ruined that for the many. — Richy',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'What does not change',
+        description: 'The free plan stays free forever, no card ever — unlimited trade logging, CSV import, 30 days of analytics, and up to 20 journal entries, same as today. If your trial is already running, or you sign up before August 8, you keep the card-free trial for its full 14 days and you will get an email a few days before it ends so it never catches you by surprise. Existing subscribers and lifetime owners are not affected in any way.',
+      },
+    ],
+  },
+  {
     version: '2.67.0',
     date: '2026-07-28',
     summary: 'The coach now reads your journal entries as you save them, and Goals suggests starting targets from your own trading history.',
@@ -2297,4 +2316,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.67.0'
+export const LATEST_CHANGELOG_VERSION = '2.68.0'

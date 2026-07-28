@@ -283,7 +283,9 @@ const FAQS: { q: string; a: string; lifetime?: boolean }[] = [
   },
   {
     q: 'How does the 14-day free trial work?',
-    a: 'Every new account automatically starts with 14 days of full Pro — no card required. When it ends, you keep the free plan and nothing is charged. Upgrade anytime to keep Pro.',
+    a: Date.now() < LIFETIME_RETIRES_AT
+      ? 'Every new account automatically starts with 14 days of full Pro — no card required. When it ends, you keep the free plan and nothing is charged. Upgrade anytime to keep Pro.'
+      : 'Start a Pro monthly or yearly plan and the first 14 days are free. Cancel before the trial ends and nothing is charged — you just go back to the free plan.',
   },
   {
     q: 'Can I cancel my Pro subscription anytime?',
@@ -569,7 +571,7 @@ export default function Pricing() {
                   {checkoutLoading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
                   {user ? 'Get Pro' : 'Get Started Free'}
                 </Button>
-                <p className="text-xs text-muted-foreground">New accounts get 14 days of Pro free · Cancel anytime · No hidden fees</p>
+                <p className="text-xs text-muted-foreground">{Date.now() < LIFETIME_RETIRES_AT ? 'New accounts get 14 days of Pro free · Cancel anytime · No hidden fees' : '14 days of Pro free on any subscription · Cancel anytime · No hidden fees'}</p>
               </div>
             )}
           </div>

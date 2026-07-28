@@ -537,6 +537,12 @@ async function checkSignupVelocity(email: string | undefined): Promise<string | 
 // isEntitledPro below) — never from the isPro flag, which the Stripe webhook owns.
 const SIGNUP_TRIAL_DAYS = 14;
 
+// Lifetime retires for good on this date (committed publicly) — matches
+// LIFETIME_RETIRES_AT in src/constants/pricing.ts. Doubles as the cutoff for
+// the no-card signup trial: accounts created after it only get the 14-day
+// card trial at checkout (trial_period_days in createCheckoutSession).
+const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
+
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const throttleReason = await checkSignupVelocity(user.email || undefined);
 
@@ -564,8 +570,13 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       // hadTrial also blocks the Stripe card trial in createCheckoutSession,
       // so a returning user can't stack the 14-day checkout trial either.
+      // After the lifetime retirement date, no-card signup trials stop:
+      // new accounts trial only through checkout with a card on file.
+      // (hadTrial deliberately NOT set, so the card trial stays available.)
       ...(trialAlreadyUsed
         ? { hadTrial: true }
+        : Date.now() > LIFETIME_RETIRES_AT
+        ? {}
         : {
             trialProExpiresAt: new Date(
               Date.now() + SIGNUP_TRIAL_DAYS * 24 * 60 * 60 * 1000
@@ -2425,10 +2436,8 @@ export const createCheckoutSession = functions.https.onCall(
     const hadTrial = userDoc.data()?.hadTrial === true || !!userDoc.data()?.trialProExpiresAt;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
 
-    // Lifetime retires for good on this date (committed publicly) — matches
-    // LIFETIME_RETIRES_AT in src/constants/pricing.ts, where the pricing card
-    // hides itself. This guard covers stale tabs loaded before the cutoff.
-    const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
+    // The pricing card hides itself after LIFETIME_RETIRES_AT; this guard
+    // covers stale tabs loaded before the cutoff.
     if (isLifetime && Date.now() > LIFETIME_RETIRES_AT) {
       throw new functions.https.HttpsError(
         "failed-precondition",
