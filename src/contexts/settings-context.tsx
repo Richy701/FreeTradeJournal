@@ -16,6 +16,8 @@ export interface AppSettings {
   dashboardLayout?: { hidden: string[]; order: string[] };
   // Dashboard analytics period ('7d' | '30d' | '90d' | 'ytd' | 'all')
   dashboardPeriod?: string;
+  // Show P&L values as money or as percent of account balance
+  pnlDisplayMode?: 'currency' | 'percent';
   // Mirrored from the theme system by ThemeSettingsSync so the color theme
   // rides Pro cloud sync across devices. Light/dark mode is deliberately NOT
   // synced — that's a per-device preference.

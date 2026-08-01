@@ -19,6 +19,25 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.69.0',
+    date: '2026-08-01',
+    summary: 'See your results as percentages of your account, and imported trades now show their real percentage return.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Show P&L as a percentage of your account',
+        description: 'A new toggle on the Dashboard and Trade Log switches every P&L figure — per-trade results, totals, averages, best and worst — between money and percentage of your account balance. Traders who think in percentages asked for this, and it makes results comparable across account sizes. Your choice is remembered, and on Pro it follows you across devices.',
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Imported trades now show their percentage return',
+        description: 'Trades imported from a broker CSV always showed 0% as their percentage return. Imports now calculate it the same way as manually logged trades.',
+      },
+    ],
+  },
+  {
     version: '2.68.0',
     date: '2026-07-28',
     summary: 'From August 8, new-account trials will need a card up front. The free plan stays free, and anyone already on a trial keeps every day of it.',
@@ -2316,4 +2335,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.68.0'
+export const LATEST_CHANGELOG_VERSION = '2.69.0'

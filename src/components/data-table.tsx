@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
+import { usePnlDisplay } from '@/hooks/use-pnl-display'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { List, ArrowUp, ArrowDown, Plus, UploadSimple, CaretRight } from '@phosphor-icons/react'
 import { Link, useNavigate } from "react-router-dom"
@@ -54,6 +55,7 @@ function formatTradeTime(date: Date): string {
 export function DataTable({ data }: DataTableProps) {
   const { themeColors, alpha } = useThemePresets()
   const { formatCurrency } = useSettings()
+  const { mode: pnlMode, formatPnl } = usePnlDisplay()
   const { getTrades } = useDemoData()
   const navigate = useNavigate()
 
@@ -156,9 +158,13 @@ export function DataTable({ data }: DataTableProps) {
                               className="text-sm font-semibold tabular-nums"
                               style={{ color: pnlColor }}
                             >
-                              {formatCurrency(trade.pnl, true)}
+                              {formatPnl(trade.pnl)}
                             </span>
-                            {pctValue !== 0 && (
+                            {pnlMode === 'percent' ? (
+                              <span className="text-[11px] text-muted-foreground tabular-nums">
+                                {formatCurrency(trade.pnl, true)}
+                              </span>
+                            ) : pctValue !== 0 && (
                               <span className="text-[11px] text-muted-foreground tabular-nums">
                                 {isProfit ? '+' : ''}{pctValue.toFixed(2)}%
                               </span>

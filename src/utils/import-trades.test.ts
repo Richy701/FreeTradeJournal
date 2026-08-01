@@ -39,6 +39,14 @@ describe('buildImportedTrades — commission handling', () => {
     expect(t.pnl).toBeCloseTo(-75.9, 2);
     expect(t.brokerPnL - t.commission - t.fees).toBeCloseTo(t.pnl, 2);
   });
+
+  it('computes pnlPercentage instead of hardcoding 0', () => {
+    const [t] = buildImportedTrades([baseTrade], opts);
+    // MNQ futures: notional = 30220 × 2 (multiplier) × 1 contract = 60440;
+    // 47.32 net / 60440 × 100 — same formula as manually entered trades
+    expect(t.pnlPercentage).toBeCloseTo((47.32 / 60440) * 100, 4);
+    expect(t.pnlPercentage).not.toBe(0);
+  });
 });
 
 describe('detectMarketFromSymbol', () => {

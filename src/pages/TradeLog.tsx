@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePnlDisplay } from '@/hooks/use-pnl-display';
+import { PnlDisplayToggle } from '@/components/pnl-display-toggle';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
@@ -149,6 +151,7 @@ export default function TradeLog() {
   const { themeColors, alpha } = useThemePresets();
   const { settings, getCurrencySymbol } = useSettings();
   const currencySymbol = getCurrencySymbol();
+  const { mode: pnlMode, formatPnl } = usePnlDisplay();
   const { user, isDemo } = useAuth();
   const demoGuard = useDemoGuard();
   const { isPro, hasAIAccess } = useProStatus();
@@ -2154,6 +2157,9 @@ export default function TradeLog() {
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Stats */}
         <TooltipProvider>
+        <div className="flex justify-end mb-3">
+          <PnlDisplayToggle />
+        </div>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-6">
             {/* Total P&L */}
             <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
@@ -2166,22 +2172,26 @@ export default function TradeLog() {
                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                     >
                       {quickStats.totalPnL >= 0 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
-                      {quickStats.totalPnL >= 0 ? '+' : '-'}{quickStats.pnlPct.toFixed(1)}%
+                      {pnlMode === 'percent'
+                        ? `${quickStats.totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+                        : `${quickStats.totalPnL >= 0 ? '+' : '-'}${quickStats.pnlPct.toFixed(1)}%`}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="p-2 border bg-popover">
-                    <p className="text-xs">Percentage of account balance</p>
+                    <p className="text-xs">{pnlMode === 'percent' ? 'P&L in money' : 'Percentage of account balance'}</p>
                   </TooltipContent>
                 </Tooltip>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight tabular-nums"
                    style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                  {quickStats.totalPnL >= 0 ? '+' : '-'}{currencySymbol}{Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  {pnlMode === 'percent'
+                    ? `${quickStats.totalPnL >= 0 ? '+' : '-'}${quickStats.pnlPct.toFixed(2)}%`
+                    : `${quickStats.totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                    Avg {quickStats.totalTrades > 0 ? (quickStats.totalPnL / quickStats.totalTrades >= 0 ? '+' : '-') + currencySymbol + Math.abs(quickStats.totalPnL / quickStats.totalTrades).toFixed(0) : currencySymbol + '0'} per trade
+                    Avg {quickStats.totalTrades > 0 ? formatPnl(quickStats.totalPnL / quickStats.totalTrades) : formatPnl(0)} per trade
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {quickStats.totalTrades} trades recorded
@@ -2213,9 +2223,9 @@ export default function TradeLog() {
                         {Math.abs(quickStats.winRate - 50).toFixed(0)}pts {quickStats.winRate >= 50 ? 'above' : 'below'} 50%
                       </p>
                       <p className="text-xs">
-                        <span style={{ color: themeColors.profit }}>{currencySymbol}{quickStats.avgWin.toFixed(0)} avg win</span>
+                        <span style={{ color: themeColors.profit }}>{formatPnl(quickStats.avgWin, { showSign: false })} avg win</span>
                         {' / '}
-                        <span style={{ color: themeColors.loss }}>{currencySymbol}{quickStats.avgLoss.toFixed(0)} avg loss</span>
+                        <span style={{ color: themeColors.loss }}>{formatPnl(quickStats.avgLoss, { showSign: false })} avg loss</span>
                       </p>
                     </div>
                   </div>
@@ -2265,11 +2275,11 @@ export default function TradeLog() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: themeColors.profit }}>
-                  +${quickStats.bestTrade.toFixed(0)}
+                  {formatPnl(quickStats.bestTrade)}
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium" style={{ color: themeColors.loss }}>
-                    Worst: {quickStats.worstTrade < 0 ? '-' : ''}{currencySymbol}{Math.abs(quickStats.worstTrade).toFixed(0)}
+                    Worst: {formatPnl(quickStats.worstTrade)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {quickStats.totalTrades} total trades
@@ -2329,12 +2339,12 @@ export default function TradeLog() {
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
                    style={{ backgroundColor: alpha(themeColors.profit, '10') }}>
                 <span className="text-muted-foreground">Avg win</span>
-                <span style={{ color: themeColors.profit }}>{currencySymbol}{quickStats.avgWin.toFixed(0)}</span>
+                <span style={{ color: themeColors.profit }}>{formatPnl(quickStats.avgWin, { showSign: false })}</span>
               </div>
               <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
                    style={{ backgroundColor: alpha(themeColors.loss, '10') }}>
                 <span className="text-muted-foreground">Avg loss</span>
-                <span style={{ color: themeColors.loss }}>{currencySymbol}{quickStats.avgLoss.toFixed(0)}</span>
+                <span style={{ color: themeColors.loss }}>{formatPnl(quickStats.avgLoss, { showSign: false })}</span>
               </div>
               <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
                 <span className="text-muted-foreground">PF</span>
@@ -2596,11 +2606,11 @@ export default function TradeLog() {
                         <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.entryPrice, trade.symbol)}</TableCell>
                         <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.exitPrice, trade.symbol)}</TableCell>
                         <TableCell className="font-medium text-sm">{trade.lotSize}</TableCell>
-                        <TableCell 
-                          className="font-bold text-base"
+                        <TableCell
+                          className="font-bold text-base tabular-nums"
                           style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                         >
-                          {(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
+                          {formatPnl(trade.pnl ?? 0)}
                         </TableCell>
                         <TableCell className="font-medium text-sm text-muted-foreground">
                           {trade.riskReward ? `${trade.riskReward.toFixed(2)}:1` : '-'}
@@ -2701,11 +2711,11 @@ export default function TradeLog() {
                             })()}
                           </p>
                         </div>
-                        <div 
-                          className="font-bold text-xl"
+                        <div
+                          className="font-bold text-xl tabular-nums"
                           style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                         >
-                          {(trade.pnl ?? 0) >= 0 ? '+' : ''}${(trade.pnl ?? 0).toFixed(2)}
+                          {formatPnl(trade.pnl ?? 0)}
                         </div>
                       </div>
                       

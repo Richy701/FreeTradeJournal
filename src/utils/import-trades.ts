@@ -3,6 +3,7 @@
 // (Previously each page converted ParsedTrade -> Trade differently, which is how
 // the dashboard import shipped invalid dates and dropped commissions/fees.)
 import { findColumnIndex, parseCSVHeaders, type ParsedTrade } from './csv-parser';
+import { computePnlPercentage } from '@/lib/pnl';
 
 // Column synonyms offered when auto-detection fails and the user maps manually.
 // Kept in one place so the Trade Log and Dashboard mapping dialogs stay in sync.
@@ -133,13 +134,16 @@ export function buildImportedTrades(
     // the edit-time invariant (net = brokerPnL - commission - fees) still holds.
     const netPnl = trade.pnlIsNet ? reportedPnl : reportedPnl - commission - fees;
     const grossPnl = trade.pnlIsNet ? reportedPnl + commission + fees : reportedPnl;
+    const market = detectMarketFromSymbol(trade.symbol);
+    const entryPrice = parseFloat(trade.entryPrice) || 0;
+    const quantity = parseFloat(trade.quantity) || 1;
     return {
       id: `csv-${stamp}-${index}`,
       symbol: trade.symbol,
       side: trade.side,
-      entryPrice: parseFloat(trade.entryPrice) || 0,
+      entryPrice,
       exitPrice: parseFloat(trade.exitPrice) || 0,
-      lotSize: parseFloat(trade.quantity) || 1,
+      lotSize: quantity,
       entryTime: new Date(trade.entryDate || trade.date),
       exitTime: new Date(trade.exitDate || trade.date),
       spread: 0,
@@ -148,13 +152,13 @@ export function buildImportedTrades(
       swap: 0,
       pnl: netPnl,
       brokerPnL: grossPnl,
-      pnlPercentage: 0,
+      pnlPercentage: computePnlPercentage({ pnl: netPnl, symbol: trade.symbol, market, entryPrice, quantity }),
       riskReward: 0,
       notes: opts.source
         ? `Imported from ${opts.fileName} via ${opts.source}`
         : `Imported from ${opts.fileName}`,
       strategy: '',
-      market: detectMarketFromSymbol(trade.symbol),
+      market,
       accountId: opts.accountId,
     };
   });

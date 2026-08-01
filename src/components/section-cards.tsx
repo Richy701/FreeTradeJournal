@@ -4,6 +4,8 @@ import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { usePnlDisplay } from '@/hooks/use-pnl-display'
+import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
 import { TrendUp, TrendDown } from '@phosphor-icons/react'
 import { Link } from "react-router-dom"
 import {
@@ -45,6 +47,7 @@ export function SectionCards() {
   const { activeAccount } = useAccounts()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()
+  const { mode: pnlMode, formatPnl } = usePnlDisplay()
 
   // Get trades from demo data or localStorage, narrowed to the dashboard period
   const trades = useMemo(() => {
@@ -157,6 +160,9 @@ export function SectionCards() {
 
   return (
     <TooltipProvider>
+      <div className="flex justify-end mb-3">
+        <PnlDisplayToggle />
+      </div>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 overflow-visible">
 
         {/* Total P&L */}
@@ -171,11 +177,13 @@ export function SectionCards() {
                   style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}
                 >
                   {pnlPositive ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
-                  {pnlPositive ? '+' : '-'}{formatPercentage(pnlPct)}
+                  {pnlMode === 'percent'
+                    ? formatCurrency(metrics.totalPnL)
+                    : `${pnlPositive ? '+' : '-'}${formatPercentage(pnlPct)}`}
                 </div>
               </TooltipTrigger>
               <TooltipContent className="p-2 border bg-popover">
-                <p className="text-xs">Percentage of account balance</p>
+                <p className="text-xs">{pnlMode === 'percent' ? 'P&L in money' : 'Percentage of account balance'}</p>
               </TooltipContent>
             </Tooltip>
           </CardHeader>
@@ -183,13 +191,13 @@ export function SectionCards() {
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
-                  {formatCurrency(metrics.totalPnL)}
+                  {formatPnl(metrics.totalPnL)}
                 </div>
                 <div className="mt-3 space-y-0.5">
                   <p className="text-sm font-medium break-words text-muted-foreground">
                     Balance: {formatCurrencyPlain(accountBalance)}
                   </p>
-                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatCurrency(avgPnlPerTrade)} per trade</p>
+                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatPnl(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
               <div className="w-16 h-16 relative shrink-0">
@@ -229,7 +237,7 @@ export function SectionCards() {
                   <p className="text-sm font-medium break-words" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
                     {Math.abs(metrics.winRate - 50).toFixed(0)}pts {winRateGood ? 'above' : 'below'} 50%
                   </p>
-                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(metrics.avgWin)} avg win</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(metrics.avgLoss)} avg loss</span></p>
+                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatPnl(metrics.avgWin, { showSign: false })} avg win</span> / <span style={{ color: themeColors.loss }}>{formatPnl(metrics.avgLoss, { showSign: false })} avg loss</span></p>
                 </div>
               </div>
               <div className="w-16 h-16 relative shrink-0">
@@ -344,7 +352,7 @@ export function SectionCards() {
                   <p className="text-sm font-medium break-words" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                     {pfGood ? `${getCurrencySymbol()}${metrics.profitFactor.toFixed(2)} earned per ${getCurrencySymbol()}1 lost` : 'Losing more than winning'}
                   </p>
-                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatCurrencyPlain(grossProfit)} won</span> / <span style={{ color: themeColors.loss }}>{formatCurrencyPlain(grossLoss)} lost</span></p>
+                  <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatPnl(grossProfit, { showSign: false })} won</span> / <span style={{ color: themeColors.loss }}>{formatPnl(grossLoss, { showSign: false })} lost</span></p>
                 </div>
               </div>
               <div className="w-16 h-16 relative shrink-0">
