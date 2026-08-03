@@ -337,9 +337,13 @@ export default function Signup() {
                 onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
               />
               <Label htmlFor="terms" className="text-sm leading-snug">
-                I agree to the{' '}
+                {/* Text runs are wrapped so React only ever removes elements it
+                    created. Page translation replaces bare text nodes, and
+                    React then fails to remove them — crashing this label the
+                    moment the checkbox re-renders it. */}
+                <span>I agree to the </span>
                 <Link to="/terms" className="text-amber-500 hover:underline">Terms of Service</Link>
-                {' '}and{' '}
+                <span> and </span>
                 <Link to="/privacy" className="text-amber-500 hover:underline">Privacy Policy</Link>
               </Label>
             </div>
@@ -352,11 +356,11 @@ export default function Signup() {
               {loading ? (
                 <div className="flex items-center gap-2">
                   <SpinnerGap className="h-4 w-4 animate-spin" />
-                  Creating account...
+                  <span>Creating account...</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  Create account
+                  <span>Create account</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -382,12 +386,12 @@ export default function Signup() {
               {googleLoading ? (
                 <div className="flex items-center gap-2">
                   <SpinnerGap className="h-4 w-4 animate-spin" />
-                  Connecting...
+                  <span>Connecting...</span>
                 </div>
               ) : (
                 <>
                   <GoogleIcon className="mr-2 h-4 w-4" />
-                  Continue with Google
+                  <span>Continue with Google</span>
                 </>
               )}
             </Button>
@@ -395,7 +399,7 @@ export default function Signup() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Already have an account?{' '}
+            <span>Already have an account? </span>
             <Link to="/login" className="text-amber-500 hover:underline font-medium">
               Sign in
             </Link>

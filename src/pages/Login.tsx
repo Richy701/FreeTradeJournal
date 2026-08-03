@@ -209,11 +209,11 @@ export default function Login() {
               {loading ? (
                 <div className="flex items-center gap-2">
                   <SpinnerGap className="h-4 w-4 animate-spin" />
-                  Signing in...
+                  <span>Signing in...</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  Sign in
+                  <span>Sign in</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -239,12 +239,12 @@ export default function Login() {
               {googleLoading ? (
                 <div className="flex items-center gap-2">
                   <SpinnerGap className="h-4 w-4 animate-spin" />
-                  Connecting...
+                  <span>Connecting...</span>
                 </div>
               ) : (
                 <>
                   <GoogleIcon className="mr-2 h-4 w-4" />
-                  Continue with Google
+                  <span>Continue with Google</span>
                 </>
               )}
             </Button>
@@ -252,18 +252,18 @@ export default function Login() {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Don't have an account?{' '}
+            <span>Don't have an account? </span>
             <Link to="/signup" className="text-amber-500 hover:underline font-medium">
               Sign up
             </Link>
           </p>
 
           <p className="text-center text-xs text-muted-foreground mt-4">
-            By signing in, you agree to our{' '}
+            <span>By signing in, you agree to our </span>
             <Link to="/terms" className="underline hover:text-foreground">
               Terms of Service
-            </Link>{' '}
-            and{' '}
+            </Link>
+            <span> and </span>
             <Link to="/privacy" className="underline hover:text-foreground">
               Privacy Policy
             </Link>

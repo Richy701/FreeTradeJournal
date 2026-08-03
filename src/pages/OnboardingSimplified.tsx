@@ -354,7 +354,7 @@ export default function OnboardingSimplified() {
 
               <div className="space-y-3">
                 <motion.h1 variants={activeFadeUpItem} className="text-4xl font-bold tracking-tight">
-                  Welcome to{' '}
+                  <span>Welcome to </span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-amber-500">
                     FreeTradeJournal
                   </span>
@@ -575,7 +575,7 @@ export default function OnboardingSimplified() {
 
                 <div className="space-y-2">
                   <Label htmlFor="broker">
-                    Broker{' '}
+                    <span>Broker </span>
                     <span className="text-muted-foreground font-normal text-xs">(optional)</span>
                   </Label>
                   <Input
@@ -672,11 +672,11 @@ export default function OnboardingSimplified() {
                   disabled={loading}
                 >
                   {loading ? (
-                    'Setting up...'
+                    <span>Setting up...</span>
                   ) : (
                     <>
                       <Rocket className="mr-2 h-4 w-4" />
-                      Enter FreeTradeJournal
+                      <span>Enter FreeTradeJournal</span>
                     </>
                   )}
                 </Button>

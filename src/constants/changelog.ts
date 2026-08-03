@@ -29,6 +29,11 @@ export const changelog: ChangelogEntry[] = [
         text: 'Fixed a blank page or reloading tab after an update',
         description: 'If you had the app open while a new version was released, the page could go blank or start reloading over and over on its own. It now refreshes once to pick up the new version, and if it still cannot load, it shows an error you can act on instead of reloading endlessly.',
       },
+      {
+        type: 'fixed',
+        text: 'Fixed signing up while your browser translates the page',
+        description: 'If you had your browser translate FreeTradeJournal into another language, signing up or signing in could break the page — ticking the terms box or pressing the button showed an error screen instead. Those pages now work with translation turned on.',
+      },
     ],
   },
   {
