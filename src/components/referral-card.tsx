@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Copy, Check, ShareNetwork, Users, Crown } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
+import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
@@ -33,6 +34,12 @@ const DEFAULT_TIERS: ReferralTier[] = [
 
 export function ReferralCard() {
   const { user, isDemo } = useAuth();
+  // The tiers pay out in days of Pro, which reads as nonsense to someone who
+  // already owns it. The card stays — a Pro member can still want to pass the
+  // link on — but it drops the reward framing rather than promising them
+  // something they cannot use.
+  const { isPro, trialEndsAt } = useProStatus();
+  const isPayingPro = isPro && !trialEndsAt;
   const { themeColors } = useThemePresets();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [copied, setCopied] = useState(false);
@@ -107,9 +114,11 @@ export function ReferralCard() {
       <div>
         <p className="text-sm font-medium">Invite Friends</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {nextTier
-            ? `Refer friends, earn free Pro — ${nextTier.days} days at ${nextTier.count} referrals, and bigger rewards at every tier after.`
-            : 'You reached every referral tier. Keep sharing to help fellow traders.'}
+          {isPayingPro
+            ? 'You are already on Pro, so this is simply your link to pass on to other traders.'
+            : nextTier
+              ? `Refer friends, earn free Pro — ${nextTier.days} days at ${nextTier.count} referrals, and bigger rewards at every tier after.`
+              : 'You reached every referral tier. Keep sharing to help fellow traders.'}
         </p>
       </div>
 
@@ -127,8 +136,19 @@ export function ReferralCard() {
         </div>
       )}
 
+      {/* Pro members get the plain count — the tier ladder below only makes
+          sense to someone who can actually spend the reward. */}
+      {isPayingPro && count > 0 && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Users className="h-3.5 w-3.5" />
+          <span>
+            {count} {count === 1 ? 'friend has' : 'friends have'} signed up with your link
+          </span>
+        </div>
+      )}
+
       {/* Progress toward the next tier — always shown while one remains */}
-      {nextTier && (
+      {nextTier && !isPayingPro && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-1.5">
