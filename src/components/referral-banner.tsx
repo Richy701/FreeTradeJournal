@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Copy, Check, ShareNetwork, X, Gift } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
+import { useProStatus } from '@/contexts/pro-context'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useUserStorage } from '@/utils/user-storage'
 import { toast } from 'sonner'
@@ -24,6 +25,12 @@ interface ReferralStats {
 
 export function ReferralBanner() {
   const { user, isDemo } = useAuth()
+  // The reward is 14 days of Pro, which is worth nothing to someone already
+  // paying for it and worse than nothing to a lifetime owner. `rewardEarned`
+  // doesn't cover this: it only flips for Pro earned *through* referrals, not
+  // Pro that was bought. Trial users still see it — extra days are real value.
+  const { isPro, trialEndsAt } = useProStatus()
+  const isPayingPro = isPro && !trialEndsAt
   const { themeColors, alpha } = useThemePresets()
   const userStorage = useUserStorage()
   const [stats, setStats] = useState<ReferralStats | null>(null)
@@ -51,7 +58,7 @@ export function ReferralBanner() {
   const activated = tradeCount >= MIN_TRADES_TO_SHOW
 
   useEffect(() => {
-    if (!user || isDemo || dismissed || !activated) return
+    if (!user || isDemo || dismissed || !activated || isPayingPro) return
     let cancelled = false
     ;(async () => {
       try {
@@ -68,7 +75,7 @@ export function ReferralBanner() {
       }
     })()
     return () => { cancelled = true }
-  }, [user, isDemo, dismissed, activated])
+  }, [user, isDemo, dismissed, activated, isPayingPro])
 
   const referralLink = stats
     ? `https://www.freetradejournal.com/signup?ref=${stats.referralCode}`
@@ -108,7 +115,7 @@ export function ReferralBanner() {
     setDismissed(true)
   }
 
-  if (!user || isDemo || dismissed || !activated || loading || !stats) return null
+  if (!user || isDemo || dismissed || !activated || isPayingPro || loading || !stats) return null
   if (stats.rewardEarned) return null
 
   const count = stats.referralCount
