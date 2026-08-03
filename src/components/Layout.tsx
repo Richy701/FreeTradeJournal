@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { MobileHeader } from '@/components/mobile-header';
 import { DemoBanner } from '@/components/demo-banner';
 import { FounderOfferAnnouncement } from '@/components/founder-offer-announcement';
+import { LifetimeFarewellDialog } from '@/components/lifetime-farewell-dialog';
 import { ThemeSettingsSync } from '@/components/theme-settings-sync';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -16,6 +17,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={false}>
       <ThemeSettingsSync />
+      <LifetimeFarewellDialog />
       {/* Keyboard users skip the full sidebar tab-through on every page */}
       <a
         href="#main-content"

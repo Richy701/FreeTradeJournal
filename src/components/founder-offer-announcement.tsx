@@ -6,6 +6,7 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
 import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
+import { isLifetimeFarewellAudience, isLifetimeFarewellPending } from '@/lib/lifetime-farewell';
 
 const snoozeKeyFor = (uid: string | undefined) => `founder-offer-banner-snoozed-until-${uid || 'anon'}`;
 const dismissKeyFor = (uid: string | undefined) => `founder-offer-banner-dismissed-${uid || 'anon'}`;
@@ -38,19 +39,29 @@ export function FounderOfferAnnouncement() {
 
   const isPayingPro = isPro && !trialEndsAt;
 
+  // The farewell dialog owns the first load for users who qualify for it — the
+  // two carry the same message, so stacking them would be shouting. Read once
+  // at mount like `show` above: the dialog marks itself seen as it opens, and a
+  // live read would un-suppress the banner into the space behind the open
+  // modal. Next load the flag is set, this is false, and the banner takes over.
+  const [farewellPending] = useState(() => isLifetimeFarewellPending(user?.uid));
+  const farewellWillShow =
+    farewellPending &&
+    isLifetimeFarewellAudience({ uid: user?.uid, isDemo, isPayingPro, isTrialing: !!trialEndsAt });
+
   const updateHeight = useCallback(() => {
     const height = bannerRef.current?.offsetHeight ?? 0;
     document.documentElement.style.setProperty('--announcement-banner-height', `${height}px`);
   }, []);
 
   useEffect(() => {
-    if (user && !isDemo && !isPayingPro && show) {
+    if (user && !isDemo && !isPayingPro && show && !farewellWillShow) {
       const timer = setTimeout(() => setIsVisible(true), 800);
       return () => clearTimeout(timer);
     } else {
       document.documentElement.style.setProperty('--announcement-banner-height', '0px');
     }
-  }, [user, isDemo, isPayingPro, show]);
+  }, [user, isDemo, isPayingPro, show, farewellWillShow]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -59,7 +70,7 @@ export function FounderOfferAnnouncement() {
     return () => window.removeEventListener('resize', updateHeight);
   }, [isVisible, updateHeight]);
 
-  if (!user || isDemo || isPayingPro || !show || !mounted) return null;
+  if (!user || isDemo || isPayingPro || !show || !mounted || farewellWillShow) return null;
 
   const dismiss = () => {
     setIsVisible(false);

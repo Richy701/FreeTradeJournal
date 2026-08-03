@@ -72,10 +72,15 @@ export function initPostHog() {
 // Ad blockers (uBlock / EasyPrivacy) reject the entire /api/ingest path
 // regardless of the same-origin proxy. One HEAD probe; if it's rejected we stop
 // client capture so the SDK doesn't retry every blocked event into a wall.
+//
+// Probes a static asset, not the capture endpoint: blockers match on the
+// /api/ingest prefix so detection is identical, but a bodyless HEAD to
+// /i/v0/e/ is a 400 by definition — one logged error per page load, for every
+// user, describing nothing. The static path answers 200.
 function detectBlocking(): void {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3000);
-  fetch(`${host}/i/v0/e/`, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+  fetch(`${host}/static/array.js`, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
     .catch(() => {
       blocked = true;
       try {

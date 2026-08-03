@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.69.1',
+    date: '2026-08-03',
+    summary: 'Fixed a rare blank page or repeated reloading after an update.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Fixed a blank page or reloading tab after an update',
+        description: 'If you had the app open while a new version was released, the page could go blank or start reloading over and over on its own. It now refreshes once to pick up the new version, and if it still cannot load, it shows an error you can act on instead of reloading endlessly.',
+      },
+    ],
+  },
+  {
     version: '2.69.0',
     date: '2026-08-01',
     summary: 'See your results as percentages of your account, and imported trades now show their real percentage return.',
@@ -2335,4 +2348,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.69.0'
+export const LATEST_CHANGELOG_VERSION = '2.69.1'
