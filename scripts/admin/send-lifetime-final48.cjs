@@ -5,18 +5,22 @@
 // recipients "I will not email you about this again", so anyone carrying
 // foundingMemberEmailId or lifetimeRetirementEmailId is hard-excluded here.
 //
-// Timezone-aware: each email is scheduled for 9:00 AM on Wednesday August 6
+// Timezone-aware: each email is scheduled for 9:00 AM on Tuesday August 4
 // in the recipient's own timezone (PostHog $geoip_time_zone), so nobody gets
 // a "last chance" email at 3 AM. Unknown timezone falls back to
 // America/New_York (the largest market).
+//
+// Aug 7 2026 is a FRIDAY. An earlier draft of this script and the email body
+// both said "Thursday" — verify the weekday against a real calendar before
+// touching any deadline copy.
 //
 // Usage:
 //   node scripts/admin/send-lifetime-final48.cjs                # dry run (writes nothing)
 //   node scripts/admin/send-lifetime-final48.cjs --live         # schedule for real
 //   node scripts/admin/send-lifetime-final48.cjs --live --limit 5   # smoke test
 //
-// Run --live on Tuesday August 5 so signups between now and then are included.
-// Idempotent via lifetimeFinal48EmailId — safe to re-run as a top-up.
+// Idempotent via lifetimeFinal48EmailId — safe to re-run as a top-up, so a
+// later run picks up anyone who signed up after the first pass.
 
 const fs = require('fs');
 const path = require('path');
@@ -47,10 +51,10 @@ if (Number.isNaN(LIMIT) || LIMIT < 1) {
   throw new Error('--limit requires a positive number');
 }
 
-const SUBJECT = 'Lifetime Pro ends Thursday — last chance at $149';
+const SUBJECT = 'Lifetime Pro ends Friday — last chance at $149';
 const CAMPAIGN = 'lifetime_final48_2026_08';
 const PRICING_URL = `https://www.freetradejournal.com/pricing?utm_source=resend&utm_medium=email&utm_campaign=${CAMPAIGN}`;
-const SEND_DAY_9AM_UTC = Date.parse('2026-08-06T09:00:00Z');
+const SEND_DAY_9AM_UTC = Date.parse('2026-08-04T09:00:00Z');
 const EARLIEST = Date.now() + 2 * 60 * 60 * 1000;
 const LATEST = Date.parse('2026-08-07T18:00:00Z'); // still ~6h before the cutoff
 const FALLBACK_TZ = 'America/New_York';
@@ -208,14 +212,17 @@ async function scheduleOne(uid, email, firstName, scheduledAt) {
   });
 
   console.log(`Timezone coverage: ${tzByUid.size}/${verified.length} resolved, rest default to 9 AM New York\n`);
-  console.log('Send slots (all 9:00 AM local, Wednesday August 6):');
+  const sendDayLabel = new Date(SEND_DAY_9AM_UTC).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC',
+  });
+  console.log(`Send slots (all 9:00 AM local, ${sendDayLabel}):`);
   [...slotCounts.entries()].sort().forEach(([slot, n]) => console.log(`  ${slot}: ${n}`));
 
   if (dryRun) {
     console.log('');
     targets.slice(0, 10).forEach((u) => console.log(`  would schedule → ${u.email}${u.firstName ? ` (${u.firstName})` : ''} at ${u.scheduledAt} [${u.tz}]`));
     if (targets.length > 10) console.log(`  … and ${targets.length - 10} more`);
-    console.log('\nDry run complete. Re-run with --live on Tuesday August 5 to schedule.');
+    console.log('\nDry run complete. Re-run with --live to schedule.');
     process.exit(0);
   }
 

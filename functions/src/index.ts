@@ -946,11 +946,20 @@ export const sendDay21BackupEmails = functions.pubsub
 
 // ─── Weekly Digest Email (Scheduled — every Monday 8am UTC) ───
 
-export const sendWeeklyDigestEmails = functions.pubsub
-  .schedule("every monday 08:00")
+export const sendWeeklyDigestEmails = functions
+  .runWith({ timeoutSeconds: 540, memory: "512MB" })
+  .pubsub.schedule("every monday 08:00")
   .timeZone("UTC")
   .onRun(async () => {
     const MAX_SENDS = 500;
+    // Reads run this many users ahead of the sender. Sends stay sequential
+    // (Resend rate-limits per second); the three sequential per-user
+    // subcollection gets were the real bottleneck — on the 60s default
+    // timeout this function died mid-run every week from Jul 6 to Aug 3,
+    // delivering 11-104 of ~130. Worse, an inequality query is implicitly
+    // ordered by its field, so it always walked activated users oldest-first
+    // and starved the newest trialists week after week.
+    const PREFETCH = 10;
     const now = Date.now();
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const weekLabel = `Week of ${weekAgo.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(now).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
@@ -965,99 +974,113 @@ export const sendWeeklyDigestEmails = functions.pubsub
 
     const currentWeek = `${new Date(now).getFullYear()}-W${Math.ceil((now - new Date(new Date(now).getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}`;
 
-    let sent = 0;
-    for (const doc of allSnapshot.docs) {
-      if (sent >= MAX_SENDS) break;
+    const symbols: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CAD: "C$", AUD: "A$", CHF: "CHF", CNY: "¥" };
+
+    // Resolve the whole audience first: eligibility is I/O-free, so the
+    // expensive per-user reads only run for people who will actually be sent
+    // to. Entitlement is checked here and nowhere else — the old second check
+    // guarding the stats block was dead code.
+    const recipients = allSnapshot.docs.filter((doc) => {
       const data = doc.data();
-      const email = data.email;
-      if (!email) continue;
+      if (!data.email) return false;
+      if (data.emailOptOut || data.weeklyDigestLastSentWeek === currentWeek) return false;
+      return isEntitledPro(data);
+    });
+    console.log(`Weekly digest: ${recipients.length} eligible of ${allSnapshot.size} activated`);
 
-      if (data.emailOptOut || data.weeklyDigestLastSentWeek === currentWeek) continue;
-      if (!isEntitledPro(data)) continue;
-
-      const firstName = (data.displayName || data.email || "trader").split(" ")[0];
-
-      let tradeCount = 0;
-      let winRate = 0;
-      let pnl = "$0.00";
-      let bestTrade = "$0.00";
-
-      // Entitled users with synced trades — compute real weekly stats
-      if (isEntitledPro(data)) {
+    // One round trip for all three synced docs instead of three sequential
+    // gets. Never throws — a user whose sync data is missing or corrupt still
+    // gets the zero-state recap rather than blocking the rest of the run.
+    const weeklyStats = async (uid: string) => {
+      const stats = { tradeCount: 0, winRate: 0, pnl: "$0.00", bestTrade: "$0.00" };
+      try {
+        const userSync = db.collection("users").doc(uid).collection("sync");
+        const [tradesDoc, settingsDoc, accountsDoc] = await db.getAll(
+          userSync.doc("trades"), userSync.doc("settings"), userSync.doc("accounts"),
+        );
+        // Use the user's currency from synced settings (falls back to $)
+        let curSym = "$";
         try {
-          const tradesDoc = await db.collection("users").doc(doc.id).collection("sync").doc("trades").get();
-          const symbols: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CAD: "C$", AUD: "A$", CHF: "CHF", CNY: "¥" };
-          // Use the user's currency from synced settings (falls back to $)
-          let curSym = "$";
-          try {
-            const settingsDoc = await db.collection("users").doc(doc.id).collection("sync").doc("settings").get();
-            if (settingsDoc.exists) {
-              const s = JSON.parse(settingsDoc.data()?.data || "{}");
-              curSym = symbols[s.currency] || "$";
-            }
-          } catch { /* default $ */ }
-          // Account-level currency overrides the global setting (same rule as
-          // the app). A multi-currency week renders per currency instead of
-          // summing euros and dollars into one meaningless number.
-          const accountCur: Record<string, string> = {};
-          try {
-            const accountsDoc = await db.collection("users").doc(doc.id).collection("sync").doc("accounts").get();
-            if (accountsDoc.exists) {
-              for (const a of JSON.parse(accountsDoc.data()?.data || "[]")) {
-                if (a?.id && a?.currency) accountCur[a.id] = symbols[a.currency] || a.currency;
-              }
-            }
-          } catch { /* global fallback */ }
-          if (tradesDoc.exists) {
-            const allTrades = JSON.parse(tradesDoc.data()?.data || "[]");
-            const weekTrades = allTrades.filter((t: any) => {
-              const exitDate = new Date(t.exitTime || t.date);
-              return exitDate >= weekAgo;
-            });
-            tradeCount = weekTrades.length;
-            if (tradeCount > 0) {
-              const wins = weekTrades.filter((t: any) => Number(t.pnl) > 0).length;
-              winRate = Math.round((wins / tradeCount) * 100);
-              const symOf = (t: any) => (t.accountId && accountCur[t.accountId]) || curSym;
-              const totals: Record<string, number> = {};
-              for (const t of weekTrades) {
-                const cs = symOf(t);
-                totals[cs] = (totals[cs] || 0) + (Number(t.pnl) || 0);
-              }
-              pnl = Object.entries(totals)
-                .map(([cs, v]) => `${v >= 0 ? "+" : "-"}${cs}${Math.abs(v).toFixed(2)}`)
-                .join(" · ");
-              const bestT = weekTrades.reduce((max: any, t: any) =>
-                (Number(t.pnl) || 0) > (max ? (Number(max.pnl) || 0) : -Infinity) ? t : max, null);
-              const best = Number(bestT?.pnl) || 0;
-              const bcs = bestT ? symOf(bestT) : curSym;
-              bestTrade = best > 0 ? `+${bcs}${best.toFixed(2)}` : `${bcs}${best.toFixed(2)}`;
+          if (settingsDoc.exists) {
+            const s = JSON.parse(settingsDoc.data()?.data || "{}");
+            curSym = symbols[s.currency] || "$";
+          }
+        } catch { /* default $ */ }
+        // Account-level currency overrides the global setting (same rule as
+        // the app). A multi-currency week renders per currency instead of
+        // summing euros and dollars into one meaningless number.
+        const accountCur: Record<string, string> = {};
+        try {
+          if (accountsDoc.exists) {
+            for (const a of JSON.parse(accountsDoc.data()?.data || "[]")) {
+              if (a?.id && a?.currency) accountCur[a.id] = symbols[a.currency] || a.currency;
             }
           }
-        } catch (err) {
-          console.error(`Failed to compute weekly stats for ${doc.id}:`, err);
+        } catch { /* global fallback */ }
+        if (tradesDoc.exists) {
+          const allTrades = JSON.parse(tradesDoc.data()?.data || "[]");
+          const weekTrades = allTrades.filter((t: any) => {
+            const exitDate = new Date(t.exitTime || t.date);
+            return exitDate >= weekAgo;
+          });
+          stats.tradeCount = weekTrades.length;
+          if (stats.tradeCount > 0) {
+            const wins = weekTrades.filter((t: any) => Number(t.pnl) > 0).length;
+            stats.winRate = Math.round((wins / stats.tradeCount) * 100);
+            const symOf = (t: any) => (t.accountId && accountCur[t.accountId]) || curSym;
+            const totals: Record<string, number> = {};
+            for (const t of weekTrades) {
+              const cs = symOf(t);
+              totals[cs] = (totals[cs] || 0) + (Number(t.pnl) || 0);
+            }
+            stats.pnl = Object.entries(totals)
+              .map(([cs, v]) => `${v >= 0 ? "+" : "-"}${cs}${Math.abs(v).toFixed(2)}`)
+              .join(" · ");
+            const bestT = weekTrades.reduce((max: any, t: any) =>
+              (Number(t.pnl) || 0) > (max ? (Number(max.pnl) || 0) : -Infinity) ? t : max, null);
+            const best = Number(bestT?.pnl) || 0;
+            const bcs = bestT ? symOf(bestT) : curSym;
+            stats.bestTrade = best > 0 ? `+${bcs}${best.toFixed(2)}` : `${bcs}${best.toFixed(2)}`;
+          }
         }
-      }
-
-      try {
-        const html = await render(React.createElement(WeeklyDigestEmail, {
-          firstName, tradeCount, winRate, pnl, bestTrade, weekLabel,
-          unsubscribeUrl: getUnsubscribeUrl(doc.id),
-        }));
-        await getResend().emails.send({
-          from: FROM_EMAIL,
-          to: email,
-          subject: tradeCount > 0
-            ? `Your week: ${tradeCount} trades, ${winRate}% win rate`
-            : "Your weekly trading recap",
-          html,
-          headers: unsubHeaders(doc.id),
-        });
-        await doc.ref.update({ weeklyDigestLastSentWeek: currentWeek });
-        sent++;
       } catch (err) {
-        console.error(`Failed to send weekly digest:`, err);
-        reportError(err, { fn: "sendWeeklyDigestEmails", uid: doc.id });
+        console.error(`Failed to compute weekly stats for ${uid}:`, err);
+      }
+      return stats;
+    };
+
+    let sent = 0;
+    for (let i = 0; i < recipients.length && sent < MAX_SENDS; i += PREFETCH) {
+      const batch = recipients.slice(i, i + PREFETCH);
+      const batchStats = await Promise.all(batch.map((doc) => weeklyStats(doc.id)));
+
+      for (let j = 0; j < batch.length; j++) {
+        if (sent >= MAX_SENDS) break;
+        const doc = batch[j];
+        const data = doc.data();
+        const { tradeCount, winRate, pnl, bestTrade } = batchStats[j];
+        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+
+        try {
+          const html = await render(React.createElement(WeeklyDigestEmail, {
+            firstName, tradeCount, winRate, pnl, bestTrade, weekLabel,
+            unsubscribeUrl: getUnsubscribeUrl(doc.id),
+          }));
+          await getResend().emails.send({
+            from: FROM_EMAIL,
+            to: data.email,
+            subject: tradeCount > 0
+              ? `Your week: ${tradeCount} trades, ${winRate}% win rate`
+              : "Your weekly trading recap",
+            html,
+            headers: unsubHeaders(doc.id),
+          });
+          await doc.ref.update({ weeklyDigestLastSentWeek: currentWeek });
+          sent++;
+        } catch (err) {
+          console.error(`Failed to send weekly digest:`, err);
+          reportError(err, { fn: "sendWeeklyDigestEmails", uid: doc.id });
+        }
       }
     }
 
