@@ -12,6 +12,7 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import { useSettings } from '@/contexts/settings-context';
 import { renderReviewMarkdown } from '@/components/ai-trade-review';
+import { computeTradeAggregates } from '@/utils/trade-aggregates';
 import { AIFeedback } from '@/components/ui/ai-feedback';
 import { trackEvent } from '@/lib/analytics';
 
@@ -20,6 +21,9 @@ interface ImportedTradeLike {
   pnl: number | string;
   exitTime?: Date | string;
   entryTime?: Date | string;
+  side?: string;
+  strategy?: string;
+  riskReward?: number | string;
 }
 
 interface ImportInsightDialogProps {
@@ -69,8 +73,6 @@ export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsigh
     let wins = 0, netPnl = 0, sumWin = 0, sumLoss = 0, lossCount = 0;
     let first: number | null = null, last: number | null = null;
     const byDay = new Map<string, number>();
-    const bySymbol = new Map<string, { count: number; wins: number; netPnl: number }>();
-    const byWeekday = new Map<string, { count: number; wins: number; netPnl: number }>();
 
     for (const t of trades) {
       const pnl = num(t.pnl);
@@ -82,28 +84,26 @@ export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsigh
       if (ts !== null) {
         if (first === null || ts < first) first = ts;
         if (last === null || ts > last) last = ts;
-        // Local day, matching the app's day-bucketing standard (the weekday
-        // below is already local — mixing UTC here skewed best/worst day)
+        // Local day, matching the app's day-bucketing standard
         const d = new Date(ts);
         const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         byDay.set(day, (byDay.get(day) || 0) + pnl);
-        const wd = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(ts).getDay()];
-        const w = byWeekday.get(wd) || { count: 0, wins: 0, netPnl: 0 };
-        w.count++; if (pnl > 0) w.wins++; w.netPnl += pnl;
-        byWeekday.set(wd, w);
       }
-
-      const sym = (t.symbol || 'Unknown').trim() || 'Unknown';
-      const s = bySymbol.get(sym) || { count: 0, wins: 0, netPnl: 0 };
-      s.count++; if (pnl > 0) s.wins++; s.netPnl += pnl;
-      bySymbol.set(sym, s);
     }
 
-    const groupList = (m: Map<string, { count: number; wins: number; netPnl: number }>) =>
-      Array.from(m.entries())
-        .map(([key, g]) => ({ key, count: g.count, winRate: g.count > 0 ? (g.wins / g.count) * 100 : 0, netPnl: g.netPnl }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
+    // Same sample-ranked, significance-flagged buckets the coach features use
+    // (shared util) — replaces the ad-hoc count/winRate/netPnl grouping that
+    // let a 3-trade symbol read like an edge in the first-impression insight.
+    const agg = computeTradeAggregates(trades.map((t) => ({
+      pnl: num(t.pnl),
+      riskReward: num(t.riskReward),
+      symbol: t.symbol,
+      strategy: t.strategy,
+      side: t.side,
+      entryTime: t.entryTime ? new Date(t.entryTime) : null,
+      exitTime: t.exitTime ? new Date(t.exitTime) : null,
+      emotions: null,
+    })));
 
     const dayPnls = Array.from(byDay.values());
 
@@ -121,9 +121,14 @@ export function ImportInsightDialog({ open, onOpenChange, trades }: ImportInsigh
           avgLoss: lossCount > 0 ? Math.abs(sumLoss / lossCount) : 0,
           bestDay: dayPnls.length ? Math.max(...dayPnls) : 0,
           worstDay: dayPnls.length ? Math.min(...dayPnls) : 0,
+          payoffRatio: agg.payoffRatio,
         },
-        perSymbol: groupList(bySymbol),
-        perWeekday: groupList(byWeekday),
+        hasEnoughData: agg.hasEnoughData,
+        significanceThreshold: agg.significanceThreshold,
+        perSymbol: agg.perSymbol,
+        perWeekday: agg.perWeekday,
+        perSession: agg.perSession,
+        perSide: agg.perSide,
       },
     })
       .then((text) => {

@@ -144,7 +144,11 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
             cleanedResult = cleanedResult.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
           }
 
-          const parsed: TagResult[] = JSON.parse(cleanedResult);
+          // Server now enforces JSON-object mode ({"tags": [...]}); a bare
+          // array is the pre-2.71 shape, kept so a stale server still works.
+          const parsedRaw = JSON.parse(cleanedResult);
+          const parsed: TagResult[] = Array.isArray(parsedRaw) ? parsedRaw
+            : Array.isArray(parsedRaw?.tags) ? parsedRaw.tags : [];
           allResults.push(...parsed);
         } catch (err: any) {
           console.error(`Batch ${batchIndex + 1} error:`, err);

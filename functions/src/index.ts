@@ -3007,6 +3007,159 @@ interface AnalysisRequest {
   analysisType: "recent" | "period";
 }
 
+// One shared analysis prompt for BOTH the callable (analyzeTradesAI) and the
+// streaming (aiStream) paths. They used to carry near-identical inline copies
+// that had already drifted apart — the streaming one had lost the benchmark
+// framing and section detail. Any prompt change now lands in both.
+function buildAnalysisPrompts(trades: TradeInput[], cur: string): { systemPrompt: string; userPrompt: string } {
+  const tradesSummary = trades.map((t, i) => {
+    const hold = Math.round(
+      (new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000
+    );
+    const holdStr = hold >= 60 ? `${Math.floor(hold / 60)}h ${hold % 60}m` : `${hold}m`;
+    const entryHour = new Date(t.entryTime).getUTCHours();
+    const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(t.entryTime).getUTCDay()];
+    return `${i + 1}. ${clip(t.symbol, 20)} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${clip(t.strategy, 80)}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${clip(t.emotions, 120)}` : ""}`;
+  }).join("\n");
+
+  // Aggregate emotion patterns for analysis
+  const emotionCounts: Record<string, { total: number; wins: number; losses: number }> = {};
+  for (const t of trades) {
+    if (t.emotions) {
+      for (const e of t.emotions.split(",").map((s: string) => s.trim()).filter(Boolean)) {
+        if (!emotionCounts[e]) emotionCounts[e] = { total: 0, wins: 0, losses: 0 };
+        emotionCounts[e].total++;
+        if (t.pnl > 0) emotionCounts[e].wins++;
+        else if (t.pnl < 0) emotionCounts[e].losses++;
+      }
+    }
+  }
+  const hasEmotions = Object.keys(emotionCounts).length > 0;
+  const emotionStats = Object.entries(emotionCounts)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([e, c]) => `${e}: ${c.total} trades (${c.wins}W/${c.losses}L, ${(c.wins / c.total * 100).toFixed(0)}% WR)`)
+    .join(", ");
+
+  const wins = trades.filter((t) => t.pnl > 0).length;
+  const losses = trades.filter((t) => t.pnl < 0).length;
+  const breakeven = trades.filter((t) => t.pnl === 0).length;
+  const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
+  const avgWin = wins > 0 ? trades.filter((t) => t.pnl > 0).reduce((s, t) => s + t.pnl, 0) / wins : 0;
+  const avgLoss = losses > 0 ? trades.filter((t) => t.pnl < 0).reduce((s, t) => s + t.pnl, 0) / losses : 0;
+  const largestWin = Math.max(...trades.map((t) => t.pnl));
+  const largestLoss = Math.min(...trades.map((t) => t.pnl));
+  const avgHoldMins = Math.round(trades.reduce((s, t) => s + (new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000, 0) / trades.length);
+  const symbols = [...new Set(trades.map((t) => t.symbol))];
+  const longCount = trades.filter((t) => t.side === "long").length;
+  const shortCount = trades.filter((t) => t.side === "short").length;
+  const longPnl = trades.filter((t) => t.side === "long").reduce((s, t) => s + t.pnl, 0);
+  const shortPnl = trades.filter((t) => t.side === "short").reduce((s, t) => s + t.pnl, 0);
+
+  // Streak calculation
+  let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
+  for (const t of trades) {
+    if (t.pnl > 0) { curWin++; curLoss = 0; maxWinStreak = Math.max(maxWinStreak, curWin); }
+    else if (t.pnl < 0) { curLoss++; curWin = 0; maxLossStreak = Math.max(maxLossStreak, curLoss); }
+    else { curWin = 0; curLoss = 0; }
+  }
+
+  // Pre-aggregated buckets. The system prompt asks for time-of-day / symbol /
+  // day-of-week patterns; without these the model must eyeball them from the
+  // raw trade rows, which is where generic (or invented) "patterns" come from.
+  // Computed server-side from the same trades, so every client benefits.
+  type Bucket = { count: number; wins: number; pnl: number };
+  const bump = (m: Map<string, Bucket>, k: string, t: { pnl: number }) => {
+    const b = m.get(k) || { count: 0, wins: 0, pnl: 0 };
+    b.count++; if (t.pnl > 0) b.wins++; b.pnl += t.pnl;
+    m.set(k, b);
+  };
+  const bySymbol = new Map<string, Bucket>();
+  const byWeekday = new Map<string, Bucket>();
+  const bySession = new Map<string, Bucket>();
+  for (const t of trades) {
+    bump(bySymbol, clip(t.symbol, 20), t);
+    const d = new Date(t.entryTime);
+    if (!isNaN(d.getTime())) {
+      bump(byWeekday, ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()], t);
+      const h = d.getUTCHours();
+      bump(bySession, h < 6 ? "00-06 UTC" : h < 12 ? "06-12 UTC" : h < 18 ? "12-18 UTC" : "18-24 UTC", t);
+    }
+  }
+  const renderBuckets = (label: string, m: Map<string, Bucket>, topN = 8) => {
+    const rows = [...m.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, topN)
+      .map(([k, b]) => `${k}: ${b.count} trades, ${(b.wins / b.count * 100).toFixed(0)}% WR, net ${cur}${b.pnl.toFixed(2)}${b.count < 10 ? " (small sample)" : ""}`);
+    return rows.length ? `- ${label}: ${rows.join(" | ")}` : "";
+  };
+  const grossWins = trades.filter((t) => t.pnl > 0).reduce((s, t) => s + t.pnl, 0);
+  const grossLosses = Math.abs(trades.filter((t) => t.pnl < 0).reduce((s, t) => s + t.pnl, 0));
+  const profitFactor = grossLosses > 0 ? (grossWins / grossLosses).toFixed(2) : "N/A";
+
+  const systemPrompt = `You are an elite trading performance coach with 20+ years of experience analysing retail and prop firm traders. You're known for giving specific, data-backed insights that traders can immediately act on. You don't give generic advice — every observation must reference specific trades, numbers, or patterns from the data.
+
+Your analysis style:
+- Speak directly to the trader ("You tend to...", "Your best trades...")
+- Use specific trade numbers and symbols when making points
+- ${RETAIL_BENCHMARK_LINE}
+- Be honest about weaknesses but frame them as opportunities
+- Give actionable next steps, not vague suggestions
+
+Structure your response in markdown with these sections:
+
+## Performance Snapshot
+A quick 2-3 sentence overview of where this trader stands. Include their win rate vs the typical 40-50% retail benchmark, and whether their risk:reward compensates.
+
+## Key Patterns Detected
+3-4 specific patterns with evidence. Look for:
+- Time-of-day and day-of-week performance differences
+- Symbol-specific edge (which instruments they trade best/worst)
+- Long vs short bias and which direction is more profitable
+- Position sizing patterns (do they size up on winners or losers?)
+- Hold time patterns (are quick trades or longer holds more profitable?)
+- Consecutive loss behaviour (do they revenge trade or stay disciplined?)
+${hasEmotions ? `- Emotional patterns (which self-reported emotions correlate with wins/losses?)` : ""}
+
+## Strengths to Double Down On
+2-3 concrete things they're doing well, with specific examples from trades
+
+## Critical Improvements
+2-3 high-impact changes ranked by potential impact. For each:
+- What the problem is (with data)
+- Why it matters
+- Exactly what to do differently
+${hasEmotions ? `
+## Emotional Intelligence
+Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses? Give specific, actionable advice for managing destructive emotional states.
+` : ""}
+## Action Plan
+3 specific, measurable goals for their next 20 trades, framed around process and risk (e.g., "Cap max loss per trade at $X" or "Only enter after your checklist confirms the setup"). Never set quotas for trade count or direction (e.g. "take 5 short trades") — a trader can't force the market to provide setups.
+
+Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough; this analysis is a premium Pro feature that traders are paying for. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.` + PLAIN_ENGLISH_STYLE;
+
+  const userPrompt = `Here are my ${trades.length} trades to analyse:
+
+TRADES:
+${tradesSummary}
+
+COMPUTED STATS:
+- Win/Loss/BE: ${wins}W / ${losses}L / ${breakeven}BE (${(wins / trades.length * 100).toFixed(1)}% win rate)
+- Net P&L: ${cur}${totalPnl.toFixed(2)}
+- Avg Win: ${cur}${avgWin.toFixed(2)} | Avg Loss: ${cur}${avgLoss.toFixed(2)} | Ratio: ${avgLoss !== 0 ? (Math.abs(avgWin / avgLoss)).toFixed(2) : "N/A"}
+- Largest Win: ${cur}${largestWin.toFixed(2)} | Largest Loss: ${cur}${largestLoss.toFixed(2)}
+- Avg Hold Time: ${avgHoldMins >= 60 ? `${Math.floor(avgHoldMins / 60)}h ${avgHoldMins % 60}m` : `${avgHoldMins}m`}
+- Direction: ${longCount} longs (${cur}${longPnl.toFixed(2)}) vs ${shortCount} shorts (${cur}${shortPnl.toFixed(2)})
+- Symbols traded: ${symbols.join(", ")}
+- Profit factor (gross wins / gross losses): ${profitFactor}
+- Best win streak: ${maxWinStreak} | Worst loss streak: ${maxLossStreak}${hasEmotions ? `\n- Emotion patterns: ${emotionStats}` : ""}
+
+PRE-AGGREGATED BREAKDOWNS (use these for pattern claims instead of recounting the raw rows; treat groups marked "small sample" as anecdotes, not edges):
+${[renderBuckets("By symbol", bySymbol), renderBuckets("By day of week (UTC)", byWeekday), renderBuckets("By session (UTC)", bySession)].filter(Boolean).join("\n")}
+
+Give me a thorough analysis of my trading.`;
+
+  return { systemPrompt, userPrompt };
+}
+
+
 // Daily rate limits per feature type (Pro users; free tier is gated by monthly quota).
 // Tuned to feel effectively unlimited for normal use while still capping runaway/abuse.
 const RATE_LIMITS = {
@@ -3033,26 +3186,43 @@ const RATE_LIMITS = {
 // The gpt-5.x family requires max_completion_tokens (max_tokens is rejected);
 // temperature and response_format json_object still work. Vision confirmed on
 // gpt-5.4-mini (parseScreenshot).
+// Upgraded 2026-08-04 to the GPT-5.6 family (released Jul 9; Luna cut 80% on
+// Jul 30). Luna is $0.20/$1.20 per M — cheaper than the 5.4-nano it replaces
+// and ~73% cheaper than 5.4-mini, at reported 5.4-flagship-level quality —
+// so BOTH old tiers land on it. Terra ($2/$12, was 5.4 at $2.50/$15) takes
+// the two deep-analysis features. Verified live before switching: model ids,
+// max_completion_tokens, response_format json_object all work; custom
+// temperature is REJECTED (only default 1) — see modelTuning() below.
 const FEATURE_MODELS = {
-  ai_analysis: "gpt-5.4",
-  goal_coach: "gpt-5.4-mini",
-  trade_review: "gpt-5.4",
-  prop_tracker: "gpt-5.4-mini",
-  coaching_tips: "gpt-5.4-nano",
-  // Coach FTJ is the flagship AI surface — it gets the mid-tier model, not nano
-  coach_chat: "gpt-5.4-mini",
-  journal_prompts: "gpt-5.4-nano",
-  risk_alert: "gpt-5.4-nano",
-  strategy_tagger: "gpt-5.4-nano",
-  csv_mapping: "gpt-5.4-nano",
-  journal_review: "gpt-5.4-mini",
-  journal_assist: "gpt-5.4-nano",
-  import_insight: "gpt-5.4-mini",
+  ai_analysis: "gpt-5.6-terra",
+  goal_coach: "gpt-5.6-luna",
+  trade_review: "gpt-5.6-terra",
+  prop_tracker: "gpt-5.6-luna",
+  coaching_tips: "gpt-5.6-luna",
+  coach_chat: "gpt-5.6-luna",
+  journal_prompts: "gpt-5.6-luna",
+  risk_alert: "gpt-5.6-luna",
+  strategy_tagger: "gpt-5.6-luna",
+  csv_mapping: "gpt-5.6-luna",
+  journal_review: "gpt-5.6-luna",
+  journal_assist: "gpt-5.6-luna",
+  import_insight: "gpt-5.6-luna",
 } as const;
 
+// GPT-5.6 models reject non-default temperature (verified live 2026-08-04:
+// "'temperature' does not support 0.4 with this model"). Builders still
+// declare temperatures — harmless metadata for 5.4-era models (screenshot
+// vision stays on 5.4-mini) — but call sites must spread this instead of
+// passing temperature unconditionally, or every 5.6 call 400s.
+function modelTuning(model: string, temperature: number): { temperature?: number } {
+  return model.startsWith("gpt-5.6") ? {} : { temperature };
+}
+
 // Screenshot import needs a vision-capable model; not part of the quota
-// feature map, so it gets its own constant.
-const SCREENSHOT_MODEL = "gpt-5.4-mini";
+// feature map, so it gets its own constant. Vision verified live on 5.6-luna
+// 2026-08-04 (extracted exact labels + dollar figures from a real PropTracker
+// screenshot; ~8.4k image prompt tokens per shot).
+const SCREENSHOT_MODEL = "gpt-5.6-luna";
 
 // Appended to every prose AI system prompt (never the strict-JSON features).
 // Without this the models default to finance-textbook language — real user
@@ -3239,115 +3409,9 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   const trades = request.trades.slice(0, 50);
   const cur = payloadCurrency(data as Record<string, any>);
 
-  // 5. Build prompt — compute detailed stats for richer analysis
-  const tradesSummary = trades.map((t, i) => {
-    const hold = Math.round(
-      (new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000
-    );
-    const holdStr = hold >= 60 ? `${Math.floor(hold / 60)}h ${hold % 60}m` : `${hold}m`;
-    const entryHour = new Date(t.entryTime).getUTCHours();
-    const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(t.entryTime).getUTCDay()];
-    return `${i + 1}. ${clip(t.symbol, 20)} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${clip(t.strategy, 80)}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${clip(t.emotions, 120)}` : ""}`;
-  }).join("\n");
-
-  // Aggregate emotion patterns for analysis
-  const emotionCounts: Record<string, { total: number; wins: number; losses: number }> = {};
-  for (const t of trades) {
-    if (t.emotions) {
-      for (const e of t.emotions.split(",").map((s: string) => s.trim()).filter(Boolean)) {
-        if (!emotionCounts[e]) emotionCounts[e] = { total: 0, wins: 0, losses: 0 };
-        emotionCounts[e].total++;
-        if (t.pnl > 0) emotionCounts[e].wins++;
-        else if (t.pnl < 0) emotionCounts[e].losses++;
-      }
-    }
-  }
-  const hasEmotions = Object.keys(emotionCounts).length > 0;
-  const emotionStats = Object.entries(emotionCounts)
-    .sort((a, b) => b[1].total - a[1].total)
-    .map(([e, c]) => `${e}: ${c.total} trades (${c.wins}W/${c.losses}L, ${(c.wins / c.total * 100).toFixed(0)}% WR)`)
-    .join(", ");
-
-  const wins = trades.filter((t) => t.pnl > 0).length;
-  const losses = trades.filter((t) => t.pnl < 0).length;
-  const breakeven = trades.filter((t) => t.pnl === 0).length;
-  const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
-  const avgWin = wins > 0 ? trades.filter((t) => t.pnl > 0).reduce((s, t) => s + t.pnl, 0) / wins : 0;
-  const avgLoss = losses > 0 ? trades.filter((t) => t.pnl < 0).reduce((s, t) => s + t.pnl, 0) / losses : 0;
-  const largestWin = Math.max(...trades.map((t) => t.pnl));
-  const largestLoss = Math.min(...trades.map((t) => t.pnl));
-  const avgHoldMins = Math.round(trades.reduce((s, t) => s + (new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000, 0) / trades.length);
-  const symbols = [...new Set(trades.map((t) => t.symbol))];
-  const longCount = trades.filter((t) => t.side === "long").length;
-  const shortCount = trades.filter((t) => t.side === "short").length;
-  const longPnl = trades.filter((t) => t.side === "long").reduce((s, t) => s + t.pnl, 0);
-  const shortPnl = trades.filter((t) => t.side === "short").reduce((s, t) => s + t.pnl, 0);
-
-  // Streak calculation
-  let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
-  for (const t of trades) {
-    if (t.pnl > 0) { curWin++; curLoss = 0; maxWinStreak = Math.max(maxWinStreak, curWin); }
-    else if (t.pnl < 0) { curLoss++; curWin = 0; maxLossStreak = Math.max(maxLossStreak, curLoss); }
-    else { curWin = 0; curLoss = 0; }
-  }
-
-  const systemPrompt = `You are an elite trading performance coach with 20+ years of experience analysing retail and prop firm traders. You're known for giving specific, data-backed insights that traders can immediately act on. You don't give generic advice — every observation must reference specific trades, numbers, or patterns from the data.
-
-Your analysis style:
-- Speak directly to the trader ("You tend to...", "Your best trades...")
-- Use specific trade numbers and symbols when making points
-- Compare their stats to typical retail trader benchmarks where relevant
-- Be honest about weaknesses but frame them as opportunities
-- Give actionable next steps, not vague suggestions
-
-Structure your response in markdown with these sections:
-
-## Performance Snapshot
-A quick 2-3 sentence overview of where this trader stands. Include their win rate vs the typical 40-50% retail benchmark, and whether their risk:reward compensates.
-
-## Key Patterns Detected
-3-4 specific patterns with evidence. Look for:
-- Time-of-day and day-of-week performance differences
-- Symbol-specific edge (which instruments they trade best/worst)
-- Long vs short bias and which direction is more profitable
-- Position sizing patterns (do they size up on winners or losers?)
-- Hold time patterns (are quick trades or longer holds more profitable?)
-- Consecutive loss behaviour (do they revenge trade or stay disciplined?)
-${hasEmotions ? `- Emotional patterns (which self-reported emotions correlate with wins/losses?)` : ""}
-
-## Strengths to Double Down On
-2-3 concrete things they're doing well, with specific examples from trades
-
-## Critical Improvements
-2-3 high-impact changes ranked by potential impact. For each:
-- What the problem is (with data)
-- Why it matters
-- Exactly what to do differently
-${hasEmotions ? `
-## Emotional Intelligence
-Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses? Give specific, actionable advice for managing destructive emotional states.
-` : ""}
-## Action Plan
-3 specific, measurable goals for their next 20 trades, framed around process and risk (e.g., "Cap max loss per trade at $X" or "Only enter after your checklist confirms the setup"). Never set quotas for trade count or direction (e.g. "take 5 short trades") — a trader can't force the market to provide setups.
-
-Keep the tone like a knowledgeable mentor who genuinely wants to help. Be thorough; this analysis is a premium Pro feature that traders are paying for. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.` + PLAIN_ENGLISH_STYLE;
-
-  const userPrompt = `Here are my ${trades.length} trades to analyse:
-
-TRADES:
-${tradesSummary}
-
-COMPUTED STATS:
-- Win/Loss/BE: ${wins}W / ${losses}L / ${breakeven}BE (${(wins / trades.length * 100).toFixed(1)}% win rate)
-- Net P&L: ${cur}${totalPnl.toFixed(2)}
-- Avg Win: ${cur}${avgWin.toFixed(2)} | Avg Loss: ${cur}${avgLoss.toFixed(2)} | Ratio: ${avgLoss !== 0 ? (Math.abs(avgWin / avgLoss)).toFixed(2) : "N/A"}
-- Largest Win: ${cur}${largestWin.toFixed(2)} | Largest Loss: ${cur}${largestLoss.toFixed(2)}
-- Avg Hold Time: ${avgHoldMins >= 60 ? `${Math.floor(avgHoldMins / 60)}h ${avgHoldMins % 60}m` : `${avgHoldMins}m`}
-- Direction: ${longCount} longs (${cur}${longPnl.toFixed(2)}) vs ${shortCount} shorts (${cur}${shortPnl.toFixed(2)})
-- Symbols traded: ${symbols.join(", ")}
-- Best win streak: ${maxWinStreak} | Worst loss streak: ${maxLossStreak}${hasEmotions ? `\n- Emotion patterns: ${emotionStats}` : ""}
-
-Give me a thorough analysis of my trading.`;
+  // 5. Build prompt — shared with the streaming path (buildAnalysisPrompts),
+  // so the two can no longer drift.
+  const { systemPrompt, userPrompt } = buildAnalysisPrompts(trades, cur);
 
   // 6. Call OpenAI
   const apiKey = process.env.OPENAI_API_KEY;
@@ -3370,8 +3434,8 @@ Give me a thorough analysis of my trading.`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_completion_tokens: 1500,
-      temperature: 0.7,
+      max_completion_tokens: 2000,
+      ...modelTuning(FEATURE_MODELS.ai_analysis, 0.7),
     });
     analysis = completion.choices[0]?.message?.content || "No analysis generated.";
   } catch (err: any) {
@@ -3491,7 +3555,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
         { role: "user", content: userPrompt },
       ],
       max_completion_tokens: 400,
-      temperature: 0,
+      ...modelTuning(FEATURE_MODELS.csv_mapping, 0),
       response_format: { type: "json_object" },
     });
     parsed = JSON.parse(completion.choices[0]?.message?.content || "{}");
@@ -3616,13 +3680,19 @@ function buildImportInsightPrompt(payload: Record<string, any>) {
     `Best day: ${cur}${n2(s.bestDay).toFixed(2)}, worst day: ${cur}${n2(s.worstDay).toFixed(2)}`,
   ].join("\n");
 
-  const groups = (label: string, arr: any): string => {
-    const list = Array.isArray(arr) ? arr.slice(0, 5) : [];
-    if (list.length === 0) return "";
-    return `${label}:\n` + list.map((g: any) =>
-      `- ${String(g?.key ?? "?")}: ${n2(g?.count)} trades, win rate ${n2(g?.winRate).toFixed(1)}%, net P&L ${cur}${n2(g?.netPnl).toFixed(2)}`
-    ).join("\n");
-  };
+  // Shared renderer: adds payoff ratio and "[small sample, not significant]"
+  // tags per group. Pre-2.71 clients send buckets without a `significant`
+  // field — those all render as small-sample, which errs toward caution.
+  const groupBlocks = [
+    renderAiGroups(cur, "By symbol", payload.perSymbol),
+    renderAiGroups(cur, "By day of week", payload.perWeekday),
+    renderAiGroups(cur, "By time of day (trader's local time)", payload.perSession),
+    renderAiGroups(cur, "By direction (long vs short)", payload.perSide),
+  ].filter(Boolean).join("\n\n");
+
+  const payoffLine = typeof s.payoffRatio === "number" && Number.isFinite(s.payoffRatio)
+    ? `\nPayoff ratio (avg win / avg loss): ${s.payoffRatio.toFixed(2)}:1`
+    : "";
 
   return {
     system: `You are a trading coach giving a trader the FIRST read of the trade history they just imported. This is their first impression of the product's AI — make it land.
@@ -3638,8 +3708,13 @@ Three specific, numbers-backed observations — lead with the most surprising or
 ## Where to start
 One concrete, encouraging next step based on what you saw.
 
-Under 250 words. Never invent data that isn't provided. If the sample is small, say the reads are early hints, not verdicts.`,
-    user: `I just imported my trading history. Give me your first read.\n\n${statsLine}\n\n${[groups("By symbol", payload.perSymbol), groups("By day of week", payload.perWeekday)].filter(Boolean).join("\n\n")}`,
+Rules:
+- ${RETAIL_BENCHMARK_LINE}
+- Groups marked [small sample] are anecdotes, not edges — never present one as a strength or weakness to act on.
+- Never invent data that isn't provided. If the whole import is small, say the reads are early hints, not verdicts.
+
+Under 250 words.`,
+    user: `I just imported my trading history. Give me your first read.\n\n${statsLine}${payoffLine}\n\n${groupBlocks}`,
     maxTokens: 450,
     temperature: 0.7,
   };
@@ -3780,8 +3855,8 @@ Rules:
 - Large sudden moves → breakout or news
 - Trades entering after a retracement in trend direction → pullback
 
-Return ONLY valid JSON array. No markdown, no explanation. Format:
-[{"id":"tradeId","strategy":"category","confidence":0.85}]`,
+Return ONLY a valid JSON object of the shape {"tags": [...]}. No markdown, no explanation. Format:
+{"tags":[{"id":"tradeId","strategy":"category","confidence":0.85}]}`,
     user: `Classify these trades:\n${tradesList}`,
     maxTokens: 600, // Reduced for 15 trades batch size (fits character limit)
     temperature: 0.3,
@@ -3830,12 +3905,47 @@ For each goal, one specific observation or suggestion (what's working, what to a
 ## Motivation
 1-2 sentences of genuine encouragement tied to their actual progress — not generic platitudes.
 
+${RETAIL_BENCHMARK_LINE} Judge goal targets against these benchmarks: a goal like "80% win rate" deserves a reality check, not encouragement.
+
 Keep under 350 words. Be data-driven and specific.`,
     user: `My trading goals:\n${goalsSummary || "No goals set"}\n\nRisk rules:\n${rulesSummary || "No rules set"}\n\nStats: ${tradeCount} trades over ${daysSinceStart} days. Win rate: ${stats?.winRate?.toFixed(1) || "N/A"}%. Avg R:R: ${stats?.avgRR?.toFixed(2) || "N/A"}. Profit factor: ${stats?.profitFactor?.toFixed(2) || "N/A"}. Total P&L: ${cur}${stats?.totalPnL?.toFixed(2) || "0.00"}.\n\nAll money amounts are in ${cur} — use that symbol in your answer.\n\nCoach me on my goals.`,
     maxTokens: 500,
     temperature: 0.7,
   };
 }
+
+// ─── Shared AI prompt data-rendering helpers ──
+// NaN-safe formatters so no "$NaN" / "NaN%" / "Infinity:1" can reach a model.
+// Used by buildCoachChatPrompt AND buildCoachingTipsPrompt — one renderer, two
+// consumers, so the data blocks can never drift apart (the aiStream lesson).
+const aiNum = (v: any): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+const aiMoney = (cur: string, v: any): string => `${cur}${aiNum(v).toFixed(2)}`;
+const aiPct = (v: any): string => `${aiNum(v).toFixed(1)}%`;
+const aiRatioOrNA = (v: any): string =>
+  typeof v === "number" && Number.isFinite(v) ? `${v.toFixed(2)}:1` : "n/a";
+const aiSigTag = (g: any): string =>
+  g?.significant === true ? "" : ` [small sample, n=${aiNum(g?.count)}, not significant]`;
+
+// Per-group rendering (symbol / strategy / side / ...), capped and pre-ranked by count.
+function renderAiGroups(cur: string, label: string, arr: any): string {
+  const list = Array.isArray(arr) ? arr.slice(0, 6) : [];
+  if (list.length === 0) return "";
+  const lines = list.map((g: any) => {
+    const rr = g?.avgPlannedRR;
+    const rrPart =
+      typeof rr === "number" && Number.isFinite(rr)
+        ? `, avg planned R:R ${rr.toFixed(2)} (set on ${aiNum(g?.rrSampleCount)} of ${aiNum(g?.count)})`
+        : "";
+    return `- ${String(g?.key ?? "?")}: ${aiNum(g?.count)} trades, win rate ${aiPct(g?.winRate)}, net P&L ${aiMoney(cur, g?.netPnl)}, avg P&L ${aiMoney(cur, g?.avgPnl)}, payoff ratio ${aiRatioOrNA(g?.payoffRatio)}${rrPart}${aiSigTag(g)}`;
+  }).join("\n");
+  return `${label} (ranked by sample size, largest first):\n${lines}`;
+}
+
+// Retail benchmark grounding (used by tips/analysis/goal prompts): most retail
+// day traders land at 40-50% win rate, profit factor 1.0-1.5, Sharpe 0.2-0.5.
+// A win rate only means something next to the payoff ratio.
+const RETAIL_BENCHMARK_LINE =
+  "Grounding: typical retail day traders run a 40-50% win rate, profit factor 1.0-1.5. A win rate is only meaningful alongside the payoff ratio (avg win / avg loss) — 45% with a 2:1 payoff is profitable, 65% with a 0.5:1 payoff loses money. Compare the trader to these benchmarks, not to perfection.";
 
 function buildCoachingTipsPrompt(payload: Record<string, any>) {
   const { trades, winRate, avgPnl, totalPnl, consecutiveLosses, bestSymbol, worstSymbol, avgHoldMinutes, tradeCount } = payload;
@@ -3845,7 +3955,8 @@ function buildCoachingTipsPrompt(payload: Record<string, any>) {
     return `${i + 1}. ${t.symbol} ${t.side} P&L: ${cur}${t.pnl?.toFixed(2)} Hold: ${t.holdMinutes || "?"}m${t.emotions ? ` Emotions: ${t.emotions}` : ""}`;
   }).join("\n");
 
-  // Aggregate emotion patterns
+  // Legacy emotion aggregation from raw trades — kept as the fallback for
+  // pre-2.71 clients whose payload has no perEmotion buckets.
   const emotionCounts: Record<string, { total: number; wins: number; losses: number }> = {};
   for (const t of (trades || [])) {
     if (t.emotions) {
@@ -3862,25 +3973,72 @@ function buildCoachingTipsPrompt(payload: Record<string, any>) {
     .map(([e, c]) => `${e}: ${c.total} trades (${c.wins}W/${c.losses}L)`)
     .join(", ");
 
+  // ── Enriched analytics (2.71+ clients). Every block degrades to "" when the
+  // field is absent, so older clients keep getting the thin-stats prompt.
+  const hasEnough = payload.hasEnoughData === true;
+  const sigThreshold = aiNum(payload.significanceThreshold) || 25;
+
+  const riskLine = (typeof payload.avgWin === "number" || typeof payload.payoffRatio === "number")
+    ? `Avg win: ${aiMoney(cur, payload.avgWin)}, avg loss: ${aiMoney(cur, payload.avgLoss)}, payoff ratio (avg win / avg loss): ${aiRatioOrNA(payload.payoffRatio)}${typeof payload.avgPlannedRR === "number" && Number.isFinite(payload.avgPlannedRR) ? `, avg PLANNED R:R ${payload.avgPlannedRR.toFixed(2)} (set on ${aiNum(payload.rrSampleCount)} of ${aiNum(tradeCount)} trades)` : ""}`
+    : "";
+
+  const tilt = payload.tilt;
+  const tiltLine = tilt && typeof tilt.score === "number"
+    ? `Tilt score: ${aiNum(tilt.score)}/100 (${String(tilt.label || "")})${Array.isArray(tilt.factors) && tilt.factors.length > 0 ? ` — factors: ${tilt.factors.slice(0, 5).join("; ")}` : ""}`
+    : "";
+
+  const p = payload.patterns;
+  const patternFlags = p ? [
+    p.overtrading === true && "overtrading (10+ trades in a day)",
+    p.revengeTrading === true && `revenge trading (${aiNum(p.revengeTradeProbability)}% of losses followed by a rushed, larger trade)`,
+    p.fomo === true && "chasing extended moves (FOMO entries)",
+    p.positionSizingIssues === true && "inconsistent position sizing (high size variance)",
+    p.emotionalTrading === true && "worse results in trades right after losses",
+  ].filter(Boolean) as string[] : [];
+  const patternsLine = patternFlags.length > 0 ? `Detected behavior patterns: ${patternFlags.join("; ")}` : "";
+
+  const ta = payload.timeAnalysis;
+  const timeLine = ta && (ta.bestHour !== null && ta.bestHour !== undefined || ta.bestDay)
+    ? `Timing (trader's local clock): best hour ${ta.bestHour ?? "n/a"}:00, worst hour ${ta.worstHour ?? "n/a"}:00, best day ${ta.bestDay ?? "n/a"}, worst day ${ta.worstDay ?? "n/a"}`
+    : "";
+
+  const groupBlocks = [
+    renderAiGroups(cur, "By instrument/symbol", payload.perSymbol),
+    payload.strategiesTagged === true ? renderAiGroups(cur, "By strategy/setup", payload.perStrategy) : "",
+    renderAiGroups(cur, "By direction (long vs short)", payload.perSide),
+    renderAiGroups(cur, "By time of day (trader's local time)", payload.perSession),
+    renderAiGroups(cur, "By day of week (trader's local time)", payload.perWeekday),
+    renderAiGroups(cur, "By self-reported emotion (one trade can carry several)", payload.perEmotion),
+  ].filter(Boolean).join("\n\n");
+
+  const enrichedBlock = [riskLine, tiltLine, patternsLine, timeLine, groupBlocks ? "\n" + groupBlocks : ""]
+    .filter(Boolean).join("\n");
+
   return {
-    system: `You are a trading coach providing daily tips. Based on the trader's recent data, generate exactly 5 coaching tips as a JSON array. Each tip must have:
+    system: `You are a trading coach providing daily tips. Based on the trader's recent data, generate exactly 5 coaching tips. Each tip must have:
 - "type": one of "critical", "warning", "action", "success", "info"
 - "title": short title (3-6 words)
 - "message": one sentence of specific, actionable advice referencing their actual data
 
 Use "critical" sparingly (only for serious issues like large losing streaks). Use "success" for things they're doing well. The rest should be "action" or "info" with concrete suggestions.
 
-Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured, so every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.
+Rules:
+- ${RETAIL_BENCHMARK_LINE}
+- Small samples are not evidence. Any group marked [small sample] must not be praised or criticized as an edge; at most, suggest collecting more data on it.${hasEnough ? "" : `\n- The trader has fewer than ${sigThreshold} trades total, so treat every stat as preliminary and say so when it matters.`}
+- NEVER advise increasing position size, risk, or "pressing" because something has been profitable. Sizing up on recent results is pro-cyclical and dangerous. Sizing down or normalizing risk after losses or during tilt is fine.
+- If a tilt score of 40 or higher is reported, the FIRST tip must be a "warning" or "critical" about stepping back or reducing risk today, grounded in the listed tilt factors.
+- If behavior patterns are detected, address at least one of them with a concrete process fix. Never invent a pattern that is not listed.
+- Never advise the trader to force a specific count or direction of trades (e.g. "take 5 short trades", "trade more longs", "make X trades next week"). Setups cannot be manufactured, so every tip must focus on process, risk management, discipline, setup quality, or psychology, never trade-count quotas or directional targets.
 
-Write in plain prose. Do not use em-dashes or en-dashes (the long dash characters); use commas, periods, or hyphens instead.${emotionSummary ? `
+Tip messages are read by everyday traders: plain, everyday English, like talking to a trader friend. Never use jargon in a message: no "expectancy", "payoff ratio", "profit factor", "risk-adjusted", "asymmetry". Those terms appear in the data below for YOUR reasoning; translate them into money when you write, e.g. not "your payoff ratio is 0.75:1" but "your average losing trade costs more than your average winner makes". Common terms traders actually say (win rate, stop loss, P&L) are fine. Write in plain prose. Do not use em-dashes or en-dashes (the long dash characters); use commas, periods, or hyphens instead.${emotionSummary || (Array.isArray(payload.perEmotion) && payload.perEmotion.length > 0) ? `
 
 If the trader has logged emotions, include at least one tip about their emotional patterns — e.g., which emotions correlate with wins/losses, and what to do about it.` : ""}
 
-Return ONLY a valid JSON array. No markdown, no explanation. Example:
-[{"type":"success","title":"Strong Win Rate","message":"Your 65% win rate is above the retail average — keep doing what you're doing on EUR/USD."}]`,
-    user: `My stats: ${tradeCount} trades, ${winRate?.toFixed(1)}% win rate, avg P&L: ${cur}${avgPnl?.toFixed(2)}, total P&L: ${cur}${totalPnl?.toFixed(2)}, current losing streak: ${consecutiveLosses || 0}, best symbol: ${bestSymbol || "N/A"}, worst symbol: ${worstSymbol || "N/A"}, avg hold: ${avgHoldMinutes || "?"}m.${emotionSummary ? `\nEmotion patterns: ${emotionSummary}` : ""}\nAll money amounts are in ${cur} — use that symbol in tip messages.\n\nRecent trades:\n${recentSummary}\n\nGive me 5 coaching tips.`,
-    maxTokens: 500,
-    temperature: 0.7,
+Return ONLY a valid JSON object of the shape {"tips": [...]} where tips is the array of 5 tip objects. No markdown, no explanation. Example:
+{"tips":[{"type":"success","title":"Strong Win Rate","message":"Your 65% win rate is above the retail average, keep doing what you're doing on EUR/USD."}]}`,
+    user: `My stats: ${tradeCount} trades, ${winRate?.toFixed(1)}% win rate, avg P&L: ${cur}${avgPnl?.toFixed(2)}, total P&L: ${cur}${totalPnl?.toFixed(2)}, current losing streak: ${consecutiveLosses || 0}, best symbol: ${bestSymbol || "N/A"}, worst symbol: ${worstSymbol || "N/A"}, avg hold: ${avgHoldMinutes || "?"}m.${emotionSummary ? `\nEmotion patterns: ${emotionSummary}` : ""}${enrichedBlock ? `\n\n${enrichedBlock}` : ""}\nAll money amounts are in ${cur} — use that symbol in tip messages.\n\nRecent trades (chronological tail, NOT a ranking):\n${recentSummary}\n\nGive me 5 coaching tips.`,
+    maxTokens: 600,
+    temperature: 0.4,
   };
 }
 
@@ -3924,30 +4082,14 @@ function buildCoachChatPrompt(payload: Record<string, any>) {
       }))
     : [];
 
-  // NaN-safe formatters so no "$NaN" / "NaN%" / "Infinity:1" can reach the model.
+  // Shared NaN-safe formatters + group renderer (module scope below) so the
+  // chat and coaching-tips prompts render identical data blocks.
   const cur = payloadCurrency(payload);
-  const n = (v: any): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-  const money = (v: any): string => `${cur}${n(v).toFixed(2)}`;
-  const pct = (v: any): string => `${n(v).toFixed(1)}%`;
-  const ratioOrNA = (v: any): string =>
-    typeof v === "number" && Number.isFinite(v) ? `${v.toFixed(2)}:1` : "n/a";
-  const sigTag = (g: any): string =>
-    g?.significant === true ? "" : ` [small sample, n=${n(g?.count)}, not significant]`;
-
-  // Per-group rendering helper (symbol / strategy / side), capped and pre-ranked by count.
-  const renderGroups = (label: string, arr: any): string => {
-    const list = Array.isArray(arr) ? arr.slice(0, 6) : [];
-    if (list.length === 0) return "";
-    const lines = list.map((g: any) => {
-      const rr = g?.avgPlannedRR;
-      const rrPart =
-        typeof rr === "number" && Number.isFinite(rr)
-          ? `, avg planned R:R ${rr.toFixed(2)} (set on ${n(g?.rrSampleCount)} of ${n(g?.count)})`
-          : "";
-      return `- ${String(g?.key ?? "?")}: ${n(g?.count)} trades, win rate ${pct(g?.winRate)}, net P&L ${money(g?.netPnl)}, avg P&L ${money(g?.avgPnl)}, payoff ratio ${ratioOrNA(g?.payoffRatio)}${rrPart}${sigTag(g)}`;
-    }).join("\n");
-    return `${label} (ranked by sample size, largest first):\n${lines}`;
-  };
+  const n = aiNum;
+  const money = (v: any) => aiMoney(cur, v);
+  const pct = aiPct;
+  const ratioOrNA = aiRatioOrNA;
+  const renderGroups = (label: string, arr: any): string => renderAiGroups(cur, label, arr);
 
   const symbolBlock = renderGroups("By instrument/symbol", payload.perSymbol);
   const strategyBlock = payload.strategiesTagged === true
@@ -4124,7 +4266,7 @@ Accounts:
 ${accountSummaries}
 
 Give me an honest coaching breakdown with a score.`,
-    maxTokens: 900,
+    maxTokens: 1200,
     temperature: 0.4,
   };
 }
@@ -4239,7 +4381,11 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
         { role: "user", content: prompt.user },
       ],
       max_completion_tokens: prompt.maxTokens,
-      temperature: prompt.temperature,
+      ...modelTuning(model, prompt.temperature),
+      // Enforced JSON object for the structured features (coaching_tips
+      // {"tips":[...]}, strategy_tagger {"tags":[...]}) — kills silent
+      // client-side parse failures.
+      ...(JSON_OUTPUT_TYPES.has(request.type) ? { response_format: { type: "json_object" as const } } : {}),
     });
     result = completion.choices[0]?.message?.content || "No response generated.";
   } catch (err: any) {
@@ -4364,7 +4510,7 @@ Return only valid JSON with no extra text.`;
         },
       ],
       max_completion_tokens: 1500,
-      temperature: 0,
+      ...modelTuning(SCREENSHOT_MODEL, 0),
       response_format: { type: "json_object" },
     });
     result = completion.choices[0]?.message?.content || "{}";
@@ -4867,101 +5013,11 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
 
     const trades = request.trades.slice(0, 50);
     const cur = payloadCurrency(reqData as Record<string, any>);
-    const tradesSummary = trades.map((t, i) => {
-      const hold = Math.round((new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000);
-      const holdStr = hold >= 60 ? `${Math.floor(hold / 60)}h ${hold % 60}m` : `${hold}m`;
-      const entryHour = new Date(t.entryTime).getUTCHours();
-      const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(t.entryTime).getUTCDay()];
-      return `${i + 1}. ${clip(t.symbol, 20)} ${t.side.toUpperCase()} | Entry: ${t.entryPrice} → Exit: ${t.exitPrice} | Lots: ${t.lotSize} | P&L: ${cur}${t.pnl.toFixed(2)} | Hold: ${holdStr} | Entered: ${dayOfWeek} ${entryHour}:00 UTC${t.strategy ? ` | Strategy: ${clip(t.strategy, 80)}` : ""}${t.riskReward ? ` | R:R ${t.riskReward.toFixed(1)}` : ""}${t.emotions ? ` | Emotions: ${clip(t.emotions, 120)}` : ""}`;
-    }).join("\n");
-
-    const emotionCounts: Record<string, { total: number; wins: number; losses: number }> = {};
-    for (const t of trades) {
-      if (t.emotions) {
-        for (const e of t.emotions.split(",").map((s: string) => s.trim()).filter(Boolean)) {
-          if (!emotionCounts[e]) emotionCounts[e] = { total: 0, wins: 0, losses: 0 };
-          emotionCounts[e].total++;
-          if (t.pnl > 0) emotionCounts[e].wins++;
-          else if (t.pnl < 0) emotionCounts[e].losses++;
-        }
-      }
-    }
-    const hasEmotions = Object.keys(emotionCounts).length > 0;
-    const emotionStats = Object.entries(emotionCounts)
-      .sort((a, b) => b[1].total - a[1].total)
-      .map(([e, c]) => `${e}: ${c.total} trades (${c.wins}W/${c.losses}L, ${(c.wins / c.total * 100).toFixed(0)}% WR)`)
-      .join(", ");
-
-    const wins = trades.filter((t) => t.pnl > 0).length;
-    const losses = trades.filter((t) => t.pnl < 0).length;
-    const breakeven = trades.filter((t) => t.pnl === 0).length;
-    const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
-    const avgWin = wins > 0 ? trades.filter((t) => t.pnl > 0).reduce((s, t) => s + t.pnl, 0) / wins : 0;
-    const avgLoss = losses > 0 ? trades.filter((t) => t.pnl < 0).reduce((s, t) => s + t.pnl, 0) / losses : 0;
-    const largestWin = Math.max(...trades.map((t) => t.pnl));
-    const largestLoss = Math.min(...trades.map((t) => t.pnl));
-    const avgHoldMins = Math.round(trades.reduce((s, t) => s + (new Date(t.exitTime).getTime() - new Date(t.entryTime).getTime()) / 60000, 0) / trades.length);
-    const symbols = [...new Set(trades.map((t) => t.symbol))];
-    const longCount = trades.filter((t) => t.side === "long").length;
-    const shortCount = trades.filter((t) => t.side === "short").length;
-    const longPnl = trades.filter((t) => t.side === "long").reduce((s, t) => s + t.pnl, 0);
-    const shortPnl = trades.filter((t) => t.side === "short").reduce((s, t) => s + t.pnl, 0);
-    let maxWinStreak = 0, maxLossStreak = 0, curWin = 0, curLoss = 0;
-    for (const t of trades) {
-      if (t.pnl > 0) { curWin++; curLoss = 0; maxWinStreak = Math.max(maxWinStreak, curWin); }
-      else if (t.pnl < 0) { curLoss++; curWin = 0; maxLossStreak = Math.max(maxLossStreak, curLoss); }
-      else { curWin = 0; curLoss = 0; }
-    }
-
-    systemPrompt = `You are an elite trading performance coach with 20+ years of experience analysing retail and prop firm traders. You're known for giving specific, data-backed insights that traders can immediately act on. You don't give generic advice — every observation must reference specific trades, numbers, or patterns from the data.
-
-Your analysis style:
-- Speak directly to the trader ("You tend to...", "Your best trades...")
-- Use specific trade numbers and symbols when making points
-- Compare their stats to typical retail trader benchmarks where relevant
-- Be honest about weaknesses but frame them as opportunities
-- Give actionable next steps, not vague suggestions
-
-Structure your response in markdown with these sections:
-
-## Performance Snapshot
-A quick 2-3 sentence overview of where this trader stands.
-
-## Key Patterns Detected
-3-4 specific patterns with evidence.
-
-## Strengths to Double Down On
-2-3 concrete things they're doing well, with specific examples from trades
-
-## Critical Improvements
-2-3 high-impact changes ranked by potential impact.
-${hasEmotions ? `
-## Emotional Intelligence
-Analyse the trader's self-reported emotional patterns. Which emotions lead to profitable trades? Which emotions precede losses?
-` : ""}
-## Action Plan
-3 specific, measurable goals for their next 20 trades, framed around process and risk — never quotas for trade count or direction (e.g. "take 5 short trades"), since a trader can't force the market to provide setups.
-
-Keep the tone like a knowledgeable mentor who genuinely wants to help. Write in plain prose; do not use em-dashes or en-dashes (the long dash characters), use commas, periods, or hyphens instead.` + PLAIN_ENGLISH_STYLE;
-
-    userPrompt = `Here are my ${trades.length} trades to analyse:
-
-TRADES:
-${tradesSummary}
-
-COMPUTED STATS:
-- Win/Loss/BE: ${wins}W / ${losses}L / ${breakeven}BE (${(wins / trades.length * 100).toFixed(1)}% win rate)
-- Net P&L: ${cur}${totalPnl.toFixed(2)}
-- Avg Win: ${cur}${avgWin.toFixed(2)} | Avg Loss: ${cur}${avgLoss.toFixed(2)} | Ratio: ${avgLoss !== 0 ? (Math.abs(avgWin / avgLoss)).toFixed(2) : "N/A"}
-- Largest Win: ${cur}${largestWin.toFixed(2)} | Largest Loss: ${cur}${largestLoss.toFixed(2)}
-- Avg Hold Time: ${avgHoldMins >= 60 ? `${Math.floor(avgHoldMins / 60)}h ${avgHoldMins % 60}m` : `${avgHoldMins}m`}
-- Direction: ${longCount} longs (${cur}${longPnl.toFixed(2)}) vs ${shortCount} shorts (${cur}${shortPnl.toFixed(2)})
-- Symbols traded: ${symbols.join(", ")}
-- Best win streak: ${maxWinStreak} | Worst loss streak: ${maxLossStreak}${hasEmotions ? `\n- Emotion patterns: ${emotionStats}` : ""}
-
-Give me a thorough analysis of my trading.`;
-
-    maxTokens = 1500;
+    // Shared with the callable path — see buildAnalysisPrompts (they had drifted).
+    const prompts = buildAnalysisPrompts(trades, cur);
+    systemPrompt = prompts.systemPrompt;
+    userPrompt = prompts.userPrompt;
+    maxTokens = 2000;
     temperature = 0.7;
   } else {
     const request = reqData as AIAssistRequest;
@@ -5060,8 +5116,10 @@ Give me a thorough analysis of my trading.`;
         { role: "user", content: userPrompt },
       ],
       max_completion_tokens: maxTokens,
-      temperature,
+      ...modelTuning(model, temperature),
       stream: true,
+      // Same JSON-object enforcement as the callable path.
+      ...(featureType && JSON_OUTPUT_TYPES.has(featureType) ? { response_format: { type: "json_object" as const } } : {}),
     });
 
     for await (const chunk of stream) {
