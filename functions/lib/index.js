@@ -4360,6 +4360,9 @@ const ALLOWED_ORIGINS = [
     "https://www.freetradejournal.com",
     "https://freetradejournal.com",
     "http://localhost:5173",
+    // Vite auto-increments when 5173 is taken — without this, dev AI streaming
+    // dies on CORS whenever another dev server is already running.
+    "http://localhost:5174",
     "http://localhost:4173",
 ];
 exports.aiStream = functions.https.onRequest(async (req, res) => {
