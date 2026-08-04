@@ -35,6 +35,8 @@ If a file has a column layout the importer doesn't recognize on sight, a mapping
 
 Once your positions are in, the free analytics do the work MetaTrader never will: win rate by pair, by session, by day of week. Average winner against average loser. A calendar heatmap of your P&L. Risk rules that warn you when today's losses cross the line you set for yourself.
 
+All of it lives in the free [forex trading journal](/forex-trading-journal) — pips worked out per pair, sessions broken out, and nothing to install.
+
 Journal a note and how you felt on each trade, and over time you can see whether your "I knew better" trades are a rounding error or half your losses. For most people it's not a rounding error.
 
 ## What about automatic sync?

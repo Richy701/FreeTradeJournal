@@ -50,6 +50,8 @@ If you're trading with Topstep, FTMO, MyFundedFutures, or any other prop firm an
 
 It's also for traders who tried TradeZella, Edgewonk, or Tradervue and thought: *this is too expensive or too complicated for what I actually need.*
 
+If your firm is an FX shop like FTMO, the [forex trading journal](/forex-trading-journal) does the pip maths per pair and takes MT4/MT5 exports as they come.
+
 ## Getting Started
 
 Head to [freetradejournal.com](https://freetradejournal.com), create a free account, and start logging your trades today.

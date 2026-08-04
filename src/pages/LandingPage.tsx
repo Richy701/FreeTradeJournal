@@ -83,7 +83,18 @@ export default function LandingPage() {
             <span className="text-amber-600 dark:text-amber-500">Logging & Management</span>
           </span>
         }
-        description="Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across forex pairs, futures contracts, and indices with powerful filtering and export capabilities."
+        description={
+          <>
+            Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across{' '}
+            <Link
+              to="/forex-trading-journal"
+              className="text-foreground underline underline-offset-4 decoration-amber-500/40 hover:decoration-amber-500 transition-colors"
+            >
+              forex pairs
+            </Link>
+            , futures contracts, and indices with powerful filtering and export capabilities.
+          </>
+        }
         images={[
           { src: "/images/screenshots/trading-log-screenshot.webp", alt: "Trade Log View" }
         ]}
