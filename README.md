@@ -83,7 +83,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### AI Trading Coach
 
-- All AI features run on OpenAI's GPT-5.4 model family, with answers in plain English — what is actually happening with your money, not finance-textbook terms
+- All AI features run on OpenAI's GPT-5.6 model family, with answers in plain English — what is actually happening with your money, not finance-textbook terms
 - Dedicated AI Coach page with Coach FTJ chat — reads your full account history broken down by instrument, strategy, direction, day of week, session, and tagged emotions
 - Honest about small samples — tells you when there are too few trades to draw a conclusion instead of guessing
 - Automatic detection of overtrading, revenge trading, and FOMO patterns
@@ -96,7 +96,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 ### Pro Features (Powered by Stripe)
 
 - **PropTracker Unlimited** — Unlimited prop firm accounts, charts, and AI analysis (free tier: 1 account)
-- **AI PropTracker Analysis** — GPT-5.4 breakdown of prop firm P&L: which firms are profitable, warning signs, what to do next (5/day)
+- **AI PropTracker Analysis** — GPT-5.6 breakdown of prop firm P&L: which firms are profitable, warning signs, what to do next (5/day)
 - **Full analytics history** — Free accounts see dashboard stats and charts for the last 30 days of trading; Pro keeps the full history (the trade log, exports, and calendar heatmap stay unlimited for everyone)
 - **Unlimited journal entries** — Free plan includes 20; existing entries always stay readable
 - **Theme Studio** — Build a fully custom theme with separate dark-mode colors, background and sidebar tinting, and corner-radius control
@@ -131,7 +131,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - **Success Rate Dashboard (Pro)** — pass rate, total attempts vs funded, average cost-to-fund, money wasted on failed accounts, best firm by ROI
 - **Cost Recovery Tracker** — per-account indicator showing how much more in payouts until break-even, or profit earned after costs recovered
 - Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
-- AI Analysis powered by GPT-5.4 — 1-10 score card, challenge progress tracking, cross-firm pattern analysis (pass rate, cost per attempt, reset count), ROI breakdown with break-even analysis, and actionable next steps (Pro, 5/day)
+- AI Analysis powered by GPT-5.6 — 1-10 score card, challenge progress tracking, cross-firm pattern analysis (pass rate, cost per attempt, reset count), ROI breakdown with break-even analysis, and actionable next steps (Pro, 5/day)
 - **Screenshot Import (Pro)** — upload a billing or payout screenshot and AI vision auto-extracts all transactions; supports multiple files, drag & drop, and duplicate detection
 - Deadline alerts when a prop firm account expires within 7 days
 - Account size quick-select chips and firm logo dropdown in the add/edit form

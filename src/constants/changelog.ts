@@ -19,6 +19,24 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.71.0',
+    date: '2026-08-04',
+    summary: 'Your AI coach got a lot smarter — deeper knowledge of your trading, on upgraded models.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Your AI coach got a lot smarter',
+        description: 'Coaching tips, trade analysis, and the first read of an import now work from a much deeper view of your trading — your sessions, your habits, and which instruments actually carry your results — instead of just headline stats. Tips will now warn you first when your recent trading looks tilted, advice is always weighed against how many trades it is based on, and everything is written in plain money terms rather than finance jargon.',
+      },
+      {
+        type: 'improved',
+        text: 'AI upgraded to OpenAI\'s newest GPT-5.6 models',
+        description: 'Every AI feature — Coach FTJ, Trade Analysis, Trade Review, Risk Alerts, screenshot import, and the rest — now runs on OpenAI\'s newest GPT-5.6 generation. Sharper, more specific answers across the board.',
+      },
+    ],
+  },
+  {
     version: '2.70.0',
     date: '2026-08-04',
     summary: 'Imported trades can now use your broker\'s clock, so times and sessions come out right.',
@@ -2366,4 +2384,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.70.0'
+export const LATEST_CHANGELOG_VERSION = '2.71.0'
