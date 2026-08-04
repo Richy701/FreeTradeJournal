@@ -72,3 +72,24 @@ describe('detectMarketFromSymbol', () => {
     expect(detectMarketFromSymbol('SPY')).toBe('indices');
   });
 });
+
+describe('buildImportedTrades — broker timezone', () => {
+  it('stores true UTC when the account has a broker timezone', () => {
+    // MT5 server (EEST, UTC+3): wall-clock 13:44:30 is really 10:44:30 UTC.
+    const [t] = buildImportedTrades([baseTrade], { ...opts, brokerTimezone: 'Europe/Athens' });
+    expect(t.entryTime.toISOString()).toBe('2026-07-02T06:12:00.000Z');
+    expect(t.exitTime.toISOString()).toBe('2026-07-02T06:13:00.000Z');
+  });
+
+  it('keeps legacy behavior byte-for-byte when no broker timezone is set', () => {
+    const [t] = buildImportedTrades([baseTrade], opts);
+    // Legacy contract: naive string interpreted in the importing machine's TZ.
+    expect(t.entryTime.getTime()).toBe(new Date('2026-07-02T09:12:00').getTime());
+    expect(t.exitTime.getTime()).toBe(new Date('2026-07-02T09:13:00').getTime());
+  });
+
+  it('survives a corrupt timezone value without breaking the import', () => {
+    const [t] = buildImportedTrades([baseTrade], { ...opts, brokerTimezone: 'Garbage/Zone' });
+    expect(t.entryTime.getTime()).toBe(new Date('2026-07-02T09:12:00').getTime());
+  });
+});

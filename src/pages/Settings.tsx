@@ -18,6 +18,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/contexts/auth-context';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts, FREE_TRADING_ACCOUNT_LIMIT, type TradingAccount } from '@/contexts/account-context';
+import { BROKER_TIMEZONES } from '@/utils/timezone';
 import { useUserStorage } from '@/utils/user-storage';
 import { Sliders, Wallet, Gauge, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
@@ -196,6 +197,7 @@ export default function Settings() {
     currency: 'USD',
     balance: '',
     isDefault: false,
+    brokerTimezone: '',
   });
   const [editForm, setEditForm] = useState<TradingAccount | null>(null);
 
@@ -763,6 +765,13 @@ export default function Settings() {
                               </Select>
                             </div>
                             <div className="space-y-1.5">
+                              <Label className="text-xs">Broker Time Zone (CSV Import)</Label>
+                              <Select value={editForm.brokerTimezone || 'device'} onValueChange={(v) => setEditForm(p => p ? { ...p, brokerTimezone: v === 'device' ? undefined : v } : null)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1.5">
                               <Label className="text-xs">Balance (Optional)</Label>
                               <Input type="number" placeholder="10000" value={editForm.balance || ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: e.target.value ? parseFloat(e.target.value) : undefined } : null)} />
                             </div>
@@ -831,6 +840,13 @@ export default function Settings() {
                           </Select>
                         </div>
                         <div className="space-y-1.5">
+                          <Label className="text-xs">Broker Time Zone (CSV Import)</Label>
+                          <Select value={accountForm.brokerTimezone || 'device'} onValueChange={(v) => setAccountForm(p => ({ ...p, brokerTimezone: v === 'device' ? '' : v }))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
                           <Label className="text-xs">Initial Balance (Optional)</Label>
                           <Input type="number" placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
                         </div>
@@ -840,7 +856,7 @@ export default function Settings() {
                         </div>
                       </div>
                       <div className="flex gap-2 pt-1">
-                        <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.profit }}>Add Account</Button>
+                        <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined, brokerTimezone: accountForm.brokerTimezone || undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false,brokerTimezone:'' }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.profit }}>Add Account</Button>
                         <Button size="sm" variant="outline" onClick={() => setShowAddAccount(false)}>Cancel</Button>
                       </div>
                     </div>

@@ -8,9 +8,11 @@ export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
 type ChangeListener = (key: string) => void;
 
-// Server rejects sync docs over ~1MB; stay safely under it. Oversized keys are
-// kept local-only (and dirty-protected) instead of failing every push.
-const MAX_SYNC_BYTES = 950_000;
+// The server chunks large payloads across multiple Firestore docs, so the old
+// ~1MB doc ceiling no longer applies. This guard mirrors the server's 8MB
+// request cap (callable requests top out at 10MB); a payload past it is kept
+// local-only (and dirty-protected) instead of failing every push.
+const MAX_SYNC_BYTES = 8_000_000;
 
 // Keys whose local edits couldn't be pushed yet (offline, pre-pull, oversized,
 // or written while no engine was running — see markSyncKeyDirtyOffline in

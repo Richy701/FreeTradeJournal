@@ -22,6 +22,10 @@ export interface TradingAccount {
   balance?: number;
   isDefault: boolean;
   createdAt: string;
+  // IANA zone the broker's CSV timestamps are written in (e.g. Europe/Athens
+  // for MT4/MT5 server time). Absent = legacy behavior: CSV wall-clock is
+  // interpreted in the importing browser's timezone. Used by buildImportedTrades.
+  brokerTimezone?: string;
 }
 
 interface AccountContextType {

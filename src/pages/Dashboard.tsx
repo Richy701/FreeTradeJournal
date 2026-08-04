@@ -507,6 +507,7 @@ export default function Dashboard() {
           fileName: file.name,
           accountId: activeAccount?.id || '', // '' = legacy-default bucket, still visible on default accounts
           source: 'Dashboard',
+          brokerTimezone: activeAccount?.brokerTimezone,
         });
 
         setImportProgress({ active: true, phase: 'Checking for duplicates...', percent: 70 });

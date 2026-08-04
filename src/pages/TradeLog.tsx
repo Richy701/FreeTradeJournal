@@ -900,6 +900,7 @@ export default function TradeLog() {
         const importedTrades = buildImportedTrades(result.trades, {
           fileName: file.name,
           accountId: activeAccount?.id || '', // '' = legacy-default bucket, still visible on default accounts
+          brokerTimezone: activeAccount?.brokerTimezone,
         });
 
         // Deduplicate against existing trades on key fields.

@@ -4,6 +4,7 @@
 // the dashboard import shipped invalid dates and dropped commissions/fees.)
 import { findColumnIndex, parseCSVHeaders, type ParsedTrade } from './csv-parser';
 import { computePnlPercentage } from '@/lib/pnl';
+import { zonedTimeToUtc } from './timezone';
 
 // Column synonyms offered when auto-detection fails and the user maps manually.
 // Kept in one place so the Trade Log and Dashboard mapping dialogs stay in sync.
@@ -121,8 +122,14 @@ export function detectMarketFromSymbol(symbol: string): ImportMarket {
 // while the gross value is preserved as brokerPnL — the source of truth on edits.
 export function buildImportedTrades(
   trades: ParsedTrade[],
-  opts: { fileName: string; accountId: string; source?: string }
+  opts: { fileName: string; accountId: string; source?: string; brokerTimezone?: string }
 ): ImportedTrade[] {
+  // CSV wall-clock times are written in the BROKER's clock. With a broker
+  // timezone on the account, convert to true UTC; without one, keep the legacy
+  // browser-local interpretation so existing accounts' data stays consistent
+  // with what they already imported.
+  const toDate = (s: string): Date =>
+    opts.brokerTimezone ? zonedTimeToUtc(s, opts.brokerTimezone) : new Date(s);
   const stamp = Date.now();
   return trades.map((trade, index) => {
     const reportedPnl = parseFloat(trade.pnl) || 0;
@@ -144,8 +151,8 @@ export function buildImportedTrades(
       entryPrice,
       exitPrice: parseFloat(trade.exitPrice) || 0,
       lotSize: quantity,
-      entryTime: new Date(trade.entryDate || trade.date),
-      exitTime: new Date(trade.exitDate || trade.date),
+      entryTime: toDate(trade.entryDate || trade.date),
+      exitTime: toDate(trade.exitDate || trade.date),
       spread: 0,
       commission,
       fees,

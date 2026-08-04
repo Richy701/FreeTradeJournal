@@ -10,6 +10,7 @@ import * as React from "react";
 import * as webpush from "web-push";
 import * as crypto from "crypto";
 import { WelcomeEmail } from "./emails/WelcomeEmail";
+import { splitSyncValue, joinSyncChunks, syncChunkDocId, SYNC_MAX_CHUNKS } from "./sync-chunks";
 import { ProUpgradeEmail } from "./emails/ProUpgradeEmail";
 import { CancellationEmail } from "./emails/CancellationEmail";
 import { Day3NudgeEmail } from "./emails/Day3NudgeEmail";
@@ -998,11 +999,17 @@ export const sendWeeklyDigestEmails = functions
         const [tradesDoc, settingsDoc, accountsDoc] = await db.getAll(
           userSync.doc("trades"), userSync.doc("settings"), userSync.doc("accounts"),
         );
+        // Chunk-aware resolution — heavy users' trades span multiple docs, and
+        // heavy users are exactly who a weekly recap matters most to. Reading
+        // .data directly would render their digest as a zero week.
+        const tradesValue = await resolveSyncDoc(uid, "trades", tradesDoc);
+        const settingsValue = await resolveSyncDoc(uid, "settings", settingsDoc);
+        const accountsValue = await resolveSyncDoc(uid, "accounts", accountsDoc);
         // Use the user's currency from synced settings (falls back to $)
         let curSym = "$";
         try {
-          if (settingsDoc.exists) {
-            const s = JSON.parse(settingsDoc.data()?.data || "{}");
+          if (settingsValue) {
+            const s = JSON.parse(settingsValue);
             curSym = symbols[s.currency] || "$";
           }
         } catch { /* default $ */ }
@@ -1011,14 +1018,14 @@ export const sendWeeklyDigestEmails = functions
         // summing euros and dollars into one meaningless number.
         const accountCur: Record<string, string> = {};
         try {
-          if (accountsDoc.exists) {
-            for (const a of JSON.parse(accountsDoc.data()?.data || "[]")) {
+          if (accountsValue) {
+            for (const a of JSON.parse(accountsValue)) {
               if (a?.id && a?.currency) accountCur[a.id] = symbols[a.currency] || a.currency;
             }
           }
         } catch { /* global fallback */ }
-        if (tradesDoc.exists) {
-          const allTrades = JSON.parse(tradesDoc.data()?.data || "[]");
+        if (tradesValue) {
+          const allTrades = JSON.parse(tradesValue);
           const weekTrades = allTrades.filter((t: any) => {
             const exitDate = new Date(t.exitTime || t.date);
             return exitDate >= weekAgo;
@@ -4389,6 +4396,52 @@ Return only valid JSON with no extra text.`;
 const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
 type SyncKey = typeof SYNC_KEYS[number];
 
+// ─── Chunk-aware sync doc reads ──
+// Values ≤ SYNC_CHUNK_CHARS live inline in the key's doc ({data, updatedAt}) —
+// the original format, unchanged for every existing user. Larger values are
+// split across `${key}.c{i}` docs behind a {chunked: true, chunkCount}
+// manifest, lifting the 1MB-per-doc cap that silently froze heavy users'
+// cloud backup at ~2,000 trades. ALL server-side readers of sync docs must go
+// through resolveSyncDoc — reading .data directly returns undefined for a
+// chunked value and silently behaves like "no data".
+
+// Resolve an already-fetched manifest snapshot to the full payload string.
+async function resolveSyncDoc(
+  uid: string,
+  key: string,
+  snap: FirebaseFirestore.DocumentSnapshot,
+): Promise<string | null> {
+  if (!snap.exists) return null;
+  const d = snap.data() || {};
+  if (!d.chunked) return typeof d.data === "string" ? d.data : null;
+  const count = Number(d.chunkCount);
+  if (!Number.isInteger(count) || count < 1 || count > SYNC_MAX_CHUNKS) {
+    console.error(`[sync] Corrupt chunk manifest for ${uid}/${key} (chunkCount=${d.chunkCount})`);
+    return null;
+  }
+  const col = db.collection("users").doc(uid).collection("sync");
+  const chunkSnaps = await db.getAll(
+    ...Array.from({ length: count }, (_, i) => col.doc(syncChunkDocId(key, i))),
+  );
+  const parts: string[] = [];
+  for (let i = 0; i < chunkSnaps.length; i++) {
+    const part = chunkSnaps[i].data()?.part;
+    if (typeof part !== "string") {
+      // A concurrent rewrite can race this read; treat as absent, next poll heals.
+      console.error(`[sync] Missing chunk ${i}/${count} for ${uid}/${key}`);
+      return null;
+    }
+    parts.push(part);
+  }
+  return joinSyncChunks(parts);
+}
+
+// One-shot chunk-aware read of a single key.
+async function readSyncValue(uid: string, key: string): Promise<string | null> {
+  const snap = await db.collection("users").doc(uid).collection("sync").doc(key).get();
+  return resolveSyncDoc(uid, key, snap);
+}
+
 /**
  * Syncs data to Firestore (bypasses content blockers)
  * Client calls this instead of direct Firestore SDK
@@ -4412,10 +4465,12 @@ export const syncData = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
   }
 
-  // Prevent DOS: Limit sync value size to 1MB
-  const MAX_SYNC_SIZE = 1024 * 1024; // 1MB
+  // Prevent DOS: bound the payload. Chunked storage lifts the old 1MB
+  // Firestore-doc ceiling; 8MB (~16,000 trades) keeps a sane bound while
+  // staying under the 10MB callable request limit.
+  const MAX_SYNC_SIZE = 8 * 1024 * 1024;
   if (value && value.length > MAX_SYNC_SIZE) {
-    throw new functions.https.HttpsError("invalid-argument", `Sync value too large. Max size: 1MB`);
+    throw new functions.https.HttpsError("invalid-argument", `Sync value too large. Max size: 8MB`);
   }
 
   // Block empty collection writes UNLESS the client marks them deliberate
@@ -4436,9 +4491,11 @@ export const syncData = functions.https.onCall(async (data, context) => {
       const allDefaults = Array.isArray(incoming) && incoming.length > 0 &&
         incoming.every((a: any) => a.id?.startsWith('default-'));
       if (allDefaults) {
-        const tradesDoc = await db.collection('users').doc(uid).collection('sync').doc('trades').get();
-        if (tradesDoc.exists) {
-          const trades = JSON.parse(tradesDoc.data()?.data || '[]');
+        // Chunk-aware: reading .data directly would return undefined for a
+        // chunked trades doc and silently disable this guard.
+        const tradesValue = await readSyncValue(uid, 'trades');
+        if (tradesValue) {
+          const trades = JSON.parse(tradesValue);
           const tradeAccountIds = new Set(trades.map((t: any) => t.accountId).filter(Boolean));
           const incomingIds = new Set(incoming.map((a: any) => a.id));
           const hasOrphanedTrades = [...tradeAccountIds].some(id => !incomingIds.has(id));
@@ -4452,12 +4509,33 @@ export const syncData = functions.https.onCall(async (data, context) => {
   }
 
   try {
-    await db.collection('users').doc(uid).collection('sync').doc(key).set({
-      data: value,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    const col = db.collection('users').doc(uid).collection('sync');
+    const updatedAt = admin.firestore.FieldValue.serverTimestamp();
 
-    console.log(`[syncData] Synced ${key} for ${uid}`);
+    // Prior chunk count, so shrinking (or returning to inline) deletes the
+    // now-stale chunk docs in the same atomic batch.
+    const prevSnap = await col.doc(key).get();
+    const prevChunks = prevSnap.exists && prevSnap.data()?.chunked
+      ? Number(prevSnap.data()?.chunkCount) || 0
+      : 0;
+
+    const parts = splitSyncValue(value);
+    const batch = db.batch();
+    if (parts.length === 1) {
+      // set() without merge replaces the doc, so a previous manifest's
+      // chunked/chunkCount fields disappear with it.
+      batch.set(col.doc(key), { data: value, updatedAt });
+    } else {
+      batch.set(col.doc(key), { chunked: true, chunkCount: parts.length, updatedAt });
+      parts.forEach((part, i) => batch.set(col.doc(syncChunkDocId(key, i)), { part, updatedAt }));
+    }
+    const keepChunks = parts.length === 1 ? 0 : parts.length;
+    for (let i = keepChunks; i < prevChunks; i++) {
+      batch.delete(col.doc(syncChunkDocId(key, i)));
+    }
+    await batch.commit();
+
+    console.log(`[syncData] Synced ${key} for ${uid}${parts.length > 1 ? ` (${parts.length} chunks)` : ''}`);
     return { success: true };
   } catch (err: any) {
     console.error(`[syncData] Error syncing ${key} for ${uid}:`, err.message);
@@ -4485,14 +4563,13 @@ export const getSyncData = functions.https.onCall(async (_data, context) => {
   try {
     const syncData: Record<string, string> = {};
 
-    for (const key of SYNC_KEYS) {
-      const doc = await db.collection('users').doc(uid).collection('sync').doc(key).get();
-      if (doc.exists) {
-        const data = doc.data();
-        if (data?.data) {
-          syncData[key] = data.data;
-        }
-      }
+    // One round trip for all manifests (was 11 sequential gets), then
+    // chunk-aware resolution per key.
+    const col = db.collection('users').doc(uid).collection('sync');
+    const snaps = await db.getAll(...SYNC_KEYS.map((k) => col.doc(k)));
+    for (let i = 0; i < SYNC_KEYS.length; i++) {
+      const value = await resolveSyncDoc(uid, SYNC_KEYS[i], snaps[i]);
+      if (value) syncData[SYNC_KEYS[i]] = value;
     }
 
     console.log(`[getSyncData] Retrieved ${Object.keys(syncData).length} keys for ${uid}`);

@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.70.0',
+    date: '2026-08-04',
+    summary: 'Imported trades can now use your broker\'s clock, so times and sessions come out right.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Set your broker\'s time zone for CSV imports',
+        description: 'Broker files write trade times in the broker\'s own clock — an MT4/MT5 server usually runs two to three hours ahead of UTC — but imports used to read them as if they were in your local time. That could shift every imported trade by a few hours, put late-night trades on the wrong calendar day, and blur which session your results really came from. Each trading account now has a "Broker Time Zone" choice in Settings → Accounts: pick your platform once (MT4/MT5 server time, US Central for Tradovate, and more) and every future import converts times correctly. Existing accounts keep working exactly as before until you choose one.',
+      },
+    ],
+  },
+  {
     version: '2.69.1',
     date: '2026-08-03',
     summary: 'Fixed a rare blank page or repeated reloading after an update.',
@@ -2353,4 +2366,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.69.1'
+export const LATEST_CHANGELOG_VERSION = '2.70.0'
