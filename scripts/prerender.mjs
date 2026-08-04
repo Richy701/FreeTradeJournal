@@ -72,8 +72,10 @@ const ROUTES = [
   // SEO landing pages — must stay in sync with sitemap.xml, otherwise the
   // Vercel SPA rewrite serves them the homepage shell (duplicate content →
   // "crawled, currently not indexed"). The sitemap-sync guard below enforces this.
-  "/day-trading-journal",
-  "/online-trading-journal",
+  // /day-trading-journal and /online-trading-journal were removed 2026-08-04:
+  // the homepage outranked both for their own intent clusters (the "online"
+  // cluster drew 2,249 impressions and the dedicated page got zero), so they
+  // now 301 to / via vercel.json redirects.
   "/affiliate",
   "/ftmo-review",
   "/the5ers-review",
