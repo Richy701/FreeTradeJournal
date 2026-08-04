@@ -26,8 +26,8 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'fixed',
         highlight: true,
-        text: 'Fixed Google sign-in sometimes needing two clicks',
-        description: 'If you clicked "Sign in with Google" quickly after the page loaded, nothing appeared to happen and you had to click again. The first click was landing while the sign-in system was still loading in the background; it now waits for it instead of giving up, and the sign-in pages load it earlier so the Google window opens on the first click every time.',
+        text: 'Fixed Google sign-in needing two attempts',
+        description: 'Signing in with Google could drop you back on the login page as if nothing happened, and only the second attempt let you in. Two causes, both fixed: the app was checking whether you were signed in a moment before it had finished recording that you were, and clicking the Google button quickly after the page loaded could fire before the sign-in system was ready. Sign-in now completes fully before the app moves you, so the first attempt works.',
       },
     ],
   },

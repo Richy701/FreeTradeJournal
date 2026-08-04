@@ -50,6 +50,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // initialized' (silently, as easy-to-miss red text) whenever the click beat
   // the idle-callback init. Second click worked because init had finished.
   const initPromiseRef = useRef<Promise<Auth | null> | null>(null);
+  // The uid whose post-auth processing (encryption init + setUser) has
+  // completed, plus resolvers for sign-in calls waiting on it. signInWithPopup
+  // resolves BEFORE the onAuthStateChanged listener runs, and the listener
+  // additionally awaits UserStorage.initEncryption (deliberately, so nothing
+  // reads encrypted storage early). Navigating on the raw credential therefore
+  // hit ProtectedRoute while `user` was still null → bounced back to /login →
+  // the deterministic "always sign in twice" bug. Sign-in now resolves only
+  // once the guard would actually pass.
+  const readyUidRef = useRef<string | null>(null);
+  const userReadyResolvers = useRef(new Map<string, Array<() => void>>());
+
+  const waitForUserReady = (uid: string): Promise<void> => {
+    if (readyUidRef.current === uid) return Promise.resolve();
+    return new Promise((resolve) => {
+      const list = userReadyResolvers.current.get(uid) || [];
+      list.push(resolve);
+      userReadyResolvers.current.set(uid, list);
+      // Never hang the sign-in button on a misbehaving listener — after 5s,
+      // fall through to the old (bounce-prone) behavior rather than a stuck UI.
+      setTimeout(resolve, 5000);
+    });
+  };
 
   // Keep the AI response cache scoped to the current user (or demo). Set during
   // render so the scope is current before any child AI component reads it.
@@ -73,6 +95,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
           setUser(user);
           setLoading(false);
+          // Release any sign-in call awaiting this uid (see waitForUserReady).
+          readyUidRef.current = user?.uid ?? null;
+          if (user) {
+            const waiters = userReadyResolvers.current.get(user.uid);
+            if (waiters) {
+              userReadyResolvers.current.delete(user.uid);
+              waiters.forEach((resolve) => resolve());
+            }
+          }
         });
 
         return authInstance;
@@ -150,6 +181,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Failed to record referral:', err);
     }
 
+    await waitForUserReady(userCredential.user.uid);
     return userCredential.user;
   };
 
@@ -160,6 +192,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const { signInWithEmailAndPassword } = await import('firebase/auth');
     const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
     clearDemoState();
+    await waitForUserReady(userCredential.user.uid);
     return userCredential.user;
   };
 
@@ -190,6 +223,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
+    await waitForUserReady(userCredential.user.uid);
     return userCredential.user;
   };
 
