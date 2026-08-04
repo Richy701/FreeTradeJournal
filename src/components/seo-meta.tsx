@@ -94,7 +94,7 @@ const pageMeta: Record<string, SEOMetaProps> = {
   },
   '/prop-firm-dashboard': {
     title: 'Free Prop Firm Dashboard | Track FTMO, Apex & TopStep Accounts | FreeTradeJournal',
-    description: 'Track your prop firm challenge in real time. Monitor drawdown limits, daily loss caps, and eval progress for FTMO, Apex Trader, TopStep, and 20+ firms. Log trades, analyze risk, and never blow an account. 100% free.',
+    description: 'Track your prop firm challenge in real time. Monitor drawdown limits, daily loss caps, and eval progress for FTMO, Apex Trader, TopStep, and 20+ firms. Log trades, analyze risk, and never blow an account. Free to start, no credit card.',
     keywords: 'prop firm dashboard, free prop firm dashboard, prop firm trading journal, prop trading dashboard, prop firm tracker, FTMO dashboard, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, challenge tracker, verification tracker, funded trader dashboard, prop firm drawdown tracker, prop firm eval tracker'
   },
   '/prop-tracker': {

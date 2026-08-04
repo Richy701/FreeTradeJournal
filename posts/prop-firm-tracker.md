@@ -40,9 +40,9 @@ When you can see all your accounts together, you make better decisions. You know
 
 That awareness is worth more than any trading strategy.
 
-## It's Free. Always.
+## It's Free to Start
 
-Every feature in FreeTradeJournal — including the Prop Tracker — is free. No paywall, no trial, no credit card required.
+The Prop Tracker is free for your first prop firm account, with no credit card and no trial clock — every fee, reset, and payout tracked in full. Trade logging, CSV import, goals, and the calendar heatmap are uncapped on the free plan too. Pro opens unlimited prop accounts, the success-rate dashboard, and AI analysis.
 
 If you're paying for a prop firm evaluation, you're already spending money. Your journal shouldn't cost extra.
 

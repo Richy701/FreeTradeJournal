@@ -29,17 +29,17 @@ const FEATURES = [
   {
     icon: <ChartLineUp className="h-5 w-5" />,
     title: 'Full Analytics',
-    desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.',
+    desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve. Free covers your last 30 days; Pro keeps the whole history.',
   },
   {
     icon: <Buildings className="h-5 w-5" />,
     title: 'Multi-Account',
-    desc: 'Separate accounts for each broker or account type — live, demo, funded. Each has its own trade log, starting balance, and performance metrics.',
+    desc: 'Separate accounts for each broker or account type — live, demo, funded. Each has its own trade log, starting balance, and performance metrics. Free covers two accounts; Pro removes the limit.',
   },
   {
     icon: <Infinity className="h-5 w-5" />,
-    title: 'Free Forever',
-    desc: 'Trade logging, P&L calculations, analytics, CSV import, goal tracking, and the calendar heatmap — free, no credit card. Pro adds AI analysis, cloud sync, and exports.',
+    title: 'Free to Start',
+    desc: 'Trade logging, P&L calculations, CSV import, goal tracking, and the calendar heatmap are free with no card and no cap on how many trades you log. Free covers two accounts and the last 30 days of analytics. Pro adds full history, AI analysis, and cloud sync.',
   },
 ];
 
@@ -47,9 +47,9 @@ const FAQS = [
   { q: 'What do I log for each trade?', a: 'Contract symbol (ES, NQ, CL, GC, etc.), direction, entry and exit price, number of contracts, commission, and timestamps. Add notes, tag a strategy, attach chart screenshots.' },
   { q: 'How does P&L calculation work?', a: 'Enter your entry price, exit price, and quantity. The journal calculates dollar P&L using the contract\'s point multiplier minus your commissions. Results feed into your dashboard automatically.' },
   { q: 'Can I import from Tradovate or MT5?', a: 'Yes. Export your order history as CSV and import it. The parser matches opening and closing fills by contract and calculates P&L per round trip.' },
-  { q: 'What analytics do I get?', a: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.' },
-  { q: 'Can I track multiple accounts?', a: 'Yes. Create separate accounts for each broker or account type (live, demo, funded). Each has its own trade log, starting balance, and performance metrics.' },
-  { q: 'Is the futures tracker free?', a: 'Yes. Trade logging, P&L calculations, analytics, CSV import, goal tracking, and the calendar heatmap are free forever. No credit card. Pro adds AI analysis, cloud sync, and exports.' },
+  { q: 'What analytics do I get?', a: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve. The free plan computes these over your last 30 days; Pro opens the full history. The calendar heatmap always covers everything you have logged.' },
+  { q: 'Can I track multiple accounts?', a: 'Yes. Create separate accounts for each broker or account type (live, demo, funded). Each has its own trade log, starting balance, and performance metrics. The free plan covers two accounts; Pro removes the limit.' },
+  { q: 'Is the futures tracker free?', a: 'Free to start, with no credit card. Trade logging, P&L calculations, CSV import, goal tracking, and the calendar heatmap are uncapped. The free plan covers two accounts and the last 30 days of dashboard analytics. Pro removes those limits and adds AI analysis and cloud sync. Nothing is ever deleted — your trade log and exports stay complete on either plan.' },
 ];
 
 export default function FuturesTradingTracker() {

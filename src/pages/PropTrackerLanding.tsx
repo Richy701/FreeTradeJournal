@@ -19,7 +19,7 @@ const FEATURES = [
   {
     icon: <Buildings className="h-5 w-5" />,
     title: 'Multi-Firm',
-    desc: 'FTMO, Apex, TopStep, and 10+ firms in a single view. No more spreadsheets.',
+    desc: 'FTMO, Apex, TopStep, and 10+ firms supported. Free covers one account; Pro puts every firm you run in a single view.',
   },
   {
     icon: <ChartBar className="h-5 w-5" />,
@@ -38,8 +38,8 @@ const FEATURES = [
   },
   {
     icon: <Infinity className="h-5 w-5" />,
-    title: 'Free Forever',
-    desc: 'No credit card. No paywall. PropTracker is 100% free — always.',
+    title: 'Free to Start',
+    desc: 'No credit card. One prop firm account free, with every fee, payout, and your true net P&L tracked in full. Pro opens unlimited accounts, the success-rate dashboard, and AI analysis.',
   },
 ];
 
@@ -73,7 +73,7 @@ export default function PropTrackerLanding() {
         <HeroGeometric
           title1="Track Every Prop Firm Fee,"
           title2="Payout & Account"
-          subtitle="After every fee, reset, and failed challenge — most prop traders are guessing their real P&L. PropTracker shows you the exact number, across every firm, free."
+          subtitle="After every fee, reset, and failed challenge — most prop traders are guessing their real P&L. PropTracker shows you the exact number, free to start."
           compact
           cta={
             <>

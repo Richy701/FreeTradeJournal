@@ -34,12 +34,12 @@ const FEATURES = [
   {
     icon: <ChartBar className="h-5 w-5" />,
     title: 'Full Analytics',
-    desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve.',
+    desc: 'Win rate, profit factor, expectancy, max drawdown, largest and average win/loss, consecutive loss streaks, calendar heatmap, and equity curve. Free covers your last 30 days; Pro keeps the whole history.',
   },
   {
     icon: <Infinity className="h-5 w-5" />,
-    title: 'Free Forever',
-    desc: 'Account creation, trade logging, analytics, PropTracker, goal setting, CSV import, and the calendar heatmap — free, no credit card. Pro adds AI analysis, cloud sync, and exports.',
+    title: 'Free to Start',
+    desc: 'Trade logging, goal setting, CSV import, and the calendar heatmap are free with no card and no cap. Free also covers two trading accounts and one PropTracker account, with 30 days of analytics. Pro removes those limits and adds AI analysis and cloud sync.',
   },
 ];
 
@@ -48,8 +48,8 @@ const FAQS = [
   { q: 'Which prop firms does this work with?', a: 'All of them. You create your own accounts and enter your firm\'s details, so it works with FTMO, Apex, TopStep, Tradeify, E8 Markets, The5ers, and any other firm.' },
   { q: 'Can I track fees, resets, and payouts?', a: 'Yes. PropTracker lets you log every expense (eval fees, resets, subscriptions) and income (profit splits, payouts) per account. It calculates your true net P&L and ROI across all firms.' },
   { q: 'Can I set drawdown and loss goals?', a: 'Yes. Set targets for max drawdown, max daily loss, win rate, and profit. Match them to your prop firm\'s rules so you can see at a glance if you are within limits.' },
-  { q: 'Can I track multiple accounts at once?', a: 'Yes. Each account is completely separate with its own trades, balance, and analytics. Switch between them from the sidebar and compare performance across firms.' },
-  { q: 'Is the prop firm dashboard free?', a: 'Yes. Account creation, trade logging, analytics, PropTracker, goal setting, CSV import, and the calendar heatmap are free forever. No credit card. Pro adds AI analysis, cloud sync, and exports.' },
+  { q: 'Can I track multiple accounts at once?', a: 'Yes. Each account is completely separate with its own trades, balance, and analytics, and you switch between them from the sidebar. The free plan covers two trading accounts and one PropTracker account; Pro removes both limits.' },
+  { q: 'Is the prop firm dashboard free?', a: 'Free to start, with no credit card. Trade logging, goal setting, CSV import, and the calendar heatmap are uncapped. The free plan covers two trading accounts, one PropTracker account, and the last 30 days of dashboard analytics. Pro removes those limits and adds AI analysis and cloud sync. Nothing is ever deleted — your trade log and exports stay complete on either plan.' },
 ];
 
 export default function PropFirmDashboard() {
