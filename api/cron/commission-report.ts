@@ -305,13 +305,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // PARTNER_REPORT_PAUSED=true holds the partner's copy (internal report
   // still sends); unset or delete the var to resume. PARTNER_REPORT_TO must
   // stay set while paused — it also drives the self-referral exclusion.
+  //
+  // Activity overrides the pause: a week with a new referral or a code
+  // redemption sends the partner update even while paused. This is the
+  // behavior promised to Eunice (2026-08-04 reply to her Jul 29 email):
+  // quiet weeks send nothing, real numbers always arrive.
   const partnerPaused = process.env.PARTNER_REPORT_PAUSED === 'true';
+  const weekRedemptions = [...codeUse.values()].reduce((s, u) => s + u.week, 0);
+  const sendPartnerEmail = !partnerPaused || newThisWeek > 0 || weekRedemptions > 0;
   const weekOf = day(weekStart);
   const emailRes = await fetch('https://api.resend.com/emails/batch', {
     method: 'POST',
     headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify([
-      ...(partnerPaused
+      ...(!sendPartnerEmail
         ? []
         : [{
             from: FROM_EMAIL,
@@ -337,6 +344,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     referrals: rows.length,
     newThisWeek,
     commissionCents: Math.round(totalNet * COMMISSION_RATE),
-    partnerEmailSent: !partnerPaused,
+    partnerEmailSent: sendPartnerEmail,
   });
 }
