@@ -21,18 +21,19 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.71.0',
     date: '2026-08-04',
-    summary: 'Your AI coach got a lot smarter — deeper knowledge of your trading, on upgraded models.',
+    summary: 'Smarter AI across the board — every AI feature upgraded to newer models, with a much deeper view of your trading.',
     items: [
       {
         type: 'improved',
         highlight: true,
-        text: 'Your AI coach got a lot smarter',
-        description: 'Coaching tips, trade analysis, and the first read of an import now work from a much deeper view of your trading — your sessions, your habits, and which instruments actually carry your results — instead of just headline stats. Tips will now warn you first when your recent trading looks tilted, advice is always weighed against how many trades it is based on, and everything is written in plain money terms rather than finance jargon.',
+        text: 'Every AI feature upgraded to GPT-5.6',
+        description: 'Coach FTJ, Trade Analysis, Trade Review, Risk Alerts, journal features, strategy tagging, CSV mapping, and screenshot import all now run on OpenAI\'s newest GPT-5.6 generation — sharper, more specific answers everywhere the app uses AI.',
       },
       {
         type: 'improved',
-        text: 'AI upgraded to OpenAI\'s newest GPT-5.6 models',
-        description: 'Every AI feature — Coach FTJ, Trade Analysis, Trade Review, Risk Alerts, screenshot import, and the rest — now runs on OpenAI\'s newest GPT-5.6 generation. Sharper, more specific answers across the board.',
+        highlight: true,
+        text: 'The AI now knows your trading much more deeply',
+        description: 'Coaching tips, trade analysis, and the first read of an import now work from your sessions, your habits, and which instruments actually carry your results — instead of just headline stats. Tips will warn you first when your recent trading looks tilted, advice is always weighed against how many trades it is based on, and everything is written in plain money terms rather than finance jargon.',
       },
     ],
   },
