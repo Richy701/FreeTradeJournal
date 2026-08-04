@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User, Auth } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
 import { DEMO_USER } from '@/data/demo-data';
@@ -41,41 +41,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<Auth | null>(null);
-  const [authInitialized, setAuthInitialized] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
+  // In-flight (or finished) auth init. Memoizing the PROMISE — not a boolean —
+  // means a caller who arrives mid-init awaits the same init and gets the real
+  // instance. The old `authInitialized` boolean guard returned the stale null
+  // `auth` state to anyone who called during the in-flight window, which is
+  // what made the first "Sign in with Google" click throw 'Auth not
+  // initialized' (silently, as easy-to-miss red text) whenever the click beat
+  // the idle-callback init. Second click worked because init had finished.
+  const initPromiseRef = useRef<Promise<Auth | null> | null>(null);
 
   // Keep the AI response cache scoped to the current user (or demo). Set during
   // render so the scope is current before any child AI component reads it.
   setAICacheUser(user?.uid ?? null);
 
-  const initAuth = async () => {
-    if (authInitialized) return auth;
-    setAuthInitialized(true);
-    
-    try {
-      const authInstance = await getFirebaseAuth();
-      setAuth(authInstance);
-      
-      const { onAuthStateChanged } = await import('firebase/auth');
-      const unsubscribe = onAuthStateChanged(authInstance, async (user) => {
-        if (user) {
-          // Derive encryption key and decrypt cached data before any reads/writes
-          await UserStorage.initEncryption(user.uid);
-          // Migrate existing unscoped data to user-scoped data
-          if (!UserStorage.hasUserData(user.uid)) {
-            UserStorage.migrateUserData(user.uid);
+  const initAuth = (): Promise<Auth | null> => {
+    initPromiseRef.current ||= (async () => {
+      try {
+        const authInstance = await getFirebaseAuth();
+        setAuth(authInstance);
+
+        const { onAuthStateChanged } = await import('firebase/auth');
+        onAuthStateChanged(authInstance, async (user) => {
+          if (user) {
+            // Derive encryption key and decrypt cached data before any reads/writes
+            await UserStorage.initEncryption(user.uid);
+            // Migrate existing unscoped data to user-scoped data
+            if (!UserStorage.hasUserData(user.uid)) {
+              UserStorage.migrateUserData(user.uid);
+            }
           }
-        }
-        setUser(user);
+          setUser(user);
+          setLoading(false);
+        });
+
+        return authInstance;
+      } catch (error) {
+        console.error('Failed to initialize Firebase Auth:', error);
         setLoading(false);
-      });
-      
-      return authInstance;
-    } catch (error) {
-      console.error('Failed to initialize Firebase Auth:', error);
-      setLoading(false);
-      return null;
-    }
+        // Clear the memo so the next sign-in attempt retries the init instead
+        // of being permanently stuck with a cached failure until reload.
+        initPromiseRef.current = null;
+        return null;
+      }
+    })();
+    return initPromiseRef.current;
   };
 
   useEffect(() => {

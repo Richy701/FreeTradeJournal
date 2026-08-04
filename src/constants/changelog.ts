@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.71.1',
+    date: '2026-08-04',
+    summary: 'Fixed Google sign-in sometimes needing two clicks.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Fixed Google sign-in sometimes needing two clicks',
+        description: 'If you clicked "Sign in with Google" quickly after the page loaded, nothing appeared to happen and you had to click again. The first click was landing while the sign-in system was still loading in the background; it now waits for it instead of giving up, and the sign-in pages load it earlier so the Google window opens on the first click every time.',
+      },
+    ],
+  },
+  {
     version: '2.71.0',
     date: '2026-08-04',
     summary: 'Smarter AI across the board — every AI feature upgraded to newer models, with a much deeper view of your trading.',
@@ -2385,4 +2398,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.71.0'
+export const LATEST_CHANGELOG_VERSION = '2.71.1'

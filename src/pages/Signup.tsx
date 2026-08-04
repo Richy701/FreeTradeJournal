@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { clearOnboardingData } from '@/utils/onboarding';
@@ -30,6 +30,17 @@ export default function Signup() {
   const [formAnimation, setFormAnimation] = useState('');
 
   const { signUp, signInWithGoogle } = useAuth();
+
+  // Warm the Firebase Auth chunks on mount. signInWithPopup must open its
+  // popup within the click's user-activation window (~1s in Chrome, stricter
+  // in Safari); a cold-cache chunk download between click and popup blew past
+  // it, which is half of the "first Google click does nothing" bug. With the
+  // modules cached, the popup opens synchronously enough to survive.
+  useEffect(() => {
+    void import('firebase/auth');
+    void import('@/lib/firebase-lazy').then((m) => m.getFirebaseAuth());
+  }, []);
+
   const navigate = useNavigate();
 
   const passwordRequirements = [
