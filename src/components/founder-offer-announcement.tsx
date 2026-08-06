@@ -6,7 +6,7 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
 import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
-import { isLifetimeFarewellAudience, isLifetimeFarewellPending } from '@/lib/lifetime-farewell';
+import { isLifetimeFarewellAudience, isLifetimeFarewellPending, lifetimeDaysLeft } from '@/lib/lifetime-farewell';
 
 const snoozeKeyFor = (uid: string | undefined) => `founder-offer-banner-snoozed-until-${uid || 'anon'}`;
 const dismissKeyFor = (uid: string | undefined) => `founder-offer-banner-dismissed-${uid || 'anon'}`;
@@ -19,9 +19,16 @@ function shouldShowBanner(uid: string | undefined): boolean {
   // Permanently dismissed (clicked the CTA)
   if (localStorage.getItem(dismissKeyFor(uid)) === 'true') return false;
 
-  // Snoozed (clicked X) — hidden until snooze expires
+  // Snoozed (clicked X) — hidden until snooze expires. On the final day a
+  // snooze from an EARLIER day is stale news ("ends tonight" is a state change
+  // the user hasn't seen), so it gets one more showing; a snooze clicked on the
+  // final day itself stays respected.
   const snoozedUntil = localStorage.getItem(snoozeKeyFor(uid));
-  if (snoozedUntil && Date.now() < parseInt(snoozedUntil, 10)) return false;
+  if (snoozedUntil && Date.now() < parseInt(snoozedUntil, 10)) {
+    const snoozedAtDay = Math.floor((parseInt(snoozedUntil, 10) - ONE_DAY_MS) / ONE_DAY_MS);
+    const todayDay = Math.floor(Date.now() / ONE_DAY_MS);
+    if (lifetimeDaysLeft() > 0 || snoozedAtDay === todayDay) return false;
+  }
 
   return true;
 }
@@ -72,6 +79,8 @@ export function FounderOfferAnnouncement() {
 
   if (!user || isDemo || isPayingPro || !show || !mounted || farewellWillShow) return null;
 
+  const daysLeft = lifetimeDaysLeft();
+
   const dismiss = () => {
     setIsVisible(false);
     document.documentElement.style.setProperty('--announcement-banner-height', '0px');
@@ -119,14 +128,21 @@ export function FounderOfferAnnouncement() {
           <div className="flex items-center gap-3 min-w-0">
             <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-white/20 border border-white/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white">
               <Timer className="h-2.5 w-2.5" aria-hidden="true" />
-              Last chance
+              {daysLeft <= 0 ? 'Final day' : 'Last chance'}
             </span>
             <p className="text-xs sm:text-sm font-medium text-white">
               <span className="sm:hidden">
-                <span className="font-bold">Lifetime Pro: $149</span> — retiring in August.
+                <span className="font-bold">Lifetime Pro: $149</span>
+                {daysLeft <= 0 ? ' — last day, ends tonight.' : daysLeft === 1 ? ' — gone tomorrow.' : ' — retiring in August.'}
               </span>
               <span className="hidden sm:inline">
-                <span className="font-bold">Lifetime Pro retires in August</span>
+                <span className="font-bold">
+                  {daysLeft <= 0
+                    ? 'Today is the last day for Lifetime Pro'
+                    : daysLeft === 1
+                      ? 'One day left: Lifetime Pro retires tomorrow'
+                      : 'Lifetime Pro retires in August'}
+                </span>
                 <span className="text-white/90"> — $149 instead of $249 with code FOUNDER149.</span>
               </span>
             </p>

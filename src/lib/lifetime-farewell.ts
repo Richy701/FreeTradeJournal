@@ -39,6 +39,10 @@ export function hasLoggedAnyTrade(uid: string | undefined): boolean {
  * So: people who have actually used the product, plus anyone on a trial
  * (warmest audience with a deadline four days out). Never demo accounts,
  * never existing paying subscribers, never lifetime owners.
+ *
+ * In the CLOSING window (the last two calendar days) the narrow targeting
+ * yields to reach: every free user gets the closing note once, trades or not —
+ * there is no onboarding runway left to protect.
  */
 export function isLifetimeFarewellAudience(opts: {
   uid: string | undefined;
@@ -47,14 +51,22 @@ export function isLifetimeFarewellAudience(opts: {
   isTrialing: boolean;
 }): boolean {
   if (!opts.uid || opts.isDemo || opts.isPayingPro) return false;
+  if (lifetimeDaysLeft() <= 1) return true;
   return opts.isTrialing || hasLoggedAnyTrade(opts.uid);
 }
 
 const seenKeyFor = (uid: string | undefined) => `lifetime-farewell-seen-${uid || 'anon'}`;
+// The closing-window dialog is a different message with its own once-ever
+// flag, so people who saw the earlier dialog weeks ago still get the closing
+// note. One flag spans both closing days: seen "ends tomorrow night" tonight
+// means banner-only tomorrow, not a second modal.
+const finalDaySeenKeyFor = (uid: string | undefined) => `lifetime-farewell-final-seen-${uid || 'anon'}`;
+const activeSeenKeyFor = (uid: string | undefined) =>
+  lifetimeDaysLeft() <= 1 ? finalDaySeenKeyFor(uid) : seenKeyFor(uid);
 
 export function hasSeenLifetimeFarewell(uid: string | undefined): boolean {
   try {
-    return localStorage.getItem(seenKeyFor(uid)) === 'true';
+    return localStorage.getItem(activeSeenKeyFor(uid)) === 'true';
   } catch {
     // Storage blocked — treat as seen so a user in private mode isn't shown the
     // dialog on every single page load.
@@ -64,7 +76,7 @@ export function hasSeenLifetimeFarewell(uid: string | undefined): boolean {
 
 export function markLifetimeFarewellSeen(uid: string | undefined): void {
   try {
-    localStorage.setItem(seenKeyFor(uid), 'true');
+    localStorage.setItem(activeSeenKeyFor(uid), 'true');
   } catch {
     // noop — worst case they see it once more.
   }

@@ -66,6 +66,20 @@ describe('isLifetimeFarewellPending', () => {
     markLifetimeFarewellSeen(UID);
     expect(isLifetimeFarewellPending('user-2')).toBe(true);
   });
+
+  // The final-day dialog is a different message with its own once-ever flag.
+  it('comes back on the final day for a user who saw the earlier dialog', () => {
+    vi.setSystemTime(at('2026-08-03T10:00:00Z'));
+    markLifetimeFarewellSeen(UID);
+    vi.setSystemTime(at('2026-08-07T10:00:00Z'));
+    expect(isLifetimeFarewellPending(UID)).toBe(true);
+  });
+
+  it('shows the final-day dialog only once too', () => {
+    vi.setSystemTime(at('2026-08-07T10:00:00Z'));
+    markLifetimeFarewellSeen(UID);
+    expect(isLifetimeFarewellPending(UID)).toBe(false);
+  });
 });
 
 describe('hasLoggedAnyTrade', () => {
@@ -96,7 +110,13 @@ describe('hasLoggedAnyTrade', () => {
 describe('isLifetimeFarewellAudience', () => {
   const base = { uid: UID, isDemo: false, isPayingPro: false, isTrialing: false };
 
-  beforeEach(() => localStorage.clear());
+  // The audience widens on the final day, so pin these to mid-campaign.
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+    vi.setSystemTime(at('2026-08-03T10:00:00Z'));
+  });
+  afterEach(() => vi.useRealTimers());
 
   it('includes trial users even with no trades logged', () => {
     expect(isLifetimeFarewellAudience({ ...base, isTrialing: true })).toBe(true);
@@ -124,6 +144,19 @@ describe('isLifetimeFarewellAudience', () => {
   });
 
   it('excludes logged-out visitors', () => {
+    expect(isLifetimeFarewellAudience({ ...base, uid: undefined })).toBe(false);
+  });
+
+  // Final day: reach beats onboarding protection — there is no tomorrow left.
+  it('includes free users with no trades on the final day', () => {
+    vi.setSystemTime(at('2026-08-07T10:00:00Z'));
+    expect(isLifetimeFarewellAudience(base)).toBe(true);
+  });
+
+  it('still excludes paying, demo, and logged-out users on the final day', () => {
+    vi.setSystemTime(at('2026-08-07T10:00:00Z'));
+    expect(isLifetimeFarewellAudience({ ...base, isPayingPro: true })).toBe(false);
+    expect(isLifetimeFarewellAudience({ ...base, isDemo: true })).toBe(false);
     expect(isLifetimeFarewellAudience({ ...base, uid: undefined })).toBe(false);
   });
 });

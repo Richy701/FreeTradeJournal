@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from "path"
@@ -13,8 +13,49 @@ export default defineConfig(({ mode }) => {
   const appendKey = (path: string, param: string, key: string) =>
     path + (path.includes('?') ? '&' : '?') + `${param}=${key}`
 
+  // Dev-only quote cache. Production edge-caches quotes for 5 minutes in
+  // api/twelvedata/[...path].ts, but the plain dev proxy hits TwelveData on
+  // every widget mount (doubled by StrictMode), burning the free quota into
+  // console 429s. Same contract as prod: successes cached, errors never.
+  const QUOTE_CACHE_MS = 60_000
+  const quoteCache = new Map<string, { body: string; contentType: string; at: number }>()
+  const devTwelveDataQuoteCache = (): Plugin => ({
+    name: 'dev-twelvedata-quote-cache',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api/twelvedata/quote', (req, res) => {
+        void (async () => {
+          const symbol = new URL(req.url || '/', 'http://localhost').searchParams.get('symbol') || ''
+          const hit = quoteCache.get(symbol)
+          if (hit && Date.now() - hit.at < QUOTE_CACHE_MS) {
+            res.setHeader('Content-Type', hit.contentType)
+            res.setHeader('X-Dev-Quote-Cache', 'hit')
+            res.end(hit.body)
+            return
+          }
+          try {
+            const params = new URLSearchParams({ symbol, apikey: twelveDataKey })
+            const upstream = await fetch(`https://api.twelvedata.com/quote?${params}`)
+            const body = await upstream.text()
+            const contentType = upstream.headers.get('content-type') || 'application/json'
+            if (upstream.ok) quoteCache.set(symbol, { body, contentType, at: Date.now() })
+            res.statusCode = upstream.status
+            res.setHeader('Content-Type', contentType)
+            res.setHeader('X-Dev-Quote-Cache', 'miss')
+            res.end(body)
+          } catch {
+            res.statusCode = 502
+            res.setHeader('Content-Type', 'application/json')
+            res.end('{"error":"upstream fetch failed"}')
+          }
+        })()
+      })
+    },
+  })
+
   return {
   plugins: [
+    devTwelveDataQuoteCache(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: false,

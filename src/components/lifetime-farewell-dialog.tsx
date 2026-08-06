@@ -6,12 +6,13 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
-import { FOUNDER_LIFETIME_PRICE, PRICING_PLANS } from '@/constants/pricing';
+import { FOUNDER_LIFETIME_PRICE, LIFETIME_RETIRES_AT, PRICING_PLANS } from '@/constants/pricing';
 import {
   isLifetimeFarewellAudience,
   isLifetimeFarewellPending,
   lifetimeCountdownBadge,
   lifetimeCountdownPhrase,
+  lifetimeDaysLeft,
   markLifetimeFarewellSeen,
 } from '@/lib/lifetime-farewell';
 
@@ -20,8 +21,17 @@ import {
 const OPEN_DELAY_MS = 1400;
 
 const monthlyPrice = PRICING_PLANS.find((plan) => plan.interval === 'monthly')?.price ?? 12.99;
+const yearlyListPrice = PRICING_PLANS.find((plan) => plan.interval === 'yearly')?.price ?? 99.99;
 const lifetimeListPrice = PRICING_PLANS.find((plan) => plan.interval === 'lifetime')?.price ?? 249;
 const yearlyCost = (monthlyPrice * 12).toFixed(2);
+
+// Hours until the cutoff, rendered as "about 26 hours" — a local-time stamp
+// was tried here and read as nonsense east of UTC, where 11:59 PM UTC Friday
+// lands on Saturday. A countdown is unambiguous in every time zone.
+const hoursLeftPhrase = () => {
+  const hours = Math.max(1, Math.round((LIFETIME_RETIRES_AT - Date.now()) / 3_600_000));
+  return hours === 1 ? 'about an hour' : `about ${hours} hours`;
+};
 
 /**
  * White text sits on top of the theme's primary colour in the badge and the
@@ -44,11 +54,18 @@ export function LifetimeFarewellDialog() {
 
   // Dev-only escape hatch: ?farewell=preview forces the dialog open regardless
   // of targeting, so the copy can be reviewed from an account that would never
-  // qualify. Never fires in a production build, never marks itself seen, and
-  // never emits analytics — so repeated previews can't pollute the real numbers.
-  const [preview] = useState(
-    () => import.meta.env.DEV && new URLSearchParams(window.location.search).get('farewell') === 'preview'
+  // qualify; ?farewell=preview-final previews the final-day variant early.
+  // Never fires in a production build, never marks itself seen, and never
+  // emits analytics — so repeated previews can't pollute the real numbers.
+  const [previewParam] = useState(
+    () => (import.meta.env.DEV ? new URLSearchParams(window.location.search).get('farewell') : null)
   );
+  const preview = previewParam === 'preview' || previewParam === 'preview-final';
+
+  // The closing window (last two days) drops the joke: same dialog, straight
+  // last-call copy. "Tonight" vs "tomorrow night" tracks the actual deadline.
+  const finalDay = previewParam === 'preview-final' || lifetimeDaysLeft() <= 1;
+  const endsTonight = lifetimeDaysLeft() <= 0;
 
   // Read the seen flag once at mount. Recomputing it every render would make
   // the component erase itself: the effect marks the dialog seen just before
@@ -103,16 +120,31 @@ export function LifetimeFarewellDialog() {
             style={{ background: onPrimary(themeColors.primary) }}
           >
             <Timer className="h-3 w-3" aria-hidden="true" />
-            {lifetimeCountdownBadge()}
+            {finalDay && !endsTonight ? 'Ends tomorrow' : lifetimeCountdownBadge()}
           </span>
 
           <DialogTitle className="mt-4 text-2xl font-bold tracking-tight">
-            It's not you, it's the pricing
+            {finalDay
+              ? endsTonight
+                ? 'Lifetime Pro ends tonight'
+                : 'Lifetime Pro ends tomorrow night'
+              : "It's not you, it's the pricing"}
           </DialogTitle>
 
           <DialogDescription className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Lifetime Pro retires on Friday. We did the maths, and one payment only really works out
-            for one of us. You can probably guess which.
+            {finalDay ? (
+              <>
+                Sales close {endsTonight ? 'tonight' : 'tomorrow night'} at 11:59 PM UTC —{' '}
+                {hoursLeftPhrase()} from now. Pay ${FOUNDER_LIFETIME_PRICE} once with code{' '}
+                <strong className="font-semibold text-foreground">FOUNDER149</strong> and you have
+                Pro forever.
+              </>
+            ) : (
+              <>
+                Lifetime Pro retires on Friday. We did the maths, and one payment only really works
+                out for one of us. You can probably guess which.
+              </>
+            )}
           </DialogDescription>
 
           {/* The arithmetic is the punchline, so let it carry the weight visually. */}
@@ -152,8 +184,18 @@ export function LifetimeFarewellDialog() {
           </div>
 
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            {lifetimeCountdownPhrase()} to take advantage of us. Everyone who already owns it keeps
-            it for good.
+            {finalDay ? (
+              <>
+                After {endsTonight ? 'tonight' : 'tomorrow night'}, Pro is ${monthlyPrice} a month
+                or ${yearlyListPrice} a year — this option won't come back. Everyone who already
+                owns it keeps it for good.
+              </>
+            ) : (
+              <>
+                {lifetimeCountdownPhrase()} to take advantage of us. Everyone who already owns it
+                keeps it for good.
+              </>
+            )}
           </p>
 
           <div className="mt-6 flex flex-col gap-2">
@@ -169,7 +211,7 @@ export function LifetimeFarewellDialog() {
               onClick={() => handleDismiss(false)}
               className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Not today
+              {finalDay ? 'No thanks' : 'Not today'}
             </button>
           </div>
         </div>
