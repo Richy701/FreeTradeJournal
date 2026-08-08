@@ -126,7 +126,7 @@ export default function BlogPost() {
         <div className="mt-12 border-t pt-8">
           <p className="leading-relaxed text-foreground/85">
             FreeTradeJournal is the free journal this post is about — unlimited trades, broker CSV
-            import, and every new account starts with 14 days of Pro. No card required.
+            import, and goal tracking, free forever. No card required.
           </p>
           <Link
             to="/signup"
