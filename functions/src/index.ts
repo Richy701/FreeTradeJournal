@@ -2426,11 +2426,12 @@ export const createCheckoutSession = functions.https.onCall(
     const rawRef = ((data as { ref?: string }).ref || "").trim().toLowerCase().slice(0, 50);
     const ref = /^[a-z0-9_-]+$/.test(rawRef) ? rawRef : "";
 
-    // Validate priceId against allowed values to prevent use of arbitrary Stripe prices
+    // Validate priceId against allowed values to prevent use of arbitrary Stripe prices.
+    // Lifetime retired 2026-08-07 and is deliberately absent — the dated guard below
+    // stays as a second layer for the existing owners' code paths.
     const ALLOWED_PRICES = [
       process.env.STRIPE_PRICE_MONTHLY,
       process.env.STRIPE_PRICE_YEARLY,
-      process.env.STRIPE_PRICE_LIFETIME,
     ].filter(Boolean);
 
     if (!ALLOWED_PRICES.includes(priceId)) {

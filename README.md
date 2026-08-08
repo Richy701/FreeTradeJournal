@@ -193,10 +193,10 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Conversion & Upgrade Flow
 
-- **14-day free Pro trial for every account** — new signups get the full Pro experience (unlimited AI coaching, cloud sync, PDF reports, full analytics) for 14 days, no card required; it simply switches to the free plan when it ends
+- **14-day free Pro trial on any subscription** — start a monthly or yearly plan and the first 14 days are free (unlimited AI coaching, cloud sync, PDF reports, full analytics); a card is required at checkout and you can cancel any time before it ends. The card-free signup trial ran until 7 August 2026 and has been retired; the free plan itself stays card-free forever
 - Trial email flow — trial started confirmation, 2-day ending reminder, and conversion confirmation when trial converts to paid
 - AI sample previews behind ProGate blur — free users see realistic example output for AI Trade Analysis, Goal Coach, and Risk Alerts
-- Pricing page with monthly, yearly, and lifetime plans plus trial messaging and FAQ
+- Pricing page with monthly and yearly plans plus trial messaging and FAQ (the lifetime plan retired on 7 August 2026; existing owners keep it forever)
 - Cloud sync warning on dashboard with prominent "Enable Cloud Sync →" CTA button
 - PropTracker screenshot import button visible to free users with lock indicator (was hidden entirely)
 
