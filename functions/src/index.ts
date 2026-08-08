@@ -1327,8 +1327,9 @@ export const sendTrialOfferBatch = functions.https.onCall(async (data, context) 
     const d = doc.data();
     // Skip entitled users (paid, trial, or referral Pro), already-outreached
     // users, and users without an email. Anyone who ever had the signup trial
-    // (even expired) is also out: createCheckoutSession won't grant them the
-    // Stripe trial this email promises.
+    // (even expired) is also out — a leftover from when that blocked the card
+    // trial at checkout. It no longer does, so this audience could be widened
+    // to the ~2,400 users the old rule excluded. Owner's call, not a bug.
     if (d.emailOptOut || isEntitledPro(d) || d.trialProExpiresAt) continue;
     if (d.trialOutreachSentAt) continue;
     if (!d.email) continue;
@@ -2461,10 +2462,16 @@ export const createCheckoutSession = functions.https.onCall(
       );
     }
 
-    // No Stripe card trial for anyone who already got the no-card signup
-    // trial (trialProExpiresAt) — otherwise the two stack to 28 free days
-    // and every "Keep Pro" conversion books zero revenue for two more weeks.
-    const hadTrial = userDoc.data()?.hadTrial === true || !!userDoc.data()?.trialProExpiresAt;
+    // One card trial per person. hadTrial is set by the webhook on a completed
+    // on_trial checkout, and by onUserCreated for tombstoned delete-and-resignup
+    // accounts, so both the second-trial and the trial-farming cases stay shut.
+    //
+    // The no-card signup trial (trialProExpiresAt) deliberately does NOT count.
+    // It used to: the two stacked to 28 free days. onUserCreated stopped minting
+    // it at LIFETIME_RETIRES_AT, so nothing can stack anymore — all the clause
+    // did after the cutoff was charge ~2,438 existing users on day one while the
+    // pricing page advertised a free trial to them.
+    const hadTrial = userDoc.data()?.hadTrial === true;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
 
     // The pricing card hides itself after LIFETIME_RETIRES_AT; this guard
