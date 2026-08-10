@@ -37,6 +37,14 @@ export const footerConfig = {
       ]
     },
     {
+      title: "Compare",
+      links: [
+        { name: "TradeZella Alternative", href: "/tradezella-alternative" },
+        { name: "TraderSync Alternative", href: "/tradersync-alternative" },
+        { name: "Edgewonk Alternative", href: "/edgewonk-alternative" },
+      ]
+    },
+    {
       title: "Legal",
       links: [
         { name: "Privacy Policy", href: "/privacy" },
