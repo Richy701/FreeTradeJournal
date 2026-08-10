@@ -1,0 +1,298 @@
+[
+  {
+    "slug": "fundednext-trading-journal",
+    "name": "FundedNext",
+    "title": "FundedNext Trading Journal | Track Stellar Challenge Rules & Import MT5 Trades | FreeTradeJournal",
+    "description": "Track your FundedNext Stellar challenge in a free trading journal. Monitor the daily loss limit, max loss, and profit target, import your MT5 trades, and see your real stats. Free, no credit card.",
+    "keywords": "FundedNext trading journal, FundedNext journal, FundedNext tracker, FundedNext challenge tracker, Stellar challenge tracker, FundedNext daily loss limit, FundedNext drawdown tracker, FundedNext MT5 import, prop firm trading journal, FundedNext eval tracker",
+    "heroTitle1": "FundedNext Trading Journal",
+    "heroTitle2": "(2026)",
+    "heroSubtitle": "Track your Stellar challenge against FundedNext's daily loss limit, max loss, and profit target — with your trades imported from MT5. Free, no credit card.",
+    "intro": [
+      "A FundedNext Stellar challenge gives you several numbers to stay on the right side of at once: a profit target, a daily loss limit that counts floating losses, and a maximum loss measured from your initial balance. The FundedNext dashboard shows you where you stand, but it does not tell you why you are drifting toward a limit or which habits put you there.",
+      "That is what a journal is for. Import your MT5 trades into FreeTradeJournal and you get your daily P&L against the limit, your win rate by pair and session, and a written record of what you were thinking on the days that went wrong.",
+      "The free plan covers it: unlimited trade logging, CSV import, dashboard analytics, and a prop firm tracker. Below are the current Stellar rules and exactly how to get your trades in."
+    ],
+    "rulesVerified": "2026-08-10",
+    "rulesNote": "Rules verified against fundednext.com and their help center on 10 August 2026. FundedNext runs several challenge models with different numbers — check the rules for the model you bought before relying on any figure here.",
+    "rules": [
+      { "label": "Account sizes", "value": "$5K to $200K on the CFD side (Stellar Lite, Stellar 1-Step, Stellar 2-Step); futures accounts from $25K to $150K" },
+      { "label": "Stellar 2-Step targets", "value": "8% in Phase 1, 5% in Phase 2" },
+      { "label": "Stellar 1-Step target", "value": "10% in a single phase" },
+      { "label": "Daily loss limit", "value": "5% on Stellar 2-Step, 3% on 1-Step, 4% on Lite — a fixed dollar amount based on initial balance, breached intraday if balance or equity crosses it, resetting at 00:00 server time" },
+      { "label": "Maximum loss", "value": "10% on 2-Step, 6% on 1-Step, 8% on Lite — static, measured from initial balance, and floating losses count" },
+      { "label": "Minimum trading days", "value": "5 days per phase on 2-Step and Lite; 2 days on 1-Step" },
+      { "label": "Profit split", "value": "80% baseline, rising to 90% via scale-up (accounts bought on or after 12 Jan 2026)" },
+      { "label": "Payouts", "value": "1-Step: every 5 business days. 2-Step and Lite: first payout after 21 days, then every 14 days" },
+      { "label": "Platforms", "value": "MT4, MT5, cTrader, Match-Trader (the only option for US traders); TradingView, NinjaTrader, and Tradovate on the futures side" }
+    ],
+    "tracking": [
+      { "title": "Daily P&L against the loss limit", "desc": "The dashboard shows each day's net P&L, so you can see how much of the 3-5% daily allowance a session actually used and spot the days where one more trade would have breached it." },
+      { "title": "Drawdown from your starting balance", "desc": "FundedNext's maximum loss is static from the initial balance. Track your equity curve against that floor instead of doing the mental arithmetic mid-trade." },
+      { "title": "Progress to the profit target", "desc": "Set the phase target as a goal and watch progress per week. An 8% target on a $100K account is $8,000 — the goal tracker shows how far each trading day moves you." },
+      { "title": "The true cost of your challenges", "desc": "PropTracker logs every challenge fee, reset, and payout across firms, so you know your real net result with FundedNext — not just the result of the current account." },
+      { "title": "A record of the bad days", "desc": "Journal entries with emotion tags tie your notes to actual trades. When a challenge fails, you can read exactly what happened instead of guessing." }
+    ],
+    "importPlatform": "MT5",
+    "importIntro": "MT4 and MT5 are FundedNext's default platforms for paid CFD challenges. Getting your trade history out takes about a minute:",
+    "importSteps": [
+      "Log into MT5 with your FundedNext account credentials and server.",
+      "Open the Toolbox panel (View menu, or Ctrl+T) and switch to the History tab.",
+      "Right-click inside the history list and set the period you want, for example All History.",
+      "Right-click again and choose Report, then save as Open XML — it opens in Excel, where you can save it as CSV.",
+      "In FreeTradeJournal, open Trades and use Import CSV. The column-mapping step recognises MetaTrader exports, so you do not need to reformat anything.",
+      "If you trade through Match-Trader or cTrader instead, export your account statement from the platform's history panel and import the same way."
+    ],
+    "faqs": [
+      { "question": "Does FreeTradeJournal work with FundedNext accounts?", "answer": "Yes. Import your trades via CSV from MT4, MT5, cTrader, or Match-Trader, and the dashboard shows your P&L, win rate, and daily results. The prop firm dashboard tracks evaluation progress, daily loss, and drawdown alongside your journal." },
+      { "question": "How do I import FundedNext trades from MT5?", "answer": "In MT5, open Toolbox, go to the History tab, right-click and choose Report, and save the file. Open it in Excel, save as CSV, then use Import CSV on the Trades page in FreeTradeJournal. The column mapper handles MetaTrader's format." },
+      { "question": "How does the FundedNext daily loss limit work?", "answer": "It is a fixed dollar amount, set at 5% of initial balance on Stellar 2-Step (3% on 1-Step, 4% on Lite). It counts floating losses — if your equity crosses the line intraday, the account is breached — and it resets at 00:00 server time." },
+      { "question": "Is the FundedNext maximum loss static or trailing?", "answer": "Static on the Stellar challenges: your balance or equity may not drop below 90% of the initial balance on 2-Step (94% on 1-Step, 92% on Lite). The instant-funding Stellar Instant model uses a 6% trailing drawdown instead." },
+      { "question": "Can I track more than one FundedNext account?", "answer": "The free plan includes two trading accounts and one prop firm account in PropTracker. Pro removes those limits, so you can track every challenge, funded account, and reset side by side." },
+      { "question": "Is FreeTradeJournal really free?", "answer": "Yes. Unlimited trade logging, CSV import and export, dashboard analytics, goals, and 20 AI analyses a month cost nothing and need no card. Pro is $12.99/month or $99.99/year and removes the free plan's limits." }
+    ],
+    "affiliate": null,
+    "related": [
+      { "label": "Funding Pips journal", "to": "/funding-pips-trading-journal" },
+      { "label": "FTMO journal", "to": "/ftmo-trading-journal" },
+      { "label": "Prop firm dashboard", "to": "/prop-firm-dashboard" }
+    ]
+  },
+  {
+    "slug": "ftmo-trading-journal",
+    "name": "FTMO",
+    "title": "FTMO Trading Journal | Track Challenge Rules & Import MT5 or cTrader Trades | FreeTradeJournal",
+    "description": "Track your FTMO Challenge in a free trading journal. Monitor the 5% daily loss and 10% max loss, watch progress to the profit target, and import trades from MT5 or cTrader. Free, no credit card.",
+    "keywords": "FTMO trading journal, FTMO journal, FTMO challenge tracker, FTMO daily loss tracker, FTMO drawdown tracker, FTMO MT5 import, FTMO cTrader export, prop firm trading journal, FTMO eval tracker, FTMO account tracker",
+    "heroTitle1": "FTMO Trading Journal",
+    "heroTitle2": "(2026)",
+    "heroSubtitle": "Track your FTMO Challenge against the daily loss limit, max loss, and profit target — with trades imported from MT5 or cTrader. Free, no credit card.",
+    "intro": [
+      "The FTMO Challenge is won or lost on discipline: a 10% profit target, a 5% daily loss limit that resets at midnight CE(S)T, and a 10% maximum loss that never moves. FTMO's own MetriX dashboard tells you where you stand today. It does not show you the patterns — which session you give money back in, which pair you overtrade, what a losing streak does to your position sizes.",
+      "A journal does. Import your FTMO trades into FreeTradeJournal and you get daily P&L against the limit, win rate by pair and session, an equity curve against the loss floor, and written notes tied to the trades that mattered.",
+      "The free plan covers it: unlimited logging, CSV import, analytics, and a prop firm tracker. Here are the current FTMO rules and exactly how to get your trades in."
+    ],
+    "rulesVerified": "2026-08-10",
+    "rulesNote": "Rules verified against ftmo.com on 10 August 2026. FTMO adjusts its programs over time — check ftmo.com for the current objectives on your account type.",
+    "rules": [
+      { "label": "Account sizes", "value": "$10K, $25K, $50K, $100K, $200K" },
+      { "label": "2-Step targets", "value": "10% in the Challenge phase, 5% in Verification; no target on the funded account" },
+      { "label": "1-Step target", "value": "10% in a single phase" },
+      { "label": "Daily loss limit", "value": "5% on the 2-Step (3% on the 1-Step), equity-based, resetting at midnight CE(S)T" },
+      { "label": "Maximum loss", "value": "2-Step: 10% static from initial balance. 1-Step: 10% trailing end-of-day, locking at breakeven once it reaches the initial balance" },
+      { "label": "Consistency rule", "value": "1-Step only: your best day may not be more than 50% of your total positive days' profit. No consistency rule on the 2-Step" },
+      { "label": "Minimum trading days", "value": "4 per phase on the 2-Step; effectively 2 on the 1-Step" },
+      { "label": "Profit split", "value": "90% from the start on the 1-Step; 80% on the 2-Step, rising to 90% via the Scaling Plan" },
+      { "label": "Payouts", "value": "On demand from day 14 after your first funded trade; processed in 1-2 business days; challenge fee refunded with the first payout" },
+      { "label": "Platforms", "value": "MT5, MT4, cTrader" }
+    ],
+    "tracking": [
+      { "title": "Daily P&L against the 5% limit", "desc": "The dashboard shows each day's net result, so you can see how close a session came to the daily loss line and which days of the week eat your buffer." },
+      { "title": "Equity curve against the loss floor", "desc": "The 2-Step max loss is static at 10% below the initial balance. Watch your equity curve against it instead of doing mid-trade arithmetic — and on the 1-Step, note your end-of-day highs, since the floor trails them." },
+      { "title": "Progress to the profit target", "desc": "Set the 10% target as a goal. On a $100K Challenge that is $10,000 — the goal tracker shows what each trading day contributed and how many days like your average you still need." },
+      { "title": "Best-day share for the 1-Step", "desc": "The 1-Step Best Day Rule caps any single day at half your total profit. The daily breakdown makes it obvious when one big day is carrying your challenge." },
+      { "title": "The true cost of your challenges", "desc": "PropTracker logs challenge fees, resets, and payouts, so you know your all-time net with FTMO across every attempt — not just the account that is currently open." },
+      { "title": "A record of the bad days", "desc": "Journal entries with emotion tags tie your notes to actual trades, so a failed challenge becomes something you can study instead of repeat." }
+    ],
+    "importPlatform": "MT5 or cTrader",
+    "importIntro": "FTMO runs on MT5, MT4, and cTrader. Both main platforms export your history in about a minute:",
+    "importSteps": [
+      "MT5: open the Toolbox panel (View menu, or Ctrl+T) and switch to the History tab.",
+      "MT5: right-click the history list, set the period (for example All History), right-click again and choose Report, then save — Open XML opens in Excel, where you can save as CSV.",
+      "cTrader: open the History tab in the Trade Watch panel at the bottom of the platform.",
+      "cTrader: click Statement, choose Excel format, and save the file.",
+      "Alternatively, the FTMO Client Area's Account MetriX page has a built-in trading journal export.",
+      "In FreeTradeJournal, open Trades and use Import CSV. The column-mapping step recognises MetaTrader and cTrader exports, so you do not need to reformat anything."
+    ],
+    "faqs": [
+      { "question": "Does FreeTradeJournal work with FTMO accounts?", "answer": "Yes. Import your trades via CSV from MT5, MT4, or cTrader and the dashboard shows your P&L, win rate, and daily results. The prop firm dashboard tracks evaluation progress, daily loss, and drawdown alongside your journal." },
+      { "question": "How do I export my FTMO trades?", "answer": "From MT5: Toolbox, History tab, right-click, Report, then save and convert to CSV in Excel. From cTrader: History tab, Statement, Excel format. FTMO's Account MetriX also has a built-in export. Then use Import CSV on the Trades page." },
+      { "question": "How does the FTMO daily loss limit work?", "answer": "You may not lose more than 5% of the initial balance in a day (3% on the 1-Step). It is measured on equity, including floating losses, and resets at midnight Prague time (CE(S)T). Same-day profits give the buffer back." },
+      { "question": "Is the FTMO max loss static or trailing?", "answer": "On the 2-Step it is static: 10% below the initial balance, and it never moves. On the 1-Step it trails your highest end-of-day balance until it reaches the initial balance, then locks at breakeven." },
+      { "question": "What is the FTMO Best Day Rule?", "answer": "It applies to the 1-Step program only: your most profitable day may not account for more than 50% of your total positive days' profit, on the challenge and on the funded account. The 2-Step has no consistency rule." },
+      { "question": "Can I track my FTMO account alongside other prop firms?", "answer": "Yes. The free plan includes two trading accounts and one prop firm account in PropTracker; Pro removes those limits so you can compare FTMO with FundedNext, Funding Pips, or any other firm side by side." }
+    ],
+    "affiliate": { "label": "Visit FTMO", "url": "https://trader.ftmo.com/?affiliates=PYpnfPHLxoLexQHIwIhm" },
+    "related": [
+      { "label": "FTMO review", "to": "/ftmo-review" },
+      { "label": "FundedNext journal", "to": "/fundednext-trading-journal" },
+      { "label": "Prop firm dashboard", "to": "/prop-firm-dashboard" }
+    ]
+  },
+  {
+    "slug": "apex-trading-journal",
+    "name": "Apex Trader Funding",
+    "title": "Apex Trading Journal | Track Trailing Drawdown & Import Tradovate Trades | FreeTradeJournal",
+    "description": "Track your Apex Trader Funding evaluation in a free journal. Monitor the trailing drawdown and payout consistency rule, and import trades from Tradovate or Rithmic. Free, no credit card.",
+    "keywords": "Apex trading journal, Apex Trader Funding journal, Apex tracker, Apex evaluation tracker, Apex trailing drawdown tracker, Apex Tradovate import, Apex Rithmic export, futures prop firm journal, Apex consistency rule, Apex PA tracker",
+    "heroTitle1": "Apex Trading Journal",
+    "heroTitle2": "(2026)",
+    "heroSubtitle": "Track your Apex evaluation and Performance Account against the trailing drawdown and the 50% payout consistency rule — with trades imported from Tradovate or Rithmic. Free, no credit card.",
+    "intro": [
+      "Apex rebuilt its program in March 2026: evaluations now come in two families — end-of-day trailing drawdown or intraday trailing drawdown — with a 100% payout split in the Performance Account, capped at six payouts. The number that ends accounts is the trailing threshold, and the rule that blocks payouts is consistency: your best day must stay under half your profit since the last payout.",
+      "Both are patterns a journal makes visible. Import your Tradovate or Rithmic trades into FreeTradeJournal and you get daily P&L, your equity curve against the trailing floor, the share your best day carries, and notes tied to the sessions that mattered.",
+      "The free plan covers it: unlimited logging, CSV import, analytics, and a prop firm tracker. Here are the current rules and the exact export steps."
+    ],
+    "rulesVerified": "2026-08-10",
+    "rulesNote": "Rules verified against apextraderfunding.com's help center on 10 August 2026, covering the post-March 2026 products. Accounts bought before March 2026 run under different legacy rules, and much of what third-party sites say about Apex describes the old system — check the family-specific pages for your account.",
+    "rules": [
+      { "label": "Account sizes", "value": "$25K, $50K, $100K, $150K futures evaluations, in EOD Drawdown or Intraday Trailing Drawdown families (legacy $25K-$300K accounts are no longer sold)" },
+      { "label": "Profit target", "value": "$1,500 / $3,000 / $6,000 / $9,000 by account size; no consistency rule during the evaluation, no minimum days — passable in one day" },
+      { "label": "Trailing drawdown", "value": "$1,000 / $2,000 / $3,000 / $4,000. EOD family: recalculated daily at 4:59:59 PM ET from the closing balance, enforced in real time next session. Intraday family: follows peak balance continuously, including unrealized gains" },
+      { "label": "Where the trailing stops", "value": "In the Performance Account it locks at starting balance plus $100; in Rithmic and WealthCharts evaluations it locks at the target; in Tradovate evaluations it trails indefinitely" },
+      { "label": "Daily loss limit", "value": "EOD evaluations: fixed at $500 to $2,000 by size — hitting it pauses the session, it does not fail the account. Intraday evaluations: none; the PA adds a tier-based one" },
+      { "label": "Payout split", "value": "100% of Performance Account payouts, capped at 6 payouts per PA with per-request maximums, then the PA closes. Invitation-only Apex Live pays 90/10 on live profits" },
+      { "label": "Payout gates", "value": "5 qualifying trading days since the last payout (each with a minimum daily profit), $500 minimum, the Safety Net (drawdown plus $100) held for the life of the PA, and the 50% consistency rule on your best day" },
+      { "label": "Platforms", "value": "Rithmic (NinjaTrader, R|Trader Pro, Sierra Chart and other front-ends), Tradovate (includes TradingView integration), or WealthCharts — chosen at checkout" }
+    ],
+    "tracking": [
+      { "title": "Equity curve against the trailing floor", "desc": "Whether your family trails end-of-day or intraday, the journal's equity curve and daily closes show how much buffer each session added or spent, and how far the floor has ratcheted up behind you." },
+      { "title": "Best-day share for the consistency rule", "desc": "Payouts are blocked if your best day exceeds 50% of profit since the last payout. The daily breakdown shows that share at a glance, so you know before you request." },
+      { "title": "Qualifying-day progress", "desc": "Each payout needs 5 days above a minimum profit. Daily P&L history shows which days qualified and how many you still need." },
+      { "title": "The true cost across up to 20 accounts", "desc": "Apex traders often run several evaluations at once. PropTracker logs every evaluation fee, reset, activation, and payout so you know your real net across all of them — not just the account currently open." },
+      { "title": "A record of the bad days", "desc": "Journal entries with emotion tags tie your notes to actual trades, so a blown evaluation becomes something you can study instead of repeat." }
+    ],
+    "importPlatform": "Tradovate or Rithmic",
+    "importIntro": "Apex accounts run on Rithmic or Tradovate data, chosen at checkout. Both export your history as CSV:",
+    "importSteps": [
+      "Tradovate: log into the platform (web or desktop) and open Reports from the account drop-down.",
+      "Tradovate: choose the Orders report for your trade history, set the date range, and click Go.",
+      "Tradovate: click Download Report — the CSV saves to your computer.",
+      "Rithmic: in R|Trader Pro, export the order or trade history window to CSV; in NinjaTrader, right-click the Trade Performance grid and choose Export.",
+      "In FreeTradeJournal, open Trades and use Import CSV. The column-mapping step lets you match your platform's columns in a few clicks.",
+      "Re-export with a fresh date range whenever you want to top the journal up; duplicate trades are flagged on import."
+    ],
+    "faqs": [
+      { "question": "Does FreeTradeJournal work with Apex accounts?", "answer": "Yes. Export your history as CSV from Tradovate (Reports, Orders report) or a Rithmic front-end like R|Trader Pro or NinjaTrader, then use Import CSV on the Trades page. The dashboard shows your P&L, win rate, and daily results, and the prop firm dashboard tracks drawdown and progress." },
+      { "question": "How does the Apex trailing drawdown work?", "answer": "It starts $1,000 to $4,000 below your starting balance by account size. The EOD family recalculates it once per day from your closing balance; the Intraday family trails your peak balance continuously, including open profits. In the Performance Account it stops trailing at starting balance plus $100." },
+      { "question": "What is the Apex 50% consistency rule?", "answer": "It gates payouts, not the account: your most profitable day must be under 50% of your net profit since the last approved payout. If it is not, the payout request is blocked until more profitable days bring the share down." },
+      { "question": "Did Apex change its rules in 2026?", "answer": "Yes, substantially, on 1 March 2026: new EOD and Intraday product families, a 100% payout split capped at six payouts per Performance Account, no evaluation minimum days, and no evaluation consistency rule. Older accounts keep the legacy rules, and many third-party sites still describe the old system." },
+      { "question": "Can I track several Apex accounts at once?", "answer": "Apex allows up to 20 Performance Accounts. The free FreeTradeJournal plan includes two trading accounts and one prop firm account in PropTracker; Pro removes those limits so every evaluation and PA can sit side by side." },
+      { "question": "Is FreeTradeJournal really free?", "answer": "Yes. Unlimited trade logging, CSV import and export, dashboard analytics, goals, and 20 AI analyses a month cost nothing and need no card. Pro is $12.99/month or $99.99/year and removes the free plan's limits." }
+    ],
+    "affiliate": null,
+    "related": [
+      { "label": "Topstep journal", "to": "/topstep-trading-journal" },
+      { "label": "Prop firm dashboard", "to": "/prop-firm-dashboard" },
+      { "label": "Futures trading tracker", "to": "/futures-trading-tracker" }
+    ]
+  },
+  {
+    "slug": "funding-pips-trading-journal",
+    "name": "Funding Pips",
+    "title": "Funding Pips Trading Journal | Track Challenge Rules & Import MT5 Trades | FreeTradeJournal",
+    "description": "Track your Funding Pips challenge in a free trading journal. Monitor the intraday daily loss limit and static max loss, watch your phase targets, and import trades from MT5, cTrader, or Match-Trader. Free, no credit card.",
+    "keywords": "Funding Pips trading journal, FundingPips journal, Funding Pips tracker, Funding Pips challenge tracker, Funding Pips daily loss, Funding Pips drawdown tracker, Funding Pips MT5 import, prop firm trading journal, Funding Pips eval tracker, 2 step standard tracker",
+    "heroTitle1": "Funding Pips Trading Journal",
+    "heroTitle2": "(2026)",
+    "heroSubtitle": "Track your Funding Pips challenge against the daily loss limit, static max loss, and phase targets — with trades imported from MT5, cTrader, or Match-Trader. Free, no credit card.",
+    "intro": [
+      "Funding Pips runs several challenge models, and each one is a set of numbers you have to respect at once: phase profit targets, a daily loss limit measured intraday against your opening balance or equity (floating losses count), and a static maximum loss that never moves. The dashboard tells you where you stand. It does not tell you which habits are spending your buffer.",
+      "A journal does. Import your trades into FreeTradeJournal and you get daily P&L against the limit, win rate by pair and session, an equity curve against the loss floor, and notes tied to the trades that decided the challenge.",
+      "The free plan covers it: unlimited logging, CSV import, analytics, and a prop firm tracker. Here are the current rules for the main models and how to get your trades in."
+    ],
+    "rulesVerified": "2026-08-10",
+    "rulesNote": "Rules verified against help.fundingpips.com on 10 August 2026. Funding Pips runs multiple models with different numbers and retires variants over time — check the rules for the exact model you bought.",
+    "rules": [
+      { "label": "Account sizes", "value": "$5K to $100K on all models; $200K on 2 Step Pro and Zero" },
+      { "label": "2 Step Standard targets", "value": "8% in Phase 1, 5% in Phase 2 (the older 10%/5% variant retired July 2026)" },
+      { "label": "Other models", "value": "1 Step Flex: 12% in one phase. 2 Step Pro: 6% and 6%. 2 Step Flex: 10% and 6%. Zero: instant funding, no evaluation" },
+      { "label": "Daily loss limit", "value": "5% on 2 Step Standard (3% on 1 Step Flex, Pro, and Zero; 4% on 2 Step Flex) — measured against the higher of the day's opening balance or equity, floating losses included, resetting at 00:00 platform time" },
+      { "label": "Maximum loss", "value": "10% on 2 Step Standard (12% Flex models, 6% Pro) — static below the starting balance, breached if equity or balance touches it at any moment. Zero uses a 5% trailing drawdown instead" },
+      { "label": "Minimum trading days", "value": "3 per phase on 2 Step Standard, 1 on Pro, none on the Flex models' base split" },
+      { "label": "Profit split", "value": "Depends on model and reward cycle: 2 Step Standard pays 60% weekly, 80% bi-weekly, or 100% monthly; Flex models 85-95%; Zero 95%" },
+      { "label": "Payouts", "value": "Cycle-based from your first funded trade (weekly, bi-weekly, monthly, or on-demand depending on model), processed in 1-3 working days" },
+      { "label": "Platforms", "value": "MT5, cTrader, Match-Trader — chosen at checkout" }
+    ],
+    "tracking": [
+      { "title": "Daily P&L against the loss limit", "desc": "Funding Pips measures the daily limit intraday, including floating losses. The dashboard's daily breakdown shows how much of the allowance each session really used, and which weekdays are your dangerous ones." },
+      { "title": "Equity curve against the static floor", "desc": "The maximum loss never moves from its starting level, so your remaining buffer is always visible as the gap between your equity curve and one flat line." },
+      { "title": "Progress to the phase target", "desc": "Set the phase target as a goal — 8% on a $100K Standard is $8,000 — and watch what each trading day contributed and how many average days you still need." },
+      { "title": "The true cost of your challenges", "desc": "PropTracker logs every challenge fee, reset, and payout, so you know your real net result with Funding Pips across all attempts and models." },
+      { "title": "A record of the bad days", "desc": "Journal entries with emotion tags tie your notes to actual trades, so a failed phase becomes something you can study instead of repeat." }
+    ],
+    "importPlatform": "MT5",
+    "importIntro": "Funding Pips accounts run on MT5, cTrader, or Match-Trader, picked at checkout. MT5 is the first-listed option in their own setup guides, and exporting takes about a minute:",
+    "importSteps": [
+      "Log into the MT5 terminal with the Funding Pips credentials from your dashboard.",
+      "Open the Toolbox panel (View menu, or Ctrl+T) and switch to the History tab.",
+      "Right-click inside the history list and choose the period you want, for example All History.",
+      "Right-click again and choose Report, then save as Open XML — it opens in Excel, where you can save it as CSV.",
+      "In FreeTradeJournal, open Trades and use Import CSV. The column-mapping step recognises MetaTrader exports, so you do not need to reformat anything.",
+      "On cTrader, use the History tab's Statement export instead; on Match-Trader, export your account statement from the platform's history view."
+    ],
+    "faqs": [
+      { "question": "Does FreeTradeJournal work with Funding Pips accounts?", "answer": "Yes. Import your trades via CSV from MT5, cTrader, or Match-Trader and the dashboard shows your P&L, win rate, and daily results. The prop firm dashboard tracks evaluation progress, daily loss, and drawdown alongside your journal." },
+      { "question": "How do I import Funding Pips trades from MT5?", "answer": "In MT5, open Toolbox, go to the History tab, right-click and choose Report, and save the file. Open it in Excel, save as CSV, then use Import CSV on the Trades page in FreeTradeJournal. The column mapper handles MetaTrader's format." },
+      { "question": "How does the Funding Pips daily loss limit work?", "answer": "It is measured against the higher of that day's opening balance or opening equity — 5% on 2 Step Standard, 3% on 1 Step Flex and Pro. Floating losses count, so an open trade can breach it intraday, and it resets at 00:00 platform time." },
+      { "question": "Is the Funding Pips max loss static or trailing?", "answer": "Static on the evaluation models: 10% below the starting balance on 2 Step Standard (12% on the Flex models, 6% on Pro), and it never moves. The instant-funding Zero model uses a 5% trailing drawdown that locks at breakeven once the account is 5% in profit." },
+      { "question": "Which Funding Pips model is easiest to track?", "answer": "They all come down to the same three numbers: phase target, daily loss, max loss. Enter your model's numbers in the prop firm dashboard and the journal tracks progress and buffer the same way for every model." },
+      { "question": "Is FreeTradeJournal really free?", "answer": "Yes. Unlimited trade logging, CSV import and export, dashboard analytics, goals, and 20 AI analyses a month cost nothing and need no card. Pro is $12.99/month or $99.99/year and removes the free plan's limits." }
+    ],
+    "affiliate": null,
+    "related": [
+      { "label": "FundedNext journal", "to": "/fundednext-trading-journal" },
+      { "label": "FTMO journal", "to": "/ftmo-trading-journal" },
+      { "label": "Prop firm dashboard", "to": "/prop-firm-dashboard" }
+    ]
+  },
+  {
+    "slug": "topstep-trading-journal",
+    "name": "Topstep",
+    "title": "Topstep Trading Journal | Track Combine Rules & Import TopstepX Trades | FreeTradeJournal",
+    "description": "Track your Topstep Trading Combine in a free journal. Monitor the trailing Maximum Loss Limit and consistency target, and import trades straight from TopstepX's CSV export. Free, no credit card.",
+    "keywords": "Topstep trading journal, Topstep journal, Topstep Combine tracker, TopstepX CSV export, TopstepX import, Topstep trailing drawdown tracker, Topstep consistency rule, futures prop firm journal, Topstep eval tracker, Topstep account tracker",
+    "heroTitle1": "Topstep Trading Journal",
+    "heroTitle2": "(2026)",
+    "heroSubtitle": "Track your Trading Combine against the trailing Maximum Loss Limit and the consistency target — with trades imported from TopstepX's built-in CSV export. Free, no credit card.",
+    "intro": [
+      "The Topstep Trading Combine is a single-step evaluation with two numbers that end accounts: a Maximum Loss Limit that trails your end-of-day balance but is enforced in real time including open positions, and a consistency target that caps your best day at half the profit target. The TopstepX platform shows your current buffer. It does not show the patterns that spend it.",
+      "A journal does. TopstepX has a built-in CSV export, so getting your trades into FreeTradeJournal takes a minute — and then you get daily P&L, win rate by contract and session, an equity curve against the trailing floor, and notes tied to the days that hurt.",
+      "The free plan covers it: unlimited logging, CSV import, analytics, and a prop firm tracker. Here are the current Combine rules and the exact export steps."
+    ],
+    "rulesVerified": "2026-08-10",
+    "rulesNote": "Rules verified against help.topstep.com on 10 August 2026. Topstep has changed its platform lineup and payout policy several times — check their help center for the current numbers on your account.",
+    "rules": [
+      { "label": "Account sizes", "value": "$50K, $100K, and $150K Trading Combines" },
+      { "label": "Profit target", "value": "$3,000 / $6,000 / $9,000 by account size, with no time limit" },
+      { "label": "Consistency target", "value": "Your best single day must stay below 50% of the profit target" },
+      { "label": "Maximum Loss Limit", "value": "$2,000 / $3,000 / $4,500 — trails your end-of-day balance upward, is enforced in real time including unrealized P&L, and locks at breakeven once it reaches the starting balance" },
+      { "label": "Daily Loss Limit", "value": "Optional in the Combine since 2026: fixed at $1,000 / $2,000 / $3,000 if chosen at purchase. Hitting it flattens positions and blocks trading until the next session, but is not a violation. Mandatory on Live Funded accounts" },
+      { "label": "Minimum trading days", "value": "None fixed — the consistency rule makes 2 profitable days the practical minimum" },
+      { "label": "Profit split", "value": "90/10 on every approved payout (the old 100%-of-first-$10K structure applies only to accounts from before 12 Jan 2026)" },
+      { "label": "Payouts", "value": "Express Funded: after 5 winning days of $150+, up to 50% of balance with caps by account size. Live Funded: no dollar cap, and daily payouts unlock after 30 winning days" },
+      { "label": "Platform", "value": "TopstepX only for new Combines (NinjaTrader, Tradovate, and TradingView were dropped in 2025); Quantower connectable for Combine and Express Funded" }
+    ],
+    "tracking": [
+      { "title": "Equity curve against the trailing floor", "desc": "The Maximum Loss Limit follows your best end-of-day balance until it locks at breakeven. Your equity curve and daily closes show exactly how much buffer each day added or spent." },
+      { "title": "Best-day share for the consistency target", "desc": "The daily P&L breakdown makes it obvious when one day is carrying more than half your progress, so you know whether you need more trading days before passing." },
+      { "title": "Daily P&L discipline", "desc": "Whether or not you bought the optional Daily Loss Limit, seeing each session's net result against a personal daily cap is how you avoid the one red day that resets a Combine." },
+      { "title": "The true cost of your Combines", "desc": "PropTracker logs every Combine subscription, reset, and payout, so you know your real net result with Topstep across attempts — not just the current account's balance." },
+      { "title": "A record of the bad days", "desc": "Journal entries with emotion tags tie your notes to actual trades, so a failed Combine becomes something you can study instead of repeat." }
+    ],
+    "importPlatform": "TopstepX",
+    "importIntro": "TopstepX has a built-in CSV export, which makes it one of the easiest platforms to journal from:",
+    "importSteps": [
+      "Log into TopstepX at topstepx.com/trade.",
+      "Open the Trades tab at the bottom of the platform (use Trades rather than Orders for your fill history).",
+      "Click Export at the bottom-right of that panel.",
+      "Pick your date range and click Export again — the CSV downloads straight from the platform.",
+      "In FreeTradeJournal, open Trades and use Import CSV. The column-mapping step lets you match TopstepX's columns in a few clicks.",
+      "Re-export with a fresh date range whenever you want to top the journal up; duplicate trades are flagged on import."
+    ],
+    "faqs": [
+      { "question": "Does FreeTradeJournal work with Topstep accounts?", "answer": "Yes. TopstepX exports your trade history as CSV from the Trades tab, and FreeTradeJournal imports it directly. The dashboard then shows your P&L, win rate, and daily results, and the prop firm dashboard tracks your progress and drawdown." },
+      { "question": "How do I export my trades from TopstepX?", "answer": "In TopstepX, open the Trades tab at the bottom, click Export at the bottom-right, choose your date range, and confirm. The CSV downloads immediately. Then use Import CSV on the Trades page in FreeTradeJournal." },
+      { "question": "How does Topstep's Maximum Loss Limit work?", "answer": "It starts $2,000 to $4,500 below your starting balance depending on account size, and trails your end-of-day balance upward. It is enforced in real time, including unrealized P&L, and it stops trailing once it reaches your starting balance, where it locks permanently." },
+      { "question": "What is the Topstep consistency rule?", "answer": "Your best single day must stay below 50% of the profit target. If one day is carrying more than half your progress, you need more profitable days before the Combine can be passed." },
+      { "question": "Can I still use NinjaTrader or Tradovate with Topstep?", "answer": "No. New Combines have been TopstepX-only since July 2025, and resets since August 2025. Quantower can still connect for the Combine and Express Funded stages. If you trade Tradovate elsewhere, FreeTradeJournal imports Tradovate CSVs too." },
+      { "question": "Is FreeTradeJournal really free?", "answer": "Yes. Unlimited trade logging, CSV import and export, dashboard analytics, goals, and 20 AI analyses a month cost nothing and need no card. Pro is $12.99/month or $99.99/year and removes the free plan's limits." }
+    ],
+    "affiliate": null,
+    "related": [
+      { "label": "Apex journal", "to": "/apex-trading-journal" },
+      { "label": "Prop firm dashboard", "to": "/prop-firm-dashboard" },
+      { "label": "Futures trading tracker", "to": "/futures-trading-tracker" }
+    ]
+  }
+]

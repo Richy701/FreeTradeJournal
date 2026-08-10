@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import firmPages from '@/data/firm-pages.json';
 
 interface SEOMetaProps {
   title?: string;
@@ -149,6 +150,12 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'Top One Futures review, Top One Futures review 2026, Top One Trader review, futures prop firm review, best futures prop firm, Top One Futures evaluation, Top One Futures payout, futures trading prop firm'
   }
 };
+
+// Per-firm journal pages derive their meta from src/data/firm-pages.json so a
+// new firm entry needs no edit here.
+for (const p of firmPages) {
+  pageMeta[`/${p.slug}`] = { title: p.title, description: p.description, keywords: p.keywords };
+}
 
 export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
   const location = useLocation();

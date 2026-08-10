@@ -26,6 +26,10 @@ const PWAInstallPrompt = lazyWithRetry(() => import('@/components/PWAInstallProm
 const PWAUpdateNotification = lazyWithRetry(() => import('@/components/PWAUpdateNotification').then(m => ({ default: m.PWAUpdateNotification })));
 import { PostHogProvider } from 'posthog-js/react';
 import { posthog } from '@/lib/posthog';
+import firmPagesJson from '@/data/firm-pages.json';
+import type { FirmPage } from '@/pages/FirmJournalPage';
+
+const firmPages = firmPagesJson as FirmPage[];
 import { PostHogTracker } from '@/components/PostHogTracker';
 import { initGA } from '@/lib/analytics';
 import { useReferralTracker } from '@/hooks/use-referral-tracker';
@@ -72,6 +76,7 @@ const TopOneFuturesReview = lazyWithRetry(() => import('@/pages/TopOneFuturesRev
 const TradezellaAlternative = lazyWithRetry(() => import('@/pages/TradezellaAlternative'));
 const TradersyncAlternative = lazyWithRetry(() => import('@/pages/TradersyncAlternative'));
 const EdgewonkAlternative = lazyWithRetry(() => import('@/pages/EdgewonkAlternative'));
+const FirmJournalPage = lazyWithRetry(() => import('@/pages/FirmJournalPage'));
 const NotFound = lazyWithRetry(() => import('@/pages/NotFound'));
 
 const toastOptions = {
@@ -167,7 +172,10 @@ function App() {
                 <Route path="/tradezella-alternative" element={<TradezellaAlternative />} />
                 <Route path="/tradersync-alternative" element={<TradersyncAlternative />} />
                 <Route path="/edgewonk-alternative" element={<EdgewonkAlternative />} />
-                
+                {firmPages.map((page) => (
+                  <Route key={page.slug} path={`/${page.slug}`} element={<FirmJournalPage page={page} />} />
+                ))}
+
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
                 <Route path="/prop-tracker" element={<PropTrackerRoute />} />
 

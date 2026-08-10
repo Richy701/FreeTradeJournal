@@ -9,7 +9,7 @@
 
 import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
 
 // On Vercel/CI the build container has no system Chrome and Puppeteer's managed
@@ -54,6 +54,14 @@ const BLOG_POSTS = existsSync(POSTS_DIR)
   : [];
 const BLOG_ROUTES = ["/blog", ...BLOG_POSTS.map((p) => p.route)];
 
+// Per-firm journal pages are driven by src/data/firm-pages.json (same pattern
+// as blog posts): each entry's slug becomes a route here and a sitemap URL in
+// injectDerivedUrlsIntoSitemap, so adding a firm needs no edits in this file.
+const FIRM_PAGES_PATH = new URL("../src/data/firm-pages.json", import.meta.url).pathname;
+const FIRM_ROUTES = existsSync(FIRM_PAGES_PATH)
+  ? JSON.parse(readFileSync(FIRM_PAGES_PATH, "utf-8")).map((p) => `/${p.slug}`)
+  : [];
+
 const ROUTES = [
   "/",
   ...BLOG_ROUTES,
@@ -83,6 +91,7 @@ const ROUTES = [
   "/tradezella-alternative",
   "/tradersync-alternative",
   "/edgewonk-alternative",
+  ...FIRM_ROUTES,
 ];
 
 // ── Tiny static file server ──────────────────────────────────────────────────
@@ -237,13 +246,14 @@ async function prerender() {
   return results.success;
 }
 
-// ── Blog sitemap injection ───────────────────────────────────────────────────
+// ── Derived-URL sitemap injection ────────────────────────────────────────────
 //
 // public/sitemap.xml stays hand-maintained for the marketing pages; blog URLs
-// are injected into the built dist/sitemap.xml here so posts/*.md is the only
+// (from posts/*.md) and firm-page URLs (from src/data/firm-pages.json) are
+// injected into the built dist/sitemap.xml here so those files are the only
 // thing to touch when publishing. Runs before the sync guard, which then
 // verifies the injected URLs were actually prerendered.
-async function injectBlogUrlsIntoSitemap() {
+async function injectDerivedUrlsIntoSitemap() {
   const sitemapPath = join(DIST, "sitemap.xml");
   let xml;
   try {
@@ -252,9 +262,13 @@ async function injectBlogUrlsIntoSitemap() {
     return;
   }
 
+  const firmLastmod = existsSync(FIRM_PAGES_PATH)
+    ? statSync(FIRM_PAGES_PATH).mtime.toISOString().slice(0, 10)
+    : undefined;
   const entries = [
     { route: "/blog", lastmod: BLOG_POSTS[0]?.lastmod },
     ...BLOG_POSTS,
+    ...FIRM_ROUTES.map((route) => ({ route, lastmod: firmLastmod })),
   ]
     .filter(({ route }) => !xml.includes(`<loc>https://www.freetradejournal.com${route}</loc>`))
     .map(
@@ -267,7 +281,7 @@ async function injectBlogUrlsIntoSitemap() {
   if (entries.length === 0) return;
   xml = xml.replace("</urlset>", `${entries.join("")}</urlset>`);
   await writeFile(sitemapPath, xml, "utf-8");
-  console.log(`  ✅ Injected ${entries.length} blog URLs into dist/sitemap.xml.`);
+  console.log(`  ✅ Injected ${entries.length} derived URLs into dist/sitemap.xml.`);
 }
 
 // ── Sitemap sync guard ───────────────────────────────────────────────────────
@@ -326,7 +340,7 @@ let prerenderedRoutes = [];
 prerender()
   .then((success) => {
     prerenderedRoutes = success || [];
-    return injectBlogUrlsIntoSitemap();
+    return injectDerivedUrlsIntoSitemap();
   })
   .then(() => assertSitemapPrerendered(prerenderedRoutes))
   .catch((err) => {
