@@ -234,6 +234,30 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       };
     }
 
+    // Comparison pages (/tradezella-alternative etc.)
+    const COMPARISON_PAGES: Record<string, string> = {
+      '/tradezella-alternative': 'TradeZella',
+      '/tradersync-alternative': 'TraderSync',
+      '/edgewonk-alternative': 'Edgewonk',
+    };
+    if (COMPARISON_PAGES[currentPath]) {
+      const competitor = COMPARISON_PAGES[currentPath];
+      return {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": `${competitor} Alternative (2026) - Free Trading Journal Comparison`,
+        "description": `Honest side-by-side comparison of ${competitor} and FreeTradeJournal: pricing, features, and where each one wins.`,
+        "url": `${baseUrl}${currentPath}`,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": baseUrl },
+            { "@type": "ListItem", "position": 2, "name": `${competitor} Alternative`, "item": `${baseUrl}${currentPath}` }
+          ]
+        }
+      };
+    }
+
     // Affiliate page
     if (currentPath === '/affiliate') {
       return {

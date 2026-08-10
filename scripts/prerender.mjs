@@ -80,6 +80,9 @@ const ROUTES = [
   "/ftmo-review",
   "/the5ers-review",
   "/top-one-futures-review",
+  "/tradezella-alternative",
+  "/tradersync-alternative",
+  "/edgewonk-alternative",
 ];
 
 // ── Tiny static file server ──────────────────────────────────────────────────

@@ -118,6 +118,21 @@ const pageMeta: Record<string, SEOMetaProps> = {
     description: 'Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges. Verified discount codes updated for 2026.',
     keywords: 'prop firm discount, prop firm coupon code, FTMO discount, The5ers discount, Apex trader funding deal, TopStep promo code, FundedNext coupon, prop firm affiliate, prop trading deals, best prop firm deals 2026, prop firm challenge discount, funded trader discount, prop firm promo codes'
   },
+  '/tradezella-alternative': {
+    title: 'TradeZella Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal',
+    description: 'Looking for a TradeZella alternative? Honest side-by-side comparison: TradeZella starts at $35/month, FreeTradeJournal starts at free with AI coaching and prop-firm tracking included. Pro is $12.99/month.',
+    keywords: 'TradeZella alternative, TradeZella alternatives, free TradeZella alternative, TradeZella vs FreeTradeJournal, TradeZella pricing, TradeZella free version, trading journal like TradeZella, cheaper than TradeZella, TradeZella competitor, best trading journal 2026'
+  },
+  '/tradersync-alternative': {
+    title: 'TraderSync Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal',
+    description: 'Looking for a TraderSync alternative? Honest comparison: TraderSync starts at $29.95/month with AI on its $49.95 tier. FreeTradeJournal includes AI on its free plan, and Pro is $12.99/month.',
+    keywords: 'TraderSync alternative, TraderSync alternatives, free TraderSync alternative, TraderSync vs FreeTradeJournal, TraderSync pricing, TraderSync free plan, trading journal like TraderSync, cheaper than TraderSync, TraderSync competitor, best trading journal 2026'
+  },
+  '/edgewonk-alternative': {
+    title: 'Edgewonk Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal',
+    description: 'Looking for an Edgewonk alternative? Honest comparison: Edgewonk is $197 upfront with no free version. FreeTradeJournal is free to start, with AI coaching and prop-firm tracking. Pro is $12.99/month.',
+    keywords: 'Edgewonk alternative, Edgewonk alternatives, free Edgewonk alternative, Edgewonk vs FreeTradeJournal, Edgewonk pricing, Edgewonk free version, trading journal like Edgewonk, cheaper than Edgewonk, Edgewonk competitor, best trading journal 2026'
+  },
   '/ftmo-review': {
     title: 'FTMO Review (2026) | Honest Pros, Cons & Challenge Breakdown | FreeTradeJournal',
     description: 'In-depth FTMO review for 2026. Two-step evaluation breakdown, profit splits up to 90%, payout process, pricing, and how to track your FTMO challenge with FreeTradeJournal.',

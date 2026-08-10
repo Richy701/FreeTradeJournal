@@ -69,6 +69,9 @@ const Affiliate = lazyWithRetry(() => import('@/pages/Affiliate'));
 const FTMOReview = lazyWithRetry(() => import('@/pages/FTMOReview'));
 const The5ersReview = lazyWithRetry(() => import('@/pages/The5ersReview'));
 const TopOneFuturesReview = lazyWithRetry(() => import('@/pages/TopOneFuturesReview'));
+const TradezellaAlternative = lazyWithRetry(() => import('@/pages/TradezellaAlternative'));
+const TradersyncAlternative = lazyWithRetry(() => import('@/pages/TradersyncAlternative'));
+const EdgewonkAlternative = lazyWithRetry(() => import('@/pages/EdgewonkAlternative'));
 const NotFound = lazyWithRetry(() => import('@/pages/NotFound'));
 
 const toastOptions = {
@@ -161,6 +164,9 @@ function App() {
                 <Route path="/ftmo-review" element={<FTMOReview />} />
                 <Route path="/the5ers-review" element={<The5ersReview />} />
                 <Route path="/top-one-futures-review" element={<TopOneFuturesReview />} />
+                <Route path="/tradezella-alternative" element={<TradezellaAlternative />} />
+                <Route path="/tradersync-alternative" element={<TradersyncAlternative />} />
+                <Route path="/edgewonk-alternative" element={<EdgewonkAlternative />} />
                 
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
                 <Route path="/prop-tracker" element={<PropTrackerRoute />} />
