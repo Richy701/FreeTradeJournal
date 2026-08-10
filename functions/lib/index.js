@@ -64,6 +64,7 @@ const Day14UpgradeEmail_1 = require("./emails/Day14UpgradeEmail");
 const Day21BackupEmail_1 = require("./emails/Day21BackupEmail");
 const WeeklyDigestEmail_1 = require("./emails/WeeklyDigestEmail");
 const ReferralEmail_1 = require("./emails/ReferralEmail");
+const CheckoutRecoveryEmail_1 = require("./emails/CheckoutRecoveryEmail");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -303,6 +304,19 @@ async function sendTrialStartedEmail(email, name, trialEnd, uid) {
         subject: "Your 14-day Pro trial has started",
         html,
         headers: uid ? unsubHeaders(uid) : {},
+    });
+}
+async function sendCheckoutRecoveryEmail(email, name, trialAvailable, uid) {
+    const firstName = name?.split(" ")[0] || "trader";
+    const html = await (0, components_1.render)(React.createElement(CheckoutRecoveryEmail_1.CheckoutRecoveryEmail, { firstName, trialAvailable, unsubscribeUrl: getUnsubscribeUrl(uid) }));
+    await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: trialAvailable
+            ? "You left before finishing — your 14-day trial is still here"
+            : "You left checkout before finishing — nothing was charged",
+        html,
+        headers: unsubHeaders(uid),
     });
 }
 async function sendTrialEndingEmail(email, name, trialEnd, uid) {
@@ -2683,6 +2697,56 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 }
                 catch (phErr) {
                     console.error("PostHog: failed to track payment failure:", phErr);
+                }
+                break;
+            }
+            // Fires ~24h after an uncompleted checkout. Requires the event to be
+            // enabled on the webhook endpoint in the Stripe dashboard — until it
+            // is, this case never runs and there is no error anywhere.
+            case "checkout.session.expired": {
+                const session = event.data.object;
+                const firebaseUid = session.metadata?.firebase_uid;
+                if (!firebaseUid)
+                    break;
+                const userRef = db.collection("users").doc(firebaseUid);
+                const userSnap = await userRef.get();
+                if (!userSnap.exists)
+                    break;
+                const data = userSnap.data();
+                // Only nudge people who still have something to come back to:
+                // skip anyone who since completed a checkout (they may have opened
+                // several sessions — the rate limit allows 10 per 10 minutes),
+                // opted out, or was flagged by the signup velocity guard.
+                const LIVE_SUB_STATUSES = ["active", "on_trial", "past_due", "paused"];
+                if (data.emailOptOut ||
+                    data.signupThrottled ||
+                    data.subscription?.planType === "lifetime" ||
+                    LIVE_SUB_STATUSES.includes(data.subscription?.status)) {
+                    break;
+                }
+                // One recovery email per 30 days, however many sessions expire.
+                const lastSent = data.checkoutRecoveryEmailedAt?.toDate?.();
+                if (lastSent && Date.now() - lastSent.getTime() < 30 * 24 * 60 * 60 * 1000)
+                    break;
+                const userRecord = await admin.auth().getUser(firebaseUid).catch(() => null);
+                const email = userRecord?.email || data.email;
+                if (!email)
+                    break;
+                // hadTrial is set by the webhook on completed on_trial checkouts —
+                // the copy must not promise a trial createCheckoutSession won't grant.
+                const trialAvailable = data.hadTrial !== true;
+                await sendCheckoutRecoveryEmail(email, userRecord?.displayName || data.displayName || undefined, trialAvailable, firebaseUid);
+                await userRef.set({ checkoutRecoveryEmailedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+                console.log(`checkout.session.expired recovery email sent for ${firebaseUid}`);
+                try {
+                    await getPostHog().captureImmediate({
+                        distinctId: firebaseUid,
+                        event: "checkout recovery email sent",
+                        properties: { trial_available: trialAvailable },
+                    });
+                }
+                catch (phErr) {
+                    console.error("PostHog: failed to track checkout recovery:", phErr);
                 }
                 break;
             }

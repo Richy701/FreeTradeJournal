@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
 import { EmailShell, EmailButton, FeatureList, styles } from './components'
-import { URLS, PRICE_MONTHLY, PRICE_YEARLY, PRICE_LIFETIME } from './facts'
+import { URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
 
 interface Day14UpgradeEmailProps {
   firstName: string
@@ -45,7 +45,7 @@ export function Day14UpgradeEmail({ firstName, tradeCount, unsubscribeUrl }: Day
 
       <Section style={styles.content}>
         <Text style={styles.paragraph}>
-          Pro is <strong style={styles.strong}>{PRICE_MONTHLY}</strong>, {PRICE_YEARLY}, or {PRICE_LIFETIME}. Cancel anytime — everything you've logged stays exactly as it is.
+          Pro is <strong style={styles.strong}>{PRICE_MONTHLY}</strong> or {PRICE_YEARLY}. Cancel anytime — everything you've logged stays exactly as it is.
         </Text>
         <EmailButton href={URLS.pricing}>See Pro features</EmailButton>
       </Section>

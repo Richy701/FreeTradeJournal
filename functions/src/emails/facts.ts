@@ -4,6 +4,8 @@
 
 export const PRICE_MONTHLY = '$12.99/month'
 export const PRICE_YEARLY = '$99.99/year'
+// Retired 7 Aug 2026 — referenced only by the archived lifetime-campaign
+// emails. Do not use in any email that still gets sent.
 export const PRICE_LIFETIME = '$249 lifetime'
 export const TRIAL_DAYS = 14
 export const FREE_AI_QUERIES_PER_MONTH = 20
@@ -24,4 +26,4 @@ export const URLS = {
 }
 
 // One line, used wherever we state what Pro costs. Keeps every email consistent.
-export const PRICING_LINE = `Pro is ${PRICE_MONTHLY}, ${PRICE_YEARLY}, or ${PRICE_LIFETIME} — with a ${TRIAL_DAYS}-day free trial on subscriptions. Cancel anytime.`
+export const PRICING_LINE = `Pro is ${PRICE_MONTHLY} or ${PRICE_YEARLY} — with a ${TRIAL_DAYS}-day free trial. Cancel anytime.`

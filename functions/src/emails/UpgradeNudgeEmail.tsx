@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
 import { EmailShell, EmailButton, FeatureList, styles } from './components'
-import { URLS, PRICE_MONTHLY, PRICE_YEARLY, PRICE_LIFETIME } from './facts'
+import { URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
 
 interface UpgradeNudgeEmailProps {
   firstName: string
@@ -40,7 +40,7 @@ export function UpgradeNudgeEmail({ firstName, unsubscribeUrl }: UpgradeNudgeEma
 
       <Section style={styles.content}>
         <Text style={styles.paragraph}>
-          Pro is <strong style={styles.strong}>{PRICE_MONTHLY}</strong> — or {PRICE_YEARLY}, or {PRICE_LIFETIME} if you never want to think about it again. Cancel anytime. Your free data stays exactly as it is.
+          Pro is <strong style={styles.strong}>{PRICE_MONTHLY}</strong> — or {PRICE_YEARLY}, which works out 36% cheaper. Cancel anytime. Your free data stays exactly as it is.
         </Text>
         <EmailButton href={URLS.pricing}>See Pro features</EmailButton>
       </Section>
