@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -1012,12 +1012,13 @@ exports.sendWeeklyDigestEmails = functions
                         totals[cs] = (totals[cs] || 0) + (Number(t.pnl) || 0);
                     }
                     stats.pnl = Object.entries(totals)
-                        .map(([cs, v]) => `${v >= 0 ? "+" : "-"}${cs}${Math.abs(v).toFixed(2)}`)
+                        .map(([cs, v]) => `${v >= 0 ? "+" : "-"}${cs}${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                         .join(" · ");
                     const bestT = weekTrades.reduce((max, t) => (Number(t.pnl) || 0) > (max ? (Number(max.pnl) || 0) : -Infinity) ? t : max, null);
                     const best = Number(bestT?.pnl) || 0;
                     const bcs = bestT ? symOf(bestT) : curSym;
-                    stats.bestTrade = best > 0 ? `+${bcs}${best.toFixed(2)}` : `${bcs}${best.toFixed(2)}`;
+                    const bestFmt = best.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    stats.bestTrade = best > 0 ? `+${bcs}${bestFmt}` : `${bcs}${bestFmt}`;
                 }
             }
         }
@@ -4661,5 +4662,110 @@ exports.aiStream = functions.https.onRequest(async (req, res) => {
         res.write(`data: ${JSON.stringify({ error: "AI request failed. Please try again." })}\n\n`);
         res.end();
     }
+});
+// ── MT4/MT5 auto-sync (EA-push) ──────────────────────────────────────────────
+//
+// A free Expert Advisor running in the trader's own terminal POSTs closed
+// trades to mtSyncPush, authenticated by a per-user sync key. Every send is
+// idempotent (doc ID = server + login + deal ticket), so the EA re-sends by
+// design and the server upserts. Deals land in users/{uid}/mtIngest as raw
+// platform rows; the client merges them into the journal through the same
+// mapping path CSV import uses. Infra cost is ~$0 — no polling service.
+const MT_SYNC_MAX_DEALS_PER_PUSH = 500;
+function mtIngestDocId(server, login, ticket) {
+    const raw = `${server}_${login}_${ticket}`.replace(/[^A-Za-z0-9_-]/g, "-");
+    if (raw.length <= 200)
+        return raw;
+    return raw.slice(0, 160) + "-" + crypto.createHash("sha1").update(raw).digest("hex").slice(0, 16);
+}
+exports.createMtSyncKey = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Sign in to connect MetaTrader.");
+    }
+    const uid = context.auth.uid;
+    const userRef = db.collection("users").doc(uid);
+    const snap = await userRef.get();
+    const existing = snap.data()?.mtSyncKey;
+    if (existing && !data?.regenerate) {
+        return { key: existing };
+    }
+    const key = "ftj_" + crypto.randomBytes(24).toString("hex");
+    await userRef.set({ mtSyncKey: key, mtSyncKeyCreatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    return { key };
+});
+exports.mtSyncPush = functions.https.onRequest(async (req, res) => {
+    // Called by MetaTrader's WebRequest, not a browser — no CORS handling needed.
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+    const { key, account, deals } = (req.body ?? {});
+    if (typeof key !== "string" || !key.startsWith("ftj_") || key.length < 20) {
+        res.status(401).json({ error: "Invalid sync key" });
+        return;
+    }
+    const server = String(account?.server ?? "").trim();
+    const login = String(account?.login ?? "").trim();
+    if (!server || !login) {
+        res.status(400).json({ error: "Missing account.server or account.login" });
+        return;
+    }
+    if (!Array.isArray(deals)) {
+        res.status(400).json({ error: "deals must be an array" });
+        return;
+    }
+    if (deals.length > MT_SYNC_MAX_DEALS_PER_PUSH) {
+        res.status(413).json({ error: `Send at most ${MT_SYNC_MAX_DEALS_PER_PUSH} deals per request` });
+        return;
+    }
+    const match = await db.collection("users").where("mtSyncKey", "==", key).limit(1).get();
+    if (match.empty) {
+        res.status(401).json({ error: "Invalid sync key" });
+        return;
+    }
+    const uid = match.docs[0].id;
+    let upserted = 0;
+    let skipped = 0;
+    // Firestore batches cap at 500 writes; deals cap matches, +1 status write below.
+    let batch = db.batch();
+    let batchCount = 0;
+    for (const deal of deals) {
+        const ticket = String(deal?.ticket ?? "").trim();
+        const symbol = String(deal?.symbol ?? "").trim();
+        if (!ticket || !symbol) {
+            skipped++;
+            continue;
+        }
+        const ref = db.collection("users").doc(uid).collection("mtIngest").doc(mtIngestDocId(server, login, ticket));
+        batch.set(ref, {
+            ...deal,
+            ticket,
+            symbol,
+            server,
+            login,
+            platform: account?.platform === "mt4" ? "mt4" : "mt5",
+            receivedAt: admin.firestore.FieldValue.serverTimestamp(),
+            imported: false,
+        }, { merge: true });
+        upserted++;
+        batchCount++;
+        if (batchCount >= 450) {
+            await batch.commit();
+            batch = db.batch();
+            batchCount = 0;
+        }
+    }
+    const statusRef = db.collection("users").doc(uid).collection("mtSync").doc("status");
+    batch.set(statusRef, {
+        lastPushAt: admin.firestore.FieldValue.serverTimestamp(),
+        server,
+        login,
+        platform: account?.platform === "mt4" ? "mt4" : "mt5",
+        currency: account?.currency ?? null,
+        balance: typeof account?.balance === "number" ? account.balance : null,
+        lastPushDeals: deals.length,
+    }, { merge: true });
+    await batch.commit();
+    res.status(200).json({ ok: true, received: deals.length, upserted, skipped });
 });
 //# sourceMappingURL=index.js.map

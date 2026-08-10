@@ -243,7 +243,7 @@ export function EmailButton({ href, children, variant = 'primary' }: {
               target="_blank"
               style={{
                 display: 'inline-block',
-                padding: '12px 26px',
+                padding: '14px 28px',
                 fontSize: '15px',
                 fontWeight: 700,
                 fontFamily: fontStack,
@@ -428,6 +428,15 @@ export interface Stat {
   toneHint?: 'up' | 'down'
 }
 
+// Long values (six-figure P&L, multi-currency weeks) step down in size so the
+// tile never overflows — email clients have no CSS auto-fit to lean on.
+function statValueFontSize(value: string): string {
+  if (value.length > 16) return '15px'
+  if (value.length > 12) return '18px'
+  if (value.length > 9) return '21px'
+  return '26px'
+}
+
 export function StatGrid({ stats }: { stats: Stat[] }) {
   const rows: Stat[][] = []
   for (let i = 0; i < stats.length; i += 2) rows.push(stats.slice(i, i + 2))
@@ -440,6 +449,7 @@ export function StatGrid({ stats }: { stats: Stat[] }) {
               <td key={s.label} width="50%" style={statCellStyle}>
                 <Text style={{
                   ...statValueStyle,
+                  fontSize: statValueFontSize(s.value),
                   color: s.toneHint === 'up' ? tone.green : s.toneHint === 'down' ? tone.red : tone.heading,
                 }}>
                   {s.value}
@@ -462,7 +472,6 @@ const statCellStyle: React.CSSProperties = {
   textAlign: 'center' as const,
 }
 const statValueStyle: React.CSSProperties = {
-  fontSize: '26px',
   fontWeight: 700,
   margin: '0 0 2px',
   lineHeight: '1.2',

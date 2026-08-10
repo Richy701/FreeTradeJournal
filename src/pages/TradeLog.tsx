@@ -15,6 +15,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccounts } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
+import { getTradeDefaults, rememberTradeDefaults, toNumericDefault } from '@/utils/trade-defaults';
 import { recordFirstTradeIfNeeded } from '@/lib/first-trade';
 import { trackTradeLogged } from '@/lib/track-trade';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -347,6 +348,20 @@ export default function TradeLog() {
     },
     mode: 'onChange',
   });
+
+  // A new trade opens pre-filled with what was logged last on this account, so
+  // futures traders aren't re-picking the market and instrument every time.
+  const newTradeFormValues = (): Partial<TradeFormData> => {
+    const remembered = getTradeDefaults(userStorage, activeAccount?.id);
+    return {
+      ...form.formState.defaultValues,
+      market: remembered.market,
+      symbol: remembered.symbol,
+      lotSize: toNumericDefault(remembered.lotSize, 1),
+      commission: toNumericDefault(remembered.commission, 0),
+      fees: toNumericDefault(remembered.fees, 0),
+    } as Partial<TradeFormData>;
+  };
 
   // Watch the market type to filter instruments
   const watchedMarket = form.watch('market');
