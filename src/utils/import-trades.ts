@@ -189,11 +189,19 @@ export function tradeFingerprint(t: Fingerprintable): string {
 }
 
 // Skip trades already present (same symbol/side/prices/size/pnl/timestamps).
+// Fingerprints of accepted trades are added as we go, so identical rows WITHIN
+// one import batch are also collapsed — not just rows matching existing trades.
 export function dedupeImportedTrades<T extends Fingerprintable>(
   existing: Fingerprintable[],
   incoming: T[]
 ): { newTrades: T[]; skippedCount: number } {
   const seen = new Set(existing.map(tradeFingerprint));
-  const newTrades = incoming.filter(t => !seen.has(tradeFingerprint(t)));
+  const newTrades: T[] = [];
+  for (const t of incoming) {
+    const fp = tradeFingerprint(t);
+    if (seen.has(fp)) continue;
+    seen.add(fp);
+    newTrades.push(t);
+  }
   return { newTrades, skippedCount: incoming.length - newTrades.length };
 }

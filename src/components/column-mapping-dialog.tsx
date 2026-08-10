@@ -28,6 +28,12 @@ interface ColumnMappingDialogProps {
 export function ColumnMappingDialog({ value, onChange, onConfirm }: ColumnMappingDialogProps) {
   const { themeColors, alpha } = useThemePresets();
 
+  // A price column mapped as P&L is never right — it turns contract prices
+  // into "profits" (an orders export mapped this way once produced a $1.17M
+  // week). Block confirm until the mapping changes.
+  const pnlIsPriceColumn = !!value && value.mappings.pnl >= 0 &&
+    (value.mappings.pnl === value.mappings.openPrice || value.mappings.pnl === value.mappings.closePrice);
+
   return (
     <Dialog open={!!value?.show} onOpenChange={(open) => { if (!open) onChange(null); }}>
       <DialogContent className="max-w-2xl max-h-[90svh] overflow-hidden">
@@ -87,6 +93,19 @@ export function ColumnMappingDialog({ value, onChange, onConfirm }: ColumnMappin
               ))}
             </div>
 
+            {pnlIsPriceColumn && (
+              <div
+                className="rounded-lg px-4 py-3 border text-sm"
+                style={{
+                  backgroundColor: alpha(themeColors.loss, '08'),
+                  borderColor: alpha(themeColors.loss, '25'),
+                }}
+              >
+                P&L is mapped to the same column as a price. A price is not a profit, so this import would be wrong.
+                If your file has no P&L column, it is probably an orders or fills export — export a trades or performance report from your platform instead.
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <Button
                 variant="outline"
@@ -97,8 +116,9 @@ export function ColumnMappingDialog({ value, onChange, onConfirm }: ColumnMappin
               </Button>
               <Button
                 onClick={onConfirm}
+                disabled={pnlIsPriceColumn}
                 style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                className="hover:opacity-90 shadow-lg px-6 font-medium"
+                className="hover:opacity-90 shadow-lg px-6 font-medium disabled:opacity-50"
               >
                 <span className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />

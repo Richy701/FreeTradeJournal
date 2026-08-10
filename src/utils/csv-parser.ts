@@ -1609,6 +1609,164 @@ export function detectNonTradeExport(headers: string[]): NonTradeExportKind | nu
   return null;
 }
 
+// ─── Generic orders-history export (TopstepX web "Orders history.csv" etc.) ──
+//
+// One row per ORDER with a single generic price column and no P&L column.
+// Structurally this can never be column-mapped into round-trip trades — each
+// row is half a trade — so route it to FIFO buy/sell pairing like the other
+// order exports. The detector is deliberately narrow: a lone "price"-style
+// column, a side column, and NO pnl/entry/exit columns.
+function isGenericOrdersFormat(headers: string[]): boolean {
+  const h = headers.map(x => x.trim().toLowerCase());
+  const hasPrice = h.some(x => x === 'price' || x === 'fill price' || x === 'fillprice' || x === 'avg price' || x === 'average price');
+  const hasSide = h.some(x => x === 'side' || x === 'b/s' || x === 'buy/sell' || x === 'buysell');
+  const hasQty = h.some(x => x === 'qty' || x === 'quantity' || x === 'size' || x === 'filled qty' || x === 'filledqty');
+  const hasSymbol = h.some(x => x === 'symbol' || x === 'contract' || x === 'contractname' || x === 'instrument' || x === 'product');
+  const hasTime = h.some(x => x === 'timestamp' || x === 'time' || x === 'date' || x === 'fill time' || x === 'filled at' || x === 'filledat' || x === 'placed time' || x === 'update time' || x === 'updated at');
+  const hasPnl = h.some(x => x.includes('pnl') || x.includes('p&l') || x.includes('p/l') || x.includes('profit') || x.includes('realized'));
+  const hasEntryExit = h.some(x => x.includes('open price') || x.includes('close price') || x.includes('entry') || x.includes('exit') || x.includes('buyprice') || x.includes('sellprice'));
+  return hasPrice && hasSide && hasQty && hasSymbol && hasTime && !hasPnl && !hasEntryExit;
+}
+
+function parseGenericOrders(lines: string[], headers: string[]): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false,
+    trades: [],
+    errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.trim().toLowerCase());
+  const col = {
+    price:  h.findIndex(x => x === 'price' || x === 'fill price' || x === 'fillprice' || x === 'avg price' || x === 'average price'),
+    side:   h.findIndex(x => x === 'side' || x === 'b/s' || x === 'buy/sell' || x === 'buysell'),
+    qty:    h.findIndex(x => x === 'filled qty' || x === 'filledqty' || x === 'qty' || x === 'quantity' || x === 'size'),
+    symbol: h.findIndex(x => x === 'symbol' || x === 'contract' || x === 'contractname' || x === 'instrument' || x === 'product'),
+    time:   h.findIndex(x => x === 'timestamp' || x === 'fill time' || x === 'filled at' || x === 'filledat' || x === 'time' || x === 'date'),
+    status: h.findIndex(x => x === 'status'),
+  };
+
+  const DEAD_STATUSES = new Set(['cancelled', 'canceled', 'rejected', 'expired', 'working', 'pending', 'open']);
+
+  type OrderFill = { time: number; raw: string; symbol: string; side: 'Buy' | 'Sell'; qty: number; price: number };
+  const fills: OrderFill[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    result.summary.totalRows++;
+
+    const fields = parseCSVLine(line);
+    const status = col.status >= 0 ? (fields[col.status] || '').trim().toLowerCase() : '';
+    if (status && DEAD_STATUSES.has(status)) continue;
+
+    const symbol = (fields[col.symbol] || '').trim();
+    const sideRaw = (fields[col.side] || '').trim().toLowerCase();
+    const qty = Math.abs(parseFloat(cleanNumeric(fields[col.qty] || '')) || 0);
+    const price = parseFloat(cleanNumeric(fields[col.price] || ''));
+    const raw = (fields[col.time] || '').trim();
+    const time = parseTradovateTimestamp(raw);
+
+    if (!symbol || !qty || !isFinite(price) || price <= 0) {
+      result.errors.push(`Row ${i + 1}: Missing symbol, quantity, or price`);
+      result.summary.failed++;
+      continue;
+    }
+    const side: 'Buy' | 'Sell' | null =
+      sideRaw.startsWith('b') ? 'Buy' : sideRaw.startsWith('s') ? 'Sell' : null;
+    if (!side) {
+      result.errors.push(`Row ${i + 1}: Unrecognized side "${sideRaw}"`);
+      result.summary.failed++;
+      continue;
+    }
+    fills.push({ time, raw, symbol, side, qty, price });
+  }
+
+  fills.sort((a, b) => a.time - b.time);
+
+  const groups = new Map<string, OrderFill[]>();
+  for (const fill of fills) {
+    if (!groups.has(fill.symbol)) groups.set(fill.symbol, []);
+    groups.get(fill.symbol)!.push(fill);
+  }
+
+  const dates: string[] = [];
+
+  for (const [symbol, symbolFills] of groups) {
+    // Net-position FIFO pairing, same model as parseTradovateOrders.
+    type OpenEntry = { price: number; qty: number; raw: string };
+    const openQueue: OpenEntry[] = [];
+    let position = 0;
+
+    for (const fill of symbolFills) {
+      const signedQty = fill.side === 'Buy' ? fill.qty : -fill.qty;
+      const prevPosition = position;
+      const isClosing = prevPosition !== 0 && Math.sign(signedQty) !== Math.sign(prevPosition);
+
+      if (isClosing) {
+        const closingQty = Math.min(Math.abs(signedQty), Math.abs(prevPosition));
+        const isLong = prevPosition > 0;
+        const multiplier = getFuturesMultiplier(symbol);
+
+        let remaining = closingQty;
+        while (remaining > 0 && openQueue.length > 0) {
+          const open = openQueue[0];
+          const matched = Math.min(remaining, open.qty);
+          const pnl = isLong
+            ? (fill.price - open.price) * matched * multiplier
+            : (open.price - fill.price) * matched * multiplier;
+
+          const entryDateStr = parseDateString(open.raw);
+          const exitDateStr = parseDateString(fill.raw);
+          dates.push(exitDateStr);
+
+          result.trades.push({
+            symbol,
+            side: isLong ? 'long' : 'short',
+            entryPrice: open.price.toFixed(6),
+            exitPrice: fill.price.toFixed(6),
+            quantity: matched.toString(),
+            pnl: pnl.toFixed(2),
+            date: exitDateStr,
+            entryDate: entryDateStr,
+            exitDate: exitDateStr,
+          });
+          result.summary.successfulParsed++;
+
+          remaining -= matched;
+          open.qty -= matched;
+          if (open.qty <= 0) openQueue.shift();
+        }
+
+        const overflowQty = Math.abs(signedQty) - closingQty;
+        if (overflowQty > 0) openQueue.push({ price: fill.price, qty: overflowQty, raw: fill.raw });
+      } else {
+        openQueue.push({ price: fill.price, qty: fill.qty, raw: fill.raw });
+      }
+
+      position = prevPosition + signedQty;
+    }
+
+    const unmatchedQty = openQueue.reduce((sum, o) => sum + o.qty, 0);
+    if (unmatchedQty > 0) {
+      result.errors.push(`${symbol}: ${unmatchedQty} contract(s) still open (no matching close)`);
+    }
+  }
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) {
+    result.errors.push(
+      'This looks like an orders-history export (one row per order, no P&L column), but no completed round-trip trades could be paired from it. ' +
+      'Export a trades or performance report from your platform instead.'
+    );
+  }
+  return result;
+}
+
 export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fileName?: string }): CSVParseResult {
   // Strip BOM character that some exports (e.g. Topstep) include
   csvContent = csvContent.replace(/^\uFEFF/, '');
@@ -1663,6 +1821,10 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fil
       if (isTradovateFormat(headers)) return parseTradovateOrders(lines, headers);
       if (isTradovatePerformanceFormat(headers)) return parseTradovatePerformance(lines, headers);
       if (isDASTraderFormat(headers)) return parseDASTrades(lines, headers, options?.fileName);
+      // Last among the specific detectors: per-order exports (e.g. TopstepX's
+      // web "Orders history.csv") that would otherwise fall through to the
+      // mapping dialog, where they can only ever be mapped wrongly.
+      if (isGenericOrdersFormat(headers)) return parseGenericOrders(lines, headers);
     }
 
     // NinjaTrader's "Profit" is already net of commissions — flag it so the
@@ -1956,6 +2118,23 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
         result.errors.push(`Row ${i + 1}: Parse error - ${error instanceof Error ? error.message : 'Unknown error'}`);
         result.summary.failed++;
       }
+    }
+
+    // P&L equal to both prices on every row means a price column was mapped
+    // into the P&L slot (the classic orders-export mis-map — one user's 40
+    // MNQ orders imported as +$1.17M of "profit"). Refuse the whole import
+    // rather than store contract prices as profits.
+    if (result.trades.length >= 3 && result.trades.every(t => {
+      const pnl = parseFloat(t.pnl);
+      return pnl !== 0 && pnl === parseFloat(t.entryPrice) && pnl === parseFloat(t.exitPrice);
+    })) {
+      result.trades = [];
+      result.success = false;
+      result.errors.push(
+        'Import blocked: every row has P&L equal to its entry and exit price, which means a price column is mapped as P&L. ' +
+        'This usually happens with orders/fills exports, which have no P&L column — export a trades or performance report from your platform instead.'
+      );
+      return result;
     }
 
     if (dates.length > 0) {

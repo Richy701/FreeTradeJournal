@@ -19,6 +19,30 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.72.0',
+    date: '2026-08-10',
+    summary: 'Order-history CSV files now import correctly, and imports are protected against wrong column mappings and duplicate rows.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Order-history exports now import directly',
+        description: 'Some platforms (TopstepX and similar) export your history as one row per order, with no profit column. Those files used to need manual column mapping that could not produce correct trades. The importer now recognizes them, pairs your buys and sells automatically, and works out the profit on each round trip — including partial fills. Cancelled and rejected orders are skipped.',
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Imports can no longer store prices as profits',
+        description: 'If a price column was mapped as P&L during a manual import, every trade was saved with its contract price as its "profit", inflating your stats. The mapping screen now refuses that mapping and explains why, and a second check blocks any import where every row\'s P&L equals its prices.',
+      },
+      {
+        type: 'fixed',
+        text: 'Duplicate rows inside one CSV are now skipped',
+        description: 'Duplicate detection compared new trades only against trades you already had, so a file containing the same row twice imported it twice. Duplicates within a single file are now caught too.',
+      },
+    ],
+  },
+  {
     version: '2.71.1',
     date: '2026-08-04',
     summary: 'Fixed Google sign-in sometimes needing two clicks.',
@@ -2398,4 +2422,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.71.1'
+export const LATEST_CHANGELOG_VERSION = '2.72.0'
