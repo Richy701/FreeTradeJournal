@@ -182,7 +182,8 @@ export default function LandingPage() {
         }
         description="Dive deep into your performance with symbol breakdowns, a multi-dimensional trader profile radar, and long vs short direction analysis. See exactly where your edge is and which instruments drive your profits."
         images={[
-          { src: "/images/screenshots/trade-insights-screenshot.webp", alt: "Trade Insights" }
+          { src: "/images/screenshots/trade-insights-screenshot.webp", alt: "Trade Insights" },
+          { src: "/images/screenshots/trade-insights-ideas-screenshot.webp", alt: "Weekly P&L trend and actionable ideas" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
