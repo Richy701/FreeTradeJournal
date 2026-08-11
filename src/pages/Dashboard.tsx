@@ -850,7 +850,7 @@ export default function Dashboard() {
               </div>
 
               {/* Quick Actions - inline with title on desktop */}
-              <div className="flex items-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
               {isDemo ? (
                 <Link to="/signup" onClick={() => exitDemoMode()}>
                   <Button

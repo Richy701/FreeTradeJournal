@@ -357,8 +357,8 @@ export function ChartRadarDefault() {
         </CardHeader>
         <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
-            <div className="h-full flex items-center justify-center gap-4 sm:gap-8">
-              <ChartContainer config={pieConfig} className="h-full aspect-square">
+            <div className="h-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+              <ChartContainer config={pieConfig} className="aspect-square w-full max-w-[200px] sm:w-auto sm:max-w-none sm:h-full">
                 <PieChart>
                   <ChartTooltip
                     cursor={false}
@@ -408,9 +408,9 @@ export function ChartRadarDefault() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              <div className="shrink-0 space-y-2 max-w-[45%]">
+              <div className="shrink-0 grid w-full grid-cols-2 gap-x-3 gap-y-1.5 sm:flex sm:w-auto sm:max-w-[45%] sm:flex-col sm:gap-2">
                 {pieData.map((entry: any) => (
-                  <div key={entry.pair} className="flex items-center gap-2 text-xs">
+                  <div key={entry.pair} className="flex min-w-0 items-center gap-1.5 sm:gap-2 text-xs">
                     <span className="h-2.5 w-2.5 rounded-[2px] shrink-0" style={{ backgroundColor: entry.fill }} />
                     <span className="text-foreground font-medium truncate">{entry.pair}</span>
                     <span className="text-foreground font-semibold tabular-nums">

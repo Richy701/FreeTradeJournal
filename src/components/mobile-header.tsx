@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Link, useNavigate } from 'react-router-dom';
-import { AccountSwitcher } from '@/components/account-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useUserStorage } from '@/utils/user-storage';
 
@@ -144,11 +143,6 @@ export function MobileHeader({ title }: { title?: string }) {
         </div>
       </div>
 
-      {!isDemo && (
-        <div className="px-3 pb-1.5 border-b border-border/70 overflow-hidden min-w-0">
-          <AccountSwitcher />
-        </div>
-      )}
     </div>
   );
 }

@@ -22,6 +22,30 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.77.1',
+    date: '2026-08-11',
+    summary: 'Mobile layout fixes: the dashboard no longer scrolls sideways on phones.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'The dashboard no longer scrolls sideways on phones',
+        description: 'The Trade Distribution chart was wider than small phone screens, which let the whole page drift side to side. On phones the chart now sits above its symbol list instead of beside it, and the app can no longer be dragged sideways even if a widget misbehaves.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'A tidier dashboard header on phones',
+        description: 'Share Stats and Customize are now compact icon buttons next to Add Trade, so all three fit on one row at the right edge of the screen.',
+      },
+      {
+        type: 'improved',
+        text: 'The account picker moved out of the top bar on phones',
+        description: 'It was taking up a full row under the header on every page. To switch accounts on your phone, open the menu; the picker is at the top.',
+      },
+    ],
+  },
+  {
     version: '2.77.0',
     date: '2026-08-11',
     summary: 'A position size calculator with an AI risk check, and live market sessions on your dashboard.',
@@ -2538,4 +2562,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.77.0'
+export const LATEST_CHANGELOG_VERSION = '2.77.1'

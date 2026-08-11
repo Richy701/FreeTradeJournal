@@ -29,7 +29,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
       </a>
       <AppSidebar />
       <SidebarInset
-        className="h-dvh overflow-auto"
+        className="h-dvh overflow-y-auto overflow-x-hidden"
         style={{
           paddingTop: isDemo
             ? 'calc(var(--pwa-safe-top, 0px) + var(--demo-banner-height, 0px))'
