@@ -30,7 +30,7 @@ export function FreeTradeJournalFeatures() {
                     <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">Professional trading journal & <span className="text-amber-600 dark:text-amber-500">analytics</span></h2>
                     <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. <span className="text-amber-600 dark:text-amber-500 font-semibold">Free forever</span>, no credit card required.</p>
                 </div>
-                <div ref={playerRef} className="relative rounded-3xl p-0 md:p-3 md:-mx-8 lg:col-span-3">
+                <div ref={playerRef} className="relative rounded-3xl p-0 md:p-3 md:-mx-6 lg:col-span-3">
                     <div className="aspect-video rounded-2xl overflow-hidden">
                         {showPlayer ? (
                             <Suspense fallback={

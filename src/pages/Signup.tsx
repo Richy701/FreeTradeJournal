@@ -4,32 +4,31 @@ import { useAuth } from '@/contexts/auth-context';
 import { clearOnboardingData } from '@/utils/onboarding';
 import { isBadEmail } from '@/lib/email-validation';
 import { trackEvent } from '@/lib/analytics';
+import { googleAuthErrorMessage } from '@/lib/auth-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeSlash, Check, ChartLineUp, SpinnerGap, Brain, Gauge, ChartPie, BookOpen, ArrowRight } from '@phosphor-icons/react';
+import { Eye, EyeSlash, Check, SpinnerGap, ArrowRight } from '@phosphor-icons/react';
 import { GoogleIcon } from '@/components/ui/brand-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AuthLayout, PanelAccent } from '@/components/auth/auth-layout';
 
 export default function Signup() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    password: '',
-    confirmPassword: ''
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [formAnimation, setFormAnimation] = useState('');
 
-  const { signUp, signInWithGoogle } = useAuth();
+  const { user, isDemo, signUp, signInWithGoogle } = useAuth();
 
   // Warm the Firebase Auth chunks on mount. signInWithPopup must open its
   // popup within the click's user-activation window (~1s in Chrome, stricter
@@ -43,6 +42,15 @@ export default function Signup() {
 
   const navigate = useNavigate();
 
+  // Already signed in (and not just browsing in demo mode): skip the form.
+  // Guarded on the in-flight flags so the sign-up handlers keep control of
+  // where a fresh sign-up lands (verify-email or onboarding).
+  useEffect(() => {
+    if (user && !isDemo && !loading && !googleLoading) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, isDemo, loading, googleLoading, navigate]);
+
   const passwordRequirements = [
     { label: 'At least 8 characters', met: formData.password.length >= 8 },
     { label: 'Contains uppercase letter', met: /[A-Z]/.test(formData.password) },
@@ -51,7 +59,6 @@ export default function Signup() {
   ];
 
   const isPasswordValid = passwordRequirements.every(req => req.met);
-  const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword !== '';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -74,46 +81,35 @@ export default function Signup() {
       return;
     }
 
-    if (!passwordsMatch) {
-      setError('Passwords do not match');
-      return;
-    }
-
     if (isBadEmail(formData.email)) {
       setError("That email address doesn't look right. Please use a real email.");
       return;
     }
 
     setLoading(true);
-    setFormAnimation('animate-pulse');
 
     try {
       const displayName = `${formData.firstName} ${formData.lastName}`.trim();
       const user = await signUp(formData.email, formData.password, displayName);
       trackEvent('signup_completed');
       clearOnboardingData(user.uid);
-      setFormAnimation('animate-bounce');
-      setTimeout(() => {
-        navigate('/verify-email');
-      }, 300);
+      navigate('/verify-email');
     } catch (error: any) {
-      let errorMessage = 'Failed to create account';
+      let errorMessage = 'Something went wrong creating your account. Please try again.';
 
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered. Please sign in instead.';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address';
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password should be at least 6 characters';
+        errorMessage = 'Password must be at least 8 characters';
       } else if (error.code === 'auth/operation-not-allowed') {
         errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Check your connection and try again.';
       }
 
       setError(errorMessage);
-      setFormAnimation('animate-in slide-in-from-left-2 duration-300');
-      setTimeout(() => setFormAnimation(''), 300);
     } finally {
       setLoading(false);
     }
@@ -124,300 +120,227 @@ export default function Signup() {
     setGoogleLoading(true);
 
     try {
-      await signInWithGoogle();
-      navigate('/onboarding');
+      const { user: googleUser, isNewUser } = await signInWithGoogle();
+      if (isNewUser) {
+        trackEvent('signup_completed');
+        clearOnboardingData(googleUser.uid);
+        navigate('/onboarding');
+      } else {
+        // Existing account clicking Google here is just signing back in.
+        trackEvent('login_completed');
+        navigate('/dashboard', { replace: true });
+      }
     } catch (error: any) {
-      setError(error.message || 'Failed to sign up with Google');
+      const message = googleAuthErrorMessage(error);
+      if (message) setError(message);
     } finally {
       setGoogleLoading(false);
     }
   };
 
-
-  const features = [
-    { icon: ChartPie, title: 'Performance Analytics', desc: 'Track P&L, win rate, and key metrics' },
-    { icon: Brain, title: 'AI Trade Coaching', desc: 'Get personalized insights on your trades' },
-    { icon: BookOpen, title: 'Trading Journal', desc: 'Document setups, emotions, and lessons' },
-    { icon: Gauge, title: 'Risk Management', desc: 'Set rules and monitor your discipline' },
-  ];
-
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4 safe-top safe-bottom">
-      <div className="w-full max-w-5xl flex flex-col lg:flex-row overflow-hidden rounded-2xl border border-border/50 shadow-2xl bg-card">
+    <AuthLayout
+      panelTitle={<>Start your<br /><PanelAccent>trading journal.</PanelAccent></>}
+      panelSubtitle="Log every trade, see what's winning and losing, and keep notes on every setup."
+      mobileTitle={<>Start your <PanelAccent>trading journal.</PanelAccent></>}
+      mobileSubtitle="Free forever. No credit card required."
+      showFeatures
+    >
+      {/* Desktop heading */}
+      <div className="hidden lg:block space-y-1 mb-6">
+        <h1 className="font-display text-2xl font-bold tracking-tight">Create your account</h1>
+        <p className="text-muted-foreground/85 text-sm">Takes about a minute. No credit card.</p>
+      </div>
 
-        {/* Left Panel - Branding & Features (desktop only) */}
-        <div
-          className="hidden lg:flex lg:w-[45%] flex-col justify-between p-10 bg-gradient-to-br from-amber-600 to-amber-500"
-        >
-          {/* Logo & tagline */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <img src="/favicon.svg" alt="FTJ" className="h-10 w-10 rounded-xl flex-shrink-0" />
-              <span className="font-display text-xl font-bold text-white">FreeTradeJournal</span>
-            </div>
-            <div className="space-y-2 mt-8">
-              <h2 className="font-display text-3xl font-bold text-white leading-tight">
-                Your trading edge<br />starts here.
-              </h2>
-              <p className="text-white/80 text-sm leading-relaxed max-w-xs">
-                Professional analytics, journaling, and performance tools to help you trade with confidence.
-              </p>
-            </div>
+      {error && (
+        <Alert variant="destructive" className="mb-4 animate-in slide-in-from-top-2 duration-300">
+          <AlertDescription className="font-medium">{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First name</Label>
+            <Input
+              id="firstName"
+              name="firstName"
+              placeholder="John"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              autoComplete="given-name"
+              className="h-11 bg-background/60 border-border/50"
+            />
           </div>
-
-          {/* Feature list */}
-          <div className="space-y-5 my-8">
-            {features.map((feature, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-black/10 shrink-0">
-                  {(() => { const FeatureIcon = feature.icon; return <FeatureIcon className="h-4 w-4 text-white" />; })()}
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-white">{feature.title}</p>
-                  <p className="text-xs opacity-80">{feature.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bottom */}
-          <div className="pt-6 border-t border-white/20">
-            <p className="text-white/90 text-sm font-medium">Free forever. No credit card required.</p>
-            <p className="text-white/60 text-xs mt-1">Join thousands of traders improving their performance.</p>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last name</Label>
+            <Input
+              id="lastName"
+              name="lastName"
+              placeholder="Doe"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+              autoComplete="family-name"
+              className="h-11 bg-background/60 border-border/50"
+            />
           </div>
         </div>
 
-        {/* Right Panel - Sign Up Form */}
-        <div className="flex-1 flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-          {/* Mobile-only branded header */}
-          <div className="lg:hidden -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 px-6 py-6 sm:px-8 sm:py-8 bg-gradient-to-br from-amber-600 to-amber-500 rounded-t-2xl">
-            <div className="flex items-center gap-2.5 mb-4">
-              <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 rounded-xl flex-shrink-0" />
-              <span className="font-display text-lg font-bold text-white">FreeTradeJournal</span>
-            </div>
-            <h1 className="font-display text-2xl font-bold text-white leading-tight">Your trading edge starts here.</h1>
-            <p className="text-white/80 text-sm mt-1">Free forever. No credit card required.</p>
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            autoComplete="email"
+            spellCheck={false}
+            className="h-11 bg-background/60 border-border/50"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Create a strong password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              autoComplete="new-password"
+              className="h-11 pr-10 bg-background/60 border-border/50"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
-
-          {/* Desktop heading */}
-          <div className="hidden lg:block space-y-1 mb-6">
-            <h1 className="font-display text-2xl font-bold tracking-tight">Create your account</h1>
-            <p className="text-muted-foreground/85 text-sm">Fill in your details to get started</p>
-          </div>
-
-          {error && (
-            <Alert variant="destructive" className="mb-4 animate-in slide-in-from-top-2 duration-300">
-              <AlertDescription className="font-medium">{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit} className={`space-y-4 ${formAnimation}`}>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  placeholder="John…"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                  autoComplete="given-name"
-                  className="h-11 bg-background/60 border-border/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  placeholder="Doe…"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                  autoComplete="family-name"
-                  className="h-11 bg-background/60 border-border/50"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com…"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                autoComplete="email"
-                spellCheck={false}
-                className="h-11 bg-background/60 border-border/50"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a strong password…"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  autoComplete="new-password"
-                  className="h-11 pr-10 bg-background/60 border-border/50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {formData.password && (() => {
-                const metCount = passwordRequirements.filter(r => r.met).length;
-                const labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-                const colors = [
-                  'bg-red-500', 'bg-red-500', 'bg-amber-500', 'bg-amber-400', 'bg-green-500'
-                ];
-                const textColors = [
-                  'text-red-500', 'text-red-500', 'text-amber-500', 'text-amber-400', 'text-green-500'
-                ];
-                return (
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex gap-1 flex-1">
-                      {[0, 1, 2, 3].map(i => (
-                        <div
-                          key={i}
-                          className={`h-1 flex-1 rounded-full transition-colors duration-200 ${i < metCount ? colors[metCount] : 'bg-muted'}`}
-                        />
-                      ))}
-                    </div>
-                    <span className={`text-xs font-medium transition-colors duration-200 ${textColors[metCount]}`}>
-                      {labels[metCount]}
-                    </span>
+          {formData.password && (() => {
+            const metCount = passwordRequirements.filter(r => r.met).length;
+            const labels = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+            const colors = [
+              'bg-red-500', 'bg-red-500', 'bg-amber-500', 'bg-amber-400', 'bg-green-500'
+            ];
+            const textColors = [
+              'text-red-500', 'text-red-500', 'text-amber-500', 'text-amber-400', 'text-green-500'
+            ];
+            return (
+              <>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex gap-1 flex-1">
+                    {[0, 1, 2, 3].map(i => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors duration-200 ${i < metCount ? colors[metCount] : 'bg-muted'}`}
+                      />
+                    ))}
                   </div>
-                );
-              })()}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm your password…"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  autoComplete="new-password"
-                  className="h-11 pr-10 bg-background/60 border-border/50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                >
-                  {showConfirmPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {formData.confirmPassword && (
-                <div className="flex items-center gap-2 text-xs">
-                  <Check className={`h-3 w-3 ${passwordsMatch ? 'text-green-500' : 'text-muted-foreground'}`} />
-                  <span className={passwordsMatch ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>
-                    Passwords match
+                  <span className={`text-xs font-medium transition-colors duration-200 ${textColors[metCount]}`}>
+                    {labels[metCount]}
                   </span>
                 </div>
-              )}
-            </div>
-
-            <div className="flex items-start gap-2 justify-center">
-              <Checkbox
-                id="terms"
-                className="mt-0.5 size-4 min-h-4 min-w-4"
-                checked={agreedToTerms}
-                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-              />
-              <Label htmlFor="terms" className="text-sm leading-snug">
-                {/* Text runs are wrapped so React only ever removes elements it
-                    created. Page translation replaces bare text nodes, and
-                    React then fails to remove them — crashing this label the
-                    moment the checkbox re-renders it. */}
-                <span>I agree to the </span>
-                <Link to="/terms" className="text-amber-500 hover:underline">Terms of Service</Link>
-                <span> and </span>
-                <Link to="/privacy" className="text-amber-500 hover:underline">Privacy Policy</Link>
-              </Label>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-11 !mt-6 relative bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-600 hover:via-yellow-500 hover:to-amber-600 text-black font-semibold"
-              disabled={loading || googleLoading || !isPasswordValid || !passwordsMatch || !agreedToTerms}
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <SpinnerGap className="h-4 w-4 animate-spin" />
-                  <span>Creating account...</span>
+                <div className="grid grid-cols-2 gap-1 pt-1">
+                  {passwordRequirements.map((req) => (
+                    <div key={req.label} className="flex items-center gap-1.5">
+                      <Check className={`h-3 w-3 flex-shrink-0 ${req.met ? 'text-green-500' : 'text-muted-foreground/40'}`} />
+                      <span className={`text-xs ${req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        {req.label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>Create account</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </div>
-              )}
-            </Button>
-          </form>
-
-          <div className="space-y-3 mt-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={handleGoogleSignUp}
-              disabled={loading || googleLoading}
-              className="w-full h-11 relative"
-            >
-              {googleLoading ? (
-                <div className="flex items-center gap-2">
-                  <SpinnerGap className="h-4 w-4 animate-spin" />
-                  <span>Connecting...</span>
-                </div>
-              ) : (
-                <>
-                  <GoogleIcon className="mr-2 h-4 w-4" />
-                  <span>Continue with Google</span>
-                </>
-              )}
-            </Button>
-
-          </div>
-
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            <span>Already have an account? </span>
-            <Link to="/login" className="text-amber-500 hover:underline font-medium">
-              Sign in
-            </Link>
-          </p>
+              </>
+            );
+          })()}
         </div>
 
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="terms"
+            className="mt-0.5 size-4 min-h-4 min-w-4"
+            checked={agreedToTerms}
+            onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+          />
+          <Label htmlFor="terms" className="text-sm leading-snug">
+            {/* Text runs are wrapped so React only ever removes elements it
+                created. Page translation replaces bare text nodes, and
+                React then fails to remove them — crashing this label the
+                moment the checkbox re-renders it. */}
+            <span>I agree to the </span>
+            <Link to="/terms" className="text-amber-700 dark:text-amber-500 hover:underline">Terms of Service</Link>
+            <span> and </span>
+            <Link to="/privacy" className="text-amber-700 dark:text-amber-500 hover:underline">Privacy Policy</Link>
+          </Label>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full h-11 !mt-6 font-semibold"
+          disabled={loading || googleLoading}
+        >
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <SpinnerGap className="h-4 w-4 animate-spin" />
+              <span>Creating account...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span>Create account</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </div>
+          )}
+        </Button>
+      </form>
+
+      <div className="space-y-3 mt-4">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <Separator className="w-full" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={handleGoogleSignUp}
+          disabled={loading || googleLoading}
+          className="w-full h-11 relative"
+        >
+          {googleLoading ? (
+            <div className="flex items-center gap-2">
+              <SpinnerGap className="h-4 w-4 animate-spin" />
+              <span>Connecting...</span>
+            </div>
+          ) : (
+            <>
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              <span>Continue with Google</span>
+            </>
+          )}
+        </Button>
+
       </div>
-    </div>
+
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        <span>Already have an account? </span>
+        <Link to="/login" className="text-amber-700 dark:text-amber-500 hover:underline font-medium">
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

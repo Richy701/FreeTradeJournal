@@ -73,6 +73,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardPeriodProvider, useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
+import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
 
 function FreeAIBanner() {
   const { user, isDemo } = useAuth()
@@ -1186,8 +1187,9 @@ export default function Dashboard() {
             left, pills right) — this standalone row is the fallback when that
             widget is hidden via Customize. */}
         {tradeCount > 0 && !visibleWidgets.some(w => w.id === 'market-prices') && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
             <DashboardPeriodPills />
+            <PnlDisplayToggle />
           </div>
         )}
         {tradeCount === 0 && !isDemo && (

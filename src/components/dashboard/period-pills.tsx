@@ -8,7 +8,7 @@ export function DashboardPeriodPills() {
   const { period, setPeriod, allowedPeriods } = useDashboardPeriod()
 
   return (
-    <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+    <div className="flex items-center rounded-lg border border-border/60 bg-muted/30 p-0.5">
       {ALL_PERIODS.map((p) => {
         const locked = !allowedPeriods.includes(p)
         if (locked) {
@@ -16,7 +16,7 @@ export function DashboardPeriodPills() {
             <Link
               key={p}
               to="/pricing"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/70 hover:text-foreground"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-transparent text-xs font-medium text-muted-foreground/70 hover:text-foreground"
               title="Longer ranges are a Pro feature"
             >
               <LockSimple className="h-3 w-3" />
@@ -28,10 +28,10 @@ export function DashboardPeriodPills() {
           <button
             key={p}
             onClick={() => setPeriod(p)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+            className={`px-3 py-1.5 rounded-md border text-xs font-medium ${
               period === p
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-muted border-border/60 text-foreground shadow-sm'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
             aria-pressed={period === p}
           >

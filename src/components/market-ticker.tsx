@@ -104,9 +104,9 @@ export function MarketTicker() {
 
   if (isLoading && quotes.length === 0 && indicators.length === 0) {
     return (
-      <div className="flex items-center gap-4 py-1">
+      <div className="flex items-center gap-2 py-1">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-5 w-28 rounded" />
+          <Skeleton key={i} className="h-8 w-32 rounded-lg" />
         ))}
       </div>
     )
@@ -125,7 +125,7 @@ export function MarketTicker() {
   }
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1">
+    <div className="flex items-stretch gap-1.5 overflow-x-auto scrollbar-hide py-1">
       {quotes.map((q) => {
         const isUp = q.change >= 0
         const color = isUp ? themeColors.profit : themeColors.loss
@@ -133,13 +133,13 @@ export function MarketTicker() {
         return (
           <div
             key={q.symbol}
-            className="shrink-0 flex items-center gap-2 px-2.5 py-1 rounded-md transition-colors hover:bg-muted/50"
+            className="shrink-0 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 transition-colors hover:bg-muted/50"
           >
-            <span className="text-[11px] font-medium text-muted-foreground tracking-wide">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
               {q.symbol}
             </span>
             {!q.isProxy && (
-              <span className="text-[11px] font-semibold text-foreground tabular-nums font-mono">
+              <span className="text-[13px] leading-none font-semibold text-foreground tabular-nums font-mono">
                 {q.price < 10
                   ? q.price.toFixed(4)
                   : q.price < 1000
@@ -148,16 +148,16 @@ export function MarketTicker() {
               </span>
             )}
             <span
-              className="flex items-center gap-0.5 text-[11px] font-semibold tabular-nums font-mono px-1.5 py-0.5 rounded"
+              className="flex items-center gap-0.5 text-[10px] font-semibold tabular-nums font-mono px-1.5 py-0.5 rounded leading-none"
               style={{
                 color,
                 backgroundColor: alpha(color, '10'),
               }}
             >
               {isUp ? (
-                <TrendUp className="h-3 w-3" weight="bold" />
+                <TrendUp className="h-2.5 w-2.5" weight="bold" />
               ) : (
-                <TrendDown className="h-3 w-3" weight="bold" />
+                <TrendDown className="h-2.5 w-2.5" weight="bold" />
               )}
               {isUp ? '+' : ''}
               {q.changePercent.toFixed(2)}%
@@ -169,18 +169,18 @@ export function MarketTicker() {
       {indicators.length > 0 && (
         <>
           {quotes.length > 0 && (
-            <span className="shrink-0 self-stretch w-px my-1 bg-border mx-1.5" aria-hidden />
+            <span className="shrink-0 self-stretch w-px my-1.5 bg-border mx-1" aria-hidden />
           )}
           {indicators.map((ind) => (
             <div
               key={ind.id}
-              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors hover:bg-muted/50"
+              className="shrink-0 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 transition-colors hover:bg-muted/50"
               title={`As of ${ind.date}`}
             >
-              <span className="text-[11px] font-medium text-muted-foreground tracking-wide">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                 {ind.label}
               </span>
-              <span className="text-[11px] font-semibold text-foreground tabular-nums font-mono">
+              <span className="text-[13px] leading-none font-semibold text-foreground tabular-nums font-mono">
                 {formatMacro(ind)}
               </span>
               <MacroArrow change={ind.change} />

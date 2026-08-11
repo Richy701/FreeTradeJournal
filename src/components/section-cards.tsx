@@ -5,7 +5,6 @@ import { useAccounts } from '@/contexts/account-context'
 import { useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { usePnlDisplay } from '@/hooks/use-pnl-display'
-import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
 import { TrendUp, TrendDown } from '@phosphor-icons/react'
 import { Link } from "react-router-dom"
 import {
@@ -160,9 +159,6 @@ export function SectionCards() {
 
   return (
     <TooltipProvider>
-      <div className="flex justify-end mb-3">
-        <PnlDisplayToggle />
-      </div>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 overflow-visible">
 
         {/* Total P&L */}

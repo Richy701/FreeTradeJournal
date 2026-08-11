@@ -542,9 +542,9 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button variant="outline" className="gap-2 h-11 touch-manipulation">
+          <Button variant="outline" className="gap-2 h-11 touch-manipulation" aria-label="Share Stats">
             <ShareNetwork className="h-4 w-4" />
-            Share Stats
+            <span className="hidden sm:inline">Share Stats</span>
           </Button>
         )}
       </DialogTrigger>

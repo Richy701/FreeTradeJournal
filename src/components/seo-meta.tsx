@@ -46,6 +46,16 @@ const pageMeta: Record<string, SEOMetaProps> = {
     description: 'Create your free trading journal account. No credit card required. Start tracking trades and improving your performance today.',
     keywords: 'sign up, register, free account, trading journal signup'
   },
+  '/forgot-password': {
+    title: 'Reset Password | FreeTradeJournal',
+    description: 'Request a password reset link for your FreeTradeJournal account.',
+    keywords: 'reset password, forgot password'
+  },
+  '/reset-password': {
+    title: 'Set New Password | FreeTradeJournal',
+    description: 'Choose a new password for your FreeTradeJournal account.',
+    keywords: 'reset password, new password'
+  },
   '/documentation': {
     title: 'How to Use FreeTradeJournal | Free Trading Journal Setup Guide & Tutorials',
     description: 'Step-by-step guide to setting up your free trading journal. Learn how to log trades, import CSV data from MT5 or Tradovate, read your analytics dashboard, and set trading goals. Get started in under 2 minutes.',

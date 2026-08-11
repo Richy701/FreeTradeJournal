@@ -7,15 +7,18 @@ export function PnlDisplayToggle() {
   const { mode, setMode } = usePnlDisplay()
   const { getCurrencySymbol } = useSettings()
 
+  const segment = (active: boolean) =>
+    `px-3 py-1.5 rounded-md border text-xs font-medium ${
+      active
+        ? 'bg-muted border-border/60 text-foreground shadow-sm'
+        : 'border-transparent text-muted-foreground hover:text-foreground'
+    }`
+
   return (
-    <div className="flex items-center bg-muted/50 rounded-lg p-0.5" role="group" aria-label="P&L display mode">
+    <div className="flex items-center rounded-lg border border-border/60 bg-muted/30 p-0.5" role="group" aria-label="P&L display mode">
       <button
         onClick={() => setMode('currency')}
-        className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-          mode === 'currency'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
-        }`}
+        className={segment(mode === 'currency')}
         aria-pressed={mode === 'currency'}
         title="Show P&L as money"
       >
@@ -23,11 +26,7 @@ export function PnlDisplayToggle() {
       </button>
       <button
         onClick={() => setMode('percent')}
-        className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-          mode === 'percent'
-            ? 'bg-background text-foreground shadow-sm'
-            : 'text-muted-foreground hover:text-foreground'
-        }`}
+        className={segment(mode === 'percent')}
         aria-pressed={mode === 'percent'}
         title="Show P&L as percent of account balance"
       >

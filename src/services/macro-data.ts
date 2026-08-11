@@ -27,12 +27,12 @@ interface SeriesConfig {
 
 // Rates + inflation set — chosen for index/rate futures traders.
 const SERIES: SeriesConfig[] = [
-  { id: 'DFF',      label: 'Fed Funds', unit: '%' },
-  { id: 'DGS10',    label: '10Y',       unit: '%' },
-  { id: 'DGS2',     label: '2Y',        unit: '%' },
-  { id: 'T10Y2Y',   label: '10Y-2Y',    unit: 'pp' },
-  { id: 'CPIAUCSL', label: 'CPI',       unit: '%', units: 'pc1' },
-  { id: 'UNRATE',   label: 'Unemp',     unit: '%' },
+  { id: 'DFF',      label: 'Fed Funds',    unit: '%' },
+  { id: 'DGS10',    label: '10Y Yield',    unit: '%' },
+  { id: 'DGS2',     label: '2Y Yield',     unit: '%' },
+  { id: 'T10Y2Y',   label: 'Yield Curve',  unit: 'pp' },
+  { id: 'CPIAUCSL', label: 'CPI',          unit: '%', units: 'pc1' },
+  { id: 'UNRATE',   label: 'Unemployment', unit: '%' },
 ]
 
 interface FredObservation {
@@ -87,7 +87,8 @@ async function fetchSeries(cfg: SeriesConfig): Promise<MacroIndicator | null> {
 export async function fetchMacroSnapshot(): Promise<MacroIndicator[]> {
   if (!MARKET_DATA_ENABLED) return []
 
-  const cacheKey = 'ftj-macro-v1'
+  // v2: labels are cached inside the payload, so renames need a new key.
+  const cacheKey = 'ftj-macro-v2'
   const cached = getCached<MacroIndicator[]>(cacheKey, CACHE_TTL)
   if (cached !== null) return cached
 

@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable } from '@/components/data-table'
 import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
+import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
 import { CalendarHeatmap } from '@/components/calendar-heatmap'
 import { TradingCoach } from '@/components/trading-coach'
 import { DemoCtaCard } from '@/components/demo-cta-card'
@@ -46,8 +47,9 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
           </Suspense>
         </div>
         {tradeCount > 0 && (
-          <div className="flex justify-end lg:shrink-0">
+          <div className="flex justify-end gap-2 lg:shrink-0">
             <DashboardPeriodPills />
+            <PnlDisplayToggle />
           </div>
         )}
       </div>

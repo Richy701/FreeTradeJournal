@@ -12,7 +12,7 @@ interface AuthContextType {
   isDemo: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<User>;
   signIn: (email: string, password: string) => Promise<User>;
-  signInWithGoogle: () => Promise<User>;
+  signInWithGoogle: () => Promise<{ user: User; isNewUser: boolean }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   verifyPasswordResetCode: (oobCode: string) => Promise<string>;
@@ -196,7 +196,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return userCredential.user;
   };
 
-  const signInWithGoogle = async (): Promise<User> => {
+  const signInWithGoogle = async (): Promise<{ user: User; isNewUser: boolean }> => {
     const authInstance = auth || await initAuth();
     if (!authInstance) throw new Error('Auth not initialized');
 
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     await waitForUserReady(userCredential.user.uid);
-    return userCredential.user;
+    return { user: userCredential.user, isNewUser: !!additionalInfo?.isNewUser };
   };
 
   const logout = async (): Promise<void> => {

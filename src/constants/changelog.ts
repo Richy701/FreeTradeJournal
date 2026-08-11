@@ -19,6 +19,35 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.74.0',
+    date: '2026-08-11',
+    summary: 'Redesigned sign-in and sign-up pages with clearer error messages, plus a tidier dashboard header.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Sign-in and sign-up pages redesigned',
+        description: 'The sign-in, sign-up and password reset pages share one cleaner layout. Error messages now say what actually went wrong in plain English, closing the Google sign-in window no longer shows an error, and if you sign up with Google for the first time you go straight to setup instead of an empty dashboard. If you are already signed in, opening the sign-in page takes you to your dashboard.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'The money/percent P&L switch moved to the dashboard header',
+        description: 'The switch that shows P&L as money or as a percent of your account now sits at the top of the dashboard next to the time period selector, instead of above the stat cards. Both controls share the same look.',
+      },
+      {
+        type: 'improved',
+        text: 'Market prices are easier to read',
+        description: 'Each quote in the market prices strip now sits in its own labelled chip with a larger price. The economic figures have clearer names: 10Y Yield, Yield Curve and Unemployment instead of 10Y, 10Y-2Y and Unemp.',
+      },
+      {
+        type: 'improved',
+        text: 'More room on small screens',
+        description: 'On phones, the Customize and Share Stats buttons show just their icons so the dashboard header fits without wrapping.',
+      },
+    ],
+  },
+  {
     version: '2.73.1',
     date: '2026-08-11',
     summary: 'The quick add and calendar trade forms now offer the full instrument list, including micro futures.',
@@ -2453,4 +2482,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.73.1'
+export const LATEST_CHANGELOG_VERSION = '2.74.0'

@@ -136,9 +136,9 @@ export function CustomizeSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="default" className="gap-2 h-11 touch-manipulation">
+        <Button variant="outline" size="default" className="gap-2 h-11 touch-manipulation" aria-label="Customize">
           <GearSix className="h-4 w-4" />
-          <span>Customize</span>
+          <span className="hidden sm:inline">Customize</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="flex flex-col">

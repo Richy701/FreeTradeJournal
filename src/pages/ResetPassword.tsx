@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChartLineUp, SpinnerGap, Eye, EyeSlash, CheckCircle, ArrowLeft, Warning } from '@phosphor-icons/react';
+import { SpinnerGap, Eye, EyeSlash, Check, CheckCircle, ArrowLeft, Warning } from '@phosphor-icons/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AuthLayout } from '@/components/auth/auth-layout';
 
 type PageState = 'verifying' | 'ready' | 'invalid' | 'success' | 'emailVerified';
 
@@ -88,48 +89,12 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4 safe-top safe-bottom">
-      <div className="w-full max-w-5xl flex flex-col lg:flex-row overflow-hidden rounded-2xl border border-border/50 shadow-2xl bg-card">
-
-        {/* Left Panel */}
-        <div className="hidden lg:flex lg:w-[45%] flex-col justify-between p-10 bg-gradient-to-br from-amber-600 to-amber-500">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
-                <ChartLineUp className="h-6 w-6 text-white" />
-              </div>
-              <span className="font-display text-xl font-bold text-white">FreeTradeJournal</span>
-            </div>
-            <div className="mt-8 space-y-2">
-              <h2 className="font-display text-3xl font-bold text-white leading-tight">
-                Create a new password
-              </h2>
-              <p className="text-white/80 text-base">
-                Choose a strong password to secure your trading journal.
-              </p>
-            </div>
-          </div>
-          <div className="pt-6 border-t border-white/20">
-            <p className="text-white/90 text-sm font-medium">Free forever. No credit card required.</p>
-            <p className="text-white/60 text-xs mt-1">Join thousands of traders improving their performance.</p>
-          </div>
-        </div>
-
-        {/* Right Panel */}
-        <div className="flex-1 flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-
-          {/* Mobile header */}
-          <div className="lg:hidden -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 mb-6 px-6 py-6 sm:px-8 sm:py-8 bg-gradient-to-br from-amber-600 to-amber-500 rounded-t-2xl">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
-                <ChartLineUp className="h-5 w-5 text-white" />
-              </div>
-              <span className="font-display text-lg font-bold text-white">FreeTradeJournal</span>
-            </div>
-            <h1 className="font-display text-2xl font-bold text-white leading-tight">Create a new password</h1>
-            <p className="text-white/80 text-sm mt-1">Choose something strong and memorable.</p>
-          </div>
-
+    <AuthLayout
+      panelTitle="Create a new password"
+      panelSubtitle="Choose a strong password to secure your trading journal."
+      mobileTitle="Create a new password"
+      mobileSubtitle="Choose something strong and memorable."
+    >
           {/* Desktop heading */}
           <div className="hidden lg:block space-y-1 mb-6">
             <h1 className="font-display text-2xl font-bold tracking-tight">Set new password</h1>
@@ -244,7 +209,7 @@ export default function ResetPassword() {
                   <div className="grid grid-cols-2 gap-1 pt-1">
                     {passwordRequirements.map((req) => (
                       <div key={req.label} className="flex items-center gap-1.5">
-                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${req.met ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                        <Check className={`h-3 w-3 flex-shrink-0 ${req.met ? 'text-green-500' : 'text-muted-foreground/40'}`} />
                         <span className={`text-xs ${req.met ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                           {req.label}
                         </span>
@@ -309,8 +274,6 @@ export default function ResetPassword() {
               </Link>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
