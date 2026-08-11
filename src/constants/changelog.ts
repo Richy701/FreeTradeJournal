@@ -19,6 +19,24 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.73.1',
+    date: '2026-08-11',
+    summary: 'The quick add and calendar trade forms now offer the full instrument list, including micro futures.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Micro futures are now selectable everywhere',
+        description: 'The quick add form on the dashboard and the one in the calendar offered a shorter instrument list than the Trade Log page. Micro futures (MNQ, MES, MYM, M2K), micro crude and gold, natural gas, copper and the grains were missing, so anyone trading them had to use the Trade Log page instead. All three forms now offer the same list, grouped by type, and index CFDs and index ETFs both appear under Indices.',
+      },
+      {
+        type: 'fixed',
+        text: 'Your instrument no longer disappears from the form',
+        description: 'If you traded a symbol that was not on the list, such as an individual stock from an imported file, the instrument box could come up empty. Your symbol now stays selected and appears at the top of the list.',
+      },
+    ],
+  },
+  {
     version: '2.73.0',
     date: '2026-08-11',
     summary: 'The trade form now opens with whatever you logged last, instead of resetting to Forex every time.',
@@ -2435,4 +2453,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.73.0'
+export const LATEST_CHANGELOG_VERSION = '2.73.1'

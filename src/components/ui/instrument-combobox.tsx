@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-interface InstrumentCategory {
-  category: string
-  instruments: (string | { symbol: string; name: string })[]
-}
+import type { InstrumentGroup } from "@/constants/trading"
+
+/** Symbols may arrive bare (forex pairs describe themselves) or with a name. */
+const instrumentLabel = (instrument: { symbol: string; name?: string }) =>
+  instrument.name ? `${instrument.symbol} - ${instrument.name}` : instrument.symbol
 
 interface InstrumentComboboxProps {
   value: string
   onChange: (value: string) => void
-  categories: InstrumentCategory[]
+  categories: readonly InstrumentGroup[]
   placeholder?: string
 }
 
@@ -32,11 +33,7 @@ export function InstrumentCombobox({
     if (!value) return ""
     for (const cat of categories) {
       for (const inst of cat.instruments) {
-        if (typeof inst === "string") {
-          if (inst === value) return inst
-        } else {
-          if (inst.symbol === value) return `${inst.symbol} - ${inst.name}`
-        }
+        if (inst.symbol === value) return instrumentLabel(inst)
       }
     }
     // Custom / unknown symbol — just show it uppercased
@@ -54,8 +51,7 @@ export function InstrumentCombobox({
   const isKnown = React.useMemo(() => {
     for (const cat of categories) {
       for (const inst of cat.instruments) {
-        const sym = typeof inst === "string" ? inst : inst.symbol
-        if (sym === searchUpper) return true
+        if (inst.symbol === searchUpper) return true
       }
     }
     return false
@@ -115,11 +111,8 @@ export function InstrumentCombobox({
             {categories.map((cat) => (
               <CommandGroup key={cat.category} heading={cat.category}>
                 {cat.instruments.map((instrument) => {
-                  const sym = typeof instrument === "string" ? instrument : instrument.symbol
-                  const label =
-                    typeof instrument === "string"
-                      ? instrument
-                      : `${instrument.symbol} - ${instrument.name}`
+                  const sym = instrument.symbol
+                  const label = instrumentLabel(instrument)
                   return (
                     <CommandItem
                       key={sym}

@@ -28,7 +28,7 @@ import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
 import { getTradeDefaults, rememberTradeDefaults } from '@/utils/trade-defaults'
 import { isIncognitoMode } from '@/utils/incognito-detection'
-import { MARKET_INSTRUMENTS, quantityLabelForMarket, type MarketType } from '@/constants/trading'
+import { instrumentGroupsFor, quantityLabelForMarket, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
@@ -64,7 +64,9 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -258,8 +260,8 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTradeModalOpen])
 
-  const getInstrumentsByMarket = (market: MarketType) => {
-    return MARKET_INSTRUMENTS[market] || [];
+  const getInstrumentsByMarket = (market: MarketType, symbol?: string) => {
+    return instrumentGroupsFor(market, symbol);
   }
 
   const handleSaveTrade = () => {
@@ -930,10 +932,15 @@ export default function Dashboard() {
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
                           <SelectContent>
-                            {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
-                              <SelectItem key={instrument} value={instrument}>
-                                {instrument}
-                              </SelectItem>
+                            {getInstrumentsByMarket(tradeForm.market, tradeForm.symbol).map((group) => (
+                              <SelectGroup key={group.category}>
+                                <SelectLabel>{group.category}</SelectLabel>
+                                {group.instruments.map((instrument) => (
+                                  <SelectItem key={instrument.symbol} value={instrument.symbol}>
+                                    {instrument.name ? `${instrument.symbol} - ${instrument.name}` : instrument.symbol}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
                             ))}
                           </SelectContent>
                         </Select>

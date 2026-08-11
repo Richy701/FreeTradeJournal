@@ -69,7 +69,7 @@ import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv
 import { rescueFailedImport } from '@/utils/csv-import-flow';
 import { cn } from '@/lib/utils';
 import { belongsToAccount } from '@/lib/account-scope';
-import { quantityLabelForMarket } from '@/constants/trading';
+import { instrumentGroupsFor, quantityLabelForMarket, type MarketType } from '@/constants/trading';
 import { lazy, Suspense } from 'react';
 const TradingViewMiniChart = lazy(() => import("@/components/tradingview-mini-chart").then(m => ({ default: m.TradingViewMiniChart })));
 const MarketNewsFeed = lazy(() => import("@/components/market-news-feed").then(m => ({ default: m.MarketNewsFeed })));
@@ -367,86 +367,8 @@ export default function TradeLog() {
   const watchedMarket = form.watch('market');
 
   // Function to detect market type based on symbol
-  const getInstrumentsByMarket = (market: string) => {
-    switch (market) {
-      case 'forex':
-        return [
-          { category: 'Major Pairs', instruments: [
-            'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'
-          ]},
-          { category: 'Cross Pairs', instruments: [
-            'EURJPY', 'GBPJPY', 'EURGBP', 'EURAUD', 'EURNZD', 'EURCHF',
-            'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPNZD',
-            'AUDJPY', 'NZDJPY', 'CADJPY', 'CHFJPY', 'AUDCAD', 'AUDNZD'
-          ]},
-          { category: 'Exotic Pairs', instruments: [
-            'USDSEK', 'USDNOK', 'USDDKK', 'USDSGD', 'USDMXN', 'USDZAR'
-          ]}
-        ];
-      case 'futures':
-        return [
-          { category: 'Micro Index Futures', instruments: [
-            { symbol: 'MES', name: 'Micro E-mini S&P 500' },
-            { symbol: 'MNQ', name: 'Micro E-mini Nasdaq 100' },
-            { symbol: 'MYM', name: 'Micro E-mini Dow Jones' },
-            { symbol: 'M2K', name: 'Micro E-mini Russell 2000' }
-          ]},
-          { category: 'Standard Index Futures', instruments: [
-            { symbol: 'ES', name: 'E-mini S&P 500' },
-            { symbol: 'NQ', name: 'E-mini Nasdaq 100' },
-            { symbol: 'YM', name: 'E-mini Dow Jones' },
-            { symbol: 'RTY', name: 'E-mini Russell 2000' }
-          ]},
-          { category: 'Micro Energy', instruments: [
-            { symbol: 'MCL', name: 'Micro Crude Oil' }
-          ]},
-          { category: 'Standard Energy', instruments: [
-            { symbol: 'CL', name: 'Crude Oil' },
-            { symbol: 'NG', name: 'Natural Gas' },
-            { symbol: 'RB', name: 'Gasoline' }
-          ]},
-          { category: 'Micro Metals', instruments: [
-            { symbol: 'MGC', name: 'Micro Gold' }
-          ]},
-          { category: 'Standard Metals', instruments: [
-            { symbol: 'GC', name: 'Gold' },
-            { symbol: 'SI', name: 'Silver' },
-            { symbol: 'HG', name: 'Copper' }
-          ]},
-          { category: 'Agriculture', instruments: [
-            { symbol: 'ZC', name: 'Corn' },
-            { symbol: 'ZS', name: 'Soybeans' },
-            { symbol: 'ZW', name: 'Wheat' }
-          ]},
-          { category: 'Bonds', instruments: [
-            { symbol: 'ZN', name: '10-Year Treasury' },
-            { symbol: 'ZB', name: '30-Year Treasury' }
-          ]}
-        ];
-      case 'indices':
-        return [
-          { category: 'US Index ETFs', instruments: [
-            { symbol: 'SPY', name: 'SPDR S&P 500 ETF' },
-            { symbol: 'QQQ', name: 'Invesco QQQ Trust' },
-            { symbol: 'DIA', name: 'SPDR Dow Jones ETF' },
-            { symbol: 'IWM', name: 'iShares Russell 2000 ETF' }
-          ]},
-          { category: 'Sector ETFs', instruments: [
-            { symbol: 'XLF', name: 'Financial Sector SPDR' },
-            { symbol: 'XLK', name: 'Technology Sector SPDR' },
-            { symbol: 'XLE', name: 'Energy Sector SPDR' },
-            { symbol: 'XLV', name: 'Health Care Sector SPDR' }
-          ]},
-          { category: 'International ETFs', instruments: [
-            { symbol: 'EFA', name: 'iShares MSCI EAFE ETF' },
-            { symbol: 'EEM', name: 'iShares MSCI Emerging Markets ETF' },
-            { symbol: 'VGK', name: 'Vanguard European ETF' }
-          ]}
-        ];
-      default:
-        return [];
-    }
-  };
+  const getInstrumentsByMarket = (market: string, symbol?: string) =>
+    instrumentGroupsFor((market || 'forex') as MarketType, symbol);
 
   // This useEffect is replaced by the enhanced loading simulation below
 
@@ -1535,7 +1457,7 @@ export default function TradeLog() {
                             name="symbol"
                             rules={{ required: 'Symbol is required' }}
                             render={({ field }) => {
-                              const marketInstruments = getInstrumentsByMarket(watchedMarket || 'forex');
+                              const marketInstruments = getInstrumentsByMarket(watchedMarket || 'forex', field.value);
                               return (
                                 <FormItem>
                                   <FormLabel className="text-sm font-medium">Instrument *</FormLabel>

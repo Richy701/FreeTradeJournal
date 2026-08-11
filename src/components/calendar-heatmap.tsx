@@ -13,7 +13,7 @@ import { useUserStorage } from '@/utils/user-storage'
 import { getTradeDefaults, rememberTradeDefaults } from '@/utils/trade-defaults'
 import { useProStatus } from '@/contexts/pro-context'
 import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing'
-import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
+import { instrumentGroupsFor, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
 import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +29,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "./ui/select"
@@ -154,8 +156,8 @@ export function CalendarHeatmap() {
   })
 
 
-  const getInstrumentsByMarket = (market: MarketType) => {
-    return MARKET_INSTRUMENTS[market] || [];
+  const getInstrumentsByMarket = (market: MarketType, symbol?: string) => {
+    return instrumentGroupsFor(market, symbol);
   }
 
   // Get trades from localStorage or demo data
@@ -1497,10 +1499,15 @@ export function CalendarHeatmap() {
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
-                        {getInstrumentsByMarket(tradeForm.market).map((instrument) => (
-                          <SelectItem key={instrument} value={instrument}>
-                            {instrument}
-                          </SelectItem>
+                        {getInstrumentsByMarket(tradeForm.market, tradeForm.symbol).map((group) => (
+                          <SelectGroup key={group.category}>
+                            <SelectLabel>{group.category}</SelectLabel>
+                            {group.instruments.map((instrument) => (
+                              <SelectItem key={instrument.symbol} value={instrument.symbol}>
+                                {instrument.name ? `${instrument.symbol} - ${instrument.name}` : instrument.symbol}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
                         ))}
                       </SelectContent>
                     </Select>
