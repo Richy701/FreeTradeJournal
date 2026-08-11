@@ -50,6 +50,14 @@ export default function Changelog() {
                         {item.description && (
                           <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                         )}
+                        {item.image && (
+                          <img
+                            src={item.image.src}
+                            alt={item.image.alt}
+                            loading="lazy"
+                            className="mt-3 w-full max-w-2xl rounded-lg border border-border/60"
+                          />
+                        )}
                       </div>
                     </div>
                   )

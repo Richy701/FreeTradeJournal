@@ -8,6 +8,9 @@ export type ChangelogItem = {
    *  "+N more". Aim for 3-4 per release. Without any flags, the dialog falls
    *  back to the first three items. */
   highlight?: boolean
+  /** Screenshot rendered under the item in the What's New dialog and on
+   *  /changelog. Use a site-relative path under public/. */
+  image?: { src: string; alt: string }
 }
 
 export type ChangelogEntry = {
@@ -21,26 +24,27 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.77.0',
     date: '2026-08-11',
-    summary: 'A market sessions widget on the dashboard shows which sessions are open and when the next one starts.',
+    summary: 'A position size calculator with an AI risk check, and live market sessions on your dashboard.',
     items: [
       {
         type: 'new',
         highlight: true,
-        text: 'Market sessions on the dashboard',
-        description: 'A new dashboard widget shows Sydney, Tokyo, London, New York and CME futures hours at a glance: what is open right now, each market\'s local time, and how long until the next open or close, all in your own timezone. It flags when London and New York overlap, notes the CME daily halt, and warns you the day before market holidays like Thanksgiving or UK bank holidays. You can hide it from Customize like any other widget.',
+        text: 'Position size calculator with an AI risk check',
+        description: 'Enter your account size, how much you want to risk, and your stop loss, and it tells you how many lots or contracts to trade. Forex mode covers majors, crosses, gold and silver, with live exchange rates when your account currency differs from the pair. Futures mode has the real tick sizes and values for ES, NQ, crude, gold and all the micro versions. Results round down so you never risk more than you planned. The AI risk check reads the plan against your own logged trades and tells you whether the risk survives your real losing streaks and whether the reward fits your actual win rate. It is in the sidebar as Position Calculator.',
+        image: {
+          src: '/screenshots/position-calculator.png',
+          alt: 'The position size calculator showing 5 MNQ contracts for a $100 risk with a 40-tick stop',
+        },
       },
-    ],
-  },
-  {
-    version: '2.76.0',
-    date: '2026-08-11',
-    summary: 'A free position size calculator for forex and futures, in the app sidebar and on the public site.',
-    items: [
       {
         type: 'new',
         highlight: true,
-        text: 'Position size calculator',
-        description: 'Enter your account size, how much you want to risk, and your stop loss, and it tells you how many lots or contracts to trade. Forex mode covers majors, crosses, gold and silver, with live exchange rates when your account currency differs from the pair. Futures mode has the real tick sizes and values for ES, NQ, YM, RTY, crude, gold and their micro versions, plus rates, currencies and grains. Results round down so you never risk more than you planned. There is also an AI risk check: it reads the plan together with your own logged results and tells you whether the risk survives your real losing streaks and whether the reward fits your actual win rate. You will find it all in the sidebar as Position Calculator, and there is a public version at freetradejournal.com/position-size-calculator that needs no account.',
+        text: 'Market sessions, live on your dashboard',
+        description: 'Sydney, Tokyo, London, New York and CME futures hours on one timeline in your own timezone: what is open right now, each market\'s local time, and how long until the next open or close. It flags when London and New York overlap, notes the CME daily halt, and warns you the day before market holidays. You can hide it from Customize like any other widget.',
+        image: {
+          src: '/screenshots/market-sessions-widget.png',
+          alt: 'The market sessions widget showing London and New York open on a 24-hour timeline',
+        },
       },
     ],
   },

@@ -37,24 +37,34 @@ function ItemRow({ item, index }: { item: ChangelogItem; index: number }) {
   const Icon = config.icon
   return (
     <div
-      className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
+      className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms`, animationDuration: '350ms' }}
     >
-      <div
-        className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
-        style={{ backgroundColor: config.bg }}
-      >
-        <Icon className="h-4 w-4" weight="bold" style={{ color: config.color }} />
+      <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
+        <div
+          className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: config.bg }}
+        >
+          <Icon className="h-4 w-4" weight="bold" style={{ color: config.color }} />
+        </div>
+        <span className="flex-1 min-w-0 text-sm font-medium text-foreground/90 leading-snug">
+          {item.text}
+        </span>
+        <span
+          className="shrink-0 text-[10px] font-semibold uppercase tracking-wider"
+          style={{ color: config.color }}
+        >
+          {config.label}
+        </span>
       </div>
-      <span className="flex-1 min-w-0 text-sm font-medium text-foreground/90 leading-snug">
-        {item.text}
-      </span>
-      <span
-        className="shrink-0 text-[10px] font-semibold uppercase tracking-wider"
-        style={{ color: config.color }}
-      >
-        {config.label}
-      </span>
+      {item.image && (
+        <img
+          src={item.image.src}
+          alt={item.image.alt}
+          loading="lazy"
+          className="mt-1.5 mx-3 mb-1 w-[calc(100%-1.5rem)] rounded-lg border border-border/60"
+        />
+      )}
     </div>
   )
 }
