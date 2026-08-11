@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useThemePresets } from '@/contexts/theme-presets'
-import { useMarketNews, useSymbolNews } from '@/hooks/use-market-news'
-import { Newspaper, ArrowSquareOut, Globe, CurrencyDollar, Lightning } from '@phosphor-icons/react'
+import { useMarketFeed, useSymbolNews } from '@/hooks/use-market-news'
+import { Newspaper, CurrencyDollar, ChartLineUp } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { NewsItem } from '@/services/market-news'
+import type { NewsItem, FeedTab } from '@/services/market-news'
 import { MARKET_DATA_ENABLED } from '@/config/market-data'
 
 function formatAge(timestamp: number): string {
@@ -18,76 +18,41 @@ function formatAge(timestamp: number): string {
   return `${days}d ago`
 }
 
-function isLikelyLogo(url: string): boolean {
-  const lower = url.toLowerCase()
-  return lower.includes('logo') || lower.includes('favicon') || lower.includes('icon')
-    || lower.includes('brand') || lower.includes('default') || lower.includes('placeholder')
-}
-
-function NewsCard({ item, alpha, themeColors, isLast }: {
+// Social-style post row: byline first, then the headline as the post body.
+function FeedPost({ item, primary, isLast }: {
   item: NewsItem
-  alpha: (color: string, opacity: string) => string
-  themeColors: any
+  primary: string
   isLast: boolean
 }) {
-  const [imgState, setImgState] = useState<'loading' | 'good' | 'hidden'>(() =>
-    item.image && !isLikelyLogo(item.image) ? 'loading' : 'hidden'
-  )
-
   return (
     <a
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50 ${
+      className={`group block px-4 py-3 transition-colors hover:bg-muted/50 ${
         !isLast ? 'border-b border-border/50' : ''
       }`}
     >
-      {imgState !== 'hidden' && (
-        <div className="shrink-0 w-20 h-14 rounded-lg overflow-hidden bg-muted">
-          <img
-            src={item.image}
-            alt=""
-            className={`w-full h-full object-cover ${imgState === 'loading' ? 'opacity-0' : 'opacity-100'} transition-opacity`}
-            loading="lazy"
-            onLoad={(e) => {
-              const img = e.currentTarget
-              if (img.naturalWidth < 200 || img.naturalHeight < 100 || img.naturalWidth === img.naturalHeight) {
-                setImgState('hidden')
-              } else {
-                setImgState('good')
-              }
-            }}
-            onError={() => setImgState('hidden')}
-          />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-foreground leading-snug line-clamp-2 group-hover:underline">
-          {item.headline}
-        </p>
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <span
-            className="text-[10px] font-semibold"
-            style={{ color: themeColors.primary }}
-          >
-            {item.source}
-          </span>
-          <span className="text-[10px] text-muted-foreground select-none">·</span>
-          <span className="text-[10px] text-muted-foreground">{formatAge(item.datetime)}</span>
-        </div>
+      <div className="flex items-baseline gap-1.5 min-w-0">
+        <span className="text-[11px] font-semibold truncate" style={{ color: primary }}>
+          {item.author || item.source}
+        </span>
+        {item.author && (
+          <span className="text-[11px] text-muted-foreground shrink-0">{item.source}</span>
+        )}
+        <span className="text-[11px] text-muted-foreground shrink-0 select-none">·</span>
+        <span className="text-[11px] text-muted-foreground shrink-0">{formatAge(item.datetime)}</span>
       </div>
-      <ArrowSquareOut
-        className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors"
-      />
+      <p className="mt-1 text-[13px] text-foreground leading-snug line-clamp-3 group-hover:underline">
+        {item.headline}
+      </p>
     </a>
   )
 }
 
-const CATEGORIES = [
-  { key: 'general' as const, label: 'General', icon: Globe },
+const TABS = [
   { key: 'forex' as const, label: 'Forex', icon: CurrencyDollar },
-  { key: 'crypto' as const, label: 'Crypto', icon: Lightning },
+  { key: 'markets' as const, label: 'Markets', icon: ChartLineUp },
 ]
 
 interface MarketNewsFeedProps {
@@ -96,27 +61,16 @@ interface MarketNewsFeedProps {
   maxItems?: number
 }
 
-export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedProps) {
+export function MarketNewsFeed({ symbol, title, maxItems = 6 }: MarketNewsFeedProps) {
   const { themeColors, alpha } = useThemePresets()
-  const [category, setCategory] = useState<'general' | 'forex' | 'crypto'>('general')
+  const [tab, setTab] = useState<FeedTab>('forex')
   const [showCount, setShowCount] = useState(maxItems)
-  const userPickedRef = useRef(false)
 
   const symbolResult = useSymbolNews(symbol ?? null)
-  const generalResult = useMarketNews(symbol ? 'general' : category)
+  const feedResult = useMarketFeed(tab)
 
-  const { news, isLoading, error } = symbol ? symbolResult : generalResult
-  const displayTitle = title || (symbol ? `${symbol} News` : 'Market News')
-
-  // Finnhub's free tier can answer the General category with 200 + [] (the
-  // same fate as its economic calendar). Fall back to Forex once, but only
-  // for the default category — a tab the user clicked stays put.
-  useEffect(() => {
-    if (symbol || userPickedRef.current) return
-    if (category === 'general' && generalResult.hasLoaded && !generalResult.error && generalResult.news.length === 0) {
-      setCategory('forex')
-    }
-  }, [symbol, category, generalResult.hasLoaded, generalResult.error, generalResult.news.length])
+  const { news, isLoading, error } = symbol ? symbolResult : feedResult
+  const displayTitle = title || (symbol ? `${symbol} News` : 'Market Feed')
 
   if (!MARKET_DATA_ENABLED) return null
 
@@ -124,8 +78,8 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
     return (
       <div className="rounded-xl border bg-card/50 p-4 space-y-3">
         <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-8 w-48" />
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+        <Skeleton className="h-8 w-40" />
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-12 w-full" />)}
       </div>
     )
   }
@@ -140,7 +94,7 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
       )
     }
     // Symbol mode has no tabs to switch to, so an empty result hides the card.
-    // Category mode keeps the card so the tabs stay reachable.
+    // Tab mode keeps the card so the tabs stay reachable.
     if (symbol) return null
   }
 
@@ -153,58 +107,52 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
             <Newspaper className="h-4 w-4" style={{ color: themeColors.primary }} />
             <span className="text-sm font-semibold text-foreground">{displayTitle}</span>
           </div>
-          {news.length > 0 && (
-            <span className="text-[11px] text-muted-foreground">{news.length} articles</span>
+          {!symbol && (
+            <div className="flex gap-0.5 rounded-lg bg-muted p-1">
+              {TABS.map(t => {
+                const isActive = tab === t.key
+                const Icon = t.icon
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => { setTab(t.key); setShowCount(maxItems) }}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors"
+                    style={isActive ? {
+                      backgroundColor: alpha(themeColors.primary, '12'),
+                      color: themeColors.primary,
+                    } : {
+                      color: 'hsl(var(--muted-foreground))',
+                    }}
+                  >
+                    <Icon className="h-3 w-3" weight={isActive ? 'bold' : 'regular'} />
+                    {t.label}
+                  </button>
+                )
+              })}
+            </div>
           )}
         </div>
-
-        {/* Category tabs — segmented control */}
-        {!symbol && (
-          <div className="flex gap-0.5 rounded-lg bg-muted p-1">
-            {CATEGORIES.map(cat => {
-              const isActive = category === cat.key
-              const Icon = cat.icon
-              return (
-                <button
-                  key={cat.key}
-                  onClick={() => { userPickedRef.current = true; setCategory(cat.key); setShowCount(maxItems) }}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
-                  style={isActive ? {
-                    backgroundColor: alpha(themeColors.primary, '12'),
-                    color: themeColors.primary,
-                  } : {
-                    color: 'hsl(var(--muted-foreground))',
-                  }}
-                >
-                  <Icon className="h-3 w-3" weight={isActive ? 'bold' : 'regular'} />
-                  {cat.label}
-                </button>
-              )
-            })}
-          </div>
-        )}
       </div>
 
-      {/* Scrollable news list */}
-      <div className="relative">
+      {/* Scrollable post list */}
+      <div className="relative border-t border-border/50">
         <div className="max-h-[420px] overflow-y-auto modern-scrollbar">
           {news.length === 0 && (
             <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-              No articles in this category right now.
+              No posts in this feed right now.
             </p>
           )}
           {news.slice(0, showCount).map((item, i) => (
-            <NewsCard
+            <FeedPost
               key={item.id}
               item={item}
-              alpha={alpha}
-              themeColors={themeColors}
+              primary={themeColors.primary}
               isLast={i === Math.min(showCount, news.length) - 1}
             />
           ))}
           {showCount < news.length && (
             <button
-              onClick={() => setShowCount(c => c + 5)}
+              onClick={() => setShowCount(c => c + 6)}
               className="w-full py-2.5 text-[11px] font-medium transition-colors hover:bg-muted/50"
               style={{ color: themeColors.primary }}
             >

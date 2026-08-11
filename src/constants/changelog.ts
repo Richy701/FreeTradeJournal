@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.75.0',
+    date: '2026-08-11',
+    summary: 'The dashboard news panel is now a live market feed from trader-focused sources.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'A market feed built for traders',
+        description: 'The news panel on the dashboard now pulls from investingLive (formerly ForexLive), FXStreet, CNBC and MarketWatch instead of the old generic provider. Each post shows who wrote it, where it came from and how long ago, in a compact feed you can scan quickly. There are two tabs: Forex for currency and commodities commentary, and Markets for stocks, indices and the wider picture. The crypto tab is gone.',
+      },
+    ],
+  },
+  {
     version: '2.74.1',
     date: '2026-08-11',
     summary: 'The market news panel no longer disappears from the dashboard.',
@@ -2495,4 +2508,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.74.1'
+export const LATEST_CHANGELOG_VERSION = '2.75.0'

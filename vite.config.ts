@@ -3,6 +3,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from "path"
+import { fetchMarketFeed, FEED_TABS } from './api/_lib/market-feed'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -53,9 +54,52 @@ export default defineConfig(({ mode }) => {
     },
   })
 
+  // Dev twin of api/news.ts — same shared fetch/parse module, so there is one
+  // parser code path. Cached like the quote proxy so StrictMode double-mounts
+  // don't hammer the RSS upstreams.
+  const NEWS_CACHE_MS = 5 * 60_000
+  const newsCache = new Map<string, { body: string; at: number }>()
+  const devNewsFeed = (): Plugin => ({
+    name: 'dev-news-feed',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api/news', (req, res) => {
+        void (async () => {
+          const tab = new URL(req.url || '/', 'http://localhost').searchParams.get('tab') || 'forex'
+          res.setHeader('Content-Type', 'application/json')
+          if (!FEED_TABS.includes(tab)) {
+            res.statusCode = 400
+            res.end('{"error":"Invalid tab"}')
+            return
+          }
+          const hit = newsCache.get(tab)
+          if (hit && Date.now() - hit.at < NEWS_CACHE_MS) {
+            res.end(hit.body)
+            return
+          }
+          try {
+            const posts = await fetchMarketFeed(tab)
+            if (posts.length === 0) {
+              res.statusCode = 503
+              res.end('{"error":"Feeds unavailable"}')
+              return
+            }
+            const body = JSON.stringify(posts)
+            newsCache.set(tab, { body, at: Date.now() })
+            res.end(body)
+          } catch {
+            res.statusCode = 502
+            res.end('{"error":"Feed fetch failed"}')
+          }
+        })()
+      })
+    },
+  })
+
   return {
   plugins: [
     devTwelveDataQuoteCache(),
+    devNewsFeed(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: false,

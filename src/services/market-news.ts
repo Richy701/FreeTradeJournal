@@ -10,33 +10,36 @@ export interface NewsItem {
   id: string
   headline: string
   source: string
+  author?: string
   url: string
   summary: string
   datetime: number
   image?: string
 }
 
-export async function getMarketNews(
-  category: 'general' | 'forex' | 'crypto' = 'general'
-): Promise<NewsItem[]> {
+export type FeedTab = 'forex' | 'markets'
+
+// Aggregated RSS from trader-focused outlets via our own /api/news proxy
+// (see api/_lib/market-feed.ts) — replaced Finnhub's category news, whose
+// free-tier General feed went empty.
+export async function getMarketFeed(tab: FeedTab): Promise<NewsItem[]> {
   if (!MARKET_DATA_ENABLED) return []
 
   return cachedFetch<NewsItem[]>(
-    `ftj-news-${category}`,
-    `${BASE_URL}/news?category=${category}`,
+    `ftj-feed-${tab}`,
+    `/api/news?tab=${tab}`,
     CACHE_TTL,
     (raw: any) =>
-      (Array.isArray(raw) ? raw : []).slice(0, 20).map((item: any) => ({
+      (Array.isArray(raw) ? raw : []).map((item: any) => ({
         id: String(item.id),
         headline: item.headline,
         source: item.source,
+        author: item.author || undefined,
         url: item.url,
-        summary: item.summary,
+        summary: '',
         datetime: item.datetime,
-        image: item.image || undefined,
       })),
-    // Finnhub sometimes returns 200 with [] for a category (the free tier's
-    // General feed does this). Don't pin that emptiness for the whole TTL.
+    // Don't pin an empty result for the whole TTL.
     (data) => data.length > 0
   )
 }

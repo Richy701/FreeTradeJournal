@@ -1,34 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
-import { getMarketNews, getSymbolNews, type NewsItem } from '@/services/market-news'
+import { getMarketFeed, getSymbolNews, type NewsItem, type FeedTab } from '@/services/market-news'
 
-export function useMarketNews(category: 'general' | 'forex' | 'crypto' = 'general') {
+export function useMarketFeed(tab: FeedTab) {
   const [news, setNews] = useState<NewsItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
-  // Distinguishes "fetch finished with no articles" from the initial empty
-  // state, so callers can react to a genuinely empty category.
-  const [hasLoaded, setHasLoaded] = useState(false)
   const mountedRef = useRef(true)
 
   useEffect(() => {
     mountedRef.current = true
     setIsLoading(true)
     setError(false)
-    setHasLoaded(false)
-    getMarketNews(category)
+    getMarketFeed(tab)
       .then(data => { if (mountedRef.current) setNews(data) })
       .catch(() => { if (mountedRef.current) setError(true) })
-      .finally(() => {
-        if (mountedRef.current) {
-          setIsLoading(false)
-          setHasLoaded(true)
-        }
-      })
+      .finally(() => { if (mountedRef.current) setIsLoading(false) })
 
     return () => { mountedRef.current = false }
-  }, [category])
+  }, [tab])
 
-  return { news, isLoading, error, hasLoaded }
+  return { news, isLoading, error }
 }
 
 export function useSymbolNews(symbol: string | null) {
