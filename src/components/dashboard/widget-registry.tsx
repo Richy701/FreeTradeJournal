@@ -15,6 +15,7 @@ const ChartAreaInteractive = lazy(() => import('@/components/chart-area-interact
 const ChartRadarDefault = lazy(() => import('@/components/chart-radar-default').then(m => ({ default: m.ChartRadarDefault })))
 const EconomicCalendarWidget = lazy(() => import('@/components/economic-calendar-widget').then(m => ({ default: m.EconomicCalendarWidget })))
 const MarketNewsFeed = lazy(() => import('@/components/market-news-feed').then(m => ({ default: m.MarketNewsFeed })))
+const MarketSessions = lazy(() => import('@/components/market-sessions').then(m => ({ default: m.MarketSessions })))
 
 export interface WidgetRenderCtx {
   tradeCount: number
@@ -114,6 +115,16 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
           <MarketNewsFeed />
         </Suspense>
       </div>
+    ),
+  },
+  {
+    id: 'sessions',
+    label: 'Market sessions',
+    removable: true,
+    render: () => (
+      <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+        <MarketSessions />
+      </Suspense>
     ),
   },
   {

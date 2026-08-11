@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.77.0',
+    date: '2026-08-11',
+    summary: 'A market sessions widget on the dashboard shows which sessions are open and when the next one starts.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Market sessions on the dashboard',
+        description: 'A new dashboard widget shows Sydney, Tokyo, London, New York and CME futures hours at a glance: what is open right now, each market\'s local time, and how long until the next open or close, all in your own timezone. It flags when London and New York overlap, notes the CME daily halt, and warns you the day before market holidays like Thanksgiving or UK bank holidays. You can hide it from Customize like any other widget.',
+      },
+    ],
+  },
+  {
     version: '2.76.0',
     date: '2026-08-11',
     summary: 'A free position size calculator for forex and futures, in the app sidebar and on the public site.',
@@ -2521,4 +2534,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.76.0'
+export const LATEST_CHANGELOG_VERSION = '2.77.0'
