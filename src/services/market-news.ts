@@ -34,7 +34,10 @@ export async function getMarketNews(
         summary: item.summary,
         datetime: item.datetime,
         image: item.image || undefined,
-      }))
+      })),
+    // Finnhub sometimes returns 200 with [] for a category (the free tier's
+    // General feed does this). Don't pin that emptiness for the whole TTL.
+    (data) => data.length > 0
   )
 }
 

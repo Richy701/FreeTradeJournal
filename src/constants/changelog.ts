@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.74.1',
+    date: '2026-08-11',
+    summary: 'The market news panel no longer disappears from the dashboard.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Market news is back',
+        description: 'The news panel vanished from the dashboard when our news provider started returning an empty General feed. The panel now switches to Forex news automatically when General has no articles, and if a tab you pick is empty it says so instead of removing the whole panel.',
+      },
+    ],
+  },
+  {
     version: '2.74.0',
     date: '2026-08-11',
     summary: 'Redesigned sign-in and sign-up pages with clearer error messages, plus a tidier dashboard header.',
@@ -2482,4 +2495,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.74.0'
+export const LATEST_CHANGELOG_VERSION = '2.74.1'

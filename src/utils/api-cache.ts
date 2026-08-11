@@ -29,7 +29,8 @@ export async function cachedFetch<T>(
   cacheKey: string,
   url: string,
   ttlMs: number,
-  transform?: (data: unknown) => T
+  transform?: (data: unknown) => T,
+  shouldCache?: (data: T) => boolean
 ): Promise<T> {
   const cached = getCached<T>(cacheKey, ttlMs);
   if (cached !== null) return cached;
@@ -39,6 +40,6 @@ export async function cachedFetch<T>(
 
   const raw = await res.json();
   const data = transform ? transform(raw) : (raw as T);
-  setCache(cacheKey, data);
+  if (!shouldCache || shouldCache(data)) setCache(cacheKey, data);
   return data;
 }

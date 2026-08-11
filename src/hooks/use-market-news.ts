@@ -5,21 +5,30 @@ export function useMarketNews(category: 'general' | 'forex' | 'crypto' = 'genera
   const [news, setNews] = useState<NewsItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(false)
+  // Distinguishes "fetch finished with no articles" from the initial empty
+  // state, so callers can react to a genuinely empty category.
+  const [hasLoaded, setHasLoaded] = useState(false)
   const mountedRef = useRef(true)
 
   useEffect(() => {
     mountedRef.current = true
     setIsLoading(true)
     setError(false)
+    setHasLoaded(false)
     getMarketNews(category)
       .then(data => { if (mountedRef.current) setNews(data) })
       .catch(() => { if (mountedRef.current) setError(true) })
-      .finally(() => { if (mountedRef.current) setIsLoading(false) })
+      .finally(() => {
+        if (mountedRef.current) {
+          setIsLoading(false)
+          setHasLoaded(true)
+        }
+      })
 
     return () => { mountedRef.current = false }
   }, [category])
 
-  return { news, isLoading, error }
+  return { news, isLoading, error, hasLoaded }
 }
 
 export function useSymbolNews(symbol: string | null) {

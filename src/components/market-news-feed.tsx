@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useMarketNews, useSymbolNews } from '@/hooks/use-market-news'
 import { Newspaper, ArrowSquareOut, Globe, CurrencyDollar, Lightning } from '@phosphor-icons/react'
@@ -100,12 +100,23 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
   const { themeColors, alpha } = useThemePresets()
   const [category, setCategory] = useState<'general' | 'forex' | 'crypto'>('general')
   const [showCount, setShowCount] = useState(maxItems)
+  const userPickedRef = useRef(false)
 
   const symbolResult = useSymbolNews(symbol ?? null)
   const generalResult = useMarketNews(symbol ? 'general' : category)
 
   const { news, isLoading, error } = symbol ? symbolResult : generalResult
   const displayTitle = title || (symbol ? `${symbol} News` : 'Market News')
+
+  // Finnhub's free tier can answer the General category with 200 + [] (the
+  // same fate as its economic calendar). Fall back to Forex once, but only
+  // for the default category — a tab the user clicked stays put.
+  useEffect(() => {
+    if (symbol || userPickedRef.current) return
+    if (category === 'general' && generalResult.hasLoaded && !generalResult.error && generalResult.news.length === 0) {
+      setCategory('forex')
+    }
+  }, [symbol, category, generalResult.hasLoaded, generalResult.error, generalResult.news.length])
 
   if (!MARKET_DATA_ENABLED) return null
 
@@ -128,7 +139,9 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
         </div>
       )
     }
-    return null
+    // Symbol mode has no tabs to switch to, so an empty result hides the card.
+    // Category mode keeps the card so the tabs stay reachable.
+    if (symbol) return null
   }
 
   return (
@@ -140,7 +153,9 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
             <Newspaper className="h-4 w-4" style={{ color: themeColors.primary }} />
             <span className="text-sm font-semibold text-foreground">{displayTitle}</span>
           </div>
-          <span className="text-[11px] text-muted-foreground">{news.length} articles</span>
+          {news.length > 0 && (
+            <span className="text-[11px] text-muted-foreground">{news.length} articles</span>
+          )}
         </div>
 
         {/* Category tabs — segmented control */}
@@ -152,7 +167,7 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
               return (
                 <button
                   key={cat.key}
-                  onClick={() => { setCategory(cat.key); setShowCount(maxItems) }}
+                  onClick={() => { userPickedRef.current = true; setCategory(cat.key); setShowCount(maxItems) }}
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
                   style={isActive ? {
                     backgroundColor: alpha(themeColors.primary, '12'),
@@ -173,6 +188,11 @@ export function MarketNewsFeed({ symbol, title, maxItems = 5 }: MarketNewsFeedPr
       {/* Scrollable news list */}
       <div className="relative">
         <div className="max-h-[420px] overflow-y-auto modern-scrollbar">
+          {news.length === 0 && (
+            <p className="px-4 py-6 text-sm text-muted-foreground text-center">
+              No articles in this category right now.
+            </p>
+          )}
           {news.slice(0, showCount).map((item, i) => (
             <NewsCard
               key={item.id}
