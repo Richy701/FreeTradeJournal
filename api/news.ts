@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { fetchMarketFeed, FEED_TABS } from './_lib/market-feed';
+// The .js extension is required: this compiles to an ESM module, and Node's
+// ESM loader does not resolve extensionless relative imports at runtime.
+import { fetchMarketFeed, FEED_TABS } from './_lib/market-feed.js';
 
 // Aggregated trader news from public RSS feeds (see api/_lib/market-feed.ts).
 // Edge-cached so the upstream outlets see a handful of requests per hour, not
