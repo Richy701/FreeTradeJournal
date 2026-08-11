@@ -68,7 +68,8 @@ export default function LandingPage() {
         }
         description="See your recent trades, pairs performance radar, and trade distribution at a glance. Live P&L tracking, win rate calculations, and profit factor analytics update instantly as you log trades."
         images={[
-          { src: "/images/screenshots/dashboard-trades-performance-screenshot.webp", alt: "Dashboard Performance" }
+          { src: "/images/screenshots/dashboard-trades-performance-screenshot.webp", alt: "Dashboard Performance" },
+          { src: "/images/screenshots/equity-curve-screenshot.webp", alt: "Equity curve with market feed" }
         ]}
         imageLayout="stack"
         reverseLayout={true}
@@ -198,7 +199,8 @@ export default function LandingPage() {
         }
         description="Finally know if your prop firm journey is actually profitable. Log every evaluation fee, reset cost, and payout across all your accounts. See invested vs earned, net P&L per firm, and get an AI-powered verdict on which firms are worth your money."
         images={[
-          { src: "/images/screenshots/prop-tracker-screenshot.webp", alt: "PropTracker" }
+          { src: "/images/screenshots/prop-tracker-screenshot.webp", alt: "PropTracker" },
+          { src: "/images/screenshots/prop-tracker-firms-screenshot.webp", alt: "PropTracker firm accounts" }
         ]}
         imageLayout="stack"
         reverseLayout={false}

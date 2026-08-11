@@ -30,6 +30,16 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     const { enterDemoMode } = useAuth();
     const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
 
+    // Auto-rotate for multi-image stack sections. Paused while hovering (the
+    // visitor is looking) and while the lightbox is open.
+    const [activeImage, setActiveImage] = useState(0);
+    const [rotationPaused, setRotationPaused] = useState(false);
+    React.useEffect(() => {
+        if (imageLayout !== 'stack' || images.length <= 1 || rotationPaused || selectedImage) return;
+        const id = setInterval(() => setActiveImage((i) => (i + 1) % images.length), 5000);
+        return () => clearInterval(id);
+    }, [imageLayout, images.length, rotationPaused, selectedImage]);
+
     // The lightbox triggers are styled containers, not <button>s — these props
     // make them reachable and operable by keyboard and visible to screen readers.
     const lightboxTriggerProps = (img: { src: string; alt: string }) => ({
@@ -209,52 +219,63 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                     );
                 }
                 
-                // Multiple images stacked
+                // Multiple images: auto-rotating crossfade. The first image stays
+                // in normal flow to define the container height; the rest sit on
+                // top absolutely and fade in when active.
                 return (
-                    <div className="relative">
-                        {images.map((img, index) => (
-                            <motion.div
-                                key={index}
-                                className={cn(
-                                    "relative rounded-3xl shadow-2xl overflow-hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                    index > 0 && "mt-[-20%]"
-                                )}
-                                {...lightboxTriggerProps(img)}
-                                initial={{ 
-                                    opacity: 0, 
-                                    y: 50,
-                                    scale: 0.95
-                                }}
-                                whileInView={{ 
-                                    opacity: 1, 
-                                    y: 0,
-                                    scale: 1
-                                }}
-                                transition={{ 
-                                    duration: 0.6, 
-                                    delay: index * 0.15,
-                                    ease: "easeOut"
-                                }}
-                                viewport={{ once: true }}
-                                style={{
-                                    zIndex: images.length - index
-                                }}
-                                whileHover={{ 
-                                    y: -10,
-                                    transition: { duration: 0.3 }
-                                }}
-                            >
-                                <ResponsiveImage
-                                    src={img.src}
-                                    alt={img.alt}
+                    <motion.div
+                        className="relative"
+                        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.7, ease: "easeOut" }}
+                        viewport={{ once: true }}
+                    >
+                        <div
+                            className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/70 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            onMouseEnter={() => setRotationPaused(true)}
+                            onMouseLeave={() => setRotationPaused(false)}
+                            {...lightboxTriggerProps(images[activeImage])}
+                        >
+                            {images.map((img, index) => (
+                                <div
+                                    key={img.src}
                                     className={cn(
-                                        "w-full h-auto",
-                                        img.className
+                                        "transition-opacity duration-700",
+                                        index !== 0 && "absolute inset-0",
+                                        index === activeImage ? "opacity-100" : "opacity-0"
+                                    )}
+                                    aria-hidden={index !== activeImage}
+                                >
+                                    <ResponsiveImage
+                                        src={img.src}
+                                        alt={img.alt}
+                                        className={index === 0 ? undefined : "h-full"}
+                                        imgClassName={cn(
+                                            index === 0 ? "w-full h-auto object-contain" : "w-full h-full object-cover",
+                                            img.className
+                                        )}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-4 flex justify-center gap-2">
+                            {images.map((img, index) => (
+                                <button
+                                    key={img.src}
+                                    type="button"
+                                    aria-label={`Show screenshot: ${img.alt}`}
+                                    aria-current={index === activeImage}
+                                    onClick={() => setActiveImage(index)}
+                                    className={cn(
+                                        "h-2 rounded-full transition-all duration-300",
+                                        index === activeImage
+                                            ? "w-6 bg-amber-500"
+                                            : "w-2 bg-border hover:bg-muted-foreground/40"
                                     )}
                                 />
-                            </motion.div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    </motion.div>
                 );
         }
     };

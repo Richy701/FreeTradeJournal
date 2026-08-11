@@ -34,6 +34,9 @@ export function TestimonialsSection() {
         const snap = await getDocs(q);
         if (cancelled) return;
         const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Testimonial));
+        // Grid rows stretch to the tallest card, so a one-liner next to a long
+        // review becomes mostly empty space. Pair similar lengths per row.
+        docs.sort((a, b) => (b.quote?.length ?? 0) - (a.quote?.length ?? 0));
         setTestimonials(docs.length > 0 ? docs : FALLBACK_TESTIMONIALS);
       } catch (err) {
         // A silent failure here hid the section from every visitor for months
@@ -69,8 +72,11 @@ export function TestimonialsSection() {
           </p>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Grid — 4 reviews orphan badly in a 3-column grid, so give them a 2x2 */}
+        <div className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 gap-4",
+          testimonials.length === 4 ? "max-w-4xl mx-auto w-full" : "lg:grid-cols-3"
+        )}>
           {testimonials.map((t) => (
             <TestimonialCard key={t.id} testimonial={t} />
           ))}

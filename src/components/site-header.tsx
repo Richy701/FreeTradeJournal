@@ -184,7 +184,7 @@ export function SiteHeader({ className }: { className?: string }) {
   const isPublicPage = PUBLIC_PAGES.includes(pathname.split('/').filter(Boolean)[0])
 
   return (
-    <header className={`${hasSidebar ? 'hidden md:flex' : 'flex'} h-12 md:h-16 shrink-0 items-center gap-2 px-3 md:px-4 ${className || ''}`}>
+    <header className={`${hasSidebar ? 'hidden md:flex' : 'flex'} sticky top-0 z-40 h-12 md:h-16 shrink-0 items-center gap-2 border-b border-border/40 bg-background/95 backdrop-blur px-3 md:px-4 ${className || ''}`}>
       {hasSidebar && <SidebarTrigger />}
       <Separator orientation="vertical" className="mr-2 h-4 hidden md:block" />
       <Breadcrumb className="hidden md:block">
