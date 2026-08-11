@@ -3307,6 +3307,33 @@ function modelTuning(model: string, temperature: number): { temperature?: number
 // screenshot; ~8.4k image prompt tokens per shot).
 const SCREENSHOT_MODEL = "gpt-5.6-luna";
 
+// ── AI client: Vercel AI Gateway with direct-OpenAI fallback ──────────────
+// When AI_GATEWAY_API_KEY is set, requests route through the Vercel AI
+// Gateway's OpenAI-compatible endpoint (BYOK or Vercel-managed billing) and
+// the gateway requires "openai/"-prefixed model ids. Without it, requests
+// hit OpenAI directly with OPENAI_API_KEY, byte-for-byte the old behavior —
+// so removing the env var is the rollback. FEATURE_MODELS and modelTuning()
+// keep bare model names; only the request's `model` field is prefixed.
+const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1";
+
+function aiClientConfigured(): boolean {
+  if (process.env.AI_GATEWAY_API_KEY) return true;
+  const key = process.env.OPENAI_API_KEY;
+  return !!key && key !== "your-openai-api-key-here";
+}
+
+function getAIClient(): OpenAI {
+  const gatewayKey = process.env.AI_GATEWAY_API_KEY;
+  if (gatewayKey) {
+    return new OpenAI({ apiKey: gatewayKey, baseURL: AI_GATEWAY_BASE_URL });
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+function aiModelId(model: string): string {
+  return process.env.AI_GATEWAY_API_KEY ? `openai/${model}` : model;
+}
+
 // Appended to every prose AI system prompt (never the strict-JSON features).
 // Without this the models default to finance-textbook language — real user
 // feedback: "expectancy is negative" and "payoff ratio 0.75:1" read as
@@ -3496,23 +3523,22 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   // so the two can no longer drift.
   const { systemPrompt, userPrompt } = buildAnalysisPrompts(trades, cur);
 
-  // 6. Call OpenAI
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "your-openai-api-key-here") {
+  // 6. Call the AI model
+  if (!aiClientConfigured()) {
     // The quota unit was already charged — give it back, the user got nothing.
     await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
     throw new functions.https.HttpsError(
       "internal",
-      "OpenAI API key not configured."
+      "AI API key not configured."
     );
   }
 
-  const openai = new OpenAI({ apiKey });
+  const openai = getAIClient();
 
   let analysis: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: FEATURE_MODELS.ai_analysis,
+      model: aiModelId(FEATURE_MODELS.ai_analysis),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -3603,11 +3629,10 @@ export const suggestCsvMapping = functions.https.onCall(reported("suggestCsvMapp
     )
     : [];
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "your-openai-api-key-here") {
-    throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
+  if (!aiClientConfigured()) {
+    throw new functions.https.HttpsError("internal", "AI API key not configured.");
   }
-  const openai = new OpenAI({ apiKey });
+  const openai = getAIClient();
 
   const systemPrompt = `You map columns from a trading platform's trade-history CSV export to a fixed set of roles.
 For each role return the EXACT column header string it maps to, or null if the file has no such column:
@@ -3632,7 +3657,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
   let parsed: any;
   try {
     const completion = await openai.chat.completions.create({
-      model: FEATURE_MODELS.csv_mapping,
+      model: aiModelId(FEATURE_MODELS.csv_mapping),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -4485,16 +4510,15 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
   try {
     const prompt = builder(request.payload);
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey || apiKey === "your-openai-api-key-here") {
-      throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
+    if (!aiClientConfigured()) {
+      throw new functions.https.HttpsError("internal", "AI API key not configured.");
     }
 
-    const openai = new OpenAI({ apiKey });
+    const openai = getAIClient();
     const model = FEATURE_MODELS[featureType];
 
     const completion = await openai.chat.completions.create({
-      model,
+      model: aiModelId(model),
       messages: [
         { role: "system", content: prompt.system + (JSON_OUTPUT_TYPES.has(request.type) ? "" : PLAIN_ENGLISH_STYLE) },
         { role: "user", content: prompt.user },
@@ -4586,9 +4610,8 @@ export const parseScreenshot = functions.https.onCall(reported("parseScreenshot"
     return current;
   });
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "your-openai-api-key-here") {
-    throw new functions.https.HttpsError("internal", "OpenAI API key not configured.");
+  if (!aiClientConfigured()) {
+    throw new functions.https.HttpsError("internal", "AI API key not configured.");
   }
 
   const billingPrompt = `Extract all billing/payment transactions from this screenshot. Return a JSON object with a "transactions" array. Each item must have:
@@ -4613,12 +4636,12 @@ Return only valid JSON with no extra text.`;
 
 Return only valid JSON with no extra text.`;
 
-  const openai = new OpenAI({ apiKey });
+  const openai = getAIClient();
 
   let result: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: SCREENSHOT_MODEL,
+      model: aiModelId(SCREENSHOT_MODEL),
       messages: [
         {
           role: "user",
@@ -5218,10 +5241,9 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
     temperature = prompt.temperature;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey === "your-openai-api-key-here") {
+  if (!aiClientConfigured()) {
     await refundStreamCharges();
-    res.status(500).json({ error: "OpenAI API key not configured." });
+    res.status(500).json({ error: "AI API key not configured." });
     return;
   }
 
@@ -5229,11 +5251,11 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
   res.set("Cache-Control", "no-cache");
   res.set("Connection", "keep-alive");
 
-  const openai = new OpenAI({ apiKey });
+  const openai = getAIClient();
 
   try {
     const stream = await openai.chat.completions.create({
-      model,
+      model: aiModelId(model),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
