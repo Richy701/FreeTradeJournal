@@ -10,6 +10,7 @@ import { useDemoData } from '@/hooks/use-demo-data'
 import { notifyDataChange } from '@/contexts/sync-context'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
+import { getTradeDefaults, rememberTradeDefaults } from '@/utils/trade-defaults'
 import { useProStatus } from '@/contexts/pro-context'
 import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing'
 import { MARKET_INSTRUMENTS, type MarketType } from '@/constants/trading'
@@ -288,6 +289,15 @@ export function CalendarHeatmap() {
     setJournalTags("")
     setSelectedTradeId("none")
 
+    // Pre-fill a blank form with the last trade logged on this account, so futures
+    // traders aren't re-picking the market and instrument every time. A part-filled
+    // form (closed and reopened) is left exactly as the user left it.
+    setTradeForm(prev => {
+      if (prev.symbol || prev.entryPrice || prev.exitPrice || prev.pnl) return prev
+      const defaults = getTradeDefaults(userStorage, activeAccount?.id)
+      return { ...prev, market: defaults.market, symbol: defaults.symbol, lotSize: defaults.lotSize }
+    })
+
     setDayDialogView('overview')
     setIsTradeDialogOpen(true)
   }
@@ -404,14 +414,21 @@ export function CalendarHeatmap() {
     userStorage.setItem('trades', JSON.stringify(allTrades))
     notifyDataChange()
 
-    // Reset form
+    // Pre-fill the next trade with this one's instrument
+    rememberTradeDefaults(userStorage, activeAccount?.id, {
+      market: newTrade.market,
+      symbol: newTrade.symbol,
+      lotSize: tradeForm.lotSize,
+    })
+
+    // Reset form, keeping the instrument this trade used as the next one's default
     setTradeForm({
-      symbol: "",
+      symbol: newTrade.symbol,
       side: "long",
-      market: "forex",
+      market: newTrade.market,
       entryPrice: "",
       exitPrice: "",
-      lotSize: "",
+      lotSize: tradeForm.lotSize,
       pnl: "",
       strategy: "",
       notes: "",

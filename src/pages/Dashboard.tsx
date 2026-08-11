@@ -26,6 +26,7 @@ import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, detec
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
+import { getTradeDefaults, rememberTradeDefaults } from '@/utils/trade-defaults'
 import { isIncognitoMode } from '@/utils/incognito-detection'
 import { MARKET_INSTRUMENTS, quantityLabelForMarket, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
@@ -244,6 +245,19 @@ export default function Dashboard() {
     propFirm: "none"
   })
 
+  // Open a blank quick-add pre-filled with the last trade logged on this account,
+  // so futures traders aren't re-picking the market and instrument every time. A
+  // part-filled form (closed and reopened) is left exactly as the user left it.
+  useEffect(() => {
+    if (!isTradeModalOpen) return
+    setTradeForm(prev => {
+      if (prev.symbol || prev.entryPrice || prev.exitPrice || prev.pnl) return prev
+      const defaults = getTradeDefaults(userStorage, activeAccount?.id)
+      return { ...prev, market: defaults.market, symbol: defaults.symbol, lotSize: defaults.lotSize }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTradeModalOpen])
+
   const getInstrumentsByMarket = (market: MarketType) => {
     return MARKET_INSTRUMENTS[market] || [];
   }
@@ -311,6 +325,12 @@ export default function Dashboard() {
     
     trades.unshift(newTrade)
     userStorage.setItem('trades', JSON.stringify(trades))
+    // Pre-fill the next trade with this one's instrument
+    rememberTradeDefaults(userStorage, activeAccount?.id, {
+      market: newTrade.market,
+      symbol: newTrade.symbol,
+      lotSize: tradeForm.lotSize,
+    })
 
     // Record activation + emit per-trade event the moment a trade is created
     // here (the Dashboard quick-add is a real first-trade path), instead of
@@ -347,14 +367,14 @@ export default function Dashboard() {
       }
     }
 
-    // Reset form
+    // Reset form, keeping the instrument this trade used as the next one's default
     setTradeForm({
-      symbol: "",
+      symbol: newTrade.symbol,
       side: "long",
-      market: "forex",
+      market: newTrade.market,
       entryPrice: "",
       exitPrice: "",
-      lotSize: "",
+      lotSize: tradeForm.lotSize,
       pnl: "",
       strategy: "",
       emotions: "",

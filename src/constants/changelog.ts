@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.73.0',
+    date: '2026-08-11',
+    summary: 'The trade form now opens with whatever you logged last, instead of resetting to Forex every time.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'The trade form remembers what you last traded',
+        description: 'Every new trade form opened on Forex with a blank instrument, so futures and stock traders re-picked the same market and symbol on every single entry. The form now opens with the market, instrument and size from the last trade you logged on that account. This works from the dashboard quick-add, the calendar day view and the full Trade Log form. The full form also carries over your commission and fees, since those stay the same per broker. Long or short always resets to Long, so a short cannot be logged as a long by accident, and prices and notes stay blank.',
+      },
+    ],
+  },
+  {
     version: '2.72.0',
     date: '2026-08-10',
     summary: 'Order-history CSV files now import correctly, and imports are protected against wrong column mappings and duplicate rows.',
@@ -2422,4 +2435,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.72.0'
+export const LATEST_CHANGELOG_VERSION = '2.73.0'

@@ -666,6 +666,14 @@ export default function TradeLog() {
       setEditingTrade(null);
     } else {
       saveTrades([...trades, newTrade]);
+      // Pre-fill the next trade with this one's instrument and costs
+      rememberTradeDefaults(userStorage, activeAccount?.id, {
+        market: newTrade.market,
+        symbol: newTrade.symbol,
+        lotSize: String(newTrade.lotSize ?? ''),
+        commission: String(newTrade.commission ?? ''),
+        fees: String(newTrade.fees ?? ''),
+      });
       trackEvent('trade_created', { symbol: newTrade.symbol, side: newTrade.side, market: newTrade.market });
       trackTradeLogged(1, 'manual');
       toast.success(`${newTrade.symbol} trade saved`);
@@ -699,7 +707,7 @@ export default function TradeLog() {
       }
     }
 
-    form.reset();
+    form.reset(newTradeFormValues());
     setIsDialogOpen(false);
   };
 
@@ -1348,7 +1356,7 @@ export default function TradeLog() {
                 size="sm"
                 onClick={() => {
                   setEditingTrade(null);
-                  form.reset();
+                  form.reset(newTradeFormValues());
                   setIsDialogOpen(true);
                 }}
                 style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
@@ -2469,7 +2477,7 @@ export default function TradeLog() {
                 {/* CTAs */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    onClick={() => { setEditingTrade(null); form.reset(); setIsDialogOpen(true); }}
+                    onClick={() => { setEditingTrade(null); form.reset(newTradeFormValues()); setIsDialogOpen(true); }}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
