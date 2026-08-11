@@ -46,6 +46,11 @@ const pageMeta: Record<string, SEOMetaProps> = {
     description: 'Create your free trading journal account. No credit card required. Start tracking trades and improving your performance today.',
     keywords: 'sign up, register, free account, trading journal signup'
   },
+  '/position-size-calculator': {
+    title: 'Free Position Size Calculator — Forex Lots & Futures Contracts | FreeTradeJournal',
+    description: 'Calculate exactly how many forex lots or futures contracts to trade from your account size, risk percentage, and stop loss. Live exchange rates, micro contract support, no sign-up.',
+    keywords: 'position size calculator, forex lot size calculator, futures contract calculator, risk calculator trading, pip value calculator'
+  },
   '/forgot-password': {
     title: 'Reset Password | FreeTradeJournal',
     description: 'Request a password reset link for your FreeTradeJournal account.',

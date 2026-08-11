@@ -4,6 +4,7 @@ export type AIAssistType =
   | 'journal_prompts'
   | 'trade_review'
   | 'risk_alert'
+  | 'position_check'
   | 'strategy_tagger'
   | 'goal_coach'
   | 'coaching_tips'

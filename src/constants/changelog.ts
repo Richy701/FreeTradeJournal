@@ -19,6 +19,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.76.0',
+    date: '2026-08-11',
+    summary: 'A free position size calculator for forex and futures, in the app sidebar and on the public site.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Position size calculator',
+        description: 'Enter your account size, how much you want to risk, and your stop loss, and it tells you how many lots or contracts to trade. Forex mode covers majors, crosses, gold and silver, with live exchange rates when your account currency differs from the pair. Futures mode has the real tick sizes and values for ES, NQ, YM, RTY, crude, gold and their micro versions, plus rates, currencies and grains. Results round down so you never risk more than you planned. There is also an AI risk check: it reads the plan together with your own logged results and tells you whether the risk survives your real losing streaks and whether the reward fits your actual win rate. You will find it all in the sidebar as Position Calculator, and there is a public version at freetradejournal.com/position-size-calculator that needs no account.',
+      },
+    ],
+  },
+  {
     version: '2.75.0',
     date: '2026-08-11',
     summary: 'The dashboard news panel is now a live market feed from trader-focused sources.',
@@ -2508,4 +2521,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.75.0'
+export const LATEST_CHANGELOG_VERSION = '2.76.0'

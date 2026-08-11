@@ -76,6 +76,8 @@ const TopOneFuturesReview = lazyWithRetry(() => import('@/pages/TopOneFuturesRev
 const TradezellaAlternative = lazyWithRetry(() => import('@/pages/TradezellaAlternative'));
 const TradersyncAlternative = lazyWithRetry(() => import('@/pages/TradersyncAlternative'));
 const EdgewonkAlternative = lazyWithRetry(() => import('@/pages/EdgewonkAlternative'));
+const PositionSizeCalculatorPage = lazyWithRetry(() => import('@/pages/PositionSizeCalculatorPage'));
+const Calculator = lazyWithRetry(() => import('@/pages/Calculator'));
 const FirmJournalPage = lazyWithRetry(() => import('@/pages/FirmJournalPage'));
 const NotFound = lazyWithRetry(() => import('@/pages/NotFound'));
 
@@ -172,6 +174,7 @@ function App() {
                 <Route path="/tradezella-alternative" element={<TradezellaAlternative />} />
                 <Route path="/tradersync-alternative" element={<TradersyncAlternative />} />
                 <Route path="/edgewonk-alternative" element={<EdgewonkAlternative />} />
+                <Route path="/position-size-calculator" element={<PositionSizeCalculatorPage />} />
                 {firmPages.map((page) => (
                   <Route key={page.slug} path={`/${page.slug}`} element={<FirmJournalPage page={page} />} />
                 ))}
@@ -187,6 +190,7 @@ function App() {
                   <Route path="/coach" element={<Coach />} />
                   <Route path="/trades" element={<TradeLog />} />
                   <Route path="/goals" element={<Goals />} />
+                  <Route path="/calculator" element={<Calculator />} />
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/ideas" element={<TradeIdeas />} />
                   <Route path="/settings" element={<Settings />} />

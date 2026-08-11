@@ -9,6 +9,7 @@ import {
   BookOpen,
   Lightbulb,
   Buildings,
+  Calculator,
   Brain,
   GearSix,
   Megaphone,
@@ -78,6 +79,11 @@ const navMain = [
     title: "PropTracker",
     url: "/prop-tracker",
     icon: Buildings,
+  },
+  {
+    title: "Position Calculator",
+    url: "/calculator",
+    icon: Calculator,
   },
 ]
 

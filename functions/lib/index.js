@@ -2936,6 +2936,7 @@ const RATE_LIMITS = {
     coach_chat: 150, // Flagship chat - mid-tier model
     journal_prompts: 150, // Light - nano model
     risk_alert: 75, // Light - nano model
+    position_check: 75, // Light - nano model (calculator sizing check vs own stats)
     strategy_tagger: 75, // Light - nano model (1125 trades/day with batches of 15)
     csv_mapping: 40, // Light - nano model (Pro-only broker CSV auto-mapping)
     journal_review: 10, // Heavy - mid-tier model, reads journal text + trade stats
@@ -2966,6 +2967,7 @@ const FEATURE_MODELS = {
     coach_chat: "gpt-5.6-luna",
     journal_prompts: "gpt-5.6-luna",
     risk_alert: "gpt-5.6-luna",
+    position_check: "gpt-5.6-luna",
     strategy_tagger: "gpt-5.6-luna",
     csv_mapping: "gpt-5.6-luna",
     journal_review: "gpt-5.6-luna",
@@ -3495,6 +3497,33 @@ Keep it under 150 words. Be direct.`,
         temperature: 0.6,
     };
 }
+function buildPositionCheckPrompt(payload) {
+    const { mode, instrument, accountCurrency, balance, riskAmount, riskPercent, stopDescription, positionDescription, rewardRisk, stats, } = payload;
+    const statsBlock = stats && stats.tradeCount >= 5
+        ? `Their actual results from ${stats.tradeCount} logged trades:
+- Win rate: ${stats.winRate}%
+- Average winner: ${accountCurrency}${stats.avgWin}, average loser: ${accountCurrency}${stats.avgLoss}
+- Worst losing streak: ${stats.maxLossStreak} trades in a row${stats.instrumentTradeCount >= 5 ? `
+- On ${instrument} specifically: ${stats.instrumentTradeCount} trades, ${stats.instrumentWinRate}% win rate` : ""}`
+        : "They have fewer than 5 logged trades, so there is no meaningful personal history yet. Judge the plan on general risk principles and say the picture sharpens once they log more trades.";
+    return {
+        system: `You are a risk manager reviewing a single trade's position sizing BEFORE the trade is taken. You get the planned numbers and the trader's real historical results. Give a verdict in 2-4 short sentences, no headings, no lists.
+
+Judge only what the numbers support:
+- Whether the risk per trade is sensible for the account (0.5-2% is normal; above 3% deserves a direct warning; use their worst losing streak to make drawdown concrete, e.g. "your worst streak of 6 would cost about 12% of the account").
+- Whether the reward-to-risk, if given, fits their win rate (a win rate below 50% needs better than 1:1 to make money; say it with their numbers).
+- Anything clearly off, like a stop so wide the size rounds to zero.
+
+Be direct and specific with their numbers. No praise padding. If the plan is sound, say so in one sentence and stop.`,
+        user: `Planned trade (${mode}): ${instrument}
+Account: ${accountCurrency}${balance} · Risk: ${accountCurrency}${riskAmount} (${riskPercent}% of account)
+Stop: ${stopDescription} · Size: ${positionDescription}${rewardRisk ? ` · Reward-to-risk: 1:${rewardRisk}` : " · No take profit set"}
+
+${statsBlock}`,
+        maxTokens: 300,
+        temperature: 0.4,
+    };
+}
 function buildStrategyTaggerPrompt(payload) {
     const { trades } = payload;
     const tradesList = (trades || []).slice(0, 15).map((t) => {
@@ -3891,6 +3920,7 @@ exports.aiAssist = functions.https.onCall(reported("aiAssist", async (data, cont
         journal_prompts: buildJournalPromptsPrompt,
         trade_review: buildTradeReviewPrompt,
         risk_alert: buildRiskAlertPrompt,
+        position_check: buildPositionCheckPrompt,
         strategy_tagger: buildStrategyTaggerPrompt,
         goal_coach: buildGoalCoachPrompt,
         coaching_tips: buildCoachingTipsPrompt,
@@ -3930,6 +3960,7 @@ exports.aiAssist = functions.https.onCall(reported("aiAssist", async (data, cont
                     coach_chat: "Coach FTJ Chat",
                     journal_prompts: "Journal Prompts",
                     risk_alert: "Risk Alert",
+                    position_check: "Position Check",
                     strategy_tagger: "Strategy Tagger",
                     csv_mapping: "AI Column Mapping",
                     journal_review: "AI Journal Review",
@@ -4555,6 +4586,7 @@ exports.aiStream = functions.https.onRequest(async (req, res) => {
             journal_prompts: buildJournalPromptsPrompt,
             trade_review: buildTradeReviewPrompt,
             risk_alert: buildRiskAlertPrompt,
+            position_check: buildPositionCheckPrompt,
             strategy_tagger: buildStrategyTaggerPrompt,
             goal_coach: buildGoalCoachPrompt,
             coaching_tips: buildCoachingTipsPrompt,

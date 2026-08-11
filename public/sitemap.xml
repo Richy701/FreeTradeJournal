@@ -106,6 +106,13 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://www.freetradejournal.com/position-size-calculator</loc>
+    <lastmod>2026-08-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Information Pages -->
   <url>
     <loc>https://www.freetradejournal.com/documentation</loc>
