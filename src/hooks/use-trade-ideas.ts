@@ -372,7 +372,7 @@ function generateIdeas(
     ideas.push({
       id: 'reduce-worst-symbol',
       title: `Reduce ${worst.symbol} exposure`,
-      insight: `${worst.symbol} is costing you ${fmt(Math.abs(worst.pnl))} with only a ${worst.winRate}% win rate.`,
+      insight: `${worst.symbol} is costing you ${fmt(Math.abs(worst.pnl), false)} with only a ${worst.winRate}% win rate.`,
       nextStep: `Cut your lot size on ${worst.symbol} by half, or remove it from your watchlist for 2 weeks and see if your P&L improves.`,
       sentiment: 'opportunity',
     })
@@ -429,7 +429,7 @@ function generateIdeas(
       ideas.push({
         id: 'let-winners-run',
         title: 'Let your winners run',
-        insight: `Average winner ${fmt(summary.avgWin)} is smaller than average loser ${fmt(summary.avgLoss)}. Current R:R is ${rr.toFixed(1)}:1.`,
+        insight: `Average winner ${fmt(summary.avgWin, false)} is smaller than average loser ${fmt(summary.avgLoss, false)}. Current R:R is ${rr.toFixed(1)}:1.`,
         nextStep: `On your next 10 trades, move your take-profit 20% further than usual and use a trailing stop instead of a fixed exit.`,
         sentiment: 'opportunity',
       })
@@ -455,7 +455,7 @@ function generateIdeas(
     ideas.push({
       id: 'day-schedule',
       title: `Trade more on ${bestDayData.day}s`,
-      insight: `${bestDayData.day}s: ${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}. ${worstDayData.day}s: down ${fmt(Math.abs(worstDayData.pnl))}.`,
+      insight: `${bestDayData.day}s: ${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}. ${worstDayData.day}s: down ${fmt(Math.abs(worstDayData.pnl), false)}.`,
       nextStep: `Block ${worstDayData.day}s as a no-trade or review-only day for one month. Log what you do instead and whether your weekly P&L improves.`,
       sentiment: 'neutral',
     })
