@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { parseCSV, findColumnIndex, parseCSVHeaders, dateFromFileName, detectNonTradeExport } from './csv-parser';
 
 describe('findColumnIndex', () => {
@@ -494,5 +494,52 @@ describe('detectNonTradeExport', () => {
     const r = parseCSV(csv);
     expect(r.success).toBe(false);
     expect(r.errors[0]).toContain('open positions');
+  });
+});
+
+describe('parseCSV — ambiguous date order resolved by future-date check', () => {
+  // Every date in these files has day and month ≤ 12, so detectDayFirst()
+  // cannot decide from digits alone. Frozen clock: 12 Aug 2026.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 12, 12, 0, 0));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const mk = (dates: string[]) =>
+    [
+      'Symbol,Side,Open Price,Close Price,Quantity,PnL,Open Time',
+      ...dates.map((d, i) => `EURUSD,Buy,1.1000,1.1050,1,${50 + i},${d}`),
+    ].join('\n');
+
+  it('flips to day-first when the US reading would put trades in the future', () => {
+    // Real dates: 10 March and 5 June 2026. Read month-first they become
+    // 3 October (future) and 6 May — exactly the Abhinav case.
+    const r = parseCSV(mk(['10/03/2026 09:30:00', '05/06/2026 10:15:00']));
+    expect(r.success).toBe(true);
+    expect(r.trades[0].entryDate).toBe('2026-03-10T09:30:00');
+    expect(r.trades[1].entryDate).toBe('2026-06-05T10:15:00');
+    expect(r.warnings).toBeUndefined();
+  });
+
+  it('keeps the US default when neither reading produces future dates', () => {
+    const r = parseCSV(mk(['05/06/2026 10:15:00']));
+    expect(r.trades[0].entryDate).toBe('2026-05-06T10:15:00');
+  });
+
+  it('warns when trades are future-dated under every reading', () => {
+    // 12 December is in the future whichever way it is read.
+    const r = parseCSV(mk(['12/12/2026 09:30:00', '05/06/2026 10:15:00']));
+    expect(r.success).toBe(true);
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings![0]).toContain('1 trade is dated in the future');
+  });
+
+  it('does not warn about dates within broker-clock tolerance of now', () => {
+    // "Tomorrow" can be legitimate when the broker's timezone runs ahead.
+    const r = parseCSV(mk(['08/13/2026 01:00:00']));
+    expect(r.warnings).toBeUndefined();
   });
 });

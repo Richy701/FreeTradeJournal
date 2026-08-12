@@ -24,6 +24,8 @@ export interface CSVParseResult {
   success: boolean;
   trades: ParsedTrade[];
   errors: string[];
+  /** Non-fatal problems the user should see (e.g. future-dated trades). */
+  warnings?: string[];
   summary: {
     totalRows: number;
     successfulParsed: number;
@@ -294,6 +296,52 @@ function detectDayFirst(dateStrings: string[]): boolean | undefined {
   if (sawDayFirst && !sawMonthFirst) return true;
   if (sawMonthFirst && !sawDayFirst) return false;
   return undefined;
+}
+
+// Broker clocks can legitimately run ahead of the user's (up to ~a day), so
+// only dates further out than this count as "in the future".
+const FUTURE_TOLERANCE_MS = 48 * 60 * 60 * 1000;
+
+// Second chance for files detectDayFirst() can't decide (every date has day and
+// month ≤ 12): if one reading puts trades in the future and the other doesn't,
+// the past-only reading is the right one. A real 10/03 (10 March) file imported
+// in August otherwise defaults to MM/DD and lands on 3 October — a date that
+// hasn't happened. Returns undefined when both or neither reading is future-free.
+function resolveAmbiguousDayFirst(dateStrings: string[]): boolean | undefined {
+  const limit = Date.now() + FUTURE_TOLERANCE_MS;
+  let monthFirstFuture = false;
+  let dayFirstFuture = false;
+  for (const s of dateStrings) {
+    const m = (s || '').trim().match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+    if (!m) continue;
+    const a = parseInt(m[1], 10);
+    const b = parseInt(m[2], 10);
+    let year = parseInt(m[3], 10);
+    if (m[3].length <= 2) year += year < 70 ? 2000 : 1900;
+    if (new Date(year, a - 1, b).getTime() > limit) monthFirstFuture = true;
+    if (new Date(year, b - 1, a).getTime() > limit) dayFirstFuture = true;
+    if (monthFirstFuture && dayFirstFuture) return undefined;
+  }
+  if (monthFirstFuture && !dayFirstFuture) return true;
+  if (dayFirstFuture && !monthFirstFuture) return false;
+  return undefined;
+}
+
+// Post-parse guard for every import path: trades dated in the future are
+// impossible, so surface them instead of letting them sit silently in months
+// nobody looks at (wrong day/month order is the usual cause).
+function flagFutureTrades(result: CSVParseResult): CSVParseResult {
+  const limit = Date.now() + FUTURE_TOLERANCE_MS;
+  const future = result.trades.filter(
+    (t) => new Date(t.entryDate || t.date).getTime() > limit
+  ).length;
+  if (future > 0) {
+    result.warnings = [
+      ...(result.warnings || []),
+      `${future} trade${future === 1 ? ' is' : 's are'} dated in the future — the file's day and month may be swapped. Check the dates after import.`,
+    ];
+  }
+  return result;
 }
 
 // ─── IBKR Detection & Parsing ───────────────────────────────
@@ -1768,6 +1816,10 @@ function parseGenericOrders(lines: string[], headers: string[]): CSVParseResult 
 }
 
 export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fileName?: string }): CSVParseResult {
+  return flagFutureTrades(parseCSVCore(csvContent, options));
+}
+
+function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileName?: string }): CSVParseResult {
   // Strip BOM character that some exports (e.g. Topstep) include
   csvContent = csvContent.replace(/^\uFEFF/, '');
 
@@ -1870,7 +1922,7 @@ export function parseCSV(csvContent: string, options?: { dayFirst?: boolean; fil
           const f = parseCSVLine(lines[i], delimiter);
           if (f[dateCol]) samples.push(f[dateCol]);
         }
-        dayFirst = detectDayFirst(samples);
+        dayFirst = detectDayFirst(samples) ?? resolveAmbiguousDayFirst(samples);
       }
     }
 
@@ -2006,6 +2058,10 @@ export function parseCSVSample(csvContent: string, maxRows: number = 5): string[
 }
 
 export function parseCSVWithMappings(csvContent: string, mappings: Record<string, number>): CSVParseResult {
+  return flagFutureTrades(parseCSVWithMappingsCore(csvContent, mappings));
+}
+
+function parseCSVWithMappingsCore(csvContent: string, mappings: Record<string, number>): CSVParseResult {
   csvContent = csvContent.replace(/^\uFEFF/, '');
 
   const result: CSVParseResult = {
@@ -2049,7 +2105,7 @@ export function parseCSVWithMappings(csvContent: string, mappings: Record<string
         const f = parseCSVLine(lines[i], delimiter);
         if (f[dateCol]) samples.push(f[dateCol]);
       }
-      dayFirst = detectDayFirst(samples);
+      dayFirst = detectDayFirst(samples) ?? resolveAmbiguousDayFirst(samples);
     }
 
     const dates: string[] = [];

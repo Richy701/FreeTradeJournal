@@ -22,6 +22,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.77.3',
+    date: '2026-08-12',
+    summary: 'CSV imports now catch swapped day and month dates.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'CSV imports now catch swapped day and month dates',
+        description: 'Brokers in different countries write dates differently: 10/03 can mean 10 March or October 3. When a file could be read either way, the importer now picks the reading that does not put your trades in the future. And if an import still produces future-dated trades, you get a warning instead of wrong dates sitting silently in your calendar.',
+      },
+    ],
+  },
+  {
     version: '2.77.2',
     date: '2026-08-12',
     summary: 'Pop-up messages got a refresh: color-coded by type, dismissible, and better aligned.',
@@ -2586,4 +2599,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.77.2'
+export const LATEST_CHANGELOG_VERSION = '2.77.3'

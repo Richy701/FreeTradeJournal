@@ -874,6 +874,10 @@ export default function TradeLog() {
           }
         );
 
+        for (const warning of result.warnings || []) {
+          toast.warning(warning, { duration: 10000 });
+        }
+
         // The activation moment: stream an AI first-read of a meaningful import.
         // When it shows, hold the feedback toast — one ask at a time.
         const showInsight = newTrades.length >= 10 && hasAIAccess && !isDemo;
