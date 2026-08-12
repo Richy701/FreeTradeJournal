@@ -404,7 +404,7 @@ export default function PropTracker() {
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
 
   async function runAiAnalysis() {
-    if (accounts.length === 0) { toast.error('Add some accounts first'); return }
+    if (accounts.length === 0) { toast.warning('Add some accounts first'); return }
     setAiLoading(true)
     setAiAnalysis(null)
     // Demo mode: show a pre-written analysis instead of calling the backend.
@@ -461,7 +461,7 @@ export default function PropTracker() {
   async function processImageFiles(files: File[], importType: 'billing' | 'payout', accountId: string) {
     if (!files.length) return
     const invalid = files.find(f => !f.type.startsWith('image/'))
-    if (invalid) { toast.error('Please upload image files only'); return }
+    if (invalid) { toast.warning('Please upload image files only'); return }
     setImportDialog(p => ({ ...p, loading: true, dragOver: false }))
     try {
       const toBase64 = (f: File) => new Promise<string>((resolve, reject) => {
@@ -485,7 +485,7 @@ export default function PropTracker() {
         res.transactions.forEach(tx => allParsed.push(mapTx(tx)))
       }
       if (!allParsed.length) {
-        toast.error('No transactions found in screenshots')
+        toast.warning('No transactions found in screenshots')
         setImportDialog(p => ({ ...p, loading: false }))
         return
       }
@@ -523,7 +523,7 @@ export default function PropTracker() {
   function handleConfirmImport() {
     if (demoGuard('import transactions')) return
     const toImport = importDialog.parsed.filter(tx => tx.keep)
-    if (!toImport.length) { toast.error('No transactions selected'); return }
+    if (!toImport.length) { toast.warning('No transactions selected'); return }
     saveTransactions([...transactions, ...toImport.map(tx => ({
       id: tx.id,
       propAccountId: importDialog.accountId,
@@ -542,7 +542,7 @@ export default function PropTracker() {
 
   function openAddAccount() {
     if (!isPro && accounts.length >= FREE_ACCOUNT_LIMIT) {
-      toast.error(`Free plan is limited to ${FREE_ACCOUNT_LIMIT} prop firm ${FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'}. Upgrade to Pro for unlimited accounts.`)
+      toast.warning(`Free plan is limited to ${FREE_ACCOUNT_LIMIT} prop firm ${FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'}. Upgrade to Pro for unlimited accounts.`)
       return
     }
     setAccountForm(defaultAccountForm())
@@ -580,17 +580,17 @@ export default function PropTracker() {
     const firmName = accountForm.firmName === 'Custom...' ? accountForm.customFirm.trim() : accountForm.firmName
     const sizeRaw = accountForm.accountSizeStr === 'custom' ? accountForm.customSizeStr : accountForm.accountSizeStr
     const accountSize = Number(sizeRaw)
-    if (!firmName) { toast.error('Firm name is required'); return }
-    if (!accountSize || accountSize <= 0) { toast.error('Account size must be greater than 0'); return }
-    if (!accountForm.startDate) { toast.error('Start date is required'); return }
+    if (!firmName) { toast.warning('Firm name is required'); return }
+    if (!accountSize || accountSize <= 0) { toast.warning('Account size must be greater than 0'); return }
+    if (!accountForm.startDate) { toast.warning('Start date is required'); return }
 
     let challengeRules: ChallengeRules | undefined
     if (accountForm.rulesEnabled) {
       const profitTarget = Number(accountForm.profitTarget)
       const maxDailyDrawdown = Number(accountForm.maxDailyDrawdown) || 0
       const maxTotalDrawdown = Number(accountForm.maxTotalDrawdown)
-      if (!profitTarget || profitTarget <= 0) { toast.error('Profit target is required when rules are enabled'); return }
-      if (!maxTotalDrawdown || maxTotalDrawdown <= 0) { toast.error('Max total drawdown is required when rules are enabled'); return }
+      if (!profitTarget || profitTarget <= 0) { toast.warning('Profit target is required when rules are enabled'); return }
+      if (!maxTotalDrawdown || maxTotalDrawdown <= 0) { toast.warning('Max total drawdown is required when rules are enabled'); return }
       challengeRules = {
         profitTarget,
         maxDailyDrawdown,
@@ -662,9 +662,9 @@ export default function PropTracker() {
   function handleSaveTx() {
     if (demoGuard('add transactions')) return
     const amount = Number(txForm.amount)
-    if (!txForm.propAccountId) { toast.error('Select an account'); return }
-    if (!amount || amount <= 0) { toast.error('Amount must be greater than 0'); return }
-    if (!txForm.date) { toast.error('Date is required'); return }
+    if (!txForm.propAccountId) { toast.warning('Select an account'); return }
+    if (!amount || amount <= 0) { toast.warning('Amount must be greater than 0'); return }
+    if (!txForm.date) { toast.warning('Date is required'); return }
 
     saveTransactions([...transactions, {
       id: crypto.randomUUID(),
@@ -712,7 +712,7 @@ export default function PropTracker() {
   function handleSaveBalance() {
     if (demoGuard('update balances')) return
     const balance = Number(balanceDialog.balance)
-    if (isNaN(balance) || balance < 0) { toast.error('Enter a valid balance'); return }
+    if (isNaN(balance) || balance < 0) { toast.warning('Enter a valid balance'); return }
     const tradingDays = Number(balanceDialog.tradingDays) || 0
     const todayPnL = balanceDialog.todayPnL ? Number(balanceDialog.todayPnL) : undefined
 

@@ -38,19 +38,47 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 export async function loadWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>
 ): Promise<{ default: T }> {
+  let mod: { default: T } | undefined;
   try {
-    return await factory();
+    mod = await factory();
   } catch (error) {
-    if (Date.now() - readLastReload() < RELOAD_COOLDOWN_MS) throw error;
-    // Storage blocked (Safari private mode) means the guard can't survive the
-    // reload, so the only safe number of reloads is zero.
-    if (!markReload()) throw error;
-
-    await refreshServiceWorker();
-    window.location.reload();
+    if (!attemptStaleChunkReload()) throw error;
     // Never resolve — the reload is in flight; avoids flashing an error boundary.
     return new Promise<{ default: T }>(() => {});
   }
+  // The vite:preloadError listener preventDefault()s a failure it is already
+  // healing, which makes the import resolve with no module. Suspend forever —
+  // the reload it started is about to replace this document.
+  if (!mod) return new Promise<{ default: T }>(() => {});
+  return mod;
+}
+
+/**
+ * Single reload-or-surface decision shared by every stale-chunk recovery path.
+ * True = a healing reload has been initiated; false = the guard says this
+ * failure must surface (a reload already ran and didn't heal, or storage is
+ * blocked — Safari private mode — so the guard can't survive a reload and the
+ * only safe number of reloads is zero).
+ */
+export function attemptStaleChunkReload(): boolean {
+  if (Date.now() - readLastReload() < RELOAD_COOLDOWN_MS) return false;
+  if (!markReload()) return false;
+  void refreshServiceWorker().then(() => window.location.reload());
+  return true;
+}
+
+/**
+ * Vite fires a cancelable vite:preloadError for every failed chunk or CSS
+ * preload, including dynamic imports that don't go through lazyWithRetry
+ * (firebase-lazy, widget registry). Route them all through the same guard;
+ * preventDefault() stops Vite from rethrowing a failure we're already healing,
+ * so tabs holding a pre-deploy index.html reload instead of logging an
+ * unhandled "Failed to fetch dynamically imported module".
+ */
+export function installStaleChunkReloadListener(): void {
+  window.addEventListener('vite:preloadError', (event) => {
+    if (attemptStaleChunkReload()) event.preventDefault();
+  });
 }
 
 function readLastReload(): number {

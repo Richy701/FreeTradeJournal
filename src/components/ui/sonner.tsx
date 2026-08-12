@@ -3,6 +3,10 @@ import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+// Follows the app's light/dark class so sonner's richColors palettes and its
+// own chrome (close button, action buttons) match the active theme. Colors
+// come entirely from richColors — do not reintroduce bg/text overrides here,
+// they win over the per-type success/error styling and flatten every toast.
 const Toaster = ({ ...props }: ToasterProps) => {
   const [theme, setTheme] = useState<"light" | "dark">(
     document.documentElement.classList.contains("dark") ? "dark" : "light"
@@ -16,24 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     return () => observer.disconnect()
   }, [])
 
-  return (
-    <Sonner
-      theme={theme as ToasterProps["theme"]}
-      className="toaster group"
-      toastOptions={{
-        classNames: {
-          toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-        },
-      }}
-      {...props}
-    />
-  )
+  return <Sonner theme={theme as ToasterProps["theme"]} {...props} />
 }
 
 export { Toaster }

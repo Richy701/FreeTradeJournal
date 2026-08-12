@@ -98,7 +98,7 @@ export default function Profile() {
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (!file.type.startsWith('image/')) { toast.warning('Please select an image file'); return; }
 
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);

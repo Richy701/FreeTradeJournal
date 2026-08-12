@@ -84,13 +84,13 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
   const handleTag = async () => {
     const selectedTrades = trades.filter(t => selected.has(t.id));
     if (selectedTrades.length === 0) {
-      toast.error('Select at least one trade to tag.');
+      toast.warning('Select at least one trade to tag.');
       return;
     }
 
     // Limit to 100 trades max
     if (selectedTrades.length > 100) {
-      toast.error('Maximum 100 trades at once. Please select fewer trades.');
+      toast.warning('Maximum 100 trades at once. Please select fewer trades.');
       return;
     }
 
@@ -184,7 +184,7 @@ export function AIStrategyTagger({ open, onOpenChange, trades, onTagsApplied }: 
       .map(r => ({ id: r.id, strategy: r.strategy }));
 
     if (updates.length === 0) {
-      toast.error('No tags accepted.');
+      toast.warning('No tags accepted.');
       return;
     }
 

@@ -836,7 +836,7 @@ export default function Journal() {
     for (const file of files) {
       if (!file.type.startsWith('image/')) continue;
       if (file.size > 15 * 1024 * 1024) { // generous source cap; we compress below
-        toast.error(`${file.name || 'Image'} is too large (max 15MB)`);
+        toast.warning(`${file.name || 'Image'} is too large (max 15MB)`);
         continue;
       }
       try {

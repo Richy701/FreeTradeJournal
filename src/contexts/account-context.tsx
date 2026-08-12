@@ -159,7 +159,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
       throw new Error('Not available in demo mode');
     }
     if (!isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT) {
-      toast.error(`Free plan is limited to ${FREE_TRADING_ACCOUNT_LIMIT} trading accounts. Upgrade to Pro for unlimited accounts.`);
+      toast.warning(`Free plan is limited to ${FREE_TRADING_ACCOUNT_LIMIT} trading accounts. Upgrade to Pro for unlimited accounts.`);
       throw new Error('Free account limit reached');
     }
     const newAccount: TradingAccount = {

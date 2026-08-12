@@ -604,7 +604,7 @@ export function PerformanceGoals() {
   const updateRiskRule = (rule: RiskRule) => {
     if (demoGuard('manage risk rules')) return
     if (!rule.value || rule.value <= 0) {
-      toast.error('Enter a value greater than zero.')
+      toast.warning('Enter a value greater than zero.')
       return
     }
     let updatedRules: RiskRule[]

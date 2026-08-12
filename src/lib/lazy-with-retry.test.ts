@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { loadWithRetry } from './lazy-with-retry';
+import { loadWithRetry, installStaleChunkReloadListener } from './lazy-with-retry';
 
 const RELOAD_KEY = 'chunk-reload-at';
 
@@ -80,5 +80,44 @@ describe('loadWithRetry', () => {
     } finally {
       setItem.mockRestore();
     }
+  });
+
+  // The vite:preloadError listener preventDefault()s a failure it is healing,
+  // which makes the wrapped import resolve with no module. That must suspend,
+  // not hand React an undefined component.
+  it('suspends instead of resolving when the import yields no module', async () => {
+    const outcome = vi.fn();
+    void loadWithRetry(() => Promise.resolve(undefined as any)).then(outcome, outcome);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(outcome).not.toHaveBeenCalled();
+  });
+});
+
+describe('installStaleChunkReloadListener', () => {
+  beforeEach(() => {
+    reload.mockClear();
+    window.sessionStorage.clear();
+  });
+
+  function dispatchPreloadError(): Event {
+    const event = new Event('vite:preloadError', { cancelable: true });
+    window.dispatchEvent(event);
+    return event;
+  }
+
+  it('cancels the event and reloads on the first stale-chunk failure', async () => {
+    installStaleChunkReloadListener();
+    const event = dispatchPreloadError();
+    expect(event.defaultPrevented).toBe(true);
+    await settle();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets the error surface while the cooldown guard is set', () => {
+    window.sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    installStaleChunkReloadListener();
+    const event = dispatchPreloadError();
+    expect(event.defaultPrevented).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
   });
 });

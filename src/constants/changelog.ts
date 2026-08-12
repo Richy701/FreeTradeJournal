@@ -22,6 +22,30 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.77.2',
+    date: '2026-08-12',
+    summary: 'Pop-up messages got a refresh: color-coded by type, dismissible, and better aligned.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Pop-up messages are now color-coded',
+        description: 'Success messages are green, errors are red, and warnings are amber, in both light and dark mode. Before, every message looked the same regardless of what it was telling you. Reminders about a missed form field or a plan limit now show as amber warnings instead of red errors, so red always means something actually failed.',
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'You can now dismiss pop-up messages yourself',
+        description: 'Hover over any message and a close button appears. On phones, swiping them away still works.',
+      },
+      {
+        type: 'fixed',
+        text: 'The icon in pop-up messages lines up with the title',
+        description: 'On two-line messages the icon used to float between the lines.',
+      },
+    ],
+  },
+  {
     version: '2.77.1',
     date: '2026-08-11',
     summary: 'Mobile layout fixes: the dashboard no longer scrolls sideways on phones.',
@@ -2562,4 +2586,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.77.1'
+export const LATEST_CHANGELOG_VERSION = '2.77.2'

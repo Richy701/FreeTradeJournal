@@ -6,11 +6,16 @@ import App from './App.tsx'
 import './utils/emergency-recovery'
 import { initPostHog } from './lib/posthog'
 import { installThirdPartyErrorFilter } from './lib/suppress-third-party-noise'
+import { installStaleChunkReloadListener } from './lib/lazy-with-retry'
 import { captureReferral } from './lib/referral'
 
 // Register before PostHog init so blocked-TradingView chunk errors are filtered
 // out before its global exception handler sees them.
 installThirdPartyErrorFilter()
+
+// Reload once when a deploy invalidates this tab's chunk hashes, before the
+// failure reaches PostHog as an unhandled rejection.
+installStaleChunkReloadListener()
 
 initPostHog();
 

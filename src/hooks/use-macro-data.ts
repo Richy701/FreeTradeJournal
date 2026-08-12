@@ -21,6 +21,8 @@ export function useMacroData(enabled = true) {
       try {
         const data = await fetchMacroSnapshot()
         if (mountedRef.current) setIndicators(data)
+      } catch {
+        // Network blip on a background refresh — keep the last snapshot.
       } finally {
         if (mountedRef.current) setIsLoading(false)
       }

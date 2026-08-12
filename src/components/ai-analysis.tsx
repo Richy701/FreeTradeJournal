@@ -339,7 +339,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
     }
 
     if (filteredTrades.length < 3) {
-      toast.error('Need at least 3 trades in this period to analyze.');
+      toast.warning('Need at least 3 trades in this period to analyze.');
       return;
     }
 
@@ -383,7 +383,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
       const msg = err?.message || 'Failed to analyze trades';
       trackEvent('ai_analysis_error', { period, message: msg });
       if (msg.includes('Daily') && msg.includes('limit')) {
-        toast.error('Daily limit reached. Resets at midnight UTC.');
+        toast.warning('Daily limit reached. Resets at midnight UTC.');
       } else {
         toast.error(msg);
       }

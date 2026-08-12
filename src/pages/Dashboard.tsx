@@ -271,7 +271,7 @@ export default function Dashboard() {
     const hasPnl = tradeForm.pnl.trim() !== '' && !Number.isNaN(Number(tradeForm.pnl))
     const hasPrices = !!tradeForm.entryPrice && !!tradeForm.exitPrice
     if (!tradeForm.symbol || (!hasPnl && !hasPrices)) {
-      toast.error('Add a P&L amount, or entry and exit prices, to save the trade.')
+      toast.warning('Add a P&L amount, or entry and exit prices, to save the trade.')
       return
     }
     if (demoGuard('save your trades')) return
@@ -431,13 +431,13 @@ export default function Dashboard() {
         });
         if (wrongFileKind) {
           // Column mapping can't rescue these — the closing data isn't in the file.
-          toast('This doesn’t look like a closed-trades export', {
+          toast.warning('This doesn’t look like a closed-trades export', {
             description: NON_TRADE_EXPORT_MESSAGES[wrongFileKind],
             duration: 10000,
           });
         } else if (!isPro && !isDemo) {
           // Nudge free users toward the Pro AI auto-mapper.
-          toast('Unrecognized format', {
+          toast.warning('Unrecognized format', {
             description: 'Map the columns below — or upgrade to Pro to auto-map any broker with AI.',
           });
         }
@@ -467,7 +467,7 @@ export default function Dashboard() {
     const requiredFields = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
     const unmapped = requiredFields.filter(f => mappings[f] === undefined || mappings[f] < 0);
     if (unmapped.length > 0) {
-      toast.error('Missing required mappings', {
+      toast.warning('Missing required mappings', {
         description: `Please map: ${unmapped.join(', ')}`,
       });
       return;

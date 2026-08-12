@@ -709,7 +709,7 @@ export default function TradeLog() {
             .reduce((sum, t) => sum + t.pnl, 0) + newPnl;
           if (todayPnl < -rule.value) {
             violations.push(rule);
-            toast.warning(`Daily loss limit breached`, {
+            toast.error(`Daily loss limit breached`, {
               description: `Today's P&L is -${currencySymbol}${Math.abs(todayPnl).toFixed(2)}, exceeding your ${currencySymbol}${rule.value} limit.`,
               duration: 6000,
             });
@@ -718,7 +718,7 @@ export default function TradeLog() {
 
         if (rule.type === 'maxLossPerTrade' && newPnl < -rule.value) {
           violations.push(rule);
-          toast.warning(`Per-trade loss limit breached`, {
+          toast.error(`Per-trade loss limit breached`, {
             description: `This trade lost ${currencySymbol}${Math.abs(newPnl).toFixed(2)}, exceeding your ${currencySymbol}${rule.value} limit.`,
             duration: 6000,
           });
@@ -780,13 +780,13 @@ export default function TradeLog() {
         });
         if (wrongFileKind) {
           // Column mapping can't rescue these — the closing data isn't in the file.
-          toast('This doesn’t look like a closed-trades export', {
+          toast.warning('This doesn’t look like a closed-trades export', {
             description: NON_TRADE_EXPORT_MESSAGES[wrongFileKind],
             duration: 10000,
           });
         } else if (!isPro && !isDemo) {
           // Nudge free users toward the Pro AI auto-mapper.
-          toast('Unrecognized format', {
+          toast.warning('Unrecognized format', {
             description: 'Map the columns below — or upgrade to Pro to auto-map any broker with AI.',
           });
         }
@@ -919,7 +919,7 @@ export default function TradeLog() {
     const requiredFields = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
     const unmapped = requiredFields.filter(f => mappings[f] === undefined || mappings[f] < 0);
     if (unmapped.length > 0) {
-      toast.error('Missing required mappings', {
+      toast.warning('Missing required mappings', {
         description: `Please map: ${unmapped.join(', ')}`,
       });
       return;

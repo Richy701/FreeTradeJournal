@@ -258,6 +258,14 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     display: none;                /* Chrome/Safari */
   }
 
+  /* Sonner centers the status icon against the whole toast, which floats the
+     tick between the lines on title + description toasts. Pin it to the title
+     line; 2px nudge optically centers the 16px icon on the 19.5px title line. */
+  [data-sonner-toast][data-styled='true'] [data-icon] {
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
   /* Notch/home-indicator clearance for full-screen pages (auth, PWA).
      Backed by --pwa-safe-top/bottom, which resolve to env(safe-area-inset-*)
      in standalone display mode and 0px in the browser. */

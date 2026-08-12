@@ -16,7 +16,7 @@ import { ScrollToTop } from '@/components/scroll-to-top';
 const FeedbackListener = lazyWithRetry(() => import('@/components/feedback-listener').then(m => ({ default: m.FeedbackListener })));
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Button } from '@/components/ui/button';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 const Analytics = lazy(() => import('@vercel/analytics/react').then(m => ({ default: m.Analytics })));
 const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m => ({ default: m.SpeedInsights })));
 // Consent banner and PWA prompts render on delay/conditions anyway — lazy-load
@@ -81,14 +81,6 @@ const Calculator = lazyWithRetry(() => import('@/pages/Calculator'));
 const FirmJournalPage = lazyWithRetry(() => import('@/pages/FirmJournalPage'));
 const NotFound = lazyWithRetry(() => import('@/pages/NotFound'));
 
-const toastOptions = {
-  style: {
-    background: 'hsl(var(--background))',
-    color: 'hsl(var(--foreground))',
-    border: '1px solid hsl(var(--border))',
-  },
-};
-
 function ReferralTracker() {
   useReferralTracker();
   return null;
@@ -114,21 +106,21 @@ function App() {
             <ScrollToTop />
             <SEOMeta />
             <StructuredData />
-            <Toaster
-              richColors
-              position="top-right"
-              toastOptions={toastOptions}
-            />
+            <Toaster richColors closeButton position="top-right" />
             <Suspense fallback={null}>
               <Analytics />
               <SpeedInsights />
             </Suspense>
-            <Suspense fallback={null}>
-              <CookieConsent />
-              <PWAInstallPrompt />
-              <PWAUpdateNotification />
-              <FeedbackListener />
-            </Suspense>
+            {/* Outside the main boundary below, so a crash here must not
+                unmount the app: swallow it after ErrorBoundary reports it. */}
+            <ErrorBoundary label="overlay widgets" fallback={() => null}>
+              <Suspense fallback={null}>
+                <CookieConsent />
+                <PWAInstallPrompt />
+                <PWAUpdateNotification />
+                <FeedbackListener />
+              </Suspense>
+            </ErrorBoundary>
             <ErrorBoundary
               fallback={(_, reset) => (
                 <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-6 text-center">
