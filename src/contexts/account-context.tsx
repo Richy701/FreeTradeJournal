@@ -7,7 +7,7 @@ import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useSync } from '@/contexts/sync-context';
 import { getChangeVersion, onSyncChange, notifyDataChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
-import { isLegacyRecord } from '@/lib/account-scope';
+import { belongsToAccount, isLegacyRecord } from '@/lib/account-scope';
 
 // Free-plan cap on trading accounts. Enforced here (the only write path) —
 // UI gates in Settings are messaging, not enforcement.
@@ -28,6 +28,11 @@ export interface TradingAccount {
   brokerTimezone?: string;
 }
 
+// Persisted active-account-id sentinel for the combined view: '__all__:<currency>'.
+// Combined view is per-currency on purpose — the app has no FX conversion layer,
+// so summing accounts with different currencies would produce a wrong number.
+const ALL_ACCOUNTS_PREFIX = '__all__:';
+
 interface AccountContextType {
   accounts: TradingAccount[];
   activeAccount: TradingAccount | null;
@@ -36,6 +41,17 @@ interface AccountContextType {
   updateAccount: (id: string, updates: Partial<TradingAccount>) => void;
   deleteAccount: (id: string) => void;
   loading: boolean;
+  // Combined "All accounts" view (read-only aggregation across one currency).
+  // activeAccount stays set to a member of the group so currency formatting and
+  // any un-migrated single-account code keep working; data reads must use
+  // scopeAccounts/isInScope instead of activeAccount.id.
+  isAllAccounts: boolean;
+  allAccountsCurrency: string | null;
+  setAllAccounts: (currency: string) => void;
+  scopeAccounts: TradingAccount[];
+  // Sum of starting balances across the scope (0 when none are set)
+  scopeStartingBalance: number;
+  isInScope: (record: unknown) => boolean;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -60,6 +76,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
   const { initialSyncDone } = useSync();
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [activeAccount, setActiveAccountState] = useState<TradingAccount | null>(null);
+  const [allAccountsCurrency, setAllAccountsCurrency] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [syncVersion, setSyncVersion] = useState(() => getChangeVersion());
@@ -110,7 +127,17 @@ export function AccountProvider({ children }: AccountProviderProps) {
       }
       setAccounts(parsedAccounts);
 
-      if (savedActiveAccountId) {
+      if (savedActiveAccountId?.startsWith(ALL_ACCOUNTS_PREFIX)) {
+        const currency = savedActiveAccountId.slice(ALL_ACCOUNTS_PREFIX.length);
+        const group = parsedAccounts.filter((acc: TradingAccount) => acc.currency === currency);
+        if (group.length > 0) {
+          setAllAccountsCurrency(currency);
+          setActiveAccountState(group.find((acc: TradingAccount) => acc.isDefault) || group[0]);
+        } else {
+          const defaultAcc = parsedAccounts.find((acc: TradingAccount) => acc.isDefault);
+          setActiveAccountState(defaultAcc || parsedAccounts[0] || null);
+        }
+      } else if (savedActiveAccountId) {
         const activeAcc = parsedAccounts.find((acc: TradingAccount) => acc.id === savedActiveAccountId);
         if (activeAcc) {
           setActiveAccountState(activeAcc);
@@ -150,9 +177,40 @@ export function AccountProvider({ children }: AccountProviderProps) {
   }, [accounts, loading, userId]);
 
   const setActiveAccount = (account: TradingAccount) => {
+    setAllAccountsCurrency(null);
     setActiveAccountState(account);
     UserStorage.setItem(userId, 'active-account-id', account.id);
   };
+
+  const setAllAccounts = (currency: string) => {
+    const group = accounts.filter(acc => acc.currency === currency);
+    if (group.length === 0) return;
+    setAllAccountsCurrency(currency);
+    // Keep activeAccount inside the group so currency formatting stays correct
+    if (!activeAccount || activeAccount.currency !== currency) {
+      setActiveAccountState(group.find(acc => acc.isDefault) || group[0]);
+    }
+    UserStorage.setItem(userId, 'active-account-id', ALL_ACCOUNTS_PREFIX + currency);
+  };
+
+  const isAllAccounts = allAccountsCurrency !== null;
+
+  const scopeAccounts = useMemo(() => {
+    if (allAccountsCurrency !== null) {
+      return accounts.filter(acc => acc.currency === allAccountsCurrency);
+    }
+    return activeAccount ? [activeAccount] : [];
+  }, [accounts, activeAccount, allAccountsCurrency]);
+
+  const scopeStartingBalance = useMemo(
+    () => scopeAccounts.reduce((sum, acc) => sum + (acc.balance || 0), 0),
+    [scopeAccounts]
+  );
+
+  const isInScope = useMemo(
+    () => (record: unknown) => scopeAccounts.some(acc => belongsToAccount(record as any, acc.id)),
+    [scopeAccounts]
+  );
 
   const addAccount = (accountData: Omit<TradingAccount, 'id' | 'createdAt'>): TradingAccount => {
     if (demoGuard('manage accounts')) {
@@ -276,8 +334,14 @@ export function AccountProvider({ children }: AccountProviderProps) {
     addAccount,
     updateAccount,
     deleteAccount,
-    loading
-  }), [accounts, activeAccount, setActiveAccount, addAccount, updateAccount, deleteAccount, loading]);
+    loading,
+    isAllAccounts,
+    allAccountsCurrency,
+    setAllAccounts,
+    scopeAccounts,
+    scopeStartingBalance,
+    isInScope
+  }), [accounts, activeAccount, setActiveAccount, addAccount, updateAccount, deleteAccount, loading, isAllAccounts, allAccountsCurrency, setAllAccounts, scopeAccounts, scopeStartingBalance, isInScope]);
 
   return (
     <AccountContext.Provider value={value}>

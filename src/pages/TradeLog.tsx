@@ -158,7 +158,7 @@ export default function TradeLog() {
   const { isPro, hasAIAccess } = useProStatus();
   // Freshly imported trades queued for the AI first-read dialog
   const [importInsightTrades, setImportInsightTrades] = useState<any[] | null>(null);
-  const { activeAccount } = useAccounts();
+  const { activeAccount, isAllAccounts, scopeAccounts, scopeStartingBalance, isInScope } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries } = useDemoData();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -372,7 +372,21 @@ export default function TradeLog() {
 
   // This useEffect is replaced by the enhanced loading simulation below
 
+  // The combined "All accounts" view is read-only: saveTrades merges against a
+  // single account's complement, so writing the aggregated set would duplicate
+  // or drop other accounts' trades.
+  const guardAllAccounts = () => {
+    if (!isAllAccounts) return false;
+    toast.warning('Viewing all accounts. Switch to a single account to add or edit trades.');
+    return true;
+  };
+
+  // Which account a trade belongs to, for row attribution in the combined view
+  const accountNameFor = (trade: any) =>
+    scopeAccounts.find(acc => belongsToAccount(trade, acc.id))?.name;
+
   const saveTrades = (updatedTrades: Trade[]) => {
+    if (guardAllAccounts()) return;
     setTrades(updatedTrades);
     calculateQuickStats(updatedTrades);
 
@@ -634,6 +648,7 @@ export default function TradeLog() {
   };
 
   const handleEdit = (trade: Trade) => {
+    if (guardAllAccounts()) return;
     setEditingTrade(trade);
     const hasAutoRR = trade.stopLoss && trade.takeProfit;
     form.reset({
@@ -739,6 +754,7 @@ export default function TradeLog() {
   };
 
   const processCsvFile = async (file: File) => {
+    if (guardAllAccounts()) return;
     setCsvUploadState({ isUploading: true });
 
     try {
@@ -1033,7 +1049,7 @@ export default function TradeLog() {
     const grossProfit = winners.reduce((s, t) => s + t.pnl, 0);
     const grossLoss = Math.abs(losers.reduce((s, t) => s + t.pnl, 0));
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? 999 : 0);
-    const accountSize = activeAccount?.balance || settings.accountSize || 10000;
+    const accountSize = scopeStartingBalance || settings.accountSize || 10000;
     const pnlPct = Math.abs((totalPnL / accountSize) * 100);
 
     setQuickStats({
@@ -1107,9 +1123,10 @@ export default function TradeLog() {
             return tradeWithDates;
           });
           
-          // Filter trades by active account
+          // Filter trades to the account scope (single account, or the
+          // currency group when the combined "All accounts" view is active)
           const filteredTrades = tradesWithDates.filter((trade: any) =>
-            !activeAccount || belongsToAccount(trade, activeAccount.id)
+            scopeAccounts.length === 0 || isInScope(trade)
           );
           
           setTrades(filteredTrades);
@@ -1174,7 +1191,7 @@ export default function TradeLog() {
       setIsLoading(false);
     };
     loadTrades();
-  }, [activeAccount]);
+  }, [activeAccount, isAllAccounts, scopeAccounts]);
 
   // Enhanced loading state
   if (isLoading) {
@@ -1281,6 +1298,7 @@ export default function TradeLog() {
               <Button
                 size="sm"
                 onClick={() => {
+                  if (guardAllAccounts()) return;
                   setEditingTrade(null);
                   form.reset(newTradeFormValues());
                   setIsDialogOpen(true);
@@ -1406,7 +1424,7 @@ export default function TradeLog() {
         onOpenChange={setIsPdfDialogOpen}
         trades={trades}
         journalEntries={getJournalEntries()}
-        accountName={activeAccount?.name}
+        accountName={isAllAccounts ? 'All accounts' : activeAccount?.name}
       />
 
       {/* Add Trade Dialog */}
@@ -2403,7 +2421,7 @@ export default function TradeLog() {
                 {/* CTAs */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    onClick={() => { setEditingTrade(null); form.reset(newTradeFormValues()); setIsDialogOpen(true); }}
+                    onClick={() => { if (guardAllAccounts()) return; setEditingTrade(null); form.reset(newTradeFormValues()); setIsDialogOpen(true); }}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
@@ -2526,7 +2544,12 @@ export default function TradeLog() {
                             ) : null;
                           })()}
                         </TableCell>
-                        <TableCell className="font-bold text-base">{trade.symbol}</TableCell>
+                        <TableCell className="font-bold text-base">
+                          {trade.symbol}
+                          {isAllAccounts && accountNameFor(trade) && (
+                            <div className="text-[10px] font-normal text-muted-foreground truncate max-w-[120px]">{accountNameFor(trade)}</div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge 
                             variant="outline" 
@@ -2659,6 +2682,7 @@ export default function TradeLog() {
                               const d = new Date(trade.exitTime);
                               return (d.getHours() !== 0 || d.getMinutes() !== 0) ? ` ${format(d, 'h:mm a')}` : '';
                             })()}
+                            {isAllAccounts && accountNameFor(trade) && ` · ${accountNameFor(trade)}`}
                           </p>
                         </div>
                         <div

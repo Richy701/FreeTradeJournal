@@ -43,7 +43,7 @@ export function SectionCards() {
   // Get theme colors and demo data
   const { themeColors } = useThemePresets()
   const { formatCurrency: formatCurrencyFromSettings, getCurrencySymbol, settings } = useSettings()
-  const { activeAccount } = useAccounts()
+  const { scopeStartingBalance } = useAccounts()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()
   const { mode: pnlMode, formatPnl } = usePnlDisplay()
@@ -110,11 +110,13 @@ export function SectionCards() {
 
   const formatPercentage = (value: number) => `${value.toFixed(1)}%`
 
-  const accountBalance = (activeAccount?.balance || settings.accountSize || 10000) + allTimePnL
-  const balancePositive = accountBalance >= (activeAccount?.balance || settings.accountSize || 10000)
+  // Starting balance across the account scope (summed in the "All accounts" view)
+  const startingBalance = scopeStartingBalance || settings.accountSize || 10000
+  const accountBalance = startingBalance + allTimePnL
+  const balancePositive = accountBalance >= startingBalance
 
   const pnlPositive = metrics.totalPnL >= 0
-  const pnlPct = Math.abs((metrics.totalPnL / (activeAccount?.balance || settings.accountSize || 10000)) * 100)
+  const pnlPct = Math.abs((metrics.totalPnL / startingBalance) * 100)
   const winRateGood = metrics.winRate >= 50
   const winCount = trades.filter((t: Trade) => t.pnl > 0).length
   const lossCount = trades.filter((t: Trade) => t.pnl < 0).length

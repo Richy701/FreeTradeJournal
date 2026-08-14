@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { trackEvent } from '@/lib/analytics';
-import { belongsToAccount } from '@/lib/account-scope';
 import { Badge } from '@/components/ui/badge';
 import { 
   TrendUp, 
@@ -240,23 +239,13 @@ function parseLocalDateInput(s: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// Mirrors the trade-log account filter: an entry belongs to the active account,
-// and legacy account-less entries fall back to a "default" account.
-function matchesActiveAccount(
-  entry: { accountId?: string },
-  account: { id: string } | null
-): boolean {
-  if (!account) return true;
-  return belongsToAccount(entry, account.id);
-}
-
 export default function Journal() {
   const { themeColors, alpha } = useThemePresets();
   const { formatCurrency, getCurrencySymbol } = useSettings();
   const { isDemo, user } = useAuth();
   const demoGuard = useDemoGuard();
   const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
-  const { accounts, activeAccount, loading: accountsLoading } = useAccounts();
+  const { accounts, activeAccount, loading: accountsLoading, isAllAccounts, scopeAccounts, isInScope } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -454,7 +443,7 @@ export default function Journal() {
         if (cancelled) return;
         setTotalEntryCount(all.length);
         const mine = all
-          .filter((e: any) => matchesActiveAccount(e, activeAccount))
+          .filter((e: any) => scopeAccounts.length === 0 || isInScope(e))
           .map((e: any) => ({ ...e, date: new Date(e.date) }));
         setEntries(mine);
       } catch (error) {
@@ -469,7 +458,7 @@ export default function Journal() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, activeAccount, accountsLoading, refreshKey]);
+  }, [isDemo, activeAccount, scopeAccounts, accountsLoading, refreshKey]);
 
   // Load trades scoped to the active account (mirrors the entry scoping above);
   // re-runs on account switch and when trades change elsewhere.
@@ -492,7 +481,7 @@ export default function Journal() {
         const storedTrades = userStorage.getItem('trades');
         if (storedTrades) {
           const parsedTrades = JSON.parse(storedTrades)
-            .filter((trade: any) => !activeAccount || belongsToAccount(trade, activeAccount.id))
+            .filter((trade: any) => scopeAccounts.length === 0 || isInScope(trade))
             .map((trade: any) => ({
               ...trade,
               entryTime: new Date(trade.entryTime),
@@ -510,7 +499,7 @@ export default function Journal() {
 
     loadTrades();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, activeAccount, accountsLoading, refreshKey]);
+  }, [isDemo, activeAccount, scopeAccounts, accountsLoading, refreshKey]);
 
   // Deep link: /journal?trade=<id>. If this trade already has a journal entry,
   // open it for editing instead of starting a blank one (which previously created
@@ -584,8 +573,18 @@ export default function Journal() {
     return { images, unresolved };
   };
 
+  // The combined "All accounts" view is read-only: persistEntries merges
+  // against the single active account, so writes there could misfile or
+  // resurrect other accounts' entries.
+  const guardAllAccounts = () => {
+    if (!isAllAccounts) return false;
+    toast.warning('Viewing all accounts. Switch to a single account to add or edit journal entries.');
+    return true;
+  };
+
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;
+    if (guardAllAccounts()) return;
     if (demoGuard('save journal entries')) return;
 
     // Block creating NEW entries past the free cap (editing existing is allowed).
@@ -925,6 +924,7 @@ export default function Journal() {
   };
 
   const deleteEntry = async (entryId: string) => {
+    if (guardAllAccounts()) return;
     if (demoGuard('delete journal entries')) return;
     if (confirm('Are you sure you want to delete this journal entry?')) {
       const target = entries.find(entry => entry.id === entryId);

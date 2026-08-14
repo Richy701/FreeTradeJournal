@@ -10,10 +10,12 @@ export type PnlDisplayMode = 'currency' | 'percent';
 // notional stored in trade.pnlPercentage.
 export function usePnlDisplay() {
   const { settings, updateSettings, formatCurrency } = useSettings();
-  const { activeAccount } = useAccounts();
+  const { scopeStartingBalance } = useAccounts();
 
   const mode: PnlDisplayMode = settings.pnlDisplayMode === 'percent' ? 'percent' : 'currency';
-  const accountBalance = activeAccount?.balance || settings.accountSize || 10000;
+  // Starting balance across the account scope — the single active account, or
+  // the summed currency group in the combined "All accounts" view
+  const accountBalance = scopeStartingBalance || settings.accountSize || 10000;
 
   const setMode = useCallback(
     (m: PnlDisplayMode) => updateSettings({ pnlDisplayMode: m }),

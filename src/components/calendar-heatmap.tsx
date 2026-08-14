@@ -7,6 +7,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { usePnlDisplay } from '@/hooks/use-pnl-display'
 import { notifyDataChange } from '@/contexts/sync-context'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
@@ -108,8 +109,9 @@ export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors, alpha } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
-  const { activeAccount } = useAccounts()
+  const { activeAccount, isAllAccounts, scopeAccounts, isInScope } = useAccounts()
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
+  const { mode: pnlMode, formatPnl, accountBalance } = usePnlDisplay()
   const { isPro } = useProStatus()
   const demoGuard = useDemoGuard()
   const userStorage = useUserStorage()
@@ -173,14 +175,15 @@ export function CalendarHeatmap() {
       }))
     }
     
-    // Use localStorage data for real users
+    // Use localStorage data for real users, filtered to the account scope
+    // (single account, or the currency group in the "All accounts" view)
     const storedTrades = userStorage.getItem('trades')
-    if (!storedTrades || !activeAccount) return []
-    
+    if (!storedTrades || scopeAccounts.length === 0) return []
+
     try {
       const parsedTrades = JSON.parse(storedTrades)
       return parsedTrades
-        .filter((trade: any) => belongsToAccount(trade, activeAccount.id))
+        .filter((trade: any) => isInScope(trade))
         .map((trade: any) => ({
           ...trade,
           entryTime: new Date(trade.entryTime),
@@ -189,7 +192,7 @@ export function CalendarHeatmap() {
     } catch {
       return []
     }
-  }, [activeAccount, isDemo, getTrades, refreshKey])
+  }, [activeAccount, scopeAccounts, isInScope, isDemo, getTrades, refreshKey])
 
   // Get journal entries from demo data or localStorage
   const journalEntries = useMemo(() => {
@@ -304,8 +307,17 @@ export function CalendarHeatmap() {
     setIsTradeDialogOpen(true)
   }
 
+  // In the combined "All accounts" view there is no single account to stamp a
+  // new record onto, so quick-adds are disabled.
+  const guardAllAccounts = () => {
+    if (!isAllAccounts) return false
+    toast.warning('Viewing all accounts. Switch to a single account to add trades or journal entries.')
+    return true
+  }
+
   const handleSaveJournal = () => {
     if (!selectedDateForTrade || !journalNote.trim()) return
+    if (guardAllAccounts()) return
     if (demoGuard('save journal entries')) return
 
     // Read ALL entries from localStorage — getJournalEntries() is filtered to
@@ -366,6 +378,7 @@ export function CalendarHeatmap() {
     const hasPrices = Boolean(tradeForm.entryPrice && tradeForm.exitPrice)
     const hasManualPnl = tradeForm.pnl.trim() !== ''
     if (!selectedDateForTrade || !tradeForm.symbol || (!hasPrices && !hasManualPnl)) return
+    if (guardAllAccounts()) return
     if (demoGuard('save your trades')) return
 
     const entryPrice = parseFloat(tradeForm.entryPrice) || 0
@@ -737,13 +750,25 @@ export function CalendarHeatmap() {
 
   // Compact P&L for tight spots (day cells, weekly column, mobile popover) —
   // uses the account currency, symbol always in front (e.g. +€820, -€1.2k)
-  const fmtCompact = (n: number, signed = true) => {
+  const fmtCompactCurrency = (n: number, signed = true) => {
     const symbol = getCurrencySymbol()
     const sign = signed && n > 0 ? '+' : n < 0 ? '-' : ''
     const a = Math.abs(n)
     const num = a >= 1000 ? `${(a / 1000).toFixed(1)}k` : a.toFixed(0)
     return `${sign}${symbol}${num}`
   }
+
+  // Compact percent-of-starting-balance, same denominator as the $/% toggle.
+  // Sub-1% days get two decimals so a small loss reads -0.05%, not -0.0%.
+  const fmtCompactPct = (n: number, signed = true) => {
+    const pct = accountBalance > 0 ? (Math.abs(n) / accountBalance) * 100 : 0
+    const sign = signed && n > 0 ? '+' : n < 0 ? '-' : ''
+    const decimals = pct >= 10 ? 0 : pct >= 1 ? 1 : 2
+    return `${sign}${pct.toFixed(decimals)}%`
+  }
+
+  const fmtCompact = (n: number, signed = true) =>
+    pnlMode === 'percent' ? fmtCompactPct(n, signed) : fmtCompactCurrency(n, signed)
 
   const today = new Date()
   const currentMonthName = MONTHS[currentDate.getMonth()]
@@ -871,13 +896,13 @@ export function CalendarHeatmap() {
           <div className="px-3 sm:px-4 border-r border-border/40 last:border-r-0">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Monthly P&L</div>
             <div className="text-lg sm:text-2xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
-              {formatCurrency(monthlyStats.totalPnL)}
+              {formatPnl(monthlyStats.totalPnL)}
             </div>
             {monthlyStats.bestDay && (
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1">
-                <span>Best <span className="font-semibold" style={{color: themeColors.profit}}>{formatCurrency(monthlyStats.bestDay.pnl)}</span></span>
+                <span>Best <span className="font-semibold" style={{color: themeColors.profit}}>{formatPnl(monthlyStats.bestDay.pnl)}</span></span>
                 {monthlyStats.worstDay && monthlyStats.worstDay.pnl < 0 && (
-                  <span>Worst <span className="font-semibold" style={{color: themeColors.loss}}>{formatCurrency(monthlyStats.worstDay.pnl)}</span></span>
+                  <span>Worst <span className="font-semibold" style={{color: themeColors.loss}}>{formatPnl(monthlyStats.worstDay.pnl)}</span></span>
                 )}
               </div>
             )}
@@ -1015,11 +1040,13 @@ export function CalendarHeatmap() {
                               <div className="flex items-center justify-center h-full">
                                 {/* Mobile */}
                                 <div className={cn("sm:hidden text-[10px] font-black tracking-tighter leading-none drop-shadow-sm px-0.5", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
-                                  {Math.abs(day.pnl) >= 1000
-                                    ? `${day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl/1000).toFixed(1)}k`
-                                    : Math.abs(day.pnl) >= 10
-                                      ? `${day.pnl >= 0 ? '+' : '-'}${Math.abs(Math.round(day.pnl))}`
-                                      : `${day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl).toFixed(1)}`
+                                  {pnlMode === 'percent'
+                                    ? fmtCompactPct(day.pnl)
+                                    : Math.abs(day.pnl) >= 1000
+                                      ? `${day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl/1000).toFixed(1)}k`
+                                      : Math.abs(day.pnl) >= 10
+                                        ? `${day.pnl >= 0 ? '+' : '-'}${Math.abs(Math.round(day.pnl))}`
+                                        : `${day.pnl >= 0 ? '+' : '-'}${Math.abs(day.pnl).toFixed(1)}`
                                   }
                                 </div>
                                 {/* Desktop */}
@@ -1148,7 +1175,9 @@ export function CalendarHeatmap() {
                   color: isLightColor(roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor) ? '#000' : '#fff',
                 }}
               >
-                {fmtCompact(hoverDay.pnl)}
+                {accountBalance > 0
+                  ? `${fmtCompactCurrency(hoverDay.pnl)} · ${fmtCompactPct(hoverDay.pnl)}`
+                  : fmtCompactCurrency(hoverDay.pnl)}
               </span>
             </div>
 

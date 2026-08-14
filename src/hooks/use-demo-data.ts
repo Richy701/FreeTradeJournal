@@ -4,7 +4,6 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { useCallback, useEffect, useState } from 'react';
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context';
-import { belongsToAccount } from '@/lib/account-scope';
 import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing';
 import { windowAnalyticsTrades } from '@/lib/analytics-window';
 
@@ -22,7 +21,7 @@ import { windowAnalyticsTrades } from '@/lib/analytics-window';
 export function useDemoData() {
   const { isDemo } = useAuth();
   const { isPro, isLoading: isProLoading } = useProStatus();
-  const { activeAccount } = useAccounts();
+  const { scopeAccounts, isInScope } = useAccounts();
   const userStorage = useUserStorage();
 
   // Subscribe to sync changes — version bump triggers re-render
@@ -44,13 +43,14 @@ export function useDemoData() {
       }
     }
 
-    // Filter trades by active account if account exists
-    if (activeAccount) {
-      return trades.filter((trade: any) => belongsToAccount(trade, activeAccount.id));
+    // Filter trades to the account scope (single account, or the currency
+    // group when the combined "All accounts" view is active)
+    if (scopeAccounts.length > 0) {
+      return trades.filter((trade: any) => isInScope(trade));
     }
 
     return trades;
-  }, [isDemo, userStorage, activeAccount, version]);
+  }, [isDemo, userStorage, scopeAccounts, isInScope, version]);
 
   // Analytics views (dashboard widgets, header stats) read through this instead
   // of getTrades: free accounts get the trailing FREE_ANALYTICS_WINDOW_DAYS
@@ -77,13 +77,13 @@ export function useDemoData() {
       }
     }
 
-    // Filter journal entries by active account if account exists
-    if (activeAccount) {
-      return entries.filter((entry: any) => belongsToAccount(entry, activeAccount.id));
+    // Filter journal entries to the account scope
+    if (scopeAccounts.length > 0) {
+      return entries.filter((entry: any) => isInScope(entry));
     }
 
     return entries;
-  }, [isDemo, userStorage, activeAccount, version]);
+  }, [isDemo, userStorage, scopeAccounts, isInScope, version]);
 
   return {
     isDemo,

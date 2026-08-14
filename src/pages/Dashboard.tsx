@@ -122,7 +122,7 @@ export default function Dashboard() {
   const { user, isDemo, exitDemoMode } = useAuth()
   const demoGuard = useDemoGuard()
   const { isPro, hasAIAccess } = useProStatus()
-  const { activeAccount } = useAccounts()
+  const { activeAccount, isAllAccounts, scopeStartingBalance } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings, getCurrencySymbol } = useSettings()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const userStorage = useUserStorage()
@@ -151,9 +151,9 @@ export default function Dashboard() {
   const accountBalance = useMemo(() => {
     const tradesData = getTrades()
     const totalPnL = tradesData.reduce((sum: number, t: any) => sum + (Number(t.pnl) || 0), 0)
-    return (activeAccount?.balance || settings.accountSize || 10000) + totalPnL
+    return (scopeStartingBalance || settings.accountSize || 10000) + totalPnL
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getTrades, activeAccount, settings.accountSize, dataVersion])
+  }, [getTrades, activeAccount, scopeStartingBalance, settings.accountSize, dataVersion])
   const tradeCount = useMemo(() => getTrades().length, [getTrades, dataVersion])
   // Windowed trades + count of older trades excluded (0 for Pro/demo) — one
   // computation shared by the header stats and the "last 30 days" notice
@@ -265,6 +265,14 @@ export default function Dashboard() {
     return instrumentGroupsFor(market, symbol);
   }
 
+  // The combined "All accounts" view is read-only — there is no single account
+  // to stamp a new trade onto.
+  const guardAllAccounts = () => {
+    if (!isAllAccounts) return false
+    toast.warning('Viewing all accounts. Switch to a single account to add or import trades.')
+    return true
+  }
+
   const handleSaveTrade = () => {
     // P&L-only quick adds are valid (the form copy invites them); prices are
     // the optional path. Never bail silently — the save button looked enabled.
@@ -274,6 +282,7 @@ export default function Dashboard() {
       toast.warning('Add a P&L amount, or entry and exit prices, to save the trade.')
       return
     }
+    if (guardAllAccounts()) return
     if (demoGuard('save your trades')) return
 
     const savedTrades = userStorage.getItem('trades')
@@ -389,6 +398,7 @@ export default function Dashboard() {
   }
 
   const processCsvFile = async (file: File) => {
+    if (guardAllAccounts()) return;
     setCsvUploadState({ isUploading: true });
 
     try {

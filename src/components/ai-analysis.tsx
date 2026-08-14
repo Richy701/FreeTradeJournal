@@ -268,7 +268,10 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
   const { getCurrencySymbol } = useSettings();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { user, isDemo } = useAuth();
-  const { activeAccount } = useAccounts();
+  const { activeAccount, isAllAccounts, allAccountsCurrency } = useAccounts();
+  // Cache per scope: the combined view analyzes a different trade set than the
+  // member account, so it must not share the single account's cache slot.
+  const cacheAccountId = isAllAccounts ? `all-${allAccountsCurrency}` : activeAccount?.id;
   const { streamText, isStreaming, startStream, meta, abort } = useStreamingAI();
   const [period, setPeriod] = useState<Period>('last30');
   const [result, setResult] = useState<CachedAnalysis | null>(null);
@@ -291,10 +294,10 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
     }
     // Account-scoped: switching accounts must never keep showing the previous
     // account's analysis, so a missing cache clears the panel.
-    const cached = getCachedAnalysis(user?.uid ?? null, activeAccount?.id);
+    const cached = getCachedAnalysis(user?.uid ?? null, cacheAccountId);
     setResult(cached);
     if (cached) setPeriod(cached.period);
-  }, [isDemo, user?.uid, activeAccount?.id]);
+  }, [isDemo, user?.uid, cacheAccountId]);
 
   useEffect(() => {
     if (meta?.freeUsage) updateFreeAiQuota(meta.freeUsage);
@@ -307,7 +310,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
     setResult(prev => {
       if (!prev) return prev;
       const next = { ...prev, usage: meta.usage };
-      if (!isDemo) setCachedAnalysis(user?.uid ?? null, activeAccount?.id, next);
+      if (!isDemo) setCachedAnalysis(user?.uid ?? null, cacheAccountId, next);
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -376,7 +379,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
         period,
         tradeCount: payloadTrades.length,
       };
-      setCachedAnalysis(user?.uid ?? null, activeAccount?.id, cached);
+      setCachedAnalysis(user?.uid ?? null, cacheAccountId, cached);
       setResult(cached);
       trackEvent('ai_analysis_succeeded', { period, tradeCount: payloadTrades.length });
     } catch (err: any) {
@@ -423,7 +426,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                   size="sm"
                   onClick={() => {
                     setResult(null);
-                    localStorage.removeItem(scopedCacheKey(user?.uid ?? null, activeAccount?.id));
+                    localStorage.removeItem(scopedCacheKey(user?.uid ?? null, cacheAccountId));
                   }}
                 >
                   <ArrowCounterClockwise className="mr-1.5 h-3.5 w-3.5" />

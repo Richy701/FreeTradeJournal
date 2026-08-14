@@ -22,6 +22,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.78.0',
+    date: '2026-08-14',
+    summary: 'One view of all your accounts combined, plus percentages on the trading calendar.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'View all your accounts combined',
+        description: 'The account switcher in the sidebar has a new All accounts option. Pick it and the dashboard, trading calendar, trade log, and journal show every account together, so you can see your total P&L in one place. While you\'re viewing all accounts you can\'t add or edit trades. Switch back to a single account for that. If your accounts use different currencies, you get one combined view per currency, since adding dollars to euros would give a meaningless total.',
+        image: {
+          src: '/screenshots/all-accounts-switcher.png',
+          alt: 'The account switcher open with the new All accounts option selected above two trading accounts',
+        },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'The trading calendar can show percentages',
+        description: 'The $ / % switch on the dashboard now changes the trading calendar too. In percent mode, each day shows what you made or lost as a percentage of your starting balance. Hover over any day to see both the amount and the percentage. Set your starting balance in Settings so the percentages are accurate.',
+        image: {
+          src: '/screenshots/calendar-percent-mode.png',
+          alt: 'The trading calendar in percent mode, each day showing its return as a percentage',
+        },
+      },
+    ],
+  },
+  {
     version: '2.77.3',
     date: '2026-08-12',
     summary: 'CSV imports now catch swapped day and month dates.',
@@ -456,7 +483,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.63.2',
     date: '2026-07-16',
-    summary: 'Delete All Data now clears your cloud backup, every AI feature speaks your currency, and broker imports got a correctness pass.',
+    summary: 'Delete All Data now clears your cloud backup, every AI feature speaks your currency, and a batch of broker import bugs are fixed.',
     items: [
       {
         type: 'fixed',
@@ -523,14 +550,14 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved',
         highlight: true,
         text: 'Tilt Meter learns your trading hours',
-        description: 'The Tilt Meter now builds a picture of when you normally trade from your own history. Entries at hours you rarely touch raise your tilt score, and count double when they come right after a loss — the classic sign of revenge trading outside your window. Needs at least 20 logged trades before it kicks in.',
+        description: 'The Tilt Meter now builds a picture of when you normally trade from your own history. Trades at hours you rarely trade raise your tilt score, and count double when they come right after a loss — the classic sign of revenge trading outside your window. Needs at least 20 logged trades before it kicks in.',
       },
     ],
   },
   {
     version: '2.62.0',
     date: '2026-07-15',
-    summary: 'A deep reliability pass: cloud sync protects your data in every edge case, and every corner of the app now speaks your currency.',
+    summary: 'A deep reliability update: cloud sync protects your data in every edge case, and every corner of the app now speaks your currency.',
     items: [
       {
         type: 'fixed',
@@ -645,7 +672,7 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'fixed',
-        text: 'Euro symbol leads the number',
+        text: 'The euro symbol now comes first',
         description: 'Euro amounts used to show the symbol after the number (1,234.56€) in some places while other currencies led with it. Euro now reads €1,234.56 everywhere.',
       },
       {
@@ -832,7 +859,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.56.0',
     date: '2026-07-09',
-    summary: 'AI Journal Review — your journal and your results, finally connected.',
+    summary: 'AI Journal Review connects what you write to how you trade.',
     items: [
       {
         type: 'new',
@@ -922,7 +949,7 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'improved',
-        text: 'Trades confirm when they save',
+        text: 'You get a confirmation when a trade saves',
         description: 'Logging or editing a trade now shows a confirmation, from both the dashboard quick-add and the Trade Log form.',
       },
       {
@@ -1001,7 +1028,7 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'improved',
-        text: 'AI limits now say so',
+        text: 'A clear message when you hit the AI limit',
         description: 'When you reach your AI usage limit, Coach FTJ now tells you exactly that — including when it resets — instead of showing a generic "try again" error.',
       },
       {
@@ -1253,7 +1280,7 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'fixed',
-        text: 'Trading days no longer read past the requirement',
+        text: 'Trading days no longer count past the requirement',
         description: 'Once you have met the minimum trading days, the count now caps at the requirement (for example 4 / 4) instead of showing more days than required.',
       },
       {
@@ -1444,7 +1471,7 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'fixed',
-        text: 'Reach every action on touch',
+        text: 'Every control now reachable on phones',
         description: 'Reset, edit, and delete controls on goals, risk rules, and prop-tracker transactions used to only appear on hover — they now show on phones so you can manage everything without a mouse.',
       },
       {
@@ -1730,7 +1757,7 @@ export const changelog: ChangelogEntry[] = [
   {
     version: '2.21.0',
     date: '2026-06-10',
-    summary: 'A new Navy Gold theme arrives — deep navy with a warm gold accent for a premium look across the whole app.',
+    summary: 'A new Navy Gold theme: deep navy with a warm gold accent across the whole app.',
     items: [
       {
         type: 'new',
@@ -1828,7 +1855,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'Share Stats card redesign',
-        description: 'Your name, initials avatar, win/loss bar, equity curve sparkline, and theme-colored accents. Period selector lets you share This Month, Quarter, Year, or All Time stats.',
+        description: 'The card now shows your name, an initials avatar, a win/loss bar, an equity curve sparkline, and accents in your theme colors. A period selector lets you share This Month, Quarter, Year, or All Time stats.',
       },
       {
         type: 'fixed',
@@ -1838,7 +1865,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'Premium sharing dialog',
-        description: 'Dark frosted glass design with backdrop blur, period selector pills, and styled action buttons that match the card aesthetic.',
+        description: 'The sharing dialog now uses a dark frosted-glass design with period selector pills and action buttons styled to match the card.',
       },
       {
         type: 'improved',
@@ -1950,7 +1977,7 @@ export const changelog: ChangelogEntry[] = [
       {
         type: 'improved',
         text: 'Coach FTJ',
-        description: 'Now with tilt detection that scores how tilted you are based on recent losses, trade emotions, and trading speed. Plus a streaming AI chat so you can ask follow-up questions.',
+        description: 'Coach FTJ now detects tilt, scoring how tilted you are from recent losses, trade emotions, and trading speed. A streaming chat also lets you ask follow-up questions.',
       },
       {
         type: 'improved',
@@ -2599,4 +2626,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.77.3'
+export const LATEST_CHANGELOG_VERSION = '2.78.0'
