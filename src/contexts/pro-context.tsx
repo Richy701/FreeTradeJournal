@@ -62,7 +62,7 @@ interface ProProviderProps {
 }
 
 export function ProProvider({ children }: ProProviderProps) {
-  const { user, isDemo } = useAuth();
+  const { user, isDemo, loading: authLoading, hadSession } = useAuth();
   const uid = user?.uid || null;
 
   // Fast initial load from localStorage cache
@@ -140,6 +140,13 @@ export function ProProvider({ children }: ProProviderProps) {
     // so dependents like useAutoRestore wait before making decisions
     if (!cachedSub) {
       setIsLoading(true);
+    } else {
+      // The uid was null on first render, so useState never saw this cache.
+      // Apply it now so a cached-Pro user paints Pro on the next frame; the
+      // snapshot below confirms or corrects it.
+      setSubscription(cachedSub);
+      setReferralProExpiresAt(cachedEntitlements.referral || null);
+      setTrialProExpiresAt(cachedEntitlements.trial || null);
     }
 
     let unsubscribe: (() => void) | undefined;
@@ -272,16 +279,23 @@ export function ProProvider({ children }: ProProviderProps) {
   // hasAIAccess is true therefore auto-show sample output in demo.
   const hasAIAccess = isDemo || isPro || (freeAiQuota !== null && freeAiQuota.remaining > 0);
 
+  // Before auth resolves, uid is null and the state above reads "not loading,
+  // not Pro" — which painted the free UI for a frame on every reload. For a
+  // returning user, that window IS loading. (Strangers with no session hint
+  // don't wait, so the logged-out landing page stays instant.)
+  const authPending = authLoading && hadSession && !isDemo;
+  const effectiveLoading = isLoading || authPending;
+
   const value: ProContextType = useMemo(() => ({
     isPro,
-    isLoading,
+    isLoading: effectiveLoading,
     subscription,
     openCheckout: handleOpenCheckout,
     hasAIAccess,
     freeAiQuota: isPro || isDemo ? null : freeAiQuota,
     updateFreeAiQuota,
     trialEndsAt,
-  }), [isPro, isDemo, isLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
+  }), [isPro, isDemo, effectiveLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

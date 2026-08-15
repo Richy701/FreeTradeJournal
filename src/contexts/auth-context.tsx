@@ -9,6 +9,12 @@ import { seedDemoStorage, clearDemoStorage } from '@/services/demo-service';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  /** True when a signed-in session existed on this device the last time we
+   *  looked. Firebase keeps the real session in IndexedDB, which can't be read
+   *  synchronously, so this is the cheap hint that lets pages that render
+   *  before auth resolves (the landing page, ProGate) hold back for a returning
+   *  user instead of painting the logged-out/free version for a frame. */
+  hadSession: boolean;
   isDemo: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<User>;
   signIn: (email: string, password: string) => Promise<User>;
@@ -37,9 +43,14 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const SESSION_HINT_KEY = 'ftj-had-session';
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hadSession] = useState<boolean>(() => {
+    try { return localStorage.getItem(SESSION_HINT_KEY) === '1'; } catch { return false; }
+  });
   const [auth, setAuth] = useState<Auth | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   // In-flight (or finished) auth init. Memoizing the PROMISE — not a boolean —
@@ -95,6 +106,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
           setUser(user);
           setLoading(false);
+          // Keep the session hint in step with the real session (a sign-out
+          // also lands here with user === null and clears it).
+          try {
+            if (user) localStorage.setItem(SESSION_HINT_KEY, '1');
+            else localStorage.removeItem(SESSION_HINT_KEY);
+          } catch { /* storage unavailable */ }
           // Release any sign-in call awaiting this uid (see waitForUserReady).
           readyUidRef.current = user?.uid ?? null;
           if (user) {
@@ -318,6 +335,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = useMemo(() => ({
     user,
     loading,
+    hadSession,
     isDemo,
     signUp,
     signIn,
@@ -330,7 +348,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     refreshUser,
     enterDemoMode,
     exitDemoMode
-  }), [user, loading, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, refreshUser, enterDemoMode, exitDemoMode]);
+  }), [user, loading, hadSession, isDemo, signUp, signIn, signInWithGoogle, logout, resetPassword, verifyPasswordResetCode, confirmPasswordReset, applyActionCode, refreshUser, enterDemoMode, exitDemoMode]);
 
   return (
     <AuthContext.Provider value={value}>

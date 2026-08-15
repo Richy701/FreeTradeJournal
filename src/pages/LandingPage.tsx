@@ -13,14 +13,20 @@ import { SEOMeta } from '@/components/seo-meta';
 
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  const { user, loading, hadSession } = useAuth();
 
   // If user is signed in, redirect to dashboard
-  // Don't block rendering while auth loads — show landing page immediately
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
+  // Auth resolves after first paint. A stranger should see the landing page
+  // immediately (LCP), but a returning user should NOT get the marketing page
+  // for a beat and then a redirect — hold back on the session hint only.
+  if (loading && hadSession) {
+    return <div className="min-h-screen bg-background" aria-busy="true" />;
+  }
+
   return (
     <div className="w-full">
       <SEOMeta />
