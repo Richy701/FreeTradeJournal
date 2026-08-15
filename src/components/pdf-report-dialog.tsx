@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, endOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, endOfDay, subMonths } from 'date-fns';
 import { Check, FileArrowDown, SpinnerGap } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -46,10 +46,11 @@ interface PDFReportDialogProps {
   accountName?: string;
 }
 
-type ReportPeriod = 'monthly' | 'quarterly' | 'yearly' | 'custom';
+type ReportPeriod = 'monthly' | 'lastMonth' | 'quarterly' | 'yearly' | 'custom';
 
 export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, accountName }: PDFReportDialogProps) {
   const { getCurrencySymbol } = useSettings();
+  const currencySymbol = getCurrencySymbol();
   const [period, setPeriod] = useState<ReportPeriod>('monthly');
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -59,6 +60,12 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
     const now = new Date();
     switch (period) {
       case 'monthly': return { start: startOfMonth(now), end: endOfMonth(now) };
+      // The report people most often want: the month that just finished.
+      // Without this, a completed month was only reachable via custom dates.
+      case 'lastMonth': {
+        const prev = subMonths(now, 1);
+        return { start: startOfMonth(prev), end: endOfMonth(prev) };
+      }
       case 'quarterly': return { start: startOfQuarter(now), end: endOfQuarter(now) };
       case 'yearly': return { start: startOfYear(now), end: endOfYear(now) };
       // End of the chosen day, so trades ON the end date are included
@@ -83,9 +90,18 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
     });
   };
 
-  const filteredCount = getFilteredTrades().length;
+  const filtered = getFilteredTrades();
+  const filteredCount = filtered.length;
   const journalCount = getFilteredJournal().length;
+  const daysTraded = new Set(filtered.map(t => format(new Date(t.exitTime), 'yyyy-MM-dd'))).size;
   const canGenerate = period !== 'custom' || (!!startDate && !!endDate);
+
+  // Live cover-preview numbers for the selected period
+  const totalPnL = filtered.reduce((s, t) => s + t.pnl, 0);
+  const winRate = filteredCount > 0
+    ? (filtered.filter(t => t.pnl > 0).length / filteredCount) * 100
+    : 0;
+  const pnlLabel = `${totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -98,7 +114,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
         period: range,
         reportType: period,
         accountName,
-        currencySymbol: getCurrencySymbol(),
+        currencySymbol,
       };
       await generatePDFReport(options);
       toast.success('PDF report downloaded');
@@ -114,26 +130,75 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* [&>button] targets the built-in close X so it stays visible over the dark hero */}
-      <DialogContent className="w-[90vw] max-w-lg p-0 gap-0 overflow-hidden [&>button]:text-white/70 [&>button:hover]:text-white">
+      {/* p-0 alone doesn't beat the base dialog's sm:p-6 (twMerge keeps other
+          breakpoints) — without sm:p-0 the dark hero renders inset in a light
+          gutter on desktop. */}
+      <DialogContent className="w-[90vw] max-w-lg p-0 sm:p-0 gap-0 overflow-hidden [&>button]:text-white/70 [&>button:hover]:text-white">
         <ProGate featureName="PDF Trade Reports">
-          {/* Hero — previews the dark Wrapped cover the report actually has */}
-          <div className="bg-zinc-950 px-6 pt-6 pb-5">
-            <DialogHeader className="space-y-1.5 text-left">
-              <DialogTitle className="text-2xl font-bold tracking-tight text-white">
-                Your Trading <span className="text-amber-400">Wrapped.</span>
-              </DialogTitle>
-              <DialogDescription className="text-sm text-zinc-400">
-                A personalised recap of your trading — stats, patterns, and insights, styled to share.
-              </DialogDescription>
-            </DialogHeader>
+          {/* Hero — a live miniature of the report's dark cover page, with the
+              selected period's real numbers. Deliberately NOT themed: the PDF
+              itself is always amber-on-black, and the hero previews the PDF. */}
+          <div className="relative overflow-hidden bg-[#09090c] px-6 pt-6 pb-6">
+            <div
+              className="pointer-events-none absolute -top-20 -right-16 h-56 w-56 rounded-full blur-3xl"
+              style={{ backgroundColor: 'rgba(251, 191, 36, 0.07)' }}
+            />
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded-md bg-amber-400 flex items-center justify-center">
+                  <span className="text-[7px] font-bold text-zinc-950">FTJ</span>
+                </div>
+                <span className="text-xs text-zinc-500">FreeTradeJournal</span>
+              </div>
+              <DialogHeader className="space-y-0 text-left">
+                <DialogTitle asChild>
+                  <h2 className="font-display mt-4 text-[2rem] leading-[1.05] font-bold tracking-tight text-white">
+                    Your Trading
+                    <br />
+                    <span className="text-amber-400">Wrapped.</span>
+                  </h2>
+                </DialogTitle>
+                <DialogDescription asChild>
+                  <p className="!mt-3 text-xs text-zinc-500">
+                    {canGenerate
+                      ? `${format(getDateRange().start, 'MMM d')} – ${format(getDateRange().end, 'MMM d, yyyy')}`
+                      : 'Pick a date range'}
+                    {accountName ? ` · ${accountName}` : ''}
+                  </p>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                {[
+                  {
+                    value: filteredCount > 0 ? pnlLabel : '—',
+                    label: 'P&L',
+                    color: filteredCount === 0 ? '#71717a' : totalPnL >= 0 ? '#34d399' : '#f87171',
+                  },
+                  {
+                    value: filteredCount > 0 ? `${winRate.toFixed(0)}%` : '—',
+                    label: 'Win rate',
+                    color: '#fbbf24',
+                  },
+                  { value: String(filteredCount), label: 'Trades', color: '#fff' },
+                ].map(chip => (
+                  <div key={chip.label} className="rounded-lg bg-zinc-900/90 border border-zinc-800 px-3 py-2.5">
+                    <p className="text-base font-bold tabular-nums leading-none" style={{ color: chip.color }}>
+                      {chip.value}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1.5">{chip.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="px-6 py-5 space-y-5">
+          <div className="px-6 py-5 space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Period</Label>
               <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
                 {([
-                  ['monthly', 'Month'],
+                  ['monthly', 'This month'],
+                  ['lastMonth', 'Last month'],
                   ['quarterly', 'Quarter'],
                   ['yearly', 'Year'],
                   ['custom', 'Custom'],
@@ -143,7 +208,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
                     type="button"
                     onClick={() => setPeriod(value)}
                     aria-pressed={period === value}
-                    className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
                       period === value
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -178,25 +243,11 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border p-3">
-                <p className="text-lg font-bold tabular-nums leading-none">{filteredCount}</p>
-                <p className="text-xs text-muted-foreground mt-1.5">Trades</p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-lg font-bold tabular-nums leading-none">{journalCount}</p>
-                <p className="text-xs text-muted-foreground mt-1.5">Journal entries</p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-lg font-bold leading-none">9</p>
-                <p className="text-xs text-muted-foreground mt-1.5">Pages</p>
-              </div>
-            </div>
-            {canGenerate && (
-              <p className="text-xs text-muted-foreground -mt-2">
-                {format(getDateRange().start, 'MMM d, yyyy')} — {format(getDateRange().end, 'MMM d, yyyy')}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {filteredCount === 0 && canGenerate
+                ? 'No trades in this range — pick another period to generate a report.'
+                : `${daysTraded} day${daysTraded !== 1 ? 's' : ''} traded · ${journalCount} journal ${journalCount === 1 ? 'entry' : 'entries'} included`}
+            </p>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium">What's inside</Label>
@@ -227,6 +278,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
             <Button
               onClick={handleGenerate}
               disabled={!canGenerate || generating || filteredCount === 0}
+              className="bg-amber-400 text-zinc-950 hover:bg-amber-300"
             >
               {generating ? (
                 <>

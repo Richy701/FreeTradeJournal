@@ -32,7 +32,60 @@ function heroVersion(v: string): string {
   return v.replace(/\.0$/, '')
 }
 
-function ItemRow({ item, index }: { item: ChangelogItem; index: number }) {
+// A screenshot-led feature card — the image is the star, with the note and a
+// jump-in link beneath it. Used for items that ship with a screenshot.
+function FeatureCard({ item, index, onNavigate }: { item: ChangelogItem; index: number; onNavigate: () => void }) {
+  const { themeColors } = useThemePresets()
+  const config = typeConfig[item.type]
+  return (
+    <div
+      className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both rounded-xl border border-border/60 bg-card/50 overflow-hidden"
+      style={{ animationDelay: `${Math.min(index, 8) * 60}ms`, animationDuration: '350ms' }}
+    >
+      {item.image && (
+        <img
+          src={item.image.src}
+          alt={item.image.alt}
+          loading="lazy"
+          className="w-full border-b border-border/60"
+        />
+      )}
+      <div className="p-3.5">
+        <div className="flex items-center gap-2">
+          <span
+            className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+            style={{ color: config.color, backgroundColor: config.bg }}
+          >
+            {config.label}
+          </span>
+          <span className="min-w-0 text-sm font-semibold text-foreground leading-snug">
+            {item.text}
+          </span>
+        </div>
+        {item.description && (
+          <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed line-clamp-3">
+            {item.description}
+          </p>
+        )}
+        {item.link && (
+          <Link
+            to={item.link.to}
+            onClick={onNavigate}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline"
+            style={{ color: themeColors.primary }}
+          >
+            {item.link.label}
+            <CaretRight className="h-3 w-3" />
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Compact row for items without a screenshot.
+function ItemRow({ item, index, onNavigate }: { item: ChangelogItem; index: number; onNavigate: () => void }) {
+  const { themeColors } = useThemePresets()
   const config = typeConfig[item.type]
   const Icon = config.icon
   return (
@@ -40,31 +93,46 @@ function ItemRow({ item, index }: { item: ChangelogItem; index: number }) {
       className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms`, animationDuration: '350ms' }}
     >
-      <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
+      <div className="flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
         <div
           className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
           style={{ backgroundColor: config.bg }}
         >
           <Icon className="h-4 w-4" weight="bold" style={{ color: config.color }} />
         </div>
-        <span className="flex-1 min-w-0 text-sm font-medium text-foreground/90 leading-snug">
-          {item.text}
-        </span>
-        <span
-          className="shrink-0 text-[10px] font-semibold uppercase tracking-wider"
-          style={{ color: config.color }}
-        >
-          {config.label}
-        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span className="flex-1 min-w-0 text-sm font-medium text-foreground/90 leading-snug">
+              {item.text}
+            </span>
+            <span
+              className="shrink-0 text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: config.color }}
+            >
+              {config.label}
+            </span>
+          </div>
+          {/* The written release note used to live only on /changelog — the
+              dialog showed bare one-liners. Clamped so long notes don't take
+              over; the full text stays on /changelog. */}
+          {item.description && (
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-3">
+              {item.description}
+            </p>
+          )}
+          {item.link && (
+            <Link
+              to={item.link.to}
+              onClick={onNavigate}
+              className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium hover:underline"
+              style={{ color: themeColors.primary }}
+            >
+              {item.link.label}
+              <CaretRight className="h-3 w-3" />
+            </Link>
+          )}
+        </div>
       </div>
-      {item.image && (
-        <img
-          src={item.image.src}
-          alt={item.image.alt}
-          loading="lazy"
-          className="mt-1.5 mx-3 mb-1 w-[calc(100%-1.5rem)] rounded-lg border border-border/60"
-        />
-      )}
     </div>
   )
 }
@@ -110,33 +178,32 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
           breakpoints) — without sm:p-0 the hero renders inset in a gutter.
           outline-none: this dialog auto-opens, so the browser paints its
           default focus outline around the programmatically-focused content. */}
-      <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 sm:p-0 overflow-hidden outline-none">
-        {/* Hero — layered primary glow, oversized version, summary as copy */}
-        <div
-          className="relative px-6 pt-7 pb-6 overflow-hidden"
-          style={{
-            background: `radial-gradient(120% 140% at 0% 0%, ${alpha(themeColors.primary, '1f')} 0%, ${alpha(themeColors.primary, '0a')} 45%, transparent 100%)`,
-          }}
-        >
-          {/* Second, offset glow for depth */}
+      <DialogContent className="w-[95vw] max-w-lg sm:max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0 sm:p-0 overflow-hidden outline-none [&>button]:text-white/70 [&>button:hover]:text-white">
+        {/* Hero — always dark, like the Wrapped dialog: a deliberate
+            announcement card instead of a tinted wash that goes muddy in
+            light mode. The user's theme color is the accent. */}
+        <div className="relative shrink-0 overflow-hidden bg-[#09090c] px-6 pt-6 pb-6">
           <div
-            className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full blur-3xl"
-            style={{ backgroundColor: alpha(themeColors.primary, '14') }}
+            className="pointer-events-none absolute -top-20 -right-16 h-56 w-56 rounded-full blur-3xl"
+            style={{ backgroundColor: alpha(themeColors.primary, '1a') }}
           />
           <DialogHeader className="relative text-left space-y-0">
             <p
               className="text-[11px] font-semibold uppercase tracking-[0.18em]"
               style={{ color: themeColors.primary }}
             >
-              What's New · {dateLabel}
+              What's New
             </p>
-            <DialogTitle asChild>
-              <h2 className="font-display text-[2.75rem] leading-none font-bold tracking-tight mt-3">
-                v{heroVersion(release.version)}
-              </h2>
-            </DialogTitle>
+            <div className="flex items-baseline justify-between gap-3 mt-2.5">
+              <DialogTitle asChild>
+                <h2 className="font-display text-4xl leading-none font-bold tracking-tight text-white">
+                  v{heroVersion(release.version)}
+                </h2>
+              </DialogTitle>
+              <span className="text-xs text-zinc-500 shrink-0">{dateLabel}</span>
+            </div>
             <DialogDescription asChild>
-              <p className="text-sm text-foreground/70 leading-relaxed mt-3 max-w-[52ch] text-pretty">
+              <p className="text-sm text-zinc-400 leading-relaxed mt-3 text-pretty">
                 {release.summary}
               </p>
             </DialogDescription>
@@ -145,10 +212,14 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-4 py-4 overscroll-contain">
-          <div className="space-y-0.5">
-            {highlights.map((item, i) => (
-              <ItemRow key={item.text} item={item} index={i} />
-            ))}
+          <div className="space-y-3">
+            {highlights.map((item, i) =>
+              item.image ? (
+                <FeatureCard key={item.text} item={item} index={i} onNavigate={() => handleOpenChange(false)} />
+              ) : (
+                <ItemRow key={item.text} item={item} index={i} onNavigate={() => handleOpenChange(false)} />
+              )
+            )}
           </div>
 
           {rest.length > 0 && (
@@ -169,7 +240,7 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
               {showRest && (
                 <div className="space-y-0.5 mt-0.5">
                   {rest.map((item, i) => (
-                    <ItemRow key={item.text} item={item} index={i} />
+                    <ItemRow key={item.text} item={item} index={i} onNavigate={() => handleOpenChange(false)} />
                   ))}
                 </div>
               )}
@@ -202,7 +273,7 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t bg-muted/40 flex items-center justify-between">
+        <div className="shrink-0 px-6 py-4 border-t bg-muted/40 flex items-center justify-between">
           <Link
             to="/changelog"
             onClick={() => handleOpenChange(false)}

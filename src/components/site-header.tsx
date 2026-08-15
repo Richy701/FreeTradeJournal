@@ -132,7 +132,7 @@ export function SiteHeader({ className }: { className?: string }) {
       'dashboard': 'Dashboard',
       'coach': 'AI Coach',
       'trades': 'Trade Log',
-      'goals': 'Goals & Risk Management',
+      'goals': 'Goals & Risk',
       'journal': 'Journal',
       'settings': 'Settings',
       'profile': 'Profile',

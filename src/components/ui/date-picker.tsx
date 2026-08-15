@@ -78,6 +78,9 @@ export function DateTimePicker({
   const [timeValue, setTimeValue] = React.useState<string>(
     date ? format(date, "HH:mm:ss") : "10:30:00"
   )
+  // Unique per instance — a hardcoded id meant two pickers in one dialog
+  // (entry + exit time) shared it, so the exit label focused the entry field.
+  const timeId = React.useId()
 
   React.useEffect(() => {
     setSelectedDate(date)
@@ -151,11 +154,11 @@ export function DateTimePicker({
       </Popover>
       {/* Always-visible time field so the time can be edited directly */}
       <div className="w-[120px] shrink-0">
-        <Label htmlFor="time-picker" className="sr-only">
+        <Label htmlFor={timeId} className="sr-only">
           Time
         </Label>
         <Input
-          id="time-picker"
+          id={timeId}
           type="time"
           step="1"
           value={timeValue}

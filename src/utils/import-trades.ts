@@ -122,7 +122,7 @@ export function detectMarketFromSymbol(symbol: string): ImportMarket {
 // while the gross value is preserved as brokerPnL — the source of truth on edits.
 export function buildImportedTrades(
   trades: ParsedTrade[],
-  opts: { fileName: string; accountId: string; source?: string; brokerTimezone?: string }
+  opts: { fileName: string; accountId: string; source?: string; brokerTimezone?: string; idPrefix?: string }
 ): ImportedTrade[] {
   // CSV wall-clock times are written in the BROKER's clock. With a broker
   // timezone on the account, convert to true UTC; without one, keep the legacy
@@ -135,17 +135,19 @@ export function buildImportedTrades(
     const reportedPnl = parseFloat(trade.pnl) || 0;
     const commission = trade.commission ? parseFloat(trade.commission) || 0 : 0;
     const fees = trade.fees ? parseFloat(trade.fees) || 0 : 0;
+    const swap = trade.swap ? parseFloat(trade.swap) || 0 : 0;
     // Most brokers report GROSS P&L, so net = gross - costs. NinjaTrader's
     // "Profit" is already NET of commissions (pnlIsNet): keep it as the net and
     // reconstruct gross (net + costs) so we never subtract commissions twice and
-    // the edit-time invariant (net = brokerPnL - commission - fees) still holds.
-    const netPnl = trade.pnlIsNet ? reportedPnl : reportedPnl - commission - fees;
-    const grossPnl = trade.pnlIsNet ? reportedPnl + commission + fees : reportedPnl;
+    // the edit-time invariant (net = brokerPnL - commission - fees - swap) still holds.
+    const costs = commission + fees + swap;
+    const netPnl = trade.pnlIsNet ? reportedPnl : reportedPnl - costs;
+    const grossPnl = trade.pnlIsNet ? reportedPnl + costs : reportedPnl;
     const market = detectMarketFromSymbol(trade.symbol);
     const entryPrice = parseFloat(trade.entryPrice) || 0;
     const quantity = parseFloat(trade.quantity) || 1;
     return {
-      id: `csv-${stamp}-${index}`,
+      id: `${opts.idPrefix || 'csv'}-${stamp}-${index}`,
       symbol: trade.symbol,
       side: trade.side,
       entryPrice,
@@ -156,7 +158,7 @@ export function buildImportedTrades(
       spread: 0,
       commission,
       fees,
-      swap: 0,
+      swap,
       pnl: netPnl,
       brokerPnL: grossPnl,
       pnlPercentage: computePnlPercentage({ pnl: netPnl, symbol: trade.symbol, market, entryPrice, quantity }),

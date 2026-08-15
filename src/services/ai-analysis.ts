@@ -63,13 +63,43 @@ export interface ParsedTransaction {
   notes?: string;
 }
 
+export interface ScreenshotUsage {
+  used: number;
+  limit: number;
+  remaining: number;
+  // 'day' for Pro (20/day), 'total' for the free lifetime taste.
+  scope?: 'day' | 'total';
+}
+
 export interface ScreenshotParseResponse {
   transactions: ParsedTransaction[];
-  usage: {
-    used: number;
-    limit: number;
-    remaining: number;
-  };
+  usage: ScreenshotUsage;
+}
+
+// One closed trade as read off a history screenshot by the vision model.
+// Already sanitised server-side (finite numbers, normalised side); costs are
+// signed as printed by the platform and times are the broker's wall clock.
+export interface ScreenshotTrade {
+  symbol: string;
+  side: 'long' | 'short';
+  entryPrice: number;
+  exitPrice: number;
+  quantity: number;
+  pnl: number;
+  commission: number | null;
+  swap: number | null;
+  fees: number | null;
+  openTime: string;
+  closeTime: string;
+  confidence: 'high' | 'low';
+}
+
+export interface ScreenshotTradesResponse {
+  trades: ScreenshotTrade[];
+  platform: string;
+  currency: string | null;
+  warnings: string[];
+  usage: ScreenshotUsage;
 }
 
 export async function requestScreenshotParse(
@@ -81,6 +111,17 @@ export async function requestScreenshotParse(
   const { httpsCallable } = await import('firebase/functions');
   const parseScreenshotFn = httpsCallable<unknown, ScreenshotParseResponse>(fns, 'parseScreenshot');
   const result = await parseScreenshotFn({ image, mimeType, importType });
+  return result.data;
+}
+
+export async function requestScreenshotTrades(
+  image: string,
+  mimeType: string,
+): Promise<ScreenshotTradesResponse> {
+  const fns = await getFirebaseFunctions();
+  const { httpsCallable } = await import('firebase/functions');
+  const parseScreenshotFn = httpsCallable<unknown, ScreenshotTradesResponse>(fns, 'parseScreenshot');
+  const result = await parseScreenshotFn({ image, mimeType, importType: 'trades' });
   return result.data;
 }
 

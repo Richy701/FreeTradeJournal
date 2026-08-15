@@ -15,6 +15,9 @@ export interface ParsedTrade {
   exitDate?: string;
   commission?: string;
   fees?: string;
+  // Positive = cost (the app's convention: net = gross - commission - fees - swap).
+  // Only screenshot import sets this today; CSV parsers leave it undefined.
+  swap?: string;
   // True when `pnl` is ALREADY net of commissions/fees (e.g. NinjaTrader's Grid
   // "Profit" column). The importer must then NOT subtract costs from it again.
   pnlIsNet?: boolean;

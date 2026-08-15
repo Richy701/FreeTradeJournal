@@ -5,10 +5,11 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useAccounts, type TradingAccount } from '@/contexts/account-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { trackEvent } from '@/lib/analytics';
-import { SUPPORTED_CURRENCIES, DEFAULT_VALUES } from '@/constants/trading';
+import { SUPPORTED_CURRENCIES, DEFAULT_VALUES, BROKERS } from '@/constants/trading';
 import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UnitInput } from '@/components/ui/money-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Check, Rocket, CaretLeft, Wallet, Monitor, Buildings, FileText, Plant, ChartBar, Lightning, Trophy, BookOpen, Target } from '@phosphor-icons/react';
@@ -562,10 +563,10 @@ export default function OnboardingSimplified() {
 
                   <div className="space-y-2">
                     <Label htmlFor="balance">Starting Balance</Label>
-                    <Input
+                    <UnitInput
                       id="balance"
                       className="h-11"
-                      type="number"
+                      prefix={SUPPORTED_CURRENCIES.find(c => c.code === data.currency)?.symbol ?? '$'}
                       value={data.currentBalance}
                       onChange={(e) => setData({ ...data, currentBalance: e.target.value })}
                       placeholder={DEFAULT_VALUES.STARTING_BALANCE.toString()}
@@ -581,10 +582,14 @@ export default function OnboardingSimplified() {
                   <Input
                     id="broker"
                     className="h-11"
+                    list="onboarding-brokers"
                     value={data.broker}
                     onChange={(e) => setData({ ...data, broker: e.target.value })}
                     placeholder="e.g., FTMO, Apex, TopStep..."
                   />
+                  <datalist id="onboarding-brokers">
+                    {BROKERS.filter(b => b !== 'Other').map(b => <option key={b} value={b} />)}
+                  </datalist>
                 </div>
               </motion.div>
 

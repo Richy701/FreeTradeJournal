@@ -61,7 +61,7 @@ const navMain = [
     icon: TrendUp,
   },
   {
-    title: "Goals & Risk Management",
+    title: "Goals & Risk",
     url: "/goals",
     icon: Target,
   },

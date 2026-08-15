@@ -324,7 +324,7 @@ export function AIGoalCoach() {
               <Button
                 onClick={handleCoach}
                 disabled={goalData.goals.length === 0 && goalData.tradeCount === 0}
-                style={{ backgroundColor: themeColors.primary }}
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}
               >
                 <Brain className="mr-2 h-4 w-4" />
                 Get Coaching

@@ -31,9 +31,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen } from '@phosphor-icons/react';
+import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen, Image as ImageIcon, FileCsv } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
+import { PropFirmSelect } from '@/components/prop-firm-select';
+import { UnitInput, parseNumberInput } from '@/components/ui/money-input';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CurrencyDollar, Target, Trophy, Scales, CheckCircle, Warning, TrendUp, TrendDown, ChartLineUp, Clock, Coins, Sliders, Note, ArrowRight, Crosshair, ArrowsLeftRight, Lightbulb } from '@phosphor-icons/react';
 import {
   Tooltip,
@@ -57,13 +60,15 @@ import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { TradeLogFilters, TradeLogFilterPills, EMPTY_FILTERS, countActiveFilters, type TradeFilters } from '@/components/trade-log-filters';
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { ImportInsightDialog } from '@/components/import-insight-dialog';
+import { ScreenshotTradeImportDialog } from '@/components/screenshot-trade-import-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
 import { ProUpgradeCard } from '@/components/pro-upgrade-card';
 import { useProStatus } from '@/contexts/pro-context';
 import { notifyDataChange } from '@/contexts/sync-context';
-import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades';
+import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, buildColumnMapping, type ColumnMapping, type ImportedTrade } from '@/utils/import-trades';
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog';
 import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory';
 import { rescueFailedImport } from '@/utils/csv-import-flow';
@@ -158,12 +163,15 @@ export default function TradeLog() {
   const { isPro, hasAIAccess } = useProStatus();
   // Freshly imported trades queued for the AI first-read dialog
   const [importInsightTrades, setImportInsightTrades] = useState<any[] | null>(null);
+  const [screenshotImportOpen, setScreenshotImportOpen] = useState(false);
   const { activeAccount, isAllAccounts, scopeAccounts, scopeStartingBalance, isInScope } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries } = useDemoData();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Trade id awaiting delete confirmation, or '__bulk__' for the selection.
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
   const [csvUploadState, setCsvUploadState] = useState({
     isUploading: false,
@@ -331,8 +339,10 @@ export default function TradeLog() {
     defaultValues: {
       symbol: '',
       side: 'long',
-      entryPrice: 0,
-      exitPrice: 0,
+      // Prices start empty (not 0) so the user types straight into a blank
+      // field instead of clearing a prefilled zero.
+      entryPrice: undefined as unknown as number,
+      exitPrice: undefined as unknown as number,
       lotSize: 1,
       spread: 0,
       commission: 0,
@@ -353,6 +363,10 @@ export default function TradeLog() {
   // futures traders aren't re-picking the market and instrument every time.
   const newTradeFormValues = (): Partial<TradeFormData> => {
     const remembered = getTradeDefaults(userStorage, activeAccount?.id);
+    // Times default to "now": most manual logs happen right after the trade,
+    // and both pickers previously opened empty, costing two calendar round
+    // trips per trade for a timestamp that's almost always the current one.
+    const now = new Date();
     return {
       ...form.formState.defaultValues,
       market: remembered.market,
@@ -360,6 +374,8 @@ export default function TradeLog() {
       lotSize: toNumericDefault(remembered.lotSize, 1),
       commission: toNumericDefault(remembered.commission, 0),
       fees: toNumericDefault(remembered.fees, 0),
+      entryTime: now as any,
+      exitTime: now as any,
     } as Partial<TradeFormData>;
   };
 
@@ -523,6 +539,15 @@ export default function TradeLog() {
     return { pnl, pnlPercentage, riskReward };
   };
 
+  // In a long scrolling dialog an inline error can sit off-screen; surface the
+  // first problem as a toast so an invalid submit never looks like a dead click.
+  const onInvalid = (errors: Record<string, any>) => {
+    const first = Object.values(errors)[0] as { message?: string } | undefined;
+    toast.warning('Almost there', {
+      description: first?.message || 'Fill in the required fields marked with *.',
+    });
+  };
+
   const onSubmit = (data: TradeFormData) => {
     if (demoGuard('save your trades')) return;
 
@@ -665,7 +690,10 @@ export default function TradeLog() {
 
   const handleDelete = (id: string) => {
     if (demoGuard('delete trades')) return;
-    if (!window.confirm('Are you sure you want to delete this trade?')) return;
+    setPendingDelete(id);
+  };
+
+  const confirmSingleDelete = (id: string) => {
     const updatedTrades = trades.filter((t) => t.id !== id);
     saveTrades(updatedTrades);
     trackEvent('trade_deleted');
@@ -674,7 +702,10 @@ export default function TradeLog() {
   const handleBulkDelete = () => {
     if (demoGuard('delete trades')) return;
     if (selectedTradeIds.size === 0) return;
-    if (!window.confirm(`Delete ${selectedTradeIds.size} selected trade${selectedTradeIds.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    setPendingDelete('__bulk__');
+  };
+
+  const confirmBulkDelete = () => {
     const updatedTrades = trades.filter((t) => !selectedTradeIds.has(t.id));
     saveTrades(updatedTrades);
     setSelectedTradeIds(new Set());
@@ -835,6 +866,34 @@ export default function TradeLog() {
     await processCsvFile(files[0]);
     // Clear file input so re-selecting the same file re-triggers onChange
     event.target.value = '';
+  };
+
+  const openScreenshotImport = () => {
+    if (demoGuard('import trades')) return;
+    setScreenshotImportOpen(true);
+  };
+
+  // Screenshot import lands here with fully built, user-reviewed trades. Same
+  // dedupe → save → toast → first-read path as a CSV import.
+  const handleScreenshotImport = (built: ImportedTrade[]) => {
+    const { newTrades, skippedCount } = dedupeImportedTrades(trades, built);
+    if (newTrades.length > 0) {
+      saveTrades([...trades, ...newTrades] as Trade[]);
+      trackEvent('screenshot_imported', { count: newTrades.length });
+      trackTradeLogged(newTrades.length, 'screenshot');
+    }
+    toast.success(
+      newTrades.length > 0
+        ? `Imported ${newTrades.length} trade${newTrades.length > 1 ? 's' : ''} from screenshot`
+        : 'No new trades to import',
+      {
+        description: skippedCount > 0
+          ? `${skippedCount} duplicate trade${skippedCount > 1 ? 's' : ''} skipped`
+          : undefined,
+        duration: 6000,
+      }
+    );
+    if (newTrades.length >= 10 && hasAIAccess && !isDemo) setImportInsightTrades(newTrades);
   };
 
   const handleCsvDrop = async (event: React.DragEvent<HTMLDivElement>) => {
@@ -1308,15 +1367,24 @@ export default function TradeLog() {
                 <Plus className="mr-2 h-4 w-4" />
                 Add Trade
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('csv-import')?.click()}
-                disabled={csvUploadState.isUploading}
-              >
-                <UploadSimple className="mr-2 h-4 w-4" />
-                {csvUploadState.isUploading ? 'Processing...' : 'Import'}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={csvUploadState.isUploading}>
+                    <UploadSimple className="mr-2 h-4 w-4" />
+                    {csvUploadState.isUploading ? 'Processing...' : 'Import'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => document.getElementById('csv-import')?.click()}>
+                    <FileCsv className="mr-2 h-4 w-4" />
+                    CSV or Excel file
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={openScreenshotImport}>
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Screenshot
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <input
                 id="csv-import"
                 type="file"
@@ -1427,6 +1495,20 @@ export default function TradeLog() {
         accountName={isAllAccounts ? 'All accounts' : activeAccount?.name}
       />
 
+      {/* Delete confirmation (replaces window.confirm) */}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null) }}
+        title={pendingDelete === '__bulk__'
+          ? `Delete ${selectedTradeIds.size} selected trade${selectedTradeIds.size !== 1 ? 's' : ''}?`
+          : 'Delete this trade?'}
+        description="This cannot be undone."
+        onConfirm={() => {
+          if (pendingDelete === '__bulk__') confirmBulkDelete();
+          else if (pendingDelete) confirmSingleDelete(pendingDelete);
+        }}
+      />
+
       {/* Add Trade Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90svh] sm:max-h-[85vh] overflow-y-auto">
@@ -1442,7 +1524,7 @@ export default function TradeLog() {
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                    <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-5">
                       <div className="rounded-xl border bg-card/50 p-4 space-y-3">
                         <div className="flex items-center gap-2">
                           <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
@@ -1506,17 +1588,30 @@ export default function TradeLog() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Direction *</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="bg-background/60 border-border/50">
-                                      <SelectValue placeholder="Select side" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="long">Long (Buy)</SelectItem>
-                                    <SelectItem value="short">Short (Sell)</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {([
+                                      { value: 'long', label: 'Long', color: themeColors.profit },
+                                      { value: 'short', label: 'Short', color: themeColors.loss },
+                                    ] as const).map(opt => {
+                                      const selected = field.value === opt.value;
+                                      return (
+                                        <button
+                                          key={opt.value}
+                                          type="button"
+                                          aria-pressed={selected}
+                                          onClick={() => field.onChange(opt.value)}
+                                          className="h-9 rounded-md border text-sm font-medium transition-colors"
+                                          style={selected
+                                            ? { borderColor: alpha(opt.color, '50'), backgroundColor: alpha(opt.color, '12'), color: opt.color }
+                                            : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
+                                        >
+                                          {opt.label}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -1528,24 +1623,15 @@ export default function TradeLog() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-sm font-medium">Prop Firm</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-background/60 border-border/50">
-                                    <SelectValue placeholder="Select prop firm" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  <SelectItem value="E8 Markets">E8 Markets</SelectItem>
-                                  <SelectItem value="Funded FX">Funded FX</SelectItem>
-                                  <SelectItem value="FundingPips">FundingPips</SelectItem>
-                                  <SelectItem value="TopStep">TopStep</SelectItem>
-                                  <SelectItem value="FTMO">FTMO</SelectItem>
-                                  <SelectItem value="Alpha Capital Group">Alpha Capital Group</SelectItem>
-                                  <SelectItem value="Apex Trader Funding">Apex Trader Funding</SelectItem>
-                                  <SelectItem value="The5ers">The5ers</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <div>
+                                  <PropFirmSelect
+                                    value={field.value || 'none'}
+                                    onChange={field.onChange}
+                                    triggerClassName="bg-background/60 border-border/50"
+                                  />
+                                </div>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1569,9 +1655,11 @@ export default function TradeLog() {
                                   <Input
                                     type="number"
                                     step="0.00001"
+                                    placeholder="e.g. 1.0850"
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                    value={Number.isFinite(field.value) ? field.value : ''}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value))}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1589,9 +1677,11 @@ export default function TradeLog() {
                                   <Input
                                     type="number"
                                     step="0.00001"
+                                    placeholder="e.g. 1.0950"
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                    value={Number.isFinite(field.value) ? field.value : ''}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value))}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1612,7 +1702,8 @@ export default function TradeLog() {
                                     placeholder={watchedMarket === 'futures' ? '2' : '1.0'}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                                    value={Number.isFinite(field.value) ? field.value : ''}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value))}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1830,13 +1921,13 @@ export default function TradeLog() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Spread</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
+                                  <UnitInput
                                     step="0.0001"
                                     placeholder="0.0002"
+                                    suffix={watchedMarket === 'forex' ? 'pips' : 'pts'}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value) ?? 0)}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1850,13 +1941,13 @@ export default function TradeLog() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Commission</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
+                                  <UnitInput
                                     step="0.01"
                                     placeholder="7.00"
+                                    prefix={currencySymbol}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value) ?? 0)}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1870,14 +1961,14 @@ export default function TradeLog() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Fees</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
+                                  <UnitInput
                                     step="0.01"
                                     placeholder="1.34"
+                                    prefix={currencySymbol}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
                                     value={field.value ?? ''}
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value) ?? 0)}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1891,13 +1982,13 @@ export default function TradeLog() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Swap/Rollover</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
+                                  <UnitInput
                                     step="0.01"
                                     placeholder="-2.50"
+                                    prefix={currencySymbol}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value) ?? 0)}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1922,9 +2013,16 @@ export default function TradeLog() {
                                 <Input
                                   placeholder="e.g., Trend Following, Mean Reversion, Breakout"
                                   className="bg-background/60 border-border/50"
+                                  list="known-strategies"
                                   {...field}
                                 />
                               </FormControl>
+                              {/* Suggest the strategies this account already uses */}
+                              <datalist id="known-strategies">
+                                {[...new Set(trades.map(t => t.strategy).filter(Boolean))].slice(0, 12).map(s => (
+                                  <option key={s} value={s} />
+                                ))}
+                              </datalist>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1946,12 +2044,16 @@ export default function TradeLog() {
                                     <button
                                       key={e}
                                       type="button"
+                                      aria-pressed={selected.includes(e)}
                                       onClick={() => toggle(e)}
                                       className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150 ${
                                         selected.includes(e)
-                                          ? 'bg-amber-500/20 border-amber-500/40 text-amber-500'
+                                          ? ''
                                           : 'bg-muted/50 border-border/70 text-muted-foreground hover:border-border hover:text-foreground'
                                       }`}
+                                      style={selected.includes(e)
+                                        ? { backgroundColor: alpha(themeColors.primary, '15'), borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary }
+                                        : undefined}
                                     >
                                       {e}
                                     </button>
@@ -2069,13 +2171,14 @@ export default function TradeLog() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Manual P&L *</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    type="number"
+                                  <UnitInput
                                     step="0.01"
-                                    placeholder="Enter exact P&L (e.g., -50.00 for loss, 100.00 for profit)"
+                                    placeholder="-50.00 for loss, 100.00 for profit"
+                                    prefix={currencySymbol}
                                     className="bg-background/60 border-border/50 font-semibold"
                                     {...field}
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    value={field.value ?? ''}
+                                    onChange={e => field.onChange(parseNumberInput(e.target.value))}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -2100,7 +2203,25 @@ export default function TradeLog() {
                         </Suspense>
                       )}
 
-                      <div className="flex justify-end gap-4 pt-2">
+                      <div className="flex flex-wrap items-center justify-end gap-4 pt-2">
+                        {/* Live P&L preview so the trader sees the result before saving */}
+                        {(() => {
+                          const v = form.watch();
+                          if (v.useManualPnL || editingTrade?.brokerPnL !== undefined) return null;
+                          if (!Number.isFinite(v.entryPrice) || !Number.isFinite(v.exitPrice) || !Number.isFinite(v.lotSize) || !v.symbol) return null;
+                          const sl = resolveSlTpPrice(v.stopLoss, 'sl', v);
+                          const tp = resolveSlTpPrice(v.takeProfit, 'tp', v);
+                          const { pnl } = calculatePnL({ ...v, stopLoss: sl, takeProfit: tp });
+                          if (!Number.isFinite(pnl)) return null;
+                          return (
+                            <span className="mr-auto text-sm text-muted-foreground">
+                              Estimated P&L:{' '}
+                              <span className="font-semibold tabular-nums" style={{ color: pnl >= 0 ? themeColors.profit : themeColors.loss }}>
+                                {pnl >= 0 ? '+' : '-'}{currencySymbol}{Math.abs(pnl).toFixed(2)}
+                              </span>
+                            </span>
+                          );
+                        })()}
                         <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="px-8">
                           Cancel
                         </Button>
@@ -2430,6 +2551,10 @@ export default function TradeLog() {
                   <Button variant="outline" onClick={() => document.getElementById('csv-import')?.click()}>
                     <UploadSimple className="mr-2 h-4 w-4" />
                     Import CSV
+                  </Button>
+                  <Button variant="outline" onClick={openScreenshotImport}>
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Import screenshot
                   </Button>
                 </div>
 
@@ -2861,6 +2986,15 @@ export default function TradeLog() {
       <ColumnMappingDialog value={columnMapping} onChange={setColumnMapping} onConfirm={handleMappingConfirm} />
 
       {/* CSV Preview Dialog */}
+      <ScreenshotTradeImportDialog
+        open={screenshotImportOpen}
+        onOpenChange={setScreenshotImportOpen}
+        accountId={activeAccount?.id || ''}
+        brokerTimezone={activeAccount?.brokerTimezone}
+        existingTrades={trades}
+        onImport={handleScreenshotImport}
+      />
+
       <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90svh] overflow-hidden">
           <DialogHeader>

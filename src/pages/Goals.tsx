@@ -20,7 +20,7 @@ export default function Goals() {
             </div>
             <div className="space-y-0.5">
               <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
-                Goals & Risk Management
+                Goals & Risk
               </h1>
               <p className="text-sm text-muted-foreground">
                 Set targets, protect your capital, and track your discipline.
@@ -30,7 +30,7 @@ export default function Goals() {
         </div>
       </div>
 
-      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-10">
         <PerformanceGoals />
         <AIGoalCoach />
       </div>

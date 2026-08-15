@@ -8,6 +8,7 @@ import { FounderOfferAnnouncement } from '@/components/founder-offer-announcemen
 import { LifetimeFarewellDialog } from '@/components/lifetime-farewell-dialog';
 import { PlanChangesDialog } from '@/components/plan-changes-dialog';
 import { ThemeSettingsSync } from '@/components/theme-settings-sync';
+import { RiskBreachMonitor } from '@/components/risk-breach-monitor';
 import { useAuth } from '@/contexts/auth-context';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={false}>
       <ThemeSettingsSync />
+      <RiskBreachMonitor />
       <LifetimeFarewellDialog />
       <PlanChangesDialog />
       {/* Keyboard users skip the full sidebar tab-through on every page */}

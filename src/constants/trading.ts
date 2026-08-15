@@ -1,5 +1,15 @@
 // Trading constants that can be configured
 
+// Broker/platform preset list, shared by Settings' account forms and the
+// onboarding broker field.
+export const BROKERS = [
+  'OANDA','IC Markets','MetaTrader 4','MetaTrader 5','Pepperstone','IG',
+  'Interactive Brokers','FTMO','The5ers','Apex Trader Funding','E8 Markets',
+  'Topfutures Funded','FundedNext','Lux Trading Firm','NinjaTrader',
+  'TradingView','Tradovate','AMP Futures','Discount Trading',
+  'Schwab','E*TRADE','TopstepTrader','Other',
+];
+
 export const PROP_FIRMS = [
   "Alpha Capital Group",
   "Alpha Futures",

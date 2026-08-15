@@ -11,6 +11,8 @@ export type ChangelogItem = {
   /** Screenshot rendered under the item in the What's New dialog and on
    *  /changelog. Use a site-relative path under public/. */
   image?: { src: string; alt: string }
+  /** In-app route the What's New dialog offers as a "try it" jump. */
+  link?: { to: string; label: string }
 }
 
 export type ChangelogEntry = {
@@ -21,6 +23,116 @@ export type ChangelogEntry = {
 }
 
 export const changelog: ChangelogEntry[] = [
+  {
+    version: '2.81.0',
+    date: '2026-08-15',
+    summary: 'Import trades from a screenshot: upload a photo of your closed trades and check them before they are saved.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Import trades from a screenshot',
+        description: 'Take a screenshot of your closed trades or history in MT4/MT5 (phone or desktop), TradingView, TopstepX, Tradovate, NinjaTrader or your broker app, and upload it. The trades are read out into a table where you can check and fix each row before anything is saved. Rows we are less sure about are marked, and duplicates you already have are unticked. Commission and swap are subtracted when they were visible in the screenshot. Free accounts get 3 screenshot imports; Pro gets 20 a day.',
+        image: {
+          src: '/screenshots/screenshot-import-review.png',
+          alt: 'The Import from Screenshot review table with trades read from a screenshot, ready to check and import',
+        },
+        link: { to: '/trades', label: 'Try it' },
+      },
+      {
+        type: 'improved',
+        text: 'Import button now offers CSV or Screenshot',
+        description: 'On the Trade Log, Import opens a small menu: CSV or Excel file, or Screenshot. The dashboard quick-add Import tab has the screenshot option under the CSV drop zone.',
+      },
+    ],
+  },
+  {
+    version: '2.80.0',
+    date: '2026-08-15',
+    summary: 'Logging a trade is faster: one-tap direction, times filled in for you, and a live P&L preview before you save.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'The trade form got a refresh',
+        description: 'Long and Short are now two buttons instead of a dropdown. Price fields start empty so you can type straight away, and entry and exit times are pre-filled with the current time, so a quick log needs no date picking at all. Money fields show your currency symbol, and the form now shows an estimated P&L next to the save button before you commit.',
+        image: {
+          src: '/screenshots/trade-form-refresh.png',
+          alt: 'The Add New Trade form with Long/Short buttons, pre-filled times, and placeholder price fields',
+        },
+        link: { to: '/trades', label: 'Log a trade' },
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Forms tell you what is missing',
+        description: 'Submitting an incomplete trade now points out the first missing field instead of silently doing nothing. The calendar quick-add and account forms in Settings say what is needed next to the save button instead of just greying it out.',
+      },
+      {
+        type: 'improved',
+        text: 'Faster goal and limit forms',
+        description: 'Setting a goal or a risk limit is now a few taps: pick the type, pick the period, tap a suggested amount or type your own.',
+        image: {
+          src: '/screenshots/goal-form-quickpicks.png',
+          alt: 'The new goal form with tap-to-select type and period tiles and quick-pick target amounts',
+        },
+      },
+      {
+        type: 'improved',
+        text: 'Risk limit form explains each cap',
+        description: 'Each limit type now has a plain-English line saying exactly what it caps, with suggested amounts sized from your account, like $200 = 2% of a $10,000 account.',
+        image: {
+          src: '/screenshots/risk-limit-form.png',
+          alt: 'The risk limit form with descriptions under each limit type and suggested amounts',
+        },
+      },
+      {
+        type: 'improved',
+        text: 'The strategy field suggests your own strategies',
+        description: 'Start typing in the Strategy field and it offers the strategy names you have used on past trades.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner delete confirmations',
+        description: 'Deleting a trade or journal entry now asks in a proper in-app dialog instead of the browser popup.',
+      },
+      {
+        type: 'improved',
+        text: 'Trading Wrapped can report on last month',
+        description: 'The PDF report has a Last month option, so you can generate a finished month\'s recap without setting custom dates. Win rates in the report are now colored by whether they are above or below 50%.',
+      },
+    ],
+  },
+  {
+    version: '2.79.0',
+    date: '2026-08-15',
+    summary: 'The Goals & Risk page is rebuilt: everything on one screen, and risk alerts that reach you anywhere in the app.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Goals & Risk on one screen',
+        description: 'No more tabs. Your risk limits sit at the top with today\'s usage against each cap, and your goals sit below with a clear current number against each target. Each goal card also shows your recent record, like hit 4 of the last 6 weeks, so you can see consistency, not just today.',
+        image: {
+          src: '/screenshots/goals-risk-redesign.png',
+          alt: 'The redesigned Goals & Risk page with risk limit cards on top and goal cards with streak history below',
+        },
+        link: { to: '/goals', label: 'Open Goals & Risk' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Risk alerts now follow you around the app',
+        description: 'Cross a daily loss, per-trade loss, or drawdown limit and you get an alert the moment it happens, whether you\'re in the trade log, the calendar, or importing a CSV. Before, you only found out if you opened the Goals page.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Goals reset with their period',
+        description: 'A weekly goal now starts fresh each week instead of staying marked achieved forever. Your past periods live on in the goal\'s history row.',
+      },
+    ],
+  },
   {
     version: '2.78.0',
     date: '2026-08-14',
@@ -2626,4 +2738,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.78.0'
+export const LATEST_CHANGELOG_VERSION = '2.81.0'

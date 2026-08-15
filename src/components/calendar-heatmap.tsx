@@ -20,7 +20,8 @@ import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/r
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { UnitInput } from '@/components/ui/money-input'
 import { Plus, CurrencyDollar, ChartBar, PencilSimple, Crosshair, ArrowsLeftRight, Lightbulb, Tag, Heart, Note } from '@phosphor-icons/react'
 import {
   Popover,
@@ -109,6 +110,7 @@ export function CalendarHeatmap() {
   // Get theme colors
   const { themeColors, alpha } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
+  const navigate = useNavigate()
   const { activeAccount, isAllAccounts, scopeAccounts, isInScope } = useAccounts()
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
   const { mode: pnlMode, formatPnl, accountBalance } = usePnlDisplay()
@@ -449,7 +451,8 @@ export function CalendarHeatmap() {
       notes: "",
       propFirm: "none"
     })
-    
+
+    toast.success(`${newTrade.symbol} trade saved`)
     setIsTradeDialogOpen(false)
   }
 
@@ -1505,7 +1508,7 @@ export function CalendarHeatmap() {
                   <Crosshair className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                   <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setup</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Market</Label>
                     <Select value={tradeForm.market} onValueChange={(value: "forex" | "futures" | "indices") => {
@@ -1570,7 +1573,7 @@ export function CalendarHeatmap() {
                   <ArrowsLeftRight className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                   <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Execution</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="trade-entry" className="text-xs text-muted-foreground">Entry Price</Label>
                     <Input
@@ -1609,11 +1612,11 @@ export function CalendarHeatmap() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="trade-pnl" className="text-xs text-muted-foreground">P&L</Label>
-                    <Input
+                    <UnitInput
                       id="trade-pnl"
-                      type="number"
                       step="0.01"
                       placeholder="Auto-calculated"
+                      prefix={getCurrencySymbol()}
                       className="h-10 bg-background/60 border-border/50"
                       value={tradeForm.pnl}
                       onChange={(e) => setTradeForm(prev => ({ ...prev, pnl: e.target.value }))}
@@ -1674,13 +1677,19 @@ export function CalendarHeatmap() {
                     };
                     userStorage.setItem('prefilledTradeForm', JSON.stringify(prefilledData));
                     setIsTradeDialogOpen(false);
-                    window.location.href = '/trades';
+                    navigate('/trades');
                   }}
                 >
                   <ChartBar className="h-3 w-3" />
                   Full trade log
                 </button>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  {/* Say what's missing instead of silently disabling the button */}
+                  {(!tradeForm.symbol || (!(tradeForm.entryPrice && tradeForm.exitPrice) && tradeForm.pnl.trim() === '')) && (
+                    <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                      {!tradeForm.symbol ? 'Pick a symbol to save' : 'Add a P&L, or entry and exit prices'}
+                    </span>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => setDayDialogView('overview')}>
                     Cancel
                   </Button>

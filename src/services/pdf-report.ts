@@ -60,6 +60,10 @@ function getTraderPersonality(stats: ReturnType<typeof analyze>) {
     return { name: 'The Risk Taker', desc: 'You lose more than you win — but your wins more than cover it.' };
   if (totalTrades >= 50 && winRate >= 45)
     return { name: 'The Grinder', desc: 'Reps on reps. Every session is another step forward.' };
+  // A solid, profitable month shouldn't fall through to "still finding your
+  // style" — that reads as an insult to someone with a working edge.
+  if (totalTrades >= 15 && winRate >= 55 && profitFactor >= 1.3)
+    return { name: 'The Steady Hand', desc: 'Good win rate, controlled losses. This is what an edge looks like.' };
   return { name: 'The Explorer', desc: 'Still finding your style. Every great trader started here.' };
 }
 
@@ -519,18 +523,28 @@ export async function generatePDFReport(options: PDFReportOptions): Promise<void
     doc.text('Win rate', cardX2 + 10, instCardY + 15);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(30);
-    tc(green);
+    // A 33% win rate in green sends the wrong signal — color by the number.
+    const topWinRateColor = topWinRate >= 50 ? green : red;
+    tc(topWinRateColor);
     doc.text(`${topWinRate.toFixed(0)}%`, cardX2 + 10, instCardY + 38);
-    drawProgressBar(doc, cardX2 + 10, instCardY + 44, (R - L - 8) / 2 - 20, 4, topWinRate, [15, 35, 28], green);
+    drawProgressBar(doc, cardX2 + 10, instCardY + 44, (R - L - 8) / 2 - 20, 4, topWinRate, [15, 35, 28], topWinRateColor);
 
-    // Worst symbol callout
+    // Worst symbol callout. When the most-traded instrument IS the biggest
+    // loser, "your go-to" and "consider cutting it" on one page contradict
+    // each other — call that situation what it is instead.
     if (stats.worstSymbol && stats.worstSymbol[1].pnl < 0) {
+      const worstIsTop = stats.worstSymbol[0] === stats.topSymbol.name;
       fc([13, 30, 24]);
       doc.roundedRect(L, 216, R - L, 28, 4, 4, 'F');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(13);
       tc([150, 190, 170]);
-      doc.text(`${stats.worstSymbol[0]} cost you ${fmtCurrency(Math.abs(stats.worstSymbol[1].pnl))}. Consider cutting it.`, L + 12, 233);
+      doc.text(
+        worstIsTop
+          ? `Your most-traded instrument lost ${fmtCurrency(Math.abs(stats.worstSymbol[1].pnl))} this period. Worth a review.`
+          : `${stats.worstSymbol[0]} cost you ${fmtCurrency(Math.abs(stats.worstSymbol[1].pnl))}. Consider cutting it.`,
+        L + 12, 233
+      );
     }
 
     footer();

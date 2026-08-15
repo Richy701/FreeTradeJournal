@@ -61,6 +61,7 @@ import { useDemoData } from '@/hooks/use-demo-data';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { toast } from 'sonner';
 import { renderMarkdown } from '@/lib/markdown';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import {
@@ -267,6 +268,8 @@ export default function Journal() {
   const [entriesLoaded, setEntriesLoaded] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  // Entry id awaiting delete confirmation (in-app dialog, not window.confirm)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   // Screenshot refs on the entry being edited that couldn't be resolved on this
   // device (evicted IndexedDB, other-device idb: refs). Kept verbatim on save so
@@ -923,27 +926,29 @@ export default function Journal() {
     }
   };
 
-  const deleteEntry = async (entryId: string) => {
+  const deleteEntry = (entryId: string) => {
     if (guardAllAccounts()) return;
     if (demoGuard('delete journal entries')) return;
-    if (confirm('Are you sure you want to delete this journal entry?')) {
-      const target = entries.find(entry => entry.id === entryId);
-      const updatedEntries = entries.filter(entry => entry.id !== entryId);
-      try {
-        // Persist first — if the write fails, the entry stays visible instead
-        // of looking deleted until the next reload.
-        await persistEntries(updatedEntries);
-        setEntries(updatedEntries);
-        for (const r of target?.screenshots || []) {
-          try {
-            if (isImageRef(r)) await deleteImage(r.slice(4));
-            else if (isCloudRef(r)) await deleteCloudImage(r);
-          } catch { /* entry is gone; an orphaned image is acceptable */ }
-        }
-      } catch (err) {
-        console.error('Failed to delete journal entry:', err);
-        toast.error('Could not delete the entry. Please try again.');
+    setPendingDeleteId(entryId);
+  };
+
+  const confirmDeleteEntry = async (entryId: string) => {
+    const target = entries.find(entry => entry.id === entryId);
+    const updatedEntries = entries.filter(entry => entry.id !== entryId);
+    try {
+      // Persist first — if the write fails, the entry stays visible instead
+      // of looking deleted until the next reload.
+      await persistEntries(updatedEntries);
+      setEntries(updatedEntries);
+      for (const r of target?.screenshots || []) {
+        try {
+          if (isImageRef(r)) await deleteImage(r.slice(4));
+          else if (isCloudRef(r)) await deleteCloudImage(r);
+        } catch { /* entry is gone; an orphaned image is acceptable */ }
       }
+    } catch (err) {
+      console.error('Failed to delete journal entry:', err);
+      toast.error('Could not delete the entry. Please try again.');
     }
   };
 
@@ -1722,7 +1727,7 @@ export default function Journal() {
 
             {/* Action Bar */}
             <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-muted-foreground hidden sm:block">
+              <p className="text-xs text-muted-foreground">
                 {newEntry.title.trim() && newEntry.content.trim()
                   ? 'Ready to save'
                   : 'Fill in title and content to save'}
@@ -2288,6 +2293,14 @@ export default function Journal() {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => { if (!open) setPendingDeleteId(null) }}
+        title="Delete this journal entry?"
+        description="The entry and its screenshots will be removed."
+        onConfirm={() => { if (pendingDeleteId) confirmDeleteEntry(pendingDeleteId) }}
+      />
     </div>
   );
 }

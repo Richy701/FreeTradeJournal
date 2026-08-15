@@ -7,7 +7,8 @@ import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useSettings } from '@/contexts/settings-context'
 import { notifyDataChange } from '@/contexts/sync-context'
-import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping } from '@/utils/import-trades'
+import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping, type ImportedTrade } from '@/utils/import-trades'
+import { ScreenshotTradeImportDialog } from '@/components/screenshot-trade-import-dialog'
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
 import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory'
 import { rescueFailedImport } from '@/utils/csv-import-flow'
@@ -19,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire } from '@phosphor-icons/react'
+import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire, Image as ImageIcon, CaretRight } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
@@ -64,12 +65,11 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { InstrumentCombobox } from "@/components/ui/instrument-combobox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardPeriodProvider, useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
@@ -170,6 +170,7 @@ export default function Dashboard() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
+  const [screenshotImportOpen, setScreenshotImportOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -510,6 +511,39 @@ export default function Dashboard() {
     if (file) await processCsvFile(file);
   };
 
+  // Screenshot import: the quick-add modal closes and the review dialog takes
+  // over (nested dialogs fight over focus). Saves exactly like the CSV path.
+  const openScreenshotImport = () => {
+    if (demoGuard('import trades')) return
+    setIsTradeModalOpen(false)
+    setScreenshotImportOpen(true)
+  }
+
+  const handleScreenshotImport = (built: ImportedTrade[]) => {
+    let existingTrades: any[] = []
+    try { existingTrades = JSON.parse(userStorage.getItem('trades') || '[]') } catch { existingTrades = [] }
+    const accountTrades = existingTrades.filter((t: any) => belongsToAccount(t, activeAccount?.id || ''))
+    const { newTrades, skippedCount } = dedupeImportedTrades(accountTrades, built)
+    if (newTrades.length > 0) {
+      userStorage.setItem('trades', JSON.stringify([...existingTrades, ...newTrades]))
+      if (user && !isDemo) recordFirstTradeIfNeeded(user.uid)
+      trackEvent('screenshot_imported', { count: newTrades.length, source: 'dashboard' })
+      trackTradeLogged(newTrades.length, 'screenshot_dashboard')
+      notifyDataChange()
+      setDataVersion(v => v + 1)
+    }
+    toast.success(
+      newTrades.length > 0
+        ? `Imported ${newTrades.length} trade${newTrades.length > 1 ? 's' : ''} from screenshot`
+        : 'No new trades to import',
+      {
+        description: skippedCount > 0 ? `${skippedCount} duplicate trade${skippedCount > 1 ? 's' : ''} skipped` : undefined,
+        duration: 5000,
+      }
+    )
+    if (newTrades.length >= 10 && hasAIAccess && !isDemo) setImportInsightTrades(newTrades)
+  }
+
   // New function to actually perform the import after confirmation
   const handleConfirmImport = async () => {
     if (!csvPreview.parseResult || !csvPreview.file) return;
@@ -742,6 +776,15 @@ export default function Dashboard() {
         trades={importInsightTrades || []}
       />
 
+      <ScreenshotTradeImportDialog
+        open={screenshotImportOpen}
+        onOpenChange={setScreenshotImportOpen}
+        accountId={activeAccount?.id || ''}
+        brokerTimezone={activeAccount?.brokerTimezone}
+        existingTrades={screenshotImportOpen ? getTrades() : []}
+        onImport={handleScreenshotImport}
+      />
+
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (
         <div className="mx-4 mb-4 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ backgroundColor: 'hsl(var(--amber-500) / 0.05)', borderColor: 'hsl(var(--amber-500) / 0.3)' }}>
@@ -942,35 +985,38 @@ export default function Dashboard() {
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="trade-symbol" className="text-xs text-muted-foreground">Symbol</Label>
-                        <Select value={tradeForm.symbol} onValueChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}>
-                          <SelectTrigger id="trade-symbol" className="h-10 bg-background/60 border-border/50">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getInstrumentsByMarket(tradeForm.market, tradeForm.symbol).map((group) => (
-                              <SelectGroup key={group.category}>
-                                <SelectLabel>{group.category}</SelectLabel>
-                                {group.instruments.map((instrument) => (
-                                  <SelectItem key={instrument.symbol} value={instrument.symbol}>
-                                    {instrument.name ? `${instrument.symbol} - ${instrument.name}` : instrument.symbol}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {/* Searchable combobox — same picker as the full trade form */}
+                        <InstrumentCombobox
+                          value={tradeForm.symbol}
+                          onChange={(value) => setTradeForm(prev => ({ ...prev, symbol: value }))}
+                          categories={getInstrumentsByMarket(tradeForm.market, tradeForm.symbol)}
+                          placeholder="Select"
+                        />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="trade-side" className="text-xs text-muted-foreground">Side</Label>
-                        <Select value={tradeForm.side} onValueChange={(value: "long" | "short") => setTradeForm(prev => ({ ...prev, side: value }))}>
-                          <SelectTrigger id="trade-side" className="h-10 bg-background/60 border-border/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="long">Long</SelectItem>
-                            <SelectItem value="short">Short</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label className="text-xs text-muted-foreground">Side</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {([
+                            { value: 'long', label: 'Long', color: themeColors.profit },
+                            { value: 'short', label: 'Short', color: themeColors.loss },
+                          ] as const).map(opt => {
+                            const selected = tradeForm.side === opt.value
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                aria-pressed={selected}
+                                onClick={() => setTradeForm(prev => ({ ...prev, side: opt.value }))}
+                                className="h-10 rounded-md border text-sm font-medium transition-colors"
+                                style={selected
+                                  ? { borderColor: alpha(opt.color, '50'), backgroundColor: alpha(opt.color, '12'), color: opt.color }
+                                  : { borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
+                              >
+                                {opt.label}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
                     </div>
 
@@ -989,6 +1035,7 @@ export default function Dashboard() {
                           style={tradeForm.pnl !== '' && !Number.isNaN(Number(tradeForm.pnl)) ? { color: Number(tradeForm.pnl) >= 0 ? themeColors.profit : themeColors.loss } : undefined}
                           value={tradeForm.pnl}
                           onChange={(e) => setTradeForm(prev => ({ ...prev, pnl: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === 'Enter' && tradeForm.symbol && (tradeForm.pnl || (tradeForm.entryPrice && tradeForm.exitPrice))) handleSaveTrade() }}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">Enter your result -- use a minus for a loss (e.g. -50). Or add entry and exit below to calculate it.</p>
@@ -1099,7 +1146,13 @@ export default function Dashboard() {
                         <FileText className="h-3 w-3" />
                         Full trade log
                       </Link>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* Say what's missing instead of silently disabling the button */}
+                        {(!tradeForm.symbol || (!tradeForm.pnl && (!tradeForm.entryPrice || !tradeForm.exitPrice))) && (
+                          <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                            {!tradeForm.symbol ? 'Pick a symbol to save' : 'Add a P&L, or entry and exit prices'}
+                          </span>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => setIsTradeModalOpen(false)}>
                           Cancel
                         </Button>
@@ -1160,6 +1213,21 @@ export default function Dashboard() {
                           <p className="text-sm text-muted-foreground">Processing file...</p>
                         </div>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={openScreenshotImport}
+                        className="w-full rounded-xl border bg-card/50 p-4 flex items-center gap-3 text-left transition-colors hover:bg-muted/40"
+                      >
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+                          <ImageIcon className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Or import from a screenshot</p>
+                          <p className="text-xs text-muted-foreground">Upload a photo of your closed trades from MT4/MT5, TradingView, or your broker app. You check the trades before they're saved.</p>
+                        </div>
+                        <CaretRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </button>
 
                       <div className="rounded-xl border bg-card/50 p-4 space-y-2">
                         <p className="text-xs font-medium text-muted-foreground">How it works</p>

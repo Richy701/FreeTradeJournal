@@ -34,14 +34,9 @@ import { belongsToAccount } from '@/lib/account-scope';
 import { ExitSurveyDialog } from '@/components/exit-survey-dialog';
 import { ProGate } from '@/components/pro-gate';
 import { ThemeStudio, ThemeMiniPreview, PREVIEW_DEFAULTS } from '@/components/theme-studio';
+import { UnitInput, parseNumberInput } from '@/components/ui/money-input';
 
-const BROKERS = [
-  'OANDA','IC Markets','MetaTrader 4','MetaTrader 5','Pepperstone','IG',
-  'Interactive Brokers','FTMO','The5ers','Apex Trader Funding','E8 Markets',
-  'Topfutures Funded','FundedNext','Lux Trading Firm','NinjaTrader',
-  'TradingView','Tradovate','AMP Futures','Discount Trading',
-  'Schwab','E*TRADE','TopstepTrader','Other',
-];
+import { BROKERS } from '@/constants/trading';
 
 const CURRENCIES = [
   { value: 'USD', symbol: '$', label: 'USD' },
@@ -51,6 +46,9 @@ const CURRENCIES = [
   { value: 'CAD', symbol: 'C$', label: 'CAD' },
   { value: 'AUD', symbol: 'A$', label: 'AUD' },
 ] as const;
+
+const getSymbolForCurrency = (code: string): string =>
+  CURRENCIES.find(c => c.value === code)?.symbol ?? '$';
 
 const BROKER_CUSTOM = '__custom__';
 
@@ -378,7 +376,7 @@ export default function Settings() {
 
         {/* Tab bar */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60">
-          <div className="w-full max-w-5xl mx-auto overflow-x-auto scrollbar-hide">
+          <div className="w-full overflow-x-auto scrollbar-hide">
             <div className="flex gap-0 px-4 sm:px-6 lg:px-8 min-w-max">
               {NAV.map(({ id, label, Icon }) => (
                 <button
@@ -396,7 +394,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="space-y-12 pb-16">
 
               {/* Profile & plan summary */}
@@ -773,16 +771,19 @@ export default function Settings() {
                             </div>
                             <div className="space-y-1.5">
                               <Label className="text-xs">Balance (Optional)</Label>
-                              <Input type="number" placeholder="10000" value={editForm.balance || ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: e.target.value ? parseFloat(e.target.value) : undefined } : null)} />
+                              <UnitInput prefix={getSymbolForCurrency(editForm.currency)} placeholder="10000" value={editForm.balance ?? ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: parseNumberInput(e.target.value) } : null)} />
                             </div>
                             <div className="flex items-center gap-2 pt-5">
                               <Switch checked={editForm.isDefault} onCheckedChange={(c) => setEditForm(p => p ? { ...p, isDefault: c } : null)} />
                               <Label className="text-xs">Set as default</Label>
                             </div>
                           </div>
-                          <div className="flex gap-2 pt-1">
-                            <Button size="sm" onClick={() => { if (editForm.name && editForm.broker) { updateAccount(editForm.id, editForm); if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) updateSettings({ currency: editForm.currency }); setEditForm(null); } }} disabled={!editForm.name || !editForm.broker}>Save</Button>
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button size="sm" onClick={() => { if (editForm.name && editForm.broker) { updateAccount(editForm.id, editForm); if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) updateSettings({ currency: editForm.currency }); setEditForm(null); } }} disabled={!editForm.name || !editForm.broker} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}>Save</Button>
                             <Button size="sm" variant="outline" onClick={() => setEditForm(null)}>Cancel</Button>
+                            {(!editForm.name || !editForm.broker) && (
+                              <span className="text-[11px] text-muted-foreground">{!editForm.name ? 'Enter an account name' : 'Pick a broker'} to save</span>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -848,16 +849,19 @@ export default function Settings() {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-xs">Initial Balance (Optional)</Label>
-                          <Input type="number" placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
+                          <UnitInput prefix={getSymbolForCurrency(accountForm.currency)} placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
                         </div>
                         <div className="flex items-center gap-2 pt-5">
                           <Switch checked={accountForm.isDefault} onCheckedChange={(c) => setAccountForm(p => ({ ...p, isDefault: c }))} />
                           <Label className="text-xs">Set as default</Label>
                         </div>
                       </div>
-                      <div className="flex gap-2 pt-1">
-                        <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: accountForm.balance ? parseFloat(accountForm.balance) : undefined, brokerTimezone: accountForm.brokerTimezone || undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false,brokerTimezone:'' }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.profit }}>Add Account</Button>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: parseNumberInput(accountForm.balance), brokerTimezone: accountForm.brokerTimezone || undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false,brokerTimezone:'' }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}>Add Account</Button>
                         <Button size="sm" variant="outline" onClick={() => setShowAddAccount(false)}>Cancel</Button>
+                        {(!accountForm.name || !accountForm.broker) && (
+                          <span className="text-[11px] text-muted-foreground">{!accountForm.name ? 'Enter an account name' : 'Pick a broker'} to add</span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -952,7 +956,7 @@ export default function Settings() {
                       {[
                         { label: 'Max risk per trade', value: formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false), color: themeColors.profit },
                         { label: 'Account balance', value: formatCurrency(settings.accountSize, false), color: themeColors.primary },
-                        { label: 'Trades to blow account', value: String(Math.round(100 / settings.riskPerTrade)), color: themeColors.loss },
+                        { label: 'Trades to blow account', value: settings.riskPerTrade > 0 ? String(Math.round(100 / settings.riskPerTrade)) : '—', color: themeColors.loss },
                       ].map(({ label, value, color }) => (
                         <div key={label} className="rounded-lg p-3 bg-muted/40">
                           <p className="text-xs text-muted-foreground">{label}</p>

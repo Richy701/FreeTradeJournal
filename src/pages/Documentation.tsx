@@ -137,7 +137,7 @@ export default function Documentation() {
               </DocSection>
 
               <DocSection id="goals" title="Goals & Risk Management">
-                <p>Set trading goals, enforce risk rules, and monitor violations. Stay disciplined with performance alerts and live progress tracking.</p>
+                <p>Set profit, win rate, trade count, and risk/reward goals with progress computed live from your trades — each goal shows how often you hit it in recent periods. Cap your daily loss, per-trade loss, and drawdown, and get alerted the moment a trade crosses a limit, anywhere in the app.</p>
               </DocSection>
 
               <DocSection id="csv-import" title="CSV Import">
@@ -208,7 +208,7 @@ export default function Documentation() {
                 <Accordion type="single" collapsible className="w-full">
                   {[
                     ['Is my trading data secure?', 'Data is stored locally on your device by default. Cloud sync uses industry-standard encryption, and your financial information never leaves your control without consent.'],
-                    ['What does the Free plan include?', 'Everything you need to journal seriously — trade logging, analytics, journaling, goals, and CSV import/export — plus 20 AI queries per month. Pro removes usage limits and adds cloud sync, screenshot import, and the Theme Studio.'],
+                    ['What does the Free plan include?', 'Everything you need to journal seriously — trade logging, analytics, journaling, goals, and CSV import/export — plus 20 AI queries per month. Pro removes usage limits and adds cloud sync, 20 screenshot imports a day (free accounts get 3), and the Theme Studio.'],
                     ['What file formats can I import?', 'CSV files from most major brokers — MetaTrader, TradingView, Interactive Brokers, Tradovate, TopStep, and common prop firm formats.'],
                     ['Can I use this for tax reporting?', 'FreeTradeJournal provides detailed P&L calculations and exports, but always verify data accuracy and consult a tax professional.'],
                     ['Does FreeTradeJournal provide trading advice?', 'No. FreeTradeJournal is purely an analysis and journaling tool. All trading decisions remain your responsibility.'],

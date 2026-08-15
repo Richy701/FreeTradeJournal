@@ -69,29 +69,42 @@ function instantForTzTime(tz: string, year: number, month: number, day: number, 
 const isTradingDay = (day: number) => day >= 1 && day <= 5
 
 function fmtDuration(mins: number): string {
+  if (mins >= 1440) {
+    const d = Math.floor(mins / 1440)
+    const h = Math.round((mins % 1440) / 60)
+    return h === 0 ? `${d}d` : `${d}d ${h}h`
+  }
   const h = Math.floor(mins / 60)
   const m = Math.round(mins % 60)
   if (h === 0) return `${m}m`
   return `${h}h ${String(m).padStart(2, '0')}m`
 }
 
-// Session occurrences as absolute intervals near "now" (yesterday, today and
-// tomorrow in the session's own calendar), skipping weekends.
+// "Mon 08:00" in the user's local time — for opens further out than a countdown
+// reads well.
+function fmtWhen(d: Date): string {
+  return `${d.toLocaleDateString([], { weekday: 'short' })} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+}
+
+// Session occurrences as absolute intervals near "now" (yesterday through
+// three days ahead in the session's own calendar, skipping weekends) — wide
+// enough that the next open is always known, even across a whole weekend.
 function sessionIntervals(now: Date, s: SessionDef): { open: Date; close: Date }[] {
   const out: { open: Date; close: Date }[] = []
-  for (const offset of [-1, 0, 1]) {
+  const seen = new Set<number>()
+  for (const offset of [-1, 0, 1, 2, 3]) {
     const ref = new Date(now.getTime() + offset * DAY_MS)
     const p = tzParts(ref, s.tz)
     if (!isTradingDay(p.weekday)) continue
-    out.push({
-      open: instantForTzTime(s.tz, p.year, p.month, p.day, s.start),
-      close: instantForTzTime(s.tz, p.year, p.month, p.day, s.end),
-    })
+    const open = instantForTzTime(s.tz, p.year, p.month, p.day, s.start)
+    if (seen.has(open.getTime())) continue
+    seen.add(open.getTime())
+    out.push({ open, close: instantForTzTime(s.tz, p.year, p.month, p.day, s.end) })
   }
   return out
 }
 
-function sessionStatus(now: Date, intervals: { open: Date; close: Date }[]): { open: boolean; detail: string } {
+function sessionStatus(now: Date, intervals: { open: Date; close: Date }[]): { open: boolean; detail: string; nextOpen?: Date } {
   const t = now.getTime()
   for (const iv of intervals) {
     if (t >= iv.open.getTime() && t < iv.close.getTime()) {
@@ -99,8 +112,12 @@ function sessionStatus(now: Date, intervals: { open: Date; close: Date }[]): { o
     }
   }
   const next = intervals.map(iv => iv.open.getTime()).filter(o => o > t).sort((a, b) => a - b)[0]
-  if (next) return { open: false, detail: `opens in ${fmtDuration((next - t) / 60000)}` }
-  // Weekend gap longer than the computed window (e.g. Friday evening).
+  if (next) {
+    const nextOpen = new Date(next)
+    const mins = (next - t) / 60000
+    // Under a day out a countdown is most useful; further out, name the day.
+    return { open: false, detail: mins < 1440 ? `opens in ${fmtDuration(mins)}` : `opens ${fmtWhen(nextOpen)}`, nextOpen }
+  }
   return { open: false, detail: 'opens Monday' }
 }
 
@@ -150,24 +167,48 @@ export function MarketSessions() {
   const dayStart = new Date(now)
   dayStart.setHours(0, 0, 0, 0)
   const dayStartMs = dayStart.getTime()
-  const pct = (ms: number) => Math.max(0, Math.min(100, ((ms - dayStartMs) / DAY_MS) * 100))
-  const nowPct = pct(now.getTime())
 
-  const rows = SESSIONS.map(s => {
-    const intervals = sessionIntervals(now, s)
-    const status = sessionStatus(now, intervals)
-    // Clip each occurrence to the visible day; a session that spans local
-    // midnight naturally shows as two bars.
-    const segments = intervals
-      .map(iv => ({ left: pct(iv.open.getTime()), right: pct(iv.close.getTime()) }))
+  const sessionData = SESSIONS.map(s => ({
+    def: s,
+    intervals: sessionIntervals(now, s),
+    status: sessionStatus(now, sessionIntervals(now, s)),
+    clock: tzParts(now, s.tz).clock,
+  }))
+
+  // On a day with no sessions at all (the weekend), an all-empty timeline
+  // reads as broken — preview the next trading day instead.
+  const segmentsFor = (windowStartMs: number, intervals: { open: Date; close: Date }[]) => {
+    const p = (ms: number) => Math.max(0, Math.min(100, ((ms - windowStartMs) / DAY_MS) * 100))
+    return intervals
+      .map(iv => ({ left: p(iv.open.getTime()), right: p(iv.close.getTime()) }))
       .filter(seg => seg.right - seg.left > 0.1)
-    return { def: s, status, segments, clock: tzParts(now, s.tz).clock }
-  })
+  }
+  // Advance until a day where the timeline is actually populated (2+ sessions)
+  // — Sunday evening technically has Sydney's opening sliver, but a wall of
+  // near-empty bars is what we're trying to avoid.
+  const sessionsVisibleOn = (startMs: number) =>
+    sessionData.filter(r => segmentsFor(startMs, r.intervals).length > 0).length
+  let windowOffset = 0
+  while (windowOffset < 3 && sessionsVisibleOn(dayStartMs + windowOffset * DAY_MS) < 2) {
+    if (windowOffset === 0 && sessionsVisibleOn(dayStartMs) > 0) break // normal trading day
+    windowOffset++
+  }
+  const windowStartMs = dayStartMs + windowOffset * DAY_MS
+  const isPreview = windowOffset > 0
+  const previewDayLabel = new Date(windowStartMs).toLocaleDateString([], { weekday: 'long' })
+  const nowPct = Math.max(0, Math.min(100, ((now.getTime() - windowStartMs) / DAY_MS) * 100))
+
+  const rows = sessionData.map(r => ({ ...r, segments: segmentsFor(windowStartMs, r.intervals) }))
 
   const overlap = rows.find(r => r.def.name === 'London')?.status.open
     && rows.find(r => r.def.name === 'New York')?.status.open
   const cme = cmeStatus(now)
   const holiday = upcomingHoliday(now)
+
+  // First session to reopen — the headline fact while everything is closed.
+  const nextUp = rows
+    .filter(r => !r.status.open && r.status.nextOpen)
+    .sort((a, b) => a.status.nextOpen!.getTime() - b.status.nextOpen!.getTime())[0]
 
   return (
     <div className="rounded-xl border bg-card/50">
@@ -180,7 +221,18 @@ export function MarketSessions() {
           <p className="text-xs text-muted-foreground mt-1 truncate">
             {(() => {
               const open = rows.filter(r => r.status.open).map(r => r.def.name)
-              if (open.length === 0) return cme.open ? 'Forex sessions closed · CME futures trading' : 'All sessions closed'
+              if (open.length === 0) {
+                if (cme.open) return 'Forex sessions closed · CME futures trading'
+                if (nextUp) {
+                  const mins = (nextUp.status.nextOpen!.getTime() - now.getTime()) / 60000
+                  const when = mins < 1440 ? `in ${fmtDuration(mins)}` : fmtWhen(nextUp.status.nextOpen!)
+                  // A gap this long only happens on the weekend; short gaps are
+                  // just the daily hand-off between sessions.
+                  const prefix = mins > 12 * 60 ? 'Closed for the weekend' : 'All sessions closed'
+                  return `${prefix} · ${nextUp.def.name} opens ${when}`
+                }
+                return 'All sessions closed'
+              }
               if (open.length === 1) return `${open[0]} is open`
               return `${open.slice(0, -1).join(', ')} and ${open[open.length - 1]} are open`
             })()}
@@ -197,6 +249,11 @@ export function MarketSessions() {
       </div>
 
       <div className="border-t border-border/50 px-4 py-3">
+        {isPreview && (
+          <p className="text-[11px] text-muted-foreground mb-2">
+            Showing {previewDayLabel}'s sessions in your time — nothing trades today.
+          </p>
+        )}
         <div className="flex gap-3">
           {/* Session labels */}
           <div className="shrink-0 w-20 sm:w-24">
@@ -243,12 +300,14 @@ export function MarketSessions() {
               </div>
             ))}
 
-            {/* Now marker */}
-            <div
-              className="absolute top-4 bottom-0 w-0.5 rounded-full"
-              style={{ left: `${nowPct}%`, backgroundColor: themeColors.primary }}
-              aria-hidden
-            />
+            {/* Now marker — hidden while previewing a future day */}
+            {!isPreview && (
+              <div
+                className="absolute top-4 bottom-0 w-0.5 rounded-full"
+                style={{ left: `${nowPct}%`, backgroundColor: themeColors.primary }}
+                aria-hidden
+              />
+            )}
           </div>
 
           {/* Status column */}

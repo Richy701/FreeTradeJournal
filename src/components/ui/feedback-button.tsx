@@ -135,7 +135,7 @@ function getPageContext(): string {
     '/ideas': 'Trade Insights',
     '/coach': 'AI Coach',
     '/journal': 'Journal',
-    '/goals': 'Goals & Risk Management',
+    '/goals': 'Goals & Risk',
     '/prop-tracker': 'Prop Tracker',
     '/pricing': 'Pricing',
     '/documentation': 'Documentation',
