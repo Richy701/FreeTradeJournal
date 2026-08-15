@@ -2987,6 +2987,10 @@ function modelTuning(model, temperature) {
 // 2026-08-04 (extracted exact labels + dollar figures from a real PropTracker
 // screenshot; ~8.4k image prompt tokens per shot).
 const SCREENSHOT_MODEL = "gpt-5.6-luna";
+// Free users get a fixed lifetime number of trade-screenshot imports (a taste,
+// not a daily allowance). Pro shares the 20/day screenshot_import counter.
+const SCREENSHOT_TRADES_FREE_TOTAL = 3;
+const SCREENSHOT_PRO_DAILY = 20;
 // ── AI client: Vercel AI Gateway with direct-OpenAI fallback ──────────────
 // When AI_GATEWAY_API_KEY is set, requests route through the Vercel AI
 // Gateway's OpenAI-compatible endpoint (BYOK or Vercel-managed billing) and
@@ -4051,16 +4055,20 @@ exports.parseScreenshot = functions.https.onCall(reported("parseScreenshot", asy
         throw new functions.https.HttpsError("unauthenticated", "You must be signed in.");
     }
     const uid = context.auth.uid;
-    const userDoc = await db.collection("users").doc(uid).get();
-    if (!userDoc.exists || !isEntitledPro(userDoc.data())) {
-        throw new functions.https.HttpsError("permission-denied", "Screenshot import is a Pro feature.");
-    }
     const { image, mimeType, importType } = data;
     if (!image || !mimeType || !importType) {
         throw new functions.https.HttpsError("invalid-argument", "Missing image, mimeType, or importType.");
     }
-    if (!["billing", "payout"].includes(importType)) {
-        throw new functions.https.HttpsError("invalid-argument", "importType must be 'billing' or 'payout'.");
+    if (!["billing", "payout", "trades"].includes(importType)) {
+        throw new functions.https.HttpsError("invalid-argument", "importType must be 'billing', 'payout', or 'trades'.");
+    }
+    // Billing/payout (PropTracker) stay Pro-only. Trade screenshots give free
+    // users a fixed lifetime taste (SCREENSHOT_TRADES_FREE_TOTAL) so the feature
+    // is seen before the Pro gate; Pro users share the 20/day counter below.
+    const userDoc = await db.collection("users").doc(uid).get();
+    const isPro = userDoc.exists && isEntitledPro(userDoc.data());
+    if (!isPro && importType !== "trades") {
+        throw new functions.https.HttpsError("permission-denied", "Screenshot import is a Pro feature.");
     }
     // Validate image size and MIME type
     const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB base64
@@ -4071,26 +4079,38 @@ exports.parseScreenshot = functions.https.onCall(reported("parseScreenshot", asy
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new functions.https.HttpsError("invalid-argument", "Unsupported image type. Use JPEG, PNG, WebP, or GIF.");
     }
-    // Rate limit: 20/day — atomically check and increment
-    const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
     const todayStr = new Date().toISOString().split("T")[0];
-    const LIMIT = 20;
-    const usedToday = await db.runTransaction(async (tx) => {
-        const snap = await tx.get(usageRef);
-        const d = snap.data();
-        const current = (d?.date === todayStr ? d?.screenshot_import : 0) || 0;
-        if (current >= LIMIT) {
-            throw new functions.https.HttpsError("resource-exhausted", `Screenshot import limit reached (${LIMIT}/day). Resets at midnight UTC.`);
-        }
-        // Overwrite on a new day so stale sibling counters reset (see aiAssist).
-        if (d?.date !== todayStr) {
-            tx.set(usageRef, { date: todayStr, screenshot_import: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() });
-        }
-        else {
-            tx.set(usageRef, { date: todayStr, screenshot_import: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-        }
-        return current;
-    });
+    const LIMIT = isPro ? SCREENSHOT_PRO_DAILY : SCREENSHOT_TRADES_FREE_TOTAL;
+    // Free taste: lifetime counter in its own doc. It must NOT live in aiUsage,
+    // which is overwritten wholesale on each new day (see below / aiAssist).
+    const freeRef = db.collection("users").doc(uid).collection("meta").doc("screenshotImport");
+    const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
+    const usedToday = isPro
+        ? await db.runTransaction(async (tx) => {
+            const snap = await tx.get(usageRef);
+            const d = snap.data();
+            const current = (d?.date === todayStr ? d?.screenshot_import : 0) || 0;
+            if (current >= LIMIT) {
+                throw new functions.https.HttpsError("resource-exhausted", `Screenshot import limit reached (${LIMIT}/day). Resets at midnight UTC.`);
+            }
+            // Overwrite on a new day so stale sibling counters reset (see aiAssist).
+            if (d?.date !== todayStr) {
+                tx.set(usageRef, { date: todayStr, screenshot_import: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() });
+            }
+            else {
+                tx.set(usageRef, { date: todayStr, screenshot_import: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            }
+            return current;
+        })
+        : await db.runTransaction(async (tx) => {
+            const snap = await tx.get(freeRef);
+            const current = Number(snap.data()?.freeUsed) || 0;
+            if (current >= LIMIT) {
+                throw new functions.https.HttpsError("resource-exhausted", `You've used your ${LIMIT} free screenshot imports. Upgrade to Pro for ${SCREENSHOT_PRO_DAILY} a day.`);
+            }
+            tx.set(freeRef, { freeUsed: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            return current;
+        });
     if (!aiClientConfigured()) {
         throw new functions.https.HttpsError("internal", "AI API key not configured.");
     }
@@ -4114,7 +4134,59 @@ Return only valid JSON with no extra text.`;
 - notes: string (any description or reference number visible)
 
 Return only valid JSON with no extra text.`;
+    // Trade history screenshots: MT4/MT5 (desktop + mobile), TradingView,
+    // TopstepX/Tradovate/NinjaTrader, cTrader, broker apps. Times are returned
+    // exactly as printed (broker clock) — the client applies the account's
+    // broker timezone, same as CSV import. Costs come back separately so the
+    // client's gross/net logic (buildImportedTrades) stays the single source.
+    const tradesPrompt = `This is a screenshot of a trader's closed-trade history from a trading platform (MetaTrader 4/5, TradingView, TopstepX, Tradovate, NinjaTrader, cTrader, or a broker app). Extract every CLOSED trade visible. Return a JSON object:
+{
+  "platform": string (best guess: "mt4", "mt5", "tradingview", "topstepx", "tradovate", "ninjatrader", "ctrader", "other"),
+  "currency": string or null (account currency code if visible, e.g. "USD", "EUR"),
+  "trades": [ ... ],
+  "warnings": [string]
+}
+
+Each item in "trades" must have:
+- symbol: string, exactly as shown (keep suffixes like "EURUSD.m" or "NQZ5"; do not translate)
+- side: "long" or "short" (buy = long, sell = short; use the OPENING direction of the position)
+- entryPrice: number (open price)
+- exitPrice: number (close price)
+- quantity: number (lots, contracts, or shares as shown)
+- pnl: number, signed (the profit/loss figure printed for the row; negative for losses)
+- commission: number or null (only if a separate commission column/value is shown)
+- swap: number or null (only if a separate swap/rollover value is shown)
+- fees: number or null (only if separate fees are shown)
+- openTime: string, the open date/time exactly as printed, normalised to "YYYY-MM-DD HH:mm:ss" (or "YYYY-MM-DD" if only a date is shown). Do NOT convert time zones.
+- closeTime: string, same format. If only one time is shown for the row, use it for both.
+- confidence: "high" or "low" — "low" if any field for that row is cut off, blurry, ambiguous, or you had to infer it
+
+Rules:
+- Skip open/running positions, pending orders, and balance/deposit/withdrawal/credit rows.
+- Numbers must be plain JSON numbers: strip currency symbols and thousands separators, treat "(12.50)" and "−12.50" as -12.50, treat "1.234,56" as 1234.56 when the platform uses comma decimals.
+- If the year is not printed, infer it from context; if the date is not visible at all, still return the row with confidence "low" and openTime/closeTime as "".
+- On MetaTrader mobile, a row typically reads: symbol, "buy"/"sell" with the lot size, "openPrice → closePrice", and the profit on the right; times only appear when a row is expanded.
+- Do not invent rows. If nothing is legible, return an empty "trades" array and explain in "warnings".
+- Return only valid JSON with no extra text.`;
+    const prompt = importType === "billing" ? billingPrompt : importType === "payout" ? payoutPrompt : tradesPrompt;
+    // A full page of MT5 history can be ~50 rows × ~120 tokens; give trades headroom.
+    const maxTokens = importType === "trades" ? 6000 : 1500;
     const openai = getAIClient();
+    // A failed model call must not burn a free user's fixed allowance (or a Pro
+    // user's daily one): hand it back before rethrowing.
+    const refundUse = async () => {
+        try {
+            if (isPro) {
+                await usageRef.set({ screenshot_import: admin.firestore.FieldValue.increment(-1) }, { merge: true });
+            }
+            else {
+                await freeRef.set({ freeUsed: admin.firestore.FieldValue.increment(-1) }, { merge: true });
+            }
+        }
+        catch (e) {
+            console.error("parseScreenshot refund failed:", e.message);
+        }
+    };
     let result;
     try {
         const completion = await openai.chat.completions.create({
@@ -4124,11 +4196,11 @@ Return only valid JSON with no extra text.`;
                     role: "user",
                     content: [
                         { type: "image_url", image_url: { url: `data:${mimeType};base64,${image}` } },
-                        { type: "text", text: importType === "billing" ? billingPrompt : payoutPrompt },
+                        { type: "text", text: prompt },
                     ],
                 },
             ],
-            max_completion_tokens: 1500,
+            max_completion_tokens: maxTokens,
             ...modelTuning(SCREENSHOT_MODEL, 0),
             response_format: { type: "json_object" },
         });
@@ -4136,7 +4208,8 @@ Return only valid JSON with no extra text.`;
     }
     catch (err) {
         console.error("OpenAI Vision error:", err.message);
-        reportError(err, { fn: "parseScreenshot", uid });
+        reportError(err, { fn: "parseScreenshot", uid, importType });
+        await refundUse();
         throw new functions.https.HttpsError("internal", "Failed to parse screenshot. Please try again.");
     }
     let parsed;
@@ -4144,13 +4217,83 @@ Return only valid JSON with no extra text.`;
         parsed = JSON.parse(result);
     }
     catch {
+        await refundUse();
         throw new functions.https.HttpsError("internal", "Failed to parse AI response.");
+    }
+    const usage = { used: usedToday + 1, limit: LIMIT, remaining: LIMIT - (usedToday + 1), scope: isPro ? "day" : "total" };
+    if (importType === "trades") {
+        return {
+            trades: sanitizeScreenshotTrades(parsed.trades),
+            platform: typeof parsed.platform === "string" ? parsed.platform : "other",
+            currency: typeof parsed.currency === "string" && parsed.currency.length <= 5 ? parsed.currency : null,
+            warnings: Array.isArray(parsed.warnings) ? parsed.warnings.filter((w) => typeof w === "string").slice(0, 5) : [],
+            usage,
+        };
     }
     return {
         transactions: parsed.transactions || [],
-        usage: { used: usedToday + 1, limit: LIMIT, remaining: LIMIT - (usedToday + 1) },
+        usage,
     };
 }));
+function sanitizeScreenshotTrades(raw) {
+    if (!Array.isArray(raw))
+        return [];
+    const num = (v) => {
+        if (typeof v === "number")
+            return Number.isFinite(v) ? v : null;
+        if (typeof v === "string") {
+            const cleaned = v.replace(/[^0-9.,\-()−]/g, "").replace("−", "-");
+            const neg = /^\(.*\)$/.test(cleaned);
+            let body = cleaned.replace(/[()]/g, "");
+            // Both separators: the last one is the decimal point ("1,234.56" / "1.234,56").
+            // Comma only: a single comma followed by exactly 3 digits is a thousands
+            // separator ("1,234"), anything else is a European decimal ("12,50").
+            if (body.includes(".") && body.includes(",")) {
+                body = body.lastIndexOf(",") > body.lastIndexOf(".")
+                    ? body.replace(/\./g, "").replace(",", ".")
+                    : body.replace(/,/g, "");
+            }
+            else if (body.includes(",")) {
+                body = /^-?\d{1,3}(,\d{3})+$/.test(body) ? body.replace(/,/g, "") : body.replace(",", ".");
+            }
+            const n = parseFloat(body);
+            return Number.isFinite(n) ? (neg ? -Math.abs(n) : n) : null;
+        }
+        return null;
+    };
+    const out = [];
+    for (const row of raw.slice(0, 200)) {
+        if (!row || typeof row !== "object")
+            continue;
+        const r = row;
+        const symbol = typeof r.symbol === "string" ? r.symbol.trim().slice(0, 32) : "";
+        const sideRaw = typeof r.side === "string" ? r.side.trim().toLowerCase() : "";
+        const side = sideRaw === "long" || sideRaw === "buy" ? "long" : sideRaw === "short" || sideRaw === "sell" ? "short" : null;
+        const entryPrice = num(r.entryPrice);
+        const exitPrice = num(r.exitPrice);
+        const quantity = num(r.quantity);
+        const pnl = num(r.pnl);
+        if (!symbol || !side || entryPrice === null || exitPrice === null || pnl === null)
+            continue;
+        const str = (v) => (typeof v === "string" ? v.trim().slice(0, 40) : "");
+        out.push({
+            symbol,
+            side,
+            entryPrice,
+            exitPrice,
+            quantity: quantity && quantity > 0 ? quantity : 1,
+            pnl,
+            commission: num(r.commission),
+            swap: num(r.swap),
+            fees: num(r.fees),
+            openTime: str(r.openTime),
+            closeTime: str(r.closeTime) || str(r.openTime),
+            // A missing size is a guess (defaulted to 1) — flag it for the review table.
+            confidence: r.confidence === "low" || quantity === null ? "low" : "high",
+        });
+    }
+    return out;
+}
 // ─── Cloud Sync Proxy (bypasses content blockers) ──────────
 // Must match the client list in src/services/sync-engine.ts — a key missing
 // here is silently rejected as "Invalid sync key" ('settings' was missing for

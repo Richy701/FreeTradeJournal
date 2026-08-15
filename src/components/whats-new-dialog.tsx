@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useThemePresets } from '@/contexts/theme-presets'
-import { changelog, type ChangelogItem, type ChangelogItemType } from '@/constants/changelog'
+import { changelog, type ChangelogEntry, type ChangelogItem, type ChangelogItemType } from '@/constants/changelog'
 import {
   Dialog,
   DialogContent,
@@ -21,9 +21,10 @@ const typeConfig: Record<ChangelogItemType, { label: string; icon: typeof Plus; 
 interface WhatsNewDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** The version the user last dismissed. Releases shipped after it (other
-   *  than the latest, which renders in full) appear as one-line summaries.
-   *  Omit/null for manual opens (sidebar) and brand-new users — latest only. */
+  /** The version the user last dismissed. Every release shipped after it
+   *  renders in full (up to MAX_FULL_RELEASES; older ones become one-line
+   *  summaries). Omit/null for manual opens (sidebar) — shows the batch of
+   *  releases that shipped on the latest release's date. */
   sinceVersion?: string | null
 }
 
@@ -137,32 +138,95 @@ function ItemRow({ item, index, onNavigate }: { item: ChangelogItem; index: numb
   )
 }
 
-// Shows ONLY the latest release: a hero header, the flagged highlights, and
-// the rest collapsed behind "+N more". Releases missed since the user's last
-// visit compress to one line each. Full history lives at /changelog — the
-// dialog is a greeting, not an archive.
+// How many releases render in full. Beyond this, missed releases compress to
+// one line each — a user who has been away a month should not get an archive.
+const MAX_FULL_RELEASES = 3
+
+// One release's items: the flagged highlights, then the rest behind "+N more".
+function ReleaseItems({
+  release,
+  expanded,
+  onToggle,
+  onNavigate,
+}: {
+  release: ChangelogEntry
+  expanded: boolean
+  onToggle: () => void
+  onNavigate: () => void
+}) {
+  const flagged = release.items.filter(i => i.highlight)
+  const highlights = flagged.length > 0 ? flagged : release.items.slice(0, 3)
+  const rest = release.items.filter(i => !highlights.includes(i))
+  return (
+    <>
+      <div className="space-y-3">
+        {highlights.map((item, i) =>
+          item.image ? (
+            <FeatureCard key={item.text} item={item} index={i} onNavigate={onNavigate} />
+          ) : (
+            <ItemRow key={item.text} item={item} index={i} onNavigate={onNavigate} />
+          )
+        )}
+      </div>
+
+      {rest.length > 0 && (
+        <div className="mt-1">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
+            aria-expanded={expanded}
+          >
+            <span className="h-8 w-8 rounded-lg bg-muted/70 flex items-center justify-center shrink-0">
+              {expanded ? <CaretDown className="h-3.5 w-3.5" /> : <CaretRight className="h-3.5 w-3.5" />}
+            </span>
+            {expanded
+              ? 'Show less'
+              : `${rest.length} more improvement${rest.length !== 1 ? 's' : ''} & fixes`}
+          </button>
+          {expanded && (
+            <div className="space-y-0.5 mt-0.5">
+              {rest.map((item, i) => (
+                <ItemRow key={item.text} item={item} index={i} onNavigate={onNavigate} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
+// Shows every release the user has not seen yet, in full: a hero header for
+// the latest, then each release's flagged highlights with the rest collapsed
+// behind "+N more". Several releases can ship in one day, so the dialog must
+// not stop at changelog[0]. Beyond MAX_FULL_RELEASES, missed releases compress
+// to one line each. Full history lives at /changelog.
 export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDialogProps) {
   const { themeColors, alpha } = useThemePresets()
-  const [showRest, setShowRest] = useState(false)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   const release = changelog[0]
   if (!release) return null
 
-  const flagged = release.items.filter(i => i.highlight)
-  const highlights = flagged.length > 0 ? flagged : release.items.slice(0, 3)
-  const rest = release.items.filter(i => !highlights.includes(i))
-
-  // Releases the user skipped between their last visit and the latest one —
-  // shown as one line each, never as full item lists.
-  const missed = (() => {
-    if (!sinceVersion) return []
-    const sinceIdx = changelog.findIndex(r => r.version === sinceVersion)
-    if (sinceIdx <= 1) return [] // saw the previous release (or unknown version)
-    return changelog.slice(1, sinceIdx)
+  // Releases to render in full. Auto-open: everything newer than the version
+  // the user last dismissed. Manual open (sidebar) or unknown version: the
+  // whole batch that shipped on the latest release's date.
+  const unseenCount = (() => {
+    if (sinceVersion) {
+      const sinceIdx = changelog.findIndex(r => r.version === sinceVersion)
+      if (sinceIdx > 0) return sinceIdx
+    }
+    let n = 0
+    while (n < changelog.length && changelog[n].date === release.date) n++
+    return Math.max(1, n)
   })()
+  const full = changelog.slice(0, Math.min(unseenCount, MAX_FULL_RELEASES))
+  // Anything unseen beyond the full cap — one line each, never full item lists.
+  const missed = changelog.slice(full.length, unseenCount)
 
   const handleOpenChange = (next: boolean) => {
-    if (!next) setShowRest(false)
+    if (!next) setExpanded({})
     onOpenChange(next)
   }
 
@@ -207,45 +271,41 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
                 {release.summary}
               </p>
             </DialogDescription>
+            {full.length > 1 && (
+              <p className="relative text-xs text-zinc-500 mt-2">
+                Also in this update: {full.slice(1).map(r => `v${heroVersion(r.version)}`).join(', ')}
+              </p>
+            )}
           </DialogHeader>
         </div>
 
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-4 py-4 overscroll-contain">
-          <div className="space-y-3">
-            {highlights.map((item, i) =>
-              item.image ? (
-                <FeatureCard key={item.text} item={item} index={i} onNavigate={() => handleOpenChange(false)} />
-              ) : (
-                <ItemRow key={item.text} item={item} index={i} onNavigate={() => handleOpenChange(false)} />
-              )
-            )}
-          </div>
-
-          {rest.length > 0 && (
-            <div className="mt-1">
-              <button
-                type="button"
-                onClick={() => setShowRest(s => !s)}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors"
-                aria-expanded={showRest}
-              >
-                <span className="h-8 w-8 rounded-lg bg-muted/70 flex items-center justify-center shrink-0">
-                  {showRest ? <CaretDown className="h-3.5 w-3.5" /> : <CaretRight className="h-3.5 w-3.5" />}
-                </span>
-                {showRest
-                  ? 'Show less'
-                  : `${rest.length} more improvement${rest.length !== 1 ? 's' : ''} & fixes`}
-              </button>
-              {showRest && (
-                <div className="space-y-0.5 mt-0.5">
-                  {rest.map((item, i) => (
-                    <ItemRow key={item.text} item={item} index={i} onNavigate={() => handleOpenChange(false)} />
-                  ))}
+          {full.map((r, ri) => (
+            <div key={r.version} className={ri > 0 ? 'mt-5 pt-4 border-t border-border/70' : undefined}>
+              {/* The hero already introduces the latest release; older
+                  unseen releases get their own compact header. */}
+              {ri > 0 && (
+                <div className="px-3 mb-2.5">
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-sm font-bold tabular-nums shrink-0" style={{ color: themeColors.primary }}>
+                      v{heroVersion(r.version)}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground shrink-0">
+                      {new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed text-pretty">{r.summary}</p>
                 </div>
               )}
+              <ReleaseItems
+                release={r}
+                expanded={!!expanded[r.version]}
+                onToggle={() => setExpanded(e => ({ ...e, [r.version]: !e[r.version] }))}
+                onNavigate={() => handleOpenChange(false)}
+              />
             </div>
-          )}
+          ))}
 
           {/* Releases missed since the user's last visit — one line each */}
           {missed.length > 0 && (
