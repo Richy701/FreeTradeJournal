@@ -5,6 +5,7 @@ import { onFeedbackTrigger, triggerFeedbackDialog } from '@/lib/feedback-trigger
 // Deep-link sources (e.g. email links) → human-readable context labels
 const LINK_CONTEXTS: Record<string, string> = {
   digest: 'Weekly digest email',
+  'august-update': 'August update email',
 };
 
 export function FeedbackListener() {

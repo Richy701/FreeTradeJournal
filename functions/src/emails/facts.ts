@@ -20,6 +20,7 @@ export const URLS = {
   settings: `${BASE_URL}/settings`,
   subscription: `${BASE_URL}/settings?tab=subscription`,
   feedbackFromDigest: `${BASE_URL}/dashboard?feedback=digest`,
+  feedbackFromAugustUpdate: `${BASE_URL}/dashboard?feedback=august-update`,
   privacy: `${BASE_URL}/privacy`,
   terms: `${BASE_URL}/terms`,
   logo: `${BASE_URL}/favicon-64x64.png`,

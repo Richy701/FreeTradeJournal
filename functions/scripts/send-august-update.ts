@@ -1,6 +1,6 @@
 /**
  * August update roundup — trade form refresh, all-accounts view, Goals & Risk rebuild
- *  (v2.78 – v2.80, shipped 14–17 Aug 2026). Goes to EVERYONE incl. Pro/lifetime — it's
+ *  (v2.78 – v2.81, shipped 14–17 Aug 2026). Goes to EVERYONE incl. Pro/lifetime — it's
  * product news, not a sales pitch, and the email says "free on every plan".
  * One-off campaign; dedup field: augustUpdateSentAt. Replaces the narrower
  * all-accounts-only send that was armed for the same Monday slot.
@@ -34,7 +34,7 @@ const DRY_RUN = process.env.DRY_RUN !== 'false'
 const TEST_TO = process.env.TEST_TO || ''
 const MAX_SENDS = process.env.MAX_SENDS ? parseInt(process.env.MAX_SENDS, 10) : Number.MAX_SAFE_INTEGER
 const FROM = 'Richy at FreeTradeJournal <richy@freetradejournal.com>'
-const SUBJECT = 'August update: faster trade logging, one view of all accounts, new Goals & Risk'
+const SUBJECT = 'August update: import trades from a screenshot, faster logging, new Goals & Risk'
 const DEDUP_FIELD = 'augustUpdateSentAt'
 
 // Owner + known test/fake accounts
