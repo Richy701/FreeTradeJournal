@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
@@ -41,10 +41,14 @@ export default function Login() {
   const redirectPath = location.state?.from?.pathname || '/dashboard';
 
   // Already signed in (and not just browsing in demo mode): skip the form.
-  // Guarded on the in-flight flags so the sign-in handlers keep control of
-  // where a fresh sign-in lands (a new Google user goes to onboarding).
+  // The sign-in handlers own where a fresh sign-in lands (a new Google user
+  // goes to onboarding). Guarding on the in-flight flags alone is not enough:
+  // React Router wraps navigation in startTransition, so the handler's
+  // setLoading(false) re-renders this page at the old location first and this
+  // effect used to fire and replace /onboarding with the redirect path.
+  const handlerNavigated = useRef(false);
   useEffect(() => {
-    if (user && !isDemo && !loading && !googleLoading) {
+    if (user && !isDemo && !loading && !googleLoading && !handlerNavigated.current) {
       navigate(redirectPath, { replace: true });
     }
   }, [user, isDemo, loading, googleLoading, navigate, redirectPath]);
@@ -57,6 +61,7 @@ export default function Login() {
     try {
       await signIn(email, password);
       trackEvent('login_completed');
+      handlerNavigated.current = true;
       navigate(redirectPath, { replace: true });
     } catch (error: any) {
       let errorMessage = 'Something went wrong signing you in. Please try again.';
@@ -88,10 +93,12 @@ export default function Login() {
       if (isNewUser) {
         trackEvent('signup_completed');
         clearOnboardingData(googleUser.uid);
+        handlerNavigated.current = true;
         navigate('/onboarding', { replace: true });
       } else {
         trackEvent('login_completed');
-        navigate(redirectPath, { replace: true });
+        handlerNavigated.current = true;
+      navigate(redirectPath, { replace: true });
       }
     } catch (error: any) {
       const message = googleAuthErrorMessage(error);

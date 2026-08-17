@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { clearOnboardingData } from '@/utils/onboarding';
@@ -43,10 +43,14 @@ export default function Signup() {
   const navigate = useNavigate();
 
   // Already signed in (and not just browsing in demo mode): skip the form.
-  // Guarded on the in-flight flags so the sign-up handlers keep control of
-  // where a fresh sign-up lands (verify-email or onboarding).
+  // The sign-up handlers own where a fresh sign-up lands (verify-email or
+  // onboarding). Guarding on the in-flight flags alone is not enough: React
+  // Router wraps navigation in startTransition, so the handler's
+  // setLoading(false) re-renders this page at the old location first and this
+  // effect used to fire and replace /onboarding with /dashboard.
+  const handlerNavigated = useRef(false);
   useEffect(() => {
-    if (user && !isDemo && !loading && !googleLoading) {
+    if (user && !isDemo && !loading && !googleLoading && !handlerNavigated.current) {
       navigate('/dashboard', { replace: true });
     }
   }, [user, isDemo, loading, googleLoading, navigate]);
@@ -93,6 +97,7 @@ export default function Signup() {
       const user = await signUp(formData.email, formData.password, displayName);
       trackEvent('signup_completed');
       clearOnboardingData(user.uid);
+      handlerNavigated.current = true;
       navigate('/verify-email');
     } catch (error: any) {
       let errorMessage = 'Something went wrong creating your account. Please try again.';
@@ -124,10 +129,12 @@ export default function Signup() {
       if (isNewUser) {
         trackEvent('signup_completed');
         clearOnboardingData(googleUser.uid);
+        handlerNavigated.current = true;
         navigate('/onboarding');
       } else {
         // Existing account clicking Google here is just signing back in.
         trackEvent('login_completed');
+        handlerNavigated.current = true;
         navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
