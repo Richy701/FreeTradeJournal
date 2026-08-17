@@ -54,7 +54,13 @@ const PROSE =
   '[&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-6 ' +
   '[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-sm ' +
   '[&_img]:rounded-xl [&_img]:border [&_img]:my-8 [&_img]:max-w-full [&_img]:shadow-lg [&_img]:shadow-black/10 ' +
-  '[&_hr]:my-10 [&_hr]:border-border';
+  '[&_hr]:my-10 [&_hr]:border-border ' +
+  '[&_table]:w-full [&_table]:my-6 [&_table]:border-collapse [&_table]:text-sm ' +
+  '[&_th]:text-left [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b [&_th]:border-border [&_th]:py-2 [&_th]:pr-3 [&_th]:align-top ' +
+  '[&_td]:border-b [&_td]:border-border [&_td]:py-2 [&_td]:pr-3 [&_td]:align-top [&_td]:text-foreground/85 [&_td]:leading-relaxed ' +
+  // Below sm the table stacks: each row becomes a block with the first cell as its heading.
+  'max-sm:[&_table]:block max-sm:[&_thead]:hidden max-sm:[&_tbody]:block max-sm:[&_tr]:block max-sm:[&_tr]:border-b max-sm:[&_tr]:border-border max-sm:[&_tr]:py-3 ' +
+  'max-sm:[&_td]:block max-sm:[&_td]:border-0 max-sm:[&_td]:py-0.5 max-sm:[&_td]:pr-0 max-sm:[&_td:first-child]:font-semibold max-sm:[&_td:first-child]:text-foreground';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();

@@ -1,0 +1,55 @@
+# FreeTradeJournal
+
+> FreeTradeJournal is a free web-based trading journal for forex, futures, stock and prop-firm traders. Log trades, import broker CSVs or screenshots, track P&L and analytics, journal your sessions, and get AI coaching based only on your own trades. The core journal is free with no credit card. Pro is $12.99/month or $99.99/year with a 14-day free trial.
+
+Website: https://www.freetradejournal.com
+Live demo: the "View Live Demo" button on the home page opens the full app with sample data, no account needed.
+Support: support@freetradejournal.com
+
+## What it is
+
+- A browser-based trading journal (also installs as a PWA on mobile). No download.
+- Markets: forex, futures (ES, NQ, CL, MES, MNQ and others), stocks, crypto, indices.
+- Prop-firm support: FTMO, Topstep, Apex Trader Funding, The5ers, MyFundedFutures and custom firms. PropTracker tracks evaluation and funded-account rules (drawdown, daily loss, profit target).
+- Imports: CSV from any broker with automatic column mapping. Recognises MetaTrader 4/5, Tradovate, NinjaTrader, DAS Trader and TopstepX exports (order-per-row exports are paired into trades automatically). Screenshot import: upload an image of your closed trades from MT4/MT5, TradingView, TopstepX, Tradovate, NinjaTrader or a broker app and the trades are extracted.
+- Analytics: win rate, profit factor, expectancy, average R:R, max drawdown, largest and average win/loss, streaks, calendar heatmap, equity curve, daily/weekly/monthly P&L, breakdowns by symbol, strategy, account and weekday.
+- Journal: daily and per-trade entries, screenshots, emotion tagging, templates.
+- Goals and risk rules: profit targets, max daily loss, max trades per day, with alerts.
+- AI (uses only your own trade data, no market predictions or signals): Coach FTJ chat, AI trade review, journal review (what you wrote vs what you did), strategy tagger, risk alerts.
+- Multi-account: separate accounts per broker or prop firm, plus a combined view.
+- Data export to CSV at any time. Data is stored per-user; Pro adds encrypted cloud sync across devices.
+
+## Pricing (as of August 2026)
+
+- Free: unlimited trades, up to 2 trading accounts, 1 PropTracker account, dashboard analytics over the trailing 30 days, 20 journal entries, 20 AI queries per month, 3 screenshot imports total, CSV import and export. No credit card.
+- Pro: $12.99/month or $99.99/year. Removes the free limits (all-time analytics, unlimited journal entries, unlimited accounts, unlimited PropTracker accounts), adds cloud sync across devices, much higher AI limits, priority support. 14-day free trial, cancel anytime.
+- No lifetime plan is sold (retired 7 August 2026).
+
+## Who it is for
+
+Retail and prop-firm traders who want a journal that is free to start, works for forex and futures (not only US stocks), and includes AI coaching without a $30-plus per month subscription. Common comparisons: TradeZella (no free plan, from $35/month), TraderSync (no free plan, from $29.95/month), Edgewonk ($197 per year term), Tradervue (free plan capped at 30 trades per month).
+
+## Key pages
+
+- [Home](https://www.freetradejournal.com/): overview, screenshots, FAQ
+- [Pricing](https://www.freetradejournal.com/pricing): current Free vs Pro comparison
+- [Documentation](https://www.freetradejournal.com/documentation): how every feature works
+- [Changelog](https://www.freetradejournal.com/changelog): every release with screenshots
+- [Blog](https://www.freetradejournal.com/blog): guides on journaling, prop firms, imports and the AI coach
+- [Forex trading journal](https://www.freetradejournal.com/forex-trading-journal)
+- [Futures trading tracker](https://www.freetradejournal.com/futures-trading-tracker)
+- [Prop firm dashboard](https://www.freetradejournal.com/prop-firm-dashboard)
+- [PropTracker](https://www.freetradejournal.com/prop-tracker)
+- [Position size calculator](https://www.freetradejournal.com/position-size-calculator)
+- [TradeZella alternative](https://www.freetradejournal.com/tradezella-alternative)
+- [TraderSync alternative](https://www.freetradejournal.com/tradersync-alternative)
+- [Edgewonk alternative](https://www.freetradejournal.com/edgewonk-alternative)
+- [Affiliate program](https://www.freetradejournal.com/affiliate)
+- [Privacy](https://www.freetradejournal.com/privacy)
+- [Terms](https://www.freetradejournal.com/terms)
+
+## Optional
+
+- [FTMO review](https://www.freetradejournal.com/ftmo-review)
+- [The5ers review](https://www.freetradejournal.com/the5ers-review)
+- [Top One Futures review](https://www.freetradejournal.com/top-one-futures-review)
