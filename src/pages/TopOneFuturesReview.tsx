@@ -75,7 +75,10 @@ export default function TopOneFuturesReview() {
             </div>
 
             <div className="flex items-center gap-4 mb-8">
-              <img src="/images/partners/toponetrader.svg" alt="Top One Futures logo" className="h-12 object-contain" />
+              {/* Official white-on-transparent logo: dark panel in light mode so it stays visible. */}
+              <div className="inline-flex items-center rounded-xl bg-zinc-950 dark:bg-transparent px-4 py-3 dark:p-0">
+                <img src="/images/partners/toponetrader.svg" alt="Top One Futures logo" className="h-12 object-contain" />
+              </div>
             </div>
 
             <div className="prose prose-sm dark:prose-invert max-w-none space-y-4 text-muted-foreground leading-relaxed">

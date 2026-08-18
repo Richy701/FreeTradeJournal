@@ -180,7 +180,8 @@ function FirmRow({ firm }: { firm: PropFirm }) {
     <div className="group rounded-2xl border border-border/40 bg-card hover:border-amber-500/25 transition-all duration-300 overflow-hidden">
       <div className="flex flex-col md:flex-row">
         {/* Logo */}
-        <div className="md:w-52 lg:w-60 shrink-0 flex items-center justify-center p-8 md:p-6 bg-white/[0.04] border-b md:border-b-0 md:border-r border-border/50">
+        {/* Partner logos are official white-on-transparent files, so the cell is a dark surface in light mode. */}
+        <div className="md:w-52 lg:w-60 shrink-0 flex items-center justify-center p-8 md:p-6 bg-zinc-950 dark:bg-white/[0.04] border-b md:border-b-0 md:border-r border-border/50">
           <img
             src={firm.logo}
             alt={`${firm.name} logo`}
