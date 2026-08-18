@@ -6,7 +6,7 @@ import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { MarketingHeader } from '@/components/marketing-header';
 import { HeroGeometric } from '@/components/ui/shape-landing-hero';
 import { ArrowRight, X, ChartBar, Calculator, FileArrowDown, ChartLineUp, Buildings, Infinity } from '@phosphor-icons/react';
 
@@ -74,19 +74,7 @@ export default function FuturesTradingTracker() {
       <StructuredData />
       <div className="min-h-screen bg-background flex flex-col">
 
-        <header className="absolute top-0 left-0 right-0 z-50">
-          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
-              <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
-            </Link>
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base hidden sm:block">Pricing</Link>
-              <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base">Sign In</Link>
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
+        <MarketingHeader />
 
         <HeroGeometric
           title1="Track Every Contract,"
