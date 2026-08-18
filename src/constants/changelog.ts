@@ -37,8 +37,8 @@ export const changelog: ChangelogEntry[] = [
       },
       {
         type: 'fixed',
-        text: 'AI features stop asking once your allowance is used',
-        description: 'When the server says your coaching runs are used up, the app now believes it straight away instead of retrying, and shows the remaining count correctly.',
+        text: 'The AI credits count is now accurate',
+        description: 'If you had used up your free AI credits, the app could keep showing an old number and keep trying to run AI features anyway. It now shows the right count and stops as soon as your credits are gone.',
       },
     ],
   },
