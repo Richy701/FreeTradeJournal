@@ -8,7 +8,9 @@ export const PRICE_YEARLY = '$99.99/year'
 // emails. Do not use in any email that still gets sent.
 export const PRICE_LIFETIME = '$249 lifetime'
 export const TRIAL_DAYS = 14
-export const FREE_AI_QUERIES_PER_MONTH = 20
+// Since 18 Aug 2026 (v2.82.0): coaching runs the user asks for. Automatic
+// tips, journal prompts and risk alerts are free and not counted.
+export const FREE_AI_COACHING_RUNS_PER_MONTH = 5
 
 export const BASE_URL = 'https://www.freetradejournal.com'
 
