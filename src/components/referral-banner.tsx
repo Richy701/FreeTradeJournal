@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Copy, Check, ShareNetwork, X, Gift } from '@phosphor-icons/react'
+import { Copy, Check, ShareNetwork, Gift } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { NoticeBanner } from '@/components/notice-banner'
 import { useAuth } from '@/contexts/auth-context'
 import { useProStatus } from '@/contexts/pro-context'
-import { useThemePresets } from '@/contexts/theme-presets'
 import { useUserStorage } from '@/utils/user-storage'
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics'
@@ -31,7 +31,6 @@ export function ReferralBanner() {
   // Pro that was bought. Trial users still see it — extra days are real value.
   const { isPro, trialEndsAt } = useProStatus()
   const isPayingPro = isPro && !trialEndsAt
-  const { themeColors, alpha } = useThemePresets()
   const userStorage = useUserStorage()
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [copied, setCopied] = useState(false)
@@ -123,45 +122,29 @@ export function ReferralBanner() {
   const remaining = Math.max(0, threshold - count)
 
   return (
-    <div
-      className="mx-4 mb-4 rounded-xl border px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
-      style={{ borderColor: alpha(themeColors.primary, '25'), backgroundColor: alpha(themeColors.primary, '05') }}
-    >
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <Gift className="h-4 w-4 shrink-0" style={{ color: themeColors.primary }} />
-        <span className="text-sm min-w-0">
-          <span className="font-medium text-foreground">
-            {count > 0
-              ? `${count} of ${threshold} friends referred — ${remaining} more for free Pro`
-              : `Invite ${threshold} friends, earn free Pro`}
-          </span>
-          <span className="text-muted-foreground hidden md:inline"> · Friends sign up with your link and log a trade</span>
-        </span>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Button
-          size="sm"
-          className="gap-1.5 h-8 text-xs font-semibold text-white"
-          style={{ backgroundColor: themeColors.primary }}
-          onClick={handleCopy}
-        >
-          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? 'Copied' : 'Copy Link'}
-        </Button>
-        {typeof navigator !== 'undefined' && 'share' in navigator && (
-          <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={handleShare}>
-            <ShareNetwork className="h-3.5 w-3.5" />
-            Share
+    <NoticeBanner
+      className="mx-4 mb-4"
+      tone="info"
+      icon={Gift}
+      title={count > 0
+        ? `${count} of ${threshold} friends referred, ${remaining} more for free Pro`
+        : `Invite ${threshold} friends, earn free Pro`}
+      description="Friends sign up with your link and log a trade"
+      actions={
+        <>
+          {typeof navigator !== 'undefined' && 'share' in navigator && (
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <ShareNetwork className="h-3.5 w-3.5" />
+              Share
+            </Button>
+          )}
+          <Button size="sm" className="shadow-none" onClick={handleCopy}>
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? 'Copied' : 'Copy link'}
           </Button>
-        )}
-        <button
-          onClick={handleDismiss}
-          className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
-          aria-label="Dismiss"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
+        </>
+      }
+      onDismiss={handleDismiss}
+    />
   )
 }

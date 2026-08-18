@@ -3,7 +3,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { usePnlDisplay } from '@/hooks/use-pnl-display'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { List, ArrowUp, ArrowDown, Plus, UploadSimple, CaretRight } from '@phosphor-icons/react'
+import { List, Plus, UploadSimple, CaretRight } from '@phosphor-icons/react'
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,8 +52,10 @@ function formatTradeTime(date: Date): string {
   return format(date, 'h:mm a')
 }
 
+const VISIBLE_ROWS = 8
+
 export function DataTable({ data }: DataTableProps) {
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const { formatCurrency } = useSettings()
   const { mode: pnlMode, formatPnl } = usePnlDisplay()
   const { getTrades } = useDemoData()
@@ -70,10 +72,17 @@ export function DataTable({ data }: DataTableProps) {
     })).sort((a: Trade, b: Trade) => b.exitTime.getTime() - a.exitTime.getTime())
   }, [getTrades])
 
-  const visibleTrades = trades.slice(0, 10)
+  const visibleTrades: Trade[] = trades.slice(0, VISIBLE_ROWS)
+
+  // One-line read of the rows shown, so the card says something before you scan it
+  const summary = useMemo(() => {
+    const wins = visibleTrades.filter(t => t.pnl > 0).length
+    const losses = visibleTrades.filter(t => t.pnl < 0).length
+    const net = visibleTrades.reduce((s, t) => s + t.pnl, 0)
+    return { wins, losses, net }
+  }, [visibleTrades])
 
   // Group consecutive trades by day so the date reads once per day
-  // instead of repeating on every row.
   const groupedTrades = useMemo(() => {
     const groups: { label: string; trades: Trade[] }[] = []
     for (const trade of visibleTrades) {
@@ -85,15 +94,25 @@ export function DataTable({ data }: DataTableProps) {
     return groups
   }, [visibleTrades])
 
+  const goToLog = () => navigate('/trades')
+
   return (
-    <Card className="h-[400px] flex flex-col">
+    <Card className="flex flex-col">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-baseline gap-2.5 min-w-0">
+            <CardTitle className="text-lg font-semibold">Recent trades</CardTitle>
+            {visibleTrades.length > 0 && (
+              <span className="text-xs text-muted-foreground tabular-nums truncate">
+                {summary.wins}W {summary.losses}L ·{' '}
+                <span style={{ color: summary.net >= 0 ? themeColors.profit : themeColors.loss }}>{formatCurrency(summary.net)}</span>
+              </span>
+            )}
+          </div>
           {trades.length > 0 && (
             <Link
               to="/trades"
-              className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               View all
               <CaretRight className="h-3 w-3" />
@@ -101,97 +120,67 @@ export function DataTable({ data }: DataTableProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden pt-0">
+      <CardContent className="pt-0">
         {trades.length > 0 ? (
-          <div className="h-full overflow-y-auto -mx-1 px-1">
-            <div className="flex flex-col">
-              {groupedTrades.map((group) => (
-                <div key={group.label}>
-                  <div className="px-2 pt-2.5 pb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {group.label}
-                  </div>
-                  {group.trades.map((trade: Trade, index: number) => {
+          <div>
+            {groupedTrades.map((group) => (
+              <div key={group.label}>
+                <div className="flex items-center gap-3 pt-3 pb-1">
+                  <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
+                  <span className="flex-1 border-t border-border/60" aria-hidden="true" />
+                </div>
+                <ul>
+                  {group.trades.map((trade) => {
                     const isLong = trade.side === 'long'
                     const isProfit = trade.pnl >= 0
                     const sideColor = isLong ? themeColors.profit : themeColors.loss
                     const pnlColor = isProfit ? themeColors.profit : themeColors.loss
                     const pctValue = Number.isFinite(trade.pnlPercentage) ? trade.pnlPercentage : 0
-                    const tradeTime = formatTradeTime(trade.exitTime)
-                    const qty = Number(trade.quantity) || 0
-
+                    const time = formatTradeTime(trade.exitTime)
+                    const secondary = pnlMode === 'percent'
+                      ? formatCurrency(trade.pnl, true)
+                      : pctValue !== 0 ? `${isProfit ? '+' : ''}${pctValue.toFixed(2)}%` : ''
                     return (
-                      <div key={trade.id}>
+                      <li key={trade.id}>
                         <button
                           type="button"
-                          onClick={() => navigate('/trades')}
-                          className="w-full flex items-center gap-3 py-2.5 px-2 rounded-md hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                          onClick={goToLog}
+                          className="group w-full flex items-center gap-3 h-11 -mx-2 px-2 rounded-md text-left hover:bg-muted/40 transition-colors"
                         >
-                          {/* Left: direction arrow, colored by side (long green / short red) */}
-                          <div className="w-4 flex items-center justify-center shrink-0">
-                            {isLong ? (
-                              <ArrowUp className="h-3.5 w-3.5" weight="bold" style={{ color: sideColor }} />
-                            ) : (
-                              <ArrowDown className="h-3.5 w-3.5" weight="bold" style={{ color: sideColor }} />
-                            )}
-                          </div>
-
-                          {/* Center: symbol + side, size, time */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-foreground truncate">
-                                {trade.symbol}
-                              </span>
-                              {trade.strategy && (
-                                <span className="text-[11px] text-muted-foreground truncate max-w-[120px]">
-                                  {trade.strategy}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
-                              {isLong ? 'Long' : 'Short'}{qty > 0 ? ` ×${qty.toLocaleString()}` : ''}{tradeTime ? ` · ${tradeTime}` : ''}
-                            </p>
-                          </div>
-
-                          {/* Right: P&L + percentage */}
-                          <div className="flex flex-col items-end">
-                            <span
-                              className="text-sm font-semibold tabular-nums"
-                              style={{ color: pnlColor }}
-                            >
-                              {formatPnl(trade.pnl)}
+                          <div className="flex-1 min-w-0 flex items-baseline gap-2">
+                            <span className="text-sm font-semibold shrink-0">{trade.symbol}</span>
+                            <span className="text-xs truncate">
+                              <span className="font-medium" style={{ color: sideColor }}>{isLong ? 'Long' : 'Short'}</span>
+                              {trade.strategy && <span className="text-muted-foreground"> · {trade.strategy}</span>}
+                              {time && <span className="text-muted-foreground hidden sm:inline"> · {time}</span>}
                             </span>
-                            {pnlMode === 'percent' ? (
-                              <span className="text-[11px] text-muted-foreground tabular-nums">
-                                {formatCurrency(trade.pnl, true)}
-                              </span>
-                            ) : pctValue !== 0 && (
-                              <span className="text-[11px] text-muted-foreground tabular-nums">
-                                {isProfit ? '+' : ''}{pctValue.toFixed(2)}%
-                              </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 tabular-nums">
+                            <span className="text-sm font-semibold" style={{ color: pnlColor }}>{formatPnl(trade.pnl)}</span>
+                            {secondary && (
+                              <span className="text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5 hidden sm:inline-block min-w-[3.75rem] text-center">{secondary}</span>
                             )}
+                            <CaretRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" aria-hidden="true" />
                           </div>
                         </button>
-                        {index < group.trades.length - 1 && (
-                          <div className="mx-2 border-b border-border/40" />
-                        )}
-                      </div>
+                      </li>
                     )
                   })}
-                </div>
-              ))}
-            </div>
+                </ul>
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
+          <div className="flex items-center justify-center text-muted-foreground py-10">
             <div className="text-center space-y-3">
-              <List className="h-8 w-8 opacity-40" />
-              <p className="text-lg font-medium">No trades found</p>
+              <List className="h-8 w-8 opacity-40 mx-auto" />
+              <p className="text-lg font-medium">No trades yet</p>
               <p className="text-sm">Add your first trade or import a CSV to get started</p>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <Link to="/trades">
                   <Button size="sm" className="gap-1.5">
                     <Plus className="h-3.5 w-3.5" />
-                    Add Trade
+                    Add trade
                   </Button>
                 </Link>
                 <Button

@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, X, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire, Image as ImageIcon, CaretRight } from '@phosphor-icons/react'
+import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire, Image as ImageIcon, CaretRight, ArrowRight } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
@@ -35,6 +35,7 @@ import { PropFirmSelect } from '@/components/prop-firm-select'
 import { LATEST_CHANGELOG_VERSION } from '@/constants/changelog'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ReferralBanner } from '@/components/referral-banner'
+import { NoticeBanner } from '@/components/notice-banner'
 import { useLoggingStreak } from '@/hooks/use-logging-streak'
 import { GettingStartedChecklist } from '@/components/getting-started-checklist'
 import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
@@ -99,22 +100,13 @@ function FreeAIBanner() {
   if (!visible || !freeAiQuota) return null
 
   return (
-    <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3 relative">
-      <Brain className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">You have {freeAiQuota.remaining} free AI coaching runs this month</p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-          Try Coach FTJ below -- ask it anything about your trading. Your free queries reset monthly.
-        </p>
-      </div>
-      <button
-        onClick={() => { setVisible(false); if (dismissKey) localStorage.setItem(dismissKey, '1') }}
-        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1"
-        aria-label="Dismiss"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
+    <NoticeBanner
+      tone="warning"
+      icon={Brain}
+      title={`You have ${freeAiQuota.remaining} free AI coaching runs this month`}
+      description="Try Coach FTJ below and ask it anything about your trading. Free runs reset monthly."
+      onDismiss={() => { setVisible(false); if (dismissKey) localStorage.setItem(dismissKey, '1') }}
+    />
   )
 }
 
@@ -793,94 +785,68 @@ export default function Dashboard() {
 
       {/* Free User Data Warning Banner */}
       {!isPro && !isDemo && showDataWarning && (
-        <div className="mx-4 mb-4 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ backgroundColor: 'hsl(var(--amber-500) / 0.05)', borderColor: 'hsl(var(--amber-500) / 0.3)' }}>
-              <WarningCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-500" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium mb-1">
-                  Your data is stored locally on this device only
-                </p>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Clearing browser data, using incognito mode, or switching devices will erase your trades.
-                  <strong> Export backups regularly in Settings</strong> or upgrade to Pro for automatic cloud sync.
-                </p>
-                <Link to="/pricing">
-                  <button className="text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-lg transition-colors duration-150">
-                    Enable Cloud Sync →
-                  </button>
-                </Link>
-              </div>
-              <button
-                onClick={() => setShowDataWarning(false)}
-                className="text-muted-foreground hover:text-foreground flex-shrink-0 p-2 -m-1 flex items-center justify-center"
-                aria-label="Close warning"
-              >
-                <X className="h-4 w-4" />
-              </button>
-        </div>
+        <NoticeBanner
+          className="mx-4 mb-4"
+          tone="warning"
+          icon={WarningCircle}
+          title="Your data is stored locally on this device only"
+          description="Clearing browser data, incognito mode, or switching devices will erase your trades. Export backups in Settings, or upgrade to Pro for cloud sync."
+          actions={
+            <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-400 text-black shadow-none">
+              <Link to="/pricing">Enable Cloud Sync <ArrowRight className="h-3.5 w-3.5" /></Link>
+            </Button>
+          }
+          onDismiss={() => setShowDataWarning(false)}
+          dismissLabel="Close warning"
+        />
       )}
 
       {/* Free analytics window notice */}
       {analyticsHiddenCount > 0 && (
-        <div className="mx-4 mb-4 rounded-xl border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-xs text-muted-foreground">
-            Stats and charts show your last {FREE_ANALYTICS_WINDOW_DAYS} days ({analyticsHiddenCount} older {analyticsHiddenCount === 1 ? 'trade' : 'trades'} not included). Your trade log and exports always include everything.
-          </p>
-          <Link
-            to="/pricing"
-            className="text-xs font-semibold hover:underline"
-            style={{ color: themeColors.primary }}
-            onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'dashboard_window_notice' })}
-          >
-            Unlock full history with Pro
-          </Link>
-        </div>
+        <NoticeBanner
+          className="mx-4 mb-4"
+          tone="neutral"
+          icon={Calendar}
+          title={`Stats and charts show your last ${FREE_ANALYTICS_WINDOW_DAYS} days`}
+          description={`${analyticsHiddenCount} older ${analyticsHiddenCount === 1 ? 'trade' : 'trades'} not included. Your trade log and exports always include everything.`}
+          actions={
+            <Button asChild size="sm" variant="outline">
+              <Link
+                to="/pricing"
+                onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'dashboard_window_notice' })}
+              >
+                Unlock full history <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          }
+        />
       )}
 
       {/* Deals & PropTracker Banner */}
       {(showDealsBanner || showTrackerBanner) && (
-        <div className="mx-4 mb-4 rounded-xl border px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4" style={{borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '08')}}>
-          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <Tag className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
-              <span className="text-sm">
-                <span className="font-medium text-foreground">Prop firm deals</span>
-                <span className="text-muted-foreground hidden sm:inline"> · The5ers, FTMO, Apex codes</span>
-              </span>
-            </div>
-            <span className="hidden sm:block w-px h-4 bg-border/60 shrink-0" />
-            <div className="flex items-center gap-2">
-              <Buildings className="h-3.5 w-3.5 shrink-0" style={{color: themeColors.primary}} />
-              <span className="text-sm">
-                <span className="font-medium text-foreground">PropTracker</span>
-                <span className="text-muted-foreground hidden sm:inline"> · Track P&L across every firm</span>
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <a href="/affiliate" target="_blank" rel="noopener noreferrer">
-              <button className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150" style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}>
-                View Deals →
-              </button>
-            </a>
-            <Link to="/prop-tracker">
-              <button className="text-xs font-semibold border px-3 py-1.5 rounded-lg transition-colors duration-150" style={{borderColor: alpha(themeColors.primary, '40'), color: themeColors.primary}}>
-                PropTracker →
-              </button>
-            </Link>
-          </div>
-          <button
-            onClick={() => {
-              localStorage.setItem('ftj-dismiss-deals', '1');
-              localStorage.setItem('ftj-dismiss-tracker', '1');
-              setShowDealsBanner(false);
-              setShowTrackerBanner(false);
-            }}
-            className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
-            aria-label="Dismiss"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
+        <NoticeBanner
+          className="mx-4 mb-4"
+          tone="info"
+          icon={Tag}
+          title="Prop firm deals"
+          description="Discount codes for The5ers, FTMO, Apex and more"
+          actions={
+            <>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/prop-tracker"><Buildings className="h-3.5 w-3.5" /> PropTracker</Link>
+              </Button>
+              <Button asChild size="sm" className="shadow-none">
+                <a href="/affiliate" target="_blank" rel="noopener noreferrer">View deals <ArrowRight className="h-3.5 w-3.5" /></a>
+              </Button>
+            </>
+          }
+          onDismiss={() => {
+            localStorage.setItem('ftj-dismiss-deals', '1');
+            localStorage.setItem('ftj-dismiss-tracker', '1');
+            setShowDealsBanner(false);
+            setShowTrackerBanner(false);
+          }}
+        />
       )}
 
       <ReferralBanner />

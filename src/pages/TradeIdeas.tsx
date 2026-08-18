@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
 import { Button } from '@/components/ui/button'
+import { NoticeBanner } from '@/components/notice-banner'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -80,19 +81,22 @@ export default function TradeIdeas() {
   }, [hiddenCount])
 
   const windowNotice = hiddenCount > 0 && (
-    <div className="rounded-xl border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-      <p className="text-xs text-muted-foreground">
-        Insights cover your last {FREE_ANALYTICS_WINDOW_DAYS} days ({hiddenCount} older {hiddenCount === 1 ? 'trade' : 'trades'} not included). Your trade log and exports always include everything.
-      </p>
-      <Link
-        to="/pricing"
-        className="text-xs font-semibold hover:underline"
-        style={{ color: themeColors.primary }}
-        onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'insights_window_notice' })}
-      >
-        Unlock full history with Pro
-      </Link>
-    </div>
+    <NoticeBanner
+      tone="neutral"
+      icon={CalendarDots}
+      title={`Insights cover your last ${FREE_ANALYTICS_WINDOW_DAYS} days`}
+      description={`${hiddenCount} older ${hiddenCount === 1 ? 'trade' : 'trades'} not included. Your trade log and exports always include everything.`}
+      actions={
+        <Button asChild size="sm" variant="outline">
+          <Link
+            to="/pricing"
+            onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'insights_window_notice' })}
+          >
+            Unlock full history <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
+      }
+    />
   )
 
   if (!hasEnoughData) {

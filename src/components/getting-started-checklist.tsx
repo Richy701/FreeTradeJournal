@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, CaretDown, CaretUp, BookOpen, Target, TrendUp, Robot } from '@phosphor-icons/react';
+import { Check, X, CaretDown, CaretUp, CaretRight, BookOpen, Target, TrendUp, Robot } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
@@ -164,6 +164,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
   const doneCount = items.filter(i => i.done).length;
   const totalCount = items.length;
   const progressPct = Math.round((doneCount / totalCount) * 100);
+  const nextItemId = items.find(i => !i.done)?.id;
 
   return (
     <div className="mx-4 mb-4 rounded-xl border border-border bg-card overflow-hidden">
@@ -213,43 +214,42 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         <div className="divide-y divide-border/60">
           {items.map((item) => {
             const Icon = item.icon;
+            const isNext = item.id === nextItemId;
             return (
               <Link
                 key={item.id}
                 to={item.href}
                 className={`flex items-center gap-3 px-4 py-3 transition-colors group ${
-                  item.done ? 'opacity-60' : 'hover:bg-muted/60'
+                  item.done ? '' : isNext ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/60'
                 }`}
               >
-                {/* Checkbox */}
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    item.done
-                      ? 'bg-primary border-primary'
-                      : 'border-muted-foreground/60 group-hover:border-primary/60'
-                  }`}
-                >
-                  {item.done && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />}
-                </div>
-
-                {/* Icon */}
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                {/* Status tile: check when done, feature icon when not */}
+                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   item.done ? 'bg-muted' : 'bg-primary/10'
                 }`}>
-                  <Icon className={`h-4 w-4 ${item.done ? 'text-muted-foreground' : 'text-primary'}`} />
+                  {item.done
+                    ? <Check className="h-4 w-4 text-muted-foreground" weight="bold" />
+                    : <Icon className="h-4 w-4 text-primary" />}
                 </div>
 
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium leading-none mb-0.5 ${item.done ? 'line-through text-muted-foreground' : ''}`}>
-                    {item.label}
-                  </p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <p className={`text-sm font-medium leading-none ${item.done ? 'text-muted-foreground' : ''}`}>
+                      {item.label}
+                    </p>
+                    {isNext && (
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-primary bg-primary/10 rounded px-1.5 py-0.5 leading-none">
+                        Up next
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                 </div>
 
-                {/* Arrow for incomplete */}
+                {/* Caret for incomplete */}
                 {!item.done && (
-                  <span className="text-muted-foreground text-xs flex-shrink-0 group-hover:text-foreground transition-colors">-&gt;</span>
+                  <CaretRight className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
                 )}
               </Link>
             );

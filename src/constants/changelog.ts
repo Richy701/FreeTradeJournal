@@ -24,6 +24,73 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.83.0',
+    date: '2026-08-18',
+    summary: 'PropTracker is rebuilt around your accounts with a proper Performance tab, the coach remembers its last review, and Coach FTJ on the dashboard reads as a briefing.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'PropTracker puts your accounts first',
+        description: 'The page is now three tabs: Accounts, Performance and AI Coach. Your account cards are the first thing you see instead of the last, with an Active / Passed / Failed filter once you have a few. Your invested, earned, net P&L and active count sit in the header. Breach and deadline warnings stay at the top whichever tab you are on. The risk calculator lives with the accounts and shows your max safe loss for today without opening it.',
+        image: {
+          src: '/screenshots/proptracker-accounts-tab.png',
+          alt: 'PropTracker Accounts tab with headline numbers, tabs, the risk calculator and account cards',
+        },
+        link: { to: '/prop-tracker', label: 'Open PropTracker' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Performance tab with real analytics',
+        description: 'Pick a period (3, 6 or 12 months, or all time) and see fees against payouts by month with your best and worst month, cumulative P&L that carries in what you had banked before the period, where the fees went (evaluations, resets, monthly, other) with a count of each, payout stats (average, largest, last, gap between payouts, days from account start to first payout), and a by-firm table sorted by net with each firm\'s pass/fail record, resets, invested, earned and ROI.',
+        image: {
+          src: '/screenshots/proptracker-performance-tab.png',
+          alt: 'PropTracker Performance tab with track record, monthly cash flow, cumulative P&L, fees by type and payouts',
+        },
+        link: { to: '/prop-tracker', label: 'See your numbers' },
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'PropTracker AI Coach remembers your last review',
+        description: 'The review stays on the page when you come back, with when it was written and how many accounts and transactions it saw. If you log more after that, the tab tells you how many were added so you know when a fresh review is worth it. The empty state explains what the coach reads and returns before you spend a credit, warnings are a flagged list, and the game plan is numbered steps.',
+        image: {
+          src: '/screenshots/proptracker-coach-tab.png',
+          alt: 'PropTracker AI Coach tab with a score, the big picture, sections and a numbered game plan',
+        },
+      },
+      {
+        type: 'improved',
+        text: 'Balance updates show what the number means before you save',
+        description: 'The Update balance and End of day forms show your last recorded balance, the change since then, and live profit target, total drawdown and daily drawdown for the balance you are typing, with a warning if it is over a limit. Adding a transaction is one tap on the type instead of a dropdown, and the account form shows the money equivalent of each drawdown percentage as you set rules.',
+        image: {
+          src: '/screenshots/proptracker-balance-preview.png',
+          alt: 'The Update balance dialog showing the change since last update and drawdown after the update',
+        },
+      },
+      {
+        type: 'improved',
+        text: 'Coach FTJ on the dashboard reads as a briefing',
+        description: 'Instead of five equal cards, the coach opens with one sentence on how you are doing, then the things to fix ranked by how serious they are (three shown, the rest behind "more"), with the numbers in bold. Tilt sits in the header as a small strip you can expand. The chat box is always there under the tips, with a "More on" chip for each tip so you can ask about it in one tap. The separate "Your numbers" card is gone; the dashboard cards above already show those figures.',
+        image: {
+          src: '/screenshots/coach-ftj-briefing.png',
+          alt: 'Coach FTJ card with a lead sentence, three ranked tips, and the ask box with tip chips',
+        },
+      },
+      {
+        type: 'improved',
+        text: 'Recent trades on the dashboard is a plain list',
+        description: 'Eight rows, no scrollbar inside the card, the date shown once per day, and a small wins/losses/net line next to the title.',
+      },
+      {
+        type: 'fixed',
+        text: 'AI Coach no longer drops sections',
+        description: 'Some reviews only showed Watch Out For and Your Game Plan because the other sections were written on one line and were not picked up. All six sections now show whatever format the review comes back in, and your saved review is re-read the same way without using a credit.',
+      },
+    ],
+  },
+  {
     version: '2.82.0',
     date: '2026-08-18',
     summary: 'Free AI credits are counted differently: the automatic tips, prompts and alerts no longer use them up.',
@@ -2757,4 +2824,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.82.0'
+export const LATEST_CHANGELOG_VERSION = '2.83.0'

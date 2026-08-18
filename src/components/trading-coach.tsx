@@ -4,7 +4,7 @@ import { AIFeedback } from '@/components/ui/ai-feedback'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Heartbeat, Clock, Scales, Fire, Snowflake, GraduationCap, ChartPie, ChatCircle, PaperPlaneTilt, X, type Icon } from '@phosphor-icons/react'
+import { Lightbulb, ChartLineUp, Warning, Trophy, TrendUp, TrendDown, Brain, Heartbeat, Clock, Scales, Fire, Snowflake, GraduationCap, ChartPie, PaperPlaneTilt, X, type Icon } from '@phosphor-icons/react'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useProStatus } from '@/contexts/pro-context'
@@ -16,7 +16,6 @@ import { useUserStorage } from '@/utils/user-storage'
 // Aggregation shared with AI Analysis / Coaching Tips payloads; unit-tested in trade-aggregates.test.ts
 import { computeTradeAggregates } from '@/utils/trade-aggregates'
 import { getAICache, setAICache } from '@/utils/ai-cache'
-import { SpinnerGap } from '@phosphor-icons/react'
 import { renderMarkdown } from '@/lib/markdown'
 
 interface Trade {
@@ -278,44 +277,6 @@ function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, op
   )
 }
 
-function CoachStats({ metrics, themeColors }: { metrics: any; themeColors: { primary: string; profit: string; loss: string } }) {
-  const streakLabel = metrics.streak.count === 1
-    ? (metrics.streak.type === 'winning' ? 'win' : 'loss')
-    : (metrics.streak.type === 'winning' ? 'wins' : 'losses')
-  const stats: { label: string; value: string; color?: string }[] = [
-    { label: 'Win rate', value: `${metrics.winRate.toFixed(0)}%` },
-    { label: 'Profit factor', value: metrics.profitFactor.toFixed(2) },
-    { label: 'Avg R:R', value: `${metrics.riskReward.toFixed(2)}:1` },
-    { label: 'Recent win rate', value: `${metrics.recentWinRate.toFixed(0)}%` },
-    { label: 'Total trades', value: String(metrics.totalTrades) },
-    {
-      label: 'Current streak',
-      value: `${metrics.streak.count} ${streakLabel}`,
-      color: metrics.streak.count === 0
-        ? undefined
-        : (metrics.streak.type === 'winning' ? themeColors.profit : themeColors.loss),
-    },
-  ]
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <ChartPie className="h-4 w-4" style={{ color: themeColors.primary }} />
-        <span className="text-sm font-semibold">Your numbers</span>
-        {/* The coach always analyses full history (pattern detection needs it),
-            so make that explicit next to the period-filtered dashboard widgets. */}
-        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">All time</span>
-      </div>
-      <div className="grid grid-cols-3 gap-x-3 gap-y-4">
-        {stats.map((s) => (
-          <div key={s.label}>
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className="text-lg font-semibold font-display" style={s.color ? { color: s.color } : undefined}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -329,6 +290,22 @@ const CHAT_SUGGESTIONS = [
   "Should I stop trading today?",
   "How can I improve my win rate?",
 ]
+
+// Bold the numbers in a coaching sentence (percentages, money, counts,
+// ratios) so the eye can scan the figures without reading every word.
+const NUMBER_TOKEN = /(\$-?[\d,]+(?:\.\d+)?[kKmM]?|-?\d+(?:\.\d+)?%|\b\d+(?:\.\d+)?(?:x|:1|R)\b|\b\d[\d,]*(?:\.\d+)?\b)/g
+function Emphasize({ text }: { text: string }) {
+  const parts = text.split(NUMBER_TOKEN)
+  return (
+    <>
+      {parts.map((part, i) =>
+        i % 2 === 1
+          ? <strong key={i} className="font-semibold text-foreground">{part}</strong>
+          : <span key={i}>{part}</span>
+      )}
+    </>
+  )
+}
 
 // Replace the em/en dashes the model favours with plain punctuation.
 function cleanDashes(s: string): string {
@@ -396,7 +373,8 @@ export function TradingCoach() {
   })
 
   // Chat state
-  const [chatOpen, setChatOpen] = useState(false)
+  const [showAllTips, setShowAllTips] = useState(false)
+  const [tiltOpen, setTiltOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
     try {
       const stored = userStorage.getItem(CHAT_CACHE_KEY) ?? localStorage.getItem(CHAT_CACHE_KEY)
@@ -1321,7 +1299,9 @@ export function TradingCoach() {
   // Filter out dismissed tips
   const visibleTips = useMemo(() => {
     const filtered = baseTips.filter(tip => !dismissedTips.has(tip.key))
-    return filtered.length > 0 ? filtered : baseTips
+    const list = filtered.length > 0 ? filtered : baseTips
+    // AI tips arrive in model order; rank them the same way as the client tips
+    return [...list].sort((a, b) => (TIP_SEVERITY_ORDER[a.type] ?? 5) - (TIP_SEVERITY_ORDER[b.type] ?? 5))
   }, [baseTips, dismissedTips])
 
   const dismissTip = useCallback((key: string) => {
@@ -1360,249 +1340,254 @@ export function TradingCoach() {
 
   if (visibleTips.length === 0 && !aiLoading) return null
 
+  // Briefing layout: one lead sentence (the "you're doing fine" tip, if any),
+  // then the things to fix ranked by severity, then the chat. Five equal
+  // coloured cards gave the eye nowhere to go.
+  const leadTip = visibleTips.find(t => t.type === 'success') ?? null
+  // Anything else marked success is good news, not a fix: keep it, but after the real items
+  const focusTips = [
+    ...visibleTips.filter(t => t !== leadTip && t.type !== 'success'),
+    ...visibleTips.filter(t => t !== leadTip && t.type === 'success'),
+  ]
+  const shownTips = showAllTips ? focusTips : focusTips.slice(0, 3)
+  const hiddenTipCount = focusTips.length - shownTips.length
+  const tipQuestions = focusTips.slice(0, 3).map(t => cleanDashes(t.title))
+  const hasTilt = trades.length >= 3 && tiltScore.label !== 'Insufficient data'
+  const chatBusy = chatStreaming || !!finishingText
+
   return (
-    <div className="space-y-6">
-      {(trades.length >= 3 || metrics) && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {trades.length >= 3 && (
-            <Card className="min-h-[200px] flex flex-col">
-              <CardContent className="flex-1 flex flex-col justify-center py-6 sm:py-6">
-                <TiltMeter tilt={tiltScore} alpha={alpha} />
-              </CardContent>
-            </Card>
-          )}
-          {metrics && (
-            <Card className={`min-h-[200px] flex flex-col ${trades.length < 3 ? 'md:col-span-2' : ''}`}>
-              <CardContent className="flex-1 flex flex-col justify-center py-6 sm:py-6">
-                <CoachStats metrics={metrics} themeColors={themeColors} />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-      <Card>
+    <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 text-lg font-semibold">
-            <span>Coach FTJ</span>
-            {hasCritical && (
-              <span
-                className="px-2 py-1 text-xs font-bold rounded animate-pulse"
-                style={{
-                  backgroundColor: alpha(themeColors.loss, '20'),
-                  color: themeColors.loss
-                }}
-              >
-                URGENT
-              </span>
-            )}
-          </div>
-          {aiTips && <AIFeedback feature="Coach FTJ" responseId={visibleTips[0]?.title} />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {aiLoading ? (
-          <div className="flex items-center justify-center gap-2 py-10">
-            <SpinnerGap className="h-4 w-4 animate-spin" style={{ color: themeColors.primary }} />
-            <span className="text-sm text-muted-foreground">Loading AI coaching...</span>
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleTips.map((tip) => {
-              const color = getTipColor(tip.type)
-              const TipIcon = getTipIcon(tip.type, tip)
-              return (
-                <div
-                  key={tip.key}
-                  className="relative rounded-lg border border-border bg-card p-4 flex flex-col gap-2"
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <span>Coach FTJ</span>
+              {hasCritical && (
+                <span
+                  className="px-2 py-0.5 text-xs font-semibold rounded-full"
+                  style={{ backgroundColor: alpha(themeColors.loss, '18'), color: themeColors.loss }}
                 >
-                  <div className="flex items-start gap-2.5">
-                    <div className="p-1.5 rounded-md shrink-0" style={{ backgroundColor: alpha(color, '15') }}>
-                      <TipIcon className="h-4 w-4" style={{ color }} />
-                    </div>
-                    <h3 className="font-semibold text-sm leading-snug pt-0.5" style={{ color }}>
-                      {cleanDashes(tip.title)}
-                    </h3>
-                    <button
-                      onClick={() => dismissTip(tip.key)}
-                      className="ml-auto shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="Dismiss this insight"
-                      title="Dismiss"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{cleanDashes(tip.message)}</p>
-                </div>
-              )
-            })}
+                  Urgent
+                </span>
+              )}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {aiLoading
+                ? `Reading your last ${trades.length} trade${trades.length !== 1 ? 's' : ''}`
+                : trades.length > 0
+                  ? `${aiTips ? 'Read' : 'Based on'} your last ${trades.length} trade${trades.length !== 1 ? 's' : ''}. Updates when you log more.`
+                  : 'Log a trade and the coach starts reading.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            {hasTilt && (
+              <button
+                type="button"
+                onClick={() => setTiltOpen(v => !v)}
+                aria-expanded={tiltOpen}
+                className="flex items-center gap-1.5 text-xs rounded-md border px-2.5 h-8 hover:bg-muted/40 transition-colors"
+              >
+                <Heartbeat className="h-3.5 w-3.5" style={{ color: tiltScore.color }} />
+                <span className="text-muted-foreground">Tilt</span>
+                <span className="font-semibold tabular-nums" style={{ color: tiltScore.color }}>{tiltScore.score}<span className="text-muted-foreground font-normal">/100</span></span>
+                <span className="text-muted-foreground hidden sm:inline">· {tiltScore.label}</span>
+              </button>
+            )}
+            {aiTips && <AIFeedback feature="Coach FTJ" responseId={visibleTips[0]?.title} />}
+          </div>
+        </div>
+        {hasTilt && tiltOpen && (
+          <div className="mt-3 rounded-lg border p-3">
+            <TiltMeter tilt={tiltScore} alpha={alpha} />
           </div>
         )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {aiLoading ? (
+          <div className="space-y-3 py-1" aria-busy="true" aria-label="Loading coaching">
+            <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
+            <div className="h-3.5 w-1/2 rounded bg-muted animate-pulse" />
+            <div className="h-3.5 w-2/3 rounded bg-muted animate-pulse" />
+          </div>
+        ) : (
+          <>
+            {leadTip && (
+              <div className="flex items-start gap-3">
+                <p className="text-sm leading-relaxed flex-1"><Emphasize text={cleanDashes(leadTip.message)} /></p>
+                <button
+                  type="button"
+                  onClick={() => dismissTip(leadTip.key)}
+                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+                  aria-label="Not useful, hide this"
+                  title="Not useful"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </div>
+            )}
 
-        {/* Ask Coach FTJ */}
-        {hasAIAccess && (
-          <div className="mt-4 pt-4 border-t border-border/50">
-            {!chatOpen ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => { setChatOpen(true); setTimeout(() => chatInputRef.current?.focus(), 100) }}
-              >
-                <ChatCircle className="mr-2 h-3.5 w-3.5" />
-                Ask Coach FTJ
-              </Button>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Chat</span>
-                  <div className="flex items-center gap-1">
-                    {chatMessages.length > 0 && (
-                      <button
-                        onClick={clearChat}
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded"
-                      >
-                        Clear
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setChatOpen(false)}
-                      className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
-                      aria-label="Close chat"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Messages — aria-busy suppresses announcements while tokens
-                    stream in; the finished reply is announced once. */}
-                <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-64 overflow-y-auto space-y-2.5 scroll-smooth">
-                  {chatMessages.length === 0 && !chatStreaming && (
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground text-center">Ask anything about your trading</p>
-                      <div className="flex flex-wrap gap-1.5 justify-center">
-                        {CHAT_SUGGESTIONS.map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => sendChatMessage(s)}
-                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border/70 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {chatMessages.map((msg, i) =>
-                    msg.role === 'user' ? (
-                      <div key={i} className="text-right">
-                        <span
-                          className="inline-block px-3 py-1.5 rounded-lg text-sm text-left"
-                          style={{
-                            backgroundColor: alpha(themeColors.primary, '15'),
-                            color: themeColors.primary,
-                          }}
-                        >
-                          {msg.content}
-                        </span>
-                      </div>
-                    ) : (
-                      <div key={i} className="space-y-1.5">
+            {shownTips.length > 0 && (
+              <ol className={leadTip ? 'border-t divide-y' : 'divide-y'}>
+                {shownTips.map((tip, i) => {
+                  const color = getTipColor(tip.type)
+                  const TipIcon = getTipIcon(tip.type, tip)
+                  return (
+                    <li key={tip.key} className="flex items-start gap-3 py-3 last:pb-0">
+                      <span className="h-6 w-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0 tabular-nums mt-px">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <div
-                            className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: alpha(themeColors.primary, '15') }}
-                          >
-                            <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                          </div>
-                          <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: themeColors.primary }}>
-                            Coach FTJ
-                          </span>
+                          <TipIcon className="h-3.5 w-3.5 shrink-0" style={{ color }} aria-hidden="true" />
+                          <p className="text-sm font-semibold leading-snug">{cleanDashes(tip.title)}</p>
                         </div>
-                        <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }} />
+                        <p className="text-sm text-muted-foreground leading-relaxed mt-1"><Emphasize text={cleanDashes(tip.message)} /></p>
                       </div>
-                    )
-                  )}
-                  {(chatStreaming || finishingText) && typedStream && (
-                    <div className="space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={() => dismissTip(tip.key)}
+                        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+                        aria-label="Not useful, hide this"
+                        title="Not useful"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+
+            {(hiddenTipCount > 0 || (showAllTips && focusTips.length > 3)) && (
+              <button
+                type="button"
+                onClick={() => setShowAllTips(v => !v)}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {hiddenTipCount > 0 ? `Show ${hiddenTipCount} more` : 'Show less'}
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Ask Coach FTJ: always open, seeded with the tips above */}
+        {hasAIAccess && (
+          <div className="pt-4 border-t space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold">Ask Coach FTJ</p>
+              {chatMessages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {(chatMessages.length > 0 || chatBusy) && (
+              <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-72 overflow-y-auto space-y-2.5 scroll-smooth">
+                {chatMessages.map((msg, i) =>
+                  msg.role === 'user' ? (
+                    <div key={i} className="text-right">
+                      <span
+                        className="inline-block px-3 py-1.5 rounded-lg text-sm text-left"
+                        style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}
+                      >
+                        {msg.content}
+                      </span>
+                    </div>
+                  ) : (
+                    <div key={i} className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <div
-                          className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: alpha(themeColors.primary, '15') }}
-                        >
+                        <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                           <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                         </div>
-                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: themeColors.primary }}>
-                          Coach FTJ
-                        </span>
+                        <span className="text-xs font-semibold" style={{ color: themeColors.primary }}>Coach FTJ</span>
                       </div>
-                      <div>
-                        <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(typedStream) }} />
-                        <span className="inline-block h-3 w-0.5 mt-1 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
-                      </div>
+                      <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }} />
                     </div>
-                  )}
-                  {chatStreaming && !typedStream && (
-                    <div className="flex items-center gap-2 py-2">
-                      <div
-                        className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: alpha(themeColors.primary, '15') }}
-                      >
+                  )
+                )}
+                {(chatStreaming || finishingText) && typedStream && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                         <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                       </div>
-                      <div
-                        className="flex items-center gap-1 px-3 py-2.5 rounded-2xl"
-                        style={{ backgroundColor: alpha(themeColors.primary, '08') }}
-                        aria-label="Coach FTJ is typing"
-                      >
-                        {[0, 1, 2].map(i => (
-                          <span
-                            key={i}
-                            className="h-1.5 w-1.5 rounded-full animate-bounce"
-                            style={{ backgroundColor: themeColors.primary, animationDelay: `${i * 160}ms`, animationDuration: '900ms' }}
-                          />
-                        ))}
-                      </div>
+                      <span className="text-xs font-semibold" style={{ color: themeColors.primary }}>Coach FTJ</span>
                     </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-
-                {/* Input */}
-                <form
-                  onSubmit={(e) => { e.preventDefault(); sendChatMessage(chatInput) }}
-                  className="flex items-center gap-2"
-                >
-                  <input
-                    ref={chatInputRef}
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask Coach FTJ..."
-                    aria-label="Ask Coach FTJ"
-                    disabled={chatStreaming || !!finishingText}
-                    className="flex-1 h-9 px-3 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!chatInput.trim() || chatStreaming || !!finishingText}
-                    className="h-9 w-9 p-0 shrink-0"
-                    style={{ backgroundColor: themeColors.primary }}
-                    aria-label="Send message"
-                  >
-                    <PaperPlaneTilt className="h-3.5 w-3.5" />
-                  </Button>
-                </form>
-                {/* freeAiQuota is null for Pro/demo, so this only renders for
-                    free users — no more hitting the wall with zero warning. */}
-                {freeAiQuota && (
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    {freeAiQuota.remaining} of {freeAiQuota.limit} free AI coaching runs left this month
-                  </p>
+                    <div>
+                      <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(typedStream) }} />
+                      <span className="inline-block h-3 w-0.5 mt-1 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+                    </div>
+                  </div>
                 )}
+                {chatStreaming && !typedStream && (
+                  <div className="flex items-center gap-2 py-2">
+                    <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                      <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                    </div>
+                    <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '08') }} aria-label="Coach FTJ is typing">
+                      {[0, 1, 2].map(i => (
+                        <span key={i} className="h-1.5 w-1.5 rounded-full animate-bounce" style={{ backgroundColor: themeColors.primary, animationDelay: `${i * 160}ms`, animationDuration: '900ms' }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
+            )}
+
+            {chatMessages.length === 0 && !chatBusy && (
+              <div className="flex flex-wrap gap-1.5">
+                {(tipQuestions.length > 0 ? tipQuestions : CHAT_SUGGESTIONS).map((label) => {
+                  const fromTip = tipQuestions.includes(label)
+                  const message = fromTip ? `Tell me more about "${label}". What exactly should I do about it?` : label
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => sendChatMessage(message)}
+                      className="text-xs px-2.5 py-1.5 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                    >
+                      {fromTip ? `More on: ${label}` : label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => { e.preventDefault(); sendChatMessage(chatInput) }}
+              className="flex items-center gap-2"
+            >
+              <input
+                ref={chatInputRef}
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask anything about your trading"
+                aria-label="Ask Coach FTJ"
+                disabled={chatBusy}
+                className="flex-1 h-10 px-3 rounded-md border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!chatInput.trim() || chatBusy}
+                className="h-10 w-10 p-0 shrink-0"
+                style={{ backgroundColor: themeColors.primary }}
+                aria-label="Send message"
+              >
+                <PaperPlaneTilt className="h-4 w-4" />
+              </Button>
+            </form>
+            {/* freeAiQuota is null for Pro/demo, so this only renders for
+                free users — no more hitting the wall with zero warning. */}
+            {freeAiQuota && (
+              <p className="text-xs text-muted-foreground">
+                {freeAiQuota.remaining} of {freeAiQuota.limit} free AI coaching runs left this month
+              </p>
             )}
           </div>
         )}
@@ -1631,6 +1616,5 @@ export function TradingCoach() {
         )}
       </CardContent>
     </Card>
-    </div>
   )
 }

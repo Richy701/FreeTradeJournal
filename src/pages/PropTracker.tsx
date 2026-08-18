@@ -2,24 +2,20 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { trackGateHit } from '@/lib/track-activity'
 import DOMPurify from 'dompurify'
 import {
-  PieChart,
-  Pie,
   Tooltip,
-  Cell,
   AreaChart,
   Area,
   XAxis,
   YAxis,
   ResponsiveContainer,
   ReferenceLine,
+  BarChart,
+  Bar,
 } from "recharts"
 import {
   Plus,
   Buildings,
-  CurrencyDollar,
   TrendUp,
-  TrendDown,
-  Wallet,
   CaretDown,
   CaretUp,
   Pencil,
@@ -39,13 +35,15 @@ import {
   ArrowsClockwise,
   Target,
   ListChecks,
-  Trophy,
   Calculator,
   ClipboardText,
+  ArrowRight,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { NoticeBanner } from '@/components/notice-banner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -110,6 +108,9 @@ const PROP_FIRMS = [
   'Aqua Funded',
   'Custom...',
 ] as const
+
+type PropTab = 'accounts' | 'performance' | 'coach'
+type PerfRange = '3m' | '6m' | '12m' | 'all'
 
 const FREE_ACCOUNT_LIMIT = 1
 
@@ -182,6 +183,20 @@ const FIRM_BRAND_COLORS: Record<string, string> = {
 // entries onto the next UTC day, so every stored date goes through this.
 function localDateStr(d = new Date()) {
   return d.toLocaleDateString('en-CA')
+}
+
+// Whole calendar days between a stored YYYY-MM-DD and today, in local time.
+// Comparing Date.now() with a noon-anchored date read one day short before noon.
+function daysSinceLocalDate(ymd: string) {
+  const today = new Date(localDateStr() + 'T12:00:00').getTime()
+  const then = new Date(ymd.slice(0, 10) + 'T12:00:00').getTime()
+  return Math.round((today - then) / 86400000)
+}
+
+// Stored dates are YYYY-MM-DD, but imported or seeded rows can carry a full ISO
+// timestamp. Parse either without turning the plain form into an Invalid Date.
+function parseStoredDate(s: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T12:00:00') : new Date(s)
 }
 
 // todayPnL is only meaningful on the day it was recorded — a stale value would
@@ -342,6 +357,80 @@ function getChallengeStatus(account: PropFirmAccount) {
   }
 }
 
+// The coach prompt asks for "**Heading** — text" sections, but models vary:
+// heading and text on one line, "## Heading", "Heading:", different case.
+// Scan line by line so any of those still land in the right section, and keep
+// anything before the first heading (other than the score) as the big picture.
+const COACH_SECTION_KEYS = ['verdict', 'roi', 'challenge', 'firms', 'warnings', 'next'] as const
+type CoachSectionKey = typeof COACH_SECTION_KEYS[number]
+const COACH_HEADINGS: Record<CoachSectionKey, string> = {
+  verdict: 'The Big Picture',
+  roi: 'Your Money',
+  challenge: 'Where You Stand',
+  firms: 'Which Firms Work',
+  warnings: 'Watch Out For',
+  next: 'Your Game Plan',
+}
+function parseCoachReview(text: string): { score: number | null; sections: Record<CoachSectionKey, string> } {
+  const scoreMatch = text.match(/SCORE:?\s*\**\s*(\d+)\s*\/\s*10/i)
+  const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null
+  const sections = Object.fromEntries(COACH_SECTION_KEYS.map(k => [k, ''])) as Record<CoachSectionKey, string>
+  const buffers = Object.fromEntries(COACH_SECTION_KEYS.map(k => [k, [] as string[]])) as Record<CoachSectionKey, string[]>
+  const preamble: string[] = []
+  let current: CoachSectionKey | null = null
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim()
+    if (!line) continue
+    if (/^\**\s*SCORE:?/i.test(line)) continue
+    const stripped = line.replace(/^#{1,6}\s*/, '').replace(/^\*+\s*/, '').replace(/^_+/, '')
+    let matched: CoachSectionKey | null = null
+    let remainder = ''
+    const hasMarkup = /^(#{1,6}\s*|\*\*|__)/.test(line)
+    for (const key of COACH_SECTION_KEYS) {
+      const heading = COACH_HEADINGS[key]
+      if (stripped.slice(0, heading.length).toLowerCase() !== heading.toLowerCase()) continue
+      const after = stripped.slice(heading.length).replace(/^\s*\**\s*/, '').replace(/^_+\s*/, '')
+      // "Watch out for the Apex limit" is prose, not the Watch Out For heading:
+      // require bold/# markup, or a separator right after the phrase, or nothing after it
+      const separated = after === '' || /^[:\-\u2013\u2014]/.test(after)
+      if (!hasMarkup && !separated) continue
+      matched = key
+      remainder = after.replace(/^[:\-\u2013\u2014]\s*/, '').replace(/^\**\s*/, '').trim()
+      break
+    }
+    if (matched) {
+      current = matched
+      if (remainder) buffers[matched].push(remainder)
+    } else if (current) {
+      buffers[current].push(line)
+    } else {
+      preamble.push(line)
+    }
+  }
+  for (const key of COACH_SECTION_KEYS) sections[key] = buffers[key].join('\n')
+  if (!sections.verdict && preamble.length > 0) sections.verdict = preamble.join('\n')
+  return { score, sections }
+}
+
+// What a balance the user is about to save would mean for the challenge, so
+// the balance and check-in forms can show drawdown and target live as they type.
+function previewChallenge(account: PropFirmAccount, balanceStr: string, todayPnLStr: string, tradingDaysStr: string) {
+  const balance = Number(balanceStr)
+  if (!account.challengeRules || balanceStr.trim() === '' || isNaN(balance) || balance < 0) return null
+  const prev = account.challengeProgress
+  const todayPnLNum = todayPnLStr.trim() === '' ? NaN : Number(todayPnLStr)
+  return getChallengeStatus({
+    ...account,
+    challengeProgress: {
+      currentBalance: balance,
+      highWaterMark: Math.max(prev?.highWaterMark ?? account.accountSize, balance),
+      tradingDaysCount: Number(tradingDaysStr) || 0,
+      todayPnL: isNaN(todayPnLNum) ? undefined : todayPnLNum,
+      lastUpdated: localDateStr(),
+    },
+  })
+}
+
 function ddBarColor(usedPct: number, themeColors: { profit: string; loss: string }) {
   if (usedPct >= 80) return themeColors.loss
   if (usedPct >= 50) return '#f59e0b'
@@ -382,6 +471,13 @@ export default function PropTracker() {
       toast.error('Failed to load saved data')
     }
     setTipDismissed(dismissed === 'true')
+    const savedReview = storage.getItem('propTrackerAiReview')
+    if (savedReview) {
+      try {
+        const r = JSON.parse(savedReview) as { text: string; at: string; accounts: number; transactions: number; fingerprint?: string }
+        if (r?.text) { setAiAnalysis(r.text); setAiReviewMeta({ at: r.at, accounts: r.accounts, transactions: r.transactions, fingerprint: r.fingerprint }) }
+      } catch { /* ignore a corrupt cached review */ }
+    }
   }, [storage])
 
   const saveAccounts = useCallback((updated: PropFirmAccount[]) => {
@@ -403,15 +499,35 @@ export default function PropTracker() {
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null)
+  // When the current review was produced and what it saw, so the tab can say
+  // "reviewed 3 days ago, 2 transactions logged since" instead of a bare result.
+  const [aiReviewMeta, setAiReviewMeta] = useState<{ at: string; accounts: number; transactions: number; fingerprint?: string } | null>(null)
+
+  // What the coach reads: account status/rules/progress and every transaction.
+  // Balance updates or a status change count as "changed" even when the
+  // account and transaction counts stay the same.
+  const reviewFingerprint = useMemo(() => JSON.stringify([
+    accounts.map(a => [a.id, a.status, a.accountType, a.challengeRules ?? null, a.challengeProgress?.currentBalance ?? null, a.challengeProgress?.tradingDaysCount ?? null]),
+    transactions.map(t => [t.id, t.type, t.amount, t.date]),
+  ]), [accounts, transactions])
+
+  function rememberReview(text: string) {
+    const meta = { at: new Date().toISOString(), accounts: accounts.length, transactions: transactions.length, fingerprint: reviewFingerprint }
+    setAiReviewMeta(meta)
+    storage.setItem('propTrackerAiReview', JSON.stringify({ text, ...meta }))
+  }
 
   async function runAiAnalysis() {
     if (accounts.length === 0) { toast.warning('Add some accounts first'); return }
+    const previous = aiAnalysis
     setAiLoading(true)
     setAiAnalysis(null)
     // Demo mode: show a pre-written analysis instead of calling the backend.
     if (isDemo) {
       await new Promise(resolve => setTimeout(resolve, 600))
-      setAiAnalysis(getDemoPropAnalysis())
+      const demoText = getDemoPropAnalysis()
+      setAiAnalysis(demoText)
+      rememberReview(demoText)
       setAiUsage(DEMO_AI_USAGE)
       setAiLoading(false)
       return
@@ -419,11 +535,14 @@ export default function PropTracker() {
     try {
       const res = await requestPropAnalysis(accounts, transactions)
       setAiAnalysis(res.result)
+      rememberReview(res.result)
       setAiUsage(res.usage)
     } catch (err: unknown) {
       const e = err as { message?: string; details?: string }
       const msg = e?.message || e?.details || 'AI analysis failed'
       toast.error(msg)
+      // Keep the last good review on screen rather than dropping to the empty state
+      setAiAnalysis(previous)
     } finally {
       setAiLoading(false)
     }
@@ -438,6 +557,8 @@ export default function PropTracker() {
   }, [isDemo, accounts.length, transactions.length])
 
   // ── UI state ──
+  const [activeTab, setActiveTab] = useState<PropTab>('accounts')
+  const [accountFilter, setAccountFilter] = useState<'all' | PropAccountStatus>('all')
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [toggledMonths, setToggledMonths] = useState<Set<string>>(new Set())
   const [showAllMonths, setShowAllMonths] = useState<Set<string>>(new Set())
@@ -791,48 +912,181 @@ export default function PropTracker() {
   const subtitleParts = useMemo(() => {
     if (accounts.length === 0) return null
     return {
-      base: [
-        `${accounts.length} account${accounts.length !== 1 ? 's' : ''}`,
-        stats.activeCount > 0 ? `${stats.activeCount} active` : null,
-      ].filter(Boolean).join(' · '),
+      // Read as a sentence rather than "1 account · 1 active"
+      base: (() => {
+        const n = accounts.length
+        if (n === 1) return `1 ${statusMeta(accounts[0].status).label.toLowerCase()} account`
+        if (stats.activeCount === n) return `${n} accounts, all active`
+        if (stats.activeCount === 0) return `${n} accounts, none active`
+        return `${n} accounts · ${stats.activeCount} active`
+      })(),
       net: transactions.length > 0 ? `${stats.netPnL >= 0 ? '+' : '-'}${fmt(stats.netPnL, aggregateCurrency)} P&L` : null,
       netColor: stats.netPnL >= 0 ? themeColors.profit : themeColors.loss,
     }
   }, [accounts, stats, transactions, themeColors])
 
-  const pnlOverTime = useMemo(() => {
-    if (transactions.length === 0) return []
-    const sorted = [...transactions].sort((a, b) => a.date.localeCompare(b.date))
-    let cumulative = 0
-    return sorted.map(tx => {
-      cumulative += isExpenseTx(tx.type) ? -tx.amount : tx.amount
-      return {
-        date: new Date(tx.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value: cumulative,
-      }
-    })
-  }, [transactions])
+  // ── Performance analytics ──
+  // Money figures on the Performance tab respect a period; pass/fail counts are lifetime.
+  const [perfRange, setPerfRange] = useState<PerfRange>('12m')
 
-  const chartData = useMemo(() => {
-    if (transactions.length === 0) return []
-    return accounts.map(a => {
-      const txs = transactions.filter(t => t.propAccountId === a.id)
-      let invested = 0, earned = 0
-      for (const tx of txs) {
-        if (isExpenseTx(tx.type)) invested += tx.amount
-        else earned += tx.amount
+  const rangeStart = useMemo(() => {
+    if (perfRange === 'all') return null
+    const months = perfRange === '3m' ? 3 : perfRange === '6m' ? 6 : 12
+    const d = new Date()
+    d.setDate(1)
+    d.setMonth(d.getMonth() - (months - 1))
+    return localDateStr(d)
+  }, [perfRange])
+
+  const rangeTxs = useMemo(
+    () => (rangeStart ? transactions.filter(t => t.date >= rangeStart) : transactions),
+    [transactions, rangeStart],
+  )
+
+  // Cumulative net over the period, starting from whatever was already banked
+  // before the period so a 3-month view doesn't pretend the account began at zero.
+  const pnlOverTime = useMemo(() => {
+    if (rangeTxs.length === 0) return []
+    let cumulative = 0
+    if (rangeStart) {
+      for (const tx of transactions) {
+        if (tx.date < rangeStart) cumulative += isExpenseTx(tx.type) ? -tx.amount : tx.amount
       }
-      const pnl = earned - invested
-      return {
-        name: firmInitials(a.firmName),
-        fullName: a.firmName,
-        invested,
-        earned,
-        pnl,
-        color: firmAvatarColor(a.firmName),
+    }
+    const sorted = [...rangeTxs].sort((a, b) => a.date.localeCompare(b.date))
+    const points: Array<{ date: string; value: number }> = []
+    if (rangeStart && cumulative !== 0) {
+      points.push({ date: new Date(rangeStart + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: cumulative })
+    }
+    for (const tx of sorted) {
+      cumulative += isExpenseTx(tx.type) ? -tx.amount : tx.amount
+      points.push({
+        date: parseStoredDate(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        value: cumulative,
+      })
+    }
+    return points
+  }, [rangeTxs, transactions, rangeStart])
+
+  // Fees vs payouts per calendar month across the period (gaps stay at zero)
+  const monthlyFlow = useMemo(() => {
+    if (rangeTxs.length === 0) return []
+    const firstDate = rangeStart ?? [...rangeTxs].sort((a, b) => a.date.localeCompare(b.date))[0].date
+    const cur = new Date(firstDate.slice(0, 7) + '-01T12:00:00')
+    const now = new Date()
+    const buckets: Array<{ key: string; label: string; fees: number; payouts: number; net: number }> = []
+    while (cur.getFullYear() < now.getFullYear() || (cur.getFullYear() === now.getFullYear() && cur.getMonth() <= now.getMonth())) {
+      const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`
+      buckets.push({ key, label: cur.toLocaleDateString('en-US', { month: 'short' }), fees: 0, payouts: 0, net: 0 })
+      cur.setMonth(cur.getMonth() + 1)
+      if (buckets.length > 120) break
+    }
+    const byKey = new Map(buckets.map(b => [b.key, b]))
+    for (const tx of rangeTxs) {
+      const b = byKey.get(tx.date.slice(0, 7))
+      if (!b) continue
+      if (isExpenseTx(tx.type)) b.fees += tx.amount
+      else b.payouts += tx.amount
+    }
+    for (const b of buckets) b.net = b.payouts - b.fees
+    // Drop leading months with nothing in them so a long period doesn't start with empty bars
+    const firstActive = buckets.findIndex(b => b.fees > 0 || b.payouts > 0)
+    const active = buckets.slice(Math.max(0, firstActive))
+    // Disambiguate January (or the first bar) with the year once the axis spans two years
+    const years = new Set(active.map(b => b.key.slice(0, 4)))
+    if (years.size > 1) {
+      for (let i = 0; i < active.length; i++) {
+        if (i === 0 || active[i].key.endsWith('-01')) active[i].label += ` '${active[i].key.slice(2, 4)}`
       }
-    }).filter(d => d.invested > 0 || d.earned > 0)
-  }, [accounts, transactions])
+    }
+    return active
+  }, [rangeTxs, rangeStart])
+
+  // The bar chart shows at most the last 24 months; the summary below it uses every month
+  const monthlyBars = useMemo(() => monthlyFlow.slice(-24), [monthlyFlow])
+
+  const monthlySummary = useMemo(() => {
+    const active = monthlyFlow.filter(m => m.fees > 0 || m.payouts > 0)
+    if (active.length === 0) return null
+    const best = active.reduce((a, b) => (b.net > a.net ? b : a))
+    const worst = active.reduce((a, b) => (b.net < a.net ? b : a))
+    const avgNet = active.reduce((s, m) => s + m.net, 0) / active.length
+    const monthLabel = (key: string) => new Date(key + '-02T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    return { best, worst, avgNet, months: active.length, monthLabel }
+  }, [monthlyFlow])
+
+  // Where the fees went: evaluation vs reset vs monthly vs other
+  const spendByType = useMemo(() => {
+    const rows = TX_TYPE_OPTIONS.filter(t => t.isExpense).map(t => ({ value: t.value, label: t.label, amount: 0, count: 0 }))
+    for (const tx of rangeTxs) {
+      const r = rows.find(x => x.value === tx.type)
+      if (r) { r.amount += tx.amount; r.count += 1 }
+    }
+    const total = rows.reduce((s, r) => s + r.amount, 0)
+    return { rows: rows.filter(r => r.count > 0).sort((a, b) => b.amount - a.amount), total }
+  }, [rangeTxs])
+
+  const payoutStats = useMemo(() => {
+    const payouts = rangeTxs.filter(t => !isExpenseTx(t.type)).sort((a, b) => a.date.localeCompare(b.date))
+    if (payouts.length === 0) return null
+    const total = payouts.reduce((s, p) => s + p.amount, 0)
+    const largest = payouts.reduce((a, b) => (b.amount > a.amount ? b : a))
+    const last = payouts[payouts.length - 1]
+    const gaps: number[] = []
+    for (let i = 1; i < payouts.length; i++) {
+      gaps.push((parseStoredDate(payouts[i].date).getTime() - parseStoredDate(payouts[i - 1].date).getTime()) / 86400000)
+    }
+    const avgGapDays = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null
+    // Days from account start to its first payout (lifetime, since the start may predate the period)
+    const firstPayoutDays: number[] = []
+    for (const a of accounts) {
+      const first = transactions
+        .filter(t => t.propAccountId === a.id && !isExpenseTx(t.type))
+        .sort((x, y) => x.date.localeCompare(y.date))[0]
+      if (!first) continue
+      const days = (parseStoredDate(first.date).getTime() - parseStoredDate(a.startDate).getTime()) / 86400000
+      if (days >= 0) firstPayoutDays.push(days)
+    }
+    const avgDaysToFirstPayout = firstPayoutDays.length > 0 ? firstPayoutDays.reduce((a, b) => a + b, 0) / firstPayoutDays.length : null
+    return {
+      count: payouts.length,
+      total,
+      avg: total / payouts.length,
+      largest,
+      last,
+      avgGapDays,
+      avgDaysToFirstPayout,
+      accountsPaid: new Set(payouts.map(p => p.propAccountId)).size,
+    }
+  }, [rangeTxs, transactions, accounts])
+
+  // Per-firm scoreboard, sorted by net. Record is lifetime; money is period.
+  const firmTable = useMemo(() => {
+    const map = new Map<string, { firm: string; accounts: number; active: number; passed: number; failed: number; resets: number; invested: number; earned: number }>()
+    for (const a of accounts) {
+      const r = map.get(a.firmName) ?? { firm: a.firmName, accounts: 0, active: 0, passed: 0, failed: 0, resets: 0, invested: 0, earned: 0 }
+      r.accounts += 1
+      if (a.status === 'active') r.active += 1
+      if (a.status === 'passed' || (a.status === 'active' && a.accountType === 'funded')) r.passed += 1
+      if (a.status === 'failed') r.failed += 1
+      map.set(a.firmName, r)
+    }
+    const firmOf = new Map(accounts.map(a => [a.id, a.firmName]))
+    for (const tx of rangeTxs) {
+      const firm = firmOf.get(tx.propAccountId)
+      if (!firm) continue
+      const r = map.get(firm)!
+      if (isExpenseTx(tx.type)) {
+        r.invested += tx.amount
+        if (tx.type === 'reset-fee') r.resets += 1
+      } else {
+        r.earned += tx.amount
+      }
+    }
+    return [...map.values()]
+      .map(r => ({ ...r, net: r.earned - r.invested, roi: r.invested > 0 ? (r.earned / r.invested - 1) * 100 : null }))
+      .sort((a, b) => b.net - a.net)
+  }, [accounts, rangeTxs])
 
   function getAccountStats(accountId: string) {
     const txs = transactions.filter(t => t.propAccountId === accountId)
@@ -846,25 +1100,32 @@ export default function PropTracker() {
 
   const hasData = transactions.length > 0
 
+  const statusCounts = useMemo(() => {
+    const counts: Partial<Record<PropAccountStatus, number>> = {}
+    for (const a of accounts) counts[a.status] = (counts[a.status] ?? 0) + 1
+    return counts
+  }, [accounts])
+  // A filter whose status no longer exists (last account deleted) falls back to all
+  const effectiveFilter: 'all' | PropAccountStatus =
+    accounts.length >= 4 && accountFilter !== 'all' && (statusCounts[accountFilter] ?? 0) > 0 ? accountFilter : 'all'
+  const visibleAccounts = effectiveFilter === 'all' ? accounts : accounts.filter(a => a.status === effectiveFilter)
+
   const statCards = [
     {
-      icon: CurrencyDollar,
-      label: 'Total Invested',
+      label: 'Total invested',
       value: hasData ? fmt(stats.totalInvested, aggregateCurrency) : '—',
       // Neutral, not loss-red: fees paid are an investment, not a losing trade.
       valueColor: hasData ? 'hsl(var(--foreground))' : 'var(--muted-foreground)',
       subtitle: 'All fees paid',
     },
     {
-      icon: Wallet,
-      label: 'Total Earned',
+      label: 'Total earned',
       value: hasData ? fmt(stats.totalEarned, aggregateCurrency) : '—',
       valueColor: hasData ? themeColors.profit : 'var(--muted-foreground)',
       subtitle: 'All payouts received',
     },
     {
-      icon: stats.netPnL >= 0 ? TrendUp : TrendDown,
-      label: 'P&L',
+      label: 'Net P&L',
       value: hasData ? (stats.netPnL >= 0 ? '+' : '-') + fmt(stats.netPnL, aggregateCurrency) : '—',
       valueColor: hasData ? (stats.netPnL >= 0 ? themeColors.profit : themeColors.loss) : 'var(--muted-foreground)',
       subtitle: hasData
@@ -872,8 +1133,7 @@ export default function PropTracker() {
         : 'Fees vs payouts',
     },
     {
-      icon: Buildings,
-      label: 'Active Accounts',
+      label: 'Active accounts',
       value: String(stats.activeCount),
       valueColor: themeColors.primary,
       subtitle: `of ${accounts.length} total`,
@@ -1076,102 +1336,79 @@ export default function PropTracker() {
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
-      {/* Affiliate Deals Banner */}
+      {/* Affiliate deals banner */}
       {showDealsBanner && (
-        <div className="mx-3 sm:mx-6 lg:mx-8 mt-4 rounded-xl border px-4 py-2.5 flex items-center gap-3" style={{borderColor: alpha(themeColors.primary, '30'), backgroundColor: alpha(themeColors.primary, '08')}}>
-          <Tag className="h-4 w-4 shrink-0" style={{color: themeColors.primary}} />
-          <p className="flex-1 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Save on your next challenge</span>
-            <span className="hidden sm:inline"> · Exclusive codes for The5ers, FTMO, Apex, and more</span>
-          </p>
-          <Link
-            to="/affiliate"
-            className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors duration-150"
-            style={{backgroundColor: themeColors.primary, color: themeColors.primaryButtonText}}
-            onClick={() => trackEvent('affiliate_link_clicked', { source: 'proptracker_deals_banner' })}
-          >
-            View Deals →
-          </Link>
-          <button
-            onClick={() => { localStorage.setItem('ftj-dismiss-deals-pt', '1'); setShowDealsBanner(false); }}
-            className="text-muted-foreground hover:text-foreground shrink-0 p-1 transition-colors"
-            aria-label="Dismiss"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
+        <NoticeBanner
+          className="mx-4 sm:mx-6 lg:mx-8 mt-4"
+          tone="info"
+          icon={Tag}
+          title="Save on your next challenge"
+          description="Discount codes for The5ers, FTMO, Apex and more"
+          actions={
+            <Button asChild size="sm" className="shadow-none">
+              <Link
+                to="/affiliate"
+                onClick={() => trackEvent('affiliate_link_clicked', { source: 'proptracker_deals_banner' })}
+              >
+                View deals <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          }
+          onDismiss={() => { localStorage.setItem('ftj-dismiss-deals-pt', '1'); setShowDealsBanner(false); }}
+        />
       )}
 
-      {/* Page header */}
-      <div className="border-b relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 20% 50%, ${themeColors.primary}12 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, ${themeColors.primary}06 0%, transparent 40%)` }} />
-        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full pointer-events-none opacity-[0.04]" style={{ backgroundColor: themeColors.primary, filter: 'blur(40px)' }} />
-        <div className="relative w-full px-3 py-5 sm:px-6 lg:px-8 sm:py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Title + subtitle */}
-            <div className="text-center sm:text-left">
-              <div className="flex items-center gap-3 justify-center sm:justify-start">
-                <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: `${themeColors.primary}15` }}>
-                  <ChartBar className="h-5 w-5" style={{ color: themeColors.primary }} />
-                </div>
-                <div>
-                  <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
-                    PropTracker
-                  </h1>
-                </div>
-              </div>
-              {subtitleParts ? (
-                <div className="flex flex-wrap items-center gap-2 mt-3 justify-center sm:justify-start">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border border-border/60 bg-muted/50 text-muted-foreground">
-                    <Buildings className="h-3 w-3" />
-                    {subtitleParts.base}
-                  </span>
-                  {subtitleParts.net && (
-                    <span
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap"
-                      style={{
-                        color: subtitleParts.netColor,
-                        borderColor: `${subtitleParts.netColor}30`,
-                        backgroundColor: `${subtitleParts.netColor}10`,
-                      }}
-                    >
-                      {stats.netPnL >= 0 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
-                      {subtitleParts.net}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground mt-2 sm:pl-[52px]">Track fees, resets, and payouts across your prop firms</p>
-              )}
+      {/* Page header: title, actions, headline numbers */}
+      <div className="border-b">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>PropTracker</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {subtitleParts ? subtitleParts.base : 'Track fees, resets, and payouts across your prop firms'}
+              </p>
             </div>
-            {/* Action button */}
-            <div className="flex items-center justify-center sm:justify-end gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {activeRulesAccounts.length >= 1 && (
-                <Button variant="outline" onClick={openCheckinDialog} className="h-11 touch-manipulation">
+                <Button variant="outline" onClick={openCheckinDialog} className="h-10 touch-manipulation">
                   <ClipboardText className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">End of Day</span>
-                  <span className="sm:hidden">Check-In</span>
+                  <span className="hidden sm:inline">End of day</span>
+                  <span className="sm:hidden">Check-in</span>
                 </Button>
               )}
               {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT ? (
                 <Link to="/pricing">
-                  <Button className="h-11 touch-manipulation" style={{ backgroundColor: themeColors.primary }}>
+                  <Button className="h-10 touch-manipulation" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
                     <Lock className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                    Upgrade for More
+                    Upgrade for more
                   </Button>
                 </Link>
               ) : (
-                <Button onClick={openAddAccount} className="h-11 touch-manipulation" style={{ backgroundColor: themeColors.primary }}>
+                <Button onClick={openAddAccount} className="h-10 touch-manipulation" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
                   <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                  Add Account
+                  Add account
                 </Button>
               )}
             </div>
           </div>
+
+          {accounts.length > 0 && (
+            <dl className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-y-5 gap-x-4 sm:gap-x-0">
+              {statCards.map((card, i) => (
+                <div key={card.label} className={`min-w-0 ${i > 0 ? 'sm:border-l sm:border-border sm:pl-6' : ''} ${i > 0 && i < 3 ? 'sm:pr-6' : ''}`}>
+                  <dt className="text-xs text-muted-foreground">{card.label}</dt>
+                  <dd className="mt-1 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight truncate" style={{ color: card.valueColor }}>
+                    {card.value}
+                  </dd>
+                  <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">{card.subtitle}</p>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-5 flex-1">
 
         {/* Pro nudge when at free account limit */}
         {!isPro && accounts.length >= FREE_ACCOUNT_LIMIT && (
@@ -1184,24 +1421,26 @@ export default function PropTracker() {
           />
         )}
 
-        {/* Breach alerts */}
+        {/* Breach alerts: always visible, whichever tab is open */}
         {breachedAccounts.length > 0 && (
           <div className="space-y-2">
             {breachedAccounts.map(({ account, totalBreached, dailyBreached }) => (
               <div
                 key={account.id}
                 role="alert"
-                className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm"
-                style={{ borderColor: `${themeColors.loss}55`, backgroundColor: `${themeColors.loss}0d` }}
+                className="flex items-start gap-3 px-4 py-3 rounded-lg border text-sm"
+                style={{ borderColor: alpha(themeColors.loss, '55'), backgroundColor: alpha(themeColors.loss, '0d') }}
               >
-                <Warning className="h-4 w-4 shrink-0" style={{ color: themeColors.loss }} />
-                <span className="font-medium" style={{ color: themeColors.loss }}>
-                  {totalBreached ? 'Max drawdown breached' : 'Daily drawdown breached'}
-                </span>
-                <span className="text-muted-foreground">
-                  {account.firmName} ({account.accountType}) — {totalBreached && dailyBreached ? 'both limits exceeded. ' : ''}
-                  Check your balance entry, or mark the account as failed if the firm confirmed the breach.
-                </span>
+                <Warning className="h-4 w-4 shrink-0 mt-0.5" style={{ color: themeColors.loss }} />
+                <p>
+                  <span className="font-medium" style={{ color: themeColors.loss }}>
+                    {totalBreached ? 'Max drawdown breached' : 'Daily drawdown breached'}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {' '}{account.firmName} ({account.accountType}). {totalBreached && dailyBreached ? 'Both limits exceeded. ' : ''}
+                    Check your balance entry, or mark the account as failed if the firm confirmed the breach.
+                  </span>
+                </p>
               </div>
             ))}
           </div>
@@ -1213,738 +1452,32 @@ export default function PropTracker() {
             {upcomingDeadlines.map(({ account, daysLeft }) => (
               <div
                 key={account.id}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm"
+                className="flex items-start gap-3 px-4 py-3 rounded-lg border text-sm"
                 style={{
-                  borderColor: daysLeft <= 2 ? `${themeColors.loss}40` : `${themeColors.primary}30`,
-                  backgroundColor: daysLeft <= 2 ? `${themeColors.loss}08` : `${themeColors.primary}06`,
+                  borderColor: daysLeft <= 2 ? alpha(themeColors.loss, '40') : 'hsl(var(--border))',
                 }}
               >
                 <Warning
-                  className="h-4 w-4 shrink-0"
+                  className="h-4 w-4 shrink-0 mt-0.5"
                   style={{ color: daysLeft <= 2 ? themeColors.loss : themeColors.primary }}
                 />
-                <span className="font-medium" style={{ color: daysLeft <= 2 ? themeColors.loss : themeColors.primary }}>
-                  {daysLeft === 0 ? 'Expires today' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`}
-                </span>
-                <span className="text-muted-foreground">
-                  {account.firmName} ({account.accountType}) evaluation ends {new Date(account.endDate! + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
+                <p>
+                  <span className="font-medium" style={{ color: daysLeft <= 2 ? themeColors.loss : themeColors.primary }}>
+                    {daysLeft === 0 ? 'Expires today' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {' '}{account.firmName} ({account.accountType}) evaluation ends {new Date(account.endDate! + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </p>
               </div>
             ))}
           </div>
         )}
 
-
-        {/* Dismissible how-it-works — plain text, no step circles */}
-        {accounts.length > 0 && !tipDismissed && (
-          <div className="flex items-start gap-3 rounded-lg border border-border/60 px-4 py-3.5 text-sm">
-            <Info className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
-            <div className="flex-1 space-y-1">
-              <p className="font-medium text-foreground text-sm">Quick start</p>
-              <p className="text-muted-foreground leading-relaxed text-xs">
-                Create one card per prop account. Log every fee (evaluations, resets, subscriptions) and every payout. Set challenge rules to track drawdown limits and profit targets in real time. PropTracker shows your true net P&L across all firms.
-              </p>
-            </div>
-            <button onClick={dismissTip} aria-label="Dismiss tip" className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5">
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        )}
-
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          {statCards.map((card) => {
-            const isPnL = card.label === 'P&L'
-            return (
-              <div
-                key={card.label}
-                className={`relative rounded-xl overflow-hidden ${isPnL ? 'col-span-2 xl:col-span-1' : ''}`}
-                style={{
-                  backgroundColor: `${card.valueColor}${isPnL ? '0c' : '08'}`,
-                  border: `1px solid ${card.valueColor}${isPnL ? '22' : '18'}`,
-                }}
-              >
-                {/* Subtle bottom gradient line */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-[2px]"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${card.valueColor}30, transparent)`,
-                  }}
-                />
-
-                <div className="relative p-4 sm:p-5">
-                  {/* Watermark icon */}
-                  <card.icon
-                    className="absolute right-3 bottom-3 h-10 w-10 pointer-events-none"
-                    style={{ color: card.valueColor, opacity: 0.07 }}
-                    aria-hidden="true"
-                  />
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <card.icon
-                        className="h-3.5 w-3.5"
-                        style={{ color: card.valueColor, opacity: 0.5 }}
-                        aria-hidden="true"
-                      />
-                      <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                        {card.label}
-                      </p>
-                    </div>
-
-                    <p
-                      className={`${isPnL ? 'text-2xl sm:text-4xl' : 'text-2xl sm:text-3xl'} font-bold tabular-nums tracking-tight leading-none`}
-                      style={{ color: card.valueColor }}
-                    >
-                      {card.value}
-                    </p>
-
-                    <p className="text-[11px] text-muted-foreground tabular-nums">
-                      {card.subtitle}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Success Rate Dashboard */}
-        {successStats && (
-          <ProGate featureName="Success Rate Dashboard">
-            <div className="rounded-xl border border-border/60 overflow-hidden">
-              <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-border/60">
-                <div className="p-1.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                  <Trophy className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Performance Overview</p>
-                  <p className="text-[10px] text-muted-foreground">Your prop trading track record</p>
-                </div>
-              </div>
-              <div className="p-4 sm:p-5">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {/* Pass Rate */}
-                  {(() => {
-                    const passColor = successStats.passRate !== null && successStats.passRate >= 50 ? themeColors.profit : themeColors.loss;
-                    return (
-                      <div
-                        className="rounded-lg border p-3.5 space-y-2.5 col-span-2 sm:col-span-1"
-                        style={{
-                          backgroundColor: alpha(passColor, '08'),
-                          borderColor: alpha(passColor, '18'),
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Pass Rate</p>
-                          <Target className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                        </div>
-                        <p className="text-2xl font-bold tabular-nums" style={{ color: passColor }}>
-                          {successStats.passRate !== null ? `${successStats.passRate.toFixed(0)}%` : '--'}
-                        </p>
-                        {successStats.passRate !== null && (
-                          <div className="space-y-1.5">
-                            <div className="h-2 rounded-full overflow-hidden bg-muted/60">
-                              <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width: `${Math.min(100, successStats.passRate)}%`,
-                                  backgroundColor: passColor,
-                                }}
-                              />
-                            </div>
-                            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                              <span>{successStats.passed} passed</span>
-                              <span>{successStats.failed} failed</span>
-                            </div>
-                          </div>
-                        )}
-                        {successStats.passRate === null && (
-                          <p className="text-[10px] text-muted-foreground">{successStats.passed} passed, {successStats.failed} failed</p>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Attempts */}
-                  <div
-                    className="rounded-lg border p-3.5 space-y-2.5"
-                    style={{
-                      backgroundColor: alpha(themeColors.primary, '08'),
-                      borderColor: alpha(themeColors.primary, '18'),
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Attempts</p>
-                      <ChartBar className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                    </div>
-                    <p className="text-2xl font-bold tabular-nums" style={{ color: themeColors.primary }}>
-                      {successStats.total}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">{successStats.passed} funded</p>
-                  </div>
-
-                  {/* Avg Cost to Fund */}
-                  {(() => {
-                    const costColor = successStats.avgCostToFund !== null ? themeColors.loss : undefined;
-                    return (
-                      <div
-                        className="rounded-lg border p-3.5 space-y-2.5"
-                        style={{
-                          backgroundColor: costColor ? alpha(costColor, '08') : undefined,
-                          borderColor: costColor ? alpha(costColor, '18') : 'var(--border)',
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Avg Cost to Fund</p>
-                          <Calculator className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                        </div>
-                        <p className="text-2xl font-bold tabular-nums" style={{ color: costColor ?? 'var(--muted-foreground)' }}>
-                          {successStats.avgCostToFund !== null ? fmt(successStats.avgCostToFund, aggregateCurrency) : '--'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Per funded account</p>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Wasted on Failed */}
-                  {(() => {
-                    const wastedColor = successStats.totalWastedOnFailed > 0 ? themeColors.loss : undefined;
-                    return (
-                      <div
-                        className="rounded-lg border p-3.5 space-y-2.5"
-                        style={{
-                          backgroundColor: wastedColor ? alpha(wastedColor, '08') : undefined,
-                          borderColor: wastedColor ? alpha(wastedColor, '18') : 'var(--border)',
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Wasted on Failed</p>
-                          <Warning className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                        </div>
-                        <p className="text-2xl font-bold tabular-nums" style={{ color: wastedColor ?? 'var(--muted-foreground)' }}>
-                          {successStats.totalWastedOnFailed > 0 ? fmt(successStats.totalWastedOnFailed, aggregateCurrency) : '--'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Across {successStats.failed} failed</p>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Best Firm ROI */}
-                  {(() => {
-                    const roiColor = successStats.bestFirm && successStats.bestFirm.roi >= 0 ? themeColors.profit : themeColors.loss;
-                    const hasData = !!successStats.bestFirm;
-                    return (
-                      <div
-                        className="rounded-lg border p-3.5 space-y-2.5"
-                        style={{
-                          backgroundColor: hasData ? alpha(roiColor, '08') : undefined,
-                          borderColor: hasData ? alpha(roiColor, '18') : 'var(--border)',
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Best Firm ROI</p>
-                          <Trophy className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                        </div>
-                        <p className="text-2xl font-bold tabular-nums" style={{ color: hasData ? roiColor : 'var(--muted-foreground)' }}>
-                          {successStats.bestFirm ? `${successStats.bestFirm.roi >= 0 ? '+' : ''}${successStats.bestFirm.roi.toFixed(0)}%` : '--'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">{successStats.bestFirm?.firm ?? 'N/A'}</p>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          </ProGate>
-        )}
-
-        {/* Risk Calculator */}
-        {activeRulesAccounts.length > 0 && (
-          <div className="rounded-xl border border-border/60 overflow-hidden">
-            <button
-              onClick={() => setRiskCalcOpen(p => !p)}
-              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-muted/30 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-md" style={{ backgroundColor: `${themeColors.primary}20` }}>
-                  <Calculator className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold">Risk Calculator</p>
-                  <p className="text-[10px] text-muted-foreground">Check the impact before you trade</p>
-                </div>
-              </div>
-              {riskCalcOpen ? <CaretUp className="h-4 w-4 text-muted-foreground" /> : <CaretDown className="h-4 w-4 text-muted-foreground" />}
-            </button>
-            {riskCalcOpen && (
-              <div className="px-5 pb-4 space-y-4 border-t border-border/60 pt-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="text-sm text-muted-foreground whitespace-nowrap">If I lose</label>
-                  <div className="relative max-w-[120px] sm:max-w-[160px]">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{currencySymbol(aggregateCurrency)}</span>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-7"
-                      value={riskCalcAmount}
-                      onChange={e => setRiskCalcAmount(e.target.value)}
-                      aria-label="Hypothetical loss amount"
-                    />
-                  </div>
-                  <label className="text-sm text-muted-foreground whitespace-nowrap">today...</label>
-                </div>
-
-                {/* Quick-amount presets */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[100, 250, 500, 1000].map(v => {
-                    const active = Number(riskCalcAmount) === v
-                    return (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setRiskCalcAmount(String(v))}
-                        className="h-7 px-2.5 rounded-md text-xs font-medium tabular-nums border transition-colors hover:bg-muted/40"
-                        style={{
-                          borderColor: active ? themeColors.primary : 'var(--border)',
-                          backgroundColor: active ? `${themeColors.primary}15` : 'transparent',
-                          color: active ? themeColors.primary : undefined,
-                        }}
-                      >
-                        ${v >= 1000 ? `${v / 1000}k` : v}
-                      </button>
-                    )
-                  })}
-                  {maxSafeLoss > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setRiskCalcAmount(String(Math.floor(maxSafeLoss)))}
-                      className="h-7 px-2.5 rounded-md text-xs font-medium tabular-nums border border-dashed transition-colors hover:bg-muted/40"
-                      style={{ borderColor: `${themeColors.primary}60`, color: themeColors.primary }}
-                    >
-                      Max safe · {fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}
-                    </button>
-                  )}
-                </div>
-
-                {riskCalcResults && riskCalcResults.length > 0 && (
-                  <div className="space-y-2">
-                    {riskCalcResults.map(r => {
-                      const brandColor = firmAvatarColor(r.account.firmName)
-                      const breached = r.wouldBreachTotal || r.wouldBreachDaily
-                      const hasDaily = r.account.challengeRules!.maxDailyDrawdown > 0
-                      return (
-                        <div
-                          key={r.account.id}
-                          className="rounded-lg border p-3 space-y-2.5"
-                          style={{
-                            borderColor: breached ? `${themeColors.loss}40` : 'var(--border)',
-                            backgroundColor: breached ? `${themeColors.loss}06` : undefined,
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            {FIRM_LOGOS[r.account.firmName] ? (
-                              <div className="h-6 w-6 rounded shrink-0 overflow-hidden bg-white"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-cover" /></div>
-                            ) : (
-                              <div
-                                className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
-                                style={{ backgroundColor: brandColor }}
-                              >
-                                {firmInitials(r.account.firmName)}
-                              </div>
-                            )}
-                            <span className="text-sm font-medium min-w-0 truncate">{r.account.firmName}</span>
-                            <span className="text-xs text-muted-foreground shrink-0">{currencySymbol(r.account.currency)}{r.account.accountSize.toLocaleString()}</span>
-                            {breached && (
-                              <Badge variant="outline" className="ml-auto text-[10px] h-5 px-1.5 bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20">
-                                BREACH
-                              </Badge>
-                            )}
-                          </div>
-
-                          {/* Total drawdown impact bar */}
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-muted-foreground">Total drawdown</span>
-                              <span className="font-semibold tabular-nums">
-                                <span className="text-muted-foreground">{r.totalDDPctBefore.toFixed(0)}%</span>
-                                <span className="text-muted-foreground mx-1">&rarr;</span>
-                                <span style={{ color: ddBarColor(r.totalDDPctAfter, themeColors) }}>
-                                  {r.totalDDPctAfter.toFixed(0)}%{r.wouldBreachTotal && ' LIMIT'}
-                                </span>
-                              </span>
-                            </div>
-                            <div className="relative h-2 rounded-full bg-muted/60 overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.totalDDPctAfter)}%`, backgroundColor: ddBarColor(r.totalDDPctAfter, themeColors) }} />
-                              <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.totalDDPctBefore)}%` }} aria-hidden="true" />
-                            </div>
-                          </div>
-
-                          {/* Daily drawdown impact bar */}
-                          {hasDaily && (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span className="text-muted-foreground">Daily drawdown</span>
-                                <span className="font-semibold tabular-nums">
-                                  <span className="text-muted-foreground">{r.dailyDDPctBefore.toFixed(0)}%</span>
-                                  <span className="text-muted-foreground mx-1">&rarr;</span>
-                                  <span style={{ color: ddBarColor(r.dailyDDPctAfter, themeColors) }}>
-                                    {r.dailyDDPctAfter.toFixed(0)}%{r.wouldBreachDaily && ' LIMIT'}
-                                  </span>
-                                </span>
-                              </div>
-                              <div className="relative h-2 rounded-full bg-muted/60 overflow-hidden">
-                                <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.dailyDDPctAfter)}%`, backgroundColor: ddBarColor(r.dailyDDPctAfter, themeColors) }} />
-                                <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.dailyDDPctBefore)}%` }} aria-hidden="true" />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Footer stats */}
-                          <div className="flex items-center justify-between text-[11px] pt-0.5">
-                            <span className="text-muted-foreground">Balance after <span className="font-semibold tabular-nums text-foreground">{fmt(r.balanceAfter, r.account.currency)}</span></span>
-                            <span className="text-muted-foreground">Room left <span className="font-semibold tabular-nums text-foreground">{fmt(r.remainingBeforeTotal, r.account.currency)}</span></span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-
-                {(!riskCalcResults || riskCalcResults.length === 0) && (
-                  <div className="rounded-lg border border-dashed border-border/60 px-4 py-5 text-center space-y-1">
-                    <p className="text-xs text-muted-foreground">Enter an amount or tap a preset to see how a loss would affect your active challenges.</p>
-                    {maxSafeLoss > 0 && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Your tightest buffer today is <span className="font-semibold text-foreground tabular-nums">{fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}</span> before a breach.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Pie charts — Pro only */}
-        {chartData.length > 0 && (
-          <ProGate featureName="Charts & Analytics">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Spend by Firm */}
-            <Card
-              className="flex flex-col border"
-              style={{
-                backgroundColor: `${themeColors.loss}08`,
-                borderColor: `${themeColors.loss}18`,
-              }}
-            >
-              <CardContent className="p-5 sm:p-5 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <CurrencyDollar className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-sm font-semibold">Spend by Firm</p>
-                </div>
-                <div className="flex flex-col items-center flex-1">
-                  <div className="shrink-0">
-                    <PieChart width={200} height={200}>
-                      <Pie
-                        data={chartData.filter(d => d.invested > 0)}
-                        dataKey="invested"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={56}
-                        outerRadius={88}
-                        paddingAngle={2}
-                        startAngle={90}
-                        endAngle={-270}
-                      >
-                        {chartData.filter(d => d.invested > 0).map((entry, i) => (
-                          <Cell key={i} fill={entry.color} fillOpacity={0.9} stroke="none" />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (!active || !payload?.length) return null
-                          const d = payload[0].payload
-                          return (
-                            <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
-                              <p className="font-medium text-foreground">{d.fullName}</p>
-                              <p className="text-muted-foreground tabular-nums">{fmt(d.invested, aggregateCurrency)}</p>
-                            </div>
-                          )
-                        }}
-                      />
-                    </PieChart>
-                  </div>
-                  <div className="w-full space-y-2 mt-4">
-                    {chartData.filter(d => d.invested > 0).map((d, i) => {
-                      const totalInvested = chartData.filter(x => x.invested > 0).reduce((sum, x) => sum + x.invested, 0)
-                      const pct = totalInvested > 0 ? (d.invested / totalInvested) * 100 : 0
-                      return (
-                        <div key={i} className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                            <span className="text-xs text-muted-foreground flex-1 truncate">{d.fullName}</span>
-                            <span className="text-xs font-semibold tabular-nums">{fmt(d.invested, aggregateCurrency)}</span>
-                          </div>
-                          <div className="ml-[18px] h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${d.color}15` }}>
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{ width: `${pct}%`, backgroundColor: d.color, opacity: 0.7 }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* P&L Over Time */}
-            <Card
-              className="flex flex-col border"
-              style={{
-                backgroundColor: `${themeColors.profit}08`,
-                borderColor: `${themeColors.profit}18`,
-              }}
-            >
-              <CardContent className="p-5 sm:p-5 flex flex-col flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <TrendUp className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-semibold">P&L Over Time</p>
-                  </div>
-                  {pnlOverTime.length > 0 && (() => {
-                    const final = pnlOverTime[pnlOverTime.length - 1].value
-                    return (
-                      <div className="text-right">
-                        <p className="text-lg font-bold tabular-nums leading-none" style={{ color: final >= 0 ? themeColors.profit : themeColors.loss }}>
-                          {final >= 0 ? '+' : '-'}{fmt(final, aggregateCurrency)}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">cumulative</p>
-                      </div>
-                    )
-                  })()}
-                </div>
-                <div className="flex-1 flex flex-col justify-end">
-                {(() => {
-                  const final = pnlOverTime.length > 0 ? pnlOverTime[pnlOverTime.length - 1].value : 0
-                  const lineColor = final >= 0 ? themeColors.profit : themeColors.loss
-                  return (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <AreaChart data={pnlOverTime} margin={{ top: 8, right: 4, bottom: 8, left: 4 }}>
-                        <defs>
-                          <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={lineColor} stopOpacity={0.3} />
-                            <stop offset="100%" stopColor={lineColor} stopOpacity={0.02} />
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide domain={['auto', 'auto']} />
-                        <ReferenceLine y={0} stroke="var(--border)" strokeWidth={1} strokeDasharray="3 3" />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (!active || !payload?.length) return null
-                            const v = payload[0].value as number
-                            return (
-                              <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
-                                <p className="text-muted-foreground">{payload[0].payload.date}</p>
-                                <p className="font-semibold tabular-nums" style={{ color: v >= 0 ? themeColors.profit : themeColors.loss }}>
-                                  {v >= 0 ? '+' : '-'}{fmt(v, aggregateCurrency)}
-                                </p>
-                              </div>
-                            )
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="value"
-                          stroke={lineColor}
-                          strokeWidth={2}
-                          fill="url(#pnlGradient)"
-                          baseValue={0}
-                          dot={false}
-                          activeDot={{ r: 3, strokeWidth: 0, fill: lineColor }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  )
-                })()}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          </ProGate>
-        )}
-
-        {/* AI Analysis — Pro only */}
-        {accounts.length > 0 && transactions.length > 0 && (
-          <ProGate featureName="AI PropTracker Analysis">
-            <div className="rounded-lg border border-border/60 overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/60">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-md" style={{ backgroundColor: `${themeColors.primary}20` }}>
-                    <Brain className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">AI Coach</p>
-                    <p className="text-xs text-muted-foreground">Your prop trading, reviewed honestly</p>
-                  </div>
-                </div>
-                {!isDemo && (
-                  <div className="shrink-0 flex flex-col items-end gap-1">
-                    <button
-                      onClick={runAiAnalysis}
-                      disabled={aiLoading}
-                      aria-label="Run AI analysis"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white disabled:opacity-60 transition-opacity"
-                      style={{ backgroundColor: themeColors.primary }}
-                    >
-                      <Brain className="h-3 w-3" aria-hidden="true" />
-                      {aiLoading ? 'Analysing…' : aiAnalysis ? 'Re-analyse' : 'Analyse'}
-                    </button>
-                    {aiUsage && (
-                      <p className="text-[10px] text-muted-foreground">{aiUsage.remaining}/{aiUsage.limit} uses today</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Loading state */}
-              {aiLoading && (
-                <div className="px-5 py-8 flex flex-col items-center gap-3 text-center">
-                  <Brain className="h-6 w-6 animate-pulse" style={{ color: themeColors.primary }} aria-hidden="true" />
-                  <p className="text-sm text-muted-foreground">Analysing your prop trading data…</p>
-                </div>
-              )}
-
-              {/* Results */}
-              {aiAnalysis && !aiLoading && (() => {
-                // Parse score from first line
-                const scoreMatch = aiAnalysis.match(/^SCORE:\s*(\d+)\s*\/\s*10/im)
-                const score = scoreMatch ? parseInt(scoreMatch[1], 10) : null
-                const scoreColor = score !== null
-                  ? score >= 7 ? themeColors.profit : score >= 4 ? themeColors.primary : themeColors.loss
-                  : themeColors.primary
-
-                const sections = [
-                  { key: 'verdict',   heading: 'The Big Picture',   icon: CheckCircle,   color: themeColors.profit },
-                  { key: 'roi',       heading: 'Your Money',        icon: ChartBar,       color: themeColors.primary },
-                  { key: 'challenge', heading: 'Where You Stand',   icon: Target,          color: themeColors.primary },
-                  { key: 'firms',     heading: 'Which Firms Work',  icon: Buildings,       color: themeColors.primary },
-                  { key: 'warnings',  heading: 'Watch Out For',     icon: Warning,   color: themeColors.loss },
-                  { key: 'next',      heading: 'Your Game Plan',    icon: ListChecks,      color: themeColors.profit },
-                ]
-
-                const parsed: Record<string, string> = {}
-                sections.forEach((s, i) => {
-                  const nextHeading = sections[i + 1]?.heading
-                  const regex = new RegExp(
-                    `\\*\\*${s.heading}\\*\\*[^\\n]*\\n([\\s\\S]*?)${nextHeading ? `(?=\\*\\*${nextHeading}\\*\\*)` : '$'}`,
-                    'i'
-                  )
-                  const match = aiAnalysis.match(regex)
-                  parsed[s.key] = match ? match[1].trim() : ''
-                })
-
-                // If the model drifted from the expected headings, show the raw
-                // text rather than a blank card after spending the user's quota.
-                if (score === null && sections.every(s => !parsed[s.key])) {
-                  return (
-                    <div className="px-5 py-5 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {aiAnalysis}
-                    </div>
-                  )
-                }
-
-                return (
-                  <div className="divide-y divide-border/60">
-                    {/* Score card */}
-                    {score !== null && (
-                      <div className="px-5 py-5 flex items-center gap-4">
-                        <div
-                          className="flex items-center justify-center w-12 h-12 rounded-lg text-white font-bold text-base shrink-0"
-                          style={{ backgroundColor: scoreColor }}
-                        >
-                          {score}/10
-                        </div>
-                        <div>
-                          <p className="text-base font-semibold">
-                            {score >= 8 ? 'Looking strong' : score >= 6 ? 'Getting there' : score >= 4 ? 'Room to grow' : 'Needs attention'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {score >= 8 ? 'Your prop trading is paying off.' : score >= 6 ? 'Heading in the right direction.' : score >= 4 ? 'Some things to tighten up.' : 'Worth rethinking your approach.'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {sections.map(s => {
-                      const content = parsed[s.key]
-                      if (!content) return null
-                      const Icon = s.icon
-                      const lines = content.split('\n').filter(Boolean)
-                      return (
-                        <div key={s.key} className="px-5 py-5">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: s.color }} aria-hidden="true" />
-                            <p className="text-sm font-semibold" style={{ color: s.color }}>{s.heading}</p>
-                          </div>
-                          <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                            {lines.map((line, i) => {
-                              const isBullet = line.startsWith('-') || /^\d+\./.test(line)
-                              const cleaned = isBullet ? line.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '') : line
-
-                              const headingMatch = cleaned.match(/^\*\*(.+?)\*\*[:.]\s*(.*)/)
-                              if (headingMatch) {
-                                return (
-                                  <div key={i} className="space-y-1">
-                                    <p className="text-sm font-medium text-foreground">{headingMatch[1]}</p>
-                                    {headingMatch[2] && (
-                                      <p dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(
-                                        headingMatch[2].replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>'),
-                                        { ALLOWED_TAGS: ['strong', 'em', 'br'], ALLOWED_ATTR: ['class'] }
-                                      ) }} />
-                                    )}
-                                  </div>
-                                )
-                              }
-
-                              const formatted = cleaned.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>')
-                              return (
-                                <p
-                                  key={i}
-                                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted, { ALLOWED_TAGS: ['strong', 'em', 'br'], ALLOWED_ATTR: ['class'] }) }}
-                                />
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })()}
-
-              {/* Empty prompt */}
-              {!aiAnalysis && !aiLoading && (
-                <div className="px-5 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">Hit <strong>Analyse</strong> to get your AI breakdown.</p>
-                </div>
-              )}
-            </div>
-          </ProGate>
-        )}
-
-        {/* Empty state */}
         {accounts.length === 0 ? (
-          <div className="rounded-xl border border-border/60 overflow-hidden relative">
-            {/* Hero CTA — clean, no overlap */}
-            <div className="flex flex-col items-center text-center gap-5 px-6 pt-12 pb-8 relative" style={{ background: `radial-gradient(ellipse at 50% 0%, ${themeColors.primary}15 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, ${themeColors.primary}08 0%, transparent 50%)` }}>
+          /* ── Empty state ── */
+          <div className="rounded-lg border overflow-hidden">
+            <div className="flex flex-col items-center text-center gap-5 px-6 pt-12 pb-10">
               <div className="space-y-2 max-w-md">
                 <h2 className="text-2xl font-bold tracking-tight">Do you actually know your prop ROI?</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -1954,19 +1487,19 @@ export default function PropTracker() {
 
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {[
-                  { icon: Receipt,    label: 'Fees & Payouts' },
+                  { icon: Receipt, label: 'Fees and payouts' },
                   { icon: TrendUp, label: 'True ROI' },
-                  { icon: ClipboardText,     label: 'Challenge Rules' },
-                  { icon: Brain,      label: 'AI Analysis' },
+                  { icon: ClipboardText, label: 'Challenge rules' },
+                  { icon: Brain, label: 'AI analysis' },
                 ].map(f => (
-                  <div key={f.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border border-border/60 text-muted-foreground">
+                  <div key={f.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border text-muted-foreground">
                     <f.icon className="h-3 w-3" aria-hidden="true" />
                     {f.label}
                   </div>
                 ))}
               </div>
 
-              <Button onClick={openAddAccount} size="lg" style={{ backgroundColor: themeColors.primary }}>
+              <Button onClick={openAddAccount} size="lg" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
                 <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 Add your first account
               </Button>
@@ -1986,103 +1519,50 @@ export default function PropTracker() {
               </p>
             </div>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center px-6"><div className="w-full border-t border-border/60" /></div>
-              <div className="relative flex justify-center">
-                <span className="bg-card px-3 text-[11px] text-muted-foreground uppercase tracking-wider">Preview</span>
-              </div>
-            </div>
-
-            {/* Ghost preview — visible, fades at bottom */}
-            <div className="relative">
-              <div className="pointer-events-none select-none opacity-50 p-4 sm:p-6 space-y-4">
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+            {/* Preview of a filled-in tracker, faded */}
+            <div className="relative border-t">
+              <p className="absolute top-3 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-card px-2">Preview</p>
+              <div className="pointer-events-none select-none opacity-50 p-4 sm:p-6 pt-8 sm:pt-8 space-y-5">
+                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-4">
                   {[
-                    { icon: CurrencyDollar, label: 'Total Invested',  value: '$1,915',  sub: 'All fees paid',        color: 'hsl(var(--foreground))', isPnL: false },
-                    { icon: Wallet,     label: 'Total Earned',    value: '$7,700',  sub: 'All payouts received', color: themeColors.profit, isPnL: false },
-                    { icon: TrendUp, label: 'P&L',             value: '+$5,785', sub: '+302% ROI',            color: themeColors.profit, isPnL: true },
-                    { icon: Buildings,  label: 'Active Accounts', value: '2',       sub: 'of 4 total',          color: themeColors.primary, isPnL: false },
-                  ].map(c => (
-                    <div
-                      key={c.label}
-                      className={`relative rounded-xl overflow-hidden ${c.isPnL ? 'col-span-2 xl:col-span-1' : ''}`}
-                      style={{
-                        backgroundColor: `${c.color}${c.isPnL ? '0c' : '08'}`,
-                        border: `1px solid ${c.color}${c.isPnL ? '22' : '18'}`,
-                      }}
-                    >
-                      {/* Subtle bottom gradient line */}
-                      <div
-                        className="absolute bottom-0 left-0 right-0 h-[2px]"
-                        style={{
-                          background: `linear-gradient(90deg, transparent, ${c.color}30, transparent)`,
-                        }}
-                      />
-
-                      <div className="relative p-4 sm:p-5">
-                        {/* Watermark icon */}
-                        <c.icon
-                          className="absolute right-3 bottom-3 h-10 w-10 pointer-events-none"
-                          style={{ color: c.color, opacity: 0.07 }}
-                          aria-hidden="true"
-                        />
-
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <c.icon
-                              className="h-3.5 w-3.5"
-                              style={{ color: c.color, opacity: 0.5 }}
-                              aria-hidden="true"
-                            />
-                            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                              {c.label}
-                            </p>
-                          </div>
-
-                          <p
-                            className={`${c.isPnL ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'} font-bold tabular-nums tracking-tight leading-none`}
-                            style={{ color: c.color }}
-                          >
-                            {c.value}
-                          </p>
-
-                          <p className="text-[11px] text-muted-foreground tabular-nums">
-                            {c.sub}
-                          </p>
-                        </div>
-                      </div>
+                    { label: 'Total invested', value: '$1,915', sub: 'All fees paid', color: 'hsl(var(--foreground))' },
+                    { label: 'Total earned', value: '$7,700', sub: 'All payouts received', color: themeColors.profit },
+                    { label: 'Net P&L', value: '+$5,785', sub: '+302% ROI', color: themeColors.profit },
+                    { label: 'Active accounts', value: '2', sub: 'of 4 total', color: themeColors.primary },
+                  ].map((c, i) => (
+                    <div key={c.label} className={i > 0 ? 'sm:border-l sm:border-border sm:pl-6' : ''}>
+                      <dt className="text-xs text-muted-foreground">{c.label}</dt>
+                      <dd className="mt-1 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight" style={{ color: c.color }}>{c.value}</dd>
+                      <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
                     </div>
                   ))}
-                </div>
+                </dl>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {[
-                    { initials: 'TS', color: '#FFCC06', firm: 'TopStep',              size: '$50,000',  type: 'Evaluation', status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$347',  earned: '—',      pnl: '-$347' },
-                    { initials: 'AT', color: '#007BFF', firm: 'Apex Trader Funding',  size: '$100,000', type: 'Funded',     status: 'Passed',    statusClass: 'bg-blue-500/15 text-blue-600 border-blue-500/20',         invested: '$137',  earned: '$4,200', pnl: '+$4,063' },
-                    { initials: 'FT', color: '#0781FE', firm: 'FTMO',                 size: '$200,000', type: 'Evaluation', status: 'Failed',    statusClass: 'bg-red-500/15 text-red-600 border-red-500/20',           invested: '$810',  earned: '—',      pnl: '-$810' },
-                    { initials: 'MF', color: '#D8AE5E', firm: 'My Funded Futures (MFFU)',    size: '$150,000', type: 'Funded',     status: 'Active',    statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$524',  earned: '$3,500', pnl: '+$2,976' },
+                    { initials: 'TS', color: '#FFCC06', firm: 'TopStep', size: '$50,000', type: 'Evaluation', status: 'Active', statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$347', earned: '$2,300', pnl: '+$1,953' },
+                    { initials: 'AT', color: '#007BFF', firm: 'Apex Trader Funding', size: '$100,000', type: 'Funded', status: 'Passed', statusClass: 'bg-blue-500/15 text-blue-600 border-blue-500/20', invested: '$137', earned: '$3,900', pnl: '+$3,763' },
                   ].map(g => (
-                    <Card key={g.firm} className="relative overflow-hidden" style={{ backgroundColor: g.color + '04', border: '1px solid ' + g.color + '12' }}>
+                    <Card key={g.firm}>
                       <CardContent className="p-4 sm:p-5">
                         <div className="flex items-start gap-3 mb-4">
                           {FIRM_LOGOS[g.firm] ? (
-                            <div className="h-9 w-9 rounded-lg shrink-0 shadow-sm overflow-hidden"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
+                            <div className="h-9 w-9 rounded-lg shrink-0 overflow-hidden bg-white border"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
                           ) : (
-                            <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm" style={{ backgroundColor: g.color }}>{g.initials}</div>
+                            <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: g.color }}>{g.initials}</div>
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-semibold text-sm">{g.firm}</p>
-                              <span className={`text-[10px] h-5 px-1.5 rounded border font-semibold ${g.statusClass}`}>{g.status}</span>
+                              <span className={`text-xs h-5 px-1.5 rounded border font-medium ${g.statusClass}`}>{g.status}</span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5">{g.size} · {g.type}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[{ l: 'Invested', v: g.invested }, { l: 'Earned', v: g.earned }, { l: 'P&L', v: g.pnl }].map(s => (
-                            <div key={s.l} className="rounded-lg px-2.5 py-2.5" style={{ backgroundColor: 'var(--muted)', border: '1px solid transparent' }}>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{s.l}</p>
-                              <p className="text-sm font-bold tabular-nums mt-1">{s.v}</p>
+                        <div className="grid grid-cols-3 divide-x divide-border">
+                          {[{ l: 'Invested', v: g.invested }, { l: 'Earned', v: g.earned }, { l: 'P&L', v: g.pnl }].map((s, i) => (
+                            <div key={s.l} className={i > 0 ? 'pl-3' : ''}>
+                              <p className="text-xs text-muted-foreground">{s.l}</p>
+                              <p className="text-sm font-semibold tabular-nums mt-0.5">{s.v}</p>
                             </div>
                           ))}
                         </div>
@@ -2091,371 +1571,1202 @@ export default function PropTracker() {
                   ))}
                 </div>
               </div>
-              {/* Fade out at bottom */}
               <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)' }} />
             </div>
           </div>
         ) : (
-          /* Accounts grid */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {accounts.map(account => {
-              const { invested, earned, net, txs } = getAccountStats(account.id)
-              const expanded = expandedIds.has(account.id)
-              const meta = statusMeta(account.status)
-              const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)
-                ?? { value: account.accountType, label: String(account.accountType) }
-              const brandColor = firmAvatarColor(account.firmName)
-              const challengeStatus = getChallengeStatus(account)
-              const isEvalPhase = account.accountType === 'evaluation' || account.accountType === 'express'
-              const isClosed = account.status === 'failed' || account.status === 'withdrawn'
+          <Tabs value={activeTab} onValueChange={v => setActiveTab(v as PropTab)}>
+            <TabsList className="w-full grid grid-cols-3 sm:w-auto sm:inline-flex">
+              <TabsTrigger value="accounts" className="gap-1.5">
+                Accounts
+                <span className="text-xs text-muted-foreground tabular-nums">{accounts.length}</span>
+              </TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+              <TabsTrigger value="coach">AI Coach</TabsTrigger>
+            </TabsList>
 
-              return (
-                <Card key={account.id} className="relative overflow-hidden h-full flex flex-col transition-[transform,box-shadow] duration-300 hover:shadow-lg hover:scale-[1.005]" style={{ backgroundColor: brandColor + '04', border: '1px solid ' + brandColor + '12' }}>
-                  <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
+            {/* ── Accounts tab ── */}
+            <TabsContent value="accounts" className="mt-5 space-y-5">
+              {!tipDismissed && (
+                <div className="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm">
+                  <Info className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
+                  <p className="flex-1 text-muted-foreground">
+                    <span className="font-medium text-foreground">Quick start.</span>{' '}
+                    One card per prop account. Log every fee and payout, set challenge rules to see drawdown and profit target live, and the header shows your true net P&L across all firms.
+                  </p>
+                  <button onClick={dismissTip} aria-label="Dismiss tip" className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5">
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
 
-                    {/* Account header */}
-                    <div className="flex items-start gap-3 mb-4">
-                      {FIRM_LOGOS[account.firmName] ? (
-                        <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 shadow-sm overflow-hidden bg-white">
-                          <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div
-                          className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5 shadow-sm"
-                          style={{ backgroundColor: brandColor }}
-                        >
-                          {firmInitials(account.firmName)}
-                        </div>
+              {/* Risk calculator */}
+              {activeRulesAccounts.length > 0 && (
+                <div className="rounded-lg border overflow-hidden">
+                  <button
+                    onClick={() => setRiskCalcOpen(p => !p)}
+                    aria-expanded={riskCalcOpen}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Calculator className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                      <p className="text-sm font-medium">Risk calculator</p>
+                      <p className="text-xs text-muted-foreground truncate hidden sm:block">See what a loss today does to your drawdown limits</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {maxSafeLoss > 0 && !riskCalcOpen && (
+                        <span className="text-xs text-muted-foreground tabular-nums hidden sm:inline">
+                          Max safe today <span className="font-semibold text-foreground">{fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}</span>
+                        </span>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="font-semibold text-sm leading-tight truncate">{account.firmName}</p>
-                          <div className="flex items-center shrink-0">
-                            <Badge variant="outline" className={`text-[10px] h-5 px-1.5 shrink-0 ${meta.badgeClass}`}>
-                              {meta.label}
-                            </Badge>
-                          </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          <span className="font-medium text-foreground/70">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
-                          {' '}&middot; {typeMeta.label} &middot; Since {new Date(account.startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                        </p>
-                      </div>
+                      {riskCalcOpen ? <CaretUp className="h-4 w-4 text-muted-foreground" /> : <CaretDown className="h-4 w-4 text-muted-foreground" />}
                     </div>
-
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {[
-                        { label: 'Invested', value: invested > 0 ? fmt(invested, account.currency) : '—', color: invested > 0 ? themeColors.loss : undefined },
-                        { label: 'Earned',   value: earned > 0  ? fmt(earned, account.currency)   : '—', color: earned > 0  ? themeColors.profit : undefined },
-                        { label: 'P&L',      value: txs.length > 0 ? (net >= 0 ? '+' : '-') + fmt(net, account.currency) : '—', color: txs.length > 0 ? (net >= 0 ? themeColors.profit : themeColors.loss) : undefined },
-                      ].map(s => (
-                        <div
-                          key={s.label}
-                          className="rounded-lg px-2 sm:px-2.5 py-2.5 bg-muted/50"
-                        >
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{s.label}</p>
-                          <p className="text-xs sm:text-sm font-bold tabular-nums mt-1" style={{ color: s.color ?? 'var(--muted-foreground)' }}>{s.value}</p>
+                  </button>
+                  {riskCalcOpen && (
+                    <div className="px-4 pb-4 space-y-4 border-t pt-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="text-sm text-muted-foreground whitespace-nowrap">If I lose</label>
+                        <div className="relative max-w-[120px] sm:max-w-[160px]">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{currencySymbol(aggregateCurrency)}</span>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            className="pl-7"
+                            value={riskCalcAmount}
+                            onChange={e => setRiskCalcAmount(e.target.value)}
+                            aria-label="Hypothetical loss amount"
+                          />
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Cost recovery indicator */}
-                    {invested > 0 && (
-                      <div className="mb-3">
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                          {net >= 0 ? (
-                            <>
-                              <CheckCircle className="h-3 w-3 shrink-0" style={{ color: themeColors.profit }} />
-                              <span>Costs recovered{earned > invested ? `, ${fmt(earned - invested, account.currency)} profit` : ''}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Target className="h-3 w-3 shrink-0 text-muted-foreground" />
-                              <span>{isClosed ? `${fmt(Math.abs(net), account.currency)} net loss` : `${fmt(Math.abs(net), account.currency)} more in payouts to break even`}</span>
-                            </>
-                          )}
-                        </p>
+                        <label className="text-sm text-muted-foreground whitespace-nowrap">today</label>
                       </div>
-                    )}
-
-                    {/* Challenge progress */}
-                    {challengeStatus && account.challengeRules && (
-                      <div className="mb-3">
-                        <div className="border-t border-border/40 pt-3 mb-2.5">
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
-                              <ClipboardText className="h-3 w-3" />
-                              {isEvalPhase ? 'Challenge Progress' : 'Risk Limits'}
-                            </p>
-                            {account.challengeProgress?.lastUpdated && (
-                              <p className="text-[10px] text-muted-foreground">
-                                {(() => {
-                                  const days = Math.floor((Date.now() - new Date(account.challengeProgress!.lastUpdated + 'T12:00:00').getTime()) / 86400000)
-                                  if (days === 0) return 'Updated today'
-                                  if (days === 1) return 'Updated yesterday'
-                                  return `Updated ${days}d ago`
-                                })()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Profit Target — hero metric (evaluation phase only) */}
-                        {isEvalPhase && (
-                        <div className="rounded-lg p-3 mb-2.5" style={{ backgroundColor: profitBarColor(challengeStatus.profitPct, themeColors) + '08', border: '1px solid ' + profitBarColor(challengeStatus.profitPct, themeColors) + '15' }}>
-                          <div className="flex items-center justify-between text-[10px] mb-1.5">
-                            <span className="font-medium" style={{ color: profitBarColor(challengeStatus.profitPct, themeColors) }}>Profit Target</span>
-                            <span className="font-semibold tabular-nums" style={{ color: profitBarColor(challengeStatus.profitPct, themeColors) }}>
-                              {Math.max(0, Math.min(100, challengeStatus.profitPct)).toFixed(0)}%
-                            </span>
-                          </div>
-                          <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-300"
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {[100, 250, 500, 1000].map(v => {
+                          const active = Number(riskCalcAmount) === v
+                          return (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setRiskCalcAmount(String(v))}
+                              className="h-8 px-3 rounded-md text-xs font-medium tabular-nums border transition-colors hover:bg-muted/40"
                               style={{
-                                width: `${Math.max(0, Math.min(100, challengeStatus.profitPct))}%`,
-                                backgroundColor: profitBarColor(challengeStatus.profitPct, themeColors),
+                                borderColor: active ? themeColors.primary : 'hsl(var(--border))',
+                                backgroundColor: active ? alpha(themeColors.primary, '15') : 'transparent',
+                                color: active ? themeColors.primary : undefined,
                               }}
-                            />
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mt-1.5 tabular-nums">
-                            {challengeStatus.profitGain >= 0 ? '+' : ''}{fmt(challengeStatus.profitGain, account.currency)} of {fmt(account.challengeRules.profitTarget, account.currency)}
-                          </p>
-                        </div>
-                        )}
-
-                        {/* Total Drawdown */}
-                        <div className="space-y-1 mb-2.5 px-0.5">
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-muted-foreground">Total Drawdown</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground tabular-nums">
-                                {fmt(challengeStatus.totalDDDollars, account.currency)} / {fmt(challengeStatus.maxTotalDDDollars, account.currency)}
-                              </span>
-                              <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: ddBarColor(challengeStatus.totalDDUsedPct, themeColors) }}>
-                                {Math.min(100, challengeStatus.totalDDUsedPct).toFixed(0)}%
-                              </span>
-                            </div>
-                          </div>
-                          <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-300"
-                              style={{
-                                width: `${Math.min(100, challengeStatus.totalDDUsedPct)}%`,
-                                backgroundColor: ddBarColor(challengeStatus.totalDDUsedPct, themeColors),
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Daily Drawdown */}
-                        {account.challengeRules.maxDailyDrawdown > 0 && (
-                          <div className="space-y-1 mb-2.5 px-0.5">
-                            <div className="flex items-center justify-between text-[10px]">
-                              <span className="text-muted-foreground">Daily Drawdown</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground tabular-nums">
-                                  {fmt(challengeStatus.dailyDDDollars, account.currency)} / {fmt(challengeStatus.maxDailyDDDollars, account.currency)}
-                                </span>
-                                <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors) }}>
-                                  {Math.min(100, challengeStatus.dailyDDUsedPct).toFixed(0)}%
-                                </span>
-                              </div>
-                            </div>
-                            <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${Math.min(100, challengeStatus.dailyDDUsedPct)}%`,
-                                  backgroundColor: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors),
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Trading Days */}
-                        {isEvalPhase && challengeStatus.tradingDaysPct !== null && account.challengeRules.minTradingDays && (
-                          <div className="space-y-1 px-0.5">
-                            <div className="flex items-center justify-between text-[10px]">
-                              <span className="text-muted-foreground">Trading Days</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground tabular-nums">
-                                  {Math.min(challengeStatus.tradingDaysCount, account.challengeRules.minTradingDays)} / {account.challengeRules.minTradingDays}
-                                </span>
-                                <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: themeColors.primary }}>
-                                  {Math.min(100, challengeStatus.tradingDaysPct).toFixed(0)}%
-                                </span>
-                              </div>
-                            </div>
-                            <div className="h-2 rounded-full bg-muted/60 overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${Math.min(100, challengeStatus.tradingDaysPct)}%`,
-                                  backgroundColor: themeColors.primary,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {account.notes && (
-                      <p className="text-xs text-muted-foreground line-clamp-1 mb-3">{account.notes}</p>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 mt-auto border-t border-border/40">
-                      <div className="flex items-center gap-1.5">
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openAddTx(account.id)}>
-                          <Plus className="h-3 w-3" />
-                          Transaction
-                        </Button>
-                        {account.challengeRules && (
-                          <Button
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-white"
-                            style={{ backgroundColor: brandColor }}
-                            onClick={() => openBalanceDialog(account)}
+                            >
+                              ${v >= 1000 ? `${v / 1000}k` : v}
+                            </button>
+                          )
+                        })}
+                        {maxSafeLoss > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setRiskCalcAmount(String(Math.floor(maxSafeLoss)))}
+                            className="h-8 px-3 rounded-md text-xs font-medium tabular-nums border border-dashed transition-colors hover:bg-muted/40"
+                            style={{ borderColor: alpha(themeColors.primary, '60'), color: themeColors.primary }}
                           >
-                            <ArrowsClockwise className="h-3 w-3" />
-                            Update Balance
-                          </Button>
-                        )}
-                        {isPro ? (
-                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
-                            <UploadSimple className="h-3 w-3" />
-                            Import
-                          </Button>
-                        ) : (
-                          <Link to="/pricing">
-                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
-                              <UploadSimple className="h-3 w-3" />
-                              Import
-                              <Lock className="h-2.5 w-2.5 ml-0.5" />
-                            </Button>
-                          </Link>
+                            Max safe · {fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}
+                          </button>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 ml-0 sm:ml-auto">
-                        {txs.length > 0 && (
-                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => toggleExpand(account.id)}>
-                            {expanded ? <CaretUp className="h-3.5 w-3.5" /> : <CaretDown className="h-3.5 w-3.5" />}
-                            {txs.length} transaction{txs.length !== 1 ? 's' : ''}
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Edit account" onClick={() => openEditAccount(account)}>
-                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" aria-label="Delete account" onClick={() => setDeleteDialog({ open: true, type: 'account', id: account.id })}>
-                          <Trash className="h-3.5 w-3.5" aria-hidden="true" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Expanded transactions */}
-                    {expanded && txs.length > 0 && (() => {
-                      const sorted = [...txs].sort((a, b) => b.date.localeCompare(a.date))
-                      const grouped = sorted.reduce((acc, tx) => {
-                        const month = tx.date.substring(0, 7)
-                        if (!acc[month]) acc[month] = []
-                        acc[month].push(tx)
-                        return acc
-                      }, {} as Record<string, typeof txs>)
-                      const months = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
-                      const showAll = showAllMonths.has(account.id)
-                      const visibleMonths = showAll ? months : months.slice(0, 3)
-                      const hiddenCount = months.length - visibleMonths.length
-                      return (
-                        <div className="flex flex-col gap-0 pt-1">
-                          {visibleMonths.map(month => {
-                            const monthTxs = grouped[month]
-                            const monthLabel = new Date(month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                            const monthNet = monthTxs.reduce((sum, tx) => sum + (isExpenseTx(tx.type) ? -tx.amount : tx.amount), 0)
-                            const monthOpen = isMonthOpen(account.id, month)
+                      {riskCalcResults && riskCalcResults.length > 0 && (
+                        <div className="space-y-2">
+                          {riskCalcResults.map(r => {
+                            const brandColor = firmAvatarColor(r.account.firmName)
+                            const breached = r.wouldBreachTotal || r.wouldBreachDaily
+                            const hasDaily = r.account.challengeRules!.maxDailyDrawdown > 0
                             return (
-                              <div key={month}>
-                                <button
-                                  onClick={() => toggleMonth(account.id, month)}
-                                  className="w-full flex items-center justify-between px-1.5 py-1 mt-1.5 rounded hover:bg-muted/40 transition-colors group"
-                                >
-                                  <div className="flex items-center gap-1">
-                                    {monthOpen
-                                      ? <CaretUp className="h-3 w-3 text-muted-foreground" />
-                                      : <CaretDown className="h-3 w-3 text-muted-foreground" />}
-                                    <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{monthLabel}</span>
-                                    <span className="text-[10px] text-muted-foreground">({monthTxs.length})</span>
+                              <div
+                                key={r.account.id}
+                                className="rounded-lg border p-3 space-y-2.5"
+                                style={{
+                                  borderColor: breached ? alpha(themeColors.loss, '40') : 'hsl(var(--border))',
+                                  backgroundColor: breached ? alpha(themeColors.loss, '06') : undefined,
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {FIRM_LOGOS[r.account.firmName] ? (
+                                    <div className="h-6 w-6 rounded shrink-0 overflow-hidden bg-white border"><img src={FIRM_LOGOS[r.account.firmName]} alt={r.account.firmName} className="w-full h-full object-cover" /></div>
+                                  ) : (
+                                    <div
+                                      className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+                                      style={{ backgroundColor: brandColor }}
+                                    >
+                                      {firmInitials(r.account.firmName)}
+                                    </div>
+                                  )}
+                                  <span className="text-sm font-medium min-w-0 truncate">{r.account.firmName}</span>
+                                  <span className="text-xs text-muted-foreground shrink-0">{currencySymbol(r.account.currency)}{r.account.accountSize.toLocaleString()}</span>
+                                  {breached && (
+                                    <Badge variant="outline" className="ml-auto text-xs h-5 px-1.5 bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20">
+                                      Breach
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Total drawdown</span>
+                                    <span className="font-semibold tabular-nums">
+                                      <span className="text-muted-foreground">{r.totalDDPctBefore.toFixed(0)}%</span>
+                                      <span className="text-muted-foreground mx-1">&rarr;</span>
+                                      <span style={{ color: ddBarColor(r.totalDDPctAfter, themeColors) }}>
+                                        {r.totalDDPctAfter.toFixed(0)}%{r.wouldBreachTotal && ' limit'}
+                                      </span>
+                                    </span>
                                   </div>
-                                  <span className="text-[10px] font-semibold tabular-nums" style={{ color: monthNet >= 0 ? themeColors.profit : themeColors.loss }}>
-                                    {monthNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthNet), account.currency)}
-                                  </span>
-                                </button>
-                                {monthOpen && <div className="flex flex-col gap-0.5">
-                                  {monthTxs.map(tx => {
-                                    const expense = isExpenseTx(tx.type)
-                                    const txMeta = TX_TYPE_OPTIONS.find(t => t.value === tx.type)!
-                                    return (
-                                      <div key={tx.id} className="flex items-center gap-2 rounded-md hover:bg-muted/40 px-1.5 py-1.5 group transition-colors">
-                                        <div style={{ color: expense ? themeColors.loss : themeColors.profit }}>
-                                          {expense ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${txMeta.badgeClass}`}>
-                                              {txMeta.label}
-                                            </span>
-                                            {tx.description && <span className="text-[10px] text-muted-foreground truncate">{tx.description}</span>}
-                                          </div>
-                                        </div>
-                                        <span className="text-[10px] text-muted-foreground shrink-0">
-                                          {new Date(tx.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                                  <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+                                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.totalDDPctAfter)}%`, backgroundColor: ddBarColor(r.totalDDPctAfter, themeColors) }} />
+                                    <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.totalDDPctBefore)}%` }} aria-hidden="true" />
+                                  </div>
+                                </div>
+                                {hasDaily && (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">Daily drawdown</span>
+                                      <span className="font-semibold tabular-nums">
+                                        <span className="text-muted-foreground">{r.dailyDDPctBefore.toFixed(0)}%</span>
+                                        <span className="text-muted-foreground mx-1">&rarr;</span>
+                                        <span style={{ color: ddBarColor(r.dailyDDPctAfter, themeColors) }}>
+                                          {r.dailyDDPctAfter.toFixed(0)}%{r.wouldBreachDaily && ' limit'}
                                         </span>
-                                        <span className="text-xs font-semibold shrink-0 tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
-                                          {expense ? '-' : '+'}{fmt(tx.amount, account.currency)}
-                                        </span>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-9 w-9 -m-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
-                                          aria-label="Delete transaction"
-                                          onClick={() => setDeleteDialog({ open: true, type: 'tx', id: tx.id })}
-                                        >
-                                          <Trash className="h-3 w-3" aria-hidden="true" />
-                                        </Button>
-                                      </div>
-                                    )
-                                  })}
-                                </div>}
+                                      </span>
+                                    </div>
+                                    <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+                                      <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.dailyDDPctAfter)}%`, backgroundColor: ddBarColor(r.dailyDDPctAfter, themeColors) }} />
+                                      <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.dailyDDPctBefore)}%` }} aria-hidden="true" />
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between text-xs pt-0.5">
+                                  <span className="text-muted-foreground">Balance after <span className="font-semibold tabular-nums text-foreground">{fmt(r.balanceAfter, r.account.currency)}</span></span>
+                                  <span className="text-muted-foreground">Room left <span className="font-semibold tabular-nums text-foreground">{fmt(r.remainingBeforeTotal, r.account.currency)}</span></span>
+                                </div>
                               </div>
                             )
                           })}
-                          {hiddenCount > 0 && (
-                            <button
-                              onClick={() => setShowAllMonths(prev => { const n = new Set(prev); n.add(account.id); return n })}
-                              className="w-full text-[10px] text-muted-foreground hover:text-foreground py-1.5 mt-1 transition-colors text-center"
-                            >
-                              Show {hiddenCount} older {hiddenCount === 1 ? 'month' : 'months'}
-                            </button>
-                          )}
-                          {showAll && months.length > 3 && (
-                            <button
-                              onClick={() => setShowAllMonths(prev => { const n = new Set(prev); n.delete(account.id); return n })}
-                              className="w-full text-[10px] text-muted-foreground hover:text-foreground py-1.5 mt-1 transition-colors text-center"
-                            >
-                              Show less
-                            </button>
+                        </div>
+                      )}
+                      {(!riskCalcResults || riskCalcResults.length === 0) && (
+                        <div className="rounded-lg border border-dashed px-4 py-5 text-center space-y-1">
+                          <p className="text-xs text-muted-foreground">Enter an amount or tap a preset to see how a loss would affect your active challenges.</p>
+                          {maxSafeLoss > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Your tightest buffer today is <span className="font-semibold text-foreground tabular-nums">{fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}</span>
+                            </p>
                           )}
                         </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Status filter (only worth showing once there are a few accounts) */}
+              {accounts.length >= 4 && (
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter accounts by status">
+                  {([{ value: 'all', label: 'All', count: accounts.length }, ...STATUS_OPTIONS.map(s => ({ value: s.value, label: s.label, count: statusCounts[s.value] ?? 0 }))] as Array<{ value: 'all' | PropAccountStatus; label: string; count: number }>)
+                    .filter(f => f.count > 0)
+                    .map(f => {
+                      const active = effectiveFilter === f.value
+                      return (
+                        <button
+                          key={f.value}
+                          type="button"
+                          onClick={() => setAccountFilter(f.value)}
+                          aria-pressed={active}
+                          className="h-8 px-3 rounded-full text-xs font-medium border transition-colors hover:bg-muted/40 tabular-nums"
+                          style={{
+                            borderColor: active ? themeColors.primary : 'hsl(var(--border))',
+                            backgroundColor: active ? alpha(themeColors.primary, '15') : 'transparent',
+                            color: active ? themeColors.primary : undefined,
+                          }}
+                        >
+                          {f.label} <span className={active ? '' : 'text-muted-foreground'}>{f.count}</span>
+                        </button>
                       )
-                    })()}
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+                    })}
+                </div>
+              )}
+
+              {/* Account cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {visibleAccounts.map(account => {
+                  const { invested, earned, net, txs } = getAccountStats(account.id)
+                  const expanded = expandedIds.has(account.id)
+                  const meta = statusMeta(account.status)
+                  const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)
+                    ?? { value: account.accountType, label: String(account.accountType) }
+                  const brandColor = firmAvatarColor(account.firmName)
+                  const challengeStatus = getChallengeStatus(account)
+                  const isEvalPhase = account.accountType === 'evaluation' || account.accountType === 'express'
+                  const isClosed = account.status === 'failed' || account.status === 'withdrawn'
+                  return (
+                    <Card key={account.id} className="h-full flex flex-col">
+                      <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
+                        {/* Account header */}
+                        <div className="flex items-start gap-3 mb-4">
+                          {FIRM_LOGOS[account.firmName] ? (
+                            <div className="h-9 w-9 rounded-lg shrink-0 mt-0.5 overflow-hidden bg-white border">
+                              <img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div
+                              className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5"
+                              style={{ backgroundColor: brandColor }}
+                            >
+                              {firmInitials(account.firmName)}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-semibold text-sm leading-tight truncate">{account.firmName}</p>
+                              <Badge variant="outline" className={`text-xs h-5 px-1.5 shrink-0 font-medium ${meta.badgeClass}`}>
+                                {meta.label}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              <span className="font-medium text-foreground/80">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
+                              {' '}&middot; {typeMeta.label} &middot; Since {parseStoredDate(account.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Money in / out / net */}
+                        <div className="grid grid-cols-3 divide-x divide-border mb-3">
+                          {[
+                            { label: 'Invested', value: invested > 0 ? fmt(invested, account.currency) : '—', color: undefined },
+                            { label: 'Earned', value: earned > 0 ? fmt(earned, account.currency) : '—', color: earned > 0 ? themeColors.profit : undefined },
+                            { label: 'P&L', value: txs.length > 0 ? (net >= 0 ? '+' : '-') + fmt(net, account.currency) : '—', color: txs.length > 0 ? (net >= 0 ? themeColors.profit : themeColors.loss) : undefined },
+                          ].map((s, i) => (
+                            <div key={s.label} className={`min-w-0 ${i > 0 ? 'pl-3' : ''}`}>
+                              <p className="text-xs text-muted-foreground">{s.label}</p>
+                              <p className="text-sm font-semibold tabular-nums mt-0.5 truncate" style={{ color: s.color ?? (s.value === '—' ? 'hsl(var(--muted-foreground))' : undefined) }}>{s.value}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Cost recovery */}
+                        {invested > 0 && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-3">
+                            {net >= 0 ? (
+                              <>
+                                <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: themeColors.profit }} />
+                                <span>Costs recovered{earned > invested ? `, ${fmt(earned - invested, account.currency)} profit` : ''}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Target className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <span>{isClosed ? `${fmt(Math.abs(net), account.currency)} net loss` : `${fmt(Math.abs(net), account.currency)} more in payouts to break even`}</span>
+                              </>
+                            )}
+                          </p>
+                        )}
+
+                        {/* Challenge progress */}
+                        {challengeStatus && account.challengeRules && (
+                          <div className="border-t pt-3 mb-3 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-medium">{isEvalPhase ? 'Challenge progress' : 'Risk limits'}</p>
+                              {account.challengeProgress?.lastUpdated && (
+                                <p className="text-xs text-muted-foreground">
+                                  {(() => {
+                                    const days = daysSinceLocalDate(account.challengeProgress!.lastUpdated)
+                                    if (days <= 0) return 'Updated today'
+                                    if (days === 1) return 'Updated yesterday'
+                                    return `Updated ${days}d ago`
+                                  })()}
+                                </p>
+                              )}
+                            </div>
+                            {isEvalPhase && (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">Profit target</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground tabular-nums">
+                                      {challengeStatus.profitGain >= 0 ? '+' : ''}{fmt(challengeStatus.profitGain, account.currency)} / {fmt(account.challengeRules.profitTarget, account.currency)}
+                                    </span>
+                                    <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: profitBarColor(challengeStatus.profitPct, themeColors) }}>
+                                      {Math.max(0, Math.min(100, challengeStatus.profitPct)).toFixed(0)}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.max(0, Math.min(100, challengeStatus.profitPct))}%`,
+                                      backgroundColor: profitBarColor(challengeStatus.profitPct, themeColors),
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">Total drawdown</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground tabular-nums">
+                                    {fmt(challengeStatus.totalDDDollars, account.currency)} / {fmt(challengeStatus.maxTotalDDDollars, account.currency)}
+                                  </span>
+                                  <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: ddBarColor(challengeStatus.totalDDUsedPct, themeColors) }}>
+                                    {Math.min(100, challengeStatus.totalDDUsedPct).toFixed(0)}%
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${Math.min(100, challengeStatus.totalDDUsedPct)}%`,
+                                    backgroundColor: ddBarColor(challengeStatus.totalDDUsedPct, themeColors),
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            {account.challengeRules.maxDailyDrawdown > 0 && (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">Daily drawdown</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground tabular-nums">
+                                      {fmt(challengeStatus.dailyDDDollars, account.currency)} / {fmt(challengeStatus.maxDailyDDDollars, account.currency)}
+                                    </span>
+                                    <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors) }}>
+                                      {Math.min(100, challengeStatus.dailyDDUsedPct).toFixed(0)}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.min(100, challengeStatus.dailyDDUsedPct)}%`,
+                                      backgroundColor: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors),
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {isEvalPhase && challengeStatus.tradingDaysPct !== null && account.challengeRules.minTradingDays && (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">Trading days</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground tabular-nums">
+                                      {Math.min(challengeStatus.tradingDaysCount, account.challengeRules.minTradingDays)} / {account.challengeRules.minTradingDays}
+                                    </span>
+                                    <span className="font-semibold tabular-nums min-w-[2.5rem] text-right" style={{ color: themeColors.primary }}>
+                                      {Math.min(100, challengeStatus.tradingDaysPct).toFixed(0)}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.min(100, challengeStatus.tradingDaysPct)}%`,
+                                      backgroundColor: themeColors.primary,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {account.notes && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mb-3">{account.notes}</p>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 mt-auto border-t">
+                          <div className="flex items-center gap-1.5">
+                            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddTx(account.id)}>
+                              <Plus className="h-3 w-3" />
+                              Transaction
+                            </Button>
+                            {account.challengeRules && (
+                              <Button
+                                size="sm"
+                                className="h-8 text-xs gap-1"
+                                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                                onClick={() => openBalanceDialog(account)}
+                              >
+                                <ArrowsClockwise className="h-3 w-3" />
+                                Update balance
+                              </Button>
+                            )}
+                            {isPro ? (
+                              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
+                                <UploadSimple className="h-3 w-3" />
+                                Import
+                              </Button>
+                            ) : (
+                              <Link to="/pricing">
+                                <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+                                  <UploadSimple className="h-3 w-3" />
+                                  Import
+                                  <Lock className="h-2.5 w-2.5 ml-0.5" />
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 ml-0 sm:ml-auto">
+                            {txs.length > 0 && (
+                              <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground" onClick={() => toggleExpand(account.id)} aria-expanded={expanded}>
+                                {expanded ? <CaretUp className="h-3.5 w-3.5" /> : <CaretDown className="h-3.5 w-3.5" />}
+                                {txs.length} transaction{txs.length !== 1 ? 's' : ''}
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Edit account" onClick={() => openEditAccount(account)}>
+                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" aria-label="Delete account" onClick={() => setDeleteDialog({ open: true, type: 'account', id: account.id })}>
+                              <Trash className="h-3.5 w-3.5" aria-hidden="true" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Expanded transactions */}
+                        {expanded && txs.length > 0 && (() => {
+                          const sorted = [...txs].sort((a, b) => b.date.localeCompare(a.date))
+                          const grouped = sorted.reduce((acc, tx) => {
+                            const month = tx.date.substring(0, 7)
+                            if (!acc[month]) acc[month] = []
+                            acc[month].push(tx)
+                            return acc
+                          }, {} as Record<string, typeof txs>)
+                          const months = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+                          const showAll = showAllMonths.has(account.id)
+                          const visibleMonths = showAll ? months : months.slice(0, 3)
+                          const hiddenCount = months.length - visibleMonths.length
+                          return (
+                            <div className="flex flex-col gap-0 pt-1">
+                              {visibleMonths.map(month => {
+                                const monthTxs = grouped[month]
+                                const monthLabel = new Date(month + '-02').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                                const monthNet = monthTxs.reduce((sum, tx) => sum + (isExpenseTx(tx.type) ? -tx.amount : tx.amount), 0)
+                                const monthOpen = isMonthOpen(account.id, month)
+                                return (
+                                  <div key={month}>
+                                    <button
+                                      onClick={() => toggleMonth(account.id, month)}
+                                      aria-expanded={monthOpen}
+                                      className="w-full flex items-center justify-between px-1.5 py-1.5 mt-1.5 rounded hover:bg-muted/40 transition-colors"
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        {monthOpen
+                                          ? <CaretUp className="h-3 w-3 text-muted-foreground" />
+                                          : <CaretDown className="h-3 w-3 text-muted-foreground" />}
+                                        <span className="text-xs font-medium">{monthLabel}</span>
+                                        <span className="text-xs text-muted-foreground">({monthTxs.length})</span>
+                                      </div>
+                                      <span className="text-xs font-semibold tabular-nums" style={{ color: monthNet >= 0 ? themeColors.profit : themeColors.loss }}>
+                                        {monthNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthNet), account.currency)}
+                                      </span>
+                                    </button>
+                                    {monthOpen && <div className="flex flex-col gap-0.5">
+                                      {monthTxs.map(tx => {
+                                        const expense = isExpenseTx(tx.type)
+                                        const txMeta = TX_TYPE_OPTIONS.find(t => t.value === tx.type)!
+                                        return (
+                                          <div key={tx.id} className="flex items-center gap-2 rounded-md hover:bg-muted/40 px-1.5 py-1.5 group transition-colors">
+                                            <div style={{ color: expense ? themeColors.loss : themeColors.profit }}>
+                                              {expense ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-1.5 min-w-0">
+                                                <span className={`text-xs font-medium px-1.5 py-0.5 rounded border shrink-0 ${txMeta.badgeClass}`}>
+                                                  {txMeta.label}
+                                                </span>
+                                                {tx.description && <span className="text-xs text-muted-foreground truncate">{tx.description}</span>}
+                                              </div>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground shrink-0">
+                                              {parseStoredDate(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                                            </span>
+                                            <span className="text-xs font-semibold shrink-0 tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
+                                              {expense ? '-' : '+'}{fmt(tx.amount, account.currency)}
+                                            </span>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-9 w-9 -m-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                                              aria-label="Delete transaction"
+                                              onClick={() => setDeleteDialog({ open: true, type: 'tx', id: tx.id })}
+                                            >
+                                              <Trash className="h-3 w-3" aria-hidden="true" />
+                                            </Button>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>}
+                                  </div>
+                                )
+                              })}
+                              {hiddenCount > 0 && (
+                                <button
+                                  onClick={() => setShowAllMonths(prev => { const n = new Set(prev); n.add(account.id); return n })}
+                                  className="w-full text-xs text-muted-foreground hover:text-foreground py-1.5 mt-1 transition-colors text-center"
+                                >
+                                  Show {hiddenCount} older {hiddenCount === 1 ? 'month' : 'months'}
+                                </button>
+                              )}
+                              {showAll && months.length > 3 && (
+                                <button
+                                  onClick={() => setShowAllMonths(prev => { const n = new Set(prev); n.delete(account.id); return n })}
+                                  className="w-full text-xs text-muted-foreground hover:text-foreground py-1.5 mt-1 transition-colors text-center"
+                                >
+                                  Show less
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })()}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </TabsContent>
+
+            {/* ── Performance tab ── */}
+            <TabsContent value="performance" className="mt-5 space-y-5">
+              {/* Period */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Money figures use the selected period. Pass and fail counts are all time.
+                </p>
+                <div className="flex items-center gap-1.5" role="group" aria-label="Period">
+                  {([['3m', '3M'], ['6m', '6M'], ['12m', '12M'], ['all', 'All']] as Array<[PerfRange, string]>).map(([value, label]) => {
+                    const active = perfRange === value
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setPerfRange(value)}
+                        aria-pressed={active}
+                        className="h-8 px-3 rounded-md text-xs font-medium border transition-colors hover:bg-muted/40 tabular-nums"
+                        style={{
+                          borderColor: active ? themeColors.primary : 'hsl(var(--border))',
+                          backgroundColor: active ? alpha(themeColors.primary, '15') : 'transparent',
+                          color: active ? themeColors.primary : undefined,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Track record: lifetime */}
+              {successStats ? (
+                <ProGate featureName="Success Rate Dashboard">
+                  <div className="rounded-lg border">
+                    <div className="px-4 sm:px-5 py-3 border-b flex items-center justify-between">
+                      <p className="text-sm font-medium">Track record</p>
+                      <p className="text-xs text-muted-foreground">All time</p>
+                    </div>
+                    <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-5 gap-x-4 sm:gap-x-0 p-4 sm:p-5">
+                      {(() => {
+                        const passColor = successStats.passRate !== null && successStats.passRate >= 50 ? themeColors.profit : themeColors.loss
+                        const roiColor = successStats.bestFirm && successStats.bestFirm.roi >= 0 ? themeColors.profit : themeColors.loss
+                        const cells: Array<{ label: string; value: string; color?: string; sub: string; bar?: { pct: number; color: string; left: string; right: string } }> = [
+                          {
+                            label: 'Pass rate',
+                            value: successStats.passRate !== null ? `${successStats.passRate.toFixed(0)}%` : '--',
+                            color: successStats.passRate !== null ? passColor : undefined,
+                            sub: `${successStats.passed} passed, ${successStats.failed} failed`,
+                            bar: successStats.passRate !== null ? { pct: successStats.passRate, color: passColor, left: `${successStats.passed} passed`, right: `${successStats.failed} failed` } : undefined,
+                          },
+                          { label: 'Attempts', value: String(successStats.total), sub: `${successStats.passed} funded` },
+                          { label: 'Avg cost to fund', value: successStats.avgCostToFund !== null ? fmt(successStats.avgCostToFund, aggregateCurrency) : '--', sub: 'Per funded account' },
+                          { label: 'Spent on failed', value: successStats.totalWastedOnFailed > 0 ? fmt(successStats.totalWastedOnFailed, aggregateCurrency) : '--', color: successStats.totalWastedOnFailed > 0 ? themeColors.loss : undefined, sub: `Across ${successStats.failed} failed` },
+                          { label: 'Best firm ROI', value: successStats.bestFirm ? `${successStats.bestFirm.roi >= 0 ? '+' : ''}${successStats.bestFirm.roi.toFixed(0)}%` : '--', color: successStats.bestFirm ? roiColor : undefined, sub: successStats.bestFirm?.firm ?? 'Not enough data' },
+                        ]
+                        return cells.map((c, i) => (
+                          <div key={c.label} className={`min-w-0 ${i > 0 ? 'sm:border-l sm:border-border sm:pl-5' : ''} ${i < cells.length - 1 ? 'sm:pr-5' : ''}`}>
+                            <dt className="text-xs text-muted-foreground">{c.label}</dt>
+                            <dd className="mt-1 text-xl font-semibold tabular-nums tracking-tight truncate" style={{ color: c.color ?? (c.value === '--' ? 'hsl(var(--muted-foreground))' : undefined) }}>{c.value}</dd>
+                            {c.bar ? (
+                              <div className="mt-2 space-y-1">
+                                <div className="h-1.5 rounded-full overflow-hidden bg-muted">
+                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, c.bar.pct)}%`, backgroundColor: c.bar.color }} />
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span>{c.bar.left}</span>
+                                  <span>{c.bar.right}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{c.sub}</p>
+                            )}
+                          </div>
+                        ))
+                      })()}
+                    </dl>
+                  </div>
+                </ProGate>
+              ) : (
+                <div className="rounded-lg border border-dashed px-4 py-4 text-sm text-muted-foreground">
+                  Pass rate, average cost to fund and best-firm ROI appear once you have 3 or more accounts. You have {accounts.length}.
+                </div>
+              )}
+
+              {rangeTxs.length === 0 ? (
+                <div className="rounded-lg border border-dashed px-4 py-4 text-sm text-muted-foreground">
+                  {transactions.length === 0
+                    ? 'Log a fee or payout on an account to see cash flow, spend and payout analytics.'
+                    : 'No fees or payouts in this period. Pick a longer period or All.'}
+                </div>
+              ) : (
+                <ProGate featureName="Charts & Analytics">
+                  <div className="space-y-4">
+                    {/* Cash flow row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                      {/* Monthly cash flow */}
+                      <Card className="flex flex-col lg:col-span-3">
+                        <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                              <p className="text-sm font-medium">Monthly cash flow</p>
+                              <p className="text-xs text-muted-foreground">Fees out, payouts in, by calendar month{monthlyBars.length < monthlyFlow.length ? `. Chart shows the last ${monthlyBars.length} months` : ''}</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+                              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: themeColors.loss }} />Fees</span>
+                              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ backgroundColor: themeColors.profit }} />Payouts</span>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <ResponsiveContainer width="100%" height={220}>
+                              <BarChart data={monthlyBars} margin={{ top: 4, right: 4, bottom: 0, left: 4 }} barCategoryGap="28%" barGap={2}>
+                                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} interval="preserveStartEnd" />
+                                <YAxis hide />
+                                <Tooltip
+                                  cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
+                                  content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null
+                                    const m = payload[0].payload as { key: string; fees: number; payouts: number; net: number }
+                                    return (
+                                      <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md space-y-1">
+                                        <p className="font-medium text-foreground">{new Date(m.key + '-02T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                                        <p className="text-muted-foreground tabular-nums">Fees <span className="font-medium" style={{ color: themeColors.loss }}>-{fmt(m.fees, aggregateCurrency)}</span></p>
+                                        <p className="text-muted-foreground tabular-nums">Payouts <span className="font-medium" style={{ color: themeColors.profit }}>+{fmt(m.payouts, aggregateCurrency)}</span></p>
+                                        <p className="text-muted-foreground tabular-nums border-t pt-1">Net <span className="font-semibold" style={{ color: m.net >= 0 ? themeColors.profit : themeColors.loss }}>{m.net >= 0 ? '+' : '-'}{fmt(Math.abs(m.net), aggregateCurrency)}</span></p>
+                                      </div>
+                                    )
+                                  }}
+                                />
+                                <Bar dataKey="fees" fill={themeColors.loss} fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                                <Bar dataKey="payouts" fill={themeColors.profit} fillOpacity={0.9} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                          {monthlySummary && (
+                            <dl className="grid grid-cols-3 gap-x-4 mt-4 pt-4 border-t">
+                              <div className="min-w-0">
+                                <dt className="text-xs text-muted-foreground">Best month</dt>
+                                <dd className="text-sm font-semibold tabular-nums truncate" style={{ color: monthlySummary.best.net >= 0 ? themeColors.profit : themeColors.loss }}>
+                                  {monthlySummary.best.net >= 0 ? '+' : '-'}{fmt(Math.abs(monthlySummary.best.net), aggregateCurrency)}
+                                </dd>
+                                <p className="text-xs text-muted-foreground truncate">{monthlySummary.monthLabel(monthlySummary.best.key)}</p>
+                              </div>
+                              <div className="min-w-0 border-l pl-4">
+                                <dt className="text-xs text-muted-foreground">Worst month</dt>
+                                <dd className="text-sm font-semibold tabular-nums truncate" style={{ color: monthlySummary.worst.net >= 0 ? themeColors.profit : themeColors.loss }}>
+                                  {monthlySummary.worst.net >= 0 ? '+' : '-'}{fmt(Math.abs(monthlySummary.worst.net), aggregateCurrency)}
+                                </dd>
+                                <p className="text-xs text-muted-foreground truncate">{monthlySummary.monthLabel(monthlySummary.worst.key)}</p>
+                              </div>
+                              <div className="min-w-0 border-l pl-4">
+                                <dt className="text-xs text-muted-foreground">Avg per active month</dt>
+                                <dd className="text-sm font-semibold tabular-nums truncate" style={{ color: monthlySummary.avgNet >= 0 ? themeColors.profit : themeColors.loss }}>
+                                  {monthlySummary.avgNet >= 0 ? '+' : '-'}{fmt(Math.abs(monthlySummary.avgNet), aggregateCurrency)}
+                                </dd>
+                                <p className="text-xs text-muted-foreground truncate">{monthlySummary.months} month{monthlySummary.months !== 1 ? 's' : ''} with activity</p>
+                              </div>
+                            </dl>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Cumulative P&L */}
+                      <Card className="flex flex-col lg:col-span-2">
+                        <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                              <p className="text-sm font-medium">Cumulative P&L</p>
+                              <p className="text-xs text-muted-foreground">{rangeStart ? 'Carries the balance from before the period' : 'Since your first transaction'}</p>
+                            </div>
+                            {pnlOverTime.length > 0 && (() => {
+                              const final = pnlOverTime[pnlOverTime.length - 1].value
+                              return (
+                                <p className="text-lg font-semibold tabular-nums leading-none shrink-0" style={{ color: final >= 0 ? themeColors.profit : themeColors.loss }}>
+                                  {final >= 0 ? '+' : '-'}{fmt(Math.abs(final), aggregateCurrency)}
+                                </p>
+                              )
+                            })()}
+                          </div>
+                          <div className="flex-1 flex flex-col justify-end">
+                            {(() => {
+                              const final = pnlOverTime.length > 0 ? pnlOverTime[pnlOverTime.length - 1].value : 0
+                              const lineColor = final >= 0 ? themeColors.profit : themeColors.loss
+                              return (
+                                <ResponsiveContainer width="100%" height={220}>
+                                  <AreaChart data={pnlOverTime} margin={{ top: 8, right: 4, bottom: 8, left: 4 }}>
+                                    <defs>
+                                      <linearGradient id="pnlGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor={lineColor} stopOpacity={0.3} />
+                                        <stop offset="100%" stopColor={lineColor} stopOpacity={0.02} />
+                                      </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="date" hide />
+                                    <YAxis hide domain={['auto', 'auto']} />
+                                    <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} strokeDasharray="3 3" />
+                                    <Tooltip
+                                      content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null
+                                        const v = payload[0].value as number
+                                        return (
+                                          <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
+                                            <p className="text-muted-foreground">{payload[0].payload.date}</p>
+                                            <p className="font-semibold tabular-nums" style={{ color: v >= 0 ? themeColors.profit : themeColors.loss }}>
+                                              {v >= 0 ? '+' : '-'}{fmt(Math.abs(v), aggregateCurrency)}
+                                            </p>
+                                          </div>
+                                        )
+                                      }}
+                                    />
+                                    <Area
+                                      type="monotone"
+                                      dataKey="value"
+                                      stroke={lineColor}
+                                      strokeWidth={2}
+                                      fill="url(#pnlGradient)"
+                                      baseValue={0}
+                                      dot={false}
+                                      activeDot={{ r: 3, strokeWidth: 0, fill: lineColor }}
+                                    />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              )
+                            })()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Spend + payouts row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Where the money goes */}
+                      <Card className="flex flex-col">
+                        <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                              <p className="text-sm font-medium">Where the money goes</p>
+                              <p className="text-xs text-muted-foreground">Fees by type</p>
+                            </div>
+                            <p className="text-lg font-semibold tabular-nums leading-none shrink-0">{spendByType.total > 0 ? fmt(spendByType.total, aggregateCurrency) : '--'}</p>
+                          </div>
+                          {spendByType.rows.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No fees in this period.</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {spendByType.rows.map(r => {
+                                const pct = spendByType.total > 0 ? (r.amount / spendByType.total) * 100 : 0
+                                const isReset = r.value === 'reset-fee'
+                                return (
+                                  <div key={r.value} className="space-y-1">
+                                    <div className="flex items-center justify-between gap-3 text-sm">
+                                      <span className="min-w-0 truncate">
+                                        {r.label}
+                                        <span className="text-muted-foreground"> · {r.count} {r.count === 1 ? 'charge' : 'charges'}</span>
+                                      </span>
+                                      <span className="tabular-nums font-semibold shrink-0">
+                                        {fmt(r.amount, aggregateCurrency)}
+                                        <span className="text-muted-foreground font-normal ml-1.5">{pct.toFixed(0)}%</span>
+                                      </span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: isReset ? themeColors.loss : themeColors.primary }} />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                              {(() => {
+                                const resets = spendByType.rows.find(r => r.value === 'reset-fee')
+                                const evals = spendByType.rows.find(r => r.value === 'evaluation-fee')
+                                if (!resets) return null
+                                const share = spendByType.total > 0 ? (resets.amount / spendByType.total) * 100 : 0
+                                return (
+                                  <p className="text-xs text-muted-foreground pt-1">
+                                    Resets are {share.toFixed(0)}% of what you have paid{evals ? `, ${resets.count} reset${resets.count !== 1 ? 's' : ''} against ${evals.count} evaluation${evals.count !== 1 ? 's' : ''}` : ''}.
+                                  </p>
+                                )
+                              })()}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Payouts */}
+                      <Card className="flex flex-col">
+                        <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
+                          <div className="flex items-start justify-between gap-3 mb-4">
+                            <div>
+                              <p className="text-sm font-medium">Payouts</p>
+                              <p className="text-xs text-muted-foreground">{payoutStats ? `${payoutStats.count} payout${payoutStats.count !== 1 ? 's' : ''} from ${payoutStats.accountsPaid} account${payoutStats.accountsPaid !== 1 ? 's' : ''}` : 'Withdrawals you have logged'}</p>
+                            </div>
+                            <p className="text-lg font-semibold tabular-nums leading-none shrink-0" style={{ color: payoutStats ? themeColors.profit : undefined }}>{payoutStats ? fmt(payoutStats.total, aggregateCurrency) : '--'}</p>
+                          </div>
+                          {!payoutStats ? (
+                            <p className="text-sm text-muted-foreground">No payouts in this period.</p>
+                          ) : (
+                            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+                              {[
+                                { label: 'Average payout', value: fmt(payoutStats.avg, aggregateCurrency), sub: 'per withdrawal' },
+                                { label: 'Largest payout', value: fmt(payoutStats.largest.amount, aggregateCurrency), sub: parseStoredDate(payoutStats.largest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+                                { label: 'Last payout', value: fmt(payoutStats.last.amount, aggregateCurrency), sub: parseStoredDate(payoutStats.last.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+                                { label: 'Gap between payouts', value: payoutStats.avgGapDays !== null ? `${Math.round(payoutStats.avgGapDays)} days` : '--', sub: payoutStats.avgGapDays !== null ? 'average' : 'needs 2 or more payouts' },
+                                { label: 'Start to first payout', value: payoutStats.avgDaysToFirstPayout !== null ? `${Math.round(payoutStats.avgDaysToFirstPayout)} days` : '--', sub: 'average across accounts' },
+                              ].map(item => (
+                                <div key={item.label} className="min-w-0">
+                                  <dt className="text-xs text-muted-foreground">{item.label}</dt>
+                                  <dd className="text-sm font-semibold tabular-nums mt-0.5 truncate">{item.value}</dd>
+                                  <p className="text-xs text-muted-foreground truncate">{item.sub}</p>
+                                </div>
+                              ))}
+                            </dl>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* By firm */}
+                    <div className="rounded-lg border overflow-hidden">
+                      <div className="px-4 sm:px-5 py-3 border-b flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">By firm</p>
+                          <p className="text-xs text-muted-foreground">Sorted by net. Record is all time, money is the selected period.</p>
+                        </div>
+                      </div>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-xs text-muted-foreground border-b">
+                            <th scope="col" className="text-left font-medium px-4 sm:px-5 py-2">Firm</th>
+                            <th scope="col" className="text-right font-medium px-3 py-2">Record</th>
+                            <th scope="col" className="text-right font-medium px-3 py-2 hidden md:table-cell">Resets</th>
+                            <th scope="col" className="text-right font-medium px-3 py-2 hidden sm:table-cell">Invested</th>
+                            <th scope="col" className="text-right font-medium px-3 py-2 hidden sm:table-cell">Earned</th>
+                            <th scope="col" className="text-right font-medium px-3 py-2">Net</th>
+                            <th scope="col" className="text-right font-medium pl-3 pr-4 sm:pr-5 py-2">ROI</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {firmTable.map(r => {
+                            const brandColor = firmAvatarColor(r.firm)
+                            return (
+                              <tr key={r.firm}>
+                                <td className="px-4 sm:px-5 py-2.5">
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    {FIRM_LOGOS[r.firm] ? (
+                                      <div className="h-7 w-7 rounded-md shrink-0 overflow-hidden bg-white border"><img src={FIRM_LOGOS[r.firm]} alt="" className="w-full h-full object-cover" /></div>
+                                    ) : (
+                                      <div className="h-7 w-7 rounded-md flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: brandColor }}>{firmInitials(r.firm)}</div>
+                                    )}
+                                    <div className="min-w-0">
+                                      <p className="font-medium truncate">{r.firm}</p>
+                                      <p className="text-xs text-muted-foreground">{r.accounts} account{r.accounts !== 1 ? 's' : ''}{r.active > 0 ? `, ${r.active} active` : ''}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="text-right px-3 py-2.5 tabular-nums whitespace-nowrap">
+                                  <span style={{ color: r.passed > 0 ? themeColors.profit : undefined }}>{r.passed}</span>
+                                  <span className="text-muted-foreground"> / </span>
+                                  <span style={{ color: r.failed > 0 ? themeColors.loss : undefined }}>{r.failed}</span>
+                                </td>
+                                <td className="text-right px-3 py-2.5 tabular-nums hidden md:table-cell" style={{ color: r.resets > 0 ? undefined : 'hsl(var(--muted-foreground))' }}>{r.resets}</td>
+                                <td className="text-right px-3 py-2.5 tabular-nums hidden sm:table-cell">{r.invested > 0 ? fmt(r.invested, aggregateCurrency) : '--'}</td>
+                                <td className="text-right px-3 py-2.5 tabular-nums hidden sm:table-cell" style={{ color: r.earned > 0 ? themeColors.profit : 'hsl(var(--muted-foreground))' }}>{r.earned > 0 ? fmt(r.earned, aggregateCurrency) : '--'}</td>
+                                <td className="text-right px-3 py-2.5 tabular-nums font-semibold" style={{ color: r.invested > 0 || r.earned > 0 ? (r.net >= 0 ? themeColors.profit : themeColors.loss) : 'hsl(var(--muted-foreground))' }}>
+                                  {r.invested > 0 || r.earned > 0 ? `${r.net >= 0 ? '+' : '-'}${fmt(Math.abs(r.net), aggregateCurrency)}` : '--'}
+                                </td>
+                                <td className="text-right pl-3 pr-4 sm:pr-5 py-2.5 tabular-nums font-semibold" style={{ color: r.roi !== null ? (r.roi >= 0 ? themeColors.profit : themeColors.loss) : 'hsl(var(--muted-foreground))' }}>
+                                  {r.roi !== null ? `${r.roi >= 0 ? '+' : ''}${r.roi.toFixed(0)}%` : '--'}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </ProGate>
+              )}
+            </TabsContent>
+
+            {/* ── AI Coach tab ── */}
+            <TabsContent value="coach" className="mt-5">
+              {transactions.length === 0 ? (
+                <div className="rounded-lg border border-dashed px-4 py-4 text-sm text-muted-foreground">
+                  Log at least one fee or payout, then the coach has something to review.
+                </div>
+              ) : (
+                <ProGate featureName="AI PropTracker Analysis">
+                  {(() => {
+                    const reviewedAgo = (() => {
+                      if (!aiReviewMeta) return null
+                      const mins = Math.max(0, Math.round((Date.now() - new Date(aiReviewMeta.at).getTime()) / 60000))
+                      if (mins < 2) return 'just now'
+                      if (mins < 60) return `${mins} min ago`
+                      const hours = Math.round(mins / 60)
+                      if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`
+                      const days = Math.round(hours / 24)
+                      return `${days} day${days !== 1 ? 's' : ''} ago`
+                    })()
+                    const newTxs = aiReviewMeta ? Math.max(0, transactions.length - aiReviewMeta.transactions) : 0
+                    const newAccounts = aiReviewMeta ? Math.max(0, accounts.length - aiReviewMeta.accounts) : 0
+                    const changedSince = !!aiReviewMeta?.fingerprint && aiReviewMeta.fingerprint !== reviewFingerprint
+                    const stale = newTxs > 0 || newAccounts > 0 || changedSince
+                    const analyseButton = (extraClass = '') => (
+                      <Button
+                        size="sm"
+                        onClick={runAiAnalysis}
+                        disabled={aiLoading}
+                        className={`h-9 text-sm gap-1.5 ${extraClass}`}
+                        style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                      >
+                        <Brain className="h-4 w-4" aria-hidden="true" />
+                        {aiLoading ? 'Reviewing…' : aiAnalysis ? 'Review again' : 'Review my accounts'}
+                      </Button>
+                    )
+
+                    return (
+                      <div className="rounded-lg border overflow-hidden">
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">AI Coach</p>
+                            <p className="text-xs text-muted-foreground">
+                              {aiReviewMeta && aiAnalysis
+                                ? <>Reviewed {reviewedAgo} from {aiReviewMeta.accounts} account{aiReviewMeta.accounts !== 1 ? 's' : ''} and {aiReviewMeta.transactions} transaction{aiReviewMeta.transactions !== 1 ? 's' : ''}.</>
+                                : <>Reads your accounts, fees, payouts and drawdown, then writes a plain-English review.</>}
+                            </p>
+                          </div>
+                          {!isDemo && (
+                            <div className="shrink-0 flex items-center gap-3">
+                              {aiUsage && (
+                                <p className="text-xs text-muted-foreground tabular-nums">{aiUsage.remaining} of {aiUsage.limit} left today</p>
+                              )}
+                              {(aiAnalysis || aiLoading) && analyseButton()}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Stale notice */}
+                        {stale && aiAnalysis && !aiLoading && (
+                          <div className="flex items-center gap-2 px-4 sm:px-5 py-2 border-b text-xs text-muted-foreground" style={{ backgroundColor: alpha(themeColors.primary, '08') }}>
+                            <Info className="h-3.5 w-3.5 shrink-0" style={{ color: themeColors.primary }} aria-hidden="true" />
+                            <span>
+                              {newTxs > 0 || newAccounts > 0
+                                ? `${[
+                                    newTxs > 0 ? `${newTxs} transaction${newTxs !== 1 ? 's' : ''}` : null,
+                                    newAccounts > 0 ? `${newAccounts} account${newAccounts !== 1 ? 's' : ''}` : null,
+                                  ].filter(Boolean).join(' and ')} added since this review.`
+                                : 'Your accounts or transactions have changed since this review.'}
+                              {!isDemo && ' Review again to include the changes.'}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Loading */}
+                        {aiLoading && (
+                          <div className="px-5 py-12 flex flex-col items-center gap-3 text-center">
+                            <Brain className="h-6 w-6 animate-pulse" style={{ color: themeColors.primary }} aria-hidden="true" />
+                            <p className="text-sm text-muted-foreground">Reading {accounts.length} account{accounts.length !== 1 ? 's' : ''} and {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}. Usually 10 to 20 seconds.</p>
+                          </div>
+                        )}
+
+                        {/* Empty */}
+                        {!aiAnalysis && !aiLoading && (
+                          <div className="px-5 py-10 sm:py-12 flex flex-col items-center text-center gap-4">
+                            <div className="h-11 w-11 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                              <Brain className="h-5 w-5" style={{ color: themeColors.primary }} aria-hidden="true" />
+                            </div>
+                            <div className="space-y-1.5 max-w-md">
+                              <p className="text-base font-semibold">Get a written review of your prop trading</p>
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                The coach looks at your {accounts.length} account{accounts.length !== 1 ? 's' : ''} and {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}: what you have paid in fees and resets, what you have taken out, how close each challenge is to its limits, and which firms are actually paying you.
+                                You get a score out of 10, what is working, what to watch, and a short plan.
+                              </p>
+                            </div>
+                            {!isDemo && analyseButton()}
+                            {!isDemo && aiUsage && (
+                              <p className="text-xs text-muted-foreground tabular-nums">{aiUsage.remaining} of {aiUsage.limit} reviews left today</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Result */}
+                        {aiAnalysis && !aiLoading && (() => {
+                          const { score, sections: parsed } = parseCoachReview(aiAnalysis)
+                          const scoreColor = score !== null
+                            ? score >= 7 ? themeColors.profit : score >= 4 ? themeColors.primary : themeColors.loss
+                            : themeColors.primary
+
+                          const sections = [
+                            { key: 'verdict' as const, heading: COACH_HEADINGS.verdict, icon: CheckCircle, color: themeColors.profit, style: 'prose' as const },
+                            { key: 'roi' as const, heading: COACH_HEADINGS.roi, icon: ChartBar, color: themeColors.primary, style: 'prose' as const },
+                            { key: 'challenge' as const, heading: COACH_HEADINGS.challenge, icon: Target, color: themeColors.primary, style: 'prose' as const },
+                            { key: 'firms' as const, heading: COACH_HEADINGS.firms, icon: Buildings, color: themeColors.primary, style: 'prose' as const },
+                            { key: 'warnings' as const, heading: COACH_HEADINGS.warnings, icon: Warning, color: themeColors.loss, style: 'warnings' as const },
+                            { key: 'next' as const, heading: COACH_HEADINGS.next, icon: ListChecks, color: themeColors.profit, style: 'steps' as const },
+                          ]
+
+                          // If the model drifted from the expected headings, show the raw
+                          // text rather than a blank card after spending the user's quota.
+                          if (score === null && sections.every(s => !parsed[s.key])) {
+                            return (
+                              <div className="px-5 py-5 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                {aiAnalysis}
+                              </div>
+                            )
+                          }
+
+                          const inline = (text: string) => DOMPurify.sanitize(
+                            text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>'),
+                            { ALLOWED_TAGS: ['strong', 'em', 'br'], ALLOWED_ATTR: ['class'] },
+                          )
+                          const cleanLine = (line: string) => {
+                            const isBullet = line.startsWith('-') || /^\d+\./.test(line)
+                            return isBullet ? line.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '') : line
+                          }
+
+                          const bigPicture = parsed.verdict
+                          const rest = sections.filter(s => s.key !== 'verdict' && parsed[s.key])
+                          const plan = sections.find(s => s.key === 'next')!
+                          const grid = rest.filter(s => s.key !== 'next')
+
+                          return (
+                            <div>
+                              {/* Score + big picture */}
+                              {(score !== null || bigPicture) && (
+                                <div className="px-4 sm:px-5 py-5 border-b flex flex-col sm:flex-row gap-4 sm:gap-5">
+                                  {score !== null && (
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      <div
+                                        className="flex items-center justify-center w-14 h-14 rounded-lg text-white font-bold text-lg shrink-0"
+                                        style={{ backgroundColor: scoreColor }}
+                                      >
+                                        {score}<span className="text-xs font-medium opacity-80 ml-0.5">/10</span>
+                                      </div>
+                                      <div className="sm:hidden">
+                                        <p className="text-base font-semibold">
+                                          {score >= 8 ? 'Looking strong' : score >= 6 ? 'Getting there' : score >= 4 ? 'Room to grow' : 'Needs attention'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    {score !== null && (
+                                      <p className="text-base font-semibold hidden sm:block">
+                                        {score >= 8 ? 'Looking strong' : score >= 6 ? 'Getting there' : score >= 4 ? 'Room to grow' : 'Needs attention'}
+                                      </p>
+                                    )}
+                                    {bigPicture ? (
+                                      <div className="text-sm text-muted-foreground leading-relaxed space-y-2 mt-1">
+                                        {bigPicture.split('\n').filter(Boolean).map((line, i) => (
+                                          <p key={i} dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
+                                        ))}
+                                      </div>
+                                    ) : score !== null ? (
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        {score >= 8 ? 'Your prop trading is paying off.' : score >= 6 ? 'Heading in the right direction.' : score >= 4 ? 'Some things to tighten up.' : 'Worth rethinking your approach.'}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Detail sections */}
+                              {grid.length > 0 && (
+                                <div className={`grid grid-cols-1 -mb-px ${grid.length > 1 ? 'lg:grid-cols-2' : ''}`}>
+                                  {grid.map((s, idx) => {
+                                    const Icon = s.icon
+                                    const lines = parsed[s.key].split('\n').filter(Boolean)
+                                    // Odd count: the last section takes the full row instead of leaving an empty cell
+                                    const spansRow = grid.length > 1 && grid.length % 2 === 1 && idx === grid.length - 1
+                                    const leftColumn = grid.length > 1 && idx % 2 === 0 && !spansRow
+                                    return (
+                                      <div key={s.key} className={`px-4 sm:px-5 py-5 border-b ${spansRow ? 'lg:col-span-2' : ''} ${leftColumn ? 'lg:border-r' : ''}`}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <Icon className="h-4 w-4 shrink-0" style={{ color: s.color }} aria-hidden="true" />
+                                          <p className="text-sm font-semibold">{s.heading}</p>
+                                        </div>
+                                        {s.style === 'warnings' ? (
+                                          <ul className="space-y-2.5">
+                                            {lines.map((line, i) => (
+                                              <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-relaxed">
+                                                <Warning className="h-3.5 w-3.5 mt-1 shrink-0" style={{ color: themeColors.loss }} aria-hidden="true" />
+                                                <span dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        ) : (
+                                          <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                                            {lines.map((line, i) => {
+                                              const cleaned = cleanLine(line)
+                                              const headingMatch = cleaned.match(/^\*\*(.+?)\*\*[:.]\s*(.*)/)
+                                              if (headingMatch) {
+                                                return (
+                                                  <div key={i} className="space-y-0.5">
+                                                    <p className="text-sm font-medium text-foreground">{headingMatch[1]}</p>
+                                                    {headingMatch[2] && <p dangerouslySetInnerHTML={{ __html: inline(headingMatch[2]) }} />}
+                                                  </div>
+                                                )
+                                              }
+                                              return <p key={i} dangerouslySetInnerHTML={{ __html: inline(cleaned) }} />
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Game plan as numbered steps */}
+                              {parsed.next && (
+                                <div className="px-4 sm:px-5 py-5 border-t">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <ListChecks className="h-4 w-4 shrink-0" style={{ color: plan.color }} aria-hidden="true" />
+                                    <p className="text-sm font-semibold">{plan.heading}</p>
+                                  </div>
+                                  <ol className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {parsed.next.split('\n').filter(Boolean).map((line, i) => (
+                                      <li key={i} className="flex items-start gap-3 rounded-lg border p-3 text-sm text-muted-foreground leading-relaxed">
+                                        <span className="h-6 w-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0 tabular-nums text-foreground">{i + 1}</span>
+                                        <span dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    )
+                  })()}
+                </ProGate>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </div>
 
@@ -2463,249 +2774,281 @@ export default function PropTracker() {
 
       {/* ── Add / Edit Account Dialog ── */}
       <Dialog open={accountDialog.open} onOpenChange={open => setAccountDialog(p => ({ ...p, open }))}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden">
-          {/* Branded header */}
+        <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
           {(() => {
             const selectedFirm = accountForm.firmName && accountForm.firmName !== 'Custom...' ? accountForm.firmName : null
-            const brandCol = selectedFirm ? (FIRM_BRAND_COLORS[selectedFirm] ?? themeColors.primary) : themeColors.primary
             const logo = selectedFirm ? FIRM_LOGOS[selectedFirm] : null
+            const brandCol = selectedFirm ? (FIRM_BRAND_COLORS[selectedFirm] ?? themeColors.primary) : themeColors.primary
+            const sizeNum = Number(accountForm.accountSizeStr === 'custom' ? accountForm.customSizeStr : accountForm.accountSizeStr) || 0
+            const sym = currencySymbol(accountForm.currency)
+            const isEval = accountForm.accountType === 'evaluation' || accountForm.accountType === 'express'
+            const targetNum = Number(accountForm.profitTarget) || 0
+            const dailyPct = Number(accountForm.maxDailyDrawdown) || 0
+            const totalPct = Number(accountForm.maxTotalDrawdown) || 0
             return (
-              <div className="relative px-6 pt-5 pb-4 border-b border-border/60 overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${brandCol}12 0%, transparent 50%)` }} />
-                <div className="relative flex items-center gap-3">
+              <>
+                <div className="px-6 pt-5 pb-4 border-b flex items-center gap-3">
                   {logo ? (
-                    <div className="h-10 w-10 rounded-lg shadow-sm overflow-hidden"><img src={logo} alt="" className="w-full h-full object-cover" /></div>
+                    <div className="h-10 w-10 rounded-lg overflow-hidden bg-white border shrink-0"><img src={logo} alt="" className="w-full h-full object-cover" /></div>
                   ) : (
-                    <div className="h-10 w-10 rounded-lg flex items-center justify-center shadow-sm" style={{ backgroundColor: `${brandCol}20` }}>
+                    <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${brandCol}20` }}>
                       <Buildings className="h-5 w-5" style={{ color: brandCol }} />
                     </div>
                   )}
-                  <div>
-                    <DialogHeader className="p-0 space-y-0.5">
-                      <DialogTitle className="text-lg">{accountDialog.editing ? 'Edit Account' : 'New Account'}</DialogTitle>
-                      <DialogDescription className="text-xs">
-                        {selectedFirm ? selectedFirm : 'Select a prop firm to get started'}
-                      </DialogDescription>
-                    </DialogHeader>
-                  </div>
+                  <DialogHeader className="p-0 space-y-0.5 text-left">
+                    <DialogTitle className="text-base">{accountDialog.editing ? 'Edit account' : 'New account'}</DialogTitle>
+                    <DialogDescription className="text-xs">
+                      {selectedFirm
+                        ? `${selectedFirm}${sizeNum > 0 ? ` · ${sym}${sizeNum.toLocaleString()}` : ''}`
+                        : accountForm.firmName === 'Custom...' && accountForm.customFirm
+                          ? accountForm.customFirm
+                          : 'Pick the firm, size and type. Rules are optional but unlock drawdown tracking.'}
+                    </DialogDescription>
+                  </DialogHeader>
                 </div>
-              </div>
-            )
-          })()}
 
-          <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
-            {/* Firm selector with logos */}
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-firm">Prop Firm</label>
-              <Select value={accountForm.firmName} onValueChange={v => {
-                setAccountForm(p => {
-                  const next = { ...p, firmName: v }
-                  if (v !== 'Custom...' && FIRM_RULE_PRESETS[v]) {
-                    const preset = FIRM_RULE_PRESETS[v]
-                    const sizeRaw = p.accountSizeStr === 'custom' ? p.customSizeStr : p.accountSizeStr
-                    const accountSize = Number(sizeRaw) || 100000
-                    next.rulesEnabled = true
-                    next.profitTarget = String((preset.profitTarget / 100) * accountSize)
-                    next.maxDailyDrawdown = String(preset.maxDailyDrawdown)
-                    next.maxTotalDrawdown = String(preset.maxTotalDrawdown)
-                    next.minTradingDays = preset.minTradingDays ? String(preset.minTradingDays) : ''
-                    next.targetAutoFilled = true
-                  }
-                  return next
-                })
-              }}>
-                <SelectTrigger aria-labelledby="label-firm"><SelectValue placeholder="Select firm" /></SelectTrigger>
-                <SelectContent>
-                  {PROP_FIRMS.map(f => (
-                    <SelectItem key={f} value={f}>
-                      <span className="flex items-center gap-2">
-                        {FIRM_LOGOS[f] ? (
-                          <div className="h-4 w-4 rounded-sm shrink-0 overflow-hidden"><img src={FIRM_LOGOS[f]} alt="" className="w-full h-full object-cover" /></div>
-                        ) : f !== 'Custom...' ? (
-                          <span className="h-4 w-4 rounded-sm flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ backgroundColor: FIRM_BRAND_COLORS[f] ?? '#888' }}>{firmInitials(f)}</span>
-                        ) : null}
-                        {f}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {accountForm.firmName === 'Custom...' && (
-                <Input aria-label="Custom firm name" placeholder="Enter firm name" value={accountForm.customFirm} onChange={e => setAccountForm(p => ({ ...p, customFirm: e.target.value }))} />
-              )}
-            </div>
-
-            {/* Account size chips + currency */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account Size</label>
-                <Select value={accountForm.currency} onValueChange={v => setAccountForm(p => ({ ...p, currency: v as PropCurrency }))}>
-                  <SelectTrigger aria-label="Currency" className="w-auto h-6 text-[10px] px-2 border-0 bg-muted/50 rounded-full gap-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCY_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {ACCOUNT_SIZES.map(s => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setAccountForm(p => applySizeChange(p, { accountSizeStr: String(s) }))}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      accountForm.accountSizeStr === String(s)
-                        ? 'text-white shadow-sm'
-                        : 'border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground bg-transparent'
-                    }`}
-                    style={accountForm.accountSizeStr === String(s) ? { backgroundColor: themeColors.primary, borderColor: themeColors.primary } : {}}
-                  >
-                    {currencySymbol(accountForm.currency)}{(s / 1000)}k
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setAccountForm(p => applySizeChange(p, { accountSizeStr: 'custom' }))}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    accountForm.accountSizeStr === 'custom'
-                      ? 'text-white shadow-sm'
-                      : 'border-border/60 text-muted-foreground hover:border-foreground/30 hover:text-foreground bg-transparent'
-                  }`}
-                  style={accountForm.accountSizeStr === 'custom' ? { backgroundColor: themeColors.primary, borderColor: themeColors.primary } : {}}
-                >
-                  Custom
-                </button>
-              </div>
-              {accountForm.accountSizeStr === 'custom' && (
-                <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="e.g. 150000" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => applySizeChange(p, { customSizeStr: e.target.value }))} />
-              )}
-            </div>
-
-            {/* Type + Status */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-actype">Account Type</label>
-                <Select value={accountForm.accountType} onValueChange={v => setAccountForm(p => ({ ...p, accountType: v as PropAccountType }))}>
-                  <SelectTrigger aria-labelledby="label-actype"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ACCOUNT_TYPE_OPTIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-status">Status</label>
-                <Select value={accountForm.status} onValueChange={v => setAccountForm(p => ({ ...p, status: v as PropAccountStatus }))}>
-                  <SelectTrigger aria-labelledby="label-status"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Start Date</label>
-                <DatePicker
-                  date={accountForm.startDate ? new Date(accountForm.startDate + 'T12:00:00') : undefined}
-                  onDateChange={d => setAccountForm(p => ({ ...p, startDate: d ? localDateStr(d) : '' }))}
-                  placeholder="Pick a date"
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">End Date <span className="normal-case">(opt.)</span></label>
-                <DatePicker
-                  date={accountForm.endDate ? new Date(accountForm.endDate + 'T12:00:00') : undefined}
-                  onDateChange={d => setAccountForm(p => ({ ...p, endDate: d ? localDateStr(d) : '' }))}
-                  placeholder="Pick a date"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="account-notes">Notes <span className="normal-case">(optional)</span></label>
-              <Textarea id="account-notes" placeholder="Phase 1 passed, waiting on funded account..." value={accountForm.notes} onChange={e => setAccountForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
-            </div>
-
-            {/* Challenge Rules */}
-            <div className="border-t border-border/60 pt-3 space-y-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const enabling = !accountForm.rulesEnabled
-                  if (enabling && !accountForm.profitTarget) {
-                    const firmName = accountForm.firmName === 'Custom...' ? '' : accountForm.firmName
-                    const sizeRaw = accountForm.accountSizeStr === 'custom' ? accountForm.customSizeStr : accountForm.accountSizeStr
-                    const accountSize = Number(sizeRaw) || 100000
-                    const preset = FIRM_RULE_PRESETS[firmName]
-                    if (preset) {
-                      setAccountForm(p => ({
-                        ...p,
-                        rulesEnabled: true,
-                        profitTarget: String((preset.profitTarget / 100) * accountSize),
-                        maxDailyDrawdown: String(preset.maxDailyDrawdown),
-                        maxTotalDrawdown: String(preset.maxTotalDrawdown),
-                        minTradingDays: preset.minTradingDays ? String(preset.minTradingDays) : '',
-                        targetAutoFilled: true,
-                      }))
-                      return
-                    }
-                  }
-                  setAccountForm(p => ({ ...p, rulesEnabled: enabling }))
-                }}
-                className="w-full flex items-center justify-between text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <ClipboardText className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Challenge Rules</span>
-                  {!accountForm.rulesEnabled && <span className="text-[10px] text-muted-foreground normal-case">(optional)</span>}
-                </div>
-                {accountForm.rulesEnabled
-                  ? <CaretUp className="h-3.5 w-3.5 text-muted-foreground" />
-                  : <CaretDown className="h-3.5 w-3.5 text-muted-foreground" />}
-              </button>
-
-              {accountForm.rulesEnabled && (
-                <div className="space-y-3 rounded-lg border border-border/40 p-3 bg-muted/40">
-                  {accountForm.firmName && FIRM_RULE_PRESETS[accountForm.firmName] && (
-                    <p className="text-[10px] text-muted-foreground">Pre-filled from {accountForm.firmName} defaults. Adjust to match your challenge.</p>
-                  )}
+                <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                  {/* Firm */}
                   <div className="space-y-1.5">
-                    <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-profit-target">
-                      Profit Target ({currencySymbol(accountForm.currency)})
-                    </label>
-                    <Input id="rule-profit-target" type="number" inputMode="decimal" min="0" step="0.01" placeholder="e.g. 10000" value={accountForm.profitTarget} onChange={e => setAccountForm(p => ({ ...p, profitTarget: e.target.value, targetAutoFilled: false }))} />
+                    <label className="text-xs font-medium text-muted-foreground" id="label-firm">Prop firm</label>
+                    <Select value={accountForm.firmName} onValueChange={v => {
+                      setAccountForm(p => {
+                        const next = { ...p, firmName: v }
+                        if (v !== 'Custom...' && FIRM_RULE_PRESETS[v]) {
+                          const preset = FIRM_RULE_PRESETS[v]
+                          const sizeRaw = p.accountSizeStr === 'custom' ? p.customSizeStr : p.accountSizeStr
+                          const accountSize = Number(sizeRaw) || 100000
+                          next.rulesEnabled = true
+                          next.profitTarget = String((preset.profitTarget / 100) * accountSize)
+                          next.maxDailyDrawdown = String(preset.maxDailyDrawdown)
+                          next.maxTotalDrawdown = String(preset.maxTotalDrawdown)
+                          next.minTradingDays = preset.minTradingDays ? String(preset.minTradingDays) : ''
+                          next.targetAutoFilled = true
+                        }
+                        return next
+                      })
+                    }}>
+                      <SelectTrigger aria-labelledby="label-firm" className="h-10"><SelectValue placeholder="Select firm" /></SelectTrigger>
+                      <SelectContent>
+                        {PROP_FIRMS.map(f => (
+                          <SelectItem key={f} value={f}>
+                            <span className="flex items-center gap-2">
+                              {FIRM_LOGOS[f] ? (
+                                <div className="h-4 w-4 rounded-sm shrink-0 overflow-hidden"><img src={FIRM_LOGOS[f]} alt="" className="w-full h-full object-cover" /></div>
+                              ) : f !== 'Custom...' ? (
+                                <span className="h-4 w-4 rounded-sm flex items-center justify-center text-[7px] font-bold text-white shrink-0" style={{ backgroundColor: FIRM_BRAND_COLORS[f] ?? '#888' }}>{firmInitials(f)}</span>
+                              ) : null}
+                              {f}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {accountForm.firmName === 'Custom...' && (
+                      <Input aria-label="Custom firm name" placeholder="Firm name" className="h-10" value={accountForm.customFirm} onChange={e => setAccountForm(p => ({ ...p, customFirm: e.target.value }))} />
+                    )}
                   </div>
+
+                  {/* Size + currency */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-muted-foreground">Account size</label>
+                      <Select value={accountForm.currency} onValueChange={v => setAccountForm(p => ({ ...p, currency: v as PropCurrency }))}>
+                        <SelectTrigger aria-label="Currency" className="w-auto h-7 text-xs px-2.5 gap-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CURRENCY_OPTIONS.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ACCOUNT_SIZES.map(sz => {
+                        const active = accountForm.accountSizeStr === String(sz)
+                        return (
+                          <button
+                            key={sz}
+                            type="button"
+                            onClick={() => setAccountForm(p => applySizeChange(p, { accountSizeStr: String(sz) }))}
+                            aria-pressed={active}
+                            className="h-8 px-3 rounded-md text-xs font-medium border transition-colors hover:bg-muted/40 tabular-nums"
+                            style={{
+                              borderColor: active ? themeColors.primary : 'hsl(var(--border))',
+                              backgroundColor: active ? alpha(themeColors.primary, '15') : 'transparent',
+                              color: active ? themeColors.primary : undefined,
+                            }}
+                          >
+                            {sym}{sz / 1000}k
+                          </button>
+                        )
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => setAccountForm(p => applySizeChange(p, { accountSizeStr: 'custom' }))}
+                        aria-pressed={accountForm.accountSizeStr === 'custom'}
+                        className="h-8 px-3 rounded-md text-xs font-medium border transition-colors hover:bg-muted/40"
+                        style={{
+                          borderColor: accountForm.accountSizeStr === 'custom' ? themeColors.primary : 'hsl(var(--border))',
+                          backgroundColor: accountForm.accountSizeStr === 'custom' ? alpha(themeColors.primary, '15') : 'transparent',
+                          color: accountForm.accountSizeStr === 'custom' ? themeColors.primary : undefined,
+                        }}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                    {accountForm.accountSizeStr === 'custom' && (
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{sym}</span>
+                        <Input type="number" inputMode="decimal" aria-label="Custom account size" placeholder="150000" className="h-10 pl-7" value={accountForm.customSizeStr} onChange={e => setAccountForm(p => applySizeChange(p, { customSizeStr: e.target.value }))} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Type + status */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-daily-dd">Max Daily DD (%)</label>
-                      <Input id="rule-daily-dd" type="number" inputMode="decimal" min="0" step="0.1" placeholder="e.g. 5" value={accountForm.maxDailyDrawdown} onChange={e => setAccountForm(p => ({ ...p, maxDailyDrawdown: e.target.value }))} />
+                      <label className="text-xs font-medium text-muted-foreground" id="label-actype">Account type</label>
+                      <Select value={accountForm.accountType} onValueChange={v => setAccountForm(p => ({ ...p, accountType: v as PropAccountType }))}>
+                        <SelectTrigger aria-labelledby="label-actype" className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ACCOUNT_TYPE_OPTIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-total-dd">Max Total DD (%)</label>
-                      <Input id="rule-total-dd" type="number" inputMode="decimal" min="0" step="0.1" placeholder="e.g. 10" value={accountForm.maxTotalDrawdown} onChange={e => setAccountForm(p => ({ ...p, maxTotalDrawdown: e.target.value }))} />
+                      <label className="text-xs font-medium text-muted-foreground" id="label-status">Status</label>
+                      <Select value={accountForm.status} onValueChange={v => setAccountForm(p => ({ ...p, status: v as PropAccountStatus }))}>
+                        <SelectTrigger aria-labelledby="label-status" className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map(st => <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Start date</label>
+                      <DatePicker
+                        date={accountForm.startDate ? new Date(accountForm.startDate + 'T12:00:00') : undefined}
+                        onDateChange={d => setAccountForm(p => ({ ...p, startDate: d ? localDateStr(d) : '' }))}
+                        placeholder="Pick a date"
+                        className="w-full h-10"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">{isEval ? 'Deadline' : 'End date'} <span className="font-normal">(optional)</span></label>
+                      <DatePicker
+                        date={accountForm.endDate ? new Date(accountForm.endDate + 'T12:00:00') : undefined}
+                        onDateChange={d => setAccountForm(p => ({ ...p, endDate: d ? localDateStr(d) : '' }))}
+                        placeholder="Pick a date"
+                        className="w-full h-10"
+                      />
+                      {isEval && <p className="text-xs text-muted-foreground">Reminder in the final 7 days.</p>}
+                    </div>
+                  </div>
+
+                  {/* Notes */}
                   <div className="space-y-1.5">
-                    <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="rule-min-days">Min Trading Days <span className="normal-case">(optional)</span></label>
-                    <Input id="rule-min-days" type="number" inputMode="numeric" min="0" step="1" placeholder="e.g. 4" value={accountForm.minTradingDays} onChange={e => setAccountForm(p => ({ ...p, minTradingDays: e.target.value }))} />
+                    <label className="text-xs font-medium text-muted-foreground" htmlFor="account-notes">Notes <span className="font-normal">(optional)</span></label>
+                    <Textarea id="account-notes" placeholder="Phase 1 passed, waiting on funded account" value={accountForm.notes} onChange={e => setAccountForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none text-sm" />
+                  </div>
+
+                  {/* Challenge rules */}
+                  <div className="rounded-lg border">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const enabling = !accountForm.rulesEnabled
+                        if (enabling && !accountForm.profitTarget) {
+                          const firmName = accountForm.firmName === 'Custom...' ? '' : accountForm.firmName
+                          const sizeRaw = accountForm.accountSizeStr === 'custom' ? accountForm.customSizeStr : accountForm.accountSizeStr
+                          const accountSize = Number(sizeRaw) || 100000
+                          const preset = FIRM_RULE_PRESETS[firmName]
+                          if (preset) {
+                            setAccountForm(p => ({
+                              ...p,
+                              rulesEnabled: true,
+                              profitTarget: String((preset.profitTarget / 100) * accountSize),
+                              maxDailyDrawdown: String(preset.maxDailyDrawdown),
+                              maxTotalDrawdown: String(preset.maxTotalDrawdown),
+                              minTradingDays: preset.minTradingDays ? String(preset.minTradingDays) : '',
+                              targetAutoFilled: true,
+                            }))
+                            return
+                          }
+                        }
+                        setAccountForm(p => ({ ...p, rulesEnabled: enabling }))
+                      }}
+                      aria-expanded={accountForm.rulesEnabled}
+                      className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted/40 transition-colors rounded-lg"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">Challenge rules</p>
+                        <p className="text-xs text-muted-foreground">
+                          {accountForm.rulesEnabled ? 'Tracks profit target and drawdown on the card.' : 'Optional. Turn on to track profit target and drawdown limits.'}
+                        </p>
+                      </div>
+                      <span
+                        className="text-xs font-medium px-2 py-0.5 rounded-full border shrink-0"
+                        style={accountForm.rulesEnabled ? { borderColor: alpha(themeColors.primary, '40'), backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary } : undefined}
+                      >
+                        {accountForm.rulesEnabled ? 'On' : 'Off'}
+                      </span>
+                    </button>
+
+                    {accountForm.rulesEnabled && (
+                      <div className="border-t px-3 py-3 space-y-3">
+                        {accountForm.firmName && FIRM_RULE_PRESETS[accountForm.firmName] && accountForm.targetAutoFilled && (
+                          <p className="text-xs text-muted-foreground">Pre-filled from {accountForm.firmName} defaults. Adjust to match your challenge.</p>
+                        )}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground" htmlFor="rule-profit-target">Profit target</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{sym}</span>
+                            <Input id="rule-profit-target" type="number" inputMode="decimal" min="0" step="0.01" placeholder="10000" className="h-10 pl-7" value={accountForm.profitTarget} onChange={e => setAccountForm(p => ({ ...p, profitTarget: e.target.value, targetAutoFilled: false }))} />
+                          </div>
+                          {sizeNum > 0 && targetNum > 0 && (
+                            <p className="text-xs text-muted-foreground tabular-nums">{((targetNum / sizeNum) * 100).toFixed(1)}% of {sym}{sizeNum.toLocaleString()}</p>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor="rule-daily-dd">Max daily drawdown</label>
+                            <div className="relative">
+                              <Input id="rule-daily-dd" type="number" inputMode="decimal" min="0" step="0.1" placeholder="5" className="h-10 pr-8" value={accountForm.maxDailyDrawdown} onChange={e => setAccountForm(p => ({ ...p, maxDailyDrawdown: e.target.value }))} />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">%</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground tabular-nums">{sizeNum > 0 && dailyPct > 0 ? `= ${sym}${((dailyPct / 100) * sizeNum).toLocaleString(undefined, { maximumFractionDigits: 0 })} a day` : 'Leave 0 if the firm has none'}</p>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground" htmlFor="rule-total-dd">Max total drawdown</label>
+                            <div className="relative">
+                              <Input id="rule-total-dd" type="number" inputMode="decimal" min="0" step="0.1" placeholder="10" className="h-10 pr-8" value={accountForm.maxTotalDrawdown} onChange={e => setAccountForm(p => ({ ...p, maxTotalDrawdown: e.target.value }))} />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">%</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground tabular-nums">{sizeNum > 0 && totalPct > 0 ? `= ${sym}${((totalPct / 100) * sizeNum).toLocaleString(undefined, { maximumFractionDigits: 0 })} from the high point` : 'Required'}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground" htmlFor="rule-min-days">Minimum trading days <span className="font-normal">(optional)</span></label>
+                          <Input id="rule-min-days" type="number" inputMode="numeric" min="0" step="1" placeholder="4" className="h-10" value={accountForm.minTradingDays} onChange={e => setAccountForm(p => ({ ...p, minTradingDays: e.target.value }))} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div className="px-6 py-4 border-t border-border/60 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setAccountDialog({ open: false, editing: null })}>Cancel</Button>
-            <Button onClick={handleSaveAccount} style={{ backgroundColor: themeColors.primary }}>
-              {accountDialog.editing ? 'Save Changes' : 'Add Account'}
-            </Button>
-          </div>
+                <div className="px-6 py-4 border-t flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setAccountDialog({ open: false, editing: null })}>Cancel</Button>
+                  <Button onClick={handleSaveAccount} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+                    {accountDialog.editing ? 'Save changes' : 'Add account'}
+                  </Button>
+                </div>
+              </>
+            )
+          })()}
         </DialogContent>
       </Dialog>
 
@@ -2715,71 +3058,84 @@ export default function PropTracker() {
         const txBrandColor = txAccount ? firmAvatarColor(txAccount.firmName) : themeColors.primary
         const txLogo = txAccount ? FIRM_LOGOS[txAccount.firmName] : null
         const txCurrSym = currencySymbol(txAccount?.currency)
+        const txMeta = TX_TYPE_OPTIONS.find(t => t.value === txForm.type)
         return (
           <Dialog open={txDialog.open} onOpenChange={open => setTxDialog(p => ({ ...p, open }))}>
-            <DialogContent className="max-w-sm p-0 overflow-hidden">
-              {/* Branded header */}
-              <div className="relative px-5 pt-4 pb-3 border-b border-border/60 overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${txBrandColor}12 0%, transparent 50%)` }} />
-                <div className="relative flex items-center gap-2.5">
-                  {txLogo ? (
-                    <div className="h-8 w-8 rounded-lg shadow-sm overflow-hidden"><img src={txLogo} alt="" className="w-full h-full object-cover" /></div>
-                  ) : txAccount ? (
-                    <div className="h-8 w-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: txBrandColor }}>{firmInitials(txAccount.firmName)}</div>
-                  ) : null}
-                  <DialogHeader className="p-0 space-y-0">
-                    <DialogTitle className="text-base">Add Transaction</DialogTitle>
-                    <DialogDescription className="text-xs">
-                      {txAccount?.firmName ?? 'Record a fee or payout'}
-                    </DialogDescription>
-                  </DialogHeader>
-                </div>
+            <DialogContent className="max-w-sm p-0 overflow-hidden gap-0">
+              <div className="px-5 pt-5 pb-4 border-b flex items-center gap-3">
+                {txLogo ? (
+                  <div className="h-9 w-9 rounded-lg overflow-hidden bg-white border shrink-0"><img src={txLogo} alt="" className="w-full h-full object-cover" /></div>
+                ) : txAccount ? (
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: txBrandColor }}>{firmInitials(txAccount.firmName)}</div>
+                ) : null}
+                <DialogHeader className="p-0 space-y-0.5 text-left">
+                  <DialogTitle className="text-base">Add transaction</DialogTitle>
+                  <DialogDescription className="text-xs">
+                    {txAccount ? `${txAccount.firmName} · ${txCurrSym}${txAccount.accountSize.toLocaleString()}` : 'Record a fee or payout'}
+                  </DialogDescription>
+                </DialogHeader>
               </div>
 
-              <div className="px-5 py-4 space-y-3">
+              <div className="px-5 py-5 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" id="label-txtype">Type</label>
-                  <Select value={txForm.type} onValueChange={v => setTxForm(p => ({ ...p, type: v as TransactionType }))}>
-                    <SelectTrigger aria-labelledby="label-txtype"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {TX_TYPE_OPTIONS.map(t => (
-                        <SelectItem key={t.value} value={t.value}>
-                          <span className="flex items-center gap-2">
-                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${t.isExpense ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
-                              {t.isExpense ? 'OUT' : 'IN'}
-                            </span>
-                            {t.label}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <p className="text-xs font-medium text-muted-foreground" id="label-txtype">Type</p>
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="label-txtype">
+                    {TX_TYPE_OPTIONS.map(t => {
+                      const active = txForm.type === t.value
+                      const accent = t.isExpense ? themeColors.primary : themeColors.profit
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setTxForm(p => ({ ...p, type: t.value }))}
+                          aria-pressed={active}
+                          className="h-8 px-3 rounded-md text-xs font-medium border transition-colors hover:bg-muted/40"
+                          style={{
+                            borderColor: active ? accent : 'hsl(var(--border))',
+                            backgroundColor: active ? `${accent}15` : 'transparent',
+                            color: active ? accent : undefined,
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {txMeta && (
+                    <p className="text-xs text-muted-foreground">
+                      {txMeta.isExpense ? 'Money out. Counts against your invested total.' : 'Money in. Counts toward your earned total.'}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="tx-amount">Amount</label>
+                  <label className="text-xs font-medium text-muted-foreground" htmlFor="tx-amount">Amount</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{txCurrSym}</span>
-                    <Input id="tx-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" className="pl-7" value={txForm.amount} onChange={e => setTxForm(p => ({ ...p, amount: e.target.value }))} />
+                    <Input id="tx-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" autoFocus className="h-11 pl-7 text-base tabular-nums" value={txForm.amount} onChange={e => setTxForm(p => ({ ...p, amount: e.target.value }))} />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="tx-description">Description <span className="normal-case">(optional)</span></label>
-                  <Input id="tx-description" placeholder="Phase 1 reset after drawdown..." value={txForm.description} onChange={e => setTxForm(p => ({ ...p, description: e.target.value }))} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Date</label>
-                  <DatePicker
-                    date={txForm.date ? new Date(txForm.date + 'T12:00:00') : undefined}
-                    onDateChange={d => setTxForm(p => ({ ...p, date: d ? localDateStr(d) : '' }))}
-                    placeholder="Pick a date"
-                    className="w-full"
-                  />
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Date</label>
+                    <DatePicker
+                      date={txForm.date ? new Date(txForm.date + 'T12:00:00') : undefined}
+                      onDateChange={d => setTxForm(p => ({ ...p, date: d ? localDateStr(d) : '' }))}
+                      placeholder="Pick a date"
+                      className="w-full h-10"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground" htmlFor="tx-description">Note <span className="font-normal">(optional)</span></label>
+                    <Input id="tx-description" placeholder={txMeta?.isExpense ? 'Phase 1 reset after drawdown' : 'First payout, month 1'} className="h-10" value={txForm.description} onChange={e => setTxForm(p => ({ ...p, description: e.target.value }))} />
+                  </div>
                 </div>
               </div>
 
-              <div className="px-5 py-3 border-t border-border/60 flex justify-end gap-2">
+              <div className="px-5 py-4 border-t flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setTxDialog({ open: false, accountId: '' })}>Cancel</Button>
-                <Button onClick={handleSaveTx} style={{ backgroundColor: txBrandColor }} className="text-white">Add Transaction</Button>
+                <Button onClick={handleSaveTx} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+                  {txMeta ? `Add ${txMeta.label.toLowerCase()}` : 'Add transaction'}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -2891,7 +3247,7 @@ export default function PropTracker() {
                         {tx.notes && <p className="text-[10px] text-muted-foreground truncate">{tx.notes}</p>}
                       </div>
                       <span className="text-[10px] text-muted-foreground shrink-0">
-                        {new Date(tx.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                        {parseStoredDate(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                       </span>
                       <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
                         {expense ? '-' : '+'}{fmt(tx.amount)}
@@ -2918,60 +3274,78 @@ export default function PropTracker() {
           )}
         </DialogContent>
       </Dialog>
-      {/* ── Quick Balance Check-In Dialog ── */}
+      {/* ── End of Day Check-In Dialog ── */}
       <Dialog open={checkinDialog.open} onOpenChange={open => !open && setCheckinDialog(p => ({ ...p, open: false }))}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>End of Day Check-In</DialogTitle>
-            <DialogDescription>
-              Update all your active challenge balances at once.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+        <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
+          <div className="px-5 pt-5 pb-4 border-b">
+            <DialogHeader className="p-0 space-y-0.5 text-left">
+              <DialogTitle className="text-base">End of day check-in</DialogTitle>
+              <DialogDescription className="text-xs">
+                Enter tonight's balance for each active challenge. Drawdown updates as you type.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="px-5 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
             {checkinDialog.entries.map((entry, i) => {
               const account = accounts.find(a => a.id === entry.accountId)
               if (!account) return null
               const brandColor = firmAvatarColor(account.firmName)
+              const preview = previewChallenge(account, entry.balance, entry.todayPnL, entry.tradingDays)
+              const isEvalPhase = account.accountType === 'evaluation' || account.accountType === 'express'
+              const prevBalance = account.challengeProgress?.currentBalance
+              const delta = preview && prevBalance !== undefined ? Number(entry.balance) - prevBalance : null
               return (
-                <div key={entry.accountId} className="rounded-lg border border-border/60 p-3 space-y-2.5">
-                  <div className="flex items-center gap-2">
+                <div key={entry.accountId} className="rounded-lg border p-3 space-y-3">
+                  <div className="flex items-center gap-2.5">
                     {FIRM_LOGOS[account.firmName] ? (
-                      <div className="h-6 w-6 rounded shrink-0 overflow-hidden"><img src={FIRM_LOGOS[account.firmName]} alt={account.firmName} className="w-full h-full object-cover" /></div>
+                      <div className="h-7 w-7 rounded-md shrink-0 overflow-hidden bg-white border"><img src={FIRM_LOGOS[account.firmName]} alt="" className="w-full h-full object-cover" /></div>
                     ) : (
-                      <div
-                        className="h-6 w-6 rounded flex items-center justify-center text-[9px] font-bold text-white shrink-0"
-                        style={{ backgroundColor: brandColor }}
-                      >
+                      <div className="h-7 w-7 rounded-md flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: brandColor }}>
                         {firmInitials(account.firmName)}
                       </div>
                     )}
-                    <span className="text-sm font-medium truncate">{account.firmName}</span>
-                    <span className="text-xs text-muted-foreground">{currencySymbol(account.currency)}{account.accountSize.toLocaleString()}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{account.firmName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {currencySymbol(account.currency)}{account.accountSize.toLocaleString()}
+                        {prevBalance !== undefined ? ` · last ${fmt(prevBalance, account.currency)}` : ' · no balance yet'}
+                      </p>
+                    </div>
+                    {delta !== null && delta !== 0 && (
+                      <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: delta >= 0 ? themeColors.profit : themeColors.loss }}>
+                        {delta >= 0 ? '+' : '-'}{fmt(Math.abs(delta), account.currency)}
+                      </span>
+                    )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Balance</label>
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        placeholder="0.00"
-                        className="h-8 text-xs"
-                        value={entry.balance}
-                        onChange={e => setCheckinDialog(p => ({
-                          ...p,
-                          entries: p.entries.map((en, j) => j === i ? { ...en, balance: e.target.value } : en),
-                        }))}
-                      />
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor={`ci-bal-${i}`}>Balance</label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs" aria-hidden="true">{currencySymbol(account.currency)}</span>
+                        <Input
+                          id={`ci-bal-${i}`}
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="h-9 text-sm pl-6 tabular-nums"
+                          value={entry.balance}
+                          onChange={e => setCheckinDialog(p => ({
+                            ...p,
+                            entries: p.entries.map((en, j) => j === i ? { ...en, balance: e.target.value } : en),
+                          }))}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Today P&L</label>
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor={`ci-pnl-${i}`}>Today's P&L</label>
                       <Input
+                        id={`ci-pnl-${i}`}
                         type="number"
                         inputMode="decimal"
                         step="0.01"
                         placeholder="0.00"
-                        className="h-8 text-xs"
+                        className="h-9 text-sm tabular-nums"
                         value={entry.todayPnL}
                         onChange={e => setCheckinDialog(p => ({
                           ...p,
@@ -2980,14 +3354,15 @@ export default function PropTracker() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Trading Days</label>
+                      <label className="text-xs font-medium text-muted-foreground" htmlFor={`ci-days-${i}`}>Trading days</label>
                       <Input
+                        id={`ci-days-${i}`}
                         type="number"
                         inputMode="numeric"
                         min="0"
                         step="1"
                         placeholder="0"
-                        className="h-8 text-xs"
+                        className="h-9 text-sm tabular-nums"
                         value={entry.tradingDays}
                         onChange={e => setCheckinDialog(p => ({
                           ...p,
@@ -2996,58 +3371,161 @@ export default function PropTracker() {
                       />
                     </div>
                   </div>
+                  {preview && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground tabular-nums">
+                      {isEvalPhase && account.challengeRules!.profitTarget > 0 && (
+                        <span>Target <span className="font-semibold" style={{ color: profitBarColor(preview.profitPct, themeColors) }}>{Math.max(0, preview.profitPct).toFixed(0)}%</span></span>
+                      )}
+                      <span>Total DD <span className="font-semibold" style={{ color: ddBarColor(preview.totalDDUsedPct, themeColors) }}>{Math.min(100, preview.totalDDUsedPct).toFixed(0)}%</span></span>
+                      {account.challengeRules!.maxDailyDrawdown > 0 && (
+                        <span>Daily DD <span className="font-semibold" style={{ color: ddBarColor(preview.dailyDDUsedPct, themeColors) }}>{Math.min(100, preview.dailyDDUsedPct).toFixed(0)}%</span></span>
+                      )}
+                      {(preview.totalDDUsedPct >= 100 || preview.dailyDDUsedPct >= 100) && (
+                        <span className="font-semibold" style={{ color: themeColors.loss }}>Over the limit</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
-          <DialogFooter>
+          <div className="px-5 py-4 border-t flex justify-end gap-2">
             <Button variant="outline" onClick={() => setCheckinDialog(p => ({ ...p, open: false }))}>Cancel</Button>
-            <Button onClick={handleSaveCheckin} style={{ backgroundColor: themeColors.primary }}>
-              Update All
+            <Button onClick={handleSaveCheckin} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+              Save {checkinDialog.entries.length} account{checkinDialog.entries.length !== 1 ? 's' : ''}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* ── Balance Update Dialog ── */}
-      <Dialog open={balanceDialog.open} onOpenChange={open => !open && setBalanceDialog(p => ({ ...p, open: false }))}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Update Balance</DialogTitle>
-            <DialogDescription>
-              Enter your current account balance from your prop firm dashboard.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-1">
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="bal-current">Current Balance</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">
-                  {currencySymbol(accounts.find(a => a.id === balanceDialog.accountId)?.currency)}
-                </span>
-                <Input id="bal-current" type="number" inputMode="decimal" step="0.01" placeholder="0.00" className="pl-7" value={balanceDialog.balance} onChange={e => setBalanceDialog(p => ({ ...p, balance: e.target.value }))} />
+      {(() => {
+        const balAccount = accounts.find(a => a.id === balanceDialog.accountId)
+        const balSym = currencySymbol(balAccount?.currency)
+        const balLogo = balAccount ? FIRM_LOGOS[balAccount.firmName] : null
+        const balBrand = balAccount ? firmAvatarColor(balAccount.firmName) : themeColors.primary
+        const prev = balAccount?.challengeProgress
+        const preview = balAccount ? previewChallenge(balAccount, balanceDialog.balance, balanceDialog.todayPnL, balanceDialog.tradingDays) : null
+        const isEvalPhase = balAccount ? (balAccount.accountType === 'evaluation' || balAccount.accountType === 'express') : false
+        const delta = preview && prev ? Number(balanceDialog.balance) - prev.currentBalance : null
+        const lastUpdatedLabel = prev?.lastUpdated ? (() => {
+          const days = daysSinceLocalDate(prev.lastUpdated)
+          return days <= 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`
+        })() : null
+        return (
+          <Dialog open={balanceDialog.open} onOpenChange={open => !open && setBalanceDialog(p => ({ ...p, open: false }))}>
+            <DialogContent className="max-w-md p-0 overflow-hidden gap-0">
+              <div className="px-5 pt-5 pb-4 border-b flex items-center gap-3">
+                {balLogo ? (
+                  <div className="h-9 w-9 rounded-lg overflow-hidden bg-white border shrink-0"><img src={balLogo} alt="" className="w-full h-full object-cover" /></div>
+                ) : balAccount ? (
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: balBrand }}>{firmInitials(balAccount.firmName)}</div>
+                ) : null}
+                <DialogHeader className="p-0 space-y-0.5 text-left">
+                  <DialogTitle className="text-base">Update balance</DialogTitle>
+                  <DialogDescription className="text-xs">
+                    {balAccount ? `${balAccount.firmName} · ${balSym}${balAccount.accountSize.toLocaleString()}` : 'Copy the balance from your prop firm dashboard.'}
+                  </DialogDescription>
+                </DialogHeader>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="bal-today-pnl">Today's P&L <span className="normal-case">(optional, can be negative)</span></label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">
-                  {currencySymbol(accounts.find(a => a.id === balanceDialog.accountId)?.currency)}
-                </span>
-                <Input id="bal-today-pnl" type="number" inputMode="decimal" step="0.01" placeholder="0.00" className="pl-7" value={balanceDialog.todayPnL} onChange={e => setBalanceDialog(p => ({ ...p, todayPnL: e.target.value }))} />
+
+              <div className="px-5 py-5 space-y-4">
+                {balAccount && (
+                  <p className="text-xs text-muted-foreground">
+                    {prev
+                      ? <>Last recorded <span className="font-medium text-foreground tabular-nums">{fmt(prev.currentBalance, balAccount.currency)}</span> {lastUpdatedLabel}. High point <span className="font-medium text-foreground tabular-nums">{fmt(prev.highWaterMark, balAccount.currency)}</span>.</>
+                      : <>No balance recorded yet. Drawdown is measured from the high point, starting at {fmt(balAccount.accountSize, balAccount.currency)}.</>}
+                  </p>
+                )}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground" htmlFor="bal-current">Current balance</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{balSym}</span>
+                    <Input id="bal-current" type="number" inputMode="decimal" step="0.01" placeholder="0.00" autoFocus className="h-11 pl-7 text-base tabular-nums" value={balanceDialog.balance} onChange={e => setBalanceDialog(p => ({ ...p, balance: e.target.value }))} />
+                  </div>
+                  {delta !== null && delta !== 0 && (
+                    <p className="text-xs tabular-nums" style={{ color: delta >= 0 ? themeColors.profit : themeColors.loss }}>
+                      {delta >= 0 ? '+' : '-'}{fmt(Math.abs(delta), balAccount?.currency)} since last update
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground" htmlFor="bal-today-pnl">Today's P&L <span className="font-normal">(optional)</span></label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{balSym}</span>
+                      <Input id="bal-today-pnl" type="number" inputMode="decimal" step="0.01" placeholder="-250" className="h-10 pl-7 tabular-nums" value={balanceDialog.todayPnL} onChange={e => setBalanceDialog(p => ({ ...p, todayPnL: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground" htmlFor="bal-trading-days">Trading days so far</label>
+                    <Input id="bal-trading-days" type="number" inputMode="numeric" min="0" step="1" placeholder="0" className="h-10 tabular-nums" value={balanceDialog.tradingDays} onChange={e => setBalanceDialog(p => ({ ...p, tradingDays: e.target.value }))} />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Negative P&L feeds the daily drawdown bar. Leave it blank if you did not trade today.</p>
+
+                {/* Live preview */}
+                {balAccount?.challengeRules && (
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <p className="text-xs font-medium">{preview ? 'After this update' : 'Enter a balance to preview drawdown'}</p>
+                    {preview && (
+                      <div className="space-y-2">
+                        {isEvalPhase && balAccount.challengeRules.profitTarget > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">Profit target</span>
+                              <span className="font-semibold tabular-nums" style={{ color: profitBarColor(preview.profitPct, themeColors) }}>
+                                {preview.profitGain >= 0 ? '+' : ''}{fmt(preview.profitGain, balAccount.currency)} · {Math.max(0, Math.min(100, preview.profitPct)).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, preview.profitPct))}%`, backgroundColor: profitBarColor(preview.profitPct, themeColors) }} />
+                            </div>
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground whitespace-nowrap">Total drawdown</span>
+                            <span className="font-semibold tabular-nums text-right" style={{ color: ddBarColor(preview.totalDDUsedPct, themeColors) }}>
+                              {fmt(preview.totalDDDollars, balAccount.currency)} of {fmt(preview.maxTotalDDDollars, balAccount.currency)} · {Math.min(100, preview.totalDDUsedPct).toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${Math.min(100, preview.totalDDUsedPct)}%`, backgroundColor: ddBarColor(preview.totalDDUsedPct, themeColors) }} />
+                          </div>
+                        </div>
+                        {balAccount.challengeRules.maxDailyDrawdown > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground whitespace-nowrap">Daily drawdown</span>
+                              <span className="font-semibold tabular-nums text-right" style={{ color: ddBarColor(preview.dailyDDUsedPct, themeColors) }}>
+                                {fmt(preview.dailyDDDollars, balAccount.currency)} of {fmt(preview.maxDailyDDDollars, balAccount.currency)} · {Math.min(100, preview.dailyDDUsedPct).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${Math.min(100, preview.dailyDDUsedPct)}%`, backgroundColor: ddBarColor(preview.dailyDDUsedPct, themeColors) }} />
+                            </div>
+                          </div>
+                        )}
+                        {(preview.totalDDUsedPct >= 100 || preview.dailyDDUsedPct >= 100) && (
+                          <p className="text-xs font-medium" style={{ color: themeColors.loss }}>
+                            This balance is over a drawdown limit. Save it if it is right, then mark the account failed once the firm confirms.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wider font-medium text-muted-foreground" htmlFor="bal-trading-days">Trading Days So Far</label>
-              <Input id="bal-trading-days" type="number" inputMode="numeric" min="0" step="1" placeholder="0" value={balanceDialog.tradingDays} onChange={e => setBalanceDialog(p => ({ ...p, tradingDays: e.target.value }))} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBalanceDialog(p => ({ ...p, open: false }))}>Cancel</Button>
-            <Button onClick={handleSaveBalance} style={{ backgroundColor: themeColors.primary }}>Update</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+              <div className="px-5 py-4 border-t flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setBalanceDialog(p => ({ ...p, open: false }))}>Cancel</Button>
+                <Button onClick={handleSaveBalance} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>Save balance</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )
+      })()}
     </div>
   )
 }

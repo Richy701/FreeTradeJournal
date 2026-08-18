@@ -3,6 +3,7 @@ import { trackActivity, trackGateHit } from '@/lib/track-activity';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { NoticeBanner } from '@/components/notice-banner';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +17,7 @@ import {
   ChartBar, 
   SpinnerGap, 
   WarningCircle, 
+  ArrowRight,
   Heart, 
   UploadSimple, 
   X, 
@@ -1224,26 +1226,21 @@ export default function Journal() {
       <div className="flex-1 w-full px-4 pt-6 pb-24 sm:px-6 sm:pb-6 lg:px-8 space-y-6">
 
         {(nearFreeJournalLimit || atFreeJournalLimit) && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3">
-            <WarningCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">
-                {atFreeJournalLimit
-                  ? `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries`
-                  : `You're approaching the free journal limit — ${totalEntryCount} of ${FREE_JOURNAL_ENTRY_LIMIT} entries used across your accounts`}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                {atFreeJournalLimit
-                  ? 'Your existing entries are safe and stay editable. Upgrade to Pro to add new entries with unlimited journaling.'
-                  : 'Upgrade to Pro for unlimited journal entries before you hit the cap.'}
-              </p>
-            </div>
-            <Link to="/pricing" className="shrink-0">
-              <Button size="sm" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
-                Upgrade
+          <NoticeBanner
+            tone="warning"
+            icon={WarningCircle}
+            title={atFreeJournalLimit
+              ? `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries`
+              : `${totalEntryCount} of ${FREE_JOURNAL_ENTRY_LIMIT} free journal entries used across your accounts`}
+            description={atFreeJournalLimit
+              ? 'Your existing entries are safe and stay editable. Upgrade to Pro to add new entries.'
+              : 'Upgrade to Pro for unlimited journal entries before you hit the cap.'}
+            actions={
+              <Button asChild size="sm" className="shadow-none">
+                <Link to="/pricing">Upgrade <ArrowRight className="h-3.5 w-3.5" /></Link>
               </Button>
-            </Link>
-          </div>
+            }
+          />
         )}
 
         {/* Quick Stats */}
