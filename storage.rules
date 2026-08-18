@@ -1,9 +1,12 @@
 rules_version = '2';
 
 // Journal screenshots for Pro cross-device sync. Each user can only read/write
-// images under their own path. Writes are limited to images under 5MB. Pro
-// gating is enforced client-side (only Pro accounts upload); these rules ensure
-// a user can never touch another user's files regardless.
+// images under their own path. Writes are limited to images under 5MB, and
+// (since 18 Aug 2026) to accounts whose Firestore users/{uid}.isPro is true —
+// the same Stripe-webhook-owned flag the Cloud Functions trust. The client
+// already only uploads for Pro; this makes it true server-side too. Reads and
+// deletes stay ownership-only so a lapsed subscriber keeps their own images.
+// A denied write falls back to local storage in the client (Journal.tsx).
 service firebase.storage {
   match /b/{bucket}/o {
     match /users/{userId}/journal/{allPaths=**} {
@@ -11,7 +14,8 @@ service firebase.storage {
       allow write: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType.matches('image/.*')
+        && firestore.get(/databases/(default)/documents/users/$(userId)).data.isPro == true;
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 

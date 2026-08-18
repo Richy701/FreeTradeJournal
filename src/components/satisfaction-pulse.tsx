@@ -22,6 +22,10 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
   const [visible, setVisible] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  // Scores of 8 or below ask for one line of "why" before the score is sent.
+  // 33 bare scores taught us nothing; the reason is the useful part.
+  const [askingReason, setAskingReason] = useState(false);
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     if (!user || isDemo || tradeCount < MIN_TRADES) return;
@@ -45,27 +49,40 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
 
   function handleScore(value: number) {
     setScore(value);
-    setSubmitted(true);
     localStorage.setItem(pulseKeyFor(user?.uid), String(Date.now()));
-
     trackEvent('nps_score_submitted', { score: value });
-
-    // Send to backend
-    sendNPSFeedback(value);
 
     // Promoters go straight to the testimonial ask — they already rated us,
     // so don't make them fill in the full feedback form first.
     if (value >= 9) {
+      setSubmitted(true);
+      sendNPSFeedback(value);
       setTimeout(() => {
         triggerTestimonialDialog(Math.round(value / 2), 'NPS Score: ' + value);
       }, 1500);
+      return;
     }
+
+    // Everyone else: one line on why, sent together with the score.
+    setAskingReason(true);
+  }
+
+  function submitReason() {
+    if (score === null) return;
+    const text = reason.trim();
+    if (!text) return;
+    setAskingReason(false);
+    setSubmitted(true);
+    trackEvent('nps_reason_submitted', { score });
+    sendNPSFeedback(score, text);
   }
 
   function dismiss() {
+    // Closing on the "why" step still records the score on its own.
+    if (askingReason && score !== null) sendNPSFeedback(score);
     setVisible(false);
     localStorage.setItem(pulseKeyFor(user?.uid), String(Date.now()));
-    trackEvent('nps_dismissed');
+    trackEvent('nps_dismissed', askingReason ? { stage: 'reason' } : undefined);
   }
 
   if (!visible) return null;
@@ -93,7 +110,45 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
           <X className="h-3.5 w-3.5" />
         </button>
 
-        {!submitted ? (
+        {askingReason && score !== null ? (
+          <div className="space-y-3 animate-in fade-in duration-200">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold pr-6">
+                {score <= 6 ? 'What is not working for you?' : 'What would make it a 9 or 10?'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                One line is enough. This goes straight to Richy.
+              </p>
+            </div>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value.slice(0, 500))}
+              rows={3}
+              autoFocus
+              placeholder={score <= 6 ? 'e.g. the import did not recognise my broker' : 'e.g. I want it to sync with my broker'}
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2"
+              style={{ ['--tw-ring-color' as string]: alpha(themeColors.primary, '40') }}
+            />
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={dismiss}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                onClick={submitReason}
+                disabled={!reason.trim()}
+                className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        ) : !submitted ? (
           <div className="space-y-4">
             <div className="space-y-1">
               <p className="text-sm font-semibold pr-6">
@@ -151,13 +206,13 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
   );
 }
 
-async function sendNPSFeedback(score: number) {
+async function sendNPSFeedback(score: number, reason?: string) {
   try {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
     const fn = httpsCallable(getFunctions(), 'sendFeedback');
     await fn({
       type: 'nps',
-      message: `NPS Score: ${score}/10`,
+      message: reason ? `NPS Score: ${score}/10\n\n${reason}` : `NPS Score: ${score}/10`,
       rating: Math.round(score / 2),
       page: 'NPS Pulse',
       wantFollowUp: false,
