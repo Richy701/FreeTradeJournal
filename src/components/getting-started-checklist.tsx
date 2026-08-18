@@ -127,7 +127,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
         label: 'Ask Coach FTJ',
         description: isPro
           ? 'Get personalised coaching based on your trading patterns.'
-          : `You have ${freeAiQuota?.limit ?? 20} free AI queries every month -- try your AI trading coach.`,
+          : `You have ${freeAiQuota?.limit ?? 5} free AI coaching runs every month -- try your AI trading coach.`,
         icon: Robot,
         href: '/dashboard',
         done: hasUsedAiCoach,

@@ -150,7 +150,7 @@ export default function Documentation() {
               </DocSection>
 
               <DocSection id="ai-features" title="AI Features">
-                <p className="mb-5">AI-powered tools that analyse your trading data and deliver personalised feedback. Free accounts include 20 AI queries per month; Pro removes the cap:</p>
+                <p className="mb-5">AI-powered tools that analyse your trading data and deliver personalised feedback. Free accounts include 5 AI coaching runs per month (automatic tips, journal prompts and risk alerts do not count against them, and import first-reads have their own allowance of 20); Pro removes the caps:</p>
                 <dl className="space-y-3">
                   {[
                     ['Coach FTJ', 'Your personal AI trading coach. Ask questions about your trading and get answers grounded in your actual patterns, streaks, and performance.'],
@@ -208,7 +208,7 @@ export default function Documentation() {
                 <Accordion type="single" collapsible className="w-full">
                   {[
                     ['Is my trading data secure?', 'Data is stored locally on your device by default. Cloud sync uses industry-standard encryption, and your financial information never leaves your control without consent.'],
-                    ['What does the Free plan include?', 'Everything you need to journal seriously — trade logging, analytics, journaling, goals, and CSV import/export — plus 20 AI queries per month. Pro removes usage limits and adds cloud sync, 20 screenshot imports a day (free accounts get 3), and the Theme Studio.'],
+                    ['What does the Free plan include?', 'Everything you need to journal seriously — trade logging, analytics, journaling, goals, and CSV import/export — plus 5 AI coaching runs per month (automatic tips and prompts are not counted). Pro removes usage limits and adds cloud sync, 20 screenshot imports a day (free accounts get 3), and the Theme Studio.'],
                     ['What file formats can I import?', 'CSV files from most major brokers — MetaTrader, TradingView, Interactive Brokers, Tradovate, TopStep, and common prop firm formats.'],
                     ['Can I use this for tax reporting?', 'FreeTradeJournal provides detailed P&L calculations and exports, but always verify data accuracy and consult a tax professional.'],
                     ['Does FreeTradeJournal provide trading advice?', 'No. FreeTradeJournal is purely an analysis and journaling tool. All trading decisions remain your responsibility.'],

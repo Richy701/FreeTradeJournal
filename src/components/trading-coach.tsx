@@ -379,7 +379,7 @@ export function TradingCoach() {
   const { themeColors, alpha } = useThemePresets()
   const { getCurrencySymbol, formatCurrency } = useSettings()
   const { getTrades, isDemo } = useDemoData()
-  const { isPro, hasAIAccess, freeAiQuota, updateFreeAiQuota } = useProStatus()
+  const { isPro, hasAIAccess, hasAutoAIAccess, freeAiQuota, updateFreeAiQuota } = useProStatus()
   const userStorage = useUserStorage()
   const [aiTips, setAiTips] = useState<any[] | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -892,7 +892,7 @@ export function TradingCoach() {
   // Fetch AI coaching tips for Pro users
   const aiFetchedRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!hasAIAccess || trades.length < 1 || !metrics) return
+    if (!hasAutoAIAccess || trades.length < 1 || !metrics) return
     // Demo mode has no real backend user — skip the (silently failing)
     // callable and let the client-side tips render instead.
     if (isDemo) return
@@ -1017,7 +1017,7 @@ export function TradingCoach() {
 
     fetchAITips()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasAIAccess, isDemo, trades.length, tradeFingerprint, metrics])
+  }, [hasAutoAIAccess, isDemo, trades.length, tradeFingerprint, metrics])
 
   // Generate smarter coaching tips based on advanced analysis
   const coachingTips = useMemo(() => {
@@ -1316,7 +1316,7 @@ export function TradingCoach() {
   }, [metrics, trades])
 
   // Use AI tips for Pro users, client-side tips for free users
-  const baseTips = hasAIAccess && aiTips ? aiTips : coachingTips
+  const baseTips = hasAutoAIAccess && aiTips ? aiTips : coachingTips
 
   // Filter out dismissed tips
   const visibleTips = useMemo(() => {
@@ -1599,7 +1599,7 @@ export function TradingCoach() {
                     free users — no more hitting the wall with zero warning. */}
                 {freeAiQuota && (
                   <p className="text-[11px] text-muted-foreground text-center">
-                    {freeAiQuota.remaining} of {freeAiQuota.limit} free AI queries left this month
+                    {freeAiQuota.remaining} of {freeAiQuota.limit} free AI coaching runs left this month
                   </p>
                 )}
               </div>
@@ -1613,7 +1613,7 @@ export function TradingCoach() {
           <div className="mt-4 pt-4 border-t border-border/50">
             <div className="flex flex-col items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-center">
               <p className="text-sm font-medium">
-                You've used all {freeAiQuota.limit} free AI queries this month
+                You've used all {freeAiQuota.limit} free AI coaching runs this month
               </p>
               <p className="text-xs text-muted-foreground">
                 Upgrade to Pro to keep chatting with Coach FTJ — or your quota resets next month.

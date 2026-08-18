@@ -70,7 +70,7 @@ export function ProGate({ children, featureName, featureDescription }: ProGatePr
         {children}
         <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
           <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-amber-600 dark:text-amber-400">{freeAiQuota.remaining}</span> of {freeAiQuota.limit} free AI queries remaining this month
+            <span className="font-medium text-amber-600 dark:text-amber-400">{freeAiQuota.remaining}</span> of {freeAiQuota.limit} free AI coaching runs left this month
           </p>
           <Link
             to="/pricing"
@@ -103,7 +103,7 @@ export function ProGate({ children, featureName, featureDescription }: ProGatePr
           {isAIFeature(featureName) && freeAiQuota && freeAiQuota.remaining === 0 ? (
             <>
               <p className="text-xs text-muted-foreground">
-                You've used all {freeAiQuota.limit} free AI queries this month.
+                You've used all {freeAiQuota.limit} free AI coaching runs this month.
               </p>
               <Link
                 to="/pricing"

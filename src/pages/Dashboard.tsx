@@ -102,7 +102,7 @@ function FreeAIBanner() {
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 flex items-start gap-3 relative">
       <Brain className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">You have {freeAiQuota.remaining} free AI queries this month</p>
+        <p className="text-sm font-semibold text-foreground">You have {freeAiQuota.remaining} free AI coaching runs this month</p>
         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
           Try Coach FTJ below -- ask it anything about your trading. Your free queries reset monthly.
         </p>
@@ -122,7 +122,7 @@ export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
   const demoGuard = useDemoGuard()
-  const { isPro, hasAIAccess } = useProStatus()
+  const { isPro, hasUtilityAIAccess } = useProStatus()
   const { activeAccount, isAllAccounts, scopeStartingBalance } = useAccounts()
   const { formatCurrency: formatCurrencyFromSettings, settings, getCurrencySymbol } = useSettings()
   const { getTrades, getAnalyticsTrades } = useDemoData()
@@ -547,7 +547,7 @@ export default function Dashboard() {
         duration: 5000,
       }
     )
-    if (newTrades.length >= 10 && hasAIAccess && !isDemo) setImportInsightTrades(newTrades)
+    if (newTrades.length >= 10 && hasUtilityAIAccess && !isDemo) setImportInsightTrades(newTrades)
   }
 
   // New function to actually perform the import after confirmation
@@ -634,7 +634,7 @@ export default function Dashboard() {
 
         // The activation moment: stream an AI first-read of a meaningful import.
         // When it shows, hold the feedback toast — one ask at a time.
-        const showInsight = newTrades.length >= 10 && hasAIAccess && !isDemo;
+        const showInsight = newTrades.length >= 10 && hasUtilityAIAccess && !isDemo;
         if (showInsight) setImportInsightTrades(newTrades);
 
         // Prompt for feedback after importing 5+ trades
@@ -1308,7 +1308,7 @@ export default function Dashboard() {
               </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Once you have a few trades logged, Coach FTJ can analyze them -- you get 20 free AI queries every month.
+              Once you have a few trades logged, Coach FTJ can analyze them -- you get 5 free AI coaching runs every month, and the automatic tips and prompts don't count.
             </p>
           </div>
         )}

@@ -246,7 +246,7 @@ export default function Journal() {
   const { formatCurrency, getCurrencySymbol } = useSettings();
   const { isDemo, user } = useAuth();
   const demoGuard = useDemoGuard();
-  const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { isPro, hasAIAccess, hasAutoAIAccess, updateFreeAiQuota } = useProStatus();
   const { accounts, activeAccount, loading: accountsLoading, isAllAccounts, scopeAccounts, isInScope } = useAccounts();
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
@@ -714,7 +714,7 @@ export default function Journal() {
       // are still the pre-reset values within this call.
       if (
         !editingEntry &&
-        hasAIAccess &&
+        hasAutoAIAccess &&
         !isDemo &&
         newEntry.content.trim().length >= 80 &&
         userStorage.getItem('journalOnSaveCoachDisabled') !== '1'

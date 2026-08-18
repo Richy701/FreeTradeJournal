@@ -144,7 +144,7 @@ function SampleRiskAlert() {
 export function AIRiskAlertMonitor() {
   const { themeColors, alpha } = useThemePresets();
   const { getCurrencySymbol } = useSettings();
-  const { isPro, hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { isPro, hasAutoAIAccess: hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { user, isDemo } = useAuth();
   const { getTrades } = useDemoData();
   const userStorage = useUserStorage();

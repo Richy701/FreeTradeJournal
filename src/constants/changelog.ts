@@ -24,6 +24,25 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.82.0',
+    date: '2026-08-18',
+    summary: 'Free AI credits are counted differently: the automatic tips, prompts and alerts no longer use them up.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Automatic AI no longer spends your free credits',
+        description: 'Coach FTJ tips on the dashboard, the journal questions after you save a trade, risk alerts and the on-save journal coach used to come out of the same 20-a-month allowance as everything else, so many free accounts hit the wall without ever choosing to use AI. Those automatic features are now free on every account (with a daily cap to stop runaway use). Your monthly allowance is now 5 AI coaching runs, spent only when you ask for something: AI Trade Analysis, Trade Review, Journal Review, Goal Coach, Position Check, Strategy Tagger, PropTracker AI, or a Coach FTJ chat message. Import first-reads have their own allowance of 20 a month. Everyone starts this month with a full allowance.',
+        link: { to: '/coach', label: 'Open Coach FTJ' },
+      },
+      {
+        type: 'fixed',
+        text: 'AI features stop asking once your allowance is used',
+        description: 'When the server says your coaching runs are used up, the app now believes it straight away instead of retrying, and shows the remaining count correctly.',
+      },
+    ],
+  },
+  {
     version: '2.81.0',
     date: '2026-08-15',
     summary: 'Import trades from a screenshot: upload a photo of your closed trades and check them before they are saved.',
@@ -2738,4 +2757,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.81.0'
+export const LATEST_CHANGELOG_VERSION = '2.82.0'

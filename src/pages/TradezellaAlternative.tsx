@@ -37,7 +37,7 @@ const OTHER_WINS = [
 ];
 
 const FAQS = [
-  { question: 'Is FreeTradeJournal really free?', answer: 'Yes. The free plan includes unlimited trade logging, dashboard analytics over your last 30 days, up to 20 journal entries, two trading accounts, CSV/Excel import and export, and 20 AI analyses per month. No credit card required. Pro ($12.99/month or $99.99/year) removes the limits and adds cloud sync.' },
+  { question: 'Is FreeTradeJournal really free?', answer: 'Yes. The free plan includes unlimited trade logging, dashboard analytics over your last 30 days, up to 20 journal entries, two trading accounts, CSV/Excel import and export, and 5 AI coaching runs per month (automatic tips and prompts are free). No credit card required. Pro ($12.99/month or $99.99/year) removes the limits and adds cloud sync.' },
   { question: 'How much cheaper is FreeTradeJournal than TradeZella?', answer: 'TradeZella starts at $35/month (or $315/year) and goes up to $99/month for Ultra. FreeTradeJournal Pro is $12.99/month or $99.99/year — roughly a third of TradeZella\'s cheapest plan, and there is a free plan TradeZella does not offer.' },
   { question: 'How do I switch from TradeZella to FreeTradeJournal?', answer: 'Export your trades to CSV — from TradeZella or directly from your broker — then use FreeTradeJournal\'s CSV import. The column-mapping step handles different export formats, so you do not need to reformat anything by hand.' },
   { question: 'Does FreeTradeJournal sync with my broker automatically?', answer: 'Not yet. Trades come in via CSV or Excel import from any broker, or manual entry. Automatic sync is in development.' },

@@ -33,7 +33,7 @@ const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
   const { themeColors, alpha } = useThemePresets();
-  const { hasAIAccess, updateFreeAiQuota } = useProStatus();
+  const { hasAutoAIAccess: hasAIAccess, updateFreeAiQuota } = useProStatus();
   const { getCurrencySymbol } = useSettings();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -84,7 +84,9 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
       const errorMsg = err?.message || 'Failed to generate prompts';
       setError(errorMsg);
       trackEvent('ai_journal_prompts_error', { message: errorMsg });
-      toast.error(errorMsg);
+      // The daily cap on automatic suggestions is a limit gate, not a failure.
+      if (/paused until tomorrow/i.test(errorMsg)) toast.warning(errorMsg);
+      else toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

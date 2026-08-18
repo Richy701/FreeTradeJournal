@@ -160,7 +160,7 @@ export default function TradeLog() {
   const { mode: pnlMode, formatPnl } = usePnlDisplay();
   const { user, isDemo } = useAuth();
   const demoGuard = useDemoGuard();
-  const { isPro, hasAIAccess } = useProStatus();
+  const { isPro, hasUtilityAIAccess } = useProStatus();
   // Freshly imported trades queued for the AI first-read dialog
   const [importInsightTrades, setImportInsightTrades] = useState<any[] | null>(null);
   const [screenshotImportOpen, setScreenshotImportOpen] = useState(false);
@@ -893,7 +893,7 @@ export default function TradeLog() {
         duration: 6000,
       }
     );
-    if (newTrades.length >= 10 && hasAIAccess && !isDemo) setImportInsightTrades(newTrades);
+    if (newTrades.length >= 10 && hasUtilityAIAccess && !isDemo) setImportInsightTrades(newTrades);
   };
 
   const handleCsvDrop = async (event: React.DragEvent<HTMLDivElement>) => {
@@ -955,7 +955,7 @@ export default function TradeLog() {
 
         // The activation moment: stream an AI first-read of a meaningful import.
         // When it shows, hold the feedback toast — one ask at a time.
-        const showInsight = newTrades.length >= 10 && hasAIAccess && !isDemo;
+        const showInsight = newTrades.length >= 10 && hasUtilityAIAccess && !isDemo;
         if (showInsight) setImportInsightTrades(newTrades);
 
         if (newTrades.length >= 5 && !showInsight) {

@@ -3481,7 +3481,48 @@ const JSON_OUTPUT_TYPES = new Set<string>(["strategy_tagger", "coaching_tips"]);
 type FeatureType = keyof typeof RATE_LIMITS;
 
 // ─── Free-Tier AI Quota ───────────────────────────────────────
-const FREE_AI_MONTHLY_LIMIT = 20;
+// Three allowances, one doc (users/{uid}/meta/freeAiUsage):
+//   coaching  5 / calendar month — the user asked for insight (analysis, trade
+//             and journal review, chat, goal coach, position check, tagger…)
+//   utility  20 / calendar month — reduces the friction of getting trades in
+//             (import first read; screenshot import has its own lifetime doc,
+//             CSV mapping is Pro-only)
+//   auto      8 / UTC day        — fired by the app, not the user (dashboard
+//             coach tips, journal prompts after a save, risk alerts, on-save
+//             journal coach). Not the user's credits, just an abuse cap.
+// Until 2026-08 every feature shared one 20/month `count`; the auto features
+// burned most of it (audit: ~92% of completions), so users hit the wall
+// without ever choosing to use AI. `count` is still written (coaching +
+// utility) for anything that reads the old shape; the old value is NOT
+// carried into the class counters, so every free user starts the new scheme
+// with a full allowance.
+const FREE_AI_LIMITS = { coaching: 5, utility: 20 } as const;
+const FREE_AI_AUTO_DAILY_LIMIT = 8;
+
+interface FreeAiQuotaSnapshot {
+  used: number;
+  limit: number;
+  remaining: number;
+  utility: { used: number; limit: number; remaining: number };
+  charged?: "coaching" | "utility" | "auto";
+}
+
+function freeQuotaSnapshot(
+  data: FirebaseFirestore.DocumentData | undefined,
+  monthStr: string,
+  charged?: "coaching" | "utility" | "auto",
+): FreeAiQuotaSnapshot {
+  const sameMonth = data?.month === monthStr;
+  const coaching = sameMonth ? Number(data?.coaching) || 0 : 0;
+  const utility = sameMonth ? Number(data?.utility) || 0 : 0;
+  return {
+    used: coaching,
+    limit: FREE_AI_LIMITS.coaching,
+    remaining: Math.max(0, FREE_AI_LIMITS.coaching - coaching),
+    utility: { used: utility, limit: FREE_AI_LIMITS.utility, remaining: Math.max(0, FREE_AI_LIMITS.utility - utility) },
+    ...(charged ? { charged } : {}),
+  };
+}
 
 // Server-side Pro entitlement: a paid subscription (isPro, Stripe-webhook-owned)
 // Per-user limiter for Stripe-backed callables (checkout/portal): 10 calls per
@@ -3586,36 +3627,75 @@ async function recordGateHit(uid: string, gate: string, tier: EntitlementTier, e
   await captureServerEvent(uid, "gate hit", { gate, tier, ...extra });
 }
 
-async function checkAndIncrementFreeAI(uid: string, feature?: string): Promise<{ used: number; limit: number; remaining: number }> {
+async function checkAndIncrementFreeAI(
+  uid: string,
+  feature: string,
+  payload?: Record<string, any>,
+): Promise<FreeAiQuotaSnapshot> {
+  const cls = aiFeatureClass(feature, payload);
   const monthStr = new Date().toISOString().slice(0, 7);
+  const todayStr = new Date().toISOString().split("T")[0];
   const freeUsageRef = db.collection("users").doc(uid).collection("meta").doc("freeAiUsage");
 
-  const result = await db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx): Promise<{ denied?: AiFeatureClass; snapshot?: FreeAiQuotaSnapshot }> => {
     const snap = await tx.get(freeUsageRef);
     const data = snap.data();
-    const current = (data?.month === monthStr ? data?.count : 0) || 0;
+    const sameMonth = data?.month === monthStr;
+    const coaching = sameMonth ? Number(data?.coaching) || 0 : 0;
+    const utility = sameMonth ? Number(data?.utility) || 0 : 0;
+    const count = sameMonth ? Number(data?.count) || 0 : 0;
+    const auto = data?.autoDay === todayStr ? Number(data?.auto) || 0 : 0;
 
-    if (current >= FREE_AI_MONTHLY_LIMIT) {
-      return null;
+    if (cls === "auto") {
+      if (auto >= FREE_AI_AUTO_DAILY_LIMIT) return { denied: "auto" };
+      const next = { month: monthStr, count, coaching, utility, autoDay: todayStr, auto: auto + 1 };
+      tx.set(freeUsageRef, next);
+      return { snapshot: freeQuotaSnapshot(next, monthStr, "auto") };
     }
 
-    tx.set(freeUsageRef, { month: monthStr, count: current + 1 });
-    return { used: current + 1, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT - current - 1 };
+    const current = cls === "coaching" ? coaching : utility;
+    if (current >= FREE_AI_LIMITS[cls]) return { denied: cls };
+    const next = {
+      month: monthStr,
+      count: count + 1,
+      coaching: cls === "coaching" ? coaching + 1 : coaching,
+      utility: cls === "utility" ? utility + 1 : utility,
+      autoDay: data?.autoDay ?? null,
+      auto: data?.autoDay === todayStr ? auto : 0,
+    };
+    tx.set(freeUsageRef, next);
+    return { snapshot: freeQuotaSnapshot(next, monthStr, cls) };
   });
 
-  if (!result) {
-    await recordGateHit(uid, "ai_quota", "free", feature ? { feature } : undefined);
+  if (result.denied) {
+    await recordGateHit(uid, result.denied === "auto" ? "ai_auto_daily" : "ai_quota", "free", { feature, class: result.denied });
+    if (result.denied === "auto") {
+      // Not the user's credits: a 429 the auto-firing components treat as
+      // "try again tomorrow", never as "quota gone" (see lib/ai-quota.ts).
+      throw new functions.https.HttpsError("resource-exhausted", "Automatic AI suggestions are paused until tomorrow.");
+    }
+    if (result.denied === "utility") {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        `You've used all ${FREE_AI_LIMITS.utility} free AI import reads this month. Upgrade to Pro for unlimited.`,
+      );
+    }
     throw new functions.https.HttpsError(
       "permission-denied",
-      `You've used all ${FREE_AI_MONTHLY_LIMIT} free AI queries this month. Upgrade to Pro for unlimited AI coaching, analysis, and more.`
+      `You've used all ${FREE_AI_LIMITS.coaching} free AI coaching runs this month. Upgrade to Pro for unlimited AI coaching, analysis, and more.`,
     );
   }
-  return result;
+  return result.snapshot!;
 }
 
 // Best-effort refund when the AI call itself fails after quota was charged —
 // the user got nothing, so the unit shouldn't count against them.
-async function refundAiUsage(uid: string, featureType: string | null, wasPro: boolean): Promise<void> {
+async function refundAiUsage(
+  uid: string,
+  featureType: string | null,
+  wasPro: boolean,
+  freeClass?: AiFeatureClass,
+): Promise<void> {
   try {
     if (wasPro && featureType) {
       const usageRef = db.collection("users").doc(uid).collection("meta").doc("aiUsage");
@@ -3628,15 +3708,23 @@ async function refundAiUsage(uid: string, featureType: string | null, wasPro: bo
           tx.set(usageRef, { [featureType]: current - 1 }, { merge: true });
         }
       });
-    } else if (!wasPro) {
+    } else if (!wasPro && freeClass) {
       const monthStr = new Date().toISOString().slice(0, 7);
+      const todayStr = new Date().toISOString().split("T")[0];
       const freeUsageRef = db.collection("users").doc(uid).collection("meta").doc("freeAiUsage");
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(freeUsageRef);
         const data = snap.data();
-        const current = (data?.month === monthStr ? data?.count : 0) || 0;
+        if (freeClass === "auto") {
+          const auto = data?.autoDay === todayStr ? Number(data?.auto) || 0 : 0;
+          if (auto > 0) tx.set(freeUsageRef, { auto: auto - 1 }, { merge: true });
+          return;
+        }
+        if (data?.month !== monthStr) return;
+        const current = Number(data?.[freeClass]) || 0;
+        const count = Number(data?.count) || 0;
         if (current > 0) {
-          tx.set(freeUsageRef, { month: monthStr, count: current - 1 });
+          tx.set(freeUsageRef, { [freeClass]: current - 1, count: Math.max(0, count - 1) }, { merge: true });
         }
       });
     }
@@ -3654,10 +3742,7 @@ export const getFreeAIQuota = functions.https.onCall(async (_data, context) => {
   const monthStr = new Date().toISOString().slice(0, 7);
   const freeUsageRef = db.collection("users").doc(uid).collection("meta").doc("freeAiUsage");
   const snap = await freeUsageRef.get();
-  const data = snap.data();
-  const used = (data?.month === monthStr ? data?.count : 0) || 0;
-
-  return { used, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT - used };
+  return freeQuotaSnapshot(snap.data(), monthStr);
 });
 
 export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI", async (data, context) => {
@@ -3675,7 +3760,7 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   const userDoc = await db.collection("users").doc(uid).get();
   const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
   const tier = entitlementTier(userDoc.data());
-  let freeUsage: { used: number; limit: number; remaining: number } | null = null;
+  let freeUsage: FreeAiQuotaSnapshot | null = null;
 
   if (!userIsPro) {
     freeUsage = await checkAndIncrementFreeAI(uid, "ai_analysis");
@@ -3712,7 +3797,7 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   // 4. Validate input (refund the already-charged unit — the call did nothing)
   const request = data as AnalysisRequest;
   if (!request.trades || !Array.isArray(request.trades) || request.trades.length === 0) {
-    await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
+    await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro, "coaching");
     throw new functions.https.HttpsError(
       "invalid-argument",
       "No trades provided."
@@ -3730,7 +3815,7 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   // 6. Call the AI model
   if (!aiClientConfigured()) {
     // The quota unit was already charged — give it back, the user got nothing.
-    await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
+    await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro, "coaching");
     throw new functions.https.HttpsError(
       "internal",
       "AI API key not configured."
@@ -3755,7 +3840,7 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   } catch (err: any) {
     console.error("OpenAI API error:", err.message);
     reportError(err, { fn: "analyzeTradesAI", uid });
-    await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro);
+    await refundAiUsage(uid, userIsPro ? "ai_analysis" : null, userIsPro, "coaching");
     throw new functions.https.HttpsError(
       "internal",
       "Failed to generate analysis. Please try again."
@@ -4662,9 +4747,10 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
   }
 
   // Free-tier check (if not Pro)
-  let freeUsage: { used: number; limit: number; remaining: number } | null = null;
+  let freeUsage: FreeAiQuotaSnapshot | null = null;
+  const freeClass = aiFeatureClass(request.type, request.payload);
   if (!userIsPro) {
-    freeUsage = await checkAndIncrementFreeAI(uid, request.type);
+    freeUsage = await checkAndIncrementFreeAI(uid, request.type, request.payload);
   }
 
   // 4. Check rate limit for this specific feature (Pro users only -- free tier limited by monthly quota)
@@ -4742,7 +4828,7 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
     result = completion.choices[0]?.message?.content || "No response generated.";
     await recordAiCall({ uid, feature: featureType, model, tier, usage: completion.usage, payload: request.payload, extra: { streamed: false } });
   } catch (err: any) {
-    await refundAiUsage(uid, userIsPro ? featureType : null, userIsPro);
+    await refundAiUsage(uid, userIsPro ? featureType : null, userIsPro, freeClass);
     if (err instanceof functions.https.HttpsError) throw err;
     console.error("OpenAI API error:", err.message);
     reportError(err, { fn: "aiAssist", uid, feature: featureType });
@@ -5471,14 +5557,21 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
   const userDoc = await db.collection("users").doc(uid).get();
   const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
   const tier = entitlementTier(userDoc.data());
-  let freeUsage: { used: number; limit: number; remaining: number } | null = null;
+  let freeUsage: FreeAiQuotaSnapshot | null = null;
+  const requestedFeature = endpoint === "analysis" ? "ai_analysis" : String((reqData as AIAssistRequest)?.type || "");
+  const requestedPayload = endpoint === "analysis" ? undefined : (reqData as AIAssistRequest)?.payload;
+  const freeClass = aiFeatureClass(requestedFeature, requestedPayload);
 
   if (!userIsPro) {
+    if (!requestedFeature) {
+      res.status(400).json({ error: "Missing type or payload." });
+      return;
+    }
     try {
-      const requestedFeature = endpoint === "analysis" ? "ai_analysis" : (reqData as AIAssistRequest)?.type;
-      freeUsage = await checkAndIncrementFreeAI(uid, typeof requestedFeature === "string" ? requestedFeature : undefined);
+      freeUsage = await checkAndIncrementFreeAI(uid, requestedFeature, requestedPayload);
     } catch (err: any) {
-      res.status(403).json({ error: err.message || "Free AI quota exceeded" });
+      const status = err instanceof functions.https.HttpsError && err.code === "resource-exhausted" ? 429 : 403;
+      res.status(status).json({ error: err.message || "Free AI quota exceeded" });
       return;
     }
   }
@@ -5494,7 +5587,7 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
   // A free-tier unit is charged above and a Pro unit inside each branch —
   // refund them when the request dies before anything reaches OpenAI.
   let chargedFeature: string | null = null;
-  const refundStreamCharges = () => refundAiUsage(uid, chargedFeature, userIsPro);
+  const refundStreamCharges = () => refundAiUsage(uid, chargedFeature, userIsPro, freeClass);
 
   if (endpoint === "analysis") {
     featureType = "ai_analysis" as FeatureType;
@@ -5676,7 +5769,7 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
     console.error("OpenAI streaming error:", err.message);
     reportError(err, { fn: "aiStream", uid, feature: featureType ?? undefined });
     // The stream never delivered — refund the quota unit charged above.
-    await refundAiUsage(uid, userIsPro ? featureType! : null, userIsPro);
+    await refundAiUsage(uid, userIsPro ? featureType! : null, userIsPro, freeClass);
     res.write(`data: ${JSON.stringify({ error: "AI request failed. Please try again." })}\n\n`);
     res.end();
   }

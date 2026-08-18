@@ -8,10 +8,18 @@ import { toast } from 'sonner';
 import { UserStorage } from '@/utils/user-storage';
 import type { SubscriptionInfo } from '@/types/subscription';
 
+// Free-tier AI allowance as the server reports it (getFreeAIQuota / the
+// freeUsage block on every AI response). Top-level numbers are the COACHING
+// allowance — the one users are gated on. `utility` covers import first-read.
+// Auto-fired features (coach tips, journal prompts, risk alerts, on-save
+// coach) are capped per day on the server and are not the user's credits, so
+// they have no client-side counter.
 export interface FreeAIQuota {
   used: number;
   limit: number;
   remaining: number;
+  utility?: { used: number; limit: number; remaining: number };
+  charged?: 'coaching' | 'utility' | 'auto';
 }
 
 interface ProContextType {
@@ -19,7 +27,13 @@ interface ProContextType {
   isLoading: boolean;
   subscription: SubscriptionInfo | null;
   openCheckout: (priceId: string) => void;
+  /** Coaching AI (analysis, review, chat, goal coach…): Pro, demo, or free coaching runs left. */
   hasAIAccess: boolean;
+  /** Utility AI (import first-read): Pro, demo, or free import reads left. */
+  hasUtilityAIAccess: boolean;
+  /** Auto-fired AI (coach tips, journal prompts, risk alerts, on-save coach):
+   * any signed-in user once Pro status has resolved — the server caps it per day. */
+  hasAutoAIAccess: boolean;
   freeAiQuota: FreeAIQuota | null;
   updateFreeAiQuota: (quota: FreeAIQuota) => void;
   /** ISO date the signup Pro trial ends — set only while the trial is the
@@ -43,7 +57,13 @@ const PRO_CACHE_KEY = 'proStatus';
 // Firestore snapshot is still loading.
 const ENTITLEMENT_CACHE_KEY = 'proEntitlements';
 const FREE_AI_CACHE_KEY = 'freeAiQuota';
-const FREE_AI_MONTHLY_LIMIT = 20;
+// Mirrors FREE_AI_LIMITS.coaching in functions/src/index.ts.
+const FREE_AI_COACHING_LIMIT = 5;
+const FREE_AI_UTILITY_LIMIT = 20;
+const FRESH_FREE_AI_QUOTA: FreeAIQuota = {
+  used: 0, limit: FREE_AI_COACHING_LIMIT, remaining: FREE_AI_COACHING_LIMIT,
+  utility: { used: 0, limit: FREE_AI_UTILITY_LIMIT, remaining: FREE_AI_UTILITY_LIMIT },
+};
 
 function isFutureIso(date: string | null | undefined): boolean {
   return !!date && new Date(date) > new Date();
@@ -108,16 +128,18 @@ export function ProProvider({ children }: ProProviderProps) {
   const [freeAiQuota, setFreeAiQuota] = useState<FreeAIQuota | null>(() => {
     if (!uid) return null;
     const cached = UserStorage.getItem(uid, FREE_AI_CACHE_KEY);
-    if (!cached) return { used: 0, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT };
+    if (!cached) return FRESH_FREE_AI_QUOTA;
     try {
       const parsed = JSON.parse(cached);
       const currentMonth = new Date().toISOString().slice(0, 7);
-      if (parsed.month !== currentMonth) {
-        return { used: 0, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT };
+      // A cache from the old single-counter scheme (limit 20) is not comparable;
+      // start fresh and let the server refresh below correct it.
+      if (parsed.month !== currentMonth || parsed.quota?.limit !== FREE_AI_COACHING_LIMIT) {
+        return FRESH_FREE_AI_QUOTA;
       }
       return parsed.quota as FreeAIQuota;
     } catch {
-      return { used: 0, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT };
+      return FRESH_FREE_AI_QUOTA;
     }
   });
 
@@ -134,11 +156,15 @@ export function ProProvider({ children }: ProProviderProps) {
   // (risk alerts, coach tips, journal prompts) stops asking until next month.
   useEffect(() => {
     const onExhausted = () => {
-      updateFreeAiQuota({ used: FREE_AI_MONTHLY_LIMIT, limit: FREE_AI_MONTHLY_LIMIT, remaining: 0 });
+      setFreeAiQuota((prev) => {
+        const next: FreeAIQuota = { ...(prev ?? FRESH_FREE_AI_QUOTA), used: FREE_AI_COACHING_LIMIT, limit: FREE_AI_COACHING_LIMIT, remaining: 0 };
+        if (uid) UserStorage.setItem(uid, FREE_AI_CACHE_KEY, JSON.stringify({ month: new Date().toISOString().slice(0, 7), quota: next }));
+        return next;
+      });
     };
     window.addEventListener(FREE_AI_QUOTA_EXHAUSTED_EVENT, onExhausted);
     return () => window.removeEventListener(FREE_AI_QUOTA_EXHAUSTED_EVENT, onExhausted);
-  }, [updateFreeAiQuota]);
+  }, [uid]);
 
   // Firestore real-time listener
   useEffect(() => {
@@ -290,6 +316,7 @@ export function ProProvider({ children }: ProProviderProps) {
   // responses (src/lib/demo-ai.ts) instead. Components that auto-fetch when
   // hasAIAccess is true therefore auto-show sample output in demo.
   const hasAIAccess = isDemo || isPro || (freeAiQuota !== null && freeAiQuota.remaining > 0);
+  const hasUtilityAIAccess = isDemo || isPro || (freeAiQuota !== null && (freeAiQuota.utility?.remaining ?? FREE_AI_UTILITY_LIMIT) > 0);
 
   // Before auth resolves, uid is null and the state above reads "not loading,
   // not Pro" — which painted the free UI for a frame on every reload. For a
@@ -297,6 +324,9 @@ export function ProProvider({ children }: ProProviderProps) {
   // don't wait, so the logged-out landing page stays instant.)
   const authPending = authLoading && hadSession && !isDemo;
   const effectiveLoading = isLoading || authPending;
+  // Auto-fired features are the app's calls, not the user's credits: on once
+  // we know who the user is. (Demo shows canned output; see hasAIAccess.)
+  const hasAutoAIAccess = isDemo || isPro || (!!uid && !effectiveLoading);
 
   const value: ProContextType = useMemo(() => ({
     isPro,
@@ -304,10 +334,12 @@ export function ProProvider({ children }: ProProviderProps) {
     subscription,
     openCheckout: handleOpenCheckout,
     hasAIAccess,
+    hasUtilityAIAccess,
+    hasAutoAIAccess,
     freeAiQuota: isPro || isDemo ? null : freeAiQuota,
     updateFreeAiQuota,
     trialEndsAt,
-  }), [isPro, isDemo, effectiveLoading, subscription, handleOpenCheckout, hasAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
+  }), [isPro, isDemo, effectiveLoading, subscription, handleOpenCheckout, hasAIAccess, hasUtilityAIAccess, hasAutoAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

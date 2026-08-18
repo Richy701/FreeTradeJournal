@@ -13,7 +13,7 @@ vi.mock('@/services/ai-assist', () => ({ requestAIAssist: (...args: unknown[]) =
 
 const updateFreeAiQuota = vi.fn();
 vi.mock('@/contexts/pro-context', () => ({
-  useProStatus: () => ({ isPro: false, hasAIAccess: true, updateFreeAiQuota }),
+  useProStatus: () => ({ isPro: false, hasAIAccess: true, hasAutoAIAccess: true, updateFreeAiQuota }),
 }));
 const user = { uid: 'u1' };
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => ({ user, isDemo: false }) }));
