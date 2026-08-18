@@ -356,35 +356,35 @@ export default function Affiliate() {
                 </thead>
                 <tbody className="divide-y divide-border/30">
                   <tr className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4"><img src="/images/partners/the5ers.svg" alt="The5%ers" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4"><span className="inline-flex items-center rounded-md bg-zinc-950 dark:bg-transparent px-2 py-1 dark:p-0"><img src="/images/partners/the5ers.svg" alt="The5%ers" className="h-8 max-w-[5rem] object-contain" /></span></td>
                     <td className="py-3 px-4 text-muted-foreground">Forex, Metals, Indices, Crypto</td>
                     <td className="py-3 px-4 text-muted-foreground">Instant / 1-step / 2-step / 3-step</td>
                     <td className="py-3 px-4 text-muted-foreground">$4M (scaling)</td>
                     <td className="py-3 px-4 text-muted-foreground">50% –100%</td>
                   </tr>
                   <tr className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4"><img src="/images/partners/ftmo.png" alt="FTMO" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4"><span className="inline-flex items-center rounded-md bg-zinc-950 dark:bg-transparent px-2 py-1 dark:p-0"><img src="/images/partners/ftmo.png" alt="FTMO" className="h-8 max-w-[5rem] object-contain" /></span></td>
                     <td className="py-3 px-4 text-muted-foreground">Forex, Indices, Commodities, Crypto</td>
                     <td className="py-3 px-4 text-muted-foreground">1-step / 2-step</td>
                     <td className="py-3 px-4 text-muted-foreground">$2M (scaling)</td>
                     <td className="py-3 px-4 text-muted-foreground">80% –90%</td>
                   </tr>
                   <tr className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4"><img src="/images/partners/fundednext.svg" alt="FundedNext" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4"><span className="inline-flex items-center rounded-md bg-zinc-950 dark:bg-transparent px-2 py-1 dark:p-0"><img src="/images/partners/fundednext.svg" alt="FundedNext" className="h-8 max-w-[5rem] object-contain" /></span></td>
                     <td className="py-3 px-4 text-muted-foreground">Forex, Indices, Commodities, Crypto</td>
                     <td className="py-3 px-4 text-muted-foreground">1-step / 2-step</td>
                     <td className="py-3 px-4 text-muted-foreground">$4M (scaling)</td>
                     <td className="py-3 px-4 text-muted-foreground">80% –95%</td>
                   </tr>
                   <tr className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4"><img src="/images/partners/toponetrader.svg" alt="Top One Futures" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4"><span className="inline-flex items-center rounded-md bg-zinc-950 dark:bg-transparent px-2 py-1 dark:p-0"><img src="/images/partners/toponetrader.svg" alt="Top One Futures" className="h-8 max-w-[5rem] object-contain" /></span></td>
                     <td className="py-3 px-4 text-muted-foreground">CME Futures</td>
                     <td className="py-3 px-4 text-muted-foreground">1-step / 2-step / 3-step / Instant</td>
                     <td className="py-3 px-4 text-muted-foreground">$500K</td>
                     <td className="py-3 px-4 text-muted-foreground">90%</td>
                   </tr>
                   <tr className="hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4"><img src="/images/partners/apex.webp" alt="Apex Trader Funding" className="h-8 max-w-[5rem] object-contain" /></td>
+                    <td className="py-3 px-4"><span className="inline-flex items-center rounded-md bg-zinc-950 dark:bg-transparent px-2 py-1 dark:p-0"><img src="/images/partners/apex.webp" alt="Apex Trader Funding" className="h-8 max-w-[5rem] object-contain" /></span></td>
                     <td className="py-3 px-4 text-muted-foreground">CME Futures</td>
                     <td className="py-3 px-4 text-muted-foreground">1-step (no time limit)</td>
                     <td className="py-3 px-4 text-muted-foreground">$150K (x20 accounts)</td>
