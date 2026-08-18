@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { trackGateHit, type ActivityGate } from '@/lib/track-activity';
 import { Link } from 'react-router-dom';
 import { Lock, Sparkle } from '@phosphor-icons/react';
 import { useProStatus } from '@/contexts/pro-context';
@@ -23,6 +24,13 @@ const FEATURE_DESCRIPTIONS: Record<string, string> = {
   'Theme Studio': 'Design your own full theme — separate dark-mode colors, custom surfaces, and corner style.',
 };
 
+const WALL_GATES: Record<string, ActivityGate> = {
+  'PDF Trade Reports': 'pdf',
+  'Theme Studio': 'theme_studio',
+  'Success Rate Dashboard': 'prop_panel',
+  'Charts & Analytics': 'prop_panel',
+};
+
 const isAIFeature = (name: string) => name.startsWith('AI ') || name === 'Coach FTJ';
 
 export function ProGate({ children, featureName, featureDescription }: ProGateProps) {
@@ -35,6 +43,10 @@ export function ProGate({ children, featureName, featureDescription }: ProGatePr
   useEffect(() => {
     if (showsWall) {
       trackEvent('pro_gate_shown', { feature: featureName, quotaExceeded });
+      // Client-only walls, reported server-side (AI quota walls are recorded
+      // by the Cloud Function that denies them, so they are skipped here).
+      const gate = WALL_GATES[featureName];
+      if (gate) trackGateHit(gate, { feature: featureName });
     }
   }, [showsWall, featureName, quotaExceeded]);
 

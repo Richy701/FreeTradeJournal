@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { trackGateHit } from '@/lib/track-activity';
 import { toast } from 'sonner';
 import { migrateTradesToAccountId } from '@/utils/trade-migration';
 import { useAuth } from '@/contexts/auth-context';
@@ -217,6 +218,7 @@ export function AccountProvider({ children }: AccountProviderProps) {
       throw new Error('Not available in demo mode');
     }
     if (!isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT) {
+      trackGateHit('account_cap', { accounts: accounts.length });
       toast.warning(`Free plan is limited to ${FREE_TRADING_ACCOUNT_LIMIT} trading accounts. Upgrade to Pro for unlimited accounts.`);
       throw new Error('Free account limit reached');
     }

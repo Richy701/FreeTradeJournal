@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { trackActivity } from '@/lib/track-activity';
 import type { User, Auth } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
 import { DEMO_USER } from '@/data/demo-data';
@@ -106,6 +107,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
           setUser(user);
           setLoading(false);
+          // Server-side "still active" marker (users/{uid}.lastActiveAt, deduped
+          // per day on the server) — the client is the only thing that knows.
+          if (user) trackActivity('session_seen', undefined, { onceKey: 'session_seen' });
           // Keep the session hint in step with the real session (a sign-out
           // also lands here with user === null and clears it).
           try {

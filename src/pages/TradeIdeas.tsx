@@ -1,4 +1,5 @@
-import { useId, useMemo } from 'react'
+import { useId, useMemo, useEffect } from 'react'
+import { trackGateHit } from '@/lib/track-activity'
 import { Lightbulb, ArrowRight, ChartBar, UserCircle, ArrowsSplit, Crosshair, TrendUp, CalendarDots } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
@@ -73,6 +74,10 @@ export default function TradeIdeas() {
   const strategyConfig = useMemo<ChartConfig>(() => ({
     pnl: { label: 'P&L', color: themeColors.primary },
   }), [themeColors.primary])
+
+  useEffect(() => {
+    if (hiddenCount > 0) trackGateHit('analytics_window', { hidden: hiddenCount, source: 'insights' })
+  }, [hiddenCount])
 
   const windowNotice = hiddenCount > 0 && (
     <div className="rounded-xl border border-border bg-muted/40 px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1">

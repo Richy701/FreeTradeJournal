@@ -1,4 +1,5 @@
 import { useThemePresets } from '@/contexts/theme-presets'
+import { trackGateHit } from '@/lib/track-activity';
 import { trackEvent } from '@/lib/analytics'
 import { calculateGrossPnl, computePnlPercentage } from '@/lib/pnl'
 import { belongsToAccount } from '@/lib/account-scope'
@@ -160,6 +161,11 @@ export default function Dashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const analyticsData = useMemo(() => getAnalyticsTrades(), [getAnalyticsTrades, dataVersion])
   const analyticsHiddenCount = analyticsData.hiddenCount
+  // The 30-day window is a client-only gate; report it once per load when it
+  // actually hides something, so the server can see the gate being reached.
+  useEffect(() => {
+    if (analyticsHiddenCount > 0) trackGateHit('analytics_window', { hidden: analyticsHiddenCount, source: 'dashboard' })
+  }, [analyticsHiddenCount])
   useFirstTradeCelebration(tradeCount)
   useMilestoneCelebrations(tradeCount)
 

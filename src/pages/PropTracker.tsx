@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import { trackGateHit } from '@/lib/track-activity'
 import DOMPurify from 'dompurify'
 import {
   PieChart,
@@ -542,6 +543,7 @@ export default function PropTracker() {
 
   function openAddAccount() {
     if (!isPro && accounts.length >= FREE_ACCOUNT_LIMIT) {
+      trackGateHit('prop_cap', { accounts: accounts.length })
       toast.warning(`Free plan is limited to ${FREE_ACCOUNT_LIMIT} prop firm ${FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'}. Upgrade to Pro for unlimited accounts.`)
       return
     }

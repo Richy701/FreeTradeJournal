@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { trackActivity, trackGateHit } from '@/lib/track-activity';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -592,6 +593,7 @@ export default function Journal() {
 
     // Block creating NEW entries past the free cap (editing existing is allowed).
     if (!editingEntry && atFreeJournalLimit) {
+      trackGateHit('journal_cap', { entries: FREE_JOURNAL_ENTRY_LIMIT });
       toast.error(
         `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries. Your existing entries are safe — upgrade to Pro for unlimited journaling.`
       );
@@ -704,6 +706,7 @@ export default function Journal() {
       setUnresolvedRefs([]);
       setShowNewEntry(false);
       trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new' });
+      trackActivity('journal_entry_saved', { type: editingEntry ? 'edit' : 'new', entryCount: totalEntryCount });
       toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
 
       // On-save coach: the entry is durably saved, so let the coach react to

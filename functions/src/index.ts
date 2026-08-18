@@ -46,6 +46,21 @@ function getPostHog(): PostHog {
   return _posthog;
 }
 
+// Server-side product event. Fires from Cloud Functions so ad blockers and the
+// consent gate can't drop it (client posthog-js loses ~30-40% of events). Never
+// throws — telemetry must not break the path it instruments.
+async function captureServerEvent(
+  uid: string,
+  event: string,
+  properties?: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await getPostHog().captureImmediate({ distinctId: uid, event, properties });
+  } catch (err) {
+    console.error(`PostHog: failed to capture "${event}":`, err);
+  }
+}
+
 // Server-side crash telemetry: caught errors go to PostHog error tracking
 // (same project as the client) tagged with the function name so they can be
 // attributed and alerted on. Must never throw — reporting can't be allowed to
@@ -1910,6 +1925,82 @@ export const trackTradeLogged = functions.https.onCall(async (data, context) => 
   return { ok: true };
 });
 
+// ─── Activity events the server cannot see on its own ─────────
+// Free users' journals, accounts and trades live in localStorage, and the
+// client-only plan gates fire in the browser, so the server has no record of
+// "still active on day 30", "saved a journal entry" or "hit the journal cap".
+// This callable is the sanctioned way for the client to report those three
+// things. Allowlisted names + sanitised props; server-side PostHog capture so
+// ad blockers can't drop it. session_seen also stamps users/{uid}.lastActiveAt
+// (deduped per UTC day) — the last-active marker Firestore never had.
+const ACTIVITY_EVENTS = {
+  session_seen: "session seen",
+  journal_entry_saved: "journal entry saved",
+  gate_hit: "gate hit",
+} as const;
+type ActivityEvent = keyof typeof ACTIVITY_EVENTS;
+const ACTIVITY_GATES = new Set<string>([
+  "journal_cap", "account_cap", "prop_cap", "analytics_window", "period_pills",
+  "pdf", "theme_studio", "prop_panel", "cloud_sync",
+]);
+
+function sanitizeActivityProps(raw: unknown): Record<string, string | number | boolean> {
+  const out: Record<string, string | number | boolean> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>).slice(0, 8)) {
+    if (!/^[a-zA-Z_]{1,32}$/.test(k)) continue;
+    if (typeof v === "string") out[k] = v.slice(0, 60);
+    else if (typeof v === "number" && Number.isFinite(v)) out[k] = v;
+    else if (typeof v === "boolean") out[k] = v;
+  }
+  return out;
+}
+
+export const trackActivity = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+  const uid = context.auth.uid;
+  const eventKey = String((data as { event?: unknown })?.event || "") as ActivityEvent;
+  if (!(eventKey in ACTIVITY_EVENTS)) {
+    throw new functions.https.HttpsError("invalid-argument", "Unknown activity event.");
+  }
+  const props = sanitizeActivityProps((data as { props?: unknown })?.props);
+
+  try {
+    if (eventKey === "session_seen") {
+      const userRef = db.collection("users").doc(uid);
+      const today = new Date().toISOString().slice(0, 10);
+      const snap = await userRef.get();
+      if (snap.data()?.lastActiveDay === today) return { ok: true, deduped: true };
+      await userRef.set(
+        { lastActiveAt: admin.firestore.FieldValue.serverTimestamp(), lastActiveDay: today },
+        { merge: true },
+      );
+      await captureServerEvent(uid, ACTIVITY_EVENTS.session_seen, { tier: entitlementTier(snap.data()) });
+      return { ok: true };
+    }
+
+    if (eventKey === "gate_hit") {
+      const gate = typeof props.gate === "string" ? props.gate : "";
+      if (!ACTIVITY_GATES.has(gate)) {
+        throw new functions.https.HttpsError("invalid-argument", "Unknown gate.");
+      }
+      const userSnap = await db.collection("users").doc(uid).get();
+      await recordGateHit(uid, gate, entitlementTier(userSnap.data()), props);
+      return { ok: true };
+    }
+
+    // journal_entry_saved
+    await captureServerEvent(uid, ACTIVITY_EVENTS.journal_entry_saved, props);
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof functions.https.HttpsError) throw err;
+    console.error("trackActivity failed:", err);
+    return { ok: false };
+  }
+});
+
 // ─── Process Deferred Referrals (accounts that were too new) ──
 
 export const processDeferredReferrals = functions.pubsub
@@ -2761,6 +2852,7 @@ export const stripeWebhook = functions.https.onRequest(
           }
 
           const isProStatus = subscriptionData.status === "active" || subscriptionData.status === "on_trial";
+          const startsCardTrial = subscriptionData.status === "on_trial";
           await db.collection("users").doc(firebaseUid).set(
             {
               isPro: isProStatus,
@@ -2768,12 +2860,29 @@ export const stripeWebhook = functions.https.onRequest(
               subscription: subscriptionData,
               // Record consumed trials so createCheckoutSession never grants
               // a second one (set only on completed checkout, not abandoned).
-              ...(subscriptionData.status === "on_trial" ? { hadTrial: true } : {}),
+              // The explicit trial* fields make "trials started vs converted"
+              // a direct query instead of an inference from status + hadTrial.
+              ...(startsCardTrial
+                ? {
+                    hadTrial: true,
+                    trialType: "card",
+                    trialStartedAt: subscriptionData.createdAt,
+                    trialEndsAt: subscriptionData.currentPeriodEnd,
+                    trialOutcome: "active",
+                  }
+                : {}),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
             { merge: true },
           );
           console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
+          if (startsCardTrial) {
+            await captureServerEvent(firebaseUid, "trial started", {
+              trial_type: "card",
+              plan_type: subscriptionData.planType,
+              ends_at: subscriptionData.currentPeriodEnd,
+            });
+          }
 
           // Sync Pro status to Resend contact for automations
           try {
@@ -2870,6 +2979,10 @@ export const stripeWebhook = functions.https.onRequest(
           // Send Pro upgrade email when trial converts to paid
           const prevStatus = (event.data as any).previous_attributes?.status;
           if (prevStatus === "trialing" && sub.status === "active") {
+            await db.collection("users").doc(firebaseUid).set(
+              { trialConvertedAt: new Date().toISOString(), trialOutcome: "converted" },
+              { merge: true },
+            );
             try {
               const userRecord = await admin.auth().getUser(firebaseUid);
               if (userRecord.email) {
@@ -2910,6 +3023,11 @@ export const stripeWebhook = functions.https.onRequest(
             break;
           }
 
+          // A card trial that ends here never converted (cancelled during the
+          // trial, or the first charge failed and Stripe gave up).
+          const trialEndedUnconverted =
+            existingDoc?.trialType === "card" && !existingDoc?.trialConvertedAt &&
+            (sub.status === "trialing" || existingDoc?.subscription?.status === "on_trial");
           await db.collection("users").doc(firebaseUid).set(
             {
               isPro: false,
@@ -2918,11 +3036,17 @@ export const stripeWebhook = functions.https.onRequest(
                 stripeSubscriptionId: sub.id,
                 updatedAt: new Date().toISOString(),
               },
+              ...(trialEndedUnconverted
+                ? { trialEndedAt: new Date().toISOString(), trialOutcome: "expired" }
+                : {}),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
             { merge: true },
           );
           console.log(`subscription.deleted for ${firebaseUid}`);
+          if (trialEndedUnconverted) {
+            await captureServerEvent(firebaseUid, "trial ended", { trial_type: "card", outcome: "expired" });
+          }
 
           // Sync Pro status to Resend contact for automations
           try {
@@ -3393,25 +3517,100 @@ function isEntitledPro(data: FirebaseFirestore.DocumentData | undefined): boolea
   );
 }
 
-async function checkAndIncrementFreeAI(uid: string): Promise<{ used: number; limit: number; remaining: number }> {
+// Which plan a caller is on, for telemetry. "pro" = paid (Stripe-owned isPro),
+// "trial" = card trial, no-card signup trial, or referral grant, "free" = none.
+type EntitlementTier = "pro" | "trial" | "free";
+function entitlementTier(data: FirebaseFirestore.DocumentData | undefined): EntitlementTier {
+  if (!isEntitledPro(data)) return "free";
+  if (data?.isPro && data?.subscription?.status !== "on_trial") return "pro";
+  return "trial";
+}
+
+// ── AI call telemetry ─────────────────────────────────────────
+// Every AI feature is charged to one free counter, so nothing recorded WHICH
+// feature a user ran or what it cost. These two helpers fix that: a structured
+// log line per completion (Cloud Logging) and a server-side PostHog event
+// ("ai call") with the feature, its class, tier, model and token counts.
+//
+// class: utility = reduces the friction of getting trades in; auto = fired by
+// the app without a click (dashboard coach tips, journal prompts after a save,
+// risk alerts, on-save journal coach); coaching = the user asked for insight.
+type AiFeatureClass = "utility" | "coaching" | "auto";
+const AI_UTILITY_FEATURES = new Set<string>(["csv_mapping", "import_insight", "screenshot_import"]);
+const AI_AUTO_FEATURES = new Set<string>(["coaching_tips", "journal_prompts", "risk_alert"]);
+function aiFeatureClass(feature: string, payload?: Record<string, any>): AiFeatureClass {
+  if (AI_UTILITY_FEATURES.has(feature)) return "utility";
+  if (AI_AUTO_FEATURES.has(feature)) return "auto";
+  // journal_assist is auto after a save (mode "onSave") and manual via "Ask Coach".
+  if (feature === "journal_assist" && payload?.mode === "onSave") return "auto";
+  return "coaching";
+}
+
+async function recordAiCall(opts: {
+  uid: string;
+  feature: string;
+  model: string;
+  tier: EntitlementTier;
+  usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
+  payload?: Record<string, any>;
+  extra?: Record<string, unknown>;
+}): Promise<void> {
+  const cls = aiFeatureClass(opts.feature, opts.payload);
+  const tokensIn = opts.usage?.prompt_tokens ?? null;
+  const tokensOut = opts.usage?.completion_tokens ?? null;
+  console.log(
+    `[ai_call] uid=${opts.uid} feature=${opts.feature} class=${cls} tier=${opts.tier} model=${opts.model} in=${tokensIn ?? "?"} out=${tokensOut ?? "?"}`,
+  );
+  await captureServerEvent(opts.uid, "ai call", {
+    feature: opts.feature,
+    class: cls,
+    tier: opts.tier,
+    model: opts.model,
+    tokens_in: tokensIn,
+    tokens_out: tokensOut,
+    ...opts.extra,
+  });
+}
+
+// A user hit a plan limit. Server-enforced gates call this directly; the
+// client-only gates report through the trackActivity callable. Throttled per
+// uid per minute per instance so a client retry loop can't flood PostHog.
+const gateHitLastAt = new Map<string, number>();
+async function recordGateHit(uid: string, gate: string, tier: EntitlementTier, extra?: Record<string, unknown>): Promise<void> {
+  const key = `${uid}:${gate}`;
+  const now = Date.now();
+  const last = gateHitLastAt.get(key) || 0;
+  if (now - last < 60 * 1000) return;
+  gateHitLastAt.set(key, now);
+  console.log(`[gate_hit] uid=${uid} gate=${gate} tier=${tier}`);
+  await captureServerEvent(uid, "gate hit", { gate, tier, ...extra });
+}
+
+async function checkAndIncrementFreeAI(uid: string, feature?: string): Promise<{ used: number; limit: number; remaining: number }> {
   const monthStr = new Date().toISOString().slice(0, 7);
   const freeUsageRef = db.collection("users").doc(uid).collection("meta").doc("freeAiUsage");
 
-  return db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx) => {
     const snap = await tx.get(freeUsageRef);
     const data = snap.data();
     const current = (data?.month === monthStr ? data?.count : 0) || 0;
 
     if (current >= FREE_AI_MONTHLY_LIMIT) {
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        `You've used all ${FREE_AI_MONTHLY_LIMIT} free AI queries this month. Upgrade to Pro for unlimited AI coaching, analysis, and more.`
-      );
+      return null;
     }
 
     tx.set(freeUsageRef, { month: monthStr, count: current + 1 });
     return { used: current + 1, limit: FREE_AI_MONTHLY_LIMIT, remaining: FREE_AI_MONTHLY_LIMIT - current - 1 };
   });
+
+  if (!result) {
+    await recordGateHit(uid, "ai_quota", "free", feature ? { feature } : undefined);
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      `You've used all ${FREE_AI_MONTHLY_LIMIT} free AI queries this month. Upgrade to Pro for unlimited AI coaching, analysis, and more.`
+    );
+  }
+  return result;
 }
 
 // Best-effort refund when the AI call itself fails after quota was charged —
@@ -3475,10 +3674,11 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
   // 2. Pro or free-tier check
   const userDoc = await db.collection("users").doc(uid).get();
   const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
+  const tier = entitlementTier(userDoc.data());
   let freeUsage: { used: number; limit: number; remaining: number } | null = null;
 
   if (!userIsPro) {
-    freeUsage = await checkAndIncrementFreeAI(uid);
+    freeUsage = await checkAndIncrementFreeAI(uid, "ai_analysis");
   }
 
   // 3. Rate limit (Pro users only -- free tier limited by monthly quota)
@@ -3551,6 +3751,7 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
       ...modelTuning(FEATURE_MODELS.ai_analysis, 0.7),
     });
     analysis = completion.choices[0]?.message?.content || "No analysis generated.";
+    await recordAiCall({ uid, feature: "ai_analysis", model: FEATURE_MODELS.ai_analysis, tier, usage: completion.usage, extra: { trades: trades.length, streamed: false } });
   } catch (err: any) {
     console.error("OpenAI API error:", err.message);
     reportError(err, { fn: "analyzeTradesAI", uid });
@@ -3593,8 +3794,10 @@ export const suggestCsvMapping = functions.https.onCall(reported("suggestCsvMapp
   const userDoc = await db.collection("users").doc(uid).get();
   const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
   if (!userIsPro) {
+    await recordGateHit(uid, "csv_ai_mapping", "free");
     throw new functions.https.HttpsError("permission-denied", "AI column mapping is a Pro feature.");
   }
+  const tier = entitlementTier(userDoc.data());
 
   // Daily abuse cap (Pro).
   const limit = RATE_LIMITS.csv_mapping;
@@ -3671,6 +3874,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
       response_format: { type: "json_object" },
     });
     parsed = JSON.parse(completion.choices[0]?.message?.content || "{}");
+    await recordAiCall({ uid, feature: "csv_mapping", model: FEATURE_MODELS.csv_mapping, tier, usage: completion.usage, extra: { headers: headers.length } });
   } catch (err: any) {
     console.error("CSV mapping AI error:", err.message);
     reportError(err, { fn: "suggestCsvMapping", uid });
@@ -4428,6 +4632,7 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
   // 2. Pro or free-tier check
   const userDoc = await db.collection("users").doc(uid).get();
   const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
+  const tier = entitlementTier(userDoc.data());
 
   // 3. Route by type
   const request = data as AIAssistRequest;
@@ -4459,7 +4664,7 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
   // Free-tier check (if not Pro)
   let freeUsage: { used: number; limit: number; remaining: number } | null = null;
   if (!userIsPro) {
-    freeUsage = await checkAndIncrementFreeAI(uid);
+    freeUsage = await checkAndIncrementFreeAI(uid, request.type);
   }
 
   // 4. Check rate limit for this specific feature (Pro users only -- free tier limited by monthly quota)
@@ -4535,6 +4740,7 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
       ...(JSON_OUTPUT_TYPES.has(request.type) ? { response_format: { type: "json_object" as const } } : {}),
     });
     result = completion.choices[0]?.message?.content || "No response generated.";
+    await recordAiCall({ uid, feature: featureType, model, tier, usage: completion.usage, payload: request.payload, extra: { streamed: false } });
   } catch (err: any) {
     await refundAiUsage(uid, userIsPro ? featureType : null, userIsPro);
     if (err instanceof functions.https.HttpsError) throw err;
@@ -4580,7 +4786,9 @@ export const parseScreenshot = functions.https.onCall(reported("parseScreenshot"
   // is seen before the Pro gate; Pro users share the 20/day counter below.
   const userDoc = await db.collection("users").doc(uid).get();
   const isPro = userDoc.exists && isEntitledPro(userDoc.data());
+  const tier = entitlementTier(userDoc.data());
   if (!isPro && importType !== "trades") {
+    await recordGateHit(uid, "screenshot_prop_import", "free", { importType });
     throw new functions.https.HttpsError("permission-denied", "Screenshot import is a Pro feature.");
   }
 
@@ -4624,14 +4832,18 @@ export const parseScreenshot = functions.https.onCall(reported("parseScreenshot"
       const snap = await tx.get(freeRef);
       const current = Number(snap.data()?.freeUsed) || 0;
       if (current >= LIMIT) {
-        throw new functions.https.HttpsError(
-          "resource-exhausted",
-          `You've used your ${LIMIT} free screenshot imports. Upgrade to Pro for ${SCREENSHOT_PRO_DAILY} a day.`
-        );
+        return -1;
       }
       tx.set(freeRef, { freeUsed: current + 1, lastUsed: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       return current;
     });
+  if (usedToday < 0) {
+    await recordGateHit(uid, "screenshot_quota", "free");
+    throw new functions.https.HttpsError(
+      "resource-exhausted",
+      `You've used your ${LIMIT} free screenshot imports. Upgrade to Pro for ${SCREENSHOT_PRO_DAILY} a day.`
+    );
+  }
 
   if (!aiClientConfigured()) {
     throw new functions.https.HttpsError("internal", "AI API key not configured.");
@@ -4732,6 +4944,7 @@ Rules:
       response_format: { type: "json_object" },
     });
     result = completion.choices[0]?.message?.content || "{}";
+    await recordAiCall({ uid, feature: "screenshot_import", model: SCREENSHOT_MODEL, tier, usage: completion.usage, extra: { importType } });
   } catch (err: any) {
     console.error("OpenAI Vision error:", err.message);
     reportError(err, { fn: "parseScreenshot", uid, importType });
@@ -5257,11 +5470,13 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
 
   const userDoc = await db.collection("users").doc(uid).get();
   const userIsPro = userDoc.exists && isEntitledPro(userDoc.data());
+  const tier = entitlementTier(userDoc.data());
   let freeUsage: { used: number; limit: number; remaining: number } | null = null;
 
   if (!userIsPro) {
     try {
-      freeUsage = await checkAndIncrementFreeAI(uid);
+      const requestedFeature = endpoint === "analysis" ? "ai_analysis" : (reqData as AIAssistRequest)?.type;
+      freeUsage = await checkAndIncrementFreeAI(uid, typeof requestedFeature === "string" ? requestedFeature : undefined);
     } catch (err: any) {
       res.status(403).json({ error: err.message || "Free AI quota exceeded" });
       return;
@@ -5427,16 +5642,29 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
       max_completion_tokens: maxTokens,
       ...modelTuning(model, temperature),
       stream: true,
+      // Token counts arrive on a final usage-only chunk (choices: []).
+      stream_options: { include_usage: true },
       // Same JSON-object enforcement as the callable path.
       ...(featureType && JSON_OUTPUT_TYPES.has(featureType) ? { response_format: { type: "json_object" as const } } : {}),
     });
 
+    let streamUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       if (content) {
         res.write(`data: ${JSON.stringify({ text: content })}\n\n`);
       }
+      if (chunk.usage) streamUsage = chunk.usage;
     }
+    await recordAiCall({
+      uid,
+      feature: featureType,
+      model,
+      tier,
+      usage: streamUsage,
+      payload: endpoint === "analysis" ? undefined : (reqData as AIAssistRequest).payload,
+      extra: { streamed: true },
+    });
 
     const meta: Record<string, any> = {
       usage: { used: usedToday + 1, limit, remaining: limit - (usedToday + 1) },

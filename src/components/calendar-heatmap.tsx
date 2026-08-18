@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react"
+import { trackGateHit } from '@/lib/track-activity'
 import { createPortal } from "react-dom"
 import { toast } from "sonner"
 import { calculateGrossPnl, computePnlPercentage } from "@/lib/pnl"
@@ -333,6 +334,7 @@ export function CalendarHeatmap() {
 
     // Same free cap as the Journal page — the count is across all accounts.
     if (!isPro && !isDemo && allEntries.length >= FREE_JOURNAL_ENTRY_LIMIT) {
+      trackGateHit('journal_cap', { entries: FREE_JOURNAL_ENTRY_LIMIT, source: 'heatmap' })
       toast.error(
         `You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries. Your existing entries are safe — upgrade to Pro for unlimited journaling.`
       )

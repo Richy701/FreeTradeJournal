@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { trackGateHit } from '@/lib/track-activity'
 import { LockSimple } from '@phosphor-icons/react'
 import { ALL_PERIODS, PERIOD_LABELS, useDashboardPeriod } from '@/contexts/dashboard-period'
 
@@ -18,6 +19,7 @@ export function DashboardPeriodPills() {
               to="/pricing"
               className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-transparent text-xs font-medium text-muted-foreground/70 hover:text-foreground"
               title="Longer ranges are a Pro feature"
+              onClick={() => trackGateHit('period_pills', { period: p })}
             >
               <LockSimple className="h-3 w-3" />
               {PERIOD_LABELS[p]}
