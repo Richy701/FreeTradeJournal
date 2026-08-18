@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
+import { FREE_AI_QUOTA_EXHAUSTED_EVENT } from '@/lib/ai-quota';
 import { useAuth } from '@/contexts/auth-context';
 import { getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { redirectToCheckout } from '@/lib/stripe';
@@ -127,6 +128,17 @@ export function ProProvider({ children }: ProProviderProps) {
       UserStorage.setItem(uid, FREE_AI_CACHE_KEY, JSON.stringify({ month: currentMonth, quota }));
     }
   }, [uid]);
+
+  // The server denied an AI call for quota: this tab's cached quota was stale.
+  // Mark it exhausted so hasAIAccess flips off and every auto-firing feature
+  // (risk alerts, coach tips, journal prompts) stops asking until next month.
+  useEffect(() => {
+    const onExhausted = () => {
+      updateFreeAiQuota({ used: FREE_AI_MONTHLY_LIMIT, limit: FREE_AI_MONTHLY_LIMIT, remaining: 0 });
+    };
+    window.addEventListener(FREE_AI_QUOTA_EXHAUSTED_EVENT, onExhausted);
+    return () => window.removeEventListener(FREE_AI_QUOTA_EXHAUSTED_EVENT, onExhausted);
+  }, [updateFreeAiQuota]);
 
   // Firestore real-time listener
   useEffect(() => {

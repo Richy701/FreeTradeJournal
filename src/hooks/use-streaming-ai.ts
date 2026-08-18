@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { notifyFreeAiQuotaExhausted } from '@/lib/ai-quota';
 import { getFirebaseAuth } from '@/lib/firebase-lazy';
 import { useAuth } from '@/contexts/auth-context';
 import { getDemoAIResponse, DEMO_AI_USAGE } from '@/lib/demo-ai';
@@ -87,6 +88,8 @@ export function useStreamingAI(): UseStreamingAIReturn {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: 'Request failed' }));
+        // 403 = free quota exhausted (server-side checkAndIncrementFreeAI).
+        if (response.status === 403) notifyFreeAiQuotaExhausted();
         throw new Error(err.error || `HTTP ${response.status}`);
       }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Warning, SpinnerGap, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { AIFeedback } from '@/components/ui/ai-feedback';
@@ -10,6 +10,7 @@ import { useDemoData } from '@/hooks/use-demo-data';
 import { useUserStorage } from '@/utils/user-storage';
 import { getAICache, setAICache } from '@/utils/ai-cache';
 import { trackEvent } from '@/lib/analytics';
+import { isFreeAiQuotaError, notifyFreeAiQuotaExhausted } from '@/lib/ai-quota';
 import DOMPurify from 'dompurify';
 
 // Local YYYY-MM-DD, matching the app's day-bucketing standard — a UTC key
@@ -34,6 +35,13 @@ interface Alert {
 }
 
 const THROTTLE_TTL = 24 * 60 * 60 * 1000; // 1 alert per type per day
+
+// The monitor re-checks when trades change in another tab. Only these
+// localStorage keys can change the outcome; everything else (PostHog
+// persistence, theme, caches) must be ignored — on 2026-08-17 two tabs fed each
+// other through PostHog's localStorage writes and sent 1,551 denied calls in
+// seven seconds.
+const RELEVANT_STORAGE_KEYS = /(^|_)(trades|riskRules|accounts)$/;
 
 function renderAlertMarkdown(md: string): string {
   // Build real block structure (headings, paragraphs, lists) instead of
@@ -143,6 +151,9 @@ export function AIRiskAlertMonitor() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<Set<string>>(new Set());
+  // Alert types with a request in flight or already attempted this mount.
+  // State updates re-run detection; this ref keeps that from re-asking.
+  const attemptedRef = useRef<Set<string>>(new Set());
 
   const detectPatterns = useCallback(() => {
     if (!user || isDemo || !hasAIAccess) return;
@@ -244,19 +255,31 @@ export function AIRiskAlertMonitor() {
   // trades change anywhere (Trade Log, quick add, import, other tabs).
   useEffect(() => {
     const rerun = () => detectPatterns();
+    const onStorage = (e: StorageEvent) => {
+      // key === null means localStorage.clear(); otherwise only trade-shaped
+      // keys matter (see RELEVANT_STORAGE_KEYS).
+      if (e.key !== null && !RELEVANT_STORAGE_KEYS.test(e.key)) return;
+      detectPatterns();
+    };
     window.addEventListener('tradesUpdated', rerun);
-    window.addEventListener('storage', rerun);
+    window.addEventListener('storage', onStorage);
     return () => {
       window.removeEventListener('tradesUpdated', rerun);
-      window.removeEventListener('storage', rerun);
+      window.removeEventListener('storage', onStorage);
     };
   }, [detectPatterns]);
 
   const fetchAdvice = async (alert: Alert, recentTrades: Trade[]) => {
+    if (attemptedRef.current.has(alert.type)) return;
+    attemptedRef.current.add(alert.type);
+    const today = localDayKey(new Date());
+    // One ask per alert type per day, success or failure. Written BEFORE the
+    // request (and in localStorage, so other tabs see it): a denied or failed
+    // call must not be re-asked on the next detection pass.
+    setAICache(`ftj-risk-alert-${alert.type}-${today}`, true);
     setLoading(prev => new Set(prev).add(alert.type));
     trackEvent('ai_risk_alert_started', { violationType: alert.type });
     try {
-      const today = localDayKey(new Date());
       const todayTrades = recentTrades.filter(t =>
         localDayKey(new Date(t.exitTime)) === today
       );
@@ -284,10 +307,6 @@ export function AIRiskAlertMonitor() {
         },
       });
 
-      // Cache to throttle
-      const cacheKey = `ftj-risk-alert-${alert.type}-${today}`;
-      setAICache(cacheKey, true);
-
       if (response.freeUsage) updateFreeAiQuota(response.freeUsage);
       trackEvent('ai_risk_alert_used');
       setAlerts(prev =>
@@ -295,6 +314,9 @@ export function AIRiskAlertMonitor() {
       );
     } catch (err: any) {
       trackEvent('ai_risk_alert_error', { message: err?.message });
+      // The server said the free quota is gone: tell pro-context so
+      // hasAIAccess flips off for every auto-firing feature in this tab.
+      if (isFreeAiQuotaError(err)) notifyFreeAiQuotaExhausted();
       // Show error message instead of silently failing
       setAlerts(prev =>
         prev.map(a => a.type === alert.type

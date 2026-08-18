@@ -1,4 +1,5 @@
 import { getFirebaseFunctions } from '@/lib/firebase-lazy';
+import { isFreeAiQuotaError, notifyFreeAiQuotaExhausted } from '@/lib/ai-quota';
 import type { PropFirmAccount, PropFirmTransaction, TransactionType } from '@/types/prop-tracker';
 
 interface TradeInput {
@@ -43,8 +44,13 @@ export async function requestAIAnalysis(request: AIAnalysisRequest): Promise<AIA
     'analyzeTradesAI'
   );
 
-  const result = await analyzeTradesAI(request);
-  return result.data;
+  try {
+    const result = await analyzeTradesAI(request);
+    return result.data;
+  } catch (err) {
+    if (isFreeAiQuotaError(err)) notifyFreeAiQuotaExhausted();
+    throw err;
+  }
 }
 
 export interface PropAnalysisResponse {
@@ -139,9 +145,14 @@ export async function requestPropAnalysis(
   const SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', CAD: 'C$', AUD: 'A$', CHF: 'CHF' };
   const codes = new Set(accounts.map((a) => a.currency || 'USD'));
   const currency = codes.size === 1 ? SYMBOLS[[...codes][0]] || '$' : '$';
-  const result = await aiAssist({
-    type: 'prop_tracker',
-    payload: { accounts, transactions, currency },
-  });
-  return result.data;
+  try {
+    const result = await aiAssist({
+      type: 'prop_tracker',
+      payload: { accounts, transactions, currency },
+    });
+    return result.data;
+  } catch (err) {
+    if (isFreeAiQuotaError(err)) notifyFreeAiQuotaExhausted();
+    throw err;
+  }
 }

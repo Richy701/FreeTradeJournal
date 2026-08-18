@@ -1,4 +1,5 @@
 import { getFirebaseFunctions } from '@/lib/firebase-lazy';
+import { isFreeAiQuotaError, notifyFreeAiQuotaExhausted } from '@/lib/ai-quota';
 
 export type AIAssistType =
   | 'journal_prompts'
@@ -29,6 +30,13 @@ export async function requestAIAssist(request: AIAssistRequest): Promise<AIAssis
     import('firebase/functions'),
   ]);
   const aiAssist = httpsCallable<AIAssistRequest, AIAssistResponse>(functions, 'aiAssist');
-  const result = await aiAssist(request);
-  return result.data;
+  try {
+    const result = await aiAssist(request);
+    return result.data;
+  } catch (err) {
+    // A denied call means this tab's cached quota is stale — flip hasAIAccess
+    // off so auto-firing features stop asking (see lib/ai-quota.ts).
+    if (isFreeAiQuotaError(err)) notifyFreeAiQuotaExhausted();
+    throw err;
+  }
 }
