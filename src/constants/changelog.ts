@@ -24,6 +24,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.83.1',
+    date: '2026-08-19',
+    summary: 'CSV imports now read dates written as 19-08-2026 correctly.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'CSV imports now read dates written as 19-08-2026 correctly',
+        description: 'Some brokers, including most Indian ones, write dates day first with dashes. The importer used to mistake the day for the year and put every trade in the 1920s. Those files now import on the right dates, the same as files that use slashes or dots. If you imported one of these files before, delete those trades and import the file again.',
+      },
+    ],
+  },
+  {
     version: '2.83.0',
     date: '2026-08-18',
     summary: 'PropTracker is rebuilt around your accounts with a proper Performance tab, the coach remembers its last review, and Coach FTJ on the dashboard reads as a briefing.',
@@ -2824,4 +2837,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.83.0'
+export const LATEST_CHANGELOG_VERSION = '2.83.1'

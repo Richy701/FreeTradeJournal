@@ -19,8 +19,9 @@ export function normalizeScreenshotTime(value: string | null | undefined): strin
     const pad = (n: string) => n.padStart(2, '0');
     return `${y}-${pad(mo)}-${pad(d)}T${pad(h)}:${mi}:${s}`;
   }
-  // Day-first with dots/slashes ("15.08.2026 14:30" — MT desktop style).
-  const dm = /^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(v);
+  // Day-first with dots/slashes/dashes ("15.08.2026 14:30" MT desktop style,
+  // "19-08-2026" Indian broker style). ISO ran first, so a 1-2 digit lead is day.
+  const dm = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(v);
   if (dm) {
     const [, d, mo, y, h = '00', mi = '00', s = '00'] = dm;
     const pad = (n: string) => n.padStart(2, '0');

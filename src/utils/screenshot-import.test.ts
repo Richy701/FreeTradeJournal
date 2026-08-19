@@ -28,6 +28,7 @@ describe('normalizeScreenshotTime', () => {
     expect(normalizeScreenshotTime('2026-08-14')).toBe('2026-08-14T00:00:00');
     expect(normalizeScreenshotTime('2026.08.14 09:12')).toBe('2026-08-14T09:12:00');
     expect(normalizeScreenshotTime('14.08.2026 09:12:33')).toBe('2026-08-14T09:12:33');
+    expect(normalizeScreenshotTime('19-08-2026 13:35')).toBe('2026-08-19T13:35:00');
   });
   it('returns empty for nothing usable', () => {
     expect(normalizeScreenshotTime('')).toBe('');

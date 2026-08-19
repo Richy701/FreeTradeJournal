@@ -357,6 +357,35 @@ describe('parseCSV — silent numeric/date corruption regressions', () => {
     expect(t.entryDate).toBe('2026-06-10T10:00:00');
   });
 
+  it('reads dashed day-first dates as DD-MM-YYYY, not as year 19', () => {
+    // "19-08-2026" used to fall into the ISO branch as new Date(19, 7, 2026)
+    // and import every 2026 trade into February 1925 (Indian broker exports).
+    const csv = [
+      'Symbol,Side,Quantity,Entry Price,Exit Price,Open Time,Close Time,P&L',
+      'NIFTY,Buy,1,100,110,19-08-2026 13:35,19-08-2026 14:05,10',
+      'NIFTY,Buy,1,100,110,03-08-2026,03-08-2026,10',
+      'NIFTY,Buy,1,100,110,19-08-26 09:15:00,19-08-26 09:45:00,10',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.trades.map(t => t.entryDate)).toEqual([
+      '2026-08-19T13:35:00',
+      '2026-08-03T00:00:00', // day-first inferred from the 19-08 rows
+      '2026-08-19T09:15:00',
+    ]);
+    expect(r.trades[0].exitDate).toBe('2026-08-19T14:05:00');
+  });
+
+  it('still reads ISO dashed dates as YYYY-MM-DD', () => {
+    const csv = [
+      'Symbol,Side,Quantity,Entry Price,Exit Price,Open Time,P&L',
+      'NIFTY,Buy,1,100,110,2026-08-19 13:35:00,10',
+      'NIFTY,Buy,1,100,110,2026-08-19,10',
+    ].join('\n');
+    const [a, b] = parseCSV(csv).trades;
+    expect(a.entryDate).toBe('2026-08-19T13:35:00');
+    expect(b.entryDate).toBe('2026-08-19T00:00:00');
+  });
+
   it('parses IBKR thousands-separated P&L instead of truncating at the comma', () => {
     // "1,234.56" with raw parseFloat used to import as $1.00.
     const csv = [

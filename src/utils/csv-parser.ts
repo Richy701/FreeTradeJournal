@@ -204,14 +204,18 @@ function parseDateString(dateStr: string, dayFirst?: boolean): string {
 
     let date: Date;
 
-    // Format with slashes or dots: DD/MM/YYYY or MM/DD/YYYY, optionally with time.
-    // (MT4/European exports use "2025.08.28" or "28.08.2025"; treat '.' like '/'.)
-    const slashDate = /^\d{1,2}[./]\d{1,2}[./]\d{2,4}/.test(cleaned);
+    // Format with slashes, dots or dashes: DD/MM/YYYY or MM/DD/YYYY, optionally
+    // with time. (MT4/European exports use "2025.08.28" or "28.08.2025"; Indian
+    // broker exports use "19-08-2026".) A 1-2 digit first part is what separates
+    // these from ISO "2026-08-19", which the '-' branch below still owns. Dashed
+    // day-first dates used to fall into that ISO branch and read the day as the
+    // year, landing every 2026 trade in the 1920s.
+    const slashDate = /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/.test(cleaned);
     if (slashDate) {
       const spaceIdx = cleaned.search(/[ T]/);
       const datePart = spaceIdx >= 0 ? cleaned.slice(0, spaceIdx) : cleaned;
       const timePart = spaceIdx >= 0 ? cleaned.slice(spaceIdx + 1).trim() : '';
-      const parts = datePart.split(/[./]/);
+      const parts = datePart.split(/[./-]/);
       const a = parseInt(parts[0]);
       const b = parseInt(parts[1]);
       let year = parseInt(parts[2]);
@@ -281,7 +285,7 @@ function normalizeSide(side: string): 'long' | 'short' {
   return 'short';
 }
 
-// Infer whether a column of slash/dot dates is DD/MM (day-first) or MM/DD by
+// Infer whether a column of slash/dot/dash dates is DD/MM (day-first) or MM/DD by
 // scanning every value: a first part > 12 proves day-first, a second part > 12
 // proves month-first. Returns undefined when the file is genuinely ambiguous
 // (no value exceeds 12) or self-contradictory, so the caller can fall back.
@@ -289,7 +293,7 @@ function detectDayFirst(dateStrings: string[]): boolean | undefined {
   let sawDayFirst = false;
   let sawMonthFirst = false;
   for (const s of dateStrings) {
-    const m = (s || '').trim().match(/^(\d{1,2})[./](\d{1,2})[./]\d{2,4}/);
+    const m = (s || '').trim().match(/^(\d{1,2})[./-](\d{1,2})[./-]\d{2,4}/);
     if (!m) continue;
     const a = parseInt(m[1], 10);
     const b = parseInt(m[2], 10);
@@ -315,7 +319,7 @@ function resolveAmbiguousDayFirst(dateStrings: string[]): boolean | undefined {
   let monthFirstFuture = false;
   let dayFirstFuture = false;
   for (const s of dateStrings) {
-    const m = (s || '').trim().match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+    const m = (s || '').trim().match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
     if (!m) continue;
     const a = parseInt(m[1], 10);
     const b = parseInt(m[2], 10);
