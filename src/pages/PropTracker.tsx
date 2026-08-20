@@ -1984,15 +1984,19 @@ export default function PropTracker() {
 
                         {/* Actions */}
                         <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 mt-auto border-t">
-                          <div className="flex items-center gap-1.5">
-                            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddTx(account.id)}>
+                          {/* Phones lay the buttons out as a flush 2-up grid: three of them in
+                              one flex row overflowed the card under 400px, and letting them wrap
+                              stranded a single button on its own line. Update balance takes the
+                              full second row. Back to an inline row from sm up. */}
+                          <div className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+                            <Button variant="outline" size="sm" className="h-8 w-full text-xs gap-1 sm:w-auto" onClick={() => openAddTx(account.id)}>
                               <Plus className="h-3 w-3" />
                               Transaction
                             </Button>
                             {account.challengeRules && (
                               <Button
                                 size="sm"
-                                className="h-8 text-xs gap-1"
+                                className="h-8 w-full text-xs gap-1 col-span-2 order-last sm:w-auto sm:order-none"
                                 style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                                 onClick={() => openBalanceDialog(account)}
                               >
@@ -2001,13 +2005,13 @@ export default function PropTracker() {
                               </Button>
                             )}
                             {isPro ? (
-                              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openImportDialog(account.id)}>
+                              <Button variant="outline" size="sm" className="h-8 w-full text-xs gap-1 sm:w-auto" onClick={() => openImportDialog(account.id)}>
                                 <UploadSimple className="h-3 w-3" />
                                 Import
                               </Button>
                             ) : (
-                              <Link to="/pricing">
-                                <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10">
+                              <Link to="/pricing" className="w-full sm:w-auto">
+                                <Button variant="outline" size="sm" className="h-8 w-full text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 sm:w-auto">
                                   <UploadSimple className="h-3 w-3" />
                                   Import
                                   <Lock className="h-2.5 w-2.5 ml-0.5" />
