@@ -2,6 +2,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { useDemoData } from '@/hooks/use-demo-data'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { ChartEmptyState } from '@/components/dashboard/chart-empty-state'
 import { ChartLine } from '@phosphor-icons/react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts"
@@ -119,6 +120,9 @@ export function ChartAreaInteractive() {
   const symbol = getCurrencySymbol()
   const { getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()
+  // Mobile reclaims the axis gutter: Recharts' default 60px YAxis plus 20px margins
+  // ate ~30% of the card width on a phone.
+  const isMobile = useIsMobile()
 
   // Get trades from demo data or localStorage and generate equity curve data.
   // allTradesCount tracks the unfiltered total so the empty state can tell
@@ -333,8 +337,8 @@ export function ChartAreaInteractive() {
                   accessibilityLayer
                   data={chartData}
                   margin={{
-                    left: 20,
-                    right: 20,
+                    left: isMobile ? 0 : 20,
+                    right: isMobile ? 8 : 20,
                     top: 20,
                     bottom: 20,
                   }}
@@ -366,9 +370,10 @@ export function ChartAreaInteractive() {
                     tickFormatter={(value) => dateTicks.labelByTrade[value] || ''}
                   />
                   <YAxis
+                    width={isMobile ? 48 : 60}
                     tickLine={false}
                     axisLine={false}
-                    tickMargin={8}
+                    tickMargin={isMobile ? 4 : 8}
                     domain={[(min: number) => Math.min(0, min), (max: number) => Math.max(0, max)]}
                     tickFormatter={(value) => fmtMoneyAxis(value, symbol)}
                   />
@@ -419,8 +424,8 @@ export function ChartAreaInteractive() {
                   accessibilityLayer
                   data={dailyData}
                   margin={{
-                    left: 20,
-                    right: 20,
+                    left: isMobile ? 0 : 20,
+                    right: isMobile ? 8 : 20,
                     top: 10,
                     bottom: 20,
                   }}
@@ -436,9 +441,10 @@ export function ChartAreaInteractive() {
                     interval="preserveStartEnd"
                   />
                   <YAxis
+                    width={isMobile ? 48 : 60}
                     tickLine={false}
                     axisLine={false}
-                    tickMargin={8}
+                    tickMargin={isMobile ? 4 : 8}
                     tickFormatter={(value) => fmtMoneyAxis(value, symbol)}
                   />
                   <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />

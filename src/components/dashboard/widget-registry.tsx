@@ -16,6 +16,7 @@ const ChartRadarDefault = lazy(() => import('@/components/chart-radar-default').
 const EconomicCalendarWidget = lazy(() => import('@/components/economic-calendar-widget').then(m => ({ default: m.EconomicCalendarWidget })))
 const MarketNewsFeed = lazy(() => import('@/components/market-news-feed').then(m => ({ default: m.MarketNewsFeed })))
 const MarketSessions = lazy(() => import('@/components/market-sessions').then(m => ({ default: m.MarketSessions })))
+const ChartHoursSessions = lazy(() => import('@/components/chart-hours-sessions').then(m => ({ default: m.ChartHoursSessions })))
 
 export interface WidgetRenderCtx {
   tradeCount: number
@@ -144,6 +145,16 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     ),
   },
   {
+    id: 'hours-sessions',
+    label: 'Time of day & sessions',
+    removable: true,
+    render: () => (
+      <Suspense fallback={<Skeleton className="h-[450px] w-full" />}>
+        <ChartHoursSessions />
+      </Suspense>
+    ),
+  },
+  {
     id: 'calendar',
     label: 'Trading calendar',
     removable: true,
@@ -174,6 +185,21 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   },
 ]
 
+// Configurable widgets only — contextual nudges (upsells, demo prompt) are never
+// user-orderable. Shared by the Customize sheet and the on-dashboard rearrange mode.
+export const CONFIGURABLE_WIDGETS = DASHBOARD_WIDGETS.filter(w => w.configurable !== false)
+const CONFIGURABLE_BY_ID = new Map(CONFIGURABLE_WIDGETS.map(w => [w.id, w]))
+
+// Full ordered id list (visible + hidden) over configurable widgets, de-staled.
+// Reordering must be written against this list, not just the visible ones, or a
+// hidden widget loses its slot the first time you drag something on the dashboard.
+export function deriveOrderedWidgetIds(savedOrder: string[] = []): string[] {
+  const ord = savedOrder.filter(id => CONFIGURABLE_BY_ID.has(id))
+  const seen = new Set(ord)
+  for (const w of CONFIGURABLE_WIDGETS) if (!seen.has(w.id)) ord.push(w.id)
+  return ord
+}
+
 // Pure layout resolver — crash-proof against stale/missing ids.
 // Only configurable widgets honour the user's saved order/visibility. The
 // non-configurable contextual nudges (upsells, demo prompt) always render
@@ -181,8 +207,8 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
 export function resolveDashboardLayout(
   saved: { hidden: string[]; order: string[] } | undefined
 ): DashboardWidget[] {
-  const configurable = DASHBOARD_WIDGETS.filter(w => w.configurable !== false)
-  const cfgById = new Map(configurable.map(w => [w.id, w]))
+  const configurable = CONFIGURABLE_WIDGETS
+  const cfgById = CONFIGURABLE_BY_ID
   const order = saved?.order ?? []
   const hidden = new Set(saved?.hidden ?? [])
   // 1) saved order, keep only configurable ids that still exist

@@ -13,7 +13,6 @@ import { ScreenshotTradeImportDialog } from '@/components/screenshot-trade-impor
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
 import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory'
 import { rescueFailedImport } from '@/utils/csv-import-flow'
-import { ErrorBoundary } from '@/components/error-boundary'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
@@ -49,6 +48,7 @@ import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
 import { ShareStatsCard } from '@/components/share-stats-card'
 import { Brain, ChartBar as BarChart3Icon } from '@phosphor-icons/react'
 import { resolveDashboardLayout } from '@/components/dashboard/widget-registry'
+import { WidgetStack } from '@/components/dashboard/widget-stack'
 import { CustomizeSheet } from '@/components/dashboard/customize-sheet'
 
 // Lazy load chart components to reduce initial bundle size
@@ -1278,12 +1278,7 @@ export default function Dashboard() {
             </p>
           </div>
         )}
-        {visibleWidgets.map(w => {
-          const node = w.render({ tradeCount, isDemo })
-          // Isolate each widget: a single one throwing (e.g. on a bad date in
-          // saved data) must not blank the entire dashboard.
-          return node ? <ErrorBoundary key={w.id}>{node}</ErrorBoundary> : null
-        })}
+        <WidgetStack widgets={visibleWidgets} ctx={{ tradeCount, isDemo }} />
       </div>
       </DashboardPeriodProvider>
       

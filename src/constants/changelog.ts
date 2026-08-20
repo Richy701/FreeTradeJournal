@@ -24,6 +24,24 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.84.0',
+    date: '2026-08-20',
+    summary: 'A new dashboard section shows which hours of the day and which market windows you actually make money in.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'See which hours and market windows make you money',
+        description: 'A new section on your dashboard breaks your trades down by time. Time of Day splits them into 24 bars by the hour you entered, with a switch between P&L and win rate, so you can see which hours pay and which ones only feel busy. Trading Sessions groups the same trades by market window, including the London and New York crossover as its own window, and shows P&L, trade count and win rate for each. Every trade counts once, in the one window it was taken in. Both use your own local time. Neither will name a best hour or window off fewer than five trades, so the numbers stay honest while you build up history. You can hide or reorder the section from Customize on the dashboard.',
+        image: {
+          src: '/screenshots/hours-sessions-breakdown.png',
+          alt: 'Dashboard showing Time of Day hourly P&L bars beside Trading Sessions broken down by market window',
+        },
+        link: { to: '/dashboard', label: 'Open Dashboard' },
+      },
+    ],
+  },
+  {
     version: '2.83.1',
     date: '2026-08-19',
     summary: 'CSV imports now read dates written as 19-08-2026 correctly.',
@@ -2837,4 +2855,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.83.1'
+export const LATEST_CHANGELOG_VERSION = '2.84.0'

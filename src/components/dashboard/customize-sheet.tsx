@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { GearSix, DotsSixVertical } from '@phosphor-icons/react'
 import { useSettings } from '@/contexts/settings-context'
 import { useThemePresets } from '@/contexts/theme-presets'
-import { DASHBOARD_WIDGETS } from './widget-registry'
+import { CONFIGURABLE_WIDGETS, deriveOrderedWidgetIds } from './widget-registry'
 import {
   DndContext,
   closestCenter,
@@ -33,17 +33,9 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-// Only configurable widgets are user-customizable; contextual nudges are excluded.
-const CONFIGURABLE_WIDGETS = DASHBOARD_WIDGETS.filter(w => w.configurable !== false)
+// Ordering/visibility live in the registry so the sheet and the on-dashboard
+// rearrange mode share exactly one implementation.
 const WIDGET_BY_ID = new Map(CONFIGURABLE_WIDGETS.map(w => [w.id, w]))
-
-// Full ordered id list (visible + hidden) over configurable widgets, de-staled.
-function deriveOrderedIds(savedOrder: string[]): string[] {
-  const ord = savedOrder.filter(id => WIDGET_BY_ID.has(id))
-  const seen = new Set(ord)
-  for (const w of CONFIGURABLE_WIDGETS) if (!seen.has(w.id)) ord.push(w.id)
-  return ord
-}
 
 interface SortableRowProps {
   id: string
@@ -105,7 +97,7 @@ export function CustomizeSheet() {
   // mirroring into local state would capture stale/empty layout and clobber the
   // real saved layout on the next write.
   const layout = settings.dashboardLayout ?? { hidden: [], order: [] }
-  const ids = useMemo(() => deriveOrderedIds(layout.order), [layout.order])
+  const ids = useMemo(() => deriveOrderedWidgetIds(layout.order), [layout.order])
   const hidden = useMemo(() => new Set(layout.hidden), [layout.hidden])
 
   const sensors = useSensors(
@@ -142,14 +134,14 @@ export function CustomizeSheet() {
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="flex flex-col">
-        <SheetHeader>
+        <SheetHeader className="shrink-0">
           <SheetTitle>Customize dashboard</SheetTitle>
           <SheetDescription>
             Show or hide sections and drag them into the order you prefer. Pick up a section
             and use the arrow keys to reorder without a mouse.
           </SheetDescription>
         </SheetHeader>
-        <ScrollArea className="max-h-[60vh] pr-2">
+        <ScrollArea className="min-h-0 flex-1 pr-2">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -177,7 +169,7 @@ export function CustomizeSheet() {
             </SortableContext>
           </DndContext>
         </ScrollArea>
-        <Button variant="outline" onClick={reset} className="w-full mt-4">
+        <Button variant="outline" onClick={reset} className="mt-4 w-full shrink-0">
           Reset to default
         </Button>
       </SheetContent>
