@@ -414,3 +414,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     }
   }
 }
+/* Pre-paint hold for a signed-in refresh at "/" — see public/theme-init.js.
+   Visibility rather than display so layout and the background still paint. */
+html[data-auth-hold] body {
+  visibility: hidden;
+}

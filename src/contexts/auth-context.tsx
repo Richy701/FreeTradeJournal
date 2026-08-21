@@ -107,6 +107,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
           setUser(user);
           setLoading(false);
+          // Release the pre-paint hold from theme-init.js now that we know
+          // whether to stay on the landing page or redirect.
+          try { document.documentElement.removeAttribute('data-auth-hold'); } catch { /* no DOM */ }
           // Server-side "still active" marker (users/{uid}.lastActiveAt, deduped
           // per day on the server) — the client is the only thing that knows.
           if (user) trackActivity('session_seen', undefined, { onceKey: 'session_seen' });

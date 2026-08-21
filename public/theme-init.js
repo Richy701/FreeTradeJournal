@@ -15,3 +15,17 @@
   for(;i<k.length;i++)s.setProperty(k[i],v[k[i]]);
   window.__ftjThemeVars=k;
 }catch(e){}})();
+
+// Signed-in users refreshing at "/" get the prerendered landing page painted
+// before React can redirect them — the React-side guard in LandingPage runs
+// far too late to help. Hide the page pre-paint when we already know a session
+// exists; auth-context clears the attribute the moment auth resolves, and the
+// timeout is a safety net so a JS failure reveals the page instead of leaving
+// it blank. Logged-out visitors and crawlers never have the marker, so LCP and
+// prerendered SEO content are untouched.
+(function(){try{
+  if(location.pathname!=='/')return;
+  if(localStorage.getItem('ftj-had-session')!=='1')return;
+  document.documentElement.setAttribute('data-auth-hold','1');
+  setTimeout(function(){document.documentElement.removeAttribute('data-auth-hold')},2000);
+}catch(e){}})();
