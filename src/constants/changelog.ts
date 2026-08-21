@@ -24,6 +24,24 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.84.1',
+    date: '2026-08-20',
+    summary: 'Dashboard sections can be dragged into a new order straight from the page.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Move dashboard sections without opening Customize',
+        description: 'On a desktop screen, hover any section of your dashboard and a small handle appears to its left. Drag it to move that section up or down the page. There is no edit mode to turn on first, and the rest of the section stays clickable while the handle is showing. Your order is saved the same as before, and sections you have hidden keep their place in the list. On phones and tablets, reorder from Customize as you do now.',
+        image: {
+          src: '/screenshots/dashboard-drag-reorder.png',
+          alt: 'The equity curve section part way through being dragged down the dashboard, with its drag handle showing in the left margin',
+        },
+        link: { to: '/dashboard', label: 'Open Dashboard' },
+      },
+    ],
+  },
+  {
     version: '2.84.0',
     date: '2026-08-20',
     summary: 'A new dashboard section shows which hours of the day and which market windows you actually make money in.',
@@ -2855,4 +2873,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.84.0'
+export const LATEST_CHANGELOG_VERSION = '2.84.1'

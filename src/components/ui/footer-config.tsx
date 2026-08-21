@@ -28,6 +28,16 @@ export const footerConfig = {
         { name: "Prop Firm Dashboard", href: "/prop-firm-dashboard" },
         { name: "Prop Firm ROI Tracker", href: "/prop-tracker" },
         { name: "Affiliate", href: "/affiliate" },
+      ]
+    },
+    {
+      title: "Prop Firms",
+      links: [
+        { name: "FTMO Journal", href: "/ftmo-trading-journal" },
+        { name: "Topstep Journal", href: "/topstep-trading-journal" },
+        { name: "Apex Journal", href: "/apex-trading-journal" },
+        { name: "FundedNext Journal", href: "/fundednext-trading-journal" },
+        { name: "Funding Pips Journal", href: "/funding-pips-trading-journal" },
         { name: "FTMO Review", href: "/ftmo-review" },
         { name: "The5%ers Review", href: "/the5ers-review" },
         { name: "Top One Futures Review", href: "/top-one-futures-review" },

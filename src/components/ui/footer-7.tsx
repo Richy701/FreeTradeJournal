@@ -156,7 +156,7 @@ export const Footer7 = ({
             </ul>
           </motion.div>
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full lg:max-w-4xl">
-            <div className="grid w-full gap-8 grid-cols-2 lg:grid-cols-4 lg:gap-10">
+            <div className="grid w-full gap-8 grid-cols-2 lg:grid-cols-5 lg:gap-6">
               {sections.map((section, sectionIdx) => (
                 <motion.div
                   key={sectionIdx}
