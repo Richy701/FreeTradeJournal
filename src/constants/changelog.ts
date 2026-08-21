@@ -24,6 +24,34 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.85.1',
+    date: '2026-08-21',
+    summary: 'The sidebar is grouped and easier to scan, and the profile page has been rebuilt around your numbers.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Your profile page now opens with your numbers',
+        description: 'Trades logged, win rate, net P&L and your current logging streak sit across the top, and each one is a link through to the page it comes from. Your name, email and avatar moved into a single card at the top with the date you joined and when you last signed in. Recent trades and active goals sit side by side underneath. The old cover photo and the duplicated email are gone.',
+        image: {
+          src: '/screenshots/profile-refresh.png',
+          alt: 'The profile page showing trades logged, win rate, net P&L and logging streak above recent trades and active goals',
+        },
+        link: { to: '/profile', label: 'Open Profile' },
+      },
+      {
+        type: 'improved',
+        text: 'The sidebar is split into Main and Tools',
+        description: 'Dashboard, AI Coach, Trade Log and Journal sit under Main, and Goals & Risk, Trade Insights, PropTracker and Position Calculator under Tools. The page you are on is now marked in your theme colour. Prop Firm Deals, Blog, Help & Docs, Invite Friends, What\'s New and Send Feedback moved behind a More button so Settings is not buried, and your account sits at the bottom with profile, settings and sign out. On phones every row is now big enough to tap comfortably.',
+        image: {
+          src: '/screenshots/sidebar-grouped.png',
+          alt: 'The sidebar with Main and Tools groups and the current page highlighted',
+        },
+        link: { to: '/dashboard', label: 'Open Dashboard' },
+      },
+    ],
+  },
+  {
     version: '2.85.0',
     date: '2026-08-21',
     summary: 'Your risk limits now show what sticking to them is worth, and the journal opens with the day already written down.',
@@ -2913,4 +2941,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.85.0'
+export const LATEST_CHANGELOG_VERSION = '2.85.1'

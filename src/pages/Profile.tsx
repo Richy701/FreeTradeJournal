@@ -1,18 +1,19 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useSettings } from '@/contexts/settings-context';
 import { useDemoData } from '@/hooks/use-demo-data';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Check, Envelope, Calendar, Fingerprint, IdentificationCard, Pencil, SignOut, UserCircle, ChartLineUp, Target } from '@phosphor-icons/react';
+import { Camera, Check, Pencil, SignOut, UserCircle } from '@phosphor-icons/react';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useUserStorage } from '@/utils/user-storage';
 import { computeGoalProgress, getGoalTitle } from '@/lib/goal-progress';
+import { useLoggingStreak } from '@/hooks/use-logging-streak';
 import { toast } from 'sonner';
 
 const AVATAR_COLORS = [
@@ -49,6 +50,7 @@ export default function Profile() {
   const demoGuard = useDemoGuard();
   const navigate = useNavigate();
   const userStorage = useUserStorage();
+  const { streak } = useLoggingStreak();
 
   const [avatarUrl, setAvatarUrl] = useState<string>(() => userStorage.getItem('avatar') || '');
   const [avatarEmoji, setAvatarEmoji] = useState<string>(() => userStorage.getItem('avatarEmoji') || '');
@@ -81,6 +83,19 @@ export default function Profile() {
       return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
     })
     .slice(0, 5);
+
+  // PropTracker opens with a stat strip and Goals leads with big figures; this
+  // is the same move, built from the trades already loaded above.
+  const stats = (() => {
+    const closed = scopedTrades.filter((t: any) => typeof t.pnl === 'number');
+    const wins = closed.filter((t: any) => t.pnl > 0).length;
+    const net = closed.reduce((sum: number, t: any) => sum + (t.pnl || 0), 0);
+    return {
+      trades: scopedTrades.length,
+      winRate: closed.length ? Math.round((wins / closed.length) * 100) : null,
+      net,
+    };
+  })();
 
   const activeGoals = (() => {
     try {
@@ -157,30 +172,10 @@ export default function Profile() {
 
   // ── info rows ─────────────────────────────────────────────────────
 
-  const infoRows = [
-    {
-      icon: Envelope,
-      label: 'Email',
-      value: user.email || '—',
-      badge: user.emailVerified ? { text: 'Verified', className: 'text-emerald-600 bg-emerald-500/10' } : { text: 'Unverified', className: 'text-red-500 bg-red-500/10' },
-    },
-    {
-      icon: Calendar,
-      label: 'Member since',
-      value: user.metadata?.creationTime ? new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(user.metadata.creationTime)) : '—',
-    },
-    {
-      icon: Calendar,
-      label: 'Last sign in',
-      value: user.metadata?.lastSignInTime ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(user.metadata.lastSignInTime)) : '—',
-    },
-    {
-      icon: Fingerprint,
-      label: 'User ID',
-      value: user.uid,
-      mono: true,
-    },
-  ];
+  const emailBadge = user.emailVerified
+    ? { text: 'Verified', className: 'text-emerald-600 bg-emerald-500/10' }
+    : { text: 'Unverified', className: 'text-red-500 bg-red-500/10' };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -200,65 +195,33 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="max-w-4xl mx-auto space-y-4">
+      {/* Full-bleed like Settings, Goals and PropTracker — Profile was the only
+          page pinned to a narrow centred column. */}
+      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
 
-<div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-4 items-start">
-
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4" style={{ color: themeColors.primary }} />
-              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account</span>
+        {/* Hero identity, same treatment as the Settings account card. */}
+        <div className="rounded-xl border p-5" style={{ backgroundColor: alpha(themeColors.primary, '08') }}>
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <Avatar className="h-14 w-14" style={{ boxShadow: `0 0 0 2px ${alpha(themeColors.primary, '25')}` }}>
+                {avatarUrl ? <AvatarImage src={avatarUrl} alt="Avatar" /> : null}
+                <AvatarFallback className="text-lg font-bold text-white" style={{ backgroundColor: activeBg }}>
+                  {avatarEmoji || initials}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                onClick={() => setPickerOpen(v => !v)}
+                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-muted shadow-sm hover:bg-muted/70 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white/60"
+                aria-label="Change avatar"
+                aria-expanded={pickerOpen}
+              >
+                <Camera className="h-3 w-3" aria-hidden="true" />
+              </button>
             </div>
-            <div className="rounded-2xl border border-border/50 overflow-hidden">
-            {/* Gradient banner */}
-            <div
-              className="h-24 sm:h-32"
-              style={{ background: `linear-gradient(135deg, ${alpha(themeColors.primary, '70')} 0%, ${alpha(themeColors.primary, '25')} 100%)` }}
-            />
 
-            {/* Avatar row */}
-            <div className="px-6 pb-6">
-              <div className="flex items-end justify-between -mt-12 mb-4">
-                {/* Avatar */}
-                <div className="relative">
-                  <Avatar className="h-24 w-24 ring-4 ring-background shadow-lg">
-                    {avatarUrl
-                      ? <AvatarImage src={avatarUrl} alt="Avatar" />
-                      : null
-                    }
-                    <AvatarFallback
-                      className="text-2xl font-bold text-white"
-                      style={{ backgroundColor: activeBg }}
-                    >
-                      {avatarEmoji || initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <button
-                    onClick={() => setPickerOpen(v => !v)}
-                    className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted shadow-sm hover:bg-muted/70 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white/60"
-                    aria-label="Change avatar"
-                    aria-expanded={pickerOpen}
-                  >
-                    <Camera className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                </div>
-
-                {/* Edit name button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg h-8 gap-1.5"
-                  onClick={() => setIsEditingName(v => !v)}
-                >
-                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                  {isEditingName ? 'Cancel' : 'Edit name'}
-                </Button>
-              </div>
-
-              {/* Name + meta */}
+            <div className="min-w-0 flex-1">
               {isEditingName ? (
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-2 max-w-sm">
                   <Input
                     name="displayName"
                     autoComplete="name"
@@ -276,212 +239,242 @@ export default function Profile() {
                   </Button>
                 </div>
               ) : (
-                <h2 className="text-xl font-bold mb-1">{savedName || user.displayName || 'No name set'}</h2>
-              )}
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground min-w-0">
-                <span className="truncate max-w-full">{user.email}</span>
-                <span className="text-border">·</span>
-                <span>{getAccountAge(user.metadata?.creationTime)}</span>
-              </div>
-
-              {/* ── Avatar picker ─────────────────────────────────── */}
-              {pickerOpen && (
-                <div className="mt-4 space-y-5 rounded-xl border border-border/40 bg-muted/30 p-4">
-                  {/* Reset to initials */}
-                  {(avatarUrl || avatarEmoji) && (
-                    <button
-                      onClick={() => {
-                        userStorage.removeItem('avatar');
-                        userStorage.removeItem('avatarEmoji');
-                        setAvatarUrl('');
-                        setAvatarEmoji('');
-                        toast.success('Reset to initials');
-                      }}
-                      className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px] font-bold" style={{ backgroundColor: avatarColor || themeColors.primary, color: 'white' }}>
-                        {initials}
-                      </span>
-                      Use initials
-                    </button>
-                  )}
-
-                  {/* Upload */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">UploadSimple photo</p>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors w-full"
-                      style={{}}
-                    >
-                      <Camera className="h-4 w-4" aria-hidden="true" />
-                      Choose image…
-                    </button>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                  </div>
-
-                  {/* Emoji presets */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Emoji avatar</p>
-                    <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5">
-                      {AVATAR_EMOJIS.map(emoji => (
-                        <button
-                          key={emoji}
-                          onClick={() => selectEmoji(emoji)}
-                          className={`flex items-center justify-center rounded-lg text-xl h-9 w-full transition-all ${avatarEmoji === emoji ? 'ring-2 scale-110' : 'hover:bg-muted'}`}
-                          style={avatarEmoji === emoji ? { outline: `2px solid ${themeColors.primary}`, backgroundColor: alpha(themeColors.primary, '15') } : {}}
-                          aria-label={emoji}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Color swatches */}
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Initials colour</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AVATAR_COLORS.map(color => (
-                        <button
-                          key={color}
-                          onClick={() => selectColor(color)}
-                          className="h-8 w-8 rounded-full transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          style={{ backgroundColor: color, boxShadow: avatarColor === color ? `0 0 0 2px white, 0 0 0 4px ${color}` : undefined }}
-                          aria-label={color}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          </div>
-
-          <div className="space-y-4">
-
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <IdentificationCard className="h-4 w-4" style={{ color: themeColors.primary }} />
-              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account Details</span>
-            </div>
-            <div className="rounded-2xl border border-border/50 divide-y divide-border/50 overflow-hidden">
-            {infoRows.map(({ icon: Icon, label, value, badge, mono }) => (
-              <div key={label} className="flex items-center gap-4 px-5 py-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                  <Icon className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-                  <p className={`text-sm font-medium truncate ${mono ? 'font-mono text-xs' : ''}`}>{value}</p>
-                </div>
-                {badge && (
-                  <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>
-                    {badge.text}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-base font-semibold truncate">
+                    {savedName || user.displayName || 'No name set'}
+                  </p>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${emailBadge.className}`}>
+                    {emailBadge.text}
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
-          </div>
-
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ChartLineUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Recent Trades</span>
-              </div>
-              <a href="/trades" className="text-xs text-muted-foreground hover:text-foreground transition-colors">View all</a>
+                </div>
+              )}
+              <p className="mt-0.5 text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
-            <div className="rounded-2xl border border-border/50 overflow-hidden">
-            {recentTrades.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-muted-foreground">No trades yet.</p>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {recentTrades.map((t: any) => {
-                  const pnl = typeof t.pnl === 'number' ? t.pnl : 0;
-                  const isWin = pnl >= 0;
-                  return (
-                    <div key={t.id} className="flex items-center gap-3 px-5 py-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-semibold truncate">{t.symbol || '—'}</span>
-                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${t.side === 'long' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
-                            {t.side || '—'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {t.exitTime ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(t.exitTime)) : '—'}
-                        </p>
-                      </div>
-                      <span className={`text-sm font-semibold tabular-nums ${isWin ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {formatCurrency(pnl, true)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          </div>
 
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4" style={{ color: themeColors.primary }} />
-                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Active Goals</span>
-              </div>
-              <a href="/goals" className="text-xs text-muted-foreground hover:text-foreground transition-colors">View all</a>
+            <div className="hidden md:flex items-center gap-5 shrink-0 pr-1">
+              {user.metadata?.creationTime && (
+                <>
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Member since</p>
+                    <p className="text-sm font-semibold mt-0.5">
+                      {new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(user.metadata.creationTime))}
+                    </p>
+                  </div>
+                  <div className="h-8 w-px bg-border/70" aria-hidden="true" />
+                </>
+              )}
+              {user.metadata?.lastSignInTime && (
+                <>
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Last sign in</p>
+                    <p className="text-sm font-semibold mt-0.5">
+                      {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(user.metadata.lastSignInTime))}
+                    </p>
+                  </div>
+                  <div className="h-8 w-px bg-border/70" aria-hidden="true" />
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => setIsEditingName(v => !v)}
+              >
+                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                {isEditingName ? 'Cancel' : 'Edit'}
+              </Button>
             </div>
-            <div className="rounded-2xl border border-border/50 overflow-hidden">
-            {activeGoals.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-muted-foreground">No active goals.</p>
-            ) : (
-              <div className="divide-y divide-border/50">
-                {activeGoals.map((g: any) => {
-                  const pct = g.target > 0 ? Math.min(100, Math.round(((g.current || 0) / g.target) * 100)) : 0;
-                  const isDone = pct >= 100;
-                  return (
-                    <div key={g.id} className="px-5 py-3.5 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium truncate">{getGoalTitle(g)}</span>
-                        <span className="text-xs tabular-nums text-muted-foreground shrink-0">{pct}%</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: isDone ? '#22c55e' : themeColors.primary }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+          </div>
+
+          {/* ── Avatar picker ─────────────────────────────────── */}
+          {pickerOpen && (
+            <div className="mt-4 space-y-5 rounded-xl border border-border/40 bg-muted/30 p-4">
+              {/* Reset to initials */}
+              {(avatarUrl || avatarEmoji) && (
+                <button
+                  onClick={() => {
+                    userStorage.removeItem('avatar');
+                    userStorage.removeItem('avatarEmoji');
+                    setAvatarUrl('');
+                    setAvatarEmoji('');
+                    toast.success('Reset to initials');
+                  }}
+                  className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px] font-bold" style={{ backgroundColor: avatarColor || themeColors.primary, color: 'white' }}>
+                    {initials}
+                  </span>
+                  Use initials
+                </button>
+              )}
+
+              {/* Upload */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">UploadSimple photo</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors w-full"
+                  style={{}}
+                >
+                  <Camera className="h-4 w-4" aria-hidden="true" />
+                  Choose image…
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
               </div>
-            )}
-          </div>
-          </div>
 
-          </div>
-          </div>
+              {/* Emoji presets */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Emoji avatar</p>
+                <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5">
+                  {AVATAR_EMOJIS.map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => selectEmoji(emoji)}
+                      className={`flex items-center justify-center rounded-lg text-xl h-9 w-full transition-all ${avatarEmoji === emoji ? 'ring-2 scale-110' : 'hover:bg-muted'}`}
+                      style={avatarEmoji === emoji ? { outline: `2px solid ${themeColors.primary}`, backgroundColor: alpha(themeColors.primary, '15') } : {}}
+                      aria-label={emoji}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <SignOut className="h-4 w-4 text-destructive" />
-              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Session</span>
+              {/* Color swatches */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Initials colour</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_COLORS.map(color => (
+                    <button
+                      key={color}
+                      onClick={() => selectColor(color)}
+                      className="h-8 w-8 rounded-full transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      style={{ backgroundColor: color, boxShadow: avatarColor === color ? `0 0 0 2px white, 0 0 0 4px ${color}` : undefined }}
+                      aria-label={color}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-            <button
-              onClick={async () => { await logout(); navigate('/login'); }}
-              className="flex w-full items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-left hover:bg-destructive/10 transition-colors"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
-                <SignOut className="h-4 w-4 text-destructive" aria-hidden="true" />
-              </div>
-              <span className="flex-1 text-sm font-medium text-destructive">Sign out</span>
-            </button>
-          </div>
-
+          )}
         </div>
+
+        {/* Stat strip — the move PropTracker and Goals both make. */}
+        <div className="mt-6 grid grid-cols-2 gap-y-6 lg:grid-cols-4 lg:divide-x lg:divide-border/60">
+          <Link to="/trades" className="lg:pr-6 group">
+            <p className="text-sm text-muted-foreground">Trades logged</p>
+                        <p className="mt-1 text-3xl font-bold tabular-nums group-hover:underline underline-offset-4 decoration-2">{stats.trades}</p>
+          </Link>
+          <Link to="/dashboard" className="lg:px-6 group">
+            <p className="text-sm text-muted-foreground">Win rate</p>
+                        <p className="mt-1 text-3xl font-bold tabular-nums group-hover:underline underline-offset-4 decoration-2">
+              {stats.winRate === null ? '—' : `${stats.winRate}%`}
+            </p>
+          </Link>
+          <div className="lg:px-6">
+            <p className="text-sm text-muted-foreground">Net P&amp;L</p>
+            <p
+              className="mt-1 text-3xl font-bold tabular-nums"
+              style={{ color: stats.net === 0 ? undefined : stats.net > 0 ? '#22c55e' : '#ef4444' }}
+            >
+              {formatCurrency(stats.net, true)}
+            </p>
+          </div>
+          <Link to="/journal" className="lg:pl-6 group">
+            <p className="text-sm text-muted-foreground">Logging streak</p>
+                        <p className="mt-1 text-3xl font-bold tabular-nums group-hover:underline underline-offset-4 decoration-2">
+              {streak}
+              <span className="ml-1 text-base font-medium text-muted-foreground">{streak === 1 ? 'day' : 'days'}</span>
+            </p>
+          </Link>
+        </div>
+
+        {/* Peer cards in a grid, the way Goals and PropTracker lay out. */}
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-semibold">Recent trades</h2>
+              <a href="/trades" className="text-xs font-medium hover:underline underline-offset-4" style={{ color: themeColors.primary }}>View all</a>
+            </div>
+            <div className="rounded-xl border bg-card/50">
+              {recentTrades.length === 0 ? (
+                <p className="px-5 py-4 text-sm text-muted-foreground">No trades yet.</p>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {recentTrades.map((t: any) => {
+                    const pnl = typeof t.pnl === 'number' ? t.pnl : 0;
+                    const isWin = pnl >= 0;
+                    return (
+                      <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-semibold truncate">{t.symbol || '—'}</span>
+                            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${t.side === 'long' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'}`}>
+                              {t.side || '—'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {t.exitTime ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(t.exitTime)) : '—'}
+                          </p>
+                        </div>
+                        <span className={`text-sm font-semibold tabular-nums ${isWin ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {formatCurrency(pnl, true)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-base font-semibold">Active goals</h2>
+              <a href="/goals" className="text-xs font-medium hover:underline underline-offset-4" style={{ color: themeColors.primary }}>View all</a>
+            </div>
+            <div className="rounded-xl border bg-card/50">
+              {activeGoals.length === 0 ? (
+                <p className="px-5 py-4 text-sm text-muted-foreground">No active goals.</p>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {activeGoals.map((g: any) => {
+                    const pct = g.target > 0 ? Math.min(100, Math.round(((g.current || 0) / g.target) * 100)) : 0;
+                    const isDone = pct >= 100;
+                    return (
+                      <div key={g.id} className="px-5 py-3.5 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium truncate">{getGoalTitle(g)}</span>
+                          <span className="text-xs tabular-nums text-muted-foreground shrink-0">{pct}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${pct}%`, backgroundColor: isDone ? '#22c55e' : themeColors.primary }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-5">
+          <button
+            onClick={async () => { await logout(); navigate('/login'); }}
+            className="flex items-center gap-2 text-sm font-medium text-destructive hover:underline underline-offset-4"
+          >
+            <SignOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Sign out
+          </button>
+          <p className="text-xs text-muted-foreground">
+            User ID <span className="font-mono">{user.uid}</span>
+          </p>
+        </div>
+
       </div>
 
       <AppFooter />
