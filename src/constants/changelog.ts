@@ -33,10 +33,6 @@ export const changelog: ChangelogEntry[] = [
         highlight: true,
         text: 'Your profile page now opens with your numbers',
         description: 'Trades logged, win rate, net P&L and your current logging streak sit across the top, and each one is a link through to the page it comes from. Your name, email and avatar moved into a single card at the top with the date you joined and when you last signed in. Recent trades and active goals sit side by side underneath. The old cover photo and the duplicated email are gone.',
-        image: {
-          src: '/screenshots/profile-refresh.png',
-          alt: 'The profile page showing trades logged, win rate, net P&L and logging streak above recent trades and active goals',
-        },
         link: { to: '/profile', label: 'Open Profile' },
       },
       {
