@@ -24,6 +24,46 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.85.0',
+    date: '2026-08-21',
+    summary: 'Your risk limits now show what sticking to them is worth, and the journal opens with the day already written down.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'See what your risk limits are worth',
+        description: 'On the Goals page, underneath your limits, a new panel splits your past trading days in two: days you stayed inside every limit you set, and days you crossed one. For each side it shows your average day, how many of those days finished green, and the total. It replays your limits as they stand today over every completed day, so changing a limit changes the comparison. Today itself is left out while it is still open. Nothing is shown until there are at least three days on each side, so the figure is never drawn from one bad afternoon.',
+        image: {
+          src: '/screenshots/goals-limit-adherence.png',
+          alt: 'The Goals page showing days spent inside risk limits next to days that crossed one, with the average day for each',
+        },
+        link: { to: '/goals', label: 'Open Goals' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Coach FTJ opens with how today went',
+        description: 'On days you have logged trades, Coach FTJ now starts with a short account of the session: how many trades, what the day came to, and how close you got to the limit you came nearest to. If you crossed one, it also says how many other days this month you have done the same and how those days finished. It is worked out from your own trades and limits rather than written by AI, so it appears straight away and takes nothing from your AI allowance. On days you have not traded, the card is unchanged.',
+        image: {
+          src: '/screenshots/coach-today-session.png',
+          alt: 'Coach FTJ on the dashboard opening with a summary of the day and how close it came to the daily loss limit',
+        },
+        link: { to: '/dashboard', label: 'Open Dashboard' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'The journal opens with the day already written down',
+        description: 'Start a new journal entry on a day you traded and the date and the day\'s numbers are already in the box: how many trades, what they came to, and the limit you got closest to. The cursor sits underneath, ready for whatever you want to say about it. The Pre-Trade and Post-Trade buttons put the same lines above their usual form, which is worth having before you plan another entry on a day that has already gone against you. It never writes over anything you have typed, and you can delete it if you would rather start from a blank page.',
+        image: {
+          src: '/screenshots/journal-day-prefill.png',
+          alt: 'A new journal entry opening with the date as its title and the day\'s trades, result and nearest limit already written in',
+        },
+        link: { to: '/journal', label: 'Open Journal' },
+      },
+    ],
+  },
+  {
     version: '2.84.1',
     date: '2026-08-20',
     summary: 'Dashboard sections can be dragged into a new order straight from the page.',
@@ -2873,4 +2913,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.84.1'
+export const LATEST_CHANGELOG_VERSION = '2.85.0'

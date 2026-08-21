@@ -72,3 +72,148 @@ export function evaluateRiskRules(rules: RiskRule[], trades: RuleTrade[]): RuleS
     return { rule, current, pct, breached: rule.enabled && current > rule.value }
   })
 }
+
+// ── Historical rule adherence ──────────────────────────────────────────────
+// `evaluateRiskRules` only answers "where am I right now, today". This replays
+// the same limits backwards over every completed trading day so we can answer
+// "what does breaking them actually cost you".
+//
+// Deliberate choices, because each one changes the number:
+//  - A day counts as broken only if a limit was crossed ON that day. Drawdown
+//    is a running measure, so without this one bad day would mark every day
+//    after it as broken and the comparison would be meaningless.
+//  - Only enabled limits with a positive value are replayed.
+//  - Limits are replayed at their CURRENT value. Past values were never
+//    recorded, so this is "how would today's limits have judged past days".
+//  - Days are local calendar days keyed off exitTime, matching the calendar
+//    heatmap so the two never disagree about which day a trade belongs to.
+//  - Today is excluded. It is still open, and the live evaluator covers it.
+
+export interface RuleAdherenceDay {
+  /** Local start-of-day. */
+  date: Date
+  /** Net P&L for the day. */
+  pnl: number
+  /** Limits crossed on this day. Empty means the day stayed inside all of them. */
+  brokenRuleTypes: RiskRule['type'][]
+}
+
+export interface AdherenceBucket {
+  days: number
+  winningDays: number
+  /** 0-100. */
+  winRate: number
+  totalPnl: number
+  avgPnl: number
+}
+
+export interface RuleAdherenceStats {
+  /** Days that stayed inside every enabled limit. */
+  followed: AdherenceBucket
+  /** Days that crossed at least one. */
+  broken: AdherenceBucket
+  /** Per-day detail, oldest first, today excluded. */
+  days: RuleAdherenceDay[]
+  /** Both buckets hold enough days for the comparison to mean anything. */
+  comparable: boolean
+}
+
+/** Below this many days in either bucket the comparison is noise, not a finding. */
+export const MIN_ADHERENCE_DAYS = 3
+
+export function localDayStart(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function bucketOf(days: RuleAdherenceDay[]): AdherenceBucket {
+  const winningDays = days.filter(d => d.pnl > 0).length
+  const totalPnl = days.reduce((s, d) => s + d.pnl, 0)
+  return {
+    days: days.length,
+    winningDays,
+    winRate: days.length > 0 ? (winningDays / days.length) * 100 : 0,
+    totalPnl,
+    avgPnl: days.length > 0 ? totalPnl / days.length : 0,
+  }
+}
+
+export function computeRuleAdherence(
+  rules: RiskRule[],
+  trades: RuleTrade[],
+  now: Date = new Date()
+): RuleAdherenceStats {
+  const active = rules.filter(r => r.enabled && r.value > 0)
+  const todayStart = localDayStart(now).getTime()
+
+  const ordered = trades
+    .filter(t => {
+      const ms = new Date(t.exitTime ?? 0).getTime()
+      return Number.isFinite(ms) && ms > 0 && localDayStart(new Date(ms)).getTime() < todayStart
+    })
+    .sort((a, b) => new Date(a.exitTime ?? 0).getTime() - new Date(b.exitTime ?? 0).getTime())
+
+  const byDay = new Map<number, RuleTrade[]>()
+  for (const t of ordered) {
+    const key = localDayStart(new Date(t.exitTime ?? 0)).getTime()
+    const bucket = byDay.get(key)
+    if (bucket) bucket.push(t)
+    else byDay.set(key, [t])
+  }
+
+  const limitFor = (type: RiskRule['type']) => active.find(r => r.type === type)?.value ?? 0
+
+  // Running drawdown state, carried across days so a crossing is attributed to
+  // the day it happened rather than to every day that follows it.
+  let cumulative = 0
+  let peak = 0
+  let worstDrawdownSoFar = 0
+
+  const days: RuleAdherenceDay[] = []
+
+  for (const key of [...byDay.keys()].sort((a, b) => a - b)) {
+    const dayTrades = byDay.get(key)!
+    const pnls = dayTrades.map(t => t.pnl || 0)
+    const pnl = pnls.reduce((s, p) => s + p, 0)
+
+    const drawdownBefore = worstDrawdownSoFar
+    for (const p of pnls) {
+      cumulative += p
+      if (cumulative > peak) peak = cumulative
+      const dd = peak - cumulative
+      if (dd > worstDrawdownSoFar) worstDrawdownSoFar = dd
+    }
+
+    const brokenRuleTypes: RiskRule['type'][] = []
+
+    const dayLossLimit = limitFor('maxLossPerDay')
+    if (dayLossLimit > 0 && Math.abs(Math.min(0, pnl)) > dayLossLimit) {
+      brokenRuleTypes.push('maxLossPerDay')
+    }
+
+    const tradeLossLimit = limitFor('maxLossPerTrade')
+    if (tradeLossLimit > 0 && Math.abs(Math.min(0, ...pnls)) > tradeLossLimit) {
+      brokenRuleTypes.push('maxLossPerTrade')
+    }
+
+    // Crossed on this day, not merely still under water from an earlier one.
+    const drawdownLimit = limitFor('maxDrawdown')
+    if (drawdownLimit > 0 && worstDrawdownSoFar > drawdownLimit && drawdownBefore <= drawdownLimit) {
+      brokenRuleTypes.push('maxDrawdown')
+    }
+
+    days.push({ date: new Date(key), pnl, brokenRuleTypes })
+  }
+
+  const followedDays = days.filter(d => d.brokenRuleTypes.length === 0)
+  const brokenDays = days.filter(d => d.brokenRuleTypes.length > 0)
+
+  return {
+    followed: bucketOf(followedDays),
+    broken: bucketOf(brokenDays),
+    days,
+    comparable:
+      active.length > 0 &&
+      followedDays.length >= MIN_ADHERENCE_DAYS &&
+      brokenDays.length >= MIN_ADHERENCE_DAYS,
+  }
+}

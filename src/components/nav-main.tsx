@@ -6,6 +6,7 @@ import { useThemePresets } from "@/contexts/theme-presets"
 import { trackEvent } from "@/lib/analytics"
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -17,52 +18,67 @@ function isItemActive(url: string, pathname: string): boolean {
   return pathname.startsWith(url)
 }
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string
-    url: string
-    icon: Icon
-  }[]
-}) {
+export type NavItem = {
+  title: string
+  url: string
+  icon: Icon
+}
+
+export type NavGroup = {
+  label: string
+  items: NavItem[]
+}
+
+export function NavMain({ groups }: { groups: NavGroup[] }) {
   const { pathname } = useLocation()
-  const { themeColors } = useThemePresets()
+  const { themeColors, alpha } = useThemePresets()
   const { isMobile, setOpenMobile } = useSidebar()
 
   return (
-    <SidebarGroup>
-      <SidebarMenu className="gap-1">
-        {items.map((item) => {
-          const active = isItemActive(item.url, pathname)
-          return (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                tooltip={item.title}
-                isActive={active}
-                className="relative"
-              >
-                <Link
-                  to={item.url}
-                  onClick={() => {
-                    trackEvent('sidebar_nav_clicked', { item: item.title, url: item.url })
-                    isMobile && setOpenMobile(false)
-                  }}
-                >
-                  <div
-                    className="flex items-center justify-center size-6 rounded-md"
-                    style={{ color: active ? themeColors.primary : undefined }}
+    <>
+      {groups.map((group) => (
+        <SidebarGroup key={group.label} className="py-1">
+          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
+            {group.items.map((item) => {
+              const active = isItemActive(item.url, pathname)
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    isActive={active}
+                    className={isMobile ? "h-11" : "h-9"}
+                    // The active row is the only coloured thing in the list, so
+                    // it reads as "you are here" without a left rail.
+                    style={
+                      active
+                        ? {
+                            backgroundColor: alpha(themeColors.primary, '15'),
+                            color: themeColors.primary,
+                          }
+                        : undefined
+                    }
                   >
-                    <item.icon className="size-4" />
-                  </div>
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
+                    <Link
+                      to={item.url}
+                      onClick={() => {
+                        trackEvent('sidebar_nav_clicked', { item: item.title, url: item.url })
+                        isMobile && setOpenMobile(false)
+                      }}
+                    >
+                      <div className="flex items-center justify-center size-6 rounded-md">
+                        <item.icon className="size-4" weight={active ? 'fill' : 'regular'} />
+                      </div>
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+      ))}
+    </>
   )
 }

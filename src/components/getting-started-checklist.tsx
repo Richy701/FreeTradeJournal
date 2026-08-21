@@ -169,7 +169,11 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
   return (
     <div className="mx-4 mb-4 rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/80">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 ${
+          collapsed ? '' : 'border-b border-border/80'
+        }`}
+      >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <p className="text-sm font-semibold">Get started</p>

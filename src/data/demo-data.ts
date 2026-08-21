@@ -1456,8 +1456,12 @@ export const DEMO_TRADING_GOALS = [
   },
 ]
 
+// Limits sit close to how this trader actually sizes, so the sandbox shows a
+// realistic mix: mostly disciplined days with a few that crossed a limit. Set
+// them far above the worst day (the old 500/250) and the Risk section can only
+// ever say "all clear", which is not what the feature is for.
 export const DEMO_TRADING_RISK_RULES = [
-  { id: 'demo-rr-1', type: 'maxLossPerDay', value: 500, enabled: true, violations: 0 },
-  { id: 'demo-rr-2', type: 'maxLossPerTrade', value: 250, enabled: true, violations: 0 },
+  { id: 'demo-rr-1', type: 'maxLossPerDay', value: 150, enabled: true, violations: 0 },
+  { id: 'demo-rr-2', type: 'maxLossPerTrade', value: 150, enabled: true, violations: 0 },
   { id: 'demo-rr-3', type: 'maxDrawdown', value: 1500, enabled: true, violations: 0 },
 ]

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { trackActivity, trackGateHit } from '@/lib/track-activity';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,6 +61,8 @@ import {
 } from '@/utils/image-store';
 import { StoredImage } from '@/components/stored-image';
 import { useDemoData } from '@/hooks/use-demo-data';
+import { buildSessionReview, buildJournalDraft } from '@/lib/session-review';
+import type { RiskRule } from '@/lib/risk-rules';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { toast } from 'sonner';
 import { renderMarkdown } from '@/lib/markdown';
@@ -319,6 +321,42 @@ export default function Journal() {
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade',
     entryDate: toLocalDateInput(new Date())
   });
+
+  // Open a brand new entry on a day you traded and the day's numbers are
+  // already written down. The blank box is where journalling dies. Guarded on
+  // an empty title AND body, and skipped entirely when editing, so it can
+  // never overwrite something the trader typed. Plain arithmetic, no AI.
+  // Today's numbers as journal-ready text, or null on a day with no trades.
+  // Shared by the auto-fill below and the Pre/Post-Trade quick starts.
+  const todayDraft = useCallback((): { title: string; content: string } | null => {
+    let rules: RiskRule[] = [];
+    try {
+      const raw = userStorage.getItem('riskRules');
+      rules = raw ? JSON.parse(raw) : [];
+    } catch { /* corrupt rule state, treat as none set */ }
+
+    const review = buildSessionReview(rules, trades);
+    if (!review) return null;
+    return buildJournalDraft(review, (v) => formatCurrency(v, false));
+  }, [trades, userStorage, formatCurrency]);
+
+  useEffect(() => {
+    if (!showNewEntry || editingEntry) return;
+    if (newEntry.title.trim() || newEntry.content.trim()) return;
+
+    const draft = todayDraft();
+    if (!draft) return;
+
+    setNewEntry(prev => (
+      prev.title.trim() || prev.content.trim()
+        ? prev
+        : { ...prev, title: draft.title, content: draft.content }
+    ));
+    trackEvent('journal_prefilled_from_session', { source: 'new_entry' });
+    // Runs on open only: newEntry is deliberately absent from the deps so
+    // typing (or clearing the draft) never re-triggers the fill.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNewEntry, editingEntry, todayDraft]);
 
   // Ask the writing coach about the current draft (or for starters if empty).
   // Same quota/rate-limit rails as every other AI feature.
@@ -800,9 +838,15 @@ export default function Journal() {
   };
 
   const quickStartEntry = (type: 'pre-trade' | 'post-trade', tradeId?: string) => {
+    // Facts first, then the blank form. On a pre-trade note this is the most
+    // useful it gets: you see you are already down for the day before you
+    // plan the next entry. The draft's own title is dropped here so the
+    // template keeps naming the entry.
+    const draft = todayDraft();
+    if (draft) trackEvent('journal_prefilled_from_session', { source: type });
     setNewEntry({
       title: TEMPLATE_TITLES[type],
-      content: TEMPLATE_BODIES[type],
+      content: draft ? `${draft.content}${TEMPLATE_BODIES[type]}` : TEMPLATE_BODIES[type],
       tags: '',
       emotions: [],
       mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',

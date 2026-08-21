@@ -222,7 +222,9 @@ export function SiteHeader({ className }: { className?: string }) {
       )}
       <div className="ml-auto flex items-center gap-1">
         <ThemeToggle />
-        {user && <UserAvatar />}
+        {/* App pages have the account row at the bottom of the sidebar; only
+            public pages (no sidebar) need the avatar menu up here. */}
+        {user && !hasSidebar && <UserAvatar />}
       </div>
     </header>
   )

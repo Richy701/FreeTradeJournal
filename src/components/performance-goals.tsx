@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics'
 import { computeGoalProgress, computeGoalHistory, currentPeriodStart, getGoalLabel, type TradingGoal } from '@/lib/goal-progress'
-import { evaluateRiskRules, getRuleLabel, type RiskRule, type RuleStatus } from '@/lib/risk-rules'
+import { evaluateRiskRules, computeRuleAdherence, getRuleLabel, MIN_ADHERENCE_DAYS, type RiskRule, type RuleStatus } from '@/lib/risk-rules'
 import type { PropFirmAccount } from '@/types/prop-tracker'
 
 type Goal = TradingGoal
@@ -442,6 +442,9 @@ export function PerformanceGoals() {
   // ── Risk status (single source = shared evaluator, same math as the
   //    app-wide breach monitor) ──
   const ruleStatuses = useMemo(() => evaluateRiskRules(riskRules, trades), [riskRules, trades])
+
+  // Same limits, replayed over past days, to show what they are actually worth.
+  const adherence = useMemo(() => computeRuleAdherence(riskRules, trades), [riskRules, trades])
   const enabledStatuses = ruleStatuses.filter(s => s.rule.enabled)
   const totalViolations = riskRules.reduce((s, r) => s + (r.violations || 0), 0)
   const anyBreached = enabledStatuses.some(s => s.breached) || totalViolations > 0
@@ -569,6 +572,58 @@ export function PerformanceGoals() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* What the limits are worth — the same rules replayed over past days */}
+        {riskRules.some(r => r.enabled && r.value > 0) && adherence.days.length > 0 && (
+          <div className="rounded-lg border border-border bg-card/50 px-4 py-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-3">
+              <p className="text-sm font-semibold">What your limits are worth</p>
+              <p className="text-[11px] text-muted-foreground">
+                Your limits as they stand now, replayed over {adherence.days.length} past day{adherence.days.length !== 1 ? 's' : ''}. Today is not counted.
+              </p>
+            </div>
+
+            {adherence.comparable ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0 sm:divide-x divide-border">
+                {[
+                  { key: 'inside', label: 'Days you stayed inside them', bucket: adherence.followed },
+                  { key: 'crossed', label: 'Days you crossed one', bucket: adherence.broken },
+                ].map(({ key, label, bucket }, i) => (
+                  <div key={key} className={i === 0 ? 'sm:pr-6' : 'sm:pl-6'}>
+                    <p className="text-[11px] text-muted-foreground">{label}</p>
+                    {/* Number left, supporting stats right, so each half fills its
+                        width instead of hugging the divider on a wide screen. */}
+                    <div className="flex items-end justify-between gap-4 mt-1">
+                      <div className="min-w-0">
+                        <p
+                          className="text-2xl font-bold tabular-nums leading-tight"
+                          style={{ color: bucket.avgPnl >= 0 ? themeColors.profit : themeColors.loss }}
+                        >
+                          {bucket.avgPnl < 0 ? '-' : '+'}{formatCurrency(Math.abs(bucket.avgPnl), false)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">average day</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          {bucket.days} day{bucket.days !== 1 ? 's' : ''} · {Math.round(bucket.winRate)}% green
+                        </p>
+                        <p className="text-xs text-muted-foreground tabular-nums">
+                          {bucket.totalPnl < 0 ? '-' : '+'}{formatCurrency(Math.abs(bucket.totalPnl), false)} in total
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {adherence.followed.days} day{adherence.followed.days !== 1 ? 's' : ''} inside your limits,{' '}
+                {adherence.broken.days} where you crossed one. Once there are {MIN_ADHERENCE_DAYS} of each,
+                this will show what the difference is worth per day.
+              </p>
+            )}
           </div>
         )}
 
@@ -783,13 +838,10 @@ export function PerformanceGoals() {
                     </div>
                   )}
 
+                  {/* History above, bar last. The bar is the only element every
+                      card has, so keeping it last pins it to the bottom edge in
+                      all of them and the row of bars lines up. */}
                   <div className="mt-auto space-y-2.5">
-                    <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(progress, 1)}%`, backgroundColor: accent }}
-                      />
-                    </div>
                     {finished.length >= 2 && (
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1">
@@ -810,6 +862,12 @@ export function PerformanceGoals() {
                         </span>
                       </div>
                     )}
+                    <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(progress, 1)}%`, backgroundColor: accent }}
+                      />
+                    </div>
                   </div>
                 </div>
               )

@@ -13,6 +13,8 @@ import { Sparkle } from '@phosphor-icons/react'
 import { trackEvent } from '@/lib/analytics'
 import { useStreamingAI } from '@/hooks/use-streaming-ai'
 import { useUserStorage } from '@/utils/user-storage'
+import { buildSessionReview } from '@/lib/session-review'
+import { getRuleLabel, type RiskRule } from '@/lib/risk-rules'
 // Aggregation shared with AI Analysis / Coaching Tips payloads; unit-tested in trade-aggregates.test.ts
 import { computeTradeAggregates } from '@/utils/trade-aggregates'
 import { getAICache, setAICache } from '@/utils/ai-cache'
@@ -400,6 +402,17 @@ export function TradingCoach() {
   }, [getTrades])
 
   const tiltScore = useMemo(() => computeTiltScore(trades, themeColors), [trades, themeColors])
+
+  // Today's session, against the limits the trader set on the Goals page.
+  // Pure arithmetic over data already loaded, so no AI call and no quota.
+  const sessionReview = useMemo(() => {
+    let rules: RiskRule[] = []
+    try {
+      const raw = userStorage.getItem('riskRules')
+      rules = raw ? JSON.parse(raw) : []
+    } catch { /* corrupt rule state, treat as none set */ }
+    return buildSessionReview(rules, trades)
+  }, [trades, userStorage])
 
   // Risk-adjusted, sample-sized aggregates for the coach chat. One O(n) pass over
   // the already account-scoped `trades` array (NEVER re-reads localStorage),
@@ -1338,7 +1351,7 @@ export function TradingCoach() {
     }
   }
 
-  if (visibleTips.length === 0 && !aiLoading) return null
+  if (visibleTips.length === 0 && !aiLoading && !sessionReview) return null
 
   // Briefing layout: one lead sentence (the "you're doing fine" tip, if any),
   // then the things to fix ranked by severity, then the chat. Five equal
@@ -1403,6 +1416,78 @@ export function TradingCoach() {
         )}
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Today: day-scoped facts against the trader's own limits. Sits above
+            the rolling tips because it is the thing that just happened. */}
+        {sessionReview && (
+          <div className="pb-4 border-b border-border">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+              Today
+            </p>
+            <p className="text-sm leading-relaxed">
+              {sessionReview.tradeCount} trade{sessionReview.tradeCount !== 1 ? 's' : ''} today for{' '}
+              <span
+                className="font-semibold tabular-nums"
+                style={{ color: sessionReview.pnl >= 0 ? themeColors.profit : themeColors.loss }}
+              >
+                {sessionReview.pnl < 0 ? '-' : '+'}{formatCurrency(Math.abs(sessionReview.pnl), false)}
+              </span>
+              {sessionReview.winCount > 0 && sessionReview.lossCount > 0 && (
+                <span className="text-muted-foreground">
+                  {' '}({sessionReview.winCount} win{sessionReview.winCount !== 1 ? 's' : ''},{' '}
+                  {sessionReview.lossCount} loss{sessionReview.lossCount !== 1 ? 'es' : ''})
+                </span>
+              )}
+              .
+            </p>
+
+            {sessionReview.tightest && (
+              <p className="text-sm leading-relaxed mt-1">
+                {sessionReview.tightest.crossed ? (
+                  <>
+                    You went past your {getRuleLabel(sessionReview.tightest.type).toLowerCase()} of{' '}
+                    {formatCurrency(sessionReview.tightest.limit, false)}, reaching{' '}
+                    <span className="font-semibold tabular-nums" style={{ color: themeColors.loss }}>
+                      {formatCurrency(sessionReview.tightest.used, false)}
+                    </span>.
+                  </>
+                ) : sessionReview.tightest.nearMiss ? (
+                  <>
+                    You came within{' '}
+                    <span className="font-semibold tabular-nums">
+                      {formatCurrency(sessionReview.tightest.remaining, false)}
+                    </span>{' '}
+                    of your {getRuleLabel(sessionReview.tightest.type).toLowerCase()} of{' '}
+                    {formatCurrency(sessionReview.tightest.limit, false)}.
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">
+                    Closest you got to a limit was{' '}
+                    {formatCurrency(sessionReview.tightest.used, false)} of your{' '}
+                    {getRuleLabel(sessionReview.tightest.type).toLowerCase()} of{' '}
+                    {formatCurrency(sessionReview.tightest.limit, false)}.
+                  </span>
+                )}
+              </p>
+            )}
+
+            {sessionReview.priorCrossedDays > 0 && (
+              <p className="text-sm leading-relaxed mt-1 text-muted-foreground">
+                You have crossed a limit on {sessionReview.priorCrossedDays} other{' '}
+                day{sessionReview.priorCrossedDays !== 1 ? 's' : ''} this month
+                {sessionReview.priorCrossedDaysRed > 0 && (
+                  <>
+                    , and {sessionReview.priorCrossedDaysRed === sessionReview.priorCrossedDays
+                      ? sessionReview.priorCrossedDays === 1 ? 'that one' : 'all of them'
+                      : `${sessionReview.priorCrossedDaysRed} of them`}{' '}
+                    finished red
+                  </>
+                )}
+                .
+              </p>
+            )}
+          </div>
+        )}
+
         {aiLoading ? (
           <div className="space-y-3 py-1" aria-busy="true" aria-label="Loading coaching">
             <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
