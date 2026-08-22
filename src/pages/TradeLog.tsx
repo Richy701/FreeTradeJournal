@@ -2603,6 +2603,26 @@ export default function TradeLog() {
                     <Trash className="h-3 w-3 mr-1" />
                     Delete selected
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Keep table order so the entry's linked list reads
+                      // chronologically, not in click order. The Journal
+                      // caps at 20 links; say so here instead of silently
+                      // dropping the rest.
+                      const ids = displayedTrades.filter(t => selectedTradeIds.has(t.id)).map(t => t.id);
+                      if (ids.length > 20) {
+                        toast.warning('Select up to 20 trades to journal together.');
+                        return;
+                      }
+                      navigate(`/journal?trade=${ids.join(',')}`);
+                    }}
+                    className="h-7 text-xs px-3"
+                  >
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    Journal selected
+                  </Button>
                   {allPageSelected && selectedTradeIds.size < displayedTrades.length && (
                     <button
                       onClick={selectAllMatching}

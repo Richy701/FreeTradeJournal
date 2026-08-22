@@ -117,9 +117,11 @@ export function SiteHeader({ className }: { className?: string }) {
   
   // Check if we're in a sidebar context
   let hasSidebar = false
+  let sidebarOpen = false
   try {
-    useSidebar()
+    const sidebar = useSidebar()
     hasSidebar = true
+    sidebarOpen = sidebar.open
   } catch {
     hasSidebar = false
   }
@@ -222,9 +224,10 @@ export function SiteHeader({ className }: { className?: string }) {
       )}
       <div className="ml-auto flex items-center gap-1">
         <ThemeToggle />
-        {/* App pages have the account row at the bottom of the sidebar; only
-            public pages (no sidebar) need the avatar menu up here. */}
-        {user && !hasSidebar && <UserAvatar />}
+        {/* The account row lives at the bottom of the sidebar, but the sidebar
+            starts closed on desktop, so keep the avatar menu up here until it
+            is open. Otherwise Profile and Sign out are invisible on load. */}
+        {user && (!hasSidebar || !sidebarOpen) && <UserAvatar />}
       </div>
     </header>
   )

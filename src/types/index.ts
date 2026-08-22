@@ -12,7 +12,10 @@ export interface JournalEntry {
   tags?: string[];
   emotions?: string[];
   entryType?: 'general' | 'pre-trade' | 'post-trade';
+  // Legacy single link; mirrors tradeIds[0] when tradeIds is set.
   tradeId?: string;
+  // All trades the entry covers (scale-ins, several fills of one idea).
+  tradeIds?: string[];
   screenshots?: string[];
   createdAt: string;
   updatedAt: string;

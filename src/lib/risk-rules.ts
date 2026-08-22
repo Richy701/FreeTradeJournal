@@ -49,6 +49,25 @@ export function computeMaxDrawdown(trades: RuleTrade[]): number {
   return drawdown
 }
 
+/**
+ * How far equity sits below its most recent peak right now, over every trade
+ * with a usable exit time. Unlike computeMaxDrawdown (the worst slide ever,
+ * which never recovers) this goes back to zero when a new peak is made.
+ */
+export function currentDrawdown(trades: RuleTrade[]): number {
+  const ordered = trades
+    .map(t => ({ ms: new Date(t.exitTime ?? 0).getTime(), pnl: t.pnl || 0 }))
+    .filter(t => Number.isFinite(t.ms) && t.ms > 0)
+    .sort((a, b) => a.ms - b.ms)
+  let cumulative = 0
+  let peak = 0
+  for (const t of ordered) {
+    cumulative += t.pnl
+    if (cumulative > peak) peak = cumulative
+  }
+  return peak - cumulative
+}
+
 export function evaluateRiskRules(rules: RiskRule[], trades: RuleTrade[]): RuleStatus[] {
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -160,13 +179,17 @@ export function computeRuleAdherence(
     else byDay.set(key, [t])
   }
 
-  const limitFor = (type: RiskRule['type']) => active.find(r => r.type === type)?.value ?? 0
+  // Two rules of the same type (the dialog does not block duplicates): the
+  // live monitor checks each one, so the tighter value is the one that bites.
+  const limitFor = (type: RiskRule['type']) => {
+    const values = active.filter(r => r.type === type).map(r => r.value)
+    return values.length > 0 ? Math.min(...values) : 0
+  }
 
-  // Running drawdown state, carried across days so a crossing is attributed to
-  // the day it happened rather than to every day that follows it.
+  // Running equity state, carried across days so a drawdown crossing is
+  // attributed to the day it happened rather than to every day that follows it.
   let cumulative = 0
   let peak = 0
-  let worstDrawdownSoFar = 0
 
   const days: RuleAdherenceDay[] = []
 
@@ -175,18 +198,28 @@ export function computeRuleAdherence(
     const pnls = dayTrades.map(t => t.pnl || 0)
     const pnl = pnls.reduce((s, p) => s + p, 0)
 
-    const drawdownBefore = worstDrawdownSoFar
+    // Judged trade by trade, the way the live monitor saw it happen. A day
+    // that hit the limit at 10:00 and clawed back by the close still crossed
+    // it, and the breach toast already said so at the time.
+    let running = 0
+    let worstRunning = 0
+    // Drawdown is measured from the most recent equity peak, so every fresh
+    // slide past the limit counts, not just the first one in the account's life.
+    const drawdownBefore = peak - cumulative
+    let worstDrawdownToday = drawdownBefore
     for (const p of pnls) {
+      running += p
+      if (running < worstRunning) worstRunning = running
       cumulative += p
       if (cumulative > peak) peak = cumulative
       const dd = peak - cumulative
-      if (dd > worstDrawdownSoFar) worstDrawdownSoFar = dd
+      if (dd > worstDrawdownToday) worstDrawdownToday = dd
     }
 
     const brokenRuleTypes: RiskRule['type'][] = []
 
     const dayLossLimit = limitFor('maxLossPerDay')
-    if (dayLossLimit > 0 && Math.abs(Math.min(0, pnl)) > dayLossLimit) {
+    if (dayLossLimit > 0 && -worstRunning > dayLossLimit) {
       brokenRuleTypes.push('maxLossPerDay')
     }
 
@@ -197,7 +230,7 @@ export function computeRuleAdherence(
 
     // Crossed on this day, not merely still under water from an earlier one.
     const drawdownLimit = limitFor('maxDrawdown')
-    if (drawdownLimit > 0 && worstDrawdownSoFar > drawdownLimit && drawdownBefore <= drawdownLimit) {
+    if (drawdownLimit > 0 && worstDrawdownToday > drawdownLimit && drawdownBefore <= drawdownLimit) {
       brokenRuleTypes.push('maxDrawdown')
     }
 

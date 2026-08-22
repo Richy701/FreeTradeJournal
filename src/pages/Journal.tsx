@@ -114,11 +114,28 @@ interface JournalEntry {
   tags: string[];
   mood: 'bullish' | 'bearish' | 'neutral';
   emotions?: string[];
+  // Legacy single link. Kept in sync with tradeIds[0] on save so older
+  // readers (heatmap quick-add, demo data) keep working.
   tradeId?: string;
+  // Every trade this entry covers. One pre-trade plan or post-trade review
+  // can span a scaled-in position or several fills of the same idea.
+  tradeIds?: string[];
   entryType: 'general' | 'pre-trade' | 'post-trade';
   screenshots?: string[];
   accountId?: string;
 }
+
+// Linked trade ids for an entry, whichever shape it was saved in.
+const linkedTradeIdsOf = (entry: { tradeId?: string; tradeIds?: string[] }): string[] =>
+  entry.tradeIds && entry.tradeIds.length > 0
+    ? entry.tradeIds
+    : entry.tradeId
+      ? [entry.tradeId]
+      : [];
+
+// Journal entries cover a handful of fills, not a whole month. Keeps the
+// deep-link URL and the preview card sane.
+const MAX_LINKED_TRADES = 20;
 
 // An image staged in the editor: `dataUrl` drives the preview, `id` is its
 // IndexedDB key. `ref` is the already-stored reference (`idb:`/`fb:`) when the
@@ -267,7 +284,6 @@ export default function Journal() {
   const [coachLoading, setCoachLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [imagesLoading, setImagesLoading] = useState(false);
   const [entriesLoaded, setEntriesLoaded] = useState(false);
@@ -317,10 +333,17 @@ export default function Journal() {
     tags: '',
     emotions: [] as string[],
     mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
-    tradeId: '',
+    tradeIds: [] as string[],
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade',
     entryDate: toLocalDateInput(new Date())
   });
+
+  // The trades behind newEntry.tradeIds, in link order. Derived, so the form
+  // can never show a trade the entry doesn't actually reference.
+  const selectedTrades = useMemo(
+    () => newEntry.tradeIds.map(id => trades.find(t => t.id === id)).filter((t): t is Trade => !!t),
+    [newEntry.tradeIds, trades]
+  );
 
   // Open a brand new entry on a day you traded and the day's numbers are
   // already written down. The blank box is where journalling dies. Guarded on
@@ -340,21 +363,28 @@ export default function Journal() {
     return buildJournalDraft(review, (v) => formatCurrency(v, false));
   }, [trades, userStorage, formatCurrency]);
 
+  // One fill per opening of the form. Once it has filled (or found the form
+  // already holds text), it stays quiet until the form is closed and reopened,
+  // so a trades reload or an account switch can never put the numbers back
+  // after the trader deleted them.
+  const prefilledThisOpenRef = useRef(false);
   useEffect(() => {
-    if (!showNewEntry || editingEntry) return;
-    if (newEntry.title.trim() || newEntry.content.trim()) return;
+    if (!showNewEntry) { prefilledThisOpenRef.current = false; return; }
+    if (editingEntry || prefilledThisOpenRef.current) return;
+    if (newEntry.title.trim() || newEntry.content.trim()) { prefilledThisOpenRef.current = true; return; }
 
+    // Trades may still be loading on first open; try again when they land.
     const draft = todayDraft();
     if (!draft) return;
 
+    prefilledThisOpenRef.current = true;
     setNewEntry(prev => (
       prev.title.trim() || prev.content.trim()
         ? prev
         : { ...prev, title: draft.title, content: draft.content }
     ));
     trackEvent('journal_prefilled_from_session', { source: 'new_entry' });
-    // Runs on open only: newEntry is deliberately absent from the deps so
-    // typing (or clearing the draft) never re-triggers the fill.
+    // newEntry is deliberately absent from the deps so typing never re-triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNewEntry, editingEntry, todayDraft]);
 
@@ -545,20 +575,28 @@ export default function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemo, activeAccount, scopeAccounts, accountsLoading, refreshKey]);
 
-  // Deep link: /journal?trade=<id>. If this trade already has a journal entry,
-  // open it for editing instead of starting a blank one (which previously created
-  // a duplicate / appeared to overwrite). Otherwise open a new pre-linked entry.
+  // Deep link: /journal?trade=<id> or ?trade=<id>,<id>,<id> (Trade Log
+  // "Journal selected"). A single trade that already has an entry opens that
+  // entry for editing instead of starting a blank one (which previously created
+  // a duplicate / appeared to overwrite). A group opens its existing entry only
+  // when one covers exactly those trades. Otherwise open a new pre-linked entry.
   useEffect(() => {
     if (isLoadingTrades || !entriesLoaded) return;
-    const tradeId = searchParams.get('trade');
-    if (!tradeId) return;
-    const trade = trades.find(t => t.id === tradeId);
-    if (trade) {
-      const existing = entries.find(e => e.tradeId === tradeId);
+    const param = searchParams.get('trade');
+    if (!param) return;
+    const ids = Array.from(new Set(param.split(',').map(s => s.trim()).filter(Boolean)))
+      .filter(id => trades.some(t => t.id === id))
+      .slice(0, MAX_LINKED_TRADES);
+    if (ids.length > 0) {
+      const existing = entries.find(e => {
+        const linked = linkedTradeIdsOf(e);
+        if (ids.length === 1) return linked.includes(ids[0]);
+        return linked.length === ids.length && ids.every(id => linked.includes(id));
+      });
       if (existing) {
         startEdit(existing);
       } else {
-        handleTradeSelection(tradeId);
+        linkTrades(ids);
         setShowNewEntry(true);
       }
     }
@@ -692,7 +730,8 @@ export default function Journal() {
           tags: newEntry.tags.split(',').map(tag => tag.trim()).filter(Boolean),
           emotions: newEntry.emotions.length > 0 ? newEntry.emotions : undefined,
           mood: newEntry.mood,
-          tradeId: newEntry.tradeId || undefined,
+          tradeId: newEntry.tradeIds[0] || undefined,
+          tradeIds: newEntry.tradeIds.length > 0 ? newEntry.tradeIds : undefined,
           entryType: newEntry.entryType,
           screenshots: screenshots.length > 0 ? screenshots : undefined,
           accountId: editingEntry.accountId || activeAccount?.id,
@@ -729,7 +768,8 @@ export default function Journal() {
           tags: newEntry.tags.split(',').map(tag => tag.trim()).filter(Boolean),
           emotions: newEntry.emotions.length > 0 ? newEntry.emotions : undefined,
           mood: newEntry.mood,
-          tradeId: newEntry.tradeId || undefined,
+          tradeId: newEntry.tradeIds[0] || undefined,
+          tradeIds: newEntry.tradeIds.length > 0 ? newEntry.tradeIds : undefined,
           entryType: newEntry.entryType,
           screenshots: screenshots.length > 0 ? screenshots : undefined,
           accountId: activeAccount?.id,
@@ -740,17 +780,16 @@ export default function Journal() {
         setEntries(updatedEntries);
       }
 
-      setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general', entryDate: toLocalDateInput(new Date()) });
-      setSelectedTrade(null);
+      setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeIds: [], entryType: 'general', entryDate: toLocalDateInput(new Date()) });
       setUploadedImages([]);
       setUnresolvedRefs([]);
       setShowNewEntry(false);
-      trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new' });
+      trackEvent('journal_entry_saved', { type: editingEntry ? 'edit' : 'new', linkedTrades: selectedTrades.length });
       trackActivity('journal_entry_saved', { type: editingEntry ? 'edit' : 'new', entryCount: totalEntryCount });
       toast.success(editingEntry ? 'Entry updated!' : 'Journal entry saved!');
 
       // On-save coach: the entry is durably saved, so let the coach react to
-      // substantial NEW entries automatically. Locals (newEntry, selectedTrade)
+      // substantial NEW entries automatically. Locals (newEntry, selectedTrades)
       // are still the pre-reset values within this call.
       if (
         !editingEntry &&
@@ -774,8 +813,14 @@ export default function Journal() {
           entryType: newEntry.entryType,
           currency: getCurrencySymbol(),
           dayStats: { tradeCount, dayPnl },
-          trade: selectedTrade
-            ? { symbol: selectedTrade.symbol, side: selectedTrade.side, pnl: Number(selectedTrade.pnl) || 0 }
+          // Several linked fills read to the coach as one position: the
+          // symbols joined, the first fill's side, the combined result.
+          trade: selectedTrades.length > 0
+            ? {
+                symbol: Array.from(new Set(selectedTrades.map(t => t.symbol))).join('/'),
+                side: selectedTrades[0].side,
+                pnl: selectedTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0),
+              }
             : undefined,
         });
       }
@@ -795,36 +840,46 @@ export default function Journal() {
     }
   };
 
-  const handleTradeSelection = (tradeId: string) => {
-    const resolvedId = tradeId === 'none' ? '' : tradeId;
-    setNewEntry(prev => ({ ...prev, tradeId: resolvedId }));
-    
-    if (resolvedId) {
-      const selectedTrade = trades.find(t => t.id === tradeId);
-      if (selectedTrade) {
-        setSelectedTrade(selectedTrade);
+  // Attach trades to the draft. Suggests title/mood/tags/emotions from the
+  // whole linked set, but never overwrites what the user already typed or
+  // chose; only blanks and defaults get filled.
+  const linkTrades = (ids: string[]) => {
+    const incoming = ids.filter(id => id !== 'none' && trades.some(t => t.id === id));
+    if (incoming.length === 0) return;
+    setNewEntry(prev => {
+      const merged = Array.from(new Set([...prev.tradeIds, ...incoming])).slice(0, MAX_LINKED_TRADES);
+      const linked = merged.map(id => trades.find(t => t.id === id)).filter((t): t is Trade => !!t);
+      if (linked.length === 0) return prev;
 
-        // Suggest fields from the trade, but never overwrite what the user
-        // already typed or chose — only fill blanks/defaults.
-        const isWinning = selectedTrade.pnl > 0;
-        const suggestedMood = isWinning ? 'bullish' : 'bearish';
-        const suggestedTitle = `${selectedTrade.symbol} ${selectedTrade.side.toUpperCase()} - ${isWinning ? 'Win' : 'Loss'}`;
+      const total = linked.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
+      const isWinning = total > 0;
+      const symbols = Array.from(new Set(linked.map(t => t.symbol)));
+      const sides = Array.from(new Set(linked.map(t => t.side.toUpperCase())));
+      const head = symbols.length === 1
+        ? `${symbols[0]} ${sides.length === 1 ? sides[0] : 'LONG/SHORT'}`
+        : symbols.join('/');
+      const suggestedTitle = linked.length > 1
+        ? `${head} x${linked.length} - ${isWinning ? 'Win' : 'Loss'}`
+        : `${head} - ${isWinning ? 'Win' : 'Loss'}`;
+      const strategies = Array.from(new Set(linked.map(t => t.strategy || '').filter(Boolean)));
 
-        setNewEntry(prev => ({
-          ...prev,
-          title: prev.title.trim() ? prev.title : suggestedTitle,
-          mood: prev.mood === 'neutral' ? suggestedMood : prev.mood,
-          tags: prev.tags.trim()
-            ? prev.tags
-            : [selectedTrade.symbol, selectedTrade.strategy || '', isWinning ? 'winner' : 'loser'].filter(Boolean).join(', '),
-          emotions: prev.emotions.length > 0
-            ? prev.emotions
-            : isWinning ? ['confident', 'satisfied'] : ['disappointed', 'frustrated']
-        }));
-      }
-    } else {
-      setSelectedTrade(null);
-    }
+      return {
+        ...prev,
+        tradeIds: merged,
+        title: prev.title.trim() ? prev.title : suggestedTitle,
+        mood: prev.mood === 'neutral' ? (isWinning ? 'bullish' : 'bearish') : prev.mood,
+        tags: prev.tags.trim()
+          ? prev.tags
+          : [...symbols, ...strategies, isWinning ? 'winner' : 'loser'].join(', '),
+        emotions: prev.emotions.length > 0
+          ? prev.emotions
+          : isWinning ? ['confident', 'satisfied'] : ['disappointed', 'frustrated'],
+      };
+    });
+  };
+
+  const unlinkTrade = (id: string) => {
+    setNewEntry(prev => ({ ...prev, tradeIds: prev.tradeIds.filter(t => t !== id) }));
   };
 
   const formatTradeOption = (trade: Trade) => {
@@ -837,7 +892,7 @@ export default function Journal() {
     };
   };
 
-  const quickStartEntry = (type: 'pre-trade' | 'post-trade', tradeId?: string) => {
+  const quickStartEntry = (type: 'pre-trade' | 'post-trade', tradeIds?: string[]) => {
     // Facts first, then the blank form. On a pre-trade note this is the most
     // useful it gets: you see you are already down for the day before you
     // plan the next entry. The draft's own title is dropped here so the
@@ -850,13 +905,12 @@ export default function Journal() {
       tags: '',
       emotions: [],
       mood: 'neutral' as 'bullish' | 'bearish' | 'neutral',
-      tradeId: tradeId || '',
+      tradeIds: (tradeIds || []).filter(id => trades.some(t => t.id === id)).slice(0, MAX_LINKED_TRADES),
       entryType: type,
       entryDate: toLocalDateInput(new Date())
     });
     setUploadedImages([]);
     setUnresolvedRefs([]);
-    setSelectedTrade(null);
     setShowNewEntry(true);
   };
 
@@ -953,13 +1007,11 @@ export default function Journal() {
       tags: entry.tags.join(', '),
       emotions: entry.emotions || [],
       mood: entry.mood,
-      tradeId: entry.tradeId || '',
+      tradeIds: linkedTradeIdsOf(entry),
       entryType: entry.entryType,
       entryDate: toLocalDateInput(new Date(entry.date))
     });
     setUploadedImages([]);
-    const linkedTrade = getLinkedTrade(entry.tradeId);
-    setSelectedTrade(linkedTrade || null);
     setShowNewEntry(true);
     // Resolve stored screenshot refs into editable previews. Block saving until
     // they're loaded so a fast save can't drop the entry's existing screenshots.
@@ -1003,18 +1055,21 @@ export default function Journal() {
 
   const cancelEdit = () => {
     setEditingEntry(null);
-    setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeId: '', entryType: 'general', entryDate: toLocalDateInput(new Date()) });
+    setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeIds: [], entryType: 'general', entryDate: toLocalDateInput(new Date()) });
     setUploadedImages([]);
     setUnresolvedRefs([]);
     setImagesLoading(false);
-    setSelectedTrade(null);
     setShowNewEntry(false);
   };
 
-  const getLinkedTrade = (tradeId?: string) => {
-    if (!tradeId) return null;
-    return trades.find(t => t.id === tradeId);
-  };
+  // Trades an entry links to, resolved against the loaded list. Trades from
+  // another account (or deleted ones) simply drop out.
+  const getLinkedTrades = (entry: { tradeId?: string; tradeIds?: string[] }): Trade[] =>
+    linkedTradeIdsOf(entry)
+      .map(id => trades.find(t => t.id === id))
+      .filter((t): t is Trade => !!t);
+
+  const linkedPnl = (linked: Trade[]) => linked.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0);
 
   // Extract all unique tags from entries
   const allTags = useMemo(() => {
@@ -1054,8 +1109,8 @@ export default function Journal() {
       
       // Market filter
       if (selectedMarket !== 'all') {
-        const linkedTrade = getLinkedTrade(entry.tradeId);
-        if (!linkedTrade || linkedTrade.market !== selectedMarket) {
+        const linked = getLinkedTrades(entry);
+        if (!linked.some(t => t.market === selectedMarket)) {
           return false;
         }
       }
@@ -1068,10 +1123,11 @@ export default function Journal() {
       
       // P&L range filter — entries without a linked trade have no P&L, so a
       // P&L filter excludes them (previously they slipped through unfiltered).
+      // Several linked trades count as their combined result.
       if (pnlRange.min || pnlRange.max) {
-        const linkedTrade = getLinkedTrade(entry.tradeId);
-        if (!linkedTrade) return false;
-        const pnl = linkedTrade.pnl;
+        const linked = getLinkedTrades(entry);
+        if (linked.length === 0) return false;
+        const pnl = linkedPnl(linked);
         if (pnlRange.min && pnl < parseFloat(pnlRange.min)) return false;
         if (pnlRange.max && pnl > parseFloat(pnlRange.max)) return false;
       }
@@ -1098,11 +1154,7 @@ export default function Journal() {
           comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
           break;
         case 'pnl':
-          const tradeA = getLinkedTrade(a.tradeId);
-          const tradeB = getLinkedTrade(b.tradeId);
-          const pnlA = tradeA ? tradeA.pnl : 0;
-          const pnlB = tradeB ? tradeB.pnl : 0;
-          comparison = pnlA - pnlB;
+          comparison = linkedPnl(getLinkedTrades(a)) - linkedPnl(getLinkedTrades(b));
           break;
         case 'title':
           comparison = a.title.localeCompare(b.title);
@@ -1119,9 +1171,10 @@ export default function Journal() {
   const moodPnlStats = useMemo(() => {
     const buckets: Record<'bullish' | 'bearish' | 'neutral', number[]> = { bullish: [], bearish: [], neutral: [] };
     entries.forEach(entry => {
-      if (!entry.tradeId) return;
-      const trade = trades.find(t => t.id === entry.tradeId);
-      if (trade) buckets[entry.mood].push(Number(trade.pnl) || 0);
+      // One data point per entry: a multi-trade review counts once, at its
+      // combined result, so a scaled-in position doesn't triple-weight a mood.
+      const linked = getLinkedTrades(entry);
+      if (linked.length > 0) buckets[entry.mood].push(linkedPnl(linked));
     });
     const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
     return {
@@ -1314,7 +1367,7 @@ export default function Journal() {
               },
               {
                 Icon: LinkSimple,
-                value: entries.filter(e => e.tradeId).length,
+                value: entries.filter(e => linkedTradeIdsOf(e).length > 0).length,
                 label: 'Linked Trades',
                 color: themeColors.primary,
                 subtitle: 'Trade-connected'
@@ -1547,15 +1600,20 @@ export default function Journal() {
                     </div>
                   ) : (
                     <Select
-                      value={newEntry.tradeId || 'none'}
-                      onValueChange={(value) => handleTradeSelection(value)}
+                      // Always resets to the placeholder: each pick adds a
+                      // trade to the linked set below rather than replacing it.
+                      value="none"
+                      onValueChange={(value) => linkTrades([value])}
+                      disabled={newEntry.tradeIds.length >= MAX_LINKED_TRADES}
                     >
                       <SelectTrigger aria-label="Link to trade" className="w-full h-11 bg-background/60 border-border/50 focus:border-primary/50 text-sm">
                         <SelectValue placeholder="Choose a trade to analyze..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Choose a trade to analyze...</SelectItem>
-                        {trades.map((trade) => {
+                        <SelectItem value="none">
+                          {newEntry.tradeIds.length > 0 ? 'Add another trade...' : 'Choose a trade to analyze...'}
+                        </SelectItem>
+                        {trades.filter(t => !newEntry.tradeIds.includes(t.id)).map((trade) => {
                           const formattedTrade = formatTradeOption(trade);
                           return (
                             <SelectItem key={trade.id} value={trade.id}>
@@ -1566,10 +1624,38 @@ export default function Journal() {
                       </SelectContent>
                     </Select>
                   )}
+                  {selectedTrades.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {selectedTrades.map((trade) => (
+                        <Badge
+                          key={trade.id}
+                          variant="outline"
+                          className="gap-1 pl-2 pr-1 py-0.5 text-[11px] font-medium border"
+                          style={{
+                            color: trade.pnl > 0 ? themeColors.profit : themeColors.loss,
+                            backgroundColor: alpha(trade.pnl > 0 ? themeColors.profit : themeColors.loss, '10'),
+                            borderColor: alpha(trade.pnl > 0 ? themeColors.profit : themeColors.loss, '30'),
+                          }}
+                        >
+                          {trade.symbol} {trade.side.toUpperCase()} {formatCurrency(trade.pnl, true)}
+                          <button
+                            type="button"
+                            onClick={() => unlinkTrade(trade.id)}
+                            aria-label={`Unlink ${trade.symbol} trade`}
+                            className="ml-0.5 rounded-sm p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Trade Preview */}
-                {selectedTrade && (
+                {/* Trade Preview: one trade shows its prices, a group shows one row per fill and the combined result */}
+                {selectedTrades.length === 1 && (() => {
+                  const selectedTrade = selectedTrades[0];
+                  return (
                   <div
                     className="p-4 rounded-xl"
                     style={{
@@ -1601,7 +1687,39 @@ export default function Journal() {
                       </div>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
+                {selectedTrades.length > 1 && (() => {
+                  const total = linkedPnl(selectedTrades);
+                  const tone = total > 0 ? themeColors.profit : themeColors.loss;
+                  return (
+                  <div
+                    className="p-4 rounded-xl"
+                    style={{ backgroundColor: alpha(tone, '08'), border: `1px solid ${alpha(tone, '25')}` }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {selectedTrades.length} trades · combined
+                      </span>
+                      <span className="text-sm font-bold" style={{ color: tone }}>
+                        {formatCurrency(total, true)}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 text-xs">
+                      {selectedTrades.map((trade) => (
+                        <div key={trade.id} className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground truncate">
+                            {format(trade.entryTime, 'MMM dd, HH:mm')} · {trade.symbol} {trade.side.toUpperCase()} · {trade.entryPrice} → {trade.exitPrice}
+                          </span>
+                          <span className="font-semibold shrink-0" style={{ color: trade.pnl > 0 ? themeColors.profit : themeColors.loss }}>
+                            {formatCurrency(trade.pnl, true)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  );
+                })()}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -2100,13 +2218,12 @@ export default function Journal() {
                           tags: '',
                           emotions: [],
                           mood: 'neutral' as const,
-                          tradeId: '',
+                          tradeIds: [],
                           entryType: 'general' as const,
                           entryDate: toLocalDateInput(new Date()),
                         });
                         setUploadedImages([]);
                         setUnresolvedRefs([]);
-                        setSelectedTrade(null);
                         setShowNewEntry(true);
                       },
                     },
@@ -2144,8 +2261,11 @@ export default function Journal() {
             )
           ) : (
             filteredAndSortedEntries.map((entry) => {
-              const linkedTrade = getLinkedTrade(entry.tradeId);
-              
+              const linkedTrades = getLinkedTrades(entry);
+              const linkedTrade = linkedTrades.length === 1 ? linkedTrades[0] : null;
+              const groupPnl = linkedPnl(linkedTrades);
+              const groupTone = groupPnl > 0 ? themeColors.profit : themeColors.loss;
+
               return (
                 <Card
                   key={entry.id}
@@ -2183,6 +2303,19 @@ export default function Journal() {
                                 }}
                               >
                                 {linkedTrade.symbol} {formatCurrency(linkedTrade.pnl, true)}
+                              </Badge>
+                            )}
+                            {linkedTrades.length > 1 && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-semibold border px-2 py-0"
+                                style={{
+                                  color: groupTone,
+                                  backgroundColor: alpha(groupTone, '12'),
+                                  borderColor: alpha(groupTone, '30')
+                                }}
+                              >
+                                {linkedTrades.length} trades {formatCurrency(groupPnl, true)}
                               </Badge>
                             )}
                             <Badge
@@ -2243,6 +2376,33 @@ export default function Journal() {
                             <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">R:R</span>
                             <span className="font-semibold text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</span>
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {linkedTrades.length > 1 && (
+                      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                            <LinkSimple className="h-3 w-3" />
+                            Linked Trades ({linkedTrades.length})
+                          </div>
+                          <span className="text-xs font-bold" style={{ color: groupTone }}>
+                            {formatCurrency(groupPnl, true)}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          {linkedTrades.map((t) => (
+                            <div key={t.id} className="flex items-center justify-between gap-3">
+                              <span className="text-muted-foreground truncate">
+                                {format(t.entryTime, 'MMM dd, HH:mm')} · {t.symbol} {t.side.toUpperCase()} · {t.entryPrice} → {t.exitPrice}
+                                {t.riskReward ? ` · ${t.riskReward.toFixed(2)}R` : ''}
+                              </span>
+                              <span className="font-semibold shrink-0" style={{ color: t.pnl > 0 ? themeColors.profit : themeColors.loss }}>
+                                {formatCurrency(t.pnl, true)}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

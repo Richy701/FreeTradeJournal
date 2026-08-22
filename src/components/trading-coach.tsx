@@ -1459,12 +1459,16 @@ export function TradingCoach() {
                     of your {getRuleLabel(sessionReview.tightest.type).toLowerCase()} of{' '}
                     {formatCurrency(sessionReview.tightest.limit, false)}.
                   </>
-                ) : (
+                ) : sessionReview.tightest.used > 0 ? (
                   <span className="text-muted-foreground">
                     Closest you got to a limit was{' '}
                     {formatCurrency(sessionReview.tightest.used, false)} of your{' '}
                     {getRuleLabel(sessionReview.tightest.type).toLowerCase()} of{' '}
                     {formatCurrency(sessionReview.tightest.limit, false)}.
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    You did not touch any of your limits today.
                   </span>
                 )}
               </p>

@@ -24,6 +24,39 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.86.0',
+    date: '2026-08-22',
+    summary: 'One journal entry can now cover several trades.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Link several trades to one journal entry',
+        description: 'If you scale into a position or take the same idea in three fills, you no longer have to write three near-identical entries. In the Trade Log, tick the trades and press Journal selected: one entry opens with all of them attached. In the Journal itself, the Link to Trade box now adds trades instead of replacing the one you picked, and each linked trade sits underneath it as a chip you can remove. The entry shows every trade it covers with the combined result, and the P&L filter and sort use that combined figure. Pre-trade plans and post-trade reviews work the same way. Your existing entries are untouched.',
+        image: {
+          src: '/screenshots/journal-linked-trades.png',
+          alt: 'A post-trade review in the Journal with two linked trades and their combined result',
+        },
+        link: { to: '/journal', label: 'Open Journal' },
+      },
+      {
+        type: 'fixed',
+        text: 'Your account menu is back in the header on desktop',
+        description: 'Since 2.85.1 the only way to reach Profile or Sign out on a desktop was to open the sidebar first. The avatar menu now stays in the header until the sidebar is open.',
+      },
+      {
+        type: 'fixed',
+        text: 'The risk limit track record now counts what the breach alert counted',
+        description: 'A day that hit your daily loss limit and then recovered was filed as a day you stayed inside it, even though the app had already shown the breach. It now counts as crossed. Drawdown is measured from your most recent high, so a second slide past the limit later in the account is counted too, not only the first one ever.',
+      },
+      {
+        type: 'fixed',
+        text: 'Edit your name on the profile page from a phone',
+        description: 'The Edit button and your joined and last sign in dates were only shown on wider screens.',
+      },
+    ],
+  },
+  {
     version: '2.85.1',
     date: '2026-08-21',
     summary: 'The sidebar is grouped and easier to scan, and the profile page has been rebuilt around your numbers.',
@@ -2937,4 +2970,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.85.1'
+export const LATEST_CHANGELOG_VERSION = '2.86.0'

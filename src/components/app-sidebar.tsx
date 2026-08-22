@@ -102,8 +102,14 @@ function SidebarUser() {
       setAvatarEmoji(userStorage.getItem('avatarEmoji') || '')
       setAvatarColor(userStorage.getItem('avatarColor') || '')
     }
+    // 'storage' only fires in other tabs; Profile dispatches 'profileUpdated'
+    // for this one so the row changes the moment a new avatar is picked.
     window.addEventListener('storage', sync)
-    return () => window.removeEventListener('storage', sync)
+    window.addEventListener('profileUpdated', sync)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('profileUpdated', sync)
+    }
   }, [userStorage])
 
   if (!user) return null
@@ -142,16 +148,16 @@ function SidebarUser() {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-48 rounded-lg">
-            <DropdownMenuItem onClick={() => go('/profile')}>
+            <DropdownMenuItem className={isMobile ? 'h-11' : ''} onClick={() => go('/profile')}>
               <User className="h-4 w-4 mr-2" />
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => go('/settings')}>
+            <DropdownMenuItem className={isMobile ? 'h-11' : ''} onClick={() => go('/settings')}>
               <GearSix className="h-4 w-4 mr-2" />
               Settings
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
+              className={`text-destructive focus:text-destructive ${isMobile ? 'h-11' : ''}`}
               onClick={async () => {
                 try {
                   await logout()
@@ -269,7 +275,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         className={`gap-0 ${
           // 44px rows make an expanded "More" tall enough to push the whole nav
           // off a phone screen, so cap the footer and let it scroll instead.
-          isMobile ? 'max-h-[45vh] overflow-y-auto' : ''
+          // 45vh hid the account row behind the fold once More was open.
+          isMobile ? 'max-h-[62vh] overflow-y-auto' : ''
         }`}
       >
         <SidebarMenu

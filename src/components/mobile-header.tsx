@@ -35,7 +35,11 @@ export function MobileHeader({ title }: { title?: string }) {
       setAvatarColor(userStorage.getItem('avatarColor') || '');
     };
     window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
+    window.addEventListener('profileUpdated', handler);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('profileUpdated', handler);
+    };
   }, [userStorage]);
 
   React.useEffect(() => {

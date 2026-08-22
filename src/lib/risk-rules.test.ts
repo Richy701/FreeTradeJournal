@@ -31,7 +31,7 @@ describe('computeRuleAdherence', () => {
     expect(stats.followed.totalPnl).toBe(350)
   })
 
-  it('sums a day before judging it against the daily limit', () => {
+  it('judges the running total within the day, not each trade alone', () => {
     // Three losses that only breach once added together.
     const trades = [trade(1, 9, -200), trade(1, 11, -200), trade(1, 14, -200)]
     const stats = computeRuleAdherence([rule('maxLossPerDay', 500)], trades, NOW)
@@ -39,6 +39,52 @@ describe('computeRuleAdherence', () => {
     expect(stats.days).toHaveLength(1)
     expect(stats.days[0].pnl).toBe(-600)
     expect(stats.days[0].brokenRuleTypes).toEqual(['maxLossPerDay'])
+  })
+
+  it('still counts a day that hit the limit and then clawed back', () => {
+    // The live monitor toasted at 10:00. The day ending at -300 does not undo that.
+    const trades = [trade(1, 10, -600), trade(1, 14, 300)]
+    const stats = computeRuleAdherence([rule('maxLossPerDay', 500)], trades, NOW)
+
+    expect(stats.days[0].pnl).toBe(-300)
+    expect(stats.days[0].brokenRuleTypes).toEqual(['maxLossPerDay'])
+  })
+
+  it('flags every fresh drawdown episode, not only the first in the account', () => {
+    const trades = [
+      trade(1, 10, 1000),   // peak 1000
+      trade(2, 10, -700),   // dd 700, crosses 600
+      trade(3, 10, 2000),   // new peak 2300, drawdown back to 0
+      trade(4, 10, -1000),  // dd 1000 from the new peak, crosses again
+    ]
+    const stats = computeRuleAdherence([rule('maxDrawdown', 600)], trades, NOW)
+
+    const brokenDates = stats.days
+      .filter(d => d.brokenRuleTypes.includes('maxDrawdown'))
+      .map(d => d.date.getDate())
+    expect(brokenDates).toEqual([2, 4])
+  })
+
+  it('uses the tighter value when the same limit is set twice', () => {
+    const trades = [trade(1, 10, -400)]
+    const stats = computeRuleAdherence(
+      [rule('maxLossPerDay', 500), { id: 'dup', type: 'maxLossPerDay', value: 300, enabled: true }],
+      trades,
+      NOW
+    )
+
+    expect(stats.days[0].brokenRuleTypes).toEqual(['maxLossPerDay'])
+  })
+
+  it('is not comparable when the followed side is the thin one', () => {
+    const trades = [
+      trade(1, 10, 100), trade(2, 10, 100),
+      ...Array.from({ length: MIN_ADHERENCE_DAYS }, (_, i) => trade(10 + i, 10, -900)),
+    ]
+    const stats = computeRuleAdherence([rule('maxLossPerDay', 500)], trades, NOW)
+
+    expect(stats.followed.days).toBe(2)
+    expect(stats.comparable).toBe(false)
   })
 
   it('catches an oversized single trade on a day that finished green', () => {

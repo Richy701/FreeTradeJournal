@@ -6,7 +6,7 @@
 // Every number here is arithmetic over data already on the device, so it is
 // instant, costs nothing, and cannot invent a figure.
 
-import { computeRuleAdherence, localDayStart, type RiskRule } from './risk-rules'
+import { computeRuleAdherence, currentDrawdown, localDayStart, type RiskRule } from './risk-rules'
 
 interface ReviewTrade {
   pnl?: number
@@ -68,12 +68,15 @@ export function buildSessionReview(
 
   const active = rules.filter(r => r.enabled && r.value > 0)
 
+  // Drawdown is not a today number. It is how far equity sits below its last
+  // peak after today's trades, the same measure the Goals track record uses.
+  const drawdownNow = currentDrawdown(trades)
+
   const limits: LimitUsage[] = active.map(r => {
     const used =
       r.type === 'maxLossPerDay' ? dayLoss :
       r.type === 'maxLossPerTrade' ? worstLoss :
-      // Drawdown is a running measure; today's contribution is what today lost.
-      dayLoss
+      drawdownNow
     const crossed = used > r.value
     return {
       type: r.type,

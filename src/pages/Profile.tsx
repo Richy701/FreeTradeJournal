@@ -127,6 +127,7 @@ export default function Profile() {
       URL.revokeObjectURL(objectUrl);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
       userStorage.setItem('avatar', dataUrl);
+      window.dispatchEvent(new Event('profileUpdated'));
       userStorage.removeItem('avatarEmoji');
       setAvatarUrl(dataUrl);
       setAvatarEmoji('');
@@ -139,6 +140,7 @@ export default function Profile() {
 
   const selectEmoji = useCallback((emoji: string) => {
     userStorage.setItem('avatarEmoji', emoji);
+    window.dispatchEvent(new Event('profileUpdated'));
     userStorage.removeItem('avatar');
     setAvatarEmoji(emoji);
     setAvatarUrl('');
@@ -148,6 +150,7 @@ export default function Profile() {
 
   const selectColor = useCallback((color: string) => {
     userStorage.setItem('avatarColor', color);
+    window.dispatchEvent(new Event('profileUpdated'));
     setAvatarColor(color);
     // Keep any emoji / photo as-is, just changes the tint
     toast.success('Color updated');
@@ -249,7 +252,28 @@ export default function Profile() {
                 </div>
               )}
               <p className="mt-0.5 text-xs text-muted-foreground truncate">{user.email}</p>
+              {(user.metadata?.creationTime || user.metadata?.lastSignInTime) && (
+                <p className="mt-1 text-xs text-muted-foreground md:hidden">
+                  {user.metadata?.creationTime && (
+                    <>Member since {new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(user.metadata.creationTime))}</>
+                  )}
+                  {user.metadata?.creationTime && user.metadata?.lastSignInTime && ' · '}
+                  {user.metadata?.lastSignInTime && (
+                    <>Last sign in {new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(user.metadata.lastSignInTime))}</>
+                  )}
+                </p>
+              )}
             </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 text-muted-foreground hover:text-foreground shrink-0 md:hidden"
+              onClick={() => setIsEditingName(v => !v)}
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+              {isEditingName ? 'Cancel' : 'Edit'}
+            </Button>
 
             <div className="hidden md:flex items-center gap-5 shrink-0 pr-1">
               {user.metadata?.creationTime && (
@@ -295,6 +319,7 @@ export default function Profile() {
                   onClick={() => {
                     userStorage.removeItem('avatar');
                     userStorage.removeItem('avatarEmoji');
+                    window.dispatchEvent(new Event('profileUpdated'));
                     setAvatarUrl('');
                     setAvatarEmoji('');
                     toast.success('Reset to initials');
@@ -310,7 +335,7 @@ export default function Profile() {
 
               {/* Upload */}
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">UploadSimple photo</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Upload photo</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors w-full"
@@ -371,15 +396,15 @@ export default function Profile() {
               {stats.winRate === null ? '—' : `${stats.winRate}%`}
             </p>
           </Link>
-          <div className="lg:px-6">
+          <Link to="/trades" className="lg:px-6 group">
             <p className="text-sm text-muted-foreground">Net P&amp;L</p>
             <p
-              className="mt-1 text-3xl font-bold tabular-nums"
-              style={{ color: stats.net === 0 ? undefined : stats.net > 0 ? '#22c55e' : '#ef4444' }}
+              className="mt-1 text-3xl font-bold tabular-nums group-hover:underline underline-offset-4 decoration-2"
+              style={{ color: stats.net === 0 ? undefined : stats.net > 0 ? themeColors.profit : themeColors.loss }}
             >
               {formatCurrency(stats.net, true)}
             </p>
-          </div>
+          </Link>
           <Link to="/journal" className="lg:pl-6 group">
             <p className="text-sm text-muted-foreground">Logging streak</p>
                         <p className="mt-1 text-3xl font-bold tabular-nums group-hover:underline underline-offset-4 decoration-2">
@@ -417,7 +442,7 @@ export default function Profile() {
                             {t.exitTime ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(t.exitTime)) : '—'}
                           </p>
                         </div>
-                        <span className={`text-sm font-semibold tabular-nums ${isWin ? 'text-emerald-600' : 'text-red-500'}`}>
+                        <span className="text-sm font-semibold tabular-nums" style={{ color: isWin ? themeColors.profit : themeColors.loss }}>
                           {formatCurrency(pnl, true)}
                         </span>
                       </div>
