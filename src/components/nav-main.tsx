@@ -22,6 +22,8 @@ export type NavItem = {
   title: string
   url: string
   icon: Icon
+  /** Small tag after the title, e.g. "Beta". Hidden when the sidebar is collapsed to icons. */
+  badge?: string
 }
 
 export type NavGroup = {
@@ -46,7 +48,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    tooltip={item.title}
+                    tooltip={item.badge ? `${item.title} (${item.badge})` : item.title}
                     isActive={active}
                     className={isMobile ? "h-11" : "h-9"}
                     // The active row is the only coloured thing in the list, so
@@ -71,6 +73,14 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                         <item.icon className="size-4" weight={active ? 'fill' : 'regular'} />
                       </div>
                       <span>{item.title}</span>
+                      {item.badge && (
+                        <span
+                          className="ml-auto rounded-full px-1.5 py-px text-[11px] font-semibold uppercase tracking-wide group-data-[collapsible=icon]:hidden"
+                          style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

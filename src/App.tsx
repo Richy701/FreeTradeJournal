@@ -59,6 +59,7 @@ const ForexTradingJournal = lazyWithRetry(() => import('@/pages/ForexTradingJour
 const FuturesTradingTracker = lazyWithRetry(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazyWithRetry(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazyWithRetry(() => import('@/pages/TradeIdeas'))
+const CommunityIdeas = lazyWithRetry(() => import('@/pages/CommunityIdeas'))
 const Coach = lazyWithRetry(() => import('@/pages/Coach'));
 const DayTradingJournal = lazyWithRetry(() => import('@/pages/DayTradingJournal'));
 const OnlineTradingJournal = lazyWithRetry(() => import('@/pages/OnlineTradingJournal'));
@@ -185,6 +186,7 @@ function App() {
                   <Route path="/calculator" element={<Calculator />} />
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/ideas" element={<TradeIdeas />} />
+                  <Route path="/trade-ideas" element={<CommunityIdeas />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>

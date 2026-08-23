@@ -8,7 +8,7 @@ export default function TermsAndConditions() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      <div className="max-w-3xl mx-auto px-6 py-14">
+      <div className="max-w-4xl mx-auto px-6 py-14">
         <div className="mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Terms and Conditions</h1>

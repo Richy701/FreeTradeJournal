@@ -194,12 +194,12 @@ function ExpandableContent({ content, color }: { content: string; color: string 
     <div>
       <div
         ref={ref}
-        className={`text-sm leading-relaxed text-foreground/90 break-words [&>*:first-child]:mt-0 ${!expanded ? 'max-h-[4.5rem] overflow-hidden' : ''}`}
+        className={`text-sm leading-relaxed text-foreground/90 break-words [&>*:first-child]:mt-0 ${!expanded ? 'max-h-[5.5rem] overflow-hidden' : ''}`}
         style={
           !expanded && overflowing
             ? {
-                maskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 55%, transparent 100%)',
+                maskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)',
               }
             : undefined
         }
@@ -245,7 +245,13 @@ function templateInsert(type: keyof typeof TEMPLATE_BODIES): string {
   return `${TEMPLATE_TITLES[type]}\n\n${TEMPLATE_BODIES[type]}`;
 }
 
-const mockEntries: JournalEntry[] = [];
+// Common trading emotions
+const AVAILABLE_EMOTIONS = [
+  'confident', 'anxious', 'excited', 'fearful', 'greedy', 'patient',
+  'impulsive', 'frustrated', 'satisfied', 'disappointed', 'hopeful',
+  'stressed', 'calm', 'overwhelmed', 'focused', 'doubtful', 'optimistic',
+  'regretful', 'disciplined', 'revenge-trading'
+];
 
 // Local YYYY-MM-DD for <input type="date"> values and same-day checks —
 // deliberately local time, matching how the calendar buckets days.
@@ -272,7 +278,7 @@ export default function Journal() {
   const userStorage = useUserStorage();
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [entries, setEntries] = useState<JournalEntry[]>(mockEntries);
+  const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [totalEntryCount, setTotalEntryCount] = useState(0);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
@@ -297,6 +303,12 @@ export default function Journal() {
   // an unrelated edit can never silently destroy them.
   const [unresolvedRefs, setUnresolvedRefs] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Closing the editor with unsaved typing asks first. The baseline is what
+  // the editor opened with (blank, a template, or the entry being edited), so
+  // a prefilled-but-untouched form closes without a prompt.
+  const [pendingDiscard, setPendingDiscard] = useState<(() => void) | null>(null);
+  const editorBaselineRef = useRef<string | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Reload entries/trades when they change elsewhere (Trade Log, CSV import,
   // dashboard calendar quick-add, other tabs).
@@ -345,6 +357,23 @@ export default function Journal() {
     [newEntry.tradeIds, trades]
   );
 
+  // Fingerprint of everything the editor can change, for the unsaved-changes check.
+  const editorSnapshot = useCallback(
+    () => JSON.stringify({ ...newEntry, images: uploadedImages.map(i => i.ref || i.id) }),
+    [newEntry, uploadedImages]
+  );
+
+  // Bring the editor into view when it opens. The FAB and the edit pencils on
+  // deep entries otherwise open it far above the viewport with nothing moving.
+  // Runs after the session prefill below so the scroll lands on the final layout.
+  useEffect(() => {
+    if (!showNewEntry) { editorBaselineRef.current = null; return; }
+    const frame = requestAnimationFrame(() => {
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showNewEntry, editingEntry]);
+
   // Open a brand new entry on a day you traded and the day's numbers are
   // already written down. The blank box is where journalling dies. Guarded on
   // an empty title AND body, and skipped entirely when editing, so it can
@@ -387,6 +416,17 @@ export default function Journal() {
     // newEntry is deliberately absent from the deps so typing never re-triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNewEntry, editingEntry, todayDraft]);
+
+  // First settled state after opening becomes the dirty-check baseline: after
+  // the session prefill (one render later) and, when editing, after the
+  // entry's screenshots have resolved.
+  useEffect(() => {
+    if (!showNewEntry || imagesLoading || editorBaselineRef.current !== null) return;
+    const frame = requestAnimationFrame(() => {
+      if (editorBaselineRef.current === null) editorBaselineRef.current = editorSnapshot();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showNewEntry, imagesLoading, editorSnapshot]);
 
   // Ask the writing coach about the current draft (or for starters if empty).
   // Same quota/rate-limit rails as every other AI feature.
@@ -664,6 +704,17 @@ export default function Journal() {
     return true;
   };
 
+  // Every way into a blank editor. Guarded up front so the All-accounts
+  // warning fires before anyone types, not at save.
+  const openNewEntry = () => {
+    if (guardAllAccounts()) return;
+    if (showNewEntry) {
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    setShowNewEntry(true);
+  };
+
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) return;
     if (guardAllAccounts()) return;
@@ -761,7 +812,7 @@ export default function Journal() {
         setEditingEntry(null);
       } else {
         const entry: JournalEntry = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          id: Date.now().toString() + Math.random().toString(36).slice(2, 11),
           title: newEntry.title,
           content: newEntry.content,
           date: entryDate,
@@ -882,21 +933,21 @@ export default function Journal() {
     setNewEntry(prev => ({ ...prev, tradeIds: prev.tradeIds.filter(t => t !== id) }));
   };
 
-  const formatTradeOption = (trade: Trade) => {
-    const isWin = trade.pnl > 0;
-    return {
-      label: `${trade.symbol} ${trade.side.toUpperCase()} • ${formatCurrency(trade.pnl, true)} • ${format(trade.entryTime, 'MMM dd')}`,
-      value: trade.id,
-      trade,
-      isWin
-    };
-  };
+  const formatTradeOption = (trade: Trade) =>
+    `${trade.symbol} ${trade.side.toUpperCase()} • ${formatCurrency(trade.pnl, true)} • ${format(trade.entryTime, 'MMM dd')}`;
 
   const quickStartEntry = (type: 'pre-trade' | 'post-trade', tradeIds?: string[]) => {
+    if (guardAllAccounts()) return;
+    withDirtyCheck(() => startQuickEntry(type, tradeIds));
+  };
+
+  const startQuickEntry = (type: 'pre-trade' | 'post-trade', tradeIds?: string[]) => {
     // Facts first, then the blank form. On a pre-trade note this is the most
     // useful it gets: you see you are already down for the day before you
     // plan the next entry. The draft's own title is dropped here so the
     // template keeps naming the entry.
+    editorBaselineRef.current = null;
+    setEditingEntry(null);
     const draft = todayDraft();
     if (draft) trackEvent('journal_prefilled_from_session', { source: type });
     setNewEntry({
@@ -913,14 +964,6 @@ export default function Journal() {
     setUnresolvedRefs([]);
     setShowNewEntry(true);
   };
-
-  // Common trading emotions
-  const availableEmotions = [
-    'confident', 'anxious', 'excited', 'fearful', 'greedy', 'patient',
-    'impulsive', 'frustrated', 'satisfied', 'disappointed', 'hopeful',
-    'stressed', 'calm', 'overwhelmed', 'focused', 'doubtful', 'optimistic',
-    'regretful', 'disciplined', 'revenge-trading'
-  ];
 
   const toggleEmotion = (emotion: string) => {
     setNewEntry(prev => ({
@@ -997,9 +1040,27 @@ export default function Journal() {
     return () => window.removeEventListener('paste', handlePaste);
   }, [showNewEntry]);
 
+  // Escape closes the screenshot lightbox
+  useEffect(() => {
+    if (!enlargedImage) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setEnlargedImage(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [enlargedImage]);
+
   // Edit and delete functions
   const startEdit = (entry: JournalEntry) => {
+    if (guardAllAccounts()) return;
     if (demoGuard('edit journal entries')) return;
+    if (editingEntry?.id === entry.id && showNewEntry) {
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    withDirtyCheck(() => beginEdit(entry));
+  };
+
+  const beginEdit = (entry: JournalEntry) => {
+    editorBaselineRef.current = null;
     setEditingEntry(entry);
     setNewEntry({
       title: entry.title,
@@ -1053,6 +1114,18 @@ export default function Journal() {
     }
   };
 
+  // Run `action` now, or after the trader confirms throwing away unsaved typing.
+  const withDirtyCheck = (action: () => void) => {
+    const baseline = editorBaselineRef.current;
+    if (showNewEntry && baseline !== null && baseline !== editorSnapshot()) {
+      setPendingDiscard(() => action);
+      return;
+    }
+    action();
+  };
+
+  const requestCloseEditor = () => withDirtyCheck(cancelEdit);
+
   const cancelEdit = () => {
     setEditingEntry(null);
     setNewEntry({ title: '', content: '', tags: '', emotions: [], mood: 'neutral' as 'bullish' | 'bearish' | 'neutral', tradeIds: [], entryType: 'general', entryDate: toLocalDateInput(new Date()) });
@@ -1082,7 +1155,7 @@ export default function Journal() {
 
   // Filter and sort entries
   const filteredAndSortedEntries = useMemo(() => {
-    let filtered = entries.filter(entry => {
+    const filtered = entries.filter(entry => {
       // Search filter
       const matchesSearch = searchTerm === '' || 
         entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1234,14 +1307,6 @@ export default function Journal() {
     }
   };
 
-  const getMoodIcon = (mood: string) => {
-    switch (mood) {
-      case 'bullish': return <TrendUp className="h-3 w-3" />;
-      case 'bearish': return <TrendDown className="h-3 w-3" />;
-      default: return <Minus className="h-3 w-3" />;
-    }
-  };
-
   const getMoodColor = (mood: string) => {
     switch (mood) {
       case 'bullish': return themeColors.profit;
@@ -1306,7 +1371,7 @@ export default function Journal() {
                   </div>
                 )}
                 <Button
-                  onClick={() => setShowNewEntry(true)}
+                  onClick={openNewEntry}
                   className="gap-2 shadow-lg"
                   style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                 >
@@ -1315,6 +1380,29 @@ export default function Journal() {
                 </Button>
               </div>
             </div>
+            {/* Mobile: the same actions as the desktop button group, one row; New Entry is the floating button */}
+            {(entries.length > 0 || trades.length > 0) && (
+              <div className="flex gap-2 sm:hidden">
+                {entries.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={() => setAiReviewOpen(true)} className="gap-1.5 flex-1">
+                    <Brain className="h-4 w-4" />
+                    AI Review
+                  </Button>
+                )}
+                {trades.length > 0 && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => quickStartEntry('pre-trade')} className="gap-1.5 flex-1">
+                      <Clock className="h-4 w-4" />
+                      Pre-Trade
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => quickStartEntry('post-trade')} className="gap-1.5 flex-1">
+                      <ChartBar className="h-4 w-4" />
+                      Post-Trade
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1368,9 +1456,9 @@ export default function Journal() {
               {
                 Icon: LinkSimple,
                 value: entries.filter(e => linkedTradeIdsOf(e).length > 0).length,
-                label: 'Linked Trades',
+                label: 'Linked Entries',
                 color: themeColors.primary,
-                subtitle: 'Trade-connected'
+                subtitle: 'With a trade attached'
               }
             ].map((stat, index) => (
               <Card key={index}>
@@ -1399,11 +1487,15 @@ export default function Journal() {
             <CardContent className="px-5 pb-5">
               <div className="grid grid-cols-3 gap-3">
                 {([
-                  { key: 'bullish', label: 'Bullish', color: themeColors.profit },
-                  { key: 'neutral', label: 'Neutral', color: themeColors.primary },
-                  { key: 'bearish', label: 'Bearish', color: themeColors.loss },
-                ] as const).map(({ key, label, color }) => {
+                  { key: 'bullish', label: 'Bullish' },
+                  { key: 'neutral', label: 'Neutral' },
+                  { key: 'bearish', label: 'Bearish' },
+                ] as const).map(({ key, label }) => {
                   const stat = moodPnlStats[key];
+                  // The number is a result, so it takes the result's colour, not the mood's
+                  const color = stat.avg === null || stat.avg === 0
+                    ? 'hsl(var(--foreground))'
+                    : stat.avg > 0 ? themeColors.profit : themeColors.loss;
                   return (
                     <div
                       key={key}
@@ -1432,7 +1524,17 @@ export default function Journal() {
         )}
 
         {showNewEntry && (
-          <div className="space-y-4">
+          <div
+            ref={editorRef}
+            className="space-y-4 scroll-mt-4"
+            onKeyDown={(e) => {
+              // Cmd/Ctrl+Enter saves from anywhere in the editor
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (!isSubmitting && !imagesLoading && newEntry.title.trim() && newEntry.content.trim()) handleAddEntry();
+              }
+            }}
+          >
             {/* Form Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1450,7 +1552,7 @@ export default function Journal() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={cancelEdit}
+                onClick={requestCloseEditor}
                 className="h-11 w-11 p-0 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                 aria-label="Close"
               >
@@ -1471,6 +1573,7 @@ export default function Journal() {
                   size="sm"
                   type="button"
                   onClick={() => setNewEntry({ ...newEntry, entryType: type.value })}
+                  aria-pressed={newEntry.entryType === type.value}
                   className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-shadow duration-200"
                   style={newEntry.entryType === type.value
                     ? { backgroundColor: `${alpha(themeColors.primary, '15')}`, color: themeColors.primary, borderColor: `${alpha(themeColors.primary, '30')}` }
@@ -1614,10 +1717,9 @@ export default function Journal() {
                           {newEntry.tradeIds.length > 0 ? 'Add another trade...' : 'Choose a trade to analyze...'}
                         </SelectItem>
                         {trades.filter(t => !newEntry.tradeIds.includes(t.id)).map((trade) => {
-                          const formattedTrade = formatTradeOption(trade);
                           return (
                             <SelectItem key={trade.id} value={trade.id}>
-                              {formattedTrade.label}
+                              {formatTradeOption(trade)}
                             </SelectItem>
                           );
                         })}
@@ -1769,6 +1871,7 @@ export default function Journal() {
                       key={mood.value}
                       type="button"
                       onClick={() => setNewEntry({ ...newEntry, mood: mood.value })}
+                      aria-pressed={newEntry.mood === mood.value}
                       className="flex items-center justify-center gap-2 p-2.5 rounded-lg border-2 text-xs font-medium transition-colors duration-150"
                       style={newEntry.mood === mood.value
                         ? { backgroundColor: alpha(mood.color, '15'), borderColor: alpha(mood.color, '40'), color: mood.color }
@@ -1792,13 +1895,14 @@ export default function Journal() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {availableEmotions.map((emotion) => {
+                  {AVAILABLE_EMOTIONS.map((emotion) => {
                     const isSelected = newEntry.emotions.includes(emotion);
                     return (
                       <button
                         key={emotion}
                         type="button"
                         onClick={() => toggleEmotion(emotion)}
+                        aria-pressed={isSelected}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-150 ${
                           isSelected
                             ? ''
@@ -1897,7 +2001,7 @@ export default function Journal() {
               <div className="flex gap-3 ml-auto">
                 <Button
                   variant="outline"
-                  onClick={cancelEdit}
+                  onClick={requestCloseEditor}
                   className="border-border/50"
                   disabled={isSubmitting}
                 >
@@ -2051,7 +2155,10 @@ export default function Journal() {
                   
                   {/* Mood Filter */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Mood</label>
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Heart className="h-3 w-3" />
+                      Mood
+                    </label>
                     <Select value={selectedMood} onValueChange={setSelectedMood}>
                       <SelectTrigger aria-label="Filter by mood" className="bg-background/50 border-muted-foreground/20">
                         <SelectValue />
@@ -2067,7 +2174,10 @@ export default function Journal() {
                   
                   {/* Entry Type Filter */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Entry Type</label>
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <PenNib className="h-3 w-3" />
+                      Entry Type
+                    </label>
                     <Select value={selectedEntryType} onValueChange={setSelectedEntryType}>
                       <SelectTrigger aria-label="Filter by entry type" className="bg-background/50 border-muted-foreground/20">
                         <SelectValue />
@@ -2126,6 +2236,7 @@ export default function Journal() {
                                   : [...selectedTags, tag]
                               );
                             }}
+                            aria-pressed={selectedTags.includes(tag)}
                             className={`px-2 py-1 text-xs rounded-full border transition-colors ${
                               selectedTags.includes(tag)
                                 ? 'border-primary bg-primary/10 text-primary'
@@ -2212,6 +2323,7 @@ export default function Journal() {
                       desc: 'End-of-day review of conditions and emotions.',
                       color: themeColors.primary,
                       onClick: () => {
+                        if (guardAllAccounts()) return;
                         setNewEntry({
                           title: TEMPLATE_TITLES.general,
                           content: TEMPLATE_BODIES.general,
@@ -2250,7 +2362,7 @@ export default function Journal() {
 
                 <p className="text-xs text-muted-foreground mb-3">or start from scratch</p>
                 <Button
-                  onClick={() => setShowNewEntry(true)}
+                  onClick={openNewEntry}
                   variant="outline"
                   className="gap-2"
                 >
@@ -2287,7 +2399,7 @@ export default function Journal() {
                             </span>
                             <Badge
                               variant="outline"
-                              className="flex items-center gap-1 font-medium border text-[10px] px-2 py-0"
+                              className="flex items-center gap-1 font-medium border text-[10px] px-2 py-0 capitalize"
                               style={getMoodStyle(entry.mood)}
                             >
                               {entry.mood}
@@ -2359,7 +2471,7 @@ export default function Journal() {
                           <LinkSimple className="h-3 w-3" />
                           Linked Trade
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div className={`grid grid-cols-2 gap-3 text-xs ${linkedTrade.riskReward ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                           <div>
                             <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">Side</span>
                             <span className="font-semibold text-foreground">{linkedTrade.side.toUpperCase()}</span>
@@ -2372,10 +2484,13 @@ export default function Journal() {
                             <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">Exit</span>
                             <span className="font-semibold text-foreground">{linkedTrade.exitPrice}</span>
                           </div>
-                          <div>
-                            <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">R:R</span>
-                            <span className="font-semibold text-foreground">{linkedTrade.riskReward ? linkedTrade.riskReward.toFixed(2) : 'N/A'}</span>
-                          </div>
+                          {/* Only when the trade recorded one; an "N/A" cell is noise */}
+                          {linkedTrade.riskReward ? (
+                            <div>
+                              <span className="text-muted-foreground text-[10px] uppercase tracking-wider block">R:R</span>
+                              <span className="font-semibold text-foreground">{linkedTrade.riskReward.toFixed(2)}</span>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     )}
@@ -2428,6 +2543,7 @@ export default function Journal() {
 
                     {((entry.emotions && entry.emotions.length > 0) || entry.tags.length > 0) && (
                       <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 rounded-lg px-3 py-2.5">
+                        {/* Emotions are filled chips, tags are outlined, so the two read as different things */}
                         {entry.emotions && entry.emotions.map((emotion) => (
                           <Badge
                             key={emotion}
@@ -2437,11 +2553,14 @@ export default function Journal() {
                             {emotion}
                           </Badge>
                         ))}
+                        {entry.emotions && entry.emotions.length > 0 && entry.tags.length > 0 && (
+                          <span className="h-3.5 w-px bg-border mx-0.5" aria-hidden="true" />
+                        )}
                         {entry.tags.map((tag) => (
                           <Badge
                             key={tag}
-                            variant="secondary"
-                            className="text-[10px] bg-muted/50 hover:bg-muted/70 transition-colors"
+                            variant="outline"
+                            className="text-[10px] font-medium text-muted-foreground border-border/70 bg-transparent"
                           >
                             {tag}
                           </Badge>
@@ -2458,7 +2577,7 @@ export default function Journal() {
       
       {/* Mobile Floating Action Button */}
       <Button
-        onClick={() => setShowNewEntry(true)}
+        onClick={openNewEntry}
         className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl z-50"
         style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
         aria-label="New entry"
@@ -2486,9 +2605,20 @@ export default function Journal() {
       {/* Image Lightbox */}
       {enlargedImage && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged screenshot"
           className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
           onClick={() => setEnlargedImage(null)}
         >
+          <button
+            type="button"
+            onClick={() => setEnlargedImage(null)}
+            aria-label="Close"
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
           <StoredImage
             src={enlargedImage}
             alt="Enlarged screenshot"
@@ -2497,6 +2627,15 @@ export default function Journal() {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDiscard !== null}
+        onOpenChange={(open) => { if (!open) setPendingDiscard(null) }}
+        title="Discard unsaved changes?"
+        description="What you typed in this entry will be lost."
+        confirmLabel="Discard"
+        onConfirm={() => { pendingDiscard?.(); }}
+      />
 
       <ConfirmDialog
         open={pendingDeleteId !== null}

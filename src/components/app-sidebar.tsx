@@ -8,6 +8,7 @@ import {
   Target,
   BookOpen,
   Lightbulb,
+  UsersThree,
   Buildings,
   Calculator,
   Brain,
@@ -75,6 +76,12 @@ const navGroups: NavGroup[] = [
       { title: "Trade Insights", url: "/ideas", icon: Lightbulb },
       { title: "PropTracker", url: "/prop-tracker", icon: Buildings },
       { title: "Position Calculator", url: "/calculator", icon: Calculator },
+    ],
+  },
+  {
+    label: "Community",
+    items: [
+      { title: "Trade Ideas", url: "/trade-ideas", icon: UsersThree, badge: "Beta" },
     ],
   },
 ]
@@ -180,7 +187,7 @@ function SidebarUser() {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { themeColors, alpha } = useThemePresets()
   const { user, isDemo, exitDemoMode } = useAuth()
-  const { isPro, trialEndsAt } = useProStatus()
+  const { isPro, isDev, trialEndsAt } = useProStatus()
   const trialDaysLeft = trialEndsAt
     ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
     : null
@@ -207,7 +214,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold flex items-center gap-1.5">
                     FreeTradeJournal
-                    {isPro && <ProBadge />}
+                    {isPro && <ProBadge variant={isDev ? 'dev' : 'pro'} />}
                   </span>
                 </div>
               </Link>

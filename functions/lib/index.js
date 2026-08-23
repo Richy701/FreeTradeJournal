@@ -36,7 +36,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.moderateTradeIdea = exports.deleteTradeIdea = exports.reportTradeIdea = exports.toggleIdeaLike = exports.setIdeaOutcome = exports.postTeamUpdate = exports.postTradeIdea = exports.updateIdeaAvatar = exports.claimHandle = exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.onTradeIdeaDeleted = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -65,6 +66,7 @@ const Day21BackupEmail_1 = require("./emails/Day21BackupEmail");
 const WeeklyDigestEmail_1 = require("./emails/WeeklyDigestEmail");
 const ReferralEmail_1 = require("./emails/ReferralEmail");
 const CheckoutRecoveryEmail_1 = require("./emails/CheckoutRecoveryEmail");
+const trade_ideas_1 = require("./trade-ideas");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -1472,9 +1474,15 @@ exports.submitTestimonial = functions.https.onCall(async (data, context) => {
         tx.set(rateLimitRef, { lastAt: admin.firestore.FieldValue.serverTimestamp() });
     });
     const userEmail = context.auth.token.email || "unknown";
-    await db.collection("testimonials").add({
+    // The approved testimonial doc is publicly readable (landing page), so the
+    // submitter's uid/email live in testimonialsPrivate under the same id.
+    const testimonialRef = db.collection("testimonials").doc();
+    await db.collection("testimonialsPrivate").doc(testimonialRef.id).set({
         uid,
         email: userEmail,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    await testimonialRef.set({
         name: name || "Anonymous",
         role: role || "",
         quote: quote.trim(),
@@ -3202,6 +3210,10 @@ function isEntitledPro(data) {
         return false;
     if (data.isPro)
         return true;
+    // Staff account. Set by hand with the admin SDK (users/{uid} is client
+    // read-only), mirrored by isDev in the client's pro-context.
+    if (data.role === "dev")
+        return true;
     return [data.trialProExpiresAt, data.referralProExpiresAt].some((v) => typeof v === "string" && new Date(v).getTime() > Date.now());
 }
 function entitlementTier(data) {
@@ -4784,6 +4796,13 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
             console.error(`[deleteUserAccount] Subcollection ${subcol} cleanup error:`, err.message);
         }
     }
+    // 2b. Community trade ideas, public profile and handle.
+    try {
+        await tradeIdeaFns.cleanupUserTradeIdeas(uid);
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Trade ideas cleanup error:`, err.message);
+    }
     // 3. Delete user's feedback docs
     try {
         const feedbackSnapshot = await db.collection("feedback").where("uid", "==", uid).get();
@@ -5232,4 +5251,30 @@ exports.mtSyncPush = functions.https.onRequest(async (req, res) => {
     await batch.commit();
     res.status(200).json({ ok: true, received: deals.length, upserted, skipped });
 });
+// ─── Community trade ideas ──────────────────────────────────
+// Feed, handles, likes, reports and outcome links. See trade-ideas.ts.
+const tradeIdeaFns = (0, trade_ideas_1.createTradeIdeaFunctions)({
+    db,
+    reported,
+    captureServerEvent,
+    getResend,
+    escapeHtml,
+    isAdmin: (context) => {
+        const email = (context.auth?.token?.email || "").toLowerCase();
+        return !!email && context.auth?.token?.email_verified === true && ADMIN_EMAILS.includes(email);
+    },
+    fromEmail: FROM_EMAIL,
+    supportEmail: "support@freetradejournal.com",
+    appUrl: process.env.APP_URL || "https://freetradejournal.com",
+});
+exports.claimHandle = tradeIdeaFns.claimHandle;
+exports.updateIdeaAvatar = tradeIdeaFns.updateIdeaAvatar;
+exports.postTradeIdea = tradeIdeaFns.postTradeIdea;
+exports.postTeamUpdate = tradeIdeaFns.postTeamUpdate;
+exports.setIdeaOutcome = tradeIdeaFns.setIdeaOutcome;
+exports.toggleIdeaLike = tradeIdeaFns.toggleIdeaLike;
+exports.reportTradeIdea = tradeIdeaFns.reportTradeIdea;
+exports.deleteTradeIdea = tradeIdeaFns.deleteTradeIdea;
+exports.moderateTradeIdea = tradeIdeaFns.moderateTradeIdea;
+exports.onTradeIdeaDeleted = tradeIdeaFns.onTradeIdeaDeleted;
 //# sourceMappingURL=index.js.map

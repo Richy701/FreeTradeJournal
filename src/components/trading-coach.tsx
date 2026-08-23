@@ -342,6 +342,37 @@ const CHAT_PROSE = cn(
   "[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[12px] [&_code]:font-mono"
 )
 
+// AI tips are keyed by what they say, not where they sit in the list. The
+// coach regenerates whenever trades change, and a positional key ("ai-tip-0")
+// meant every batch reused the same five keys: once a user had hidden five
+// different tips over time, every future batch counted as fully dismissed and
+// the X buttons stopped doing anything.
+function tipKey(title: string, message: string): string {
+  const text = `${title}\u0000${message}`.toLowerCase()
+  let h = 5381
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0
+  return `ai-${(h >>> 0).toString(36)}`
+}
+
+// Assigns content keys to a tip list (fresh from the model or read back from
+// cache, which may still hold positional keys written by an older build).
+export function withTipKeys(tipList: any[]): any[] {
+  const seen = new Map<string, number>()
+  return tipList.map((tip: any) => {
+    const base = tipKey(tip.title || 'Tip', tip.message || '')
+    const dup = seen.get(base) ?? 0
+    seen.set(base, dup + 1)
+    return {
+      icon: Lightbulb,
+      type: tip.type || 'info',
+      title: tip.title || 'Tip',
+      message: tip.message || '',
+      // Two tips with identical wording get a suffix so both can be hidden.
+      key: dup ? `${base}-${dup}` : base,
+    }
+  })
+}
+
 const TIP_SEVERITY_ORDER: Record<string, number> = {
   critical: 0,
   warning: 1,
@@ -368,7 +399,10 @@ export function TradingCoach() {
   const [dismissedTips, setDismissedTips] = useState<Set<string>>(() => {
     try {
       const stored = userStorage.getItem('dismissedCoachTips') ?? localStorage.getItem('dismissedCoachTips')
-      return stored ? new Set(JSON.parse(stored)) : new Set()
+      const keys: string[] = stored ? JSON.parse(stored) : []
+      // Positional AI keys from before content keys never pointed at a
+      // specific tip; keeping them would hide tips the user never saw.
+      return new Set(keys.filter(k => !/^ai-tip-\d+$/.test(k)))
     } catch {
       return new Set()
     }
@@ -895,7 +929,7 @@ export function TradingCoach() {
     const cached = getAICache<{ fp: string; tips: any[] }>(AI_COACH_CACHE_KEY, AI_COACH_TTL)
     if (cached && !Array.isArray(cached) && cached.fp === tradeFingerprint) {
       aiFetchedRef.current = tradeFingerprint
-      setAiTips(cached.tips)
+      setAiTips(withTipKeys(cached.tips))
       return
     }
 
@@ -989,13 +1023,7 @@ export function TradingCoach() {
         // is the pre-2.71 shape, kept so a stale server can't blank the tips.
         const tipList = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.tips) ? parsed.tips : null
         if (tipList) {
-          const tipsWithKeys = tipList.map((tip: any, i: number) => ({
-            icon: Lightbulb,
-            type: tip.type || 'info',
-            title: tip.title || 'Tip',
-            message: tip.message || '',
-            key: `ai-tip-${i}`,
-          }))
+          const tipsWithKeys = withTipKeys(tipList)
           setAiTips(tipsWithKeys)
           setAICache(AI_COACH_CACHE_KEY, { fp: tradeFingerprint, tips: tipsWithKeys })
         }
@@ -1312,10 +1340,10 @@ export function TradingCoach() {
   // Filter out dismissed tips
   const visibleTips = useMemo(() => {
     const filtered = baseTips.filter(tip => !dismissedTips.has(tip.key))
-    const list = filtered.length > 0 ? filtered : baseTips
     // AI tips arrive in model order; rank them the same way as the client tips
-    return [...list].sort((a, b) => (TIP_SEVERITY_ORDER[a.type] ?? 5) - (TIP_SEVERITY_ORDER[b.type] ?? 5))
+    return [...filtered].sort((a, b) => (TIP_SEVERITY_ORDER[a.type] ?? 5) - (TIP_SEVERITY_ORDER[b.type] ?? 5))
   }, [baseTips, dismissedTips])
+  const allTipsHidden = baseTips.length > 0 && visibleTips.length === 0
 
   const dismissTip = useCallback((key: string) => {
     const next = new Set(dismissedTips)
@@ -1326,6 +1354,14 @@ export function TradingCoach() {
       localStorage.removeItem('dismissedCoachTips')
     } catch {}
   }, [dismissedTips, userStorage])
+
+  const restoreTips = useCallback(() => {
+    setDismissedTips(new Set())
+    try {
+      userStorage.setItem('dismissedCoachTips', '[]')
+      localStorage.removeItem('dismissedCoachTips')
+    } catch {}
+  }, [userStorage])
 
   const hasCritical = visibleTips.some((t) => t.type === 'critical')
 
@@ -1351,7 +1387,7 @@ export function TradingCoach() {
     }
   }
 
-  if (visibleTips.length === 0 && !aiLoading && !sessionReview) return null
+  if (visibleTips.length === 0 && !allTipsHidden && !aiLoading && !sessionReview) return null
 
   // Briefing layout: one lead sentence (the "you're doing fine" tip, if any),
   // then the things to fix ranked by severity, then the chat. Five equal
@@ -1553,6 +1589,15 @@ export function TradingCoach() {
               >
                 {hiddenTipCount > 0 ? `Show ${hiddenTipCount} more` : 'Show less'}
               </button>
+            )}
+
+            {allTipsHidden && (
+              <p className="text-sm text-muted-foreground">
+                You hid everything the coach had to say.{' '}
+                <button type="button" onClick={restoreTips} className="font-medium text-foreground underline underline-offset-2 hover:opacity-80">
+                  Show it again
+                </button>
+              </p>
             )}
           </>
         )}

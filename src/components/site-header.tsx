@@ -143,6 +143,7 @@ export function SiteHeader({ className }: { className?: string }) {
       'cookie-policy': 'Cookie Policy',
       'documentation': 'Documentation',
       'ideas': 'Trade Insights',
+      'trade-ideas': 'Trade Ideas',
       'prop-tracker': 'PropTracker',
       'calculator': 'Position Calculator',
       'blog': 'Blog',

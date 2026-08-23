@@ -4,12 +4,14 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from "path"
 import { fetchMarketFeed, FEED_TABS } from './api/_lib/market-feed'
+import { parseGifQuery, searchGifs } from './api/_lib/gifs'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const twelveDataKey = env.TWELVEDATA_API_KEY || env.VITE_TWELVEDATA_API_KEY || ''
   const finnhubKey = env.FINNHUB_API_KEY || env.VITE_FINNHUB_API_KEY || ''
+  const giphyKey = env.GIPHY_API_KEY || ''
   const fredKey = env.FRED_API_KEY || env.VITE_FRED_API_KEY || ''
   const appendKey = (path: string, param: string, key: string) =>
     path + (path.includes('?') ? '&' : '?') + `${param}=${key}`
@@ -96,10 +98,42 @@ export default defineConfig(({ mode }) => {
     },
   })
 
+  // Dev twin of api/gifs.ts — same adapter module as production.
+  const devGifSearch = (): Plugin => ({
+    name: 'dev-gif-search',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api/gifs', (req, res) => {
+        void (async () => {
+          res.setHeader('Content-Type', 'application/json')
+          if (!giphyKey) {
+            res.statusCode = 503
+            res.end('{"error":"GIF search not configured"}')
+            return
+          }
+          const [, rawQuery = ''] = (req.url || '').split('?')
+          const parsed = parseGifQuery(rawQuery)
+          if (!parsed) {
+            res.statusCode = 400
+            res.end('{"error":"Invalid parameters"}')
+            return
+          }
+          try {
+            res.end(JSON.stringify(await searchGifs(giphyKey, parsed.q, parsed.offset)))
+          } catch {
+            res.statusCode = 502
+            res.end('{"error":"GIF search unavailable"}')
+          }
+        })()
+      })
+    },
+  })
+
   return {
   plugins: [
     devTwelveDataQuoteCache(),
     devNewsFeed(),
+    devGifSearch(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: false,

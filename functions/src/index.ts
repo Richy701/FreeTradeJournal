@@ -26,6 +26,7 @@ import { Day21BackupEmail } from "./emails/Day21BackupEmail";
 import { WeeklyDigestEmail } from "./emails/WeeklyDigestEmail";
 import { ReferralEmail } from "./emails/ReferralEmail";
 import { CheckoutRecoveryEmail } from "./emails/CheckoutRecoveryEmail";
+import { createTradeIdeaFunctions } from "./trade-ideas";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -1571,9 +1572,15 @@ export const submitTestimonial = functions.https.onCall(async (data, context) =>
   });
   const userEmail = context.auth.token.email || "unknown";
 
-  await db.collection("testimonials").add({
+  // The approved testimonial doc is publicly readable (landing page), so the
+  // submitter's uid/email live in testimonialsPrivate under the same id.
+  const testimonialRef = db.collection("testimonials").doc();
+  await db.collection("testimonialsPrivate").doc(testimonialRef.id).set({
     uid,
     email: userEmail,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  await testimonialRef.set({
     name: name || "Anonymous",
     role: role || "",
     quote: quote.trim(),
@@ -3553,6 +3560,9 @@ async function enforceStripeRateLimit(uid: string, kind: string): Promise<void> 
 function isEntitledPro(data: FirebaseFirestore.DocumentData | undefined): boolean {
   if (!data) return false;
   if (data.isPro) return true;
+  // Staff account. Set by hand with the admin SDK (users/{uid} is client
+  // read-only), mirrored by isDev in the client's pro-context.
+  if (data.role === "dev") return true;
   return [data.trialProExpiresAt, data.referralProExpiresAt].some(
     (v) => typeof v === "string" && new Date(v).getTime() > Date.now()
   );
@@ -5411,6 +5421,13 @@ export const deleteUserAccount = functions.https.onCall(async (_data, context) =
     }
   }
 
+  // 2b. Community trade ideas, public profile and handle.
+  try {
+    await tradeIdeaFns.cleanupUserTradeIdeas(uid);
+  } catch (err: any) {
+    console.error(`[deleteUserAccount] Trade ideas cleanup error:`, err.message);
+  }
+
   // 3. Delete user's feedback docs
   try {
     const feedbackSnapshot = await db.collection("feedback").where("uid", "==", uid).get();
@@ -5896,3 +5913,31 @@ export const mtSyncPush = functions.https.onRequest(async (req, res) => {
 
   res.status(200).json({ ok: true, received: deals.length, upserted, skipped });
 });
+
+// ─── Community trade ideas ──────────────────────────────────
+// Feed, handles, likes, reports and outcome links. See trade-ideas.ts.
+
+const tradeIdeaFns = createTradeIdeaFunctions({
+  db,
+  reported,
+  captureServerEvent,
+  getResend,
+  escapeHtml,
+  isAdmin: (context) => {
+    const email = (context.auth?.token?.email || "").toLowerCase();
+    return !!email && context.auth?.token?.email_verified === true && ADMIN_EMAILS.includes(email);
+  },
+  fromEmail: FROM_EMAIL,
+  supportEmail: "support@freetradejournal.com",
+  appUrl: process.env.APP_URL || "https://freetradejournal.com",
+});
+export const claimHandle = tradeIdeaFns.claimHandle;
+export const updateIdeaAvatar = tradeIdeaFns.updateIdeaAvatar;
+export const postTradeIdea = tradeIdeaFns.postTradeIdea;
+export const postTeamUpdate = tradeIdeaFns.postTeamUpdate;
+export const setIdeaOutcome = tradeIdeaFns.setIdeaOutcome;
+export const toggleIdeaLike = tradeIdeaFns.toggleIdeaLike;
+export const reportTradeIdea = tradeIdeaFns.reportTradeIdea;
+export const deleteTradeIdea = tradeIdeaFns.deleteTradeIdea;
+export const moderateTradeIdea = tradeIdeaFns.moderateTradeIdea;
+export const onTradeIdeaDeleted = tradeIdeaFns.onTradeIdeaDeleted;

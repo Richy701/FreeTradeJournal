@@ -82,7 +82,7 @@ export default function BlogPost() {
       <ReadingProgress />
 
       <div>
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16">
           <Link
             to="/blog"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-8"
@@ -108,7 +108,7 @@ export default function BlogPost() {
         </div>
       </div>
 
-      <article className="max-w-2xl mx-auto px-4 sm:px-6 pt-2 pb-16">
+      <article className="max-w-3xl mx-auto px-4 sm:px-6 pt-2 pb-16">
         <div
           className={PROSE}
           // Repo-authored markdown only — see renderMarkdown in src/lib/blog.ts

@@ -116,7 +116,7 @@ export default function Settings() {
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { settings, updateSettings, formatCurrency, getCurrencySymbol } = useSettings();
   const userStorage = useUserStorage();
-  const { isPro, subscription, trialEndsAt } = useProStatus();
+  const { isPro, isDev, subscription, trialEndsAt } = useProStatus();
   const { syncStatus, lastSyncTime } = useSync();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -416,7 +416,7 @@ export default function Settings() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-base font-semibold capitalize truncate">{user?.displayName || 'Trader'}</p>
-                      {isPro ? <ProBadge /> : (
+                      {isPro ? <ProBadge variant={isDev ? 'dev' : 'pro'} /> : (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Free plan</span>
                       )}
                     </div>
@@ -1124,17 +1124,17 @@ export default function Settings() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Plan</p>
                     {isPro ? (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                        <div className={`flex items-center justify-between p-4 rounded-lg border ${isDev ? 'bg-violet-500/5 border-violet-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
                           <div>
                             <div className="flex items-center gap-2">
-                              <ProBadge size="md" />
+                              <ProBadge size="md" variant={isDev ? 'dev' : 'pro'} />
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-                              {trialEndsAt ? 'Free trial' : subscription ? `${subscription.planType} plan` : 'Pro'}
+                              {isDev ? 'Developer account' : trialEndsAt ? 'Free trial' : subscription ? `${subscription.planType} plan` : 'Pro'}
                             </p>
                           </div>
                           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 capitalize">
-                            {trialEndsAt || subscription?.status === 'on_trial' ? 'Trial' : subscription?.status || 'Active'}
+                            {isDev ? 'Active' : trialEndsAt || subscription?.status === 'on_trial' ? 'Trial' : subscription?.status || 'Active'}
                           </Badge>
                         </div>
                         {/* trialEndsAt set means the trial is the entitlement — any

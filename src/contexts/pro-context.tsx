@@ -24,6 +24,9 @@ export interface FreeAIQuota {
 
 interface ProContextType {
   isPro: boolean;
+  /** Staff account (`role: "dev"` on the user doc, admin-SDK only). Counts as
+   * Pro everywhere; the UI shows a Dev tag where customers see Pro. */
+  isDev: boolean;
   isLoading: boolean;
   subscription: SubscriptionInfo | null;
   openCheckout: (priceId: string) => void;
@@ -111,7 +114,7 @@ export function ProProvider({ children }: ProProviderProps) {
   })();
 
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedSub);
-  const cachedEntitlements: { trial?: string | null; referral?: string | null } = (() => {
+  const cachedEntitlements: { trial?: string | null; referral?: string | null; dev?: boolean } = (() => {
     if (!uid) return {};
     try {
       return JSON.parse(UserStorage.getItem(uid, ENTITLEMENT_CACHE_KEY) || '{}');
@@ -123,6 +126,7 @@ export function ProProvider({ children }: ProProviderProps) {
   // Signup reverse trial: every new account gets full Pro for 14 days, written
   // server-side by the onUserCreated function. Expiry-date based, no card.
   const [trialProExpiresAt, setTrialProExpiresAt] = useState<string | null>(cachedEntitlements.trial || null);
+  const [isDev, setIsDev] = useState<boolean>(cachedEntitlements.dev === true);
   const [isLoading, setIsLoading] = useState(!cachedSub && !!uid && !isDemo);
 
   const [freeAiQuota, setFreeAiQuota] = useState<FreeAIQuota | null>(() => {
@@ -185,6 +189,7 @@ export function ProProvider({ children }: ProProviderProps) {
       setSubscription(cachedSub);
       setReferralProExpiresAt(cachedEntitlements.referral || null);
       setTrialProExpiresAt(cachedEntitlements.trial || null);
+      setIsDev(cachedEntitlements.dev === true);
     }
 
     let unsubscribe: (() => void) | undefined;
@@ -214,14 +219,17 @@ export function ProProvider({ children }: ProProviderProps) {
               }
               setReferralProExpiresAt(data.referralProExpiresAt || null);
               setTrialProExpiresAt(data.trialProExpiresAt || null);
+              setIsDev(data.role === 'dev');
               UserStorage.setItem(uid, ENTITLEMENT_CACHE_KEY, JSON.stringify({
                 trial: data.trialProExpiresAt || null,
                 referral: data.referralProExpiresAt || null,
+                dev: data.role === 'dev',
               }));
             } else {
               setSubscription(null);
               setReferralProExpiresAt(null);
               setTrialProExpiresAt(null);
+              setIsDev(false);
               UserStorage.removeItem(uid, PRO_CACHE_KEY);
               UserStorage.removeItem(uid, ENTITLEMENT_CACHE_KEY);
             }
@@ -306,7 +314,7 @@ export function ProProvider({ children }: ProProviderProps) {
   // (every Pro feature visible and working with sample data). Edits are still
   // blocked by useDemoGuard, and AI calls are served canned responses (below),
   // so nothing real is mutated or charged.
-  const isPro = isDemo || isActivePro(subscription) || hasReferralPro || hasTrialPro;
+  const isPro = isDemo || isDev || isActivePro(subscription) || hasReferralPro || hasTrialPro;
   // Surface the countdown only when the trial is what's granting Pro
   const trialEndsAt = !isDemo && !isActivePro(subscription) && !hasReferralPro && hasTrialPro
     ? trialProExpiresAt
@@ -330,6 +338,7 @@ export function ProProvider({ children }: ProProviderProps) {
 
   const value: ProContextType = useMemo(() => ({
     isPro,
+    isDev: !isDemo && isDev,
     isLoading: effectiveLoading,
     subscription,
     openCheckout: handleOpenCheckout,
@@ -339,7 +348,7 @@ export function ProProvider({ children }: ProProviderProps) {
     freeAiQuota: isPro || isDemo ? null : freeAiQuota,
     updateFreeAiQuota,
     trialEndsAt,
-  }), [isPro, isDemo, effectiveLoading, subscription, handleOpenCheckout, hasAIAccess, hasUtilityAIAccess, hasAutoAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
+  }), [isPro, isDev, isDemo, effectiveLoading, subscription, handleOpenCheckout, hasAIAccess, hasUtilityAIAccess, hasAutoAIAccess, freeAiQuota, updateFreeAiQuota, trialEndsAt]);
 
   return <ProContext.Provider value={value}>{children}</ProContext.Provider>;
 }

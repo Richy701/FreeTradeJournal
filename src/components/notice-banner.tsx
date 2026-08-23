@@ -49,8 +49,10 @@ export function NoticeBanner({
         className,
       )}
     >
-      <div className="flex-1 min-w-0 flex items-start sm:items-center gap-2.5">
-        {Icon && <Icon className={cn('h-4 w-4 shrink-0 mt-0.5 sm:mt-0', t.icon)} aria-hidden="true" />}
+      {/* Icon sits on the first text line at every width. Centring it against
+          the block floats it between lines once the description wraps. */}
+      <div className="flex-1 min-w-0 flex items-start gap-2.5">
+        {Icon && <Icon className={cn('h-4 w-4 shrink-0 mt-0.5', t.icon)} aria-hidden="true" />}
         <p className="text-sm min-w-0 leading-snug">
           <span className="font-medium text-foreground">{title}</span>
           {description && (

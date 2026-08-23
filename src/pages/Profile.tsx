@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useSettings } from '@/contexts/settings-context';
@@ -15,19 +15,10 @@ import { useUserStorage } from '@/utils/user-storage';
 import { computeGoalProgress, getGoalTitle } from '@/lib/goal-progress';
 import { useLoggingStreak } from '@/hooks/use-logging-streak';
 import { toast } from 'sonner';
+import { AVATAR_COLORS, AVATAR_EMOJIS } from '@/constants/avatars';
+import { fetchIdeaProfile } from '@/lib/trade-ideas';
+import { profileHitRate, type IdeaProfile } from '@/types/trade-ideas';
 
-const AVATAR_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308',
-  '#22c55e', '#14b8a6', '#3b82f6', '#6366f1',
-  '#8b5cf6', '#ec4899', '#64748b', '#0ea5e9',
-];
-
-const AVATAR_EMOJIS = [
-  '🚀', '💎', '🦁', '🐯', '🦅', '🦊',
-  '⚡', '🔥', '🏆', '👑', '🎯', '📈',
-  '💰', '🌙', '⭐', '🧠', '💪', '🤖',
-  '🎲', '🌊',
-];
 
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -57,6 +48,16 @@ export default function Profile() {
   const [avatarColor, setAvatarColor] = useState<string>(() => userStorage.getItem('avatarColor') || '');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  // Community handle + idea track record (Trade Ideas). Null until claimed.
+  const [ideaProfile, setIdeaProfile] = useState<IdeaProfile | null>(null);
+  useEffect(() => {
+    if (!user?.uid) return;
+    let cancelled = false;
+    fetchIdeaProfile(user.uid)
+      .then(p => { if (!cancelled) setIdeaProfile(p); })
+      .catch(() => { /* profile is optional on this page */ });
+    return () => { cancelled = true; };
+  }, [user?.uid]);
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   // Shown in the heading immediately after a save — the Firebase user object
   // in context doesn't re-render on updateProfile.
@@ -252,6 +253,16 @@ export default function Profile() {
                 </div>
               )}
               <p className="mt-0.5 text-xs text-muted-foreground truncate">{user.email}</p>
+              {ideaProfile && (() => {
+                const hit = profileHitRate(ideaProfile);
+                return (
+                  <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                    <Link to="/trade-ideas?scope=mine" className="font-semibold text-foreground hover:underline">@{ideaProfile.handle}</Link>
+                    {' · '}{ideaProfile.ideaCount} {ideaProfile.ideaCount === 1 ? 'idea' : 'ideas'} on Trade Ideas
+                    {hit && <>{' · '}{ideaProfile.winCount} of {hit.decided} worked</>}
+                  </p>
+                );
+              })()}
               {(user.metadata?.creationTime || user.metadata?.lastSignInTime) && (
                 <p className="mt-1 text-xs text-muted-foreground md:hidden">
                   {user.metadata?.creationTime && (

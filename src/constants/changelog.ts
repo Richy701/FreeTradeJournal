@@ -24,6 +24,69 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.87.0',
+    date: '2026-08-23',
+    summary: 'Trade Ideas: a shared feed of setups from other traders, in beta.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Trade Ideas (beta)',
+        description: 'A new Community section in the sidebar where anyone signed in can post a setup before taking it: symbol, long or short, entry, stop, target and why. Other traders can read it and like it. The first time you post you pick a handle and an avatar. Your real name and email are never shown. Once you have taken the trade, link it from your Trade Log and the result shows on the idea for everyone, so a feed of setups also shows which ones worked. It is a beta, so tell us what you would change.',
+        image: {
+          src: '/screenshots/trade-ideas-feed.png',
+          alt: 'The Trade Ideas feed with a long EURUSD setup still open and a short NQ idea marked Worked with its profit',
+        },
+        link: { to: '/trade-ideas', label: 'Open Trade Ideas' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Post a setup in under a minute',
+        description: 'Pick the market and symbol, long or short, entry, stop and target, then say why. The form shows your planned reward-to-risk as you type and stops you posting a stop on the wrong side of the entry. One chart screenshot can go with it. The community rules sit next to the feed: your own setups only, give a stop, no selling or links, no made-up results. Up to 5 posts a day. Anything that breaks the rules can be reported and comes down after three reports.',
+        image: {
+          src: '/screenshots/trade-ideas-post.png',
+          alt: 'The Post a trade idea form filled in with a short NQ setup showing a planned reward of 2.4R',
+        },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Link the trade, show the result',
+        description: 'On your own idea, press Link a trade and pick the trade from your Trade Log. Trades on the same symbol come first. The idea then shows Worked, Lost or Break even with the P&L, and your record on the page counts it.',
+        image: {
+          src: '/screenshots/trade-ideas-link-trade.png',
+          alt: 'The Link a trade dialog listing closed EURUSD trades from the Trade Log with a winning one selected',
+        },
+      },
+      {
+        type: 'new',
+        text: 'Updates from the FreeTradeJournal team in the feed',
+        description: 'Posts marked Team update come from us: what changed, what is coming, what we need tested. They sit in the same feed as everyone\'s ideas.',
+      },
+      {
+        type: 'new',
+        text: 'Your handle and idea record on your Profile',
+        description: 'Once you have a handle, the Profile page shows it with how many ideas you have posted and how many worked.',
+      },
+      {
+        type: 'improved',
+        text: 'AI Review, Pre-Trade and Post-Trade on a phone',
+        description: 'The three buttons from the top of the Journal on desktop now sit under the page title on a phone. Before, a phone only had the round New Entry button.',
+      },
+      {
+        type: 'improved',
+        text: 'The journal editor opens where you can see it',
+        description: 'Pressing New Entry or the pencil on an entry far down the list now scrolls the editor into view instead of opening it off screen. Closing the editor with unsaved typing asks first. Cmd+Enter (Ctrl+Enter on Windows) saves the entry, and Escape closes an enlarged screenshot.',
+      },
+      {
+        type: 'improved',
+        text: 'Journal cards are easier to read',
+        description: 'Tags are now outlined so they do not look like emotions, the mood badge is capitalised like the others, the risk-reward cell is left out when a trade has none, and the Sentiment vs P&L figures take the colour of the result rather than the mood.',
+      },
+    ],
+  },
+  {
     version: '2.86.0',
     date: '2026-08-22',
     summary: 'One journal entry can now cover several trades.',
@@ -2970,4 +3033,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.86.0'
+export const LATEST_CHANGELOG_VERSION = '2.87.0'

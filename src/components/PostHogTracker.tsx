@@ -13,6 +13,7 @@ const PAGE_NAMES: Record<string, string> = {
   '/goals': 'Goals',
   '/journal': 'Journal',
   '/ideas': 'Trade Insights',
+  '/trade-ideas': 'Trade Ideas',
   '/prop-tracker': 'PropTracker',
   '/settings': 'Settings',
   '/pricing': 'Pricing',
