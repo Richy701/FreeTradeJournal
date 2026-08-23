@@ -60,9 +60,11 @@ describe('parseLevel', () => {
     expect(parseLevel('1,1045')).toBe(1.1045)
     expect(parseLevel('24350,25')).toBe(24350.25)
   })
-  it('strips thousands separators when a dot is present or commas repeat', () => {
+  it('strips thousands separators when a dot is present, commas repeat, or the comma is followed by 3 digits', () => {
     expect(parseLevel('19,240.50')).toBe(19240.5)
     expect(parseLevel('1,234,567')).toBe(1234567)
+    expect(parseLevel('19,240')).toBe(19240)
+    expect(parseLevel('5,425')).toBe(5425)
   })
   it('returns null for empty and NaN for junk', () => {
     expect(parseLevel('  ')).toBeNull()

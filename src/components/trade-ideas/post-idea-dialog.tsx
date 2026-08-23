@@ -163,14 +163,15 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
   const hasLink = TRADE_IDEA_LINK_RE.test(reasoning)
   const reasoningShort = reasoning.trim().length > 0 && reasoning.trim().length < REASONING_MIN
 
-  const canPost =
-    !hasLink &&
-    symbol.trim().length > 0 &&
-    entryN !== null && stopN !== null && allNumbers &&
-    !levelError &&
-    reasoning.trim().length >= REASONING_MIN &&
-    reasoning.length <= REASONING_MAX &&
-    !posting
+  // What still stops the idea going out, in the order the form reads.
+  const missing: string[] = []
+  if (!symbol.trim()) missing.push('pick a symbol')
+  if (entryN === null) missing.push('add an entry')
+  if (stopN === null) missing.push('add a stop')
+  if (levelError) missing.push('fix the levels')
+  if (reasoning.trim().length < REASONING_MIN) missing.push('say why (at least a sentence)')
+  if (hasLink) missing.push('remove the link')
+  const canPost = missing.length === 0 && reasoning.length <= REASONING_MAX && !posting
 
   const pickFile = async (file: File | undefined) => {
     if (!file) return
@@ -207,7 +208,8 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
     }
   }
 
-  const canPostUpdate = postBody.trim().length >= REASONING_MIN && postBody.length <= POST_BODY_MAX && !posting
+  const updateMissing = postBody.trim().length < REASONING_MIN ? 'Write at least a sentence to post.' : null
+  const canPostUpdate = !updateMissing && postBody.length <= POST_BODY_MAX && !posting
 
   const submitUpdate = async () => {
     if (!canPostUpdate) return
@@ -456,12 +458,15 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
                     {postError}
                   </p>
                 )}
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button variant="outline" onClick={() => onOpenChange(false)} disabled={posting}>Cancel</Button>
-                  <Button onClick={submitUpdate} disabled={!canPostUpdate} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
-                    {posting && <CircleNotch className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                    Post update
-                  </Button>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <p className="text-xs text-muted-foreground min-w-0" aria-live="polite">{updateMissing ?? ''}</p>
+                  <div className="flex gap-2 shrink-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={posting}>Cancel</Button>
+                    <Button onClick={submitUpdate} disabled={!canPostUpdate} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+                      {posting && <CircleNotch className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                      Post update
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : (
@@ -616,16 +621,21 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
               </p>
             )}
 
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={posting}>Cancel</Button>
-              <Button
-                onClick={submit}
-                disabled={!canPost}
-                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-              >
-                {posting && <CircleNotch className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                Post idea
-              </Button>
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <p className="text-xs text-muted-foreground min-w-0" aria-live="polite">
+                {missing.length > 0 && `To post: ${missing.join(', ')}.`}
+              </p>
+              <div className="flex gap-2 shrink-0">
+                <Button variant="outline" onClick={() => onOpenChange(false)} disabled={posting}>Cancel</Button>
+                <Button
+                  onClick={submit}
+                  disabled={!canPost}
+                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                >
+                  {posting && <CircleNotch className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                  Post idea
+                </Button>
+              </div>
             </div>
             </>
             )}

@@ -24,7 +24,10 @@ export function parseLevel(raw: string): number | null {
   const t = raw.trim()
   if (!t) return null
   const commas = (t.match(/,/g) || []).length
-  const normalised = commas === 1 && !t.includes('.') ? t.replace(',', '.') : t.replace(/,/g, '')
+  // One comma, no dot: "19,240" (comma + exactly 3 digits) is a thousands
+  // separator; "1,1045" or "24350,25" is a decimal comma.
+  const decimalComma = commas === 1 && !t.includes('.') && !/,\d{3}$/.test(t)
+  const normalised = decimalComma ? t.replace(',', '.') : t.replace(/,/g, '')
   const n = Number(normalised)
   return Number.isFinite(n) ? n : NaN
 }
