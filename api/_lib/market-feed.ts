@@ -101,8 +101,17 @@ export async function fetchMarketFeed(tab: string): Promise<FeedPost[]> {
     })
   )
 
+  // Outlets republish the same headline (and feeds within a tab overlap), so
+  // collapse on the normalised headline and keep the newest copy.
+  const seen = new Set<string>()
   return results
     .flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
     .sort((a, b) => b.datetime - a.datetime)
+    .filter((post) => {
+      const key = post.headline.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+      if (!key || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
     .slice(0, MERGED_CAP)
 }

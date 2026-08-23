@@ -144,6 +144,7 @@ export function SiteHeader({ className }: { className?: string }) {
       'documentation': 'Documentation',
       'ideas': 'Trade Insights',
       'prop-tracker': 'PropTracker',
+      'calculator': 'Position Calculator',
       'blog': 'Blog',
     }
 

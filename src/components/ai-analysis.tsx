@@ -255,7 +255,7 @@ function SampleAnalysisPreview() {
             />
           ))}
           <p className="text-xs text-muted-foreground pt-2 text-right">
-            Based on 38 trades · Sample output — your analysis will use your real trades
+            Based on 38 trades · Sample output. Your analysis will use your real trades
           </p>
         </div>
       </CardContent>
@@ -491,7 +491,18 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
             <div className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 {sections.map((section, i) => {
-                  const wide = /snapshot|performance|action/i.test(section.title)
+                  const isWide = (t: string) => /snapshot|performance|action/i.test(t)
+                  let wide = isWide(section.title)
+                  // Half-width sections pair up. When a run of them is odd,
+                  // the last one goes full width rather than leaving a hole.
+                  if (!wide) {
+                    let runStart = i
+                    while (runStart > 0 && !isWide(sections[runStart - 1].title)) runStart--
+                    let runEnd = i
+                    while (runEnd < sections.length - 1 && !isWide(sections[runEnd + 1].title)) runEnd++
+                    const runLength = runEnd - runStart + 1
+                    wide = runLength % 2 === 1 && i === runEnd
+                  }
                   return (
                     <div key={i} className={wide ? 'sm:col-span-2' : ''}>
                       <AnalysisSection section={section} />
@@ -503,7 +514,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 <div className="flex items-center justify-between pt-3 border-t border-border/50">
                   <AIFeedback feature="AI Trade Analysis" responseId={String(result.timestamp)} />
                   <p className="text-xs text-muted-foreground">
-                    Based on {result.tradeCount} trades · {new Date(result.timestamp).toLocaleDateString()}
+                    Based on {result.tradeCount} trades · {new Date(result.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </p>
                 </div>
               )}

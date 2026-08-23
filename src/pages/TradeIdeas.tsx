@@ -12,6 +12,7 @@ import { useSettings } from '@/contexts/settings-context'
 import { AIAnalysis } from '@/components/ai-analysis'
 import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
 import { trackEvent } from '@/lib/analytics'
+import { niceAxis, niceAxisBoth } from '@/lib/chart-axis'
 import {
   Bar,
   BarChart,
@@ -50,6 +51,17 @@ export default function TradeIdeas() {
     return `${sign}${symbol}${formatted}`
   }
   const gradientId = useId().replace(/:/g, '')
+
+  const weeklyAxis = useMemo(() => {
+    let lo = 0, hi = 0
+    for (const w of charts?.weeklyPnl ?? []) { lo = Math.min(lo, w.pnl); hi = Math.max(hi, w.pnl) }
+    return niceAxis(lo, hi)
+  }, [charts])
+  const strategyAxis = useMemo(() => {
+    let lo = 0, hi = 0
+    for (const st of charts?.strategyPnl ?? []) { lo = Math.min(lo, st.pnl); hi = Math.max(hi, st.pnl) }
+    return niceAxisBoth(lo, hi)
+  }, [charts])
 
   const symbolConfig = useMemo<ChartConfig>(() => ({
     pnl: { label: 'P&L', color: themeColors.primary },
@@ -272,20 +284,25 @@ export default function TradeIdeas() {
               <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Symbol Performance</span>
             </div>
             <p className="text-sm text-muted-foreground">P&L breakdown by instrument</p>
-            <ChartContainer config={symbolConfig} className="h-[300px] w-full">
+            {/* One row per symbol: a fixed height thins the labels once the
+                list passes ~10, and an unlabelled bar is useless here. */}
+            <ChartContainer config={symbolConfig} className="w-full" style={{ height: Math.max(160, charts.symbolPnl.length * 26 + 16) }}>
                 <BarChart
                   accessibilityLayer
                   data={charts.symbolPnl}
                   layout="vertical"
-                  margin={{ left: 10 }}
+                  margin={{ left: 0, right: 8 }}
                 >
-                  <XAxis type="number" dataKey="pnl" hide />
+                  <XAxis type="number" dataKey="pnl" hide domain={['dataMin', 'dataMax']} />
                   <YAxis
                     dataKey="symbol"
                     type="category"
+                    width={72}
+                    interval={0}
                     tickLine={false}
-                    tickMargin={10}
+                    tickMargin={8}
                     axisLine={false}
+                    tick={{ fontSize: 11 }}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -322,8 +339,8 @@ export default function TradeIdeas() {
               </div>
               <p className="text-sm text-muted-foreground">Your trading style at a glance</p>
               <div className="flex flex-1 flex-col items-center gap-6">
-                <ChartContainer config={profileConfig} className="mx-auto aspect-square h-[220px]">
-                  <RadarChart data={summary.traderProfile} cx="50%" cy="50%" outerRadius="65%">
+                <ChartContainer config={profileConfig} className="mx-auto aspect-square h-[260px]">
+                  <RadarChart data={summary.traderProfile} cx="50%" cy="50%" outerRadius="58%">
                     <ChartTooltip
                       cursor={false}
                       content={
@@ -377,6 +394,7 @@ export default function TradeIdeas() {
               </div>
               <p className="text-sm text-muted-foreground">Long vs Short performance</p>
               <div className="flex flex-1 flex-col items-center gap-6">
+                <div className="flex flex-1 items-center">
                 <ChartContainer config={directionConfig} className="h-[200px] w-full max-w-[240px]">
                   <PieChart>
                     <ChartTooltip
@@ -424,7 +442,8 @@ export default function TradeIdeas() {
                     </Pie>
                   </PieChart>
                 </ChartContainer>
-                <div className="grid grid-cols-2 gap-3 w-full mt-auto">
+                </div>
+                <div className="grid grid-cols-2 gap-3 w-full">
                   {charts.direction.map((d) => {
                     const color = d.name === 'Long' ? themeColors.profit : themeColors.loss
                     return (
@@ -480,7 +499,7 @@ export default function TradeIdeas() {
                 <BarChart data={charts.strategyPnl} layout="vertical" margin={{ left: 30, right: 20 }}>
                   <CartesianGrid horizontal={false} strokeOpacity={0.1} />
                   <YAxis dataKey="strategy" type="category" width={120} tick={{ fontSize: 11 }} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => formatAxisCurrency(v)} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} domain={strategyAxis.domain} ticks={strategyAxis.ticks} tickFormatter={(v) => formatAxisCurrency(v)} />
                   <ChartTooltip
                     cursor={false}
                     content={
@@ -525,7 +544,7 @@ export default function TradeIdeas() {
                     </defs>
                     <CartesianGrid vertical={false} strokeOpacity={0.1} />
                     <XAxis dataKey="week" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatAxisCurrency(v)} />
+                    <YAxis tick={{ fontSize: 11 }} domain={weeklyAxis.domain} ticks={weeklyAxis.ticks} tickFormatter={(v) => formatAxisCurrency(v)} />
                     <ChartTooltip
                       cursor={false}
                       content={
@@ -542,11 +561,15 @@ export default function TradeIdeas() {
                       }
                     />
                     <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} />
+                    {/* Straight segments: there is one point per week, and a
+                        smoothed curve implies movement between them that
+                        was never measured. */}
                     <Area
-                      type="monotone"
+                      type="linear"
                       dataKey="pnl"
                       stroke={themeColors.primary}
                       strokeWidth={2}
+                      dot={{ r: 3, fill: themeColors.primary, strokeWidth: 0 }}
                       fill={`url(#weeklyGradient-${gradientId})`}
                     />
                   </AreaChart>

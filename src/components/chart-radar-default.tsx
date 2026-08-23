@@ -102,62 +102,72 @@ export function ChartRadarDefault() {
     }
   }, [])
 
-  const { chartData, rawData, pieData, pieConfig, totalTrades, allTradesCount } = useMemo(() => {
+  const { chartData, pieData, pieConfig, totalTrades, allTradesCount, symbolCount, totalPnL, bestSymbol, mostTraded } = useMemo(() => {
     const allTrades = getAnalyticsTrades().trades
     const trades = filterTradesByPeriod(allTrades, period)
 
-    let rawPairData: any[]
-    if (!trades || trades.length === 0) {
-      rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0, winRate: 0 }]
-    } else {
-      const pairPerformance = trades.reduce((acc: any, trade: any) => {
-        const symbol = trade.symbol || 'Unknown'
-        if (!acc[symbol]) {
-          acc[symbol] = { pair: symbol, pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0 }
-        }
-        acc[symbol].pnl += trade.pnl || 0
-        acc[symbol].actualPnl += trade.pnl || 0
-        acc[symbol].tradeCount += 1
-        if ((trade.pnl || 0) > 0) acc[symbol].wins += 1
-        return acc
-      }, {})
+    type PairRow = { pair: string; pnl: number; actualPnl: number; tradeCount: number; wins: number; winRate: number }
+    const noData: PairRow = { pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0, winRate: 0 }
 
-      rawPairData = Object.values(pairPerformance)
-        .sort((a: any, b: any) => b.pnl - a.pnl)
-        .slice(0, 8)
-        .map((d: any) => ({ ...d, winRate: d.tradeCount > 0 ? Math.round((d.wins / d.tradeCount) * 100) : 0 }))
-
-      if (rawPairData.length === 0) {
-        rawPairData = [{ pair: "No Data", pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0, winRate: 0 }]
+    // Every symbol in the period. Totals, best/most-traded and the donut are
+    // computed from this full list — the bars only *display* a subset.
+    const pairPerformance = (trades || []).reduce((acc: Record<string, PairRow>, trade: any) => {
+      const symbol = trade.symbol || 'Unknown'
+      if (!acc[symbol]) {
+        acc[symbol] = { pair: symbol, pnl: 0, actualPnl: 0, tradeCount: 0, wins: 0, winRate: 0 }
       }
-    }
+      acc[symbol].pnl += trade.pnl || 0
+      acc[symbol].actualPnl += trade.pnl || 0
+      acc[symbol].tradeCount += 1
+      if ((trade.pnl || 0) > 0) acc[symbol].wins += 1
+      return acc
+    }, {})
+    const allPairs: PairRow[] = Object.values(pairPerformance)
+      .map((d) => ({ ...d, winRate: d.tradeCount > 0 ? Math.round((d.wins / d.tradeCount) * 100) : 0 }))
+      .sort((a, b) => b.pnl - a.pnl)
 
-    const total = rawPairData.reduce((sum: number, d: any) => sum + d.tradeCount, 0)
-    // Slices and legend sort by share (largest first) — colors are assigned
-    // before sorting so each symbol keeps a stable color.
-    const piePairs = rawPairData.map((d: any, i: number) => ({
+    // Bars/radar: the 8 symbols that moved the account most, in either
+    // direction, so the biggest losers show up next to the biggest winners.
+    const MAX_BARS = 8
+    const displayed: PairRow[] = allPairs.length === 0
+      ? [noData]
+      : [...allPairs]
+          .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl))
+          .slice(0, MAX_BARS)
+          .sort((a, b) => b.pnl - a.pnl)
+
+    // Donut: slices by trade count, largest first. Past 8 symbols the tail is
+    // folded into one "Other" slice so the legend stays readable.
+    const MAX_SLICES = 8
+    const byCount = [...allPairs].sort((a, b) => b.tradeCount - a.tradeCount)
+    const sliceRows = byCount.length > MAX_SLICES ? byCount.slice(0, MAX_SLICES - 1) : byCount
+    const otherCount = byCount.slice(sliceRows.length).reduce((sum, d) => sum + d.tradeCount, 0)
+    const piePairs = sliceRows.map((d, i) => ({
       pair: d.pair,
       trades: d.tradeCount,
       fill: pairColors[i % pairColors.length],
-    })).sort((a: any, b: any) => b.trades - a.trades)
+    }))
+    if (otherCount > 0) {
+      piePairs.push({ pair: 'Other', trades: otherCount, fill: 'hsl(var(--muted-foreground) / 0.35)' })
+    }
 
     const config: ChartConfig = {
       trades: { label: "Trades" },
     }
-    rawPairData.forEach((d: any, i: number) => {
-      config[d.pair] = {
-        label: d.pair,
-        color: pairColors[i % pairColors.length],
-      }
+    piePairs.forEach((d) => {
+      config[d.pair] = { label: d.pair, color: d.fill }
     })
 
     return {
-      chartData: rawPairData,
-      rawData: rawPairData,
+      chartData: displayed,
       pieData: piePairs,
       pieConfig: config,
-      totalTrades: total,
+      totalTrades: (trades || []).length,
       allTradesCount: allTrades.length,
+      symbolCount: allPairs.length,
+      totalPnL: allPairs.reduce((sum, d) => sum + d.actualPnl, 0),
+      bestSymbol: allPairs[0] ?? null,
+      mostTraded: byCount[0] ?? null,
     }
   }, [refreshKey, getAnalyticsTrades, period])
 
@@ -175,13 +185,7 @@ export function ChartRadarDefault() {
     },
   } satisfies ChartConfig
 
-  const totalPnL = rawData.reduce((sum: number, item: any) => sum + item.actualPnl, 0)
   const hasData = chartData.length > 0 && chartData[0].pair !== "No Data"
-  // rawData is sorted by P&L descending, so the best symbol is first
-  const bestSymbol = hasData ? rawData[0] : null
-  const mostTraded = hasData
-    ? rawData.reduce((max: any, d: any) => (d.tradeCount > max.tradeCount ? d : max), rawData[0])
-    : null
   const concentration = mostTraded && totalTrades > 0
     ? Math.round((mostTraded.tradeCount / totalTrades) * 100)
     : 0
@@ -196,6 +200,7 @@ export function ChartRadarDefault() {
               <CardTitle className="text-lg font-semibold tracking-tight">Symbols Performance</CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-1.5">
                 {symbolView === 'bars' ? 'P&L breakdown by symbol' : 'Win rate by symbol'}
+                {hasData && symbolCount > chartData.length && ` · top ${chartData.length} of ${symbolCount}`}
               </CardDescription>
             </div>
             <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
@@ -321,7 +326,7 @@ export function ChartRadarDefault() {
           <div className="flex w-full items-end justify-between gap-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Symbols</span>
-              <span className="text-sm font-semibold tabular-nums">{hasData ? chartData.length : '—'}</span>
+              <span className="text-sm font-semibold tabular-nums">{hasData ? symbolCount : '—'}</span>
             </div>
             <div className="flex flex-col gap-0.5 text-center">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Best</span>

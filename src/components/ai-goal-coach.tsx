@@ -319,7 +319,7 @@ export function AIGoalCoach() {
           {!result && !isStreaming && !streamText ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Get personalised coaching on your trading goals — what's working, what to adjust, and how to stay on track.
+                Get coaching on your trading goals: what is working, what to change, and how to stay on track.
               </p>
               <Button
                 onClick={handleCoach}

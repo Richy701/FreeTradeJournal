@@ -1003,7 +1003,9 @@ export default function PropTracker() {
   }, [rangeTxs, rangeStart])
 
   // The bar chart shows at most the last 24 months; the summary below it uses every month
-  const monthlyBars = useMemo(() => monthlyFlow.slice(-24), [monthlyFlow])
+  // Fees are drawn below zero so each month is one column: money out
+  // hangs down, money in stands up. `fees` stays positive for the tooltip.
+  const monthlyBars = useMemo(() => monthlyFlow.slice(-24).map(m => ({ ...m, feesDown: -m.fees })), [monthlyFlow])
 
   const monthlySummary = useMemo(() => {
     const active = monthlyFlow.filter(m => m.fees > 0 || m.payouts > 0)
@@ -2248,9 +2250,10 @@ export default function PropTracker() {
                           </div>
                           <div className="flex-1">
                             <ResponsiveContainer width="100%" height={220}>
-                              <BarChart data={monthlyBars} margin={{ top: 4, right: 4, bottom: 0, left: 4 }} barCategoryGap="28%" barGap={2}>
+                              <BarChart data={monthlyBars} margin={{ top: 4, right: 4, bottom: 0, left: 4 }} barCategoryGap="28%" stackOffset="sign">
                                 <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} interval="preserveStartEnd" />
                                 <YAxis hide />
+                                <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
                                 <Tooltip
                                   cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
                                   content={({ active, payload }) => {
@@ -2266,8 +2269,8 @@ export default function PropTracker() {
                                     )
                                   }}
                                 />
-                                <Bar dataKey="fees" fill={themeColors.loss} fillOpacity={0.85} radius={[3, 3, 0, 0]} maxBarSize={28} />
-                                <Bar dataKey="payouts" fill={themeColors.profit} fillOpacity={0.9} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                                <Bar dataKey="feesDown" stackId="flow" fill={themeColors.loss} fillOpacity={0.85} radius={[0, 0, 3, 3]} maxBarSize={28} />
+                                <Bar dataKey="payouts" stackId="flow" fill={themeColors.profit} fillOpacity={0.9} radius={[3, 3, 0, 0]} maxBarSize={28} />
                               </BarChart>
                             </ResponsiveContainer>
                           </div>

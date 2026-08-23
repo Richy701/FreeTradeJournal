@@ -124,11 +124,19 @@ function zoneFor(open: Set<string>): string {
 
 // Entry time is what the trader chose — that is the decision the hour-of-day
 // view is about. Exit only stands in when entry is missing or unparseable.
-function tradeInstant(t: any): Date | null {
+//
+// A date with no time (CSV rows that only carry the day, manual entries left
+// at the default) parses to local midnight. That is a valid Date but not a
+// real time of day, so it is treated as untimed — the same test the trade log
+// uses to hide the clock on those rows. A trade genuinely taken at 00:00:00
+// is lost to this; that is rarer than a whole import landing on "12am".
+export function tradeInstant(t: any): Date | null {
   for (const raw of [t?.entryTime, t?.exitTime]) {
     if (!raw) continue
     const d = raw instanceof Date ? raw : new Date(raw)
-    if (!isNaN(d.getTime())) return d
+    if (isNaN(d.getTime())) continue
+    if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) continue
+    return d
   }
   return null
 }
@@ -256,6 +264,8 @@ export function ChartHoursSessions() {
 
   const hasData = totalTrades > 0
   const hasDataOutsidePeriod = allTradesCount > 0
+  // Trades exist in the period but none carry a usable time.
+  const allUntimed = !hasData && untimedCount > 0
 
   // Zero's position along the track, derived from the data rather than pinned
   // to the middle — a set with no losses should not waste half its width.
@@ -309,7 +319,7 @@ export function ChartHoursSessions() {
         <CardContent className="flex-1 min-h-0 px-4 py-2">
           {hasData ? (
             <ChartContainer config={hourConfig} className="h-full w-full aspect-auto">
-              <BarChart data={hourData} margin={{ top: 20, right: 8, bottom: 4, left: 4 }}>
+              <BarChart data={hourData} margin={{ top: 20, right: 20, bottom: 4, left: 20 }}>
                 <XAxis
                   dataKey="label"
                   tickLine={false}
@@ -371,9 +381,11 @@ export function ChartHoursSessions() {
           ) : (
             <ChartEmptyState
               icon={Clock}
-              title="No trades to break down yet"
-              description="Log a few trades and this shows which hours of the day actually make you money."
-              hasDataOutsidePeriod={hasDataOutsidePeriod}
+              title={allUntimed ? 'Your trades have no time of day' : 'No trades to break down yet'}
+              description={allUntimed
+                ? `${untimedCount === 1 ? 'The trade in this period has' : `All ${untimedCount} trades in this period have`} a date but no time, so there is nothing to put on a clock. Add the entry time when you log a trade, or import a CSV that includes times.`
+                : 'Log a few trades and this shows which hours of the day actually make you money.'}
+              hasDataOutsidePeriod={allUntimed ? false : hasDataOutsidePeriod}
             />
           )}
         </CardContent>
@@ -456,9 +468,11 @@ export function ChartHoursSessions() {
           ) : (
             <ChartEmptyState
               icon={Clock}
-              title="No session data yet"
-              description="Once you log trades, this shows whether London, the New York crossover or the Asia hours is where your edge lives."
-              hasDataOutsidePeriod={hasDataOutsidePeriod}
+              title={allUntimed ? 'Your trades have no time of day' : 'No session data yet'}
+              description={allUntimed
+                ? 'Sessions need the time a trade was taken. Add entry times, or import a CSV that includes them, and this fills in.'
+                : 'Once you log trades, this shows whether London, the New York crossover or the Asia hours is where your edge lives.'}
+              hasDataOutsidePeriod={allUntimed ? false : hasDataOutsidePeriod}
             />
           )}
         </CardContent>

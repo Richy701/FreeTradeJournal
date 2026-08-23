@@ -27,6 +27,8 @@ export interface HourlyChartData {
 
 export interface DayChartData {
   day: string
+  // Full name for prose ("Thursdays"); `day` stays short for axis ticks.
+  dayLong: string
   pnl: number
   winRate: number
   count: number
@@ -169,6 +171,7 @@ function buildChartData(trades: ParsedTrade[]): ChartDataSet {
 
   // Day of week
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const dayLongNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const byDay = new Map<number, { count: number; wins: number; totalPnl: number }>()
   for (const t of trades) {
     const d = t.entryTime.getDay()
@@ -182,6 +185,7 @@ function buildChartData(trades: ParsedTrade[]): ChartDataSet {
     .sort((a, b) => a[0] - b[0])
     .map(([d, s]) => ({
       day: dayNames[d],
+      dayLong: dayLongNames[d],
       pnl: Math.round(s.totalPnl * 100) / 100,
       winRate: Math.round((s.wins / s.count) * 100),
       count: s.count,
@@ -331,7 +335,7 @@ function buildSummaryStats(charts: ChartDataSet, trades: ParsedTrade[]): Summary
   return {
     bestSymbol: bestSym?.symbol || '—',
     bestSymbolPnl: bestSym?.pnl || 0,
-    bestDay: bestDay?.day || '—',
+    bestDay: bestDay?.dayLong || '—',
     bestDayWinRate: bestDay?.winRate || 0,
     winDirection: winDir?.name || '—',
     winDirectionWr: winDir?.winRate || 0,
@@ -454,9 +458,9 @@ function generateIdeas(
   if (bestDayData && worstDayData && worstDayData.pnl < 0) {
     ideas.push({
       id: 'day-schedule',
-      title: `Trade more on ${bestDayData.day}s`,
-      insight: `${bestDayData.day}s: ${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}. ${worstDayData.day}s: down ${fmt(Math.abs(worstDayData.pnl), false)}.`,
-      nextStep: `Block ${worstDayData.day}s as a no-trade or review-only day for one month. Log what you do instead and whether your weekly P&L improves.`,
+      title: `Trade more on ${bestDayData.dayLong}s`,
+      insight: `${bestDayData.dayLong}s: ${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}. ${worstDayData.dayLong}s: down ${fmt(Math.abs(worstDayData.pnl), false)}.`,
+      nextStep: `Block ${worstDayData.dayLong}s as a no-trade or review-only day for one month. Log what you do instead and whether your weekly P&L improves.`,
       sentiment: 'neutral',
     })
   }

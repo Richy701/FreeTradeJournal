@@ -277,6 +277,31 @@ export default function TradeLog() {
     [trades],
   );
 
+  // Current run of wins or losses. Same semantics as the Dashboard streak:
+  // chronological, and a breakeven trade ends the run.
+  const currentStreak = useMemo(() => {
+    let streak = 0;
+    let dir: 'win' | 'loss' | null = null;
+    for (let i = chronoTrades.length - 1; i >= 0; i--) {
+      if (chronoTrades[i].pnl === 0) break;
+      const d = chronoTrades[i].pnl > 0 ? 'win' : 'loss';
+      if (!dir) dir = d;
+      if (d !== dir) break;
+      streak++;
+    }
+    return dir ? { count: streak, dir } : null;
+  }, [chronoTrades]);
+
+  const monthPnL = useMemo(() => {
+    const now = new Date();
+    return trades
+      .filter((t) => {
+        const d = new Date(t.exitTime);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, t) => sum + t.pnl, 0);
+  }, [trades]);
+
   // Filter option lists derived from the loaded trades
   const symbolOptions = useMemo(
     () => Array.from(new Set(trades.map((t) => t.symbol))).sort(),
@@ -2283,7 +2308,10 @@ export default function TradeLog() {
                     Avg {quickStats.totalTrades > 0 ? formatPnl(quickStats.totalPnL / quickStats.totalTrades) : formatPnl(0)} per trade
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {quickStats.totalTrades} trades recorded
+                    This month{' '}
+                    <span className="font-medium" style={{ color: monthPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                      {formatPnl(monthPnL)}
+                    </span>
                   </p>
                 </div>
               </CardContent>
@@ -2308,8 +2336,10 @@ export default function TradeLog() {
                       {quickStats.winRate.toFixed(1)}%
                     </div>
                     <div className="mt-3 space-y-0.5">
-                      <p className="text-sm font-medium" style={{ color: quickStats.winRate >= 50 ? themeColors.profit : themeColors.loss }}>
-                        {Math.abs(quickStats.winRate - 50).toFixed(0)}pts {quickStats.winRate >= 50 ? 'above' : 'below'} 50%
+                      <p className={cn('text-sm font-medium', !currentStreak && 'text-muted-foreground')} style={{ color: currentStreak ? (currentStreak.dir === 'win' ? themeColors.profit : themeColors.loss) : undefined }}>
+                        {currentStreak
+                          ? `${currentStreak.count}-${currentStreak.dir === 'win' ? 'win' : 'loss'} streak`
+                          : 'No streak yet'}
                       </p>
                       <p className="text-xs">
                         <span style={{ color: themeColors.profit }}>{formatPnl(quickStats.avgWin, { showSign: false })} avg win</span>
@@ -2416,73 +2446,6 @@ export default function TradeLog() {
             </Card>
         </div>
         </TooltipProvider>
-
-        {/* Secondary stats strip */}
-        <Card className="border-border/60 mb-2">
-          <CardContent className="px-4 !py-3">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
-                   style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
-                {quickStats.totalTrades} trades
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
-                   style={{ backgroundColor: alpha(themeColors.profit, '10') }}>
-                <span className="text-muted-foreground">Avg win</span>
-                <span style={{ color: themeColors.profit }}>{formatPnl(quickStats.avgWin, { showSign: false })}</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
-                   style={{ backgroundColor: alpha(themeColors.loss, '10') }}>
-                <span className="text-muted-foreground">Avg loss</span>
-                <span style={{ color: themeColors.loss }}>{formatPnl(quickStats.avgLoss, { showSign: false })}</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <span className="text-muted-foreground">PF</span>
-                <span className="text-foreground">
-                  {quickStats.profitFactor >= 999 ? '∞' : quickStats.profitFactor === 0 ? '--' : quickStats.profitFactor.toFixed(1)}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <span className="text-muted-foreground">Streak</span>
-                {(() => {
-                  // Same semantics as the Dashboard streak: chronological, and a
-                  // breakeven trade ends the run.
-                  let streak = 0;
-                  let dir: 'win' | 'loss' | null = null;
-                  for (let i = chronoTrades.length - 1; i >= 0; i--) {
-                    if (chronoTrades[i].pnl === 0) break;
-                    const d = chronoTrades[i].pnl > 0 ? 'win' : 'loss';
-                    if (!dir) dir = d;
-                    if (d !== dir) break;
-                    streak++;
-                  }
-                  if (!dir) return <span className="text-foreground">--</span>;
-                  return (
-                    <span style={{ color: dir === 'win' ? themeColors.profit : themeColors.loss }}>
-                      {streak}{dir === 'win' ? 'W' : 'L'}
-                    </span>
-                  );
-                })()}
-              </div>
-              <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <span className="text-muted-foreground">This month</span>
-                {(() => {
-                  const now = new Date();
-                  const monthlyPnL = trades
-                    .filter(t => {
-                      const d = new Date(t.exitTime);
-                      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                    })
-                    .reduce((s, t) => s + t.pnl, 0);
-                  return (
-                    <span style={{ color: monthlyPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                      {monthlyPnL >= 0 ? '+' : ''}${monthlyPnL.toFixed(0)}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Trades Table */}
         <Card className="">
@@ -2660,8 +2623,7 @@ export default function TradeLog() {
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Symbol</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Market</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Side</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Entry</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Exit</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Entry / Exit</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Lots</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">P&L</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">R:R</TableHead>
@@ -2673,14 +2635,14 @@ export default function TradeLog() {
                     {paginatedTrades.map((trade) => (
                       <React.Fragment key={trade.id}>
                       <TableRow className="hover:bg-black/[0.05] dark:hover:bg-white/[0.04] border-b border-border/20">
-                        <TableCell className="py-6 w-10">
+                        <TableCell className="py-3 w-10">
                           <Checkbox
                             checked={selectedTradeIds.has(trade.id)}
                             onCheckedChange={() => toggleTradeSelection(trade.id)}
                             aria-label="Select trade"
                           />
                         </TableCell>
-                        <TableCell className="font-medium py-6 text-sm text-muted-foreground">
+                        <TableCell className="font-medium py-3 text-sm text-muted-foreground">
                           <div>{format(new Date(trade.exitTime), 'MM/dd/yy')}</div>
                           {(() => {
                             const d = new Date(trade.exitTime);
@@ -2721,8 +2683,10 @@ export default function TradeLog() {
                             {trade.side.toUpperCase()}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.entryPrice, trade.symbol)}</TableCell>
-                        <TableCell className="font-medium text-sm tabular-nums">{formatPrice(trade.exitPrice, trade.symbol)}</TableCell>
+                        <TableCell className="font-medium text-sm tabular-nums">
+                          <div>{formatPrice(trade.entryPrice, trade.symbol)}</div>
+                          <div className="text-xs text-muted-foreground">{formatPrice(trade.exitPrice, trade.symbol)}</div>
+                        </TableCell>
                         <TableCell className="font-medium text-sm">{trade.lotSize}</TableCell>
                         <TableCell
                           className="font-bold text-base tabular-nums"
@@ -2743,12 +2707,12 @@ export default function TradeLog() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => setReviewingTradeId(reviewingTradeId === trade.id ? null : trade.id)}
-                              className="transition-shadow duration-200 hover:shadow-md"
+                              className="h-8 w-8 transition-shadow duration-200 hover:shadow-md"
                               style={{ color: reviewingTradeId === trade.id ? themeColors.primary : undefined }}
                               aria-label="AI review"
                             >
@@ -2758,7 +2722,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => navigate(`/journal?trade=${trade.id}`)}
-                              className="transition-shadow duration-200 hover:shadow-md"
+                              className="h-8 w-8 transition-shadow duration-200 hover:shadow-md"
                               aria-label="Journal this trade"
                             >
                               <BookOpen className="h-4 w-4" />
@@ -2767,7 +2731,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(trade)}
-                              className="hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-shadow duration-200 hover:shadow-md"
+                              className="h-8 w-8 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-950 transition-shadow duration-200 hover:shadow-md"
                               aria-label="Edit trade"
                             >
                               <PencilSimple className="h-4 w-4" />
@@ -2776,7 +2740,7 @@ export default function TradeLog() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDelete(trade.id)}
-                              className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-shadow duration-200 hover:shadow-md"
+                              className="h-8 w-8 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950 transition-shadow duration-200 hover:shadow-md"
                               aria-label="Delete trade"
                             >
                               <Trash className="h-4 w-4" />
@@ -2786,7 +2750,7 @@ export default function TradeLog() {
                       </TableRow>
                       {reviewingTradeId === trade.id && (
                         <TableRow>
-                          <TableCell colSpan={12} className="p-0">
+                          <TableCell colSpan={11} className="p-0">
                             <AITradeReview
                               trade={trade}
                               surroundingTrades={chronoTrades.slice(Math.max(0, chronoTrades.indexOf(trade) - 2), chronoTrades.indexOf(trade) + 3)}

@@ -6,7 +6,7 @@
 // kept in sync with the app path list + cache written by
 // src/contexts/theme-presets.tsx.
 (function(){try{
-  var p=['/dashboard','/coach','/trades','/goals','/journal','/ideas','/settings','/profile','/prop-tracker'];
+  var p=['/dashboard','/coach','/trades','/goals','/journal','/ideas','/trade-ideas','/calculator','/settings','/profile','/prop-tracker'];
   var ok=false;for(var j=0;j<p.length;j++){if(location.pathname===p[j]||location.pathname.indexOf(p[j]+'/')===0){ok=true;break}}
   if(!ok)return;
   var c=JSON.parse(localStorage.getItem('theme-vars-cache')||'null');if(!c)return;

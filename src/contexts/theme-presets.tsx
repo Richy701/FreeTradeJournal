@@ -1012,7 +1012,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     // Theme presets apply only on app routes — every public/marketing page
     // (including future ones) stays brand-amber without a list to keep in
     // sync. Mirrored in public/theme-init.js for the pre-paint pass.
-    const appPaths = ['/dashboard', '/coach', '/trades', '/goals', '/journal', '/ideas', '/settings', '/profile', '/prop-tracker']
+    const appPaths = ['/dashboard', '/coach', '/trades', '/goals', '/journal', '/ideas', '/trade-ideas', '/calculator', '/settings', '/profile', '/prop-tracker']
     const isAppPage = appPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
     const isInDemo = isDemo || !!document.documentElement.dataset.demo
 

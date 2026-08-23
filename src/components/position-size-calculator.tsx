@@ -115,7 +115,7 @@ function ResultTile({ label, value, sub }: { label: string; value: string; sub?:
 
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1">
+    <div className="flex items-baseline justify-between gap-3 py-2">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-xs font-mono tabular-nums text-foreground">{value}</span>
     </div>
@@ -594,7 +594,7 @@ export function PositionSizeCalculator() {
               {state.mode === 'forex' ? pairSpec.symbol : contractSpec.symbol} specs
             </span>
           </div>
-          <div className="flex-1 flex flex-col justify-evenly">
+          <div className="divide-y divide-border/60">
           {state.mode === 'forex' ? (
             <>
               <SpecRow label="Pip size" value={String(pairSpec.pipSize)} />
@@ -618,7 +618,7 @@ export function PositionSizeCalculator() {
             </>
           )}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-2 pt-2">
+          <p className="text-[11px] text-muted-foreground mt-auto pt-4">
             Verify against your broker before trading.
           </p>
         </div>

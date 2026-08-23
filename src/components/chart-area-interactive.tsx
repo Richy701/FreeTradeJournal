@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
 import { useMemo, useState } from "react"
+import { niceAxis } from "@/lib/chart-axis"
 
 // Define interfaces
 interface Trade {
@@ -169,6 +170,17 @@ export function ChartAreaInteractive() {
 
     return Array.from(byDay, ([date, day]) => ({ date, pnl: day.pnl, dateShort: day.dateShort }))
   }, [chartData])
+
+  const equityAxis = useMemo(() => {
+    let lo = 0, hi = 0
+    for (const d of chartData) { lo = Math.min(lo, d.cumulative); hi = Math.max(hi, d.cumulative) }
+    return niceAxis(lo, hi)
+  }, [chartData])
+  const dailyAxis = useMemo(() => {
+    let lo = 0, hi = 0
+    for (const d of dailyData) { lo = Math.min(lo, d.pnl); hi = Math.max(hi, d.pnl) }
+    return niceAxis(lo, hi)
+  }, [dailyData])
 
   const totalPnL = chartData.length > 0 ? chartData[chartData.length - 1].cumulative : 0
   const isPositive = totalPnL >= 0
@@ -374,7 +386,8 @@ export function ChartAreaInteractive() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={isMobile ? 4 : 8}
-                    domain={[(min: number) => Math.min(0, min), (max: number) => Math.max(0, max)]}
+                    domain={equityAxis.domain}
+                    ticks={equityAxis.ticks}
                     tickFormatter={(value) => fmtMoneyAxis(value, symbol)}
                   />
                   <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" strokeWidth={1} />
@@ -445,6 +458,8 @@ export function ChartAreaInteractive() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={isMobile ? 4 : 8}
+                    domain={dailyAxis.domain}
+                    ticks={dailyAxis.ticks}
                     tickFormatter={(value) => fmtMoneyAxis(value, symbol)}
                   />
                   <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />

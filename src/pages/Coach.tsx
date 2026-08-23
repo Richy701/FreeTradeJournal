@@ -23,7 +23,7 @@ export default function Coach() {
             </div>
             <div className="space-y-0.5">
               <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>AI Coach</h1>
-              <p className="text-sm text-muted-foreground">Coach FTJ — personalized insights and analysis from your trades</p>
+              <p className="text-sm text-muted-foreground">Coach FTJ reads your trades and tells you what to change.</p>
             </div>
           </div>
         </div>
