@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { parseGifQuery, searchGifs } from './_lib/gifs';
+// ESM loader does not resolve extensionless relative imports at runtime.
+import { parseGifQuery, searchGifs } from './_lib/gifs.js';
 
 // GIF search for the Trade Ideas composer. Same-origin proxy so the provider
 // key stays server-side. The adapter lives in api/_lib/gifs.ts and is shared
