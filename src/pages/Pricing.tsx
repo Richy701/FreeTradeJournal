@@ -11,7 +11,7 @@ import { Footer7 } from '@/components/ui/footer-7';
 import { footerConfig } from '@/components/ui/footer-config';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS, LIFETIME_RETIRES_AT, FOUNDER_LIFETIME_PRICE } from '@/constants/pricing';
+import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS, LIFETIME_RETIRES_AT, isLifetimeOnSale, isBirthdayLifetimeWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
@@ -81,8 +81,8 @@ function LifetimeCountdown() {
     return () => clearInterval(id);
   }, []);
 
-  const remaining = LIFETIME_RETIRES_AT - now;
-  if (remaining <= 0) return null;
+  const remaining = lifetimeSaleEndsAt(now) - now;
+  if (remaining <= 0 || !isLifetimeOnSale(now)) return null;
 
   const segments = [
     { value: Math.floor(remaining / 86_400_000), unit: 'd', pad: false },
@@ -94,11 +94,11 @@ function LifetimeCountdown() {
   return (
     <div
       role="timer"
-      aria-label="Time left before the lifetime plan retires"
+      aria-label="Time left before the lifetime plan goes off sale"
       className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2"
     >
       <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-        Retires in
+        Ends in
       </span>
       <span className="flex items-baseline gap-1.5 text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
         {segments.map(({ value, unit, pad }) => (
@@ -383,7 +383,8 @@ export default function Pricing() {
   // Lifetime is retired after this date — the card disappears here and the
   // checkout Cloud Function rejects the price, so stale tabs can't buy it.
   // Existing lifetime owners keep their plan (their card renders as current).
-  const lifetimeAvailable = Date.now() < LIFETIME_RETIRES_AT || currentPlan === 'lifetime';
+  const lifetimeAvailable = isLifetimeOnSale() || currentPlan === 'lifetime';
+  const birthdayWeek = isBirthdayLifetimeWindow();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -494,9 +495,9 @@ export default function Pricing() {
           {lifetimeAvailable && (
             <PricingCard
               name="Pro Lifetime"
-              price={FOUNDER_LIFETIME_PRICE}
-              originalPrice={lifetimePlan.price}
-              subtitle="One-time founding price · yours forever"
+              price={currentLifetimePrice()}
+              originalPrice={currentLifetimePrice() < lifetimePlan.price ? lifetimePlan.price : undefined}
+              subtitle={birthdayWeek ? 'One-time birthday price · yours forever' : 'One-time founding price · yours forever'}
               description="Never pay again"
               features={lifetimePlan.features}
               cta="Get Lifetime Access"

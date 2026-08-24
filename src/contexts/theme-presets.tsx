@@ -1053,12 +1053,18 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   }, [])
 
   const themeColors = useMemo(() => {
-    const adjustedColors = resolveModeColors(currentTheme, customColors, isDarkMode ? 'dark' : 'light')
+    // Demo mode resets the CSS variables to the brand amber above, so the
+    // inline primary must follow or chips and buttons show two palettes side
+    // by side. Profit/loss stay the default green/red (monochrome greys them).
+    const mode = isDarkMode ? 'dark' : 'light'
+    const adjustedColors = isDemo
+      ? { ...resolveModeColors('default', customColors, mode), primary: resolveModeColors('monochrome', customColors, mode).primary }
+      : resolveModeColors(currentTheme, customColors, mode)
     return {
       ...adjustedColors,
       primaryButtonText: contrastText(adjustedColors.primary),
     }
-  }, [currentTheme, isDarkMode, customColors])
+  }, [currentTheme, isDarkMode, customColors, isDemo])
 
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;

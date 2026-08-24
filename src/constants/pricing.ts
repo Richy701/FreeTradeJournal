@@ -20,6 +20,32 @@ export const LIFETIME_RETIRES_AT = Date.parse('2026-08-07T23:59:59Z');
 // through. The list price in PRICING_PLANS stays canonical.
 export const FOUNDER_LIFETIME_PRICE = 149;
 
+// FreeTradeJournal's first birthday (first commit 28 Aug 2025). Lifetime comes
+// back for exactly one week at a birthday price, then goes again. Checkout
+// auto-applies FTJBIRTHDAY server-side during the window; the Stripe code
+// expires at the same instant so a stale tab cannot buy it late.
+// Deliberately NOT tied to LIFETIME_RETIRES_AT, which also gates the no-card
+// signup trial and the plan-changes notice — those must not reopen.
+export const BIRTHDAY_LIFETIME_STARTS_AT = Date.parse('2026-08-28T00:00:00Z');
+export const BIRTHDAY_LIFETIME_ENDS_AT = Date.parse('2026-09-04T23:59:59Z');
+export const BIRTHDAY_LIFETIME_PRICE = 199;
+
+export const isBirthdayLifetimeWindow = (now = Date.now()) =>
+  now >= BIRTHDAY_LIFETIME_STARTS_AT && now <= BIRTHDAY_LIFETIME_ENDS_AT;
+
+// True whenever a new lifetime purchase is allowed. Mirror of the guard in
+// functions/src/index.ts createCheckoutSession.
+export const isLifetimeOnSale = (now = Date.now()) =>
+  now < LIFETIME_RETIRES_AT || isBirthdayLifetimeWindow(now);
+
+// When the current lifetime sale closes — feeds the pricing-page countdown.
+export const lifetimeSaleEndsAt = (now = Date.now()) =>
+  now < LIFETIME_RETIRES_AT ? LIFETIME_RETIRES_AT : BIRTHDAY_LIFETIME_ENDS_AT;
+
+// What the lifetime card charges right now (list price when no offer is on).
+export const currentLifetimePrice = (now = Date.now()) =>
+  now < LIFETIME_RETIRES_AT ? FOUNDER_LIFETIME_PRICE : isBirthdayLifetimeWindow(now) ? BIRTHDAY_LIFETIME_PRICE : 249;
+
 // The values stored in Vercel have been observed with trailing newlines, which
 // Stripe rejects as invalid price IDs — always trim.
 const envPriceId = (value: string | undefined) => (value || '').trim();

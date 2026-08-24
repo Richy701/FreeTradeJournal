@@ -7,6 +7,10 @@ export const PRICE_YEARLY = '$99.99/year'
 // Retired 7 Aug 2026 — referenced only by the archived lifetime-campaign
 // emails. Do not use in any email that still gets sent.
 export const PRICE_LIFETIME = '$249 lifetime'
+// First-birthday week only, 28 Aug – 4 Sep 2026 (23:59 UTC). Code FTJBIRTHDAY
+// is auto-applied at checkout; the email quotes it for people who type it.
+export const BIRTHDAY_LIFETIME_PRICE = '$199'
+export const BIRTHDAY_PROMO_CODE = 'FTJBIRTHDAY'
 export const TRIAL_DAYS = 14
 // Since 18 Aug 2026 (v2.82.0): coaching runs the user asks for. Automatic
 // tips, journal prompts and risk alerts are free and not counted.

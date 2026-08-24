@@ -575,6 +575,16 @@ const SIGNUP_TRIAL_DAYS = 14;
 // card trial at checkout (trial_period_days in createCheckoutSession).
 const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
 
+// First-birthday lifetime week — mirrors BIRTHDAY_LIFETIME_* in
+// src/constants/pricing.ts. Lifetime is purchasable ONLY inside this window
+// now; the signup-trial cutoff above is untouched.
+const BIRTHDAY_LIFETIME_STARTS_AT = Date.parse("2026-08-28T00:00:00Z");
+const BIRTHDAY_LIFETIME_ENDS_AT = Date.parse("2026-09-04T23:59:59Z");
+const BIRTHDAY_PROMO_CODE = "FTJBIRTHDAY";
+const isLifetimeOnSale = (now = Date.now()) =>
+  now < LIFETIME_RETIRES_AT ||
+  (now >= BIRTHDAY_LIFETIME_STARTS_AT && now <= BIRTHDAY_LIFETIME_ENDS_AT);
+
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const throttleReason = await checkSignupVelocity(user.email || undefined);
 
@@ -2547,6 +2557,9 @@ export const createCheckoutSession = functions.https.onCall(
     const ALLOWED_PRICES = [
       process.env.STRIPE_PRICE_MONTHLY,
       process.env.STRIPE_PRICE_YEARLY,
+      // Lifetime is only sellable inside the birthday window; the dated guard
+      // below rejects it outside, so the allowlist can carry it permanently.
+      process.env.STRIPE_PRICE_LIFETIME,
     ].filter(Boolean);
 
     if (!ALLOWED_PRICES.includes(priceId)) {
@@ -2588,9 +2601,9 @@ export const createCheckoutSession = functions.https.onCall(
     const hadTrial = userDoc.data()?.hadTrial === true;
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
 
-    // The pricing card hides itself after LIFETIME_RETIRES_AT; this guard
-    // covers stale tabs loaded before the cutoff.
-    if (isLifetime && Date.now() > LIFETIME_RETIRES_AT) {
+    // The pricing card hides itself outside the sale windows; this guard
+    // covers stale tabs loaded before a cutoff.
+    if (isLifetime && !isLifetimeOnSale()) {
       throw new functions.https.HttpsError(
         "failed-precondition",
         "The lifetime plan is no longer available.",
@@ -2636,14 +2649,15 @@ export const createCheckoutSession = functions.https.onCall(
       }
     }
 
-    // The pricing page advertises the $149 founding price, so apply the code
-    // for the buyer instead of trusting them to retype it at checkout. The
-    // code's expiry lives in Stripe (active: false after Aug 7) — when it
-    // lapses, this quietly falls back to the manual promo-code field.
+    // The pricing page advertises the discounted lifetime price, so apply the
+    // code for the buyer instead of trusting them to retype it at checkout.
+    // FOUNDER149 until Aug 7 2026, FTJBIRTHDAY for the birthday week. Each
+    // code's expiry also lives in Stripe — when it lapses, this quietly falls
+    // back to the manual promo-code field.
     if (!autoPromoId && isLifetime) {
       try {
         const found = await getStripe().promotionCodes.list({
-          code: "FOUNDER149",
+          code: Date.now() < LIFETIME_RETIRES_AT ? "FOUNDER149" : BIRTHDAY_PROMO_CODE,
           active: true,
           limit: 1,
         });
@@ -2856,6 +2870,27 @@ export const stripeWebhook = functions.https.onRequest(
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
+            // A monthly/yearly subscriber who buys lifetime must stop being
+            // billed for the subscription. Nothing else cancels it: the
+            // subscription.updated handler only ignores renewals for lifetime
+            // owners, it does not end them. Cancel now, after the payment has
+            // succeeded, so the user is never left with neither.
+            try {
+              const leftovers = await getStripe().subscriptions.list({
+                customer: customerId,
+                status: "all",
+                limit: 10,
+              });
+              for (const leftover of leftovers.data) {
+                if (["active", "trialing", "past_due", "paused"].includes(leftover.status)) {
+                  await getStripe().subscriptions.cancel(leftover.id);
+                  console.log(`Lifetime purchase: cancelled leftover subscription ${leftover.id} for ${firebaseUid}`);
+                }
+              }
+            } catch (cancelErr) {
+              console.error("Lifetime purchase: failed to cancel leftover subscription:", cancelErr);
+              reportError(cancelErr, { fn: "stripeWebhook", uid: firebaseUid, stage: "lifetimeCancelLeftoverSub" });
+            }
           }
 
           const isProStatus = subscriptionData.status === "active" || subscriptionData.status === "on_trial";

@@ -1,3 +1,4 @@
+import { startOfWeek } from '@/lib/week'
 // Shared progress math for `tradingGoals` so every surface (Goals page,
 // Profile widget, AI coach) computes the same numbers. `current` is derived
 // from trades at render time and is never persisted; `achievedAt` is the only
@@ -46,11 +47,8 @@ export function currentPeriodStart(period: TradingGoal['period']): Date {
   switch (period) {
     case 'daily':
       return todayStart
-    case 'weekly': {
-      const weekStart = new Date(todayStart)
-      weekStart.setDate(weekStart.getDate() - now.getDay())
-      return weekStart
-    }
+    case 'weekly':
+      return startOfWeek(now)
     case 'monthly':
     default:
       return new Date(now.getFullYear(), now.getMonth(), 1)

@@ -24,6 +24,53 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.87.1',
+    date: '2026-08-24',
+    summary: 'A tidy-up across the trade log, dashboard and insights, plus a fix for hiding coach tips.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Tighter trade log',
+        description: 'The stats strip above the table is gone. This month and your streak now sit in the four cards at the top, rows are shorter, and Entry and Exit share one column so more trades fit on screen.',
+        link: { to: '/trades', label: 'Open Trade Log' },
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Symbols widget counts every symbol',
+        description: 'The dashboard symbols widget only looked at your top 8 symbols by profit, so losing symbols were left out of the totals, the donut and the concentration figure. It now counts all of them.',
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Hiding coach tips works again',
+        description: 'Once you had hidden five tips on Coach FTJ, the X buttons stopped doing anything. Tips are now remembered by what they say rather than their position, and if you hide everything there is a Show it again link.',
+        link: { to: '/coach', label: 'Open Coach FTJ' },
+      },
+      {
+        type: 'improved',
+        text: 'Imports without a time of day',
+        description: 'Trades imported with a date but no time used to pile up on 12am in the time-of-day and sessions charts. They are now left out of those charts, and the chart says so instead of showing an empty grid.',
+      },
+      {
+        type: 'improved',
+        text: 'Cleaner charts',
+        description: 'Axis ticks land on round numbers on the equity and daily P&L charts. On Trade Insights every symbol is labelled, the radar labels are no longer cut off, and weekly P&L is drawn as straight segments with dots. "Thus" reads "Thursdays".',
+      },
+      {
+        type: 'improved',
+        text: 'PropTracker monthly cash flow',
+        description: 'One column per month, with fees drawn below zero so payouts and fees are easy to tell apart.',
+      },
+      {
+        type: 'improved',
+        text: 'Dashboard news feed',
+        description: 'The same headline from two sources now shows once.',
+      },
+    ],
+  },
+  {
     version: '2.87.0',
     date: '2026-08-23',
     summary: 'Trade Ideas: a shared feed of setups from other traders, in beta.',
@@ -3033,4 +3080,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.87.0'
+export const LATEST_CHANGELOG_VERSION = '2.87.1'

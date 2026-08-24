@@ -1,3 +1,4 @@
+import { weekKey } from '@/lib/week'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useThemePresets } from '@/contexts/theme-presets'
@@ -100,7 +101,7 @@ function computeGoalSuggestions(trades: { pnl?: unknown; exitTime: Date }[], sym
     const d = new Date(t.exitTime)
     const monthKey = `${d.getFullYear()}-${d.getMonth()}`
     byMonth.set(monthKey, (byMonth.get(monthKey) || 0) + pnl)
-    weeks.add(Math.floor(d.getTime() / (7 * 24 * 60 * 60 * 1000)))
+    weeks.add(weekKey(d))
     if (pnl > 0) wins++
   }
 

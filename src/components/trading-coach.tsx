@@ -410,7 +410,6 @@ export function TradingCoach() {
 
   // Chat state
   const [showAllTips, setShowAllTips] = useState(false)
-  const [tiltOpen, setTiltOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
     try {
       const stored = userStorage.getItem(CHAT_CACHE_KEY) ?? localStorage.getItem(CHAT_CACHE_KEY)
@@ -1365,28 +1364,6 @@ export function TradingCoach() {
 
   const hasCritical = visibleTips.some((t) => t.type === 'critical')
 
-  const getTipColor = (type: string) => {
-    switch (type) {
-      case 'success': return themeColors.profit
-      case 'warning': return themeColors.loss
-      case 'critical': return themeColors.loss
-      case 'action': return themeColors.primary
-      case 'info': return themeColors.primary
-      default: return themeColors.primary
-    }
-  }
-
-  const getTipIcon = (type: string, tip?: { icon?: Icon }): Icon => {
-    switch (type) {
-      case 'success': return Trophy
-      case 'warning': return Warning
-      case 'critical': return Fire
-      case 'action': return Brain
-      case 'info': return Lightbulb
-      default: return tip?.icon || Lightbulb
-    }
-  }
-
   if (visibleTips.length === 0 && !allTipsHidden && !aiLoading && !sessionReview) return null
 
   // Briefing layout: one lead sentence (the "you're doing fine" tip, if any),
@@ -1405,60 +1382,15 @@ export function TradingCoach() {
   const chatBusy = chatStreaming || !!finishingText
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <span>Coach FTJ</span>
-              {hasCritical && (
-                <span
-                  className="px-2 py-0.5 text-xs font-semibold rounded-full"
-                  style={{ backgroundColor: alpha(themeColors.loss, '18'), color: themeColors.loss }}
-                >
-                  Urgent
-                </span>
-              )}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {aiLoading
-                ? `Reading your last ${trades.length} trade${trades.length !== 1 ? 's' : ''}`
-                : trades.length > 0
-                  ? `${aiTips ? 'Read' : 'Based on'} your last ${trades.length} trade${trades.length !== 1 ? 's' : ''}. Updates when you log more.`
-                  : 'Log a trade and the coach starts reading.'}
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {hasTilt && (
-              <button
-                type="button"
-                onClick={() => setTiltOpen(v => !v)}
-                aria-expanded={tiltOpen}
-                className="flex items-center gap-1.5 text-xs rounded-md border px-2.5 h-8 hover:bg-muted/40 transition-colors"
-              >
-                <Heartbeat className="h-3.5 w-3.5" style={{ color: tiltScore.color }} />
-                <span className="text-muted-foreground">Tilt</span>
-                <span className="font-semibold tabular-nums" style={{ color: tiltScore.color }}>{tiltScore.score}<span className="text-muted-foreground font-normal">/100</span></span>
-                <span className="text-muted-foreground hidden sm:inline">· {tiltScore.label}</span>
-              </button>
-            )}
-            {aiTips && <AIFeedback feature="Coach FTJ" responseId={visibleTips[0]?.title} />}
-          </div>
-        </div>
-        {hasTilt && tiltOpen && (
-          <div className="mt-3 rounded-lg border p-3">
-            <TiltMeter tilt={tiltScore} alpha={alpha} />
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Today: day-scoped facts against the trader's own limits. Sits above
-            the rolling tips because it is the thing that just happened. */}
-        {sessionReview && (
-          <div className="pb-4 border-b border-border">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-              Today
-            </p>
+    <>
+      {/* Today: day-scoped facts against the trader's own limits. First
+          because it is the thing that just happened. */}
+      {sessionReview && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Today</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
             <p className="text-sm leading-relaxed">
               {sessionReview.tradeCount} trade{sessionReview.tradeCount !== 1 ? 's' : ''} today for{' '}
               <span
@@ -1525,88 +1457,117 @@ export function TradingCoach() {
                 .
               </p>
             )}
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {aiLoading ? (
-          <div className="space-y-3 py-1" aria-busy="true" aria-label="Loading coaching">
-            <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
-            <div className="h-3.5 w-1/2 rounded bg-muted animate-pulse" />
-            <div className="h-3.5 w-2/3 rounded bg-muted animate-pulse" />
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <span>Coach FTJ</span>
+                {hasCritical && (
+                  <span
+                    className="px-2 py-0.5 text-xs font-semibold rounded-full"
+                    style={{ backgroundColor: alpha(themeColors.loss, '18'), color: themeColors.loss }}
+                  >
+                    Urgent
+                  </span>
+                )}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {aiLoading
+                  ? `Reading your last ${trades.length} trade${trades.length !== 1 ? 's' : ''}`
+                  : trades.length > 0
+                    ? `${aiTips ? 'Read' : 'Based on'} your last ${trades.length} trade${trades.length !== 1 ? 's' : ''}. Updates when you log more.`
+                    : 'Log a trade and the coach starts reading.'}
+              </p>
+            </div>
+            {aiTips && <AIFeedback feature="Coach FTJ" responseId={visibleTips[0]?.title} />}
           </div>
-        ) : (
-          <>
-            {leadTip && (
-              <div className="flex items-start gap-3">
-                <p className="text-sm leading-relaxed flex-1"><Emphasize text={cleanDashes(leadTip.message)} /></p>
-                <button
-                  type="button"
-                  onClick={() => dismissTip(leadTip.key)}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
-                  aria-label="Not useful, hide this"
-                  title="Not useful"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
-            )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {hasTilt && (
+            <div className="pb-4 border-b border-border">
+              <TiltMeter tilt={tiltScore} alpha={alpha} />
+            </div>
+          )}
 
-            {shownTips.length > 0 && (
-              <ol className={leadTip ? 'border-t divide-y' : 'divide-y'}>
-                {shownTips.map((tip, i) => {
-                  const color = getTipColor(tip.type)
-                  const TipIcon = getTipIcon(tip.type, tip)
-                  return (
-                    <li key={tip.key} className="flex items-start gap-3 py-3 last:pb-0">
-                      <span className="h-6 w-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0 tabular-nums mt-px">{i + 1}</span>
+          {aiLoading ? (
+            <div className="space-y-3 py-1" aria-busy="true" aria-label="Loading coaching">
+              <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-1/2 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-2/3 rounded bg-muted animate-pulse" />
+            </div>
+          ) : (
+            <>
+              {leadTip && (
+                <div className="group flex items-start gap-3">
+                  <p className="text-sm leading-relaxed flex-1"><Emphasize text={cleanDashes(leadTip.message)} /></p>
+                  <button
+                    type="button"
+                    onClick={() => dismissTip(leadTip.key)}
+                    className="shrink-0 text-muted-foreground hover:text-foreground transition-opacity p-1 -m-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                    aria-label="Not useful, hide this"
+                    title="Not useful"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+
+              {shownTips.length > 0 && (
+                <ul className={leadTip ? 'border-t divide-y' : 'divide-y'}>
+                  {shownTips.map((tip) => (
+                    <li key={tip.key} className="group flex items-start gap-3 py-3 last:pb-0">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <TipIcon className="h-3.5 w-3.5 shrink-0" style={{ color }} aria-hidden="true" />
-                          <p className="text-sm font-semibold leading-snug">{cleanDashes(tip.title)}</p>
-                        </div>
+                        <p className="text-sm font-semibold leading-snug">{cleanDashes(tip.title)}</p>
                         <p className="text-sm text-muted-foreground leading-relaxed mt-1"><Emphasize text={cleanDashes(tip.message)} /></p>
                       </div>
                       <button
                         type="button"
                         onClick={() => dismissTip(tip.key)}
-                        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1 -m-1"
+                        className="shrink-0 text-muted-foreground hover:text-foreground transition-opacity p-1 -m-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                         aria-label="Not useful, hide this"
                         title="Not useful"
                       >
                         <X className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
                     </li>
-                  )
-                })}
-              </ol>
-            )}
+                  ))}
+                </ul>
+              )}
 
-            {(hiddenTipCount > 0 || (showAllTips && focusTips.length > 3)) && (
-              <button
-                type="button"
-                onClick={() => setShowAllTips(v => !v)}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {hiddenTipCount > 0 ? `Show ${hiddenTipCount} more` : 'Show less'}
-              </button>
-            )}
-
-            {allTipsHidden && (
-              <p className="text-sm text-muted-foreground">
-                You hid everything the coach had to say.{' '}
-                <button type="button" onClick={restoreTips} className="font-medium text-foreground underline underline-offset-2 hover:opacity-80">
-                  Show it again
+              {(hiddenTipCount > 0 || (showAllTips && focusTips.length > 3)) && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTips(v => !v)}
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {hiddenTipCount > 0 ? `Show ${hiddenTipCount} more` : 'Show less'}
                 </button>
-              </p>
-            )}
-          </>
-        )}
+              )}
 
-        {/* Ask Coach FTJ: always open, seeded with the tips above */}
-        {hasAIAccess && (
-          <div className="pt-4 border-t space-y-3">
+              {allTipsHidden && (
+                <p className="text-sm text-muted-foreground">
+                  You hid everything the coach had to say.{' '}
+                  <button type="button" onClick={restoreTips} className="font-medium text-foreground underline underline-offset-2 hover:opacity-80">
+                    Show it again
+                  </button>
+                </p>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Ask Coach FTJ: always open, seeded with the tips above */}
+      {hasAIAccess && (
+        <Card>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">Ask Coach FTJ</p>
+              <CardTitle className="text-base font-semibold">Ask Coach FTJ</CardTitle>
               {chatMessages.length > 0 && (
                 <button
                   type="button"
@@ -1617,9 +1578,10 @@ export function TradingCoach() {
                 </button>
               )}
             </div>
-
+          </CardHeader>
+          <CardContent className="space-y-3">
             {(chatMessages.length > 0 || chatBusy) && (
-              <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-72 overflow-y-auto space-y-2.5 scroll-smooth">
+              <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-[28rem] min-h-[8rem] overflow-y-auto space-y-3 scroll-smooth pr-1">
                 {chatMessages.map((msg, i) =>
                   msg.role === 'user' ? (
                     <div key={i} className="text-right">
@@ -1673,7 +1635,7 @@ export function TradingCoach() {
             )}
 
             {chatMessages.length === 0 && !chatBusy && (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {(tipQuestions.length > 0 ? tipQuestions : CHAT_SUGGESTIONS).map((label) => {
                   const fromTip = tipQuestions.includes(label)
                   const message = fromTip ? `Tell me more about "${label}". What exactly should I do about it?` : label
@@ -1682,7 +1644,7 @@ export function TradingCoach() {
                       key={label}
                       type="button"
                       onClick={() => sendChatMessage(message)}
-                      className="text-xs px-2.5 py-1.5 rounded-md border text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
                       {fromTip ? `More on: ${label}` : label}
                     </button>
@@ -1723,19 +1685,21 @@ export function TradingCoach() {
                 {freeAiQuota.remaining} of {freeAiQuota.limit} free AI coaching runs left this month
               </p>
             )}
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Free quota exhausted: keep an upgrade path where the chat button was,
-            instead of the section silently disappearing */}
-        {!hasAIAccess && freeAiQuota && freeAiQuota.remaining === 0 && (
-          <div className="mt-4 pt-4 border-t border-border/50">
+      {/* Free quota exhausted: keep an upgrade path where the chat was,
+          instead of the section silently disappearing */}
+      {!hasAIAccess && freeAiQuota && freeAiQuota.remaining === 0 && (
+        <Card>
+          <CardContent className="pt-6 sm:pt-6">
             <div className="flex flex-col items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-4 text-center">
               <p className="text-sm font-medium">
                 You've used all {freeAiQuota.limit} free AI coaching runs this month
               </p>
               <p className="text-xs text-muted-foreground">
-                Upgrade to Pro to keep chatting with Coach FTJ — or your quota resets next month.
+                Upgrade to Pro to keep chatting with Coach FTJ, or your quota resets next month.
               </p>
               <Link
                 to="/pricing"
@@ -1746,9 +1710,9 @@ export function TradingCoach() {
                 Get Unlimited AI
               </Link>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      )}
+    </>
   )
 }

@@ -28,7 +28,7 @@ export function WelcomeDialog({ open, onOpenChange, onPost, onShowRules }: Welco
   const { themeColors, alpha } = useThemePresets()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg sm:max-w-3xl p-0 overflow-hidden gap-0">
+      <DialogContent className="max-w-lg sm:max-w-3xl p-0 max-h-[calc(100dvh-2rem)] overflow-y-auto overflow-x-hidden gap-0">
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.15fr]">
           {/* What the feed looks like: a finished idea with its result. */}
           <div className="px-6 pt-6 pb-6 sm:py-8 border-b sm:border-b-0 sm:border-r space-y-4" style={{ backgroundColor: alpha(themeColors.primary, '06') }}>

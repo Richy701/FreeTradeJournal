@@ -1,3 +1,4 @@
+import { startOfWeek } from '@/lib/week'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { trackGateHit } from '@/lib/track-activity';
 import { trackEvent } from '@/lib/analytics'
@@ -1673,10 +1674,7 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
     else break
   }
 
-  const now = new Date()
-  const weekStart = new Date(now)
-  weekStart.setDate(now.getDate() - now.getDay())
-  weekStart.setHours(0, 0, 0, 0)
+  const weekStart = startOfWeek()
   const thisWeek = trades.filter((t: { exitTime: Date }) => t.exitTime >= weekStart)
   const weekPnl = thisWeek.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
 

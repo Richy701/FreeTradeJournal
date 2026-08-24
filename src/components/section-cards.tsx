@@ -1,3 +1,4 @@
+import { startOfWeek } from '@/lib/week'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -144,7 +145,10 @@ export function SectionCards() {
   }, [trades])
 
   const weekCount = useMemo(
-    () => trades.filter((t: Trade) => Date.now() - t.exitTime.getTime() <= 7 * 24 * 60 * 60 * 1000).length,
+    () => {
+      const weekStart = startOfWeek()
+      return trades.filter((t: Trade) => t.exitTime >= weekStart).length
+    },
     [trades]
   )
 
