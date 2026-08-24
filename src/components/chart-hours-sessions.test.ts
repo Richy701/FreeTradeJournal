@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { tradeInstant } from './chart-hours-sessions'
+import { tradeInstant, zoneWindows } from './chart-hours-sessions'
 
 // Local-time constructor so the midnight rule is tested against the same
 // clock the component reads (getHours/getMinutes/getSeconds).
@@ -27,5 +27,14 @@ describe('tradeInstant', () => {
     expect(tradeInstant({ entryTime: iso })).toEqual(at(16, 45))
     expect(tradeInstant({ entryTime: 'not a date' })).toBeNull()
     expect(tradeInstant({})).toBeNull()
+  })
+})
+
+describe('zoneWindows', () => {
+  it('describes every zone as a local clock range', () => {
+    const w = zoneWindows()
+    for (const key of ['Asia', 'London', 'New York', 'Off-session']) {
+      expect(w[key]).toMatch(/^\d{1,2}(:\d{2})?(am|pm)–\d{1,2}(:\d{2})?(am|pm)(, .*)?$/)
+    }
   })
 })

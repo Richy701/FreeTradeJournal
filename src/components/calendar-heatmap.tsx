@@ -14,6 +14,9 @@ import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
 import { getTradeDefaults, rememberTradeDefaults } from '@/utils/trade-defaults'
 import { useProStatus } from '@/contexts/pro-context'
+import { useAuth } from '@/contexts/auth-context'
+import { compressImage, putImage, newImageId, uploadCloudImage } from '@/utils/image-store'
+import { StoredImage } from '@/components/stored-image'
 import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing'
 import { instrumentGroupsFor, type MarketType } from '@/constants/trading'
 import { PropFirmSelect } from '@/components/prop-firm-select'
@@ -23,7 +26,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Link, useNavigate } from "react-router-dom"
 import { UnitInput } from '@/components/ui/money-input'
-import { Plus, CurrencyDollar, ChartBar, PencilSimple, Crosshair, ArrowsLeftRight, Lightbulb, Tag, Heart, Note } from '@phosphor-icons/react'
+import { Plus, CurrencyDollar, ChartBar, PencilSimple, Crosshair, ArrowsLeftRight, Lightbulb, Tag, Heart, Note, UploadSimple, X, Image as ImageIcon } from '@phosphor-icons/react'
 import {
   Popover,
   PopoverContent,
@@ -116,6 +119,7 @@ export function CalendarHeatmap() {
   const { getTrades, getJournalEntries, isDemo } = useDemoData()
   const { mode: pnlMode, formatPnl, accountBalance } = usePnlDisplay()
   const { isPro } = useProStatus()
+  const { user } = useAuth()
   const demoGuard = useDemoGuard()
   const userStorage = useUserStorage()
   const [refreshKey, setRefreshKey] = useState(0)
@@ -142,6 +146,11 @@ export function CalendarHeatmap() {
   const [dayDialogView, setDayDialogView] = useState<'overview' | 'journal' | 'trade'>('overview')
   const [selectedDateForTrade, setSelectedDateForTrade] = useState<Date | null>(null)
   const [journalNote, setJournalNote] = useState("")
+  // Chart screenshots for the day note (daily bias, DXY, market recap). Same
+  // storage as the Journal page: Pro uploads to Firebase Storage with an
+  // IndexedDB fallback, free stays in IndexedDB. Only refs land in the entry.
+  const [journalImages, setJournalImages] = useState<{ id: string; dataUrl: string }[]>([])
+  const [savingJournal, setSavingJournal] = useState(false)
   const [journalTitle, setJournalTitle] = useState("")
   const [journalMood, setJournalMood] = useState<'bullish' | 'bearish' | 'neutral'>('neutral')
   const [journalTags, setJournalTags] = useState("")
@@ -292,6 +301,7 @@ export function CalendarHeatmap() {
     
     // Reset form for new journal entry (always start fresh)
     setJournalNote("")
+    setJournalImages([])
     setJournalTitle(`Trading Day - ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)
     setJournalMood('neutral')
     setJournalTags("")
@@ -318,8 +328,24 @@ export function CalendarHeatmap() {
     return true
   }
 
-  const handleSaveJournal = () => {
-    if (!selectedDateForTrade || !journalNote.trim()) return
+  const addJournalImages = async (files: File[]) => {
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue
+      if (file.size > 15 * 1024 * 1024) {
+        toast.warning(`${file.name || 'Image'} is too large (max 15MB)`)
+        continue
+      }
+      try {
+        const dataUrl = await compressImage(file)
+        setJournalImages(prev => [...prev, { id: newImageId(), dataUrl }])
+      } catch {
+        toast.error('Could not process that image')
+      }
+    }
+  }
+
+  const handleSaveJournal = async () => {
+    if (!selectedDateForTrade || !journalNote.trim() || savingJournal) return
     if (guardAllAccounts()) return
     if (demoGuard('save journal entries')) return
 
@@ -341,6 +367,26 @@ export function CalendarHeatmap() {
       return
     }
 
+    setSavingJournal(true)
+    const screenshots: string[] = []
+    try {
+      for (const img of journalImages) {
+        let stored: string | null = null
+        if (isPro && user?.uid) {
+          try { stored = await uploadCloudImage(user.uid, img.dataUrl) } catch { stored = null }
+        }
+        if (!stored) {
+          await putImage(img.id, img.dataUrl)
+          stored = `idb:${img.id}`
+        }
+        screenshots.push(stored)
+      }
+    } catch {
+      setSavingJournal(false)
+      toast.error('Could not save the screenshots. Try again.')
+      return
+    }
+
     // Always create a new journal entry (no longer replace existing ones)
     const journalEntry = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Ensure unique ID
@@ -351,6 +397,7 @@ export function CalendarHeatmap() {
       mood: journalMood,
       entryType: 'general' as const,
       tradeId: selectedTradeId === "none" ? undefined : selectedTradeId || undefined,
+      screenshots: screenshots.length > 0 ? screenshots : undefined,
       accountId: activeAccount?.id // undefined = legacy-default bucket, still visible on default accounts
     }
 
@@ -361,6 +408,8 @@ export function CalendarHeatmap() {
     notifyDataChange()
 
     // Reset form
+    setSavingJournal(false)
+    setJournalImages([])
     setJournalNote("")
     setJournalTitle("")
     setJournalMood('neutral')
@@ -1332,6 +1381,21 @@ export function CalendarHeatmap() {
                         {entry.content && (
                           <p className="text-xs text-muted-foreground line-clamp-2">{entry.content}</p>
                         )}
+                        {Array.isArray(entry.screenshots) && entry.screenshots.length > 0 && (
+                          <div className="flex gap-1.5 pt-1">
+                            {entry.screenshots.slice(0, 4).map((ref: string, j: number) => (
+                              <StoredImage
+                                key={ref}
+                                src={ref}
+                                alt={`Screenshot ${j + 1}`}
+                                className="h-12 w-16 rounded-md border border-border/40 object-cover bg-muted/40"
+                              />
+                            ))}
+                            {entry.screenshots.length > 4 && (
+                              <span className="self-center text-[11px] text-muted-foreground">+{entry.screenshots.length - 4}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1403,6 +1467,46 @@ export function CalendarHeatmap() {
                       onChange={(e) => setJournalNote(e.target.value)}
                       className="min-h-[80px] sm:min-h-[100px] resize-none text-sm bg-background/60 border-border/50"
                     />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <ImageIcon className="h-3 w-3" />
+                      Chart screenshots
+                    </Label>
+                    <label
+                      className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 bg-background/40 px-3 py-3 text-xs text-muted-foreground cursor-pointer hover:border-border transition-colors"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => { e.preventDefault(); addJournalImages(Array.from(e.dataTransfer.files)) }}
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        aria-label="Upload chart screenshots"
+                        onChange={(e) => { addJournalImages(Array.from(e.target.files || [])); e.target.value = '' }}
+                      />
+                      <UploadSimple className="h-3.5 w-3.5" />
+                      Drop your daily charts here, or click to browse
+                    </label>
+                    {journalImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 pt-1">
+                        {journalImages.map((img, index) => (
+                          <div key={img.id} className="relative group">
+                            <img src={img.dataUrl} alt={`Upload ${index + 1}`} className="h-16 w-full rounded-md border border-border/40 object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setJournalImages(prev => prev.filter(i => i.id !== img.id))}
+                              className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-70 group-hover:opacity-100"
+                              aria-label="Remove image"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1481,11 +1585,11 @@ export function CalendarHeatmap() {
                   <Button
                     size="sm"
                     onClick={handleSaveJournal}
-                    disabled={!journalNote.trim() || !journalTitle.trim()}
+                    disabled={!journalNote.trim() || !journalTitle.trim() || savingJournal}
                     className="shadow-sm gap-2 px-5"
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
-                    Save Entry
+                    {savingJournal ? 'Saving…' : 'Save Entry'}
                   </Button>
                 </div>
               </div>

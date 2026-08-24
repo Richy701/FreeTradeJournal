@@ -24,6 +24,34 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.88.0',
+    date: '2026-08-24',
+    summary: 'Chart screenshots on daily calendar notes, and redrawn Time of Day and Trading Sessions charts.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Add charts to a daily note',
+        description: 'Click a day on the calendar, choose Add note, and drop your chart screenshots straight into it: the daily bias, DXY, the levels you are watching. They no longer need a trade to hang off. The note and its charts show up in the Journal too.',
+        image: {
+          src: '/screenshots/calendar-note-screenshots.png',
+          alt: 'The calendar day note form with a chart screenshot attached below the notes',
+        },
+        link: { to: '/dashboard', label: 'Open the calendar' },
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Time of Day and Trading Sessions, redrawn',
+        description: 'Time of Day now only draws the hours you actually trade, so the bars use the whole chart, and every bar carries its figure. Trading Sessions is a new chart with four rows, Asia, London, New York and Off hours, each labelled with its hours in your own time zone, and a switch between P&L, win rate and trade count. The old overlap rows are gone: a trade taken while London and New York are both open counts as New York, and one taken while Asia and London are both open counts as London. Each trade still counts once.',
+        image: {
+          src: '/screenshots/sessions-relabelled.png',
+          alt: 'The Trading Sessions chart with Asia, London, New York and Off hours rows, local hours on each, and a P&L, win rate and trades switch',
+        },
+      },
+    ],
+  },
+  {
     version: '2.87.1',
     date: '2026-08-24',
     summary: 'A tidy-up across the trade log, dashboard and insights, plus a fix for hiding coach tips.',
@@ -3080,4 +3108,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.87.1'
+export const LATEST_CHANGELOG_VERSION = '2.88.0'

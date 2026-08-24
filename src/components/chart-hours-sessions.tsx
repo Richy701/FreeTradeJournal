@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Bar, BarChart, Cell, LabelList, ReferenceLine, XAxis, YAxis } from "recharts"
-import { Clock } from '@phosphor-icons/react'
+import { Bar, BarChart, Cell, LabelList, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, XAxis, YAxis } from "recharts"
+import { Clock, ChartBarHorizontal, ChartPolar } from '@phosphor-icons/react'
 
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -55,8 +55,10 @@ interface Bucket {
   wins: number
   netPnl: number
   winRate: number
-  /** Value text drawn on the bar — only set for the buckets worth calling out. */
+  /** Compact value text drawn on the bar in P&L view. */
   pnlLabel?: string
+  /** "65%" drawn on the bar in win-rate view. */
+  winLabel?: string
 }
 
 const makeBucket = (key: string, label: string): Bucket =>
@@ -101,25 +103,69 @@ function formatHour(h: number): string {
 // double-counts the London/NY crossover — the busiest window of the day — and
 // makes the percentages meaningless. Instead every trade lands in exactly one
 // zone, and the crossovers become named zones of their own.
+//
+// Four buckets, the way session tools traders already use split the day
+// (Asia, London, New York, out of session). An overlap goes to the market that
+// has just opened: the Asia/London crossover is London's open, the London/NY
+// crossover is New York's open. Listed in the order they happen in a day.
 const ZONES = [
-  'London / NY overlap',
-  'Asia / London overlap',
-  'London only',
-  'New York only',
-  'Asia',
-  'Off-session',
+  { key: 'Asia', label: 'Asia' },
+  { key: 'London', label: 'London' },
+  { key: 'New York', label: 'New York' },
+  { key: 'Off-session', label: 'Off hours' },
 ] as const
 
 function zoneFor(open: Set<string>): string {
-  const london = open.has('London')
-  const newYork = open.has('New York')
-  const asia = open.has('Tokyo') || open.has('Sydney')
-  if (london && newYork) return 'London / NY overlap'
-  if (asia && london) return 'Asia / London overlap'
-  if (newYork) return 'New York only'
-  if (london) return 'London only'
-  if (asia) return 'Asia'
+  if (open.has('New York')) return 'New York'
+  if (open.has('London')) return 'London'
+  if (open.has('Tokyo') || open.has('Sydney')) return 'Asia'
   return 'Off-session'
+}
+
+/** 8:30 -> "8:30am"; whole hours drop the minutes. */
+function formatClock(minutes: number): string {
+  const h = Math.floor(minutes / 60) % 24
+  const m = minutes % 60
+  const base = formatHour(h)
+  return m === 0 ? base : base.replace(/(am|pm)$/, `:${String(m).padStart(2, '0')}$1`)
+}
+
+/**
+ * Each zone's window expressed in the viewer's local clock, e.g. "8am–1pm".
+ * Sampled across today in 15-minute steps so DST on every market is handled
+ * by Intl. The off-hours window spans midnight, so it can be two ranges.
+ */
+export function zoneWindows(): Record<string, string> {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const STEP = 15
+  const runs: Record<string, [number, number][]> = {}
+  let prevZone: string | null = null
+  for (let m = 0; m < 24 * 60; m += STEP) {
+    const at = new Date(start.getTime() + m * 60_000)
+    const open = new Set<string>()
+    for (const sd of SESSIONS) {
+      const local = minutesInTz(at, sd.tz)
+      if (local >= sd.start && local < sd.end) open.add(sd.name)
+    }
+    const zone = zoneFor(open)
+    const list = (runs[zone] ||= [])
+    if (zone === prevZone) list[list.length - 1][1] = m + STEP
+    else list.push([m, m + STEP])
+    prevZone = zone
+  }
+  const out: Record<string, string> = {}
+  for (const [zone, list] of Object.entries(runs)) {
+    // A run that ends at midnight joins one that starts at midnight.
+    if (list.length > 1 && list[0][0] === 0 && list[list.length - 1][1] === 24 * 60) {
+      const last = list.pop()!
+      list[0] = [last[0], list[0][1] + 24 * 60]
+    }
+    out[zone] = list
+      .map(([a, b]) => `${formatClock(a)}–${formatClock(b % (24 * 60))}`)
+      .join(', ')
+  }
+  return out
 }
 
 // Entry time is what the trader chose — that is the decision the hour-of-day
@@ -144,6 +190,40 @@ export function tradeInstant(t: any): Date | null {
 const safePnl = (v: unknown): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : 0
 
+/** Polar axis label for the radar: session name with its local hours underneath. */
+function SessionAngleTick({ x, y, cx, cy, payload, windows }: any) {
+  const win = windows?.[payload?.value] ?? ''
+  const dx = x - cx, dy = y - cy
+  const len = Math.hypot(dx, dy) || 1
+  const px = x + (dx / len) * 6, py = y + (dy / len) * 6
+  const anchor = Math.abs(dx) < 4 ? 'middle' : dx > 0 ? 'start' : 'end'
+  return (
+    <g transform={`translate(${px},${py})`}>
+      <text textAnchor={anchor} dy={dy < -4 ? -4 : 6} fontSize={11} fontWeight={500} fill="hsl(var(--foreground))">
+        {payload?.value}
+      </text>
+      <text textAnchor={anchor} dy={dy < -4 ? 9 : 19} fontSize={10} fill="hsl(var(--muted-foreground))">
+        {win}
+      </text>
+    </g>
+  )
+}
+
+/** Category tick for the sessions chart: name, then its local hours. */
+function SessionTick({ x, y, payload, windows }: any) {
+  const win = windows?.[payload?.value] ?? ''
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text textAnchor="end" dy={-1} fontSize={11} fontWeight={500} fill="hsl(var(--foreground))">
+        {payload?.value}
+      </text>
+      <text textAnchor="end" dy={12} fontSize={10} fill="hsl(var(--muted-foreground))">
+        {win}
+      </text>
+    </g>
+  )
+}
+
 export function ChartHoursSessions() {
   const { themeColors } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
@@ -151,6 +231,8 @@ export function ChartHoursSessions() {
   const { period } = useDashboardPeriod()
   const [refreshKey, setRefreshKey] = useState(0)
   const [hourView, setHourView] = useState<'pnl' | 'winRate'>('pnl')
+  const [sessionView, setSessionView] = useState<'pnl' | 'winRate' | 'count'>('pnl')
+  const [sessionLayout, setSessionLayout] = useState<'bars' | 'radar'>('bars')
 
   const localZone = useMemo(() => {
     try {
@@ -159,6 +241,7 @@ export function ChartHoursSessions() {
       return 'your local time'
     }
   }, [])
+  const windows = useMemo(zoneWindows, [])
 
   useEffect(() => {
     const bump = () => setRefreshKey(prev => prev + 1)
@@ -174,7 +257,7 @@ export function ChartHoursSessions() {
 
   const {
     hourData, sessionData, totalTrades, allTradesCount, untimedCount,
-    bestHour, worstHour, bestSession, pnlRange,
+    bestHour, worstHour, bestWinHour, bestSession,
   } = useMemo(() => {
     // Compact currency for the two bar labels — no decimals, symbol in front.
     const fmtCompact = (n: number) => {
@@ -188,7 +271,7 @@ export function ChartHoursSessions() {
     const hours: Bucket[] = Array.from({ length: 24 }, (_, h) =>
       makeBucket(String(h), formatHour(h)))
     const sessions = new Map<string, Bucket>(
-      ZONES.map(z => [z, makeBucket(z, z)]))
+      ZONES.map(z => [z.key, makeBucket(z.key, z.label)]))
 
     let counted = 0
     let untimed = 0
@@ -218,10 +301,9 @@ export function ChartHoursSessions() {
 
     const finalHours = hours.map(finalize)
     // Empty zones are dropped so a London-hours trader doesn't stare at rows
-    // they never traded. Strongest first.
-    const finalSessions = Array.from(sessions.values())
-      .filter(b => b.count > 0).map(finalize)
-      .sort((a, b) => b.netPnl - a.netPnl)
+    // they never traded. Kept in time-of-day order so the list reads like a
+    // trading day rather than a leaderboard; the footer names the best window.
+    const finalSessions = Array.from(sessions.values()).map(finalize)
 
     // "Best"/"worst" are only claimed off buckets with enough trades behind them.
     const meaningfulHours = finalHours.filter(h => h.count >= MIN_MEANINGFUL_TRADES)
@@ -233,17 +315,26 @@ export function ChartHoursSessions() {
     const worst = losingHours.length
       ? losingHours.reduce((a, b) => (b.netPnl < a.netPnl ? b : a)) : null
 
-    // Only the best hour carries a value on the bar. Labelling the worst too
-    // collides whenever the two land on adjacent hours, and the footer already
-    // states both numbers in full.
+    // Every traded hour carries its value; the empty hours at both ends of the
+    // day are trimmed (one hour of padding kept) so the bars use the width.
     for (const h of finalHours) {
-      if (best && h.key === best.key) h.pnlLabel = fmtCompact(h.netPnl)
+      if (h.count > 0) {
+        h.pnlLabel = fmtCompact(h.netPnl)
+        h.winLabel = `${h.winRate}%`
+      }
     }
+    const tradedIdx = finalHours.map((h, i) => (h.count > 0 ? i : -1)).filter(i => i >= 0)
+    const firstHour = tradedIdx.length ? Math.max(0, tradedIdx[0] - 1) : 0
+    const lastHour = tradedIdx.length ? Math.min(23, tradedIdx[tradedIdx.length - 1] + 1) : 23
+    const visibleHours = finalHours.slice(firstHour, lastHour + 1)
+    const bestWinHour = meaningfulHours.length
+      ? meaningfulHours.reduce((a, b) => (b.winRate > a.winRate ? b : a)) : null
 
     const meaningfulSessions = finalSessions.filter(s => s.count >= MIN_MEANINGFUL_TRADES)
 
     return {
-      hourData: finalHours,
+      hourData: visibleHours,
+      bestWinHour,
       sessionData: finalSessions,
       totalTrades: counted,
       allTradesCount: (allTrades || []).length,
@@ -252,13 +343,6 @@ export function ChartHoursSessions() {
       worstHour: worst,
       bestSession: meaningfulSessions.length
         ? meaningfulSessions.reduce((a, b) => (b.netPnl > a.netPnl ? b : a)) : null,
-      // The track spans the actual data range, so zero sits where the data puts
-      // it. All-profitable zones fill from the left edge with no wasted half;
-      // once something loses money the axis moves in and the split is visible.
-      pnlRange: finalSessions.reduce(
-        (r, s) => ({ min: Math.min(r.min, s.netPnl), max: Math.max(r.max, s.netPnl) }),
-        { min: 0, max: 0 },
-      ),
     }
   }, [refreshKey, getAnalyticsTrades, period, currencySymbol])
 
@@ -267,16 +351,33 @@ export function ChartHoursSessions() {
   // Trades exist in the period but none carry a usable time.
   const allUntimed = !hasData && untimedCount > 0
 
-  // Zero's position along the track, derived from the data rather than pinned
-  // to the middle — a set with no losses should not waste half its width.
-  const span = pnlRange.max - pnlRange.min
-  const zeroPos = span > 0 ? ((0 - pnlRange.min) / span) * 100 : 0
-  const hasLosingZone = pnlRange.min < 0
-
+  const sessionViewLabel = { pnl: 'P&L', winRate: 'Win rate', count: 'Trades' }[sessionView]
   const hourConfig = {
     netPnl: { label: 'P&L', color: 'hsl(var(--primary))' },
     winRate: { label: 'Win rate', color: 'hsl(var(--primary))' },
   } satisfies ChartConfig
+  const sessionConfig = {
+    value: { label: sessionViewLabel, color: 'hsl(var(--primary))' },
+    radarValue: { label: sessionViewLabel, color: 'hsl(var(--primary))' },
+  } satisfies ChartConfig
+
+  // Only the best session carries a value label; the tooltip has the rest.
+  const sessionChartData = sessionData.map(s => ({
+    ...s,
+    window: windows[s.key] ?? '',
+    value: sessionView === 'pnl' ? s.netPnl : sessionView === 'winRate' ? s.winRate : s.count,
+    // A radar cannot draw below its centre, so a losing session sits at zero
+    // on the shape; the signed figure is in the tooltip and the footer.
+    radarValue: sessionView === 'pnl' ? Math.max(0, s.netPnl) : sessionView === 'winRate' ? s.winRate : s.count,
+    valueLabel: s.count === 0 ? 'No trades'
+      : sessionView === 'pnl' ? formatCurrency(s.netPnl, true)
+      : sessionView === 'winRate' ? `${s.winRate}%` : String(s.count),
+  }))
+  const radarMax = Math.max(1, ...sessionChartData.map(d => d.radarValue))
+  const bestWinSession = sessionData.filter(s => s.count >= MIN_MEANINGFUL_TRADES)
+    .reduce<Bucket | null>((a, b) => (!a || b.winRate > a.winRate ? b : a), null)
+  const busiestSession = sessionData.reduce<Bucket | null>((a, b) => (!a || b.count > a.count ? b : a), null)
+  const sessionWindowsByLabel = Object.fromEntries(sessionChartData.map(s => [s.label, s.window]))
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
@@ -324,7 +425,7 @@ export function ChartHoursSessions() {
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  interval={2}
+                  interval={hourData.length > 14 ? 1 : 0}
                   tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <YAxis hide domain={hourView === 'winRate' ? [0, 100] : undefined} />
@@ -366,15 +467,13 @@ export function ChartHoursSessions() {
                       fillOpacity={entry.count === 0 ? 0.15 : 1}
                     />
                   ))}
-                  {hourView === 'pnl' && (
-                    <LabelList
-                      dataKey="pnlLabel"
-                      position="top"
-                      offset={6}
-                      className="fill-muted-foreground"
-                      fontSize={11}
-                    />
-                  )}
+                  <LabelList
+                    dataKey={hourView === 'pnl' ? 'pnlLabel' : 'winLabel'}
+                    position="top"
+                    offset={6}
+                    className="fill-muted-foreground"
+                    fontSize={10}
+                  />
                 </Bar>
               </BarChart>
             </ChartContainer>
@@ -392,7 +491,9 @@ export function ChartHoursSessions() {
         {hasData && (
           <CardFooter className="pt-0 pb-4 px-6">
             <p className="text-xs text-muted-foreground">
-              {bestHour ? (
+              {hourView === 'winRate' && bestWinHour ? (
+                <>Best hour by win rate {bestWinHour.label} at {bestWinHour.winRate}% from {bestWinHour.count} trades.</>
+              ) : bestHour ? (
                 <>
                   {bestHour.netPnl > 0
                     ? <>Best hour {bestHour.label} at {formatCurrency(bestHour.netPnl, true)} from {bestHour.count} trades.</>
@@ -412,66 +513,158 @@ export function ChartHoursSessions() {
       {/* Sessions */}
       <Card className="h-[450px] flex flex-col">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold tracking-tight">Trading Sessions</CardTitle>
-          <CardDescription className="text-xs text-muted-foreground mt-1.5">
-            P&L by market window · {localZone}. Every trade counts once, in the one window it was taken in.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 min-h-0 px-6 py-2">
-          {hasData && sessionData.length > 0 ? (
-            <div className="h-full flex flex-col justify-evenly py-1">
-              {sessionData.map((s) => {
-                const width = span > 0 ? Math.max((Math.abs(s.netPnl) / span) * 100, 1) : 0
-                const color = s.netPnl >= 0 ? themeColors.profit : themeColors.loss
-                return (
-                  <div key={s.key} className="space-y-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-xs font-medium text-foreground truncate">
-                        {s.label}{' '}
-                        <span className="font-normal text-muted-foreground">
-                          {s.count} trade{s.count === 1 ? '' : 's'} · {s.winRate}% win
-                          {s.count < MIN_MEANINGFUL_TRADES && ' · thin'}
-                        </span>
-                      </span>
-                      <span
-                        className="text-xs font-semibold tabular-nums shrink-0"
-                        style={{ color }}
-                      >
-                        {formatCurrency(s.netPnl, true)}
-                      </span>
-                    </div>
-                    <div className="relative h-2.5 w-full rounded-full bg-muted/40">
-                      <div
-                        className="absolute inset-y-0 rounded-full"
-                        style={{
-                          width: `${width}%`,
-                          backgroundColor: color,
-                          ...(s.netPnl >= 0
-                            ? { left: `${zeroPos}%` }
-                            : { right: `${100 - zeroPos}%` }),
-                        }}
-                      />
-                      {/* The zero rule only earns its place once something is
-                          losing money — with an all-profitable set it would just
-                          be a line hugging the left edge. */}
-                      {hasLosingZone && (
-                        <div
-                          className="absolute inset-y-[-3px] w-px bg-border"
-                          style={{ left: `${zeroPos}%` }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <CardTitle className="text-lg font-semibold tracking-tight">Trading Sessions</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground mt-1.5">
+                {sessionViewLabel} by session · {localZone}
+              </CardDescription>
             </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
+              {([['pnl', 'P&L'], ['winRate', 'Win rate'], ['count', 'Trades']] as const).map(([view, label]) => (
+                <button
+                  key={view}
+                  onClick={() => setSessionView(view)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                    sessionView === view
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  aria-pressed={sessionView === view}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
+              {([['bars', ChartBarHorizontal, 'Bars'], ['radar', ChartPolar, 'Radar']] as const).map(([layout, Icon, name]) => (
+                <button
+                  key={layout}
+                  onClick={() => setSessionLayout(layout)}
+                  className={`p-1.5 rounded-md ${
+                    sessionLayout === layout
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  aria-pressed={sessionLayout === layout}
+                  aria-label={`${name} view`}
+                  title={name}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1 min-h-0 px-4 py-2">
+          {hasData && sessionLayout === 'radar' ? (
+            <ChartContainer config={sessionConfig} className="h-full w-full aspect-auto">
+              <RadarChart data={sessionChartData} outerRadius="72%" margin={{ top: 24, right: 72, bottom: 24, left: 72 }}>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent
+                    labelFormatter={(_label, payload) => {
+                      const p = payload?.[0]?.payload
+                      return p ? `${p.label} · ${p.window}` : String(_label)
+                    }}
+                    formatter={(_value, _name, item) => (
+                      item.payload.count === 0 ? (
+                        <span>No trades</span>
+                      ) : (
+                        <span>
+                          {formatCurrency(item.payload.netPnl, true)} · {item.payload.winRate}% win rate · {item.payload.count} trade{item.payload.count === 1 ? '' : 's'}
+                          {item.payload.count < MIN_MEANINGFUL_TRADES && ' · thin'}
+                        </span>
+                      )
+                    )}
+                  />}
+                />
+                <PolarAngleAxis dataKey="label" tick={<SessionAngleTick windows={sessionWindowsByLabel} />} />
+                <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <PolarRadiusAxis domain={[0, sessionView === 'winRate' ? 100 : radarMax]} tick={false} axisLine={false} />
+                <Radar
+                  dataKey="radarValue"
+                  fill={themeColors.primary}
+                  fillOpacity={0.55}
+                  stroke={themeColors.primary}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: themeColors.primary, strokeWidth: 0 }}
+                  isAnimationActive={false}
+                />
+              </RadarChart>
+            </ChartContainer>
+          ) : hasData ? (
+            <ChartContainer config={sessionConfig} className="h-full w-full aspect-auto">
+              <BarChart
+                data={sessionChartData}
+                layout="vertical"
+                margin={{ top: 8, right: 84, bottom: 8, left: 8 }}
+                barCategoryGap="28%"
+              >
+                <XAxis type="number" dataKey="value" hide domain={sessionView === 'winRate' ? [0, 100] : undefined} />
+                <YAxis
+                  dataKey="label"
+                  type="category"
+                  width={96}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={<SessionTick windows={sessionWindowsByLabel} />}
+                />
+                {/* Zero rule in P&L so a loss reads as a loss; coin-flip line in win rate. */}
+                <ReferenceLine
+                  x={sessionView === 'winRate' ? 50 : 0}
+                  stroke="hsl(var(--border))"
+                  strokeDasharray={sessionView === 'winRate' ? '4 4' : undefined}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent
+                    labelFormatter={(_label, payload) => {
+                      const p = payload?.[0]?.payload
+                      return p ? `${p.label} · ${p.window}` : String(_label)
+                    }}
+                    formatter={(_value, _name, item) => (
+                      item.payload.count === 0 ? (
+                        <span>No trades</span>
+                      ) : (
+                        <span>
+                          {formatCurrency(item.payload.netPnl, true)} · {item.payload.winRate}% win rate · {item.payload.count} trade{item.payload.count === 1 ? '' : 's'}
+                          {item.payload.count < MIN_MEANINGFUL_TRADES && ' · thin'}
+                        </span>
+                      )
+                    )}
+                  />}
+                />
+                <Bar dataKey="value" radius={4} maxBarSize={30} isAnimationActive={false}>
+                  {sessionChartData.map((entry) => (
+                    <Cell
+                      key={entry.key}
+                      fill={sessionView === 'pnl'
+                        ? entry.netPnl >= 0 ? themeColors.profit : themeColors.loss
+                        : themeColors.primary}
+                      fillOpacity={entry.count === 0 ? 0.15 : 1}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="valueLabel"
+                    position="right"
+                    offset={8}
+                    fill="hsl(var(--muted-foreground))"
+                    fillOpacity={1}
+                    fontSize={11}
+                  />
+                </Bar>
+              </BarChart>
+            </ChartContainer>
           ) : (
             <ChartEmptyState
               icon={Clock}
               title={allUntimed ? 'Your trades have no time of day' : 'No session data yet'}
               description={allUntimed
                 ? 'Sessions need the time a trade was taken. Add entry times, or import a CSV that includes them, and this fills in.'
-                : 'Once you log trades, this shows whether London, the New York crossover or the Asia hours is where your edge lives.'}
+                : 'Once you log trades, this shows whether Asia, London or New York is where your edge lives.'}
               hasDataOutsidePeriod={allUntimed ? false : hasDataOutsidePeriod}
             />
           )}
@@ -479,9 +672,13 @@ export function ChartHoursSessions() {
         {hasData && (
           <CardFooter className="pt-0 pb-4 px-6">
             <p className="text-xs text-muted-foreground">
-              {bestSession
-                ? <>{hasLosingZone && 'Losses run left of the line, profits right. '}Best window {bestSession.label} at {formatCurrency(bestSession.netPnl, true)} from {bestSession.count} trades.</>
-                : <>No window has {MIN_MEANINGFUL_TRADES} trades behind it yet.</>}
+              {sessionView === 'count' && busiestSession && busiestSession.count > 0
+                ? <>Most trades in {busiestSession.label}: {busiestSession.count} of {totalTrades}. Each trade counts once.</>
+                : sessionView === 'winRate' && bestWinSession
+                ? <>Best win rate {bestWinSession.label} at {bestWinSession.winRate}% from {bestWinSession.count} trades. Each trade counts once.</>
+                : bestSession
+                ? <>Best session {bestSession.label} at {formatCurrency(bestSession.netPnl, true)} from {bestSession.count} trades. Each trade counts once.</>
+                : <>No session has {MIN_MEANINGFUL_TRADES} trades behind it yet.</>}
               {untimedCount > 0 && <> {untimedCount} trade{untimedCount === 1 ? '' : 's'} had no usable time and {untimedCount === 1 ? 'is' : 'are'} left out.</>}
             </p>
           </CardFooter>
