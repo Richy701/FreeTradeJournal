@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useUserStorage } from '@/utils/user-storage';
 import { trackEvent } from '@/lib/analytics';
+import { isBirthdayLifetimeWindow } from '@/constants/pricing';
 
 const DISMISSED_KEY = 'tradeIdeasBannerDismissed';
 /** Stamped by the Trade Ideas page when the welcome dialog opens — the feed has been found. */
@@ -30,7 +31,10 @@ export function TradeIdeasAnnouncement() {
   );
 
   const onFeed = location.pathname === TRADE_IDEAS_PATH;
-  const eligible = !!user && !isDemo && show && !onFeed;
+  // The birthday lifetime banner owns the top of the app for its week (28 Aug
+  // to 4 Sep 2026); two stacked banners would be shouting. This one resumes
+  // afterwards for anyone who still has not opened the feed.
+  const eligible = !!user && !isDemo && show && !onFeed && !isBirthdayLifetimeWindow();
 
   const updateHeight = useCallback(() => {
     const height = bannerRef.current?.offsetHeight ?? 0;

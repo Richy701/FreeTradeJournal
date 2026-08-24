@@ -46,6 +46,7 @@ import {
 import { useUserStorage } from "@/utils/user-storage"
 
 import { NavMain, type NavGroup } from "@/components/nav-main"
+import { useNewIdeaCount, NEW_IDEA_COUNT_CAP } from "@/hooks/use-new-idea-count"
 import { AccountSwitcher } from "@/components/account-switcher"
 import {
   Sidebar,
@@ -196,6 +197,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile, setOpenMobile } = useSidebar()
   const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
   const [moreOpen, setMoreOpen] = React.useState(false)
+  const newIdeas = useNewIdeaCount()
+  const groups = React.useMemo<NavGroup[]>(
+    () => navGroups.map(g => ({
+      ...g,
+      items: g.items.map(item => item.url === '/trade-ideas' ? { ...item, count: newIdeas, countCap: NEW_IDEA_COUNT_CAP } : item),
+    })),
+    [newIdeas],
+  )
 
   if (!user) {
     return null
@@ -235,7 +244,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain groups={navGroups} />
+        <NavMain groups={groups} />
       </SidebarContent>
       {!isDemo && streak > 0 && (
         <div className="px-4 pb-2 space-y-1.5">

@@ -230,3 +230,22 @@ export async function deleteTradeIdea(ideaId: string): Promise<void> {
   const fn = await callable<{ ideaId: string }, { ok: boolean }>('deleteTradeIdea')
   await fn({ ideaId })
 }
+
+/**
+ * How many published ideas were posted after `since`, capped at `cap + 1` so
+ * the sidebar can show "9+" without reading the whole feed. Demo has no feed
+ * history to compare against, so it always reports none.
+ */
+export async function fetchNewIdeaCount(since: Date, cap = 9): Promise<number> {
+  if (isDemo()) return 0
+  const [db, fs] = await Promise.all([getFirebaseFirestore(), import('firebase/firestore')])
+  const { collection, query, where, orderBy, limit, getDocs, Timestamp } = fs
+  const snap = await getDocs(query(
+    collection(db, 'tradeIdeas'),
+    where('status', '==', 'published'),
+    where('createdAt', '>', Timestamp.fromDate(since)),
+    orderBy('createdAt', 'desc'),
+    limit(cap + 1),
+  ))
+  return snap.size
+}

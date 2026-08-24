@@ -24,6 +24,13 @@ export type NavItem = {
   icon: Icon
   /** Small tag after the title, e.g. "Beta". Hidden when the sidebar is collapsed to icons. */
   badge?: string
+  /** Unread-style count. Takes the badge's place while it is above zero; `countCap` and up render as "cap+". */
+  count?: number
+  countCap?: number
+}
+
+function formatCount(count: number, cap?: number): string {
+  return cap !== undefined && count > cap ? `${cap}+` : String(count)
 }
 
 export type NavGroup = {
@@ -44,11 +51,12 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
           <SidebarMenu className="gap-1">
             {group.items.map((item) => {
               const active = isItemActive(item.url, pathname)
+              const count = item.count && item.count > 0 ? formatCount(item.count, item.countCap) : null
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    tooltip={item.badge ? `${item.title} (${item.badge})` : item.title}
+                    tooltip={count ? `${item.title} (${count} new)` : item.badge ? `${item.title} (${item.badge})` : item.title}
                     isActive={active}
                     className={isMobile ? "h-11" : "h-9"}
                     // The active row is the only coloured thing in the list, so
@@ -73,7 +81,15 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                         <item.icon className="size-4" weight={active ? 'fill' : 'regular'} />
                       </div>
                       <span>{item.title}</span>
-                      {item.badge && (
+                      {count ? (
+                        <span
+                          className="ml-auto min-w-5 rounded-full px-1.5 py-px text-center text-[11px] font-semibold tabular-nums group-data-[collapsible=icon]:hidden"
+                          style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
+                          aria-label={`${count} new`}
+                        >
+                          {count}
+                        </span>
+                      ) : item.badge && (
                         <span
                           className="ml-auto rounded-full px-1.5 py-px text-[11px] font-semibold uppercase tracking-wide group-data-[collapsible=icon]:hidden"
                           style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}
