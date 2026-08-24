@@ -36,8 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteTradeIdea = exports.reportTradeIdea = exports.toggleIdeaLike = exports.setIdeaOutcome = exports.postTeamUpdate = exports.postTradeIdea = exports.updateIdeaAvatar = exports.claimHandle = exports.tradeIdeas = exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
-exports.onTradeIdeaDeleted = exports.moderateTradeIdea = void 0;
+exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -5301,15 +5300,8 @@ const tradeIdeaFns = (0, trade_ideas_1.createTradeIdeaFunctions)({
     supportEmail: "support@freetradejournal.com",
     appUrl: process.env.APP_URL || "https://freetradejournal.com",
 });
+// Every action (post, like, link, delete, ...) goes through this one callable;
+// the per-action functions were removed 2026-08-24 once the client switched.
 exports.tradeIdeas = tradeIdeaFns.tradeIdeas;
-exports.claimHandle = tradeIdeaFns.claimHandle;
-exports.updateIdeaAvatar = tradeIdeaFns.updateIdeaAvatar;
-exports.postTradeIdea = tradeIdeaFns.postTradeIdea;
-exports.postTeamUpdate = tradeIdeaFns.postTeamUpdate;
-exports.setIdeaOutcome = tradeIdeaFns.setIdeaOutcome;
-exports.toggleIdeaLike = tradeIdeaFns.toggleIdeaLike;
-exports.reportTradeIdea = tradeIdeaFns.reportTradeIdea;
-exports.deleteTradeIdea = tradeIdeaFns.deleteTradeIdea;
-exports.moderateTradeIdea = tradeIdeaFns.moderateTradeIdea;
 exports.onTradeIdeaDeleted = tradeIdeaFns.onTradeIdeaDeleted;
 //# sourceMappingURL=index.js.map

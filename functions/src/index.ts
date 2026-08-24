@@ -5966,14 +5966,7 @@ const tradeIdeaFns = createTradeIdeaFunctions({
   supportEmail: "support@freetradejournal.com",
   appUrl: process.env.APP_URL || "https://freetradejournal.com",
 });
+// Every action (post, like, link, delete, ...) goes through this one callable;
+// the per-action functions were removed 2026-08-24 once the client switched.
 export const tradeIdeas = tradeIdeaFns.tradeIdeas;
-export const claimHandle = tradeIdeaFns.claimHandle;
-export const updateIdeaAvatar = tradeIdeaFns.updateIdeaAvatar;
-export const postTradeIdea = tradeIdeaFns.postTradeIdea;
-export const postTeamUpdate = tradeIdeaFns.postTeamUpdate;
-export const setIdeaOutcome = tradeIdeaFns.setIdeaOutcome;
-export const toggleIdeaLike = tradeIdeaFns.toggleIdeaLike;
-export const reportTradeIdea = tradeIdeaFns.reportTradeIdea;
-export const deleteTradeIdea = tradeIdeaFns.deleteTradeIdea;
-export const moderateTradeIdea = tradeIdeaFns.moderateTradeIdea;
 export const onTradeIdeaDeleted = tradeIdeaFns.onTradeIdeaDeleted;
