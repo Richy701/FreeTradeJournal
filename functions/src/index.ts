@@ -5966,6 +5966,7 @@ const tradeIdeaFns = createTradeIdeaFunctions({
   supportEmail: "support@freetradejournal.com",
   appUrl: process.env.APP_URL || "https://freetradejournal.com",
 });
+export const tradeIdeas = tradeIdeaFns.tradeIdeas;
 export const claimHandle = tradeIdeaFns.claimHandle;
 export const updateIdeaAvatar = tradeIdeaFns.updateIdeaAvatar;
 export const postTradeIdea = tradeIdeaFns.postTradeIdea;

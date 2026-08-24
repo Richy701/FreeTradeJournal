@@ -34,12 +34,16 @@ function isDemo(): boolean {
   return typeof document !== 'undefined' && !!document.documentElement.dataset.demo
 }
 
-async function callable<Req, Res>(name: string) {
+// Every action goes through the single `tradeIdeas` callable so one warm
+// instance serves post, like, link and delete. The action name rides along in
+// the payload; the server dispatches on it.
+async function callable<Req extends object, Res>(name: string) {
   const [functions, { httpsCallable }] = await Promise.all([
     getFirebaseFunctions(),
     import('firebase/functions'),
   ])
-  return httpsCallable<Req, Res>(functions, name)
+  const fn = httpsCallable<{ action: string } & Req, Res>(functions, 'tradeIdeas')
+  return (data: Req) => fn({ action: name, ...data })
 }
 
 /** Firebase callable errors carry a `code` like "functions/resource-exhausted" and a server message. */

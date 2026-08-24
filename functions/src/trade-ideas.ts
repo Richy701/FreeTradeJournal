@@ -263,6 +263,17 @@ function decodeImage(raw: unknown): { buffer: Buffer; contentType: string } | nu
 
 export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   const { db, reported, captureServerEvent, getResend, escapeHtml, isAdmin, fromEmail, supportEmail, appUrl } = deps;
+
+  // Every action is exported as its own callable (kept for older clients) and
+  // also registered here so the single `tradeIdeas` function can dispatch it.
+  // One function means one warm instance covers post, like, link and delete,
+  // instead of each action paying its own cold start.
+  type Handler = (data: any, context: functions.https.CallableContext) => Promise<unknown>;
+  const handlers: Record<string, Handler> = {};
+  function callable(name: string, handler: Handler) {
+    handlers[name] = handler;
+    return functions.https.onCall(handler);
+  }
   const roleFor = (context: functions.https.CallableContext): IdeaRole => (isAdmin(context) ? "dev" : null);
 
   const ideasCol = () => db.collection("tradeIdeas");
@@ -351,7 +362,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
 
   // ─── claimHandle ───────────────────────────────────────────
   // One handle per account, claimed once. Uniqueness lives in handles/{lower}.
-  const claimHandle = functions.https.onCall(reported<{ handle?: string; avatarEmoji?: string; avatarColor?: string }>(
+  const claimHandle = callable("claimHandle", reported<{ handle?: string; avatarEmoji?: string; avatarColor?: string }>(
     "claimHandle",
     async (data, context) => {
       const uid = requireVerified(context);
@@ -390,7 +401,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
 
   // ─── updateIdeaAvatar ──────────────────────────────────────
   // Changes the avatar on the profile and on the poster's existing ideas.
-  const updateIdeaAvatar = functions.https.onCall(reported<{ avatarEmoji?: string; avatarColor?: string }>(
+  const updateIdeaAvatar = callable("updateIdeaAvatar", reported<{ avatarEmoji?: string; avatarColor?: string }>(
     "updateIdeaAvatar",
     async (data, context) => {
       const uid = requireAuth(context);
@@ -414,7 +425,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   ));
 
   // ─── postTradeIdea ─────────────────────────────────────────
-  const postTradeIdea = functions.https.onCall(reported<{
+  const postTradeIdea = callable("postTradeIdea", reported<{
     symbol?: string;
     market?: string;
     direction?: string;
@@ -544,7 +555,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   // ─── postTeamUpdate ────────────────────────────────────────
   // Dev accounts can post a plain update to the feed: title, text, optional
   // image. No levels, no outcome, links allowed, no daily cap.
-  const postTeamUpdate = functions.https.onCall(reported<{ title?: string; body?: string; image?: string | null; gifUrl?: string | null }>(
+  const postTeamUpdate = callable("postTeamUpdate", reported<{ title?: string; body?: string; image?: string | null; gifUrl?: string | null }>(
     "postTeamUpdate",
     async (data, context) => {
       const uid = requireVerified(context);
@@ -618,7 +629,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   // Links (or unlinks) one of the poster's own logged trades. The trade lives
   // in the client's own storage, so the numbers are self-reported; the result
   // is derived from the P&L sign and the exit must fall after the idea.
-  const setIdeaOutcome = functions.https.onCall(reported<{
+  const setIdeaOutcome = callable("setIdeaOutcome", reported<{
     ideaId?: string;
     outcome?: { pnl?: unknown; currency?: string; closedAt?: string; tradeId?: string } | null;
   }>("setIdeaOutcome", async (data, context) => {
@@ -674,7 +685,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   }));
 
   // ─── toggleIdeaLike ────────────────────────────────────────
-  const toggleIdeaLike = functions.https.onCall(reported<{ ideaId?: string }>("toggleIdeaLike", async (data, context) => {
+  const toggleIdeaLike = callable("toggleIdeaLike", reported<{ ideaId?: string }>("toggleIdeaLike", async (data, context) => {
     const uid = requireAuth(context);
     const ideaId = typeof data?.ideaId === "string" ? data.ideaId : "";
     if (!ideaId || ideaId.length > 64) invalid("Idea not found.");
@@ -722,7 +733,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   // count one strike against the poster; total reports count too, so deleting
   // at two reports and reposting does not reset anything. Support is emailed
   // on the first report and again when the idea is hidden.
-  const reportTradeIdea = functions.https.onCall(reported<{ ideaId?: string; reason?: string; note?: string }>(
+  const reportTradeIdea = callable("reportTradeIdea", reported<{ ideaId?: string; reason?: string; note?: string }>(
     "reportTradeIdea",
     async (data, context) => {
       const uid = requireVerified(context);
@@ -802,7 +813,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   ));
 
   // ─── deleteTradeIdea ───────────────────────────────────────
-  const deleteTradeIdea = functions.https.onCall(reported<{ ideaId?: string }>("deleteTradeIdea", async (data, context) => {
+  const deleteTradeIdea = callable("deleteTradeIdea", reported<{ ideaId?: string }>("deleteTradeIdea", async (data, context) => {
     const uid = requireAuth(context);
     const ideaId = typeof data?.ideaId === "string" ? data.ideaId : "";
     if (!ideaId || ideaId.length > 64) invalid("Idea not found.");
@@ -839,7 +850,7 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
   // Dev accounts can hide or unhide any idea from the card menu instead of
   // editing Firestore by hand. Unhiding also resets the report count so the
   // same three reports cannot re-hide it instantly.
-  const moderateTradeIdea = functions.https.onCall(reported<{ ideaId?: string; action?: string }>(
+  const moderateTradeIdea = callable("moderateTradeIdea", reported<{ ideaId?: string; action?: string }>(
     "moderateTradeIdea",
     async (data, context) => {
       const uid = requireAuth(context);
@@ -912,7 +923,19 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
     await profileRef(uid).delete().catch((err) => console.error("cleanupUserTradeIdeas: profile delete failed", err));
   }
 
+  const tradeIdeas = functions
+    .runWith({ minInstances: 1 })
+    .https.onCall(reported<{ action?: string } & Record<string, unknown>>("tradeIdeas", async (data, context) => {
+      const { action, ...payload } = data ?? {};
+      const handler = typeof action === "string" ? handlers[action] : undefined;
+      if (!handler) {
+        throw new functions.https.HttpsError("invalid-argument", "Unknown Trade Ideas action.");
+      }
+      return handler(payload, context);
+    }));
+
   return {
+    tradeIdeas,
     claimHandle,
     updateIdeaAvatar,
     postTradeIdea,

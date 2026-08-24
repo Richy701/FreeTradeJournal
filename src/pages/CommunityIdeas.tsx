@@ -60,6 +60,7 @@ export default function CommunityIdeas() {
   const [linkIdea, setLinkIdea] = useState<CommunityIdea | null>(null)
   const [reportIdea, setReportIdea] = useState<CommunityIdea | null>(null)
   const [deleteIdea, setDeleteIdea] = useState<CommunityIdea | null>(null)
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(() => new Set())
   const [likeBusy, setLikeBusy] = useState<Set<string>>(() => new Set())
   const [reportedIds, setReportedIds] = useState<Set<string>>(() => new Set())
   const [showBetaNotice, setShowBetaNotice] = useState(() => userStorage.getItem(BETA_NOTICE_KEY) !== '1')
@@ -118,17 +119,24 @@ export default function CommunityIdeas() {
     }
   }
 
+  // The confirm dialog closes straight away, so the card itself has to show
+  // the delete is happening: it fades and a loading toast sits until the call
+  // returns, instead of nothing changing for the length of the request.
   const handleDelete = async () => {
     const idea = deleteIdea
     if (!idea) return
     setDeleteIdea(null)
+    setDeletingIds(prev => new Set(prev).add(idea.id))
+    const toastId = toast.loading('Deleting idea')
     try {
       await deleteTradeIdea(idea.id)
       feed.removeIdea(idea.id)
       void feed.refreshProfile()
-      toast.success('Idea deleted')
+      toast.success('Idea deleted', { id: toastId })
     } catch (err) {
-      toast.error(callableMessage(err, 'Could not delete that idea.'))
+      toast.error(callableMessage(err, 'Could not delete that idea.'), { id: toastId })
+    } finally {
+      setDeletingIds(prev => { const next = new Set(prev); next.delete(idea.id); return next })
     }
   }
 
@@ -290,20 +298,25 @@ export default function CommunityIdeas() {
           ) : (
             <div className="space-y-4">
               {feed.ideas.map(idea => (
-                <IdeaCard
+                <div
                   key={idea.id}
-                  idea={idea}
-                  isOwn={!!uid && idea.authorUid === uid}
-                  liked={feed.likedIds.has(idea.id)}
-                  likeBusy={likeBusy.has(idea.id)}
-                  reported={reportedIds.has(idea.id)}
-                  moderator={isDev}
-                  onModerate={handleModerate}
-                  onToggleLike={handleToggleLike}
-                  onReport={i => { if (!demoGuard('report ideas')) setReportIdea(i) }}
-                  onDelete={i => { if (!demoGuard('delete ideas')) setDeleteIdea(i) }}
-                  onLinkTrade={openLink}
-                />
+                  className={deletingIds.has(idea.id) ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}
+                  aria-busy={deletingIds.has(idea.id) || undefined}
+                >
+                  <IdeaCard
+                    idea={idea}
+                    isOwn={!!uid && idea.authorUid === uid}
+                    liked={feed.likedIds.has(idea.id)}
+                    likeBusy={likeBusy.has(idea.id)}
+                    reported={reportedIds.has(idea.id)}
+                    moderator={isDev}
+                    onModerate={handleModerate}
+                    onToggleLike={handleToggleLike}
+                    onReport={i => { if (!demoGuard('report ideas')) setReportIdea(i) }}
+                    onDelete={i => { if (!demoGuard('delete ideas')) setDeleteIdea(i) }}
+                    onLinkTrade={openLink}
+                  />
+                </div>
               ))}
               {!feed.done && (
                 <div className="flex justify-center pt-2">
