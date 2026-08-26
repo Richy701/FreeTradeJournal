@@ -36,6 +36,11 @@ export const changelog: ChangelogEntry[] = [
         link: { to: '/trades', label: 'Open Trade Log' },
       },
       {
+        type: 'improved',
+        text: 'Longer trade table',
+        description: 'The Trade Log shows 25 trades per page instead of 10. A picker at the bottom of the table lets you choose 10, 25, 50 or 100, and it remembers your choice. The money / percent switch has moved up into the header next to Export and PDF.',
+      },
+      {
         type: 'new',
         highlight: true,
         text: 'News events on the calendar',
