@@ -1476,6 +1476,9 @@ export default function TradeLog() {
                   AI Auto-Tag
                 </Button>
               )}
+              <div className="flex items-center sm:ml-1">
+                <PnlDisplayToggle />
+              </div>
             </div>
           </div>
         </div>
@@ -2345,9 +2348,6 @@ export default function TradeLog() {
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Stats */}
         <TooltipProvider>
-        <div className="flex justify-end mb-3">
-          <PnlDisplayToggle />
-        </div>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-6">
             {/* Total P&L */}
             <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
