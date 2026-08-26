@@ -1343,6 +1343,17 @@ export function CalendarHeatmap() {
                         <span style={{ color: themeColors.loss }}>{selectedDateLosses}</span>
                       </div>
                     </div>
+                    {selectedDateForTrade && getEconomicEvents(selectedDateForTrade).length > 0 && (
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Events</div>
+                        <div
+                          className="text-sm font-semibold tabular-nums"
+                          title={getEconomicEvents(selectedDateForTrade).map(e => ECONOMIC_EVENT_LABELS[e]).join(', ')}
+                        >
+                          {getEconomicEvents(selectedDateForTrade).join(' · ')}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
