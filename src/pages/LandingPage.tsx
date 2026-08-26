@@ -1,9 +1,9 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
-import { HeroGeometric } from '@/components/ui/shape-landing-hero';
+import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
 import FeatureShowcase from '@/components/blocks/feature-showcase';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { FreeTradeJournalFeatures as Features6 } from '@/components/blocks/features-6';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { FAQSection } from '@/components/blocks/faq-section';

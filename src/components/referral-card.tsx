@@ -6,6 +6,7 @@ import { useProStatus } from '@/contexts/pro-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { toast } from 'sonner';
 import { trackEvent } from '@/lib/analytics';
+import { Progress } from '@/components/ui/progress'
 
 interface ReferralTier {
   count: number;
@@ -159,12 +160,7 @@ export function ReferralCard() {
               {remaining} more for {nextTier.days} days of Pro
             </span>
           </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${progress * 100}%`, backgroundColor: themeColors.primary }}
-            />
-          </div>
+          <Progress className="h-1.5" value={progress * 100} indicatorColor={themeColors.primary} />
           <p className="text-[11px] text-muted-foreground">
             {tiers.map((t) => `${t.days} days at ${t.count}`).join(' · ')}{' '}referrals
           </p>

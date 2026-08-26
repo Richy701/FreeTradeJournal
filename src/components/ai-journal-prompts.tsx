@@ -3,7 +3,7 @@ import { Brain, SpinnerGap, PenNib, X } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';

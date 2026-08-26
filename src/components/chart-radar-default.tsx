@@ -23,6 +23,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { SegmentedControl } from '@/components/ui/segmented-control'
 
 function hexToHSL(hex: string): [number, number, number] {
   const r = parseInt(hex.slice(1, 3), 16) / 255
@@ -203,30 +204,16 @@ export function ChartRadarDefault() {
                 {hasData && symbolCount > chartData.length && ` · top ${chartData.length} of ${symbolCount}`}
               </CardDescription>
             </div>
-            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
-              <button
-                onClick={() => setSymbolView('bars')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                  symbolView === 'bars'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                aria-pressed={symbolView === 'bars'}
-              >
-                Bars
-              </button>
-              <button
-                onClick={() => setSymbolView('radar')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                  symbolView === 'radar'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                aria-pressed={symbolView === 'radar'}
-              >
-                Radar
-              </button>
-            </div>
+            <SegmentedControl
+              value={symbolView}
+              onChange={setSymbolView}
+              className="shrink-0"
+              aria-label="Symbol chart layout"
+              options={[
+                { value: 'bars', label: 'Bars' },
+                { value: 'radar', label: 'Radar' },
+              ]}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 px-4 py-2">

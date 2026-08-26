@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Brain, SpinnerGap, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';

@@ -26,6 +26,7 @@ import { trackEvent } from '@/lib/analytics'
 import { computeGoalProgress, computeGoalHistory, currentPeriodStart, getGoalLabel, type TradingGoal } from '@/lib/goal-progress'
 import { evaluateRiskRules, computeRuleAdherence, getRuleLabel, MIN_ADHERENCE_DAYS, type RiskRule, type RuleStatus } from '@/lib/risk-rules'
 import type { PropFirmAccount } from '@/types/prop-tracker'
+import { Progress } from '@/components/ui/progress'
 
 type Goal = TradingGoal
 
@@ -564,12 +565,7 @@ export function PerformanceGoals() {
                     )}
                   </div>
 
-                  <div className="mt-auto h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: rule.enabled ? `${Math.max(pct, 1)}%` : '0%', backgroundColor: barColor }}
-                    />
-                  </div>
+                  <Progress className="mt-auto h-1.5 bg-muted/60" value={rule.enabled ? Math.max(pct, 1) : 0} indicatorColor={barColor} />
                 </div>
               )
             })}
@@ -863,12 +859,7 @@ export function PerformanceGoals() {
                         </span>
                       </div>
                     )}
-                    <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(progress, 1)}%`, backgroundColor: accent }}
-                      />
-                    </div>
+                    <Progress className="h-1.5 bg-muted/60" value={Math.max(progress, 1)} indicatorColor={accent} />
                   </div>
                 </div>
               )

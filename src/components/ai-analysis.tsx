@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProGate } from '@/components/pro-gate';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
 import { useProStatus } from '@/contexts/pro-context';

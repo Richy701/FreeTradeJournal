@@ -34,9 +34,10 @@ import { belongsToAccount } from '@/lib/account-scope';
 import { ExitSurveyDialog } from '@/components/exit-survey-dialog';
 import { ProGate } from '@/components/pro-gate';
 import { ThemeStudio, ThemeMiniPreview, PREVIEW_DEFAULTS } from '@/components/theme-studio';
-import { UnitInput, parseNumberInput } from '@/components/ui/money-input';
+import { UnitInput, parseNumberInput } from '@/components/money-input';
 
 import { BROKERS } from '@/constants/trading';
+import { Progress } from '@/components/ui/progress'
 
 const CURRENCIES = [
   { value: 'USD', symbol: '$', label: 'USD' },
@@ -923,9 +924,7 @@ export default function Settings() {
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                           </div>
                           <div className="space-y-1 max-w-[160px]">
-                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.min((settings.riskPerTrade / 5) * 100, 100)}%`, backgroundColor: settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss }} />
-                            </div>
+                            <Progress className="h-1.5" value={(settings.riskPerTrade / 5) * 100} indicatorColor={settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss} />
                             <p className="text-xs text-muted-foreground">
                               {settings.riskPerTrade <= 2 ? 'Conservative — recommended' : settings.riskPerTrade <= 4 ? 'Moderate risk' : 'High risk'}
                             </p>
@@ -1044,9 +1043,7 @@ export default function Settings() {
                         <span className="text-muted-foreground">Storage used</span>
                         <span style={{ color: parseFloat(storageUsed.mb) / 10 > 0.8 ? themeColors.loss : undefined }}>{storageUsed.mb} MB / ~10 MB</span>
                       </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(storageUsed.pct, 100)}%`, backgroundColor: storageUsed.pct > 80 ? themeColors.loss : themeColors.profit }} />
-                      </div>
+                      <Progress className="h-1.5" value={storageUsed.pct} indicatorColor={storageUsed.pct > 80 ? themeColors.loss : themeColors.profit} />
                     </div>
                     {!isPro && needsBackup && (
                       <div className="rounded-lg p-3 bg-amber-500/5 border border-amber-500/20">

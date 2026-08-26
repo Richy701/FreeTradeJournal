@@ -1,8 +1,8 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { XIcon } from './brand-icons';
+import { XIcon } from '@/components/icons/brand-icons';
 import { ArrowUp } from '@phosphor-icons/react';
-import { FeedbackButton } from './feedback-button';
+import { FeedbackButton } from '@/components/feedback-button';
 import { motion } from "framer-motion";
 
 const isInternalLink = (href: string) => href.startsWith('/') || href.startsWith('#');

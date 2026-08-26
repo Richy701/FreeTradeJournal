@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FeedbackButton } from '@/components/ui/feedback-button';
+import { FeedbackButton } from '@/components/feedback-button';
 
 interface FeedbackLinkProps {
   children: React.ReactNode;

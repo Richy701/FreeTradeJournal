@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog'
-import { InstrumentCombobox } from '@/components/ui/instrument-combobox'
+import { InstrumentCombobox } from '@/components/instrument-combobox'
 
 // Reproduces the real app: the InstrumentCombobox lives inside a modal Dialog
 // (the edit-trade dialog). This is the exact composition that triggers the

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ResponsiveImage } from "@/components/ui/responsive-image";
+import { ResponsiveImage } from "@/components/responsive-image";
 import { useAuth } from "@/contexts/auth-context";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";

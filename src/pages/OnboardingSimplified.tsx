@@ -9,7 +9,7 @@ import { SUPPORTED_CURRENCIES, DEFAULT_VALUES, BROKERS } from '@/constants/tradi
 import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UnitInput } from '@/components/ui/money-input';
+import { UnitInput } from '@/components/money-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Check, Rocket, CaretLeft, Wallet, Monitor, Buildings, FileText, Plant, ChartBar, Lightning, Trophy, BookOpen, Target } from '@phosphor-icons/react';

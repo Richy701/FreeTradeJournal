@@ -53,7 +53,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { DatePicker } from '@/components/ui/date-picker'
+import { Checkbox } from '@/components/ui/checkbox'
+import { DatePicker } from '@/components/date-picker'
 import {
   Select,
   SelectContent,
@@ -77,6 +78,7 @@ import type { ParsedTransaction } from '@/services/ai-analysis'
 import { Link } from 'react-router-dom'
 import { trackEvent } from '@/lib/analytics'
 import { ProUpgradeCard } from '@/components/pro-upgrade-card'
+import { Progress } from '@/components/ui/progress'
 import type {
   PropFirmAccount,
   PropFirmTransaction,
@@ -1719,10 +1721,9 @@ export default function PropTracker() {
                                       </span>
                                     </span>
                                   </div>
-                                  <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-                                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.totalDDPctAfter)}%`, backgroundColor: ddBarColor(r.totalDDPctAfter, themeColors) }} />
+                                  <Progress value={r.totalDDPctAfter} indicatorColor={ddBarColor(r.totalDDPctAfter, themeColors)}>
                                     <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.totalDDPctBefore)}%` }} aria-hidden="true" />
-                                  </div>
+                                  </Progress>
                                 </div>
                                 {hasDaily && (
                                   <div className="space-y-1">
@@ -1736,10 +1737,9 @@ export default function PropTracker() {
                                         </span>
                                       </span>
                                     </div>
-                                    <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-                                      <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, r.dailyDDPctAfter)}%`, backgroundColor: ddBarColor(r.dailyDDPctAfter, themeColors) }} />
-                                      <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.dailyDDPctBefore)}%` }} aria-hidden="true" />
-                                    </div>
+                                    <Progress value={r.dailyDDPctAfter} indicatorColor={ddBarColor(r.dailyDDPctAfter, themeColors)}>
+                                    <div className="absolute top-0 bottom-0 w-px bg-foreground/40" style={{ left: `${Math.min(100, r.dailyDDPctBefore)}%` }} aria-hidden="true" />
+                                  </Progress>
                                   </div>
                                 )}
                                 <div className="flex items-center justify-between text-xs pt-0.5">
@@ -1896,15 +1896,7 @@ export default function PropTracker() {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${Math.max(0, Math.min(100, challengeStatus.profitPct))}%`,
-                                      backgroundColor: profitBarColor(challengeStatus.profitPct, themeColors),
-                                    }}
-                                  />
-                                </div>
+                                <Progress value={challengeStatus.profitPct} indicatorColor={profitBarColor(challengeStatus.profitPct, themeColors)} />
                               </div>
                             )}
                             <div className="space-y-1">
@@ -1919,15 +1911,7 @@ export default function PropTracker() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-300"
-                                  style={{
-                                    width: `${Math.min(100, challengeStatus.totalDDUsedPct)}%`,
-                                    backgroundColor: ddBarColor(challengeStatus.totalDDUsedPct, themeColors),
-                                  }}
-                                />
-                              </div>
+                              <Progress value={challengeStatus.totalDDUsedPct} indicatorColor={ddBarColor(challengeStatus.totalDDUsedPct, themeColors)} />
                             </div>
                             {account.challengeRules.maxDailyDrawdown > 0 && (
                               <div className="space-y-1">
@@ -1942,15 +1926,7 @@ export default function PropTracker() {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${Math.min(100, challengeStatus.dailyDDUsedPct)}%`,
-                                      backgroundColor: ddBarColor(challengeStatus.dailyDDUsedPct, themeColors),
-                                    }}
-                                  />
-                                </div>
+                                <Progress value={challengeStatus.dailyDDUsedPct} indicatorColor={ddBarColor(challengeStatus.dailyDDUsedPct, themeColors)} />
                               </div>
                             )}
                             {isEvalPhase && challengeStatus.tradingDaysPct !== null && account.challengeRules.minTradingDays && (
@@ -1966,15 +1942,7 @@ export default function PropTracker() {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${Math.min(100, challengeStatus.tradingDaysPct)}%`,
-                                      backgroundColor: themeColors.primary,
-                                    }}
-                                  />
-                                </div>
+                                <Progress value={challengeStatus.tradingDaysPct} indicatorColor={themeColors.primary} />
                               </div>
                             )}
                           </div>
@@ -2201,9 +2169,7 @@ export default function PropTracker() {
                             <dd className="mt-1 text-xl font-semibold tabular-nums tracking-tight truncate" style={{ color: c.color ?? (c.value === '--' ? 'hsl(var(--muted-foreground))' : undefined) }}>{c.value}</dd>
                             {c.bar ? (
                               <div className="mt-2 space-y-1">
-                                <div className="h-1.5 rounded-full overflow-hidden bg-muted">
-                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, c.bar.pct)}%`, backgroundColor: c.bar.color }} />
-                                </div>
+                                <Progress className="h-1.5" value={c.bar.pct} indicatorColor={c.bar.color} />
                                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                                   <span>{c.bar.left}</span>
                                   <span>{c.bar.right}</span>
@@ -2399,9 +2365,7 @@ export default function PropTracker() {
                                         <span className="text-muted-foreground font-normal ml-1.5">{pct.toFixed(0)}%</span>
                                       </span>
                                     </div>
-                                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: isReset ? themeColors.loss : themeColors.primary }} />
-                                    </div>
+                                    <Progress value={pct} indicatorColor={isReset ? themeColors.loss : themeColors.primary} />
                                   </div>
                                 )
                               })}
@@ -3242,12 +3206,10 @@ export default function PropTracker() {
                   const expense = tx.type !== 'payout'
                   return (
                     <div key={tx.id} className={`flex items-center gap-3 px-3 py-2.5 transition-opacity ${tx.keep ? '' : 'opacity-40'}`}>
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         aria-label="Include transaction in import"
                         checked={tx.keep}
-                        onChange={() => setImportDialog(p => ({ ...p, parsed: p.parsed.map((t, j) => j === i ? { ...t, keep: !t.keep } : t) }))}
-                        className="rounded"
+                        onCheckedChange={() => setImportDialog(p => ({ ...p, parsed: p.parsed.map((t, j) => j === i ? { ...t, keep: !t.keep } : t) }))}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium">{TX_TYPE_OPTIONS.find(t => t.value === tx.type)?.label ?? tx.type}</p>
@@ -3485,9 +3447,7 @@ export default function PropTracker() {
                                 {preview.profitGain >= 0 ? '+' : ''}{fmt(preview.profitGain, balAccount.currency)} · {Math.max(0, Math.min(100, preview.profitPct)).toFixed(0)}%
                               </span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, preview.profitPct))}%`, backgroundColor: profitBarColor(preview.profitPct, themeColors) }} />
-                            </div>
+                            <Progress className="h-1.5" value={preview.profitPct} indicatorColor={profitBarColor(preview.profitPct, themeColors)} />
                           </div>
                         )}
                         <div className="space-y-1">
@@ -3497,9 +3457,7 @@ export default function PropTracker() {
                               {fmt(preview.totalDDDollars, balAccount.currency)} of {fmt(preview.maxTotalDDDollars, balAccount.currency)} · {Math.min(100, preview.totalDDUsedPct).toFixed(0)}%
                             </span>
                           </div>
-                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${Math.min(100, preview.totalDDUsedPct)}%`, backgroundColor: ddBarColor(preview.totalDDUsedPct, themeColors) }} />
-                          </div>
+                          <Progress className="h-1.5" value={preview.totalDDUsedPct} indicatorColor={ddBarColor(preview.totalDDUsedPct, themeColors)} />
                         </div>
                         {balAccount.challengeRules.maxDailyDrawdown > 0 && (
                           <div className="space-y-1">
@@ -3509,9 +3467,7 @@ export default function PropTracker() {
                                 {fmt(preview.dailyDDDollars, balAccount.currency)} of {fmt(preview.maxDailyDDDollars, balAccount.currency)} · {Math.min(100, preview.dailyDDUsedPct).toFixed(0)}%
                               </span>
                             </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${Math.min(100, preview.dailyDDUsedPct)}%`, backgroundColor: ddBarColor(preview.dailyDDUsedPct, themeColors) }} />
-                            </div>
+                            <Progress className="h-1.5" value={preview.dailyDDUsedPct} indicatorColor={ddBarColor(preview.dailyDDUsedPct, themeColors)} />
                           </div>
                         )}
                         {(preview.totalDDUsedPct >= 100 || preview.dailyDDUsedPct >= 100) && (

@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { MarketingHeader } from '@/components/marketing-header';
-import { HeroGeometric } from '@/components/ui/shape-landing-hero';
+import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { ArrowSquareOut, Copy, Check } from '@phosphor-icons/react';
 

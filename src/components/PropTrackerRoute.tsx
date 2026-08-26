@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
-import { RouteSpinner } from '@/components/ui/route-spinner';
+import { RouteSpinner } from '@/components/route-spinner';
 import { lazyWithRetry } from '@/lib/lazy-with-retry';
 
 const Layout = lazyWithRetry(() => import('@/components/Layout'));

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
 import { useUserStorage } from '@/utils/user-storage';
+import { Textarea } from '@/components/ui/textarea'
 
 interface ExitReason {
   value: string;
@@ -154,13 +155,13 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
 
               {reason && (
                 <div className="animate-in slide-in-from-top-2 fade-in duration-200">
-                  <textarea
+                  <Textarea
                     value={details}
                     onChange={(e) => setDetails(e.target.value)}
                     placeholder={selected?.followUp ?? "Anything else you'd like to share? (optional)"}
                     rows={2}
                     maxLength={500}
-                    className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                    className="resize-none rounded-xl bg-muted/50 px-3.5 py-2.5"
                   />
                 </div>
               )}

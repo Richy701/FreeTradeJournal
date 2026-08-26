@@ -3,12 +3,13 @@ import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOf
 import { Check, FileArrowDown, SpinnerGap } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@/components/date-picker';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ProGate } from '@/components/pro-gate';
 import { useSettings } from '@/contexts/settings-context';
 import type { PDFReportOptions } from '@/services/pdf-report';
+import { SegmentedControl } from '@/components/ui/segmented-control'
 
 interface Trade {
   id: string;
@@ -195,29 +196,19 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
           <div className="px-6 py-5 space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Period</Label>
-              <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-                {([
-                  ['monthly', 'This month'],
-                  ['lastMonth', 'Last month'],
-                  ['quarterly', 'Quarter'],
-                  ['yearly', 'Year'],
-                  ['custom', 'Custom'],
-                ] as [ReportPeriod, string][]).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setPeriod(value)}
-                    aria-pressed={period === value}
-                    className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                      period === value
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                value={period}
+                onChange={setPeriod}
+                fullWidth
+                aria-label="Report period"
+                options={[
+                  { value: 'monthly', label: 'This month' },
+                  { value: 'lastMonth', label: 'Last month' },
+                  { value: 'quarterly', label: 'Quarter' },
+                  { value: 'yearly', label: 'Year' },
+                  { value: 'custom', label: 'Custom' },
+                ]}
+              />
             </div>
 
             {period === 'custom' && (

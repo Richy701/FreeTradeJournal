@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { MarketingHeader } from '@/components/marketing-header';
-import { HeroGeometric } from '@/components/ui/shape-landing-hero';
+import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
 import { ArrowRight } from '@phosphor-icons/react';
 
 // TradeZella pricing verified 2026-08-10 against help.tradezella.com

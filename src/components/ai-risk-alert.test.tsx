@@ -24,7 +24,7 @@ vi.mock('@/contexts/theme-presets', () => ({
 }));
 const userStorage = { getItem: () => null, setItem: () => {} };
 vi.mock('@/utils/user-storage', () => ({ useUserStorage: () => userStorage }));
-vi.mock('@/components/ui/ai-feedback', () => ({ AIFeedback: () => null }));
+vi.mock('@/components/ai-feedback', () => ({ AIFeedback: () => null }));
 vi.mock('@/lib/analytics', () => ({ trackEvent: () => {} }));
 
 // Three consecutive losses → the monitor detects a pattern and asks for advice.

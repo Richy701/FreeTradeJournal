@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FeedbackButton } from '@/components/ui/feedback-button';
+import { FeedbackButton } from '@/components/feedback-button';
 
 export function AppFooter() {
   return (

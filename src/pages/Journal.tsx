@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { NoticeBanner } from '@/components/notice-banner';
 import { Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker } from '@/components/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { trackEvent } from '@/lib/analytics';
 import { Badge } from '@/components/ui/badge';
@@ -66,9 +66,10 @@ import type { RiskRule } from '@/lib/risk-rules';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { toast } from 'sonner';
 import { renderMarkdown } from '@/lib/markdown';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
+import { ImageLightbox } from '@/components/ui/image-lightbox';
 import {
   Popover,
   PopoverContent,
@@ -1039,14 +1040,6 @@ export default function Journal() {
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [showNewEntry]);
-
-  // Escape closes the screenshot lightbox
-  useEffect(() => {
-    if (!enlargedImage) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setEnlargedImage(null); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [enlargedImage]);
 
   // Edit and delete functions
   const startEdit = (entry: JournalEntry) => {
@@ -2602,31 +2595,19 @@ export default function Journal() {
         }}
       />
 
-      {/* Image Lightbox */}
-      {enlargedImage && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Enlarged screenshot"
-          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setEnlargedImage(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setEnlargedImage(null)}
-            aria-label="Close"
-            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+      <ImageLightbox
+        open={enlargedImage !== null}
+        onOpenChange={(open) => { if (!open) setEnlargedImage(null) }}
+        title="Enlarged screenshot"
+      >
+        {enlargedImage && (
           <StoredImage
             src={enlargedImage}
             alt="Enlarged screenshot"
             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
           />
-        </div>
-      )}
+        )}
+      </ImageLightbox>
 
       <ConfirmDialog
         open={pendingDiscard !== null}

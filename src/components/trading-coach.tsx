@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AIFeedback } from '@/components/ui/ai-feedback'
+import { AIFeedback } from '@/components/ai-feedback'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDemoData } from '@/hooks/use-demo-data'
@@ -19,6 +19,8 @@ import { getRuleLabel, type RiskRule } from '@/lib/risk-rules'
 import { computeTradeAggregates } from '@/utils/trade-aggregates'
 import { getAICache, setAICache } from '@/utils/ai-cache'
 import { renderMarkdown } from '@/lib/markdown'
+import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
 
 interface Trade {
   pnl: number
@@ -239,12 +241,7 @@ function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, op
         </div>
       </div>
 
-      <div className="h-2 rounded-full bg-muted/50 overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-700 ease-out"
-          style={{ width: `${pct}%`, backgroundColor: tilt.color }}
-        />
-      </div>
+      <Progress className="bg-muted/50" value={pct} indicatorColor={tilt.color} />
 
       {recommendation && (
         <div className="flex items-start gap-2 text-xs">
@@ -1657,7 +1654,7 @@ export function TradingCoach() {
               onSubmit={(e) => { e.preventDefault(); sendChatMessage(chatInput) }}
               className="flex items-center gap-2"
             >
-              <input
+              <Input
                 ref={chatInputRef}
                 type="text"
                 value={chatInput}
@@ -1665,7 +1662,7 @@ export function TradingCoach() {
                 placeholder="Ask anything about your trading"
                 aria-label="Ask Coach FTJ"
                 disabled={chatBusy}
-                className="flex-1 h-10 px-3 rounded-md border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                className="flex-1 h-10"
               />
               <Button
                 type="submit"

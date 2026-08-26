@@ -13,7 +13,7 @@ import { useStreamingAI } from '@/hooks/use-streaming-ai';
 import { useSettings } from '@/contexts/settings-context';
 import { renderReviewMarkdown } from '@/components/ai-trade-review';
 import { computeTradeAggregates } from '@/utils/trade-aggregates';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { trackEvent } from '@/lib/analytics';
 
 interface ImportedTradeLike {

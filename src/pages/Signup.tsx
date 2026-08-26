@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeSlash, Check, SpinnerGap, ArrowRight } from '@phosphor-icons/react';
-import { GoogleIcon } from '@/components/ui/brand-icons';
+import { GoogleIcon } from '@/components/icons/brand-icons';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthLayout, PanelAccent } from '@/components/auth/auth-layout';
 

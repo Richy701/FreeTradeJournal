@@ -28,15 +28,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // unused
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen, Image as ImageIcon, FileCsv } from '@phosphor-icons/react';
+import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen, Image as ImageIcon, CaretRight } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
-import { InstrumentCombobox } from '@/components/ui/instrument-combobox';
+import { InstrumentCombobox } from '@/components/instrument-combobox';
 import { PropFirmSelect } from '@/components/prop-firm-select';
-import { UnitInput, parseNumberInput } from '@/components/ui/money-input';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { UnitInput, parseNumberInput } from '@/components/money-input';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { CurrencyDollar, Target, Trophy, Scales, CheckCircle, Warning, TrendUp, TrendDown, ChartLineUp, Clock, Coins, Sliders, Note, ArrowRight, Crosshair, ArrowsLeftRight, Lightbulb } from '@phosphor-icons/react';
 import {
   Tooltip,
@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/chart";
 import { Pie, PieChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
-import { DateTimePicker, DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker, DatePicker } from '@/components/date-picker';
 import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -61,7 +61,6 @@ import { TradeLogFilters, TradeLogFilterPills, EMPTY_FILTERS, countActiveFilters
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { ImportInsightDialog } from '@/components/import-insight-dialog';
 import { ScreenshotTradeImportDialog } from '@/components/screenshot-trade-import-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
@@ -170,6 +169,9 @@ export default function TradeLog() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Same Manual / Import split as the dashboard's Log a Trade dialog
+  const [tradeDialogTab, setTradeDialogTab] = useState<'manual' | 'import'>('manual');
+  const [isDialogDropActive, setIsDialogDropActive] = useState(false);
   // Trade id awaiting delete confirmation, or '__bulk__' for the selection.
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
@@ -819,6 +821,8 @@ export default function TradeLog() {
       // lives in the filename (e.g. "July20.csv").
       let result = parseCSV(content, { fileName: file.name });
 
+      setIsDialogOpen(false);
+
       // If auto-detect failed, try to rescue the import silently before bothering
       // the user: replay a mapping they previously confirmed for this file shape,
       // or (Pro only) ask the LLM to map the columns. The app learns each user's
@@ -896,6 +900,14 @@ export default function TradeLog() {
   const openScreenshotImport = () => {
     if (demoGuard('import trades')) return;
     setScreenshotImportOpen(true);
+  };
+
+  const openTradeDialog = (tab: 'manual' | 'import' = 'manual') => {
+    if (guardAllAccounts()) return;
+    setEditingTrade(null);
+    form.reset(newTradeFormValues());
+    setTradeDialogTab(tab);
+    setIsDialogOpen(true);
   };
 
   // Screenshot import lands here with fully built, user-reviewed trades. Same
@@ -1381,35 +1393,12 @@ export default function TradeLog() {
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
               <Button
                 size="sm"
-                onClick={() => {
-                  if (guardAllAccounts()) return;
-                  setEditingTrade(null);
-                  form.reset(newTradeFormValues());
-                  setIsDialogOpen(true);
-                }}
+                onClick={() => openTradeDialog('manual')}
                 style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Trade
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={csvUploadState.isUploading}>
-                    <UploadSimple className="mr-2 h-4 w-4" />
-                    {csvUploadState.isUploading ? 'Processing...' : 'Import'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => document.getElementById('csv-import')?.click()}>
-                    <FileCsv className="mr-2 h-4 w-4" />
-                    CSV or Excel file
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={openScreenshotImport}>
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Screenshot
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
               <input
                 id="csv-import"
                 type="file"
@@ -1535,7 +1524,7 @@ export default function TradeLog() {
       />
 
       {/* Add Trade Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) { setTradeDialogTab('manual'); setIsDialogDropActive(false); } }}>
         <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90svh] sm:max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold flex items-center gap-2.5">
@@ -1545,9 +1534,25 @@ export default function TradeLog() {
                       {editingTrade ? 'Edit Trade' : 'Add New Trade'}
                     </DialogTitle>
                     <DialogDescription className="text-base">
-                      Enter your trade details below. All fields marked with * are required.
+                      {!editingTrade && tradeDialogTab === 'import'
+                        ? 'Bring in trades from a broker export or a screenshot.'
+                        : 'Enter your trade details below. All fields marked with * are required.'}
                     </DialogDescription>
                   </DialogHeader>
+                  <Tabs value={editingTrade ? 'manual' : tradeDialogTab} onValueChange={(v) => setTradeDialogTab(v as 'manual' | 'import')} className="w-full">
+                    {!editingTrade && (
+                      <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
+                        <TabsTrigger value="manual" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
+                          <Plus className="h-3.5 w-3.5" />
+                          Manual
+                        </TabsTrigger>
+                        <TabsTrigger value="import" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
+                          <UploadSimple className="h-3.5 w-3.5" />
+                          Import
+                        </TabsTrigger>
+                      </TabsList>
+                    )}
+                    <TabsContent value="manual" className="mt-0">
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-5">
                       <div className="rounded-xl border bg-card/50 p-4 space-y-3">
@@ -2264,6 +2269,75 @@ export default function TradeLog() {
                       </div>
                     </form>
                   </Form>
+                    </TabsContent>
+
+                    <TabsContent value="import" className="space-y-4 mt-0">
+                      <div
+                        className="rounded-xl border-2 border-dashed p-8 text-center space-y-4 transition-colors hover:border-primary/50 cursor-pointer"
+                        style={{
+                          borderColor: isDialogDropActive ? themeColors.primary : alpha(themeColors.primary, '30'),
+                          backgroundColor: isDialogDropActive ? alpha(themeColors.primary, '08') : undefined,
+                        }}
+                        onClick={() => document.getElementById('csv-import')?.click()}
+                        onDragOver={(e) => { e.preventDefault(); setIsDialogDropActive(true); }}
+                        onDragLeave={(e) => { e.preventDefault(); setIsDialogDropActive(false); }}
+                        onDrop={(e) => { setIsDialogDropActive(false); void handleCsvDrop(e); }}
+                      >
+                        <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+                          <UploadSimple className="h-6 w-6" style={{ color: themeColors.primary }} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">Import trades from CSV</p>
+                          <p className="text-xs text-muted-foreground">
+                            Drag and drop or click to browse
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {['MT4 / MT5', 'Tradovate', 'IBKR', 'NinjaTrader', 'TradeStation'].map(broker => (
+                            <span key={broker} className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-muted/60 text-muted-foreground border border-border/50">
+                              {broker}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {csvUploadState.isUploading && (
+                        <div className="rounded-xl border bg-card/50 p-4 text-center">
+                          <p className="text-sm text-muted-foreground">Processing file...</p>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => { setIsDialogOpen(false); openScreenshotImport(); }}
+                        className="w-full rounded-xl border bg-card/50 p-4 flex items-center gap-3 text-left transition-colors hover:bg-muted/40"
+                      >
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
+                          <ImageIcon className="h-5 w-5" style={{ color: themeColors.primary }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Or import from a screenshot</p>
+                          <p className="text-xs text-muted-foreground">Upload a photo of your closed trades from MT4/MT5, TradingView, or your broker app. You check the trades before they're saved.</p>
+                        </div>
+                        <CaretRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </button>
+
+                      <div className="rounded-xl border bg-card/50 p-4 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">How it works</p>
+                        <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                          <li>Export your trade history as CSV from your broker</li>
+                          <li>Upload the file here -- we auto-detect the format</li>
+                          <li>Review the preview, then confirm the import</li>
+                        </ol>
+                      </div>
+
+                      <div className="flex items-center justify-end pt-2">
+                        <Button variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </DialogContent>
       </Dialog>
 
@@ -2505,19 +2579,15 @@ export default function TradeLog() {
                 {/* CTAs */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    onClick={() => { if (guardAllAccounts()) return; setEditingTrade(null); form.reset(newTradeFormValues()); setIsDialogOpen(true); }}
+                    onClick={() => openTradeDialog('manual')}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Trade
                   </Button>
-                  <Button variant="outline" onClick={() => document.getElementById('csv-import')?.click()}>
+                  <Button variant="outline" onClick={() => openTradeDialog('import')}>
                     <UploadSimple className="mr-2 h-4 w-4" />
-                    Import CSV
-                  </Button>
-                  <Button variant="outline" onClick={openScreenshotImport}>
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    Import screenshot
+                    Import trades
                   </Button>
                 </div>
 

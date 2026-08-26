@@ -72,11 +72,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { InstrumentCombobox } from "@/components/ui/instrument-combobox"
+import { InstrumentCombobox } from "@/components/instrument-combobox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardPeriodProvider, useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
 import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
+import { Progress } from '@/components/ui/progress'
 
 function FreeAIBanner() {
   const { user, isDemo } = useAuth()
@@ -1610,12 +1611,7 @@ export default function Dashboard() {
               <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }} />
               <p className="text-sm font-medium">{importProgress.phase}</p>
             </div>
-            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full transition-[width] duration-500 ease-out"
-                style={{ width: `${importProgress.percent}%`, backgroundColor: themeColors.primary }}
-              />
-            </div>
+            <Progress value={importProgress.percent} indicatorColor={themeColors.primary} />
             <p className="text-xs text-muted-foreground text-right">{importProgress.percent}%</p>
           </div>
         </div>

@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
-import { Footer7 } from '@/components/ui/footer-7';
-import { footerConfig } from '@/components/ui/footer-config';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { MarketingHeader } from '@/components/marketing-header';
-import { HeroGeometric } from '@/components/ui/shape-landing-hero';
-import { ArrowRight, X, ChartBar, Calculator, FileArrowDown, ChartLineUp, Buildings, Infinity } from '@phosphor-icons/react';
+import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
+import { ArrowRight, ChartBar, Calculator, FileArrowDown, ChartLineUp, Buildings, Infinity } from '@phosphor-icons/react';
+import { ImageLightbox } from '@/components/ui/image-lightbox';
 
 const FEATURES = [
   {
@@ -122,26 +123,12 @@ export default function FuturesTradingTracker() {
           </div>
         </section>
 
-        {lightboxOpen && (
-          <div
-            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 sm:p-8"
-            onClick={() => setLightboxOpen(false)}
-          >
-            <button
-              className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors p-2"
-              onClick={() => setLightboxOpen(false)}
-              aria-label="Close"
-            >
-              <X className="h-6 w-6" />
-            </button>
-            <img
-              src="/images/screenshots/trading-log-screenshot.png"
-              alt="FreeTradeJournal futures trade log — ES, NQ, CL and GC contracts with P&L and performance metrics"
-              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
+        <ImageLightbox
+          open={lightboxOpen}
+          onOpenChange={setLightboxOpen}
+          src="/images/screenshots/trading-log-screenshot.png"
+          alt="FreeTradeJournal futures trade log — ES, NQ, CL and GC contracts with P&L and performance metrics"
+        />
 
         <section className="py-24 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">

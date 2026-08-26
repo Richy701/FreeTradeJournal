@@ -24,6 +24,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { SegmentedControl } from '@/components/ui/segmented-control'
 
 // Session windows in each market's own IANA zone — same definitions as
 // market-sessions.tsx, so daylight saving is handled by Intl rather than
@@ -391,30 +392,16 @@ export function ChartHoursSessions() {
                 {hourView === 'pnl' ? 'P&L by entry hour' : 'Win rate by entry hour'} · {localZone}
               </CardDescription>
             </div>
-            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
-              <button
-                onClick={() => setHourView('pnl')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                  hourView === 'pnl'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                aria-pressed={hourView === 'pnl'}
-              >
-                P&L
-              </button>
-              <button
-                onClick={() => setHourView('winRate')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                  hourView === 'winRate'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                aria-pressed={hourView === 'winRate'}
-              >
-                Win rate
-              </button>
-            </div>
+            <SegmentedControl
+              value={hourView}
+              onChange={setHourView}
+              className="shrink-0"
+              aria-label="Hour chart metric"
+              options={[
+                { value: 'pnl', label: 'P&L' },
+                { value: 'winRate', label: 'Win rate' },
+              ]}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 px-4 py-2">
@@ -521,40 +508,27 @@ export function ChartHoursSessions() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
-              {([['pnl', 'P&L'], ['winRate', 'Win rate'], ['count', 'Trades']] as const).map(([view, label]) => (
-                <button
-                  key={view}
-                  onClick={() => setSessionView(view)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                    sessionView === view
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  aria-pressed={sessionView === view}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
-              {([['bars', ChartBarHorizontal, 'Bars'], ['radar', ChartPolar, 'Radar']] as const).map(([layout, Icon, name]) => (
-                <button
-                  key={layout}
-                  onClick={() => setSessionLayout(layout)}
-                  className={`p-1.5 rounded-md ${
-                    sessionLayout === layout
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  aria-pressed={sessionLayout === layout}
-                  aria-label={`${name} view`}
-                  title={name}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              value={sessionView}
+              onChange={setSessionView}
+              className="shrink-0"
+              aria-label="Session chart metric"
+              options={[
+                { value: 'pnl', label: 'P&L' },
+                { value: 'winRate', label: 'Win rate' },
+                { value: 'count', label: 'Trades' },
+              ]}
+            />
+            <SegmentedControl
+              value={sessionLayout}
+              onChange={setSessionLayout}
+              className="shrink-0"
+              aria-label="Session chart layout"
+              options={[
+                { value: 'bars', icon: ChartBarHorizontal, ariaLabel: 'Bars view', title: 'Bars' },
+                { value: 'radar', icon: ChartPolar, ariaLabel: 'Radar view', title: 'Radar' },
+              ]}
+            />
             </div>
           </div>
         </CardHeader>

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { useUserStorage } from '@/utils/user-storage';
 import { getExperienceLevel, type ExperienceLevel } from '@/utils/onboarding';
+import { Progress } from '@/components/ui/progress'
 
 interface ChecklistItem {
   id: string;
@@ -182,12 +183,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
             </span>
           </div>
           {/* Progress bar */}
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
+          <Progress className="h-1.5" value={progressPct} />
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button

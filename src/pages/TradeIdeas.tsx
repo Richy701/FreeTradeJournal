@@ -37,6 +37,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart'
 import type { ChartConfig } from '@/components/ui/chart'
+import { Progress } from '@/components/ui/progress'
 
 export default function TradeIdeas() {
   const { ideas, charts, summary, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
@@ -373,9 +374,7 @@ export default function TradeIdeas() {
                           <span className="text-xs text-muted-foreground">{p.metric}</span>
                           <span className="text-xs font-semibold" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{label}</span>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden bg-muted/60">
-                          <div className="h-full rounded-full" style={{ width: `${p.value}%`, backgroundColor: color }} />
-                        </div>
+                        <Progress className="h-1.5 bg-muted/60" value={p.value} indicatorColor={color} />
                         <p className="text-right text-[11px] font-medium text-muted-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.value}/100</p>
                       </div>
                     )
@@ -457,9 +456,7 @@ export default function TradeIdeas() {
                             <span className="text-muted-foreground">Win Rate</span>
                             <span className="font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>{d.winRate}%</span>
                           </div>
-                          <div className="h-1.5 rounded-full overflow-hidden bg-muted/60">
-                            <div className="h-full rounded-full" style={{ width: `${d.winRate}%`, backgroundColor: color }} />
-                          </div>
+                          <Progress className="h-1.5 bg-muted/60" value={d.winRate} indicatorColor={color} />
                         </div>
                         <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
                           <div>

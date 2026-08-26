@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { UploadSimple, ArrowLeft, Camera } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useThemePresets } from '@/contexts/theme-presets';
@@ -259,14 +260,15 @@ export function ScreenshotTradeImportDialog({ open, onOpenChange, accountId, bro
                         )}
                       </td>
                       <td className="px-2 py-1.5">
-                        <select
-                          className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-                          value={r.side}
-                          onChange={(e) => updateRow(r.id, { side: e.target.value as 'long' | 'short' })}
-                        >
-                          <option value="long">Long</option>
-                          <option value="short">Short</option>
-                        </select>
+                        <Select value={r.side} onValueChange={(v) => updateRow(r.id, { side: v as 'long' | 'short' })}>
+                          <SelectTrigger className="h-8 w-[5.5rem] px-2 text-xs" aria-label="Side">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="long">Long</SelectItem>
+                            <SelectItem value="short">Short</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-2 py-1.5"><Input className={`${cellInput} w-24`} inputMode="decimal" value={r.entryPrice} onChange={(e) => updateRow(r.id, { entryPrice: e.target.value })} /></td>
                       <td className="px-2 py-1.5"><Input className={`${cellInput} w-24`} inputMode="decimal" value={r.exitPrice} onChange={(e) => updateRow(r.id, { exitPrice: e.target.value })} /></td>

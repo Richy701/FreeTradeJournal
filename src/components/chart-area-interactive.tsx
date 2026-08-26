@@ -21,6 +21,7 @@ import {
 import type { ChartConfig } from "@/components/ui/chart"
 import { useMemo, useState } from "react"
 import { niceAxis } from "@/lib/chart-axis"
+import { SegmentedControl } from '@/components/ui/segmented-control'
 
 // Define interfaces
 interface Trade {
@@ -260,30 +261,15 @@ export function ChartAreaInteractive() {
                 : 'Profit and loss for each trading day'}
             </CardDescription>
           </div>
-          <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-            <button
-              onClick={() => setView('equity')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                view === 'equity'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              aria-pressed={view === 'equity'}
-            >
-              Equity
-            </button>
-            <button
-              onClick={() => setView('pnl')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                view === 'pnl'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              aria-pressed={view === 'pnl'}
-            >
-              P&L
-            </button>
-          </div>
+          <SegmentedControl
+            value={view}
+            onChange={setView}
+            aria-label="Chart view"
+            options={[
+              { value: 'equity', label: 'Equity' },
+              { value: 'pnl', label: 'P&L' },
+            ]}
+          />
         </div>
 
         {view === 'equity' && chartData.length > 0 && (

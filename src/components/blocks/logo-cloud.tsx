@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { LogoCarousel } from "@/components/ui/logo-carousel";
+import { LogoCarousel } from "@/components/blocks/logo-carousel";
 
 export function LogoCloud() {
   const propFirms = [

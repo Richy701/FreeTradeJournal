@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Warning, SpinnerGap, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useAuth } from '@/contexts/auth-context';

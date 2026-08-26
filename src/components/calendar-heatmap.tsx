@@ -25,7 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Link, useNavigate } from "react-router-dom"
-import { UnitInput } from '@/components/ui/money-input'
+import { UnitInput } from '@/components/money-input'
 import { Plus, CurrencyDollar, ChartBar, PencilSimple, Crosshair, ArrowsLeftRight, Lightbulb, Tag, Heart, Note, UploadSimple, X, Image as ImageIcon } from '@phosphor-icons/react'
 import {
   Popover,
@@ -1210,20 +1210,21 @@ export function CalendarHeatmap() {
       {hoverDay && hoverPos && createPortal(
         <div
           role="tooltip"
-          className="fixed z-50 w-56 pointer-events-none animate-in fade-in zoom-in-95 duration-150"
+          className="fixed z-[9999] w-56 pointer-events-none animate-in fade-in-0 zoom-in-95 duration-150"
           style={{
             left: hoverPos.x,
             top: hoverPos.y,
             transform: `translate(-50%, ${hoverPos.above ? '-100%' : '0'})`,
           }}
         >
-          <div className="rounded-xl border border-border/70 bg-card/95 backdrop-blur-md shadow-xl p-3 space-y-2.5">
+          {/* Same surface as ui/tooltip (bg-primary / primary-foreground) so it reads as one family */}
+          <div className="rounded-md bg-primary text-primary-foreground shadow-md p-3 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold">
                 {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </span>
               <span
-                className="text-xs font-bold px-2 py-0.5 rounded-md tabular-nums"
+                className="text-xs font-bold px-1.5 py-0.5 rounded tabular-nums"
                 style={{
                   backgroundColor: roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor,
                   color: isLightColor(roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor) ? '#000' : '#fff',
@@ -1237,41 +1238,38 @@ export function CalendarHeatmap() {
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Trades</div>
+                <div className="text-[9px] uppercase tracking-wider font-medium opacity-70">Trades</div>
                 <div className="text-sm font-bold tabular-nums">{hoverDay.trades}</div>
               </div>
               <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Win rate</div>
+                <div className="text-[9px] uppercase tracking-wider font-medium opacity-70">Win rate</div>
                 <div className="text-sm font-bold tabular-nums">{hoverDay.winRate.toFixed(0)}%</div>
               </div>
               <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">W / L</div>
+                <div className="text-[9px] uppercase tracking-wider font-medium opacity-70">W / L</div>
                 <div className="text-sm font-bold tabular-nums">
-                  <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}</span>
-                  <span className="text-muted-foreground font-normal mx-0.5">/</span>
-                  <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}</span>
+                  {hoverDay.winningTrades}<span className="opacity-60 font-normal mx-0.5">/</span>{hoverDay.losingTrades}
                 </div>
               </div>
             </div>
 
-            {(hoverDay.rr > 0 || hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
-              <div className="text-[11px] text-muted-foreground tabular-nums">
-                {hoverDay.rr > 0 && (
-                  <>R:R {hoverDay.rr === Infinity ? '∞' : hoverDay.rr.toFixed(2)}</>
-                )}
+            {/* R:R is only meaningful with at least one loss; an all-win day would read as infinity */}
+            {((hoverDay.rr > 0 && Number.isFinite(hoverDay.rr)) || hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
+              <div className="text-[11px] opacity-80 tabular-nums">
+                {hoverDay.rr > 0 && Number.isFinite(hoverDay.rr) && <>R:R {hoverDay.rr.toFixed(2)}</>}
                 {(hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
                   <>
-                    {hoverDay.rr > 0 && ' · '}
+                    {hoverDay.rr > 0 && Number.isFinite(hoverDay.rr) && ' · '}
                     Avg{' '}
-                    {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
-                    {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span className="text-muted-foreground"> / </span>}
-                    {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
+                    {hoverDay.avgWin > 0 && <span>{fmtCompact(hoverDay.avgWin)}</span>}
+                    {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span className="opacity-60"> / </span>}
+                    {hoverDay.avgLoss > 0 && <span>{fmtCompact(-hoverDay.avgLoss)}</span>}
                   </>
                 )}
               </div>
             )}
 
-            <div className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
+            <div className="text-[10px] opacity-70 pt-2 border-t border-primary-foreground/20">
               Click for full day view
             </div>
           </div>
@@ -1281,7 +1279,7 @@ export function CalendarHeatmap() {
 
       {/* Trade Entry & Journal Modal */}
       <Dialog open={isTradeDialogOpen} onOpenChange={setIsTradeDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90svh] overflow-y-auto p-0">
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90svh] overflow-y-auto p-0 outline-none focus:outline-none">
           <div className="px-5 pt-5 sm:px-6 sm:pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
@@ -1310,23 +1308,31 @@ export function CalendarHeatmap() {
           {dayDialogView === 'overview' && (
             <div className="space-y-4">
               {selectedDateTrades.length > 0 && (
-                <div className="rounded-xl border bg-card/50 p-4">
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">Day P&L</div>
-                      <div
-                        className="text-2xl font-bold tabular-nums leading-none"
-                        style={{ color: selectedDatePnl >= 0 ? themeColors.profit : themeColors.loss }}
-                      >
-                        {formatCurrency(selectedDatePnl)}
-                      </div>
+                <div className="flex items-end justify-between gap-4 pb-4 border-b">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground mb-1">Day P&L</div>
+                    <div
+                      className="text-3xl font-bold tabular-nums leading-none"
+                      style={{ color: selectedDatePnl >= 0 ? themeColors.profit : themeColors.loss }}
+                    >
+                      {formatCurrency(selectedDatePnl)}
                     </div>
-                    <div className="text-right text-xs text-muted-foreground space-y-1">
-                      <div>{selectedDateTrades.length} trade{selectedDateTrades.length !== 1 ? 's' : ''} · {selectedDateWinRate}% win</div>
-                      <div className="font-semibold tabular-nums">
-                        <span style={{ color: themeColors.profit }}>{selectedDateWins}W</span>
-                        <span className="text-muted-foreground font-normal mx-1">/</span>
-                        <span style={{ color: themeColors.loss }}>{selectedDateLosses}L</span>
+                  </div>
+                  <div className="flex items-end gap-5 text-right">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Trades</div>
+                      <div className="text-sm font-semibold tabular-nums">{selectedDateTrades.length}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Win rate</div>
+                      <div className="text-sm font-semibold tabular-nums">{selectedDateWinRate}%</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">W / L</div>
+                      <div className="text-sm font-semibold tabular-nums">
+                        <span style={{ color: themeColors.profit }}>{selectedDateWins}</span>
+                        <span className="text-muted-foreground font-normal mx-0.5">/</span>
+                        <span style={{ color: themeColors.loss }}>{selectedDateLosses}</span>
                       </div>
                     </div>
                   </div>
@@ -1334,44 +1340,59 @@ export function CalendarHeatmap() {
               )}
 
               {selectedDateTrades.length > 0 && (
-                <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
                     <ChartBar className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                     <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Trades</span>
                   </div>
-                  <div className="space-y-2">
-                    {selectedDateTrades.map((trade: Trade) => (
-                      <div key={trade.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-medium truncate">{trade.symbol}</span>
+                  <div className="divide-y divide-border/60">
+                    {selectedDateTrades.map((trade: Trade) => {
+                      const entryTime = trade.entryTime instanceof Date && !isNaN(trade.entryTime.getTime())
+                        ? trade.entryTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                        : null
+                      const hasPrices = Number.isFinite(trade.entryPrice) && Number.isFinite(trade.exitPrice) && (trade.entryPrice !== 0 || trade.exitPrice !== 0)
+                      return (
+                        <div key={trade.id} className="flex items-center gap-3 py-2.5 text-sm">
+                          <div className="flex items-center gap-2 min-w-0 w-32 sm:w-36 shrink-0">
+                            <span className="font-medium truncate">{trade.symbol}</span>
+                            <span
+                              className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
+                              style={{ color: trade.side === 'long' ? themeColors.profit : themeColors.loss }}
+                            >
+                              {trade.side}
+                            </span>
+                          </div>
+                          <div className="hidden sm:flex items-center gap-3 min-w-0 flex-1 text-xs text-muted-foreground tabular-nums">
+                            {entryTime && <span className="shrink-0">{entryTime}</span>}
+                            {hasPrices && (
+                              <span className="truncate">
+                                {trade.entryPrice.toLocaleString()} <span className="opacity-60">→</span> {trade.exitPrice.toLocaleString()}
+                              </span>
+                            )}
+                            {trade.lotSize > 0 && <span className="shrink-0">{trade.lotSize} {trade.market === 'forex' ? (trade.lotSize === 1 ? 'lot' : 'lots') : (trade.lotSize === 1 ? 'ct' : 'cts')}</span>}
+                          </div>
                           <span
-                            className="text-[10px] font-semibold uppercase tracking-wide shrink-0"
-                            style={{ color: trade.side === 'long' ? themeColors.profit : themeColors.loss }}
+                            className="ml-auto font-semibold tabular-nums shrink-0"
+                            style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
                           >
-                            {trade.side}
+                            {formatCurrency(trade.pnl)}
                           </span>
                         </div>
-                        <span
-                          className="text-sm font-semibold tabular-nums shrink-0"
-                          style={{ color: trade.pnl >= 0 ? themeColors.profit : themeColors.loss }}
-                        >
-                          {formatCurrency(trade.pnl)}
-                        </span>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
 
               {selectedDateEntries.length > 0 && (
-                <div className="rounded-xl border bg-card/50 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
+                <div className={selectedDateTrades.length > 0 ? 'pt-4 border-t' : ''}>
+                  <div className="flex items-center gap-2 mb-1">
                     <BookOpen className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
                     <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Journal</span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="divide-y divide-border/60">
                     {selectedDateEntries.map((entry: any, i: number) => (
-                      <div key={entry.id || i} className="rounded-lg border border-border/50 bg-background/60 p-3 space-y-1">
+                      <div key={entry.id || i} className="py-2.5 space-y-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-sm font-medium truncate">{entry.title || 'Untitled entry'}</span>
                           {entry.mood && (

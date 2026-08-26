@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FeedbackButton } from '@/components/ui/feedback-button';
+import { FeedbackButton } from '@/components/feedback-button';
 import { onFeedbackTrigger, triggerFeedbackDialog } from '@/lib/feedback-trigger';
 
 // Deep-link sources (e.g. email links) → human-readable context labels

@@ -3,7 +3,7 @@ import { Brain, SpinnerGap, X } from '@phosphor-icons/react';
 import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useProStatus } from '@/contexts/pro-context';
 import { useStreamingAI } from '@/hooks/use-streaming-ai';

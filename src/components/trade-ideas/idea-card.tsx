@@ -14,6 +14,7 @@ import { IDEA_MARKET_LABELS, plannedRewardRatio, type CommunityIdea } from '@/ty
 import { formatIdeaPrice, formatOutcomePnl, OUTCOME_LABELS } from '@/lib/idea-format'
 import { IdeaAvatar } from './idea-avatar'
 import { RoleTag } from './role-tag'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface IdeaCardProps {
   idea: CommunityIdea
@@ -50,6 +51,7 @@ export function IdeaCard({ idea, isOwn, liked, likeBusy, reported, moderator, on
     : undefined
 
   return (
+    <TooltipProvider delayDuration={300}>
     <Card className="overflow-hidden">
       <CardContent className="p-4 sm:p-5 space-y-3">
         {/* Author row */}
@@ -177,30 +179,42 @@ export function IdeaCard({ idea, isOwn, liked, likeBusy, reported, moderator, on
 
         {/* Footer */}
         <div className="flex items-center gap-2 pt-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 px-2 -ml-2"
-            onClick={() => onToggleLike(idea)}
-            disabled={likeBusy || hidden || isOwn}
-            aria-pressed={liked}
-            aria-label={`${liked ? 'Unlike' : 'Like'}, ${idea.likeCount} ${idea.likeCount === 1 ? 'like' : 'likes'}`}
-            title={isOwn ? 'You cannot like your own idea' : undefined}
-            style={liked ? { color: themeColors.primary } : undefined}
-          >
-            <Heart className="h-4 w-4" weight={liked ? 'fill' : 'regular'} aria-hidden="true" />
-            <span className="tabular-nums text-sm">{idea.likeCount}</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* span keeps the tooltip working when the button is disabled */}
+              <span className="inline-flex -ml-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 px-2"
+                  onClick={() => onToggleLike(idea)}
+                  disabled={likeBusy || hidden || isOwn}
+                  aria-pressed={liked}
+                  aria-label={`${liked ? 'Unlike' : 'Like'}, ${idea.likeCount} ${idea.likeCount === 1 ? 'like' : 'likes'}`}
+                  style={liked ? { color: themeColors.primary } : undefined}
+                >
+                  <Heart className="h-4 w-4" weight={liked ? 'fill' : 'regular'} aria-hidden="true" />
+                  <span className="tabular-nums text-sm">{idea.likeCount}</span>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {isOwn && <TooltipContent>You cannot like your own idea</TooltipContent>}
+          </Tooltip>
           <div className="ml-auto flex items-center gap-2 min-w-0">
             {isPost ? null : outcome ? (
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums"
-                title="Linked by the poster from their own Trade Log"
-                style={outcomeColor ? { borderColor: alpha(outcomeColor, '40'), color: outcomeColor, backgroundColor: alpha(outcomeColor, '10') } : undefined}
-              >
-                {OUTCOME_LABELS[outcome.result]}
-                <span className="font-medium">{formatOutcomePnl(outcome.pnl, outcome.currency)}</span>
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    tabIndex={0}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums"
+                    style={outcomeColor ? { borderColor: alpha(outcomeColor, '40'), color: outcomeColor, backgroundColor: alpha(outcomeColor, '10') } : undefined}
+                  >
+                    {OUTCOME_LABELS[outcome.result]}
+                    <span className="font-medium">{formatOutcomePnl(outcome.pnl, outcome.currency)}</span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Linked by the poster from their own Trade Log</TooltipContent>
+              </Tooltip>
             ) : isOwn && !hidden ? (
               <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => onLinkTrade(idea)}>
                 <LinkSimple className="h-3.5 w-3.5" aria-hidden="true" />
@@ -213,5 +227,6 @@ export function IdeaCard({ idea, isOwn, liked, likeBusy, reported, moderator, on
         </div>
       </CardContent>
     </Card>
+    </TooltipProvider>
   )
 }

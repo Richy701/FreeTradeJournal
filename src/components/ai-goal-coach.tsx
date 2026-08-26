@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AIFeedback } from '@/components/ui/ai-feedback';
+import { AIFeedback } from '@/components/ai-feedback';
 import { ProGate } from '@/components/pro-gate';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';

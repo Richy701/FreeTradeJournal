@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { AVATAR_COLORS, AVATAR_EMOJIS } from '@/constants/avatars';
 import { fetchIdeaProfile } from '@/lib/trade-ideas';
 import { profileHitRate, type IdeaProfile } from '@/types/trade-ideas';
+import { Progress } from '@/components/ui/progress'
 
 
 function getInitials(name: string) {
@@ -483,12 +484,7 @@ export default function Profile() {
                           <span className="text-sm font-medium truncate">{getGoalTitle(g)}</span>
                           <span className="text-xs tabular-nums text-muted-foreground shrink-0">{pct}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{ width: `${pct}%`, backgroundColor: isDone ? '#22c55e' : themeColors.primary }}
-                          />
-                        </div>
+                        <Progress className="h-1.5" value={pct} indicatorColor={isDone ? '#22c55e' : themeColors.primary} />
                       </div>
                     );
                   })}

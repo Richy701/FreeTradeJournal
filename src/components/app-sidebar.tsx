@@ -30,7 +30,7 @@ import {
   CaretDown,
   DotsThree,
 } from '@phosphor-icons/react'
-import { FeedbackButton } from '@/components/ui/feedback-button'
+import { FeedbackButton } from '@/components/feedback-button'
 import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProBadge } from '@/components/pro-badge'
 import { useProStatus } from '@/contexts/pro-context'

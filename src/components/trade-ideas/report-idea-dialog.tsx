@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { reportTradeIdea, callableMessage } from '@/lib/trade-ideas'
 import { IDEA_REPORT_REASONS, type CommunityIdea, type IdeaReportReason } from '@/types/trade-ideas'
@@ -74,33 +75,24 @@ export function ReportIdeaDialog({ idea, onOpenChange, onReported }: ReportIdeaD
               preview={{ avatar: idea, handle: idea.handle, market: idea.market, symbol: idea.symbol, direction: idea.direction, entry: idea.entry, stop: idea.stop, target: idea.target, outcome: idea.outcome, when: 'posted', post: idea.kind === 'post' ? { title: idea.title ?? '' } : undefined }}
             />
           )}
-          {/* Native radios keep arrow-key behaviour for free; the input is visually hidden, the label is the control. */}
-          <fieldset className="space-y-1.5">
-            <legend className="sr-only">Reason</legend>
+          <RadioGroup value={reason ?? ''} onValueChange={v => setReason(v as IdeaReportReason)} aria-label="Reason" className="gap-1.5">
             {IDEA_REPORT_REASONS.map(r => {
               const active = reason === r.value
               return (
                 <label
                   key={r.value}
-                  className="flex w-full cursor-pointer items-center rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm transition-colors hover:bg-muted/40"
                   style={{
                     borderColor: active ? themeColors.primary : 'hsl(var(--border))',
                     backgroundColor: active ? alpha(themeColors.primary, '10') : undefined,
                   }}
                 >
-                  <input
-                    type="radio"
-                    name="idea-report-reason"
-                    value={r.value}
-                    checked={active}
-                    onChange={() => setReason(r.value)}
-                    className="sr-only"
-                  />
+                  <RadioGroupItem value={r.value} style={active ? { borderColor: themeColors.primary, color: themeColors.primary } : undefined} />
                   {r.label}
                 </label>
               )
             })}
-          </fieldset>
+          </RadioGroup>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="idea-report-note">Anything else (optional)</label>
             <Textarea

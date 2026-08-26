@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { trackEvent } from '@/lib/analytics';
 import { triggerTestimonialDialog } from '@/lib/feedback-trigger';
+import { Textarea } from '@/components/ui/textarea'
 
 // uid-suffixed so survey timing is tracked per user, not per device
 const pulseKeyFor = (uid: string | undefined) => `ftj-satisfaction-pulse-${uid || 'anon'}`;
@@ -120,14 +121,13 @@ export function SatisfactionPulse({ tradeCount }: SatisfactionPulseProps) {
                 One line is enough. This goes straight to Richy.
               </p>
             </div>
-            <textarea
+            <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value.slice(0, 500))}
               rows={3}
               autoFocus
               placeholder={score <= 6 ? 'e.g. the import did not recognise my broker' : 'e.g. I want it to sync with my broker'}
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2"
-              style={{ ['--tw-ring-color' as string]: alpha(themeColors.primary, '40') }}
+              className="resize-none rounded-lg"
             />
             <div className="flex items-center justify-between">
               <button

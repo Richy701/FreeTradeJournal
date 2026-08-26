@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import { RouteSpinner } from '@/components/ui/route-spinner';
+import { RouteSpinner } from '@/components/route-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemePresetsProvider } from '@/contexts/theme-presets';
 import { AuthProvider } from '@/contexts/auth-context';
