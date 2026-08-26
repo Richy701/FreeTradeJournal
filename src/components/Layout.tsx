@@ -14,13 +14,21 @@ import { ThemeSettingsSync } from '@/components/theme-settings-sync';
 import { RiskBreachMonitor } from '@/components/risk-breach-monitor';
 import { useAuth } from '@/contexts/auth-context';
 
+// The sidebar writes its open/closed state to this cookie on every toggle;
+// read it back so the choice survives reloads. First visit starts collapsed.
+function readSidebarCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+  const m = document.cookie.match(/(?:^|; )sidebar_state=(true|false)/);
+  return m ? m[1] === 'true' : false;
+}
+
 export default function Layout({ children }: { children?: React.ReactNode }) {
   const { isDemo } = useAuth();
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={readSidebarCookie()}>
       <ThemeSettingsSync />
       <RiskBreachMonitor />
       <LifetimeFarewellDialog />

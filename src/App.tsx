@@ -9,7 +9,7 @@ import { SyncProvider } from '@/contexts/sync-context';
 import { AccountProvider } from '@/contexts/account-context';
 import { SettingsProvider } from '@/contexts/settings-context';
 import { ProtectedRoute } from '@/components/protected-route';
-import { PropTrackerRoute } from '@/components/PropTrackerRoute';
+import { AppShell } from '@/components/app-shell';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { ScrollToTop } from '@/components/scroll-to-top';
@@ -37,7 +37,7 @@ import { lazyWithRetry } from '@/lib/lazy-with-retry';
 
 // The authenticated app shell (sidebar, upgrade CTA, sonner) — lazy like the
 // pages so logged-out visitors never download it.
-const Layout = lazyWithRetry(() => import('@/components/Layout'));
+const PropTracker = lazyWithRetry(() => import('@/pages/PropTracker'));
 
 // Lazy load all page components for smaller initial bundle.
 // lazyWithRetry self-heals stale-chunk failures after a deploy (see lazy-with-retry.ts).
@@ -173,13 +173,12 @@ function App() {
                 ))}
 
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
-                <Route path="/prop-tracker" element={<PropTrackerRoute />} />
-
                 {/* Protected routes */}
                 <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
 
-                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route element={<AppShell />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/prop-tracker" element={<PropTracker />} />
                   <Route path="/coach" element={<Coach />} />
                   <Route path="/trades" element={<TradeLog />} />
                   <Route path="/goals" element={<Goals />} />
