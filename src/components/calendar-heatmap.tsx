@@ -51,6 +51,7 @@ import {
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
+import { getEconomicEvents, ECONOMIC_EVENT_LABELS } from '@/constants/economic-events'
 
 // Define interfaces
 interface Trade {
@@ -1221,41 +1222,62 @@ export function CalendarHeatmap() {
             const pnlColor = roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor
             const showRr = hoverDay.rr > 0 && Number.isFinite(hoverDay.rr)
             const showAvg = hoverDay.trades >= 2 && (hoverDay.avgWin > 0 || hoverDay.avgLoss > 0)
+            const events = getEconomicEvents(hoverDay.date)
+            const row = 'flex items-baseline justify-between gap-3 py-1'
+            const label = 'text-[11px] text-muted-foreground'
+            const value = 'text-xs font-medium tabular-nums text-right'
             return (
-              <div className="relative overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md py-3 pl-4 pr-3 space-y-2">
-                <div className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: pnlColor }} aria-hidden="true" />
-                <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
-                  {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </div>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-2xl font-bold tabular-nums leading-none" style={{ color: pnlColor }}>
+              <div className="rounded-lg border bg-popover text-popover-foreground shadow-md px-3 py-2">
+                <div className="flex items-baseline justify-between gap-3 pb-1.5 border-b border-border/60">
+                  <span className="text-xs font-semibold">
+                    {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </span>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: pnlColor }}>
                     {fmtCompactCurrency(hoverDay.pnl)}
                   </span>
-                  {accountBalance > 0 && (
-                    <span className="text-xs font-medium tabular-nums text-muted-foreground">{fmtCompactPct(hoverDay.pnl)}</span>
-                  )}
                 </div>
-                <div className="text-[11px] text-muted-foreground tabular-nums leading-relaxed">
-                  <div>
-                    {hoverDay.trades} trade{hoverDay.trades !== 1 ? 's' : ''} · {hoverDay.winRate.toFixed(0)}% win ·{' '}
-                    <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}W</span>{' '}
-                    <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}L</span>
+                <div className="py-1">
+                  {accountBalance > 0 && (
+                    <div className={row}>
+                      <span className={label}>Return</span>
+                      <span className={value} style={{ color: pnlColor }}>{fmtCompactPct(hoverDay.pnl)}</span>
+                    </div>
+                  )}
+                  <div className={row}>
+                    <span className={label}>Trades</span>
+                    <span className={value}>{hoverDay.trades} · {hoverDay.winRate.toFixed(0)}% win</span>
+                  </div>
+                  <div className={row}>
+                    <span className={label}>W / L</span>
+                    <span className={value}>
+                      <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}</span>
+                      <span className="text-muted-foreground font-normal"> / </span>
+                      <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}</span>
+                    </span>
                   </div>
                   {(showRr || showAvg) && (
-                    <div>
-                      {showRr && <>R:R {hoverDay.rr.toFixed(2)}</>}
-                      {showAvg && (
-                        <>
-                          {showRr && ' · '}
-                          Avg{' '}
-                          {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
-                          {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && ' / '}
-                          {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
-                        </>
-                      )}
+                    <div className={row}>
+                      <span className={label}>{showRr && showAvg ? 'R:R · Avg' : showRr ? 'R:R' : 'Avg'}</span>
+                      <span className={value}>
+                        {showRr && hoverDay.rr.toFixed(2)}
+                        {showRr && showAvg && <span className="text-muted-foreground font-normal"> · </span>}
+                        {showAvg && (
+                          <>
+                            {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
+                            {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span className="text-muted-foreground font-normal"> / </span>}
+                            {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
+                          </>
+                        )}
+                      </span>
                     </div>
                   )}
                 </div>
+                {events.length > 0 && (
+                  <div className={`${row} pt-1.5 border-t border-border/60`}>
+                    <span className={label}>Events</span>
+                    <span className={value} title={events.map(e => ECONOMIC_EVENT_LABELS[e]).join(', ')}>{events.join(' · ')}</span>
+                  </div>
+                )}
               </div>
             )
           })()}
