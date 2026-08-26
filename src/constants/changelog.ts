@@ -24,6 +24,32 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.89.0',
+    date: '2026-08-26',
+    summary: 'Import from the Add Trade dialog, a clearer calendar day view, and news events on the calendar.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Import from Add Trade in the Trade Log',
+        description: 'Add Trade in the Trade Log now works like the one on the dashboard. It opens with two tabs, Manual and Import. Import takes a CSV or Excel export by drag and drop or file picker, or a screenshot of your closed trades. The separate Import button is gone. Dropping a file anywhere on the Trade Log page still works.',
+        link: { to: '/trades', label: 'Open Trade Log' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'News events on the calendar',
+        description: 'Days with a scheduled US release are marked in the calendar. Hover a day and the tooltip lists them, for example NFP, CPI, FOMC, GDP or PCE. Open the day and the same events sit next to your trade count and win rate. It covers the 2026 schedule from the Fed, BLS and BEA.',
+        link: { to: '/dashboard', label: 'Open the calendar' },
+      },
+      {
+        type: 'improved',
+        text: 'Calendar day view, cleaned up',
+        description: 'The hover tooltip is now a short list of labelled rows: P&L, return, trades, win/loss, and R:R with average win and loss when there is more than one trade. The day view drops the nested boxes. Each trade shows its entry time, entry and exit price, size and P&L on one line.',
+      },
+    ],
+  },
+  {
     version: '2.88.0',
     date: '2026-08-24',
     summary: 'Chart screenshots on daily calendar notes, and redrawn Time of Day and Trading Sessions charts.',
@@ -3108,4 +3134,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.88.0'
+export const LATEST_CHANGELOG_VERSION = '2.89.0'
