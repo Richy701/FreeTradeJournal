@@ -27,6 +27,7 @@ import { WeeklyDigestEmail } from "./emails/WeeklyDigestEmail";
 import { ReferralEmail } from "./emails/ReferralEmail";
 import { CheckoutRecoveryEmail } from "./emails/CheckoutRecoveryEmail";
 import { createTradeIdeaFunctions } from "./trade-ideas";
+import { runBirthdaySend } from "./birthday-send";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -5970,3 +5971,13 @@ const tradeIdeaFns = createTradeIdeaFunctions({
 // the per-action functions were removed 2026-08-24 once the client switched.
 export const tradeIdeas = tradeIdeaFns.tradeIdeas;
 export const onTradeIdeaDeleted = tradeIdeaFns.onTradeIdeaDeleted;
+
+// First-birthday lifetime offer email. One-off: the date guard inside
+// runBirthdaySend means only 28 Aug 2026 actually sends.
+export const sendBirthdayLifetimeEmails = functions
+  .runWith({ timeoutSeconds: 540, memory: "1GB" })
+  .pubsub.schedule("0 14 28 8 *")
+  .timeZone("Europe/London")
+  .onRun(async () => {
+    return runBirthdaySend({ db, getResend, getUnsubscribeUrl, reportError });
+  });
