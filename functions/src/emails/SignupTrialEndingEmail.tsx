@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
 import { EmailShell, EmailButton, Eyebrow, FeatureList, styles } from './components'
-import { URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
+import { URLS, PRICE_MONTHLY, PRICE_YEARLY, FREE_AI_COACHING_RUNS_PER_MONTH } from './facts'
 
 interface SignupTrialEndingEmailProps {
   firstName: string
@@ -10,7 +10,7 @@ interface SignupTrialEndingEmailProps {
 
 const losing = [
   { label: 'Full analytics history', desc: 'Free shows your last 30 days; Pro keeps every stat across your whole history.' },
-  { label: 'Unlimited AI coaching', desc: 'Coach FTJ, trade reviews, and risk alerts drop back to 20 free queries a month.' },
+  { label: 'Unlimited AI coaching', desc: `Coaching runs you ask for drop back to ${FREE_AI_COACHING_RUNS_PER_MONTH} a month. Automatic tips, journal prompts and risk alerts stay free.` },
   { label: 'Cloud sync', desc: 'Your journal stops syncing across devices; data stays local to this browser.' },
 ]
 
