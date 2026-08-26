@@ -204,7 +204,16 @@ export default function TradeLog() {
   const [currentPage, setCurrentPage] = useState(1);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const itemsPerPage = 10;
+  const PAGE_SIZES = [10, 25, 50, 100] as const;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(() => {
+    const saved = Number(userStorage.getItem('tradeLogPageSize'));
+    return PAGE_SIZES.includes(saved as typeof PAGE_SIZES[number]) ? saved : 25;
+  });
+  const changePageSize = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
+    userStorage.setItem('tradeLogPageSize', String(size));
+  };
 
   // Filter state (persisted per user)
   const [filters, setFilters] = useState<TradeFilters>(() => {
@@ -2975,10 +2984,20 @@ export default function TradeLog() {
             )}
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {(totalPages > 1 || displayedTrades.length > PAGE_SIZES[0]) && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/70">
-                <div className="text-sm text-muted-foreground text-center sm:text-left">
-                  Showing {startIndex + 1} to {Math.min(endIndex, displayedTrades.length)} of {displayedTrades.length} trades
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <Select value={String(itemsPerPage)} onValueChange={(v) => changePageSize(Number(v))}>
+                    <SelectTrigger className="h-8 w-[4.5rem] text-xs" aria-label="Rows per page">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <span>
+                    Showing {startIndex + 1} to {Math.min(endIndex, displayedTrades.length)} of {displayedTrades.length} trades
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-2">
