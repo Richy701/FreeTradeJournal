@@ -1217,70 +1217,48 @@ export function CalendarHeatmap() {
             transform: `translate(-50%, ${hoverPos.above ? '-100%' : '0'})`,
           }}
         >
-          {/* Popover surface (not ui/tooltip's bg-primary): the P&L badge uses the theme's profit/loss
-              colours, which on gold themes are the same as primary and would vanish. */}
-          <div className="rounded-lg border bg-popover text-popover-foreground shadow-md p-3 space-y-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold">
-                {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </span>
-              <span
-                className="text-xs font-bold px-1.5 py-0.5 rounded tabular-nums"
-                style={{
-                  backgroundColor: roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor,
-                  color: isLightColor(roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor) ? '#000' : '#fff',
-                }}
-              >
-                {accountBalance > 0
-                  ? `${fmtCompactCurrency(hoverDay.pnl)} · ${fmtCompactPct(hoverDay.pnl)}`
-                  : fmtCompactCurrency(hoverDay.pnl)}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Trades</div>
-                <div className="text-sm font-bold tabular-nums">{hoverDay.trades}</div>
-              </div>
-              <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Win rate</div>
-                <div className="text-sm font-bold tabular-nums">{hoverDay.winRate.toFixed(0)}%</div>
-              </div>
-              <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">W / L</div>
-                <div className="text-sm font-bold tabular-nums">
-                  <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}</span>
-                  <span className="text-muted-foreground font-normal mx-0.5">/</span>
-                  <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}</span>
+          {(() => {
+            const pnlColor = roundedPnl(hoverDay.pnl) > 0 ? themeColors.profit : roundedPnl(hoverDay.pnl) < 0 ? themeColors.loss : breakevenColor
+            const showRr = hoverDay.rr > 0 && Number.isFinite(hoverDay.rr)
+            const showAvg = hoverDay.trades >= 2 && (hoverDay.avgWin > 0 || hoverDay.avgLoss > 0)
+            return (
+              <div className="relative overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md py-3 pl-4 pr-3 space-y-2">
+                <div className="absolute inset-y-0 left-0 w-[3px]" style={{ backgroundColor: pnlColor }} aria-hidden="true" />
+                <div className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">
+                  {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </div>
-              </div>
-            </div>
-
-            {/* R:R needs at least one loss (else infinity); Avg needs 2+ trades or it just repeats the badge */}
-            {(() => {
-              const showRr = hoverDay.rr > 0 && Number.isFinite(hoverDay.rr)
-              const showAvg = hoverDay.trades >= 2 && (hoverDay.avgWin > 0 || hoverDay.avgLoss > 0)
-              if (!showRr && !showAvg) return null
-              return (
-                <div className="text-[11px] text-muted-foreground tabular-nums">
-                  {showRr && <>R:R {hoverDay.rr.toFixed(2)}</>}
-                  {showAvg && (
-                    <>
-                      {showRr && ' · '}
-                      Avg{' '}
-                      {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
-                      {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span> / </span>}
-                      {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
-                    </>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-2xl font-bold tabular-nums leading-none" style={{ color: pnlColor }}>
+                    {fmtCompactCurrency(hoverDay.pnl)}
+                  </span>
+                  {accountBalance > 0 && (
+                    <span className="text-xs font-medium tabular-nums text-muted-foreground">{fmtCompactPct(hoverDay.pnl)}</span>
                   )}
                 </div>
-              )
-            })()}
-
-            <div className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
-              Click for full day view
-            </div>
-          </div>
+                <div className="text-[11px] text-muted-foreground tabular-nums leading-relaxed">
+                  <div>
+                    {hoverDay.trades} trade{hoverDay.trades !== 1 ? 's' : ''} · {hoverDay.winRate.toFixed(0)}% win ·{' '}
+                    <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}W</span>{' '}
+                    <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}L</span>
+                  </div>
+                  {(showRr || showAvg) && (
+                    <div>
+                      {showRr && <>R:R {hoverDay.rr.toFixed(2)}</>}
+                      {showAvg && (
+                        <>
+                          {showRr && ' · '}
+                          Avg{' '}
+                          {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
+                          {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && ' / '}
+                          {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
         </div>,
         document.body
       )}
