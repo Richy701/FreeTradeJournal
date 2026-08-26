@@ -1217,8 +1217,9 @@ export function CalendarHeatmap() {
             transform: `translate(-50%, ${hoverPos.above ? '-100%' : '0'})`,
           }}
         >
-          {/* Same surface as ui/tooltip (bg-primary / primary-foreground) so it reads as one family */}
-          <div className="rounded-md bg-primary text-primary-foreground shadow-md p-3 space-y-2.5">
+          {/* Popover surface (not ui/tooltip's bg-primary): the P&L badge uses the theme's profit/loss
+              colours, which on gold themes are the same as primary and would vanish. */}
+          <div className="rounded-lg border bg-popover text-popover-foreground shadow-md p-3 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold">
                 {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -1238,38 +1239,45 @@ export function CalendarHeatmap() {
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium opacity-70">Trades</div>
+                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Trades</div>
                 <div className="text-sm font-bold tabular-nums">{hoverDay.trades}</div>
               </div>
               <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium opacity-70">Win rate</div>
+                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">Win rate</div>
                 <div className="text-sm font-bold tabular-nums">{hoverDay.winRate.toFixed(0)}%</div>
               </div>
               <div>
-                <div className="text-[9px] uppercase tracking-wider font-medium opacity-70">W / L</div>
+                <div className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground">W / L</div>
                 <div className="text-sm font-bold tabular-nums">
-                  {hoverDay.winningTrades}<span className="opacity-60 font-normal mx-0.5">/</span>{hoverDay.losingTrades}
+                  <span style={{ color: themeColors.profit }}>{hoverDay.winningTrades}</span>
+                  <span className="text-muted-foreground font-normal mx-0.5">/</span>
+                  <span style={{ color: themeColors.loss }}>{hoverDay.losingTrades}</span>
                 </div>
               </div>
             </div>
 
-            {/* R:R is only meaningful with at least one loss; an all-win day would read as infinity */}
-            {((hoverDay.rr > 0 && Number.isFinite(hoverDay.rr)) || hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
-              <div className="text-[11px] opacity-80 tabular-nums">
-                {hoverDay.rr > 0 && Number.isFinite(hoverDay.rr) && <>R:R {hoverDay.rr.toFixed(2)}</>}
-                {(hoverDay.avgWin > 0 || hoverDay.avgLoss > 0) && (
-                  <>
-                    {hoverDay.rr > 0 && Number.isFinite(hoverDay.rr) && ' · '}
-                    Avg{' '}
-                    {hoverDay.avgWin > 0 && <span>{fmtCompact(hoverDay.avgWin)}</span>}
-                    {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span className="opacity-60"> / </span>}
-                    {hoverDay.avgLoss > 0 && <span>{fmtCompact(-hoverDay.avgLoss)}</span>}
-                  </>
-                )}
-              </div>
-            )}
+            {/* R:R needs at least one loss (else infinity); Avg needs 2+ trades or it just repeats the badge */}
+            {(() => {
+              const showRr = hoverDay.rr > 0 && Number.isFinite(hoverDay.rr)
+              const showAvg = hoverDay.trades >= 2 && (hoverDay.avgWin > 0 || hoverDay.avgLoss > 0)
+              if (!showRr && !showAvg) return null
+              return (
+                <div className="text-[11px] text-muted-foreground tabular-nums">
+                  {showRr && <>R:R {hoverDay.rr.toFixed(2)}</>}
+                  {showAvg && (
+                    <>
+                      {showRr && ' · '}
+                      Avg{' '}
+                      {hoverDay.avgWin > 0 && <span style={{ color: themeColors.profit }}>{fmtCompact(hoverDay.avgWin)}</span>}
+                      {hoverDay.avgWin > 0 && hoverDay.avgLoss > 0 && <span> / </span>}
+                      {hoverDay.avgLoss > 0 && <span style={{ color: themeColors.loss }}>{fmtCompact(-hoverDay.avgLoss)}</span>}
+                    </>
+                  )}
+                </div>
+              )
+            })()}
 
-            <div className="text-[10px] opacity-70 pt-2 border-t border-primary-foreground/20">
+            <div className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
               Click for full day view
             </div>
           </div>
