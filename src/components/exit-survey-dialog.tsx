@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DownloadSimple, UserMinus, Warning } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
 import { useUserStorage } from '@/utils/user-storage';
+import { useAuth } from '@/contexts/auth-context';
 import { Textarea } from '@/components/ui/textarea'
 
 interface ExitReason {
@@ -67,8 +68,17 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
   const [details, setDetails] = useState('');
   const [step, setStep] = useState<'survey' | 'confirm'>('survey');
   const userStorage = useUserStorage();
+  const { user } = useAuth();
+  const detailsRef = useRef<HTMLTextAreaElement>(null);
 
   const selected = useMemo(() => EXIT_REASONS.find((r) => r.value === reason) ?? null, [reason]);
+
+  // The free-text answer is the only thing worth reading for these two reasons,
+  // and almost nobody filled it in when it sat as an optional box further down.
+  const wantsDetails = reason === 'not_useful' || reason === 'too_complex';
+  useEffect(() => {
+    if (wantsDetails) detailsRef.current?.focus();
+  }, [wantsDetails]);
 
   const tradeCount = useMemo(() => {
     if (!open) return 0;
@@ -86,7 +96,7 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
       trackEvent('exit_survey_submitted', { reason, details: details.trim() || undefined });
 
       // Fire-and-forget to backend
-      sendExitFeedback(reason, details.trim());
+      sendExitFeedback(reason, details.trim(), buildExitContext(userStorage.getItem('trades'), userStorage.getItem('journalEntries'), userStorage.getItem('accounts'), user?.metadata?.creationTime));
     }
     setStep('confirm');
   }
@@ -154,12 +164,19 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
               )}
 
               {reason && (
-                <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="animate-in slide-in-from-top-2 fade-in duration-200 space-y-1.5">
+                  {wantsDetails && selected?.followUp && (
+                    <label htmlFor="exit-details" className="block text-sm font-medium text-foreground">
+                      {selected.followUp}
+                    </label>
+                  )}
                   <Textarea
+                    id="exit-details"
+                    ref={detailsRef}
                     value={details}
                     onChange={(e) => setDetails(e.target.value)}
-                    placeholder={selected?.followUp ?? "Anything else you'd like to share? (optional)"}
-                    rows={2}
+                    placeholder={wantsDetails ? 'Even one sentence helps' : (selected?.followUp ?? "Anything else you'd like to share? (optional)")}
+                    rows={wantsDetails ? 3 : 2}
                     maxLength={500}
                     className="resize-none rounded-xl bg-muted/50 px-3.5 py-2.5"
                   />
@@ -242,7 +259,33 @@ function exportTradesCsv(saved: string | null) {
   URL.revokeObjectURL(url);
 }
 
-async function sendExitFeedback(reason: string, details: string) {
+// Account context for the exit email: says whether "too complex" means they
+// bounced off an empty dashboard or gave up after weeks of real use.
+function buildExitContext(tradesRaw: string | null, journalRaw: string | null, accountsRaw: string | null, creationTime?: string): Record<string, string> {
+  const parse = (raw: string | null): unknown[] => {
+    try {
+      const v = raw ? JSON.parse(raw) : [];
+      return Array.isArray(v) ? v : [];
+    } catch {
+      return [];
+    }
+  };
+  const trades = parse(tradesRaw) as Array<{ notes?: unknown }>;
+  const imported = trades.filter((t) => typeof t.notes === 'string' && t.notes.startsWith('Imported from')).length;
+  const ctx: Record<string, string> = {
+    trades: String(trades.length),
+    importedTrades: String(imported),
+    journalEntries: String(parse(journalRaw).length),
+    accounts: String(parse(accountsRaw).length),
+  };
+  if (creationTime) {
+    const days = Math.max(0, Math.round((Date.now() - new Date(creationTime).getTime()) / 86_400_000));
+    ctx.accountAge = `${days} day${days === 1 ? '' : 's'} (since ${new Date(creationTime).toISOString().slice(0, 10)})`;
+  }
+  return ctx;
+}
+
+async function sendExitFeedback(reason: string, details: string, diagnostics: Record<string, string>) {
   try {
     const { getFunctions, httpsCallable } = await import('firebase/functions');
     const fn = httpsCallable(getFunctions(), 'sendFeedback');
@@ -252,6 +295,7 @@ async function sendExitFeedback(reason: string, details: string) {
       rating: 0,
       page: 'Account Deletion',
       wantFollowUp: false,
+      diagnostics,
     });
   } catch {
     // Non-critical
