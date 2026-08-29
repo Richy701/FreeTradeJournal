@@ -86,10 +86,13 @@ function HeroGeometric({
     showCTA = true,
     cta,
     compact = false,
+    eyebrow,
 }: {
     title1?: string;
     title2?: string;
     subtitle?: string;
+    /** Optional pill rendered above the headline (e.g. a time-limited offer). */
+    eyebrow?: React.ReactNode;
     showCTA?: boolean;
     cta?: React.ReactNode;
     compact?: boolean;
@@ -162,6 +165,18 @@ function HeroGeometric({
 
             <div className="relative z-10 container mx-auto px-4 md:px-6">
                 <div className="max-w-3xl mx-auto text-center">
+                    {eyebrow && (
+                        <motion.div
+                            custom={0}
+                            variants={fadeUpVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="mb-5 sm:mb-6 flex justify-center px-2"
+                        >
+                            {eyebrow}
+                        </motion.div>
+                    )}
+
                     <motion.div
                         custom={1}
                         variants={fadeUpVariants}

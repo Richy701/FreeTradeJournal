@@ -41,7 +41,7 @@ import { Progress } from '@/components/ui/progress'
 
 export default function TradeIdeas() {
   const { ideas, charts, summary, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors, alpha, chartStyle } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
   // Axis ticks get a compact format (no decimals) so long values like $8,000.00
   // don't overflow recharts' fixed 60px axis width. Tooltips keep full precision.
@@ -494,7 +494,7 @@ export default function TradeIdeas() {
             <p className="text-sm text-muted-foreground">Which strategies are working</p>
               <ChartContainer config={strategyConfig} className="h-[250px] w-full">
                 <BarChart data={charts.strategyPnl} layout="vertical" margin={{ left: 30, right: 20 }}>
-                  <CartesianGrid horizontal={false} strokeOpacity={0.1} />
+                  {chartStyle.grid && <CartesianGrid horizontal={false} strokeOpacity={0.1} />}
                   <YAxis dataKey="strategy" type="category" width={120} tick={{ fontSize: 11 }} />
                   <XAxis type="number" tick={{ fontSize: 11 }} domain={strategyAxis.domain} ticks={strategyAxis.ticks} tickFormatter={(v) => formatAxisCurrency(v)} />
                   <ChartTooltip
@@ -539,7 +539,7 @@ export default function TradeIdeas() {
                         <stop offset="100%" stopColor={themeColors.primary} stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid vertical={false} strokeOpacity={0.1} />
+                    {chartStyle.grid && <CartesianGrid vertical={false} strokeOpacity={0.1} />}
                     <XAxis dataKey="week" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} domain={weeklyAxis.domain} ticks={weeklyAxis.ticks} tickFormatter={(v) => formatAxisCurrency(v)} />
                     <ChartTooltip
@@ -568,6 +568,7 @@ export default function TradeIdeas() {
                       strokeWidth={2}
                       dot={{ r: 3, fill: themeColors.primary, strokeWidth: 0 }}
                       fill={`url(#weeklyGradient-${gradientId})`}
+                      fillOpacity={chartStyle.fill ? 1 : 0}
                     />
                   </AreaChart>
                 </ChartContainer>
@@ -583,7 +584,7 @@ export default function TradeIdeas() {
               <p className="text-sm text-muted-foreground">P&L by trading day</p>
                 <ChartContainer config={hourlyConfig} className="h-[200px] w-full">
                   <BarChart data={charts.dayOfWeek} maxBarSize={24} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                    <CartesianGrid vertical={false} strokeOpacity={0.1} />
+                    {chartStyle.grid && <CartesianGrid vertical={false} strokeOpacity={0.1} />}
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatAxisCurrency(v)} />
                     <ChartTooltip

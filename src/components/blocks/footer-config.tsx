@@ -57,6 +57,7 @@ export const footerConfig = {
         { name: "Privacy Policy", href: "/privacy" },
         { name: "Terms & Conditions", href: "/terms" },
         { name: "Cookie Policy", href: "/cookie-policy" },
+        { name: "Cookie Settings", href: "#cookie-settings" },
       ]
     }
   ],

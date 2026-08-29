@@ -176,3 +176,34 @@ export function deriveSurfaceVars(tintHex: string, mode: 'light' | 'dark'): Reco
     '--sidebar-border': `${h} ${Math.round(sat * 0.7)}% 13%`,
   }
 }
+
+// Lightness curve modelled on Tailwind 500-level colors — each hue needs a
+// different lightness to look equally vibrant (yellow needs ~48%, blue ~60%).
+const LIGHTNESS_STOPS: [number, number][] = [
+  [0, 60], [25, 53], [38, 50], [48, 47], [84, 44], [142, 45],
+  [160, 39], [173, 40], [189, 43], [199, 48], [217, 60],
+  [239, 67], [258, 66], [271, 65], [292, 61], [330, 60], [347, 50], [360, 60],
+]
+
+function vibrantLightness(hue: number): number {
+  const h = ((hue % 360) + 360) % 360
+  for (let i = 0; i < LIGHTNESS_STOPS.length - 1; i++) {
+    if (h >= LIGHTNESS_STOPS[i][0] && h <= LIGHTNESS_STOPS[i + 1][0]) {
+      const t = (h - LIGHTNESS_STOPS[i][0]) / (LIGHTNESS_STOPS[i + 1][0] - LIGHTNESS_STOPS[i][0])
+      return Math.round(LIGHTNESS_STOPS[i][1] + t * (LIGHTNESS_STOPS[i + 1][1] - LIGHTNESS_STOPS[i][1]))
+    }
+  }
+  return 55
+}
+
+export const SERIES_PALETTE_SIZE = 6
+
+// Categorical series palette (symbol pie, legends) derived from the accent:
+// six hues spread around the wheel starting at the accent, each at a
+// lightness that reads equally vibrant. Theme Studio lets users override any
+// slot; unset slots fall back to this.
+export function deriveSeriesPalette(primaryHex: string): string[] {
+  const { h } = hexToHslParts(primaryHex)
+  return [h, (h + 55) % 360, (h + 110) % 360, (h + 165) % 360, (h + 220) % 360, (h + 275) % 360]
+    .map(hue => hslStringToHex(`${hue} 88% ${vibrantLightness(hue)}%`))
+}

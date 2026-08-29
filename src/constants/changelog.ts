@@ -24,6 +24,39 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.90.0',
+    date: '2026-08-29',
+    summary: 'Chart controls in the Theme Studio, and a rebuilt Settings page.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Charts in the Theme Studio',
+        description: 'The Theme Studio has a Charts section. Pick smooth, straight or stepped lines for the equity curve and P&L charts, turn the fill under the line and the grid lines on or off, and set your own six series colours for charts that compare symbols. The preview cards redraw as you change them.',
+        image: {
+          src: '/screenshots/theme-studio-charts.png',
+          alt: 'The Charts section of the Theme Studio with line style buttons, fill and grid switches, and six series colour pickers',
+        },
+        link: { to: '/settings', label: 'Open Settings' },
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Settings page, rebuilt',
+        description: 'Every section now uses the same layout: a short title, then a card of rows with the setting on the left and its control on the right. The page banner and profile card at the top are gone, the section tabs stay pinned under the header as you scroll, and the theme picker is unchanged. Risk keeps its inputs and calculator side by side; the calculator is now a plain list of figures. Data & privacy splits into Backup, Privacy and Danger zone. Subscription is a list of plan, billing and sync rows.',
+        image: {
+          src: '/screenshots/settings-risk-redesign.png',
+          alt: 'The Risk section of Settings with the inputs card on the left and the calculator figures on the right',
+        },
+      },
+      {
+        type: 'fixed',
+        text: 'Empty Notifications card',
+        description: 'The Notifications section in Settings could sit blank while it checked for a push subscription, and stayed blank in browsers with no service worker. It now shows the reminder switch, or says why reminders are not available.',
+      },
+    ],
+  },
+  {
     version: '2.89.0',
     date: '2026-08-26',
     summary: 'Import from the Add Trade dialog, a clearer calendar day view, and news events on the calendar.',
@@ -3139,4 +3172,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.89.0'
+export const LATEST_CHANGELOG_VERSION = '2.90.0'

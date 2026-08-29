@@ -30,7 +30,10 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
 
 export async function getExistingSubscription(): Promise<PushSubscription | null> {
   if (!('serviceWorker' in navigator)) return null;
-  const registration = await navigator.serviceWorker.ready;
+  // Not `serviceWorker.ready`: that promise never settles when no worker is
+  // registered (dev server, first visit), which left Settings hanging.
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) return null;
   return registration.pushManager.getSubscription();
 }
 

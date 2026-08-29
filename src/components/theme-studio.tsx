@@ -1,11 +1,19 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Moon, Sun, Warning, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useThemePresets, computeThemeVars, type CustomThemeConfig } from '@/contexts/theme-presets';
-import { contrastRatio, hslStringToHex } from '@/lib/theme-vars';
+import {
+  useThemePresets,
+  computeThemeVars,
+  resolveChartStyle,
+  type ChartCurve,
+  type ChartThemeConfig,
+  type CustomThemeConfig,
+} from '@/contexts/theme-presets';
+import { contrastRatio, hslStringToHex, deriveSeriesPalette, SERIES_PALETTE_SIZE } from '@/lib/theme-vars';
 
 // Advanced controls for the Custom theme (Pro "Theme Studio"): separate
 // dark-mode colors, surface tints that generate a full theme, and corner
@@ -33,6 +41,31 @@ export const PREVIEW_DEFAULTS: Record<'light' | 'dark', Record<string, string>> 
   },
 };
 
+const CURVE_OPTIONS: { label: string; value: ChartCurve }[] = [
+  { label: 'Smooth', value: 'smooth' },
+  { label: 'Straight', value: 'straight' },
+  { label: 'Stepped', value: 'step' },
+];
+
+// Sparkline path for the mini preview card, in the shape the Charts
+// controls select. Straight and stepped are trivial; smooth uses cubic
+// segments with horizontal handles, close to Recharts' monotone curve.
+const SPARK_POINTS: [number, number][] = [[0, 16], [14, 12], [28, 14], [42, 7], [56, 9], [70, 4], [84, 6], [96, 2]];
+
+function sparklinePath(curve: ChartCurve): string {
+  const pts = SPARK_POINTS;
+  if (curve === 'straight') return pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+  if (curve === 'step') return pts.map(([x, y], i) => (i ? `H${x} V${y}` : `M${x} ${y}`)).join(' ');
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1];
+    const [x1, y1] = pts[i];
+    const cx = (x0 + x1) / 2;
+    d += ` C${cx} ${y0}, ${cx} ${y1}, ${x1} ${y1}`;
+  }
+  return d;
+}
+
 const RADIUS_OPTIONS = [
   { label: 'Sharp', value: 0.3 },
   { label: 'Compact', value: 0.6 },
@@ -46,6 +79,7 @@ function ColorSwatchPicker({
   placeholder,
   onChange,
   onClear,
+  emptyLabel = 'Same as base',
 }: {
   label: string;
   value?: string;
@@ -53,6 +87,7 @@ function ColorSwatchPicker({
   placeholder: string;
   onChange: (hex: string) => void;
   onClear?: () => void;
+  emptyLabel?: string;
 }) {
   const effective = value ?? placeholder;
   return (
@@ -67,7 +102,7 @@ function ColorSwatchPicker({
             >
               <div className="h-5 w-5 rounded-md border shrink-0" style={{ backgroundColor: effective }} />
               <span className={`text-xs text-muted-foreground flex-1 text-left truncate ${value ? 'uppercase' : ''}`}>
-                {value ?? 'Same as base'}
+                {value ?? emptyLabel}
               </span>
             </button>
           </PopoverTrigger>
@@ -110,8 +145,11 @@ export function ThemeMiniPreview({
   vars,
   fallback,
   style,
+  charts,
 }: {
   vars: Record<string, string>;
+  // Chart style to draw the sparkline with (Theme Studio live preview)
+  charts?: ChartThemeConfig;
   // Surface values to use when the variable set doesn't define them (custom
   // themes without a surface tint fall back to the app defaults)
   fallback?: Record<string, string>;
@@ -124,6 +162,9 @@ export function ThemeMiniPreview({
   const primary = hslStringToHex(v('--primary'));
   const profit = hslStringToHex(v('--profit'));
   const loss = hslStringToHex(v('--loss'));
+  const chartStyle = resolveChartStyle(charts);
+  const sparkPath = sparklinePath(chartStyle.curve);
+  const sparkFillId = useId();
 
   return (
     <div
@@ -139,13 +180,25 @@ export function ThemeMiniPreview({
           <span className="text-xs font-bold tabular-nums" style={{ color: profit }}>+$1,240.50</span>
           <span className="text-[10px] font-medium tabular-nums" style={{ color: loss }}>-$318.20</span>
         </div>
-        <svg viewBox="0 0 96 20" preserveAspectRatio="none" className="w-full h-4" aria-hidden="true">
+        <svg viewBox="0 0 96 20" preserveAspectRatio="none" className="w-full h-5" aria-hidden="true">
+          <defs>
+            <linearGradient id={sparkFillId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor={primary} stopOpacity={0.35} />
+              <stop offset="1" stopColor={primary} stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          {chartStyle.grid && [5, 10, 15].map((y) => (
+            <line key={y} x1={0} x2={96} y1={y} y2={y} stroke={hsl('--border')} strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
+          ))}
+          {chartStyle.fill && <path d={`${sparkPath} V20 H0 Z`} fill={`url(#${sparkFillId})`} stroke="none" />}
           <path
-            d="M0 16 L14 12 L28 14 L42 7 L56 9 L70 4 L84 6 L96 2"
+            d={sparkPath}
             fill="none"
             stroke={primary}
             strokeWidth="1.5"
             strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
           />
         </svg>
       </div>
@@ -174,9 +227,11 @@ export function ThemeMiniPreview({
 function ThemePreviewPanel({
   mode,
   vars,
+  charts,
 }: {
   mode: 'light' | 'dark';
   vars: Record<string, string>;
+  charts?: ChartThemeConfig;
 }) {
   const ModeIcon = mode === 'dark' ? Moon : Sun;
   return (
@@ -184,7 +239,7 @@ function ThemePreviewPanel({
       <p className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <ModeIcon className="h-3 w-3" aria-hidden="true" /> {mode}
       </p>
-      <ThemeMiniPreview vars={vars} fallback={PREVIEW_DEFAULTS[mode]} />
+      <ThemeMiniPreview vars={vars} fallback={PREVIEW_DEFAULTS[mode]} charts={charts} />
     </div>
   );
 }
@@ -228,6 +283,30 @@ export function ThemeStudio() {
   };
 
   const patch = (updates: Partial<CustomThemeConfig>) => setCustomColors(updates);
+
+  // Chart controls. Palette overrides are sparse; an all-empty list drops the
+  // key so an untouched config round-trips to exactly the defaults.
+  const charts = customColors.charts;
+  const chartStyle = resolveChartStyle(charts);
+  const patchCharts = (updates: Partial<ChartThemeConfig>) => {
+    const next: ChartThemeConfig = { ...charts, ...updates };
+    (Object.keys(next) as (keyof ChartThemeConfig)[]).forEach((key) => {
+      if (next[key] === undefined) delete next[key];
+    });
+    patch({ charts: Object.keys(next).length ? next : undefined });
+  };
+  const setPaletteSlot = (index: number, hex?: string) => {
+    const palette = Array.from({ length: SERIES_PALETTE_SIZE }, (_, i) => charts?.palette?.[i]);
+    palette[index] = hex;
+    const hasAny = palette.some(Boolean);
+    patchCharts({ palette: hasAny ? palette : undefined });
+  };
+  // Picker placeholders show what each unset slot resolves to (light-mode accent)
+  const derivedPalette = useMemo(
+    () => deriveSeriesPalette(modeColors('light').primary),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [previews]
+  );
 
   return (
     <div className="space-y-5">
@@ -309,12 +388,85 @@ export function ThemeStudio() {
         </div>
       </div>
 
+      {/* Charts */}
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Charts</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            How the equity curve and P&amp;L charts are drawn, and the colours used when a chart compares several symbols.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Line style</Label>
+          <div className="flex flex-wrap gap-2">
+            {CURVE_OPTIONS.map(({ label, value }) => {
+              const isActive = chartStyle.curve === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => patchCharts({ curve: value === 'smooth' ? undefined : value })}
+                  aria-pressed={isActive}
+                  className={`px-3 py-2 text-xs rounded-lg border transition-all ${
+                    isActive
+                      ? 'font-semibold border-primary/60 bg-primary/10 text-foreground'
+                      : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="flex items-center justify-between gap-3 rounded-lg border border-border/40 px-3 py-2.5 cursor-pointer">
+            <span className="text-xs font-medium">Fill under the line</span>
+            <Switch
+              checked={chartStyle.fill}
+              onCheckedChange={(checked) => patchCharts({ fill: checked ? undefined : false })}
+              aria-label="Fill under the line"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-3 rounded-lg border border-border/40 px-3 py-2.5 cursor-pointer">
+            <span className="text-xs font-medium">Grid lines</span>
+            <Switch
+              checked={chartStyle.grid}
+              onCheckedChange={(checked) => patchCharts({ grid: checked ? undefined : false })}
+              aria-label="Grid lines"
+            />
+          </label>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Series colours</Label>
+          <p className="text-xs text-muted-foreground">
+            Used when a chart shows several symbols at once. Unset slots follow your accent colour.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {derivedPalette.map((fallbackColor, i) => (
+              <ColorSwatchPicker
+                key={i}
+                label={`Series ${i + 1}`}
+                value={charts?.palette?.[i]}
+                placeholder={fallbackColor}
+                onChange={(hex) => setPaletteSlot(i, hex)}
+                onClear={() => setPaletteSlot(i, undefined)}
+                emptyLabel="From accent"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Live preview */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preview</p>
         <div className="flex flex-col sm:flex-row gap-3">
-          <ThemePreviewPanel mode="light" vars={previews.light} />
-          <ThemePreviewPanel mode="dark" vars={previews.dark} />
+          <ThemePreviewPanel mode="light" vars={previews.light} charts={charts} />
+          <ThemePreviewPanel mode="dark" vars={previews.dark} charts={charts} />
         </div>
         {warnings.length > 0 && (
           <div className="space-y-1 pt-1">

@@ -5,6 +5,8 @@ import {
   contrastText,
   deriveChartVars,
   deriveSurfaceVars,
+  deriveSeriesPalette,
+  SERIES_PALETTE_SIZE,
 } from '@/lib/theme-vars'
 
 interface ModeColors {
@@ -42,6 +44,51 @@ export interface CustomThemeConfig {
   surfaceLight?: string
   surfaceDark?: string
   radius?: number
+  charts?: ChartThemeConfig
+}
+
+// Theme Studio chart controls. `palette` is a sparse list of hex overrides
+// for the categorical series colours (symbol pie, legends); unset slots fall
+// back to the accent-derived palette. The style flags apply to every theme,
+// not just Custom, so switching preset never silently changes chart shape.
+export type ChartCurve = 'smooth' | 'straight' | 'step'
+export interface ChartThemeConfig {
+  palette?: (string | undefined)[]
+  curve?: ChartCurve
+  fill?: boolean
+  grid?: boolean
+}
+
+// Resolved chart style handed to chart components: Recharts curve type plus
+// the fill/grid flags with defaults applied.
+export interface ChartStyle {
+  curve: ChartCurve
+  curveType: 'monotone' | 'linear' | 'stepAfter'
+  fill: boolean
+  grid: boolean
+}
+
+const CURVE_TYPES: Record<ChartCurve, ChartStyle['curveType']> = {
+  smooth: 'monotone',
+  straight: 'linear',
+  step: 'stepAfter',
+}
+
+export function resolveChartStyle(charts?: ChartThemeConfig): ChartStyle {
+  const curve = charts?.curve ?? 'smooth'
+  return {
+    curve,
+    curveType: CURVE_TYPES[curve],
+    fill: charts?.fill ?? true,
+    grid: charts?.grid ?? true,
+  }
+}
+
+// Final categorical palette: user overrides (Custom theme only) over the
+// accent-derived defaults.
+export function resolveSeriesPalette(primaryHex: string, custom?: ChartThemeConfig): string[] {
+  const derived = deriveSeriesPalette(primaryHex)
+  return Array.from({ length: SERIES_PALETTE_SIZE }, (_, i) => custom?.palette?.[i] || derived[i])
 }
 
 export const DEFAULT_CUSTOM_COLORS: CustomThemeConfig = {
@@ -793,7 +840,8 @@ const themePresets: Record<string, ThemePreset> = {
 
 interface ThemeContextType {
   currentTheme: string
-  themeColors: ThemePreset['colors'] & { primaryButtonText: string }
+  themeColors: ThemePreset['colors'] & { primaryButtonText: string; palette: string[] }
+  chartStyle: ChartStyle
   setTheme: (theme: string) => void
   availableThemes: Record<string, ThemePreset>
   alpha: (color: string, hexOpacity: string) => string
@@ -1063,8 +1111,14 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     return {
       ...adjustedColors,
       primaryButtonText: contrastText(adjustedColors.primary),
+      palette: resolveSeriesPalette(
+        adjustedColors.primary,
+        currentTheme === 'custom' && !isDemo ? customColors.charts : undefined
+      ),
     }
   }, [currentTheme, isDarkMode, customColors, isDemo])
+
+  const chartStyle = useMemo(() => resolveChartStyle(customColors.charts), [customColors.charts])
 
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;
@@ -1077,12 +1131,13 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   const contextValue = useMemo(() => ({
     currentTheme,
     themeColors,
+    chartStyle,
     setTheme,
     availableThemes: themePresets,
     alpha,
     setCustomColors,
     customColors,
-  }), [currentTheme, themeColors, setTheme, alpha, setCustomColors, customColors])
+  }), [currentTheme, themeColors, chartStyle, setTheme, alpha, setCustomColors, customColors])
 
   return (
     <ThemeContext.Provider value={contextValue}>

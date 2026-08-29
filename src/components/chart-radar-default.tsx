@@ -25,51 +25,6 @@ import {
 import type { ChartConfig } from "@/components/ui/chart"
 import { SegmentedControl } from '@/components/ui/segmented-control'
 
-function hexToHSL(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16) / 255
-  const g = parseInt(hex.slice(3, 5), 16) / 255
-  const b = parseInt(hex.slice(5, 7), 16) / 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  let h = 0, s = 0
-  const l = (max + min) / 2
-  if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6
-    else if (max === g) h = ((b - r) / d + 2) / 6
-    else h = ((r - g) / d + 4) / 6
-  }
-  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)]
-}
-
-// Lightness curve modelled on Tailwind 500-level colors — each hue needs a
-// different lightness to look equally vibrant (yellow needs ~48%, blue ~60%, etc.)
-const LIGHTNESS_STOPS: [number, number][] = [
-  [0, 60], [25, 53], [38, 50], [48, 47], [84, 44], [142, 45],
-  [160, 39], [173, 40], [189, 43], [199, 48], [217, 60],
-  [239, 67], [258, 66], [271, 65], [292, 61], [330, 60], [347, 50], [360, 60],
-]
-
-function vibrantLightness(hue: number): number {
-  const h = ((hue % 360) + 360) % 360
-  for (let i = 0; i < LIGHTNESS_STOPS.length - 1; i++) {
-    if (h >= LIGHTNESS_STOPS[i][0] && h <= LIGHTNESS_STOPS[i + 1][0]) {
-      const t = (h - LIGHTNESS_STOPS[i][0]) / (LIGHTNESS_STOPS[i + 1][0] - LIGHTNESS_STOPS[i][0])
-      return Math.round(LIGHTNESS_STOPS[i][1] + t * (LIGHTNESS_STOPS[i + 1][1] - LIGHTNESS_STOPS[i][1]))
-    }
-  }
-  return 55
-}
-
-function generatePairColors(primary: string, profit: string, loss: string): string[] {
-  const [h] = hexToHSL(primary)
-  const hues = [h, (h + 55) % 360, (h + 110) % 360, (h + 165) % 360, (h + 220) % 360, (h + 275) % 360]
-  return [
-    ...hues.map(hue => `hsl(${hue}, 88%, ${vibrantLightness(hue)}%)`),
-    profit,
-    loss,
-  ]
-}
 
 export function ChartRadarDefault() {
   const { themeColors } = useThemePresets()
@@ -81,9 +36,11 @@ export function ChartRadarDefault() {
     const formatted = Math.abs(Math.round(n)).toLocaleString('en-US')
     return `${sign}${symbol}${formatted}`
   }
+  // Categorical palette from the theme (Theme Studio can override slots),
+  // with profit/loss appended for symbol lists longer than the palette.
   const pairColors = useMemo(
-    () => generatePairColors(themeColors.primary, themeColors.profit, themeColors.loss),
-    [themeColors.primary, themeColors.profit, themeColors.loss]
+    () => [...themeColors.palette, themeColors.profit, themeColors.loss],
+    [themeColors.palette, themeColors.profit, themeColors.loss]
   )
   const { getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()

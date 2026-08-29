@@ -28,6 +28,7 @@ import { ReferralEmail } from "./emails/ReferralEmail";
 import { CheckoutRecoveryEmail } from "./emails/CheckoutRecoveryEmail";
 import { createTradeIdeaFunctions } from "./trade-ideas";
 import { runBirthdaySend } from "./birthday-send";
+import { runBirthdayClosingSend } from "./birthday-closing-send";
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -5980,4 +5981,14 @@ export const sendBirthdayLifetimeEmails = functions
   .timeZone("Europe/London")
   .onRun(async () => {
     return runBirthdaySend({ db, getResend, getUnsubscribeUrl, reportError });
+  });
+
+// Closing reminder for the same offer, the day before it ends. Date guard
+// inside runBirthdayClosingSend means only 3 Sep 2026 actually sends.
+export const sendBirthdayLifetimeClosingEmails = functions
+  .runWith({ timeoutSeconds: 540, memory: "1GB" })
+  .pubsub.schedule("0 14 3 9 *")
+  .timeZone("Europe/London")
+  .onRun(async () => {
+    return runBirthdayClosingSend({ db, getResend, getUnsubscribeUrl, reportError });
   });

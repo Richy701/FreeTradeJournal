@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
@@ -20,7 +20,8 @@ import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { useAccounts, FREE_TRADING_ACCOUNT_LIMIT, type TradingAccount } from '@/contexts/account-context';
 import { BROKER_TIMEZONES } from '@/utils/timezone';
 import { useUserStorage } from '@/utils/user-storage';
-import { Sliders, Wallet, Gauge, Database, CreditCard, Check, DownloadSimple, UploadSimple, Sun, Moon, Monitor, Crown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset } from '@phosphor-icons/react';
+import { openCookieSettings } from '@/lib/cookie-consent';
+import { Sliders, Wallet, Gauge, Database, CreditCard, Check, DownloadSimple, UploadSimple, Cookie, Sun, Moon, Monitor, Crown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset, Plus } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
@@ -107,6 +108,43 @@ const NAV = [
   { id: 'subscription',  label: 'Subscription',  Icon: CreditCard },
 ] as const;
 
+// Layout primitives every section is built from, so the page reads as one
+// system: a section divider, and titled groups made of label/control rows.
+function SectionHeading({ id, title }: { id: string; title: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <h2 id={id} className="text-lg font-semibold tracking-tight shrink-0">{title}</h2>
+      <div className="flex-1 border-t border-border/60" aria-hidden="true" />
+    </div>
+  );
+}
+
+function SettingsGroup({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
+      <div className="min-w-0 rounded-xl border border-border/70 bg-card divide-y divide-border/50 overflow-hidden">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({ label, description, children }: { label: ReactNode; description?: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+      <div className="min-w-0">
+        <p className="text-sm font-medium">{label}</p>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+      </div>
+      {children && <div className="shrink-0 sm:max-w-[60%]">{children}</div>}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha, setCustomColors, customColors } = useThemePresets();
@@ -129,10 +167,13 @@ export default function Settings() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteAccountId, setDeleteAccountId] = useState<string | null>(null);
 
+  // One long page; the sticky tab bar scrolls to a section and follows the
+  // scroll position. ?tab= deep links (sidebar, checkout redirect) land on
+  // the right section.
   const [activeSection, setActiveSection] = useState<string>('general');
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const scrollTo = (id: string) => {
+  const selectTab = (id: string) => {
     const el = sectionRefs.current[id];
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -153,15 +194,18 @@ export default function Settings() {
     return () => observer.disconnect();
   }, []);
 
+  const urlTab = searchParams.get('tab');
+  useEffect(() => {
+    if (urlTab && NAV.some(n => n.id === urlTab)) setTimeout(() => selectTab(urlTab), 300);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab]);
+
   useEffect(() => {
     if (searchParams.get('checkout') === 'success') {
       trackEvent('checkout_completed');
       setSearchParams({}, { replace: true });
-      setTimeout(() => scrollTo('subscription'), 600);
+      setTimeout(() => selectTab('subscription'), 600);
       setCheckoutPending(true);
-    } else if (searchParams.get('tab')) {
-      const tab = searchParams.get('tab')!;
-      setTimeout(() => scrollTo(tab), 300);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -361,875 +405,696 @@ export default function Settings() {
       <div className="min-h-screen flex flex-col bg-background">
         <SiteHeader />
 
-        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg shrink-0 mt-0.5 bg-primary/10">
-                <Sliders className="h-5 w-5 text-primary" />
-              </div>
-              <div className="space-y-0.5">
-                <h1 className="font-display text-2xl font-bold">Settings</h1>
-                <p className="text-sm text-muted-foreground">Customize your experience and manage your account.</p>
-              </div>
+        {/* Sticky section tabs; scroll-spy keeps the active one in step */}
+        {/* top offset = SiteHeader height (h-12 / md:h-16), which is sticky above this */}
+        <div className="sticky top-12 md:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60">
+          <nav aria-label="Settings sections" className="w-full overflow-x-auto scrollbar-hide">
+            <div className="flex gap-1 px-4 sm:px-6 lg:px-8 min-w-max">
+              {NAV.map(({ id, label, Icon }) => {
+                const isActive = activeSection === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => selectTab(id)}
+                    aria-current={isActive ? 'true' : undefined}
+                    className={`flex items-center gap-2 px-3 py-3 text-sm border-b-2 -mb-px transition-colors whitespace-nowrap ${
+                      isActive ? 'border-primary font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60">
-          <div className="w-full overflow-x-auto scrollbar-hide">
-            <div className="flex gap-0 px-4 sm:px-6 lg:px-8 min-w-max">
-              {NAV.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => scrollTo(id)}
-                  className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                    activeSection === id ? 'text-primary border-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+          </nav>
         </div>
 
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
-            <div className="space-y-12 pb-16">
-
-              {/* Profile & plan summary */}
-              <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.08] via-transparent to-transparent pointer-events-none" aria-hidden="true" />
-                <div className="relative p-4 sm:p-5 flex flex-wrap items-center gap-4">
-                  {user?.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/25 shrink-0"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 rounded-full bg-primary/10 ring-2 ring-primary/25 flex items-center justify-center shrink-0">
-                      <span className="text-xl font-bold text-primary">{(user?.displayName || user?.email || 'T').charAt(0).toUpperCase()}</span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-base font-semibold capitalize truncate">{user?.displayName || 'Trader'}</p>
-                      {isPro ? <ProBadge variant={isDev ? 'dev' : 'pro'} /> : (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Free plan</span>
-                      )}
-                    </div>
-                    {user?.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>}
-                  </div>
-                  <div className="hidden md:flex items-center gap-5 shrink-0 pr-1">
-                    {user?.metadata?.creationTime && (
-                      <>
-                        <div className="text-right">
-                          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Member since</p>
-                          <p className="text-sm font-semibold mt-0.5">
-                            {new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' }).format(new Date(user.metadata.creationTime))}
-                          </p>
-                        </div>
-                        <div className="h-8 w-px bg-border/70" aria-hidden="true" />
-                      </>
-                    )}
-                    {isPro ? (
-                      <button
-                        onClick={() => scrollTo('subscription')}
-                        className="text-xs font-medium text-primary hover:underline underline-offset-4"
-                      >
-                        Manage plan
-                      </button>
-                    ) : !isDemo && (
-                      <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
-                        <Crown className="mr-1.5 h-3.5 w-3.5" />
-                        Upgrade
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+          <div>
+            <div className="space-y-16 pb-16">
 
               {/* ── GENERAL ─────────────────────────────────────────────── */}
               <section
                 id="general"
                 ref={(el) => { sectionRefs.current['general'] = el; }}
-                className="scroll-mt-24 space-y-5"
+                aria-labelledby="settings-general"
+                className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
-                    <Sliders aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight">General</h2>
-                    <p className="text-xs text-muted-foreground">Appearance and display preferences</p>
-                  </div>
-                </div>
+                  <SectionHeading id="settings-general" title="General" />
 
-                {/* Appearance */}
-                <div className="rounded-xl border border-border/70 overflow-hidden">
-                  <div className="px-4 sm:px-5 py-3.5 bg-muted/30 border-b border-border/70">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Appearance</p>
-                  </div>
-                  <div className="divide-y divide-border/50">
-
-                    {/* Theme mode */}
-                    <div className="px-4 sm:px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                      <div className="sm:w-44 shrink-0">
-                        <p className="text-sm font-medium">Theme Mode</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Light, dark, or system</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 max-w-xs">
+                  <SettingsGroup title="Appearance" description="Light or dark, and the currency P&L is shown in.">
+                    <SettingRow label="Theme mode" description="Light, dark, or follow the system">
+                      <div className="flex gap-2">
                         {([
                           { value: 'light', label: 'Light', icon: Sun },
                           { value: 'dark', label: 'Dark', icon: Moon },
                           { value: 'system', label: 'System', icon: Monitor },
-                        ] as const).map(({ value, label, icon }) => (
+                        ] as const).map(({ value, label, icon: ThemeIcon }) => (
                           <button
                             key={value}
+                            type="button"
                             onClick={() => setTheme(value)}
                             aria-pressed={theme === value}
-                            className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-xs transition-all ${
-                              theme === value ? 'font-semibold border-primary/40 bg-primary/10' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors ${
+                              theme === value ? 'font-semibold border-primary/40 bg-primary/10 text-foreground' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
                             }`}
                           >
-                            {(() => { const ThemeIcon = icon; return <ThemeIcon aria-hidden="true" className={`h-4 w-4 ${theme === value ? 'text-primary' : ''}`} />; })()}
+                            <ThemeIcon aria-hidden="true" className={`h-3.5 w-3.5 ${theme === value ? 'text-primary' : ''}`} />
                             {label}
                           </button>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Currency */}
-                    <div className="px-4 sm:px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                      <div className="sm:w-44 shrink-0">
-                        <p className="text-sm font-medium">Display Currency</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Used for P&amp;L display</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
+                    </SettingRow>
+                    <SettingRow label="Display currency" description="Used wherever P&L is shown">
+                      <div className="flex flex-wrap gap-2 sm:justify-end">
                         {CURRENCIES.map(({ value, symbol, label }) => {
                           const isActive = (activeAccount?.currency || settings.currency) === value;
                           return (
                             <button
                               key={value}
+                              type="button"
                               onClick={() => {
                                 updateSettings({ currency: value });
                                 if (activeAccount) updateAccount(activeAccount.id, { ...activeAccount, currency: value });
                               }}
                               aria-pressed={isActive}
-                              className={`flex flex-col items-center gap-1 rounded-xl border px-3 py-3 text-xs transition-all min-w-[4rem] ${
-                                isActive ? 'font-semibold border-primary/40 bg-primary/10' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                              className={`rounded-lg border px-2.5 py-2 text-xs transition-colors ${
+                                isActive ? 'font-semibold border-primary/40 bg-primary/10 text-foreground' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
                               }`}
                             >
-                              <span className={`text-sm font-bold ${isActive ? 'text-primary' : ''}`}>{symbol}</span>
-                              <span>{label}</span>
+                              <span className={`font-bold mr-1 ${isActive ? 'text-primary' : ''}`}>{symbol}</span>{label}
                             </button>
                           );
                         })}
                       </div>
-                    </div>
-                  </div>
-                </div>
+                    </SettingRow>
+                  </SettingsGroup>
 
-                {/* Color theme */}
-                <div className="rounded-xl border border-border/70 overflow-hidden">
-                  <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Color Theme</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Accent, profit, and loss colors across the app</p>
-                  </div>
-                  <div className="p-5 space-y-6">
+                  <SettingsGroup title="Color theme" description="Accent, profit, and loss colors across the app. Custom unlocks the Theme Studio.">
+                    <div className="px-5 py-5 space-y-7">
 
-                    {/* Accent themes: swap the data colors, keep the standard look */}
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Accent colors</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Change the accent and profit/loss colors, keep the standard look</p>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                        {Object.entries(availableThemes).filter(([key, preset]) => !preset.cssOverrides && key !== 'custom').map(([key, preset]) => {
-                          const isSelected = currentTheme === key;
-                          return (
-                            <div
-                              key={key}
-                              onClick={() => setColorTheme(key)}
-                              tabIndex={0}
-                              role="button"
-                              aria-pressed={isSelected}
-                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                              className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                            >
-                              <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
-                                <ThemeMiniPreview
-                                  vars={computeThemeVars(key, customColors, resolvedMode)}
-                                  fallback={PREVIEW_DEFAULTS[resolvedMode]}
-                                  style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
-                                />
-                              </div>
-                              <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Full themes: restyle every surface, previewed as a mini app mock */}
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full themes</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Restyle everything — backgrounds, cards, and sidebar included</p>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-                        {Object.entries(availableThemes).filter(([, preset]) => !!preset.cssOverrides).map(([key, preset]) => {
-                          const isSelected = currentTheme === key;
-                          return (
-                            <div
-                              key={key}
-                              onClick={() => setColorTheme(key)}
-                              tabIndex={0}
-                              role="button"
-                              aria-pressed={isSelected}
-                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
-                              className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                            >
-                              <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
-                                <ThemeMiniPreview
-                                  vars={computeThemeVars(key, customColors, resolvedMode)}
-                                  style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
-                                />
-                              </div>
-                              <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Custom theme: free base colors + Pro Theme Studio */}
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your theme</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Pick your own accent, profit, and loss colors</p>
-                      </div>
-                      {(() => {
-                        const isSelected = currentTheme === 'custom';
-                        return (
-                          <div
-                            onClick={() => setColorTheme('custom')}
-                            tabIndex={0}
-                            role="button"
-                            aria-pressed={isSelected}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme('custom'); } }}
-                            className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background max-w-xs"
-                          >
-                            <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
-                              <ThemeMiniPreview
-                                vars={computeThemeVars('custom', customColors, resolvedMode)}
-                                fallback={PREVIEW_DEFAULTS[resolvedMode]}
-                                style={isSelected ? { boxShadow: `0 0 0 2px ${customColors.primary}` } : undefined}
-                              />
-                            </div>
-                            <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>Custom</span>
-                          </div>
-                        );
-                      })()}
-
-                      {currentTheme === 'custom' && (
-                        <div className="pt-4 border-t border-border/70 space-y-5">
-                          <div className="space-y-3">
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Base colors</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                              {([
-                                { key: 'primary' as const, label: 'Accent' },
-                                { key: 'profit' as const, label: 'Profit' },
-                                { key: 'loss' as const, label: 'Loss' },
-                              ]).map(({ key, label }) => (
-                                <div key={key} className="space-y-1.5">
-                                  <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <button type="button" className="flex items-center gap-2.5 w-full rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                                        <div className="h-5 w-5 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
-                                        <span className="uppercase text-xs text-muted-foreground flex-1 text-left">{customColors[key]}</span>
-                                      </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-3 space-y-3" align="start">
-                                      <HexColorPicker color={customColors[key]} onChange={(c) => setCustomColors({ [key]: c })} />
-                                      <div className="flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
-                                        <Input value={customColors[key]} maxLength={7} className="h-8 font-mono text-sm uppercase" onChange={(e) => {
-                                          let v = e.target.value;
-                                          if (!v.startsWith('#')) v = '#' + v;
-                                          if (/^#[0-9a-fA-F]{0,6}$/.test(v) && v.length === 7) setCustomColors({ [key]: v.toLowerCase() });
-                                        }} />
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
+                      {/* Accent themes: swap the data colors, keep the standard look */}
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium">Accent colors</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Change the accent and profit/loss colors, keep the standard look</p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                          {Object.entries(availableThemes).filter(([key, preset]) => !preset.cssOverrides && key !== 'custom').map(([key, preset]) => {
+                            const isSelected = currentTheme === key;
+                            return (
+                              <div
+                                key={key}
+                                onClick={() => setColorTheme(key)}
+                                tabIndex={0}
+                                role="button"
+                                aria-pressed={isSelected}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
+                                className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                              >
+                                <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
+                                  <ThemeMiniPreview
+                                    vars={computeThemeVars(key, customColors, resolvedMode)}
+                                    fallback={PREVIEW_DEFAULTS[resolvedMode]}
+                                    style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
+                                  />
                                 </div>
-                              ))}
+                                <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Full themes: restyle every surface, previewed as a mini app mock */}
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium">Full themes</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Restyle everything, backgrounds, cards, and sidebar included</p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                          {Object.entries(availableThemes).filter(([, preset]) => !!preset.cssOverrides).map(([key, preset]) => {
+                            const isSelected = currentTheme === key;
+                            return (
+                              <div
+                                key={key}
+                                onClick={() => setColorTheme(key)}
+                                tabIndex={0}
+                                role="button"
+                                aria-pressed={isSelected}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
+                                className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                              >
+                                <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
+                                  <ThemeMiniPreview
+                                    vars={computeThemeVars(key, customColors, resolvedMode)}
+                                    style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
+                                  />
+                                </div>
+                                <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Custom theme: free base colors + Pro Theme Studio */}
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium">Your theme</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Pick your own accent, profit, and loss colors</p>
+                        </div>
+                        {(() => {
+                          const isSelected = currentTheme === 'custom';
+                          return (
+                            <div
+                              onClick={() => setColorTheme('custom')}
+                              tabIndex={0}
+                              role="button"
+                              aria-pressed={isSelected}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme('custom'); } }}
+                              className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background max-w-xs"
+                            >
+                              <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
+                                <ThemeMiniPreview
+                                  vars={computeThemeVars('custom', customColors, resolvedMode)}
+                                  fallback={PREVIEW_DEFAULTS[resolvedMode]}
+                                  style={isSelected ? { boxShadow: `0 0 0 2px ${customColors.primary}` } : undefined}
+                                />
+                              </div>
+                              <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>Custom</span>
                             </div>
+                          );
+                        })()}
+
+                        {currentTheme === 'custom' && (
+                          <div className="pt-5 border-t border-border/60 space-y-5">
+                            <div className="space-y-3">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Base colors</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {([
+                                  { key: 'primary' as const, label: 'Accent' },
+                                  { key: 'profit' as const, label: 'Profit' },
+                                  { key: 'loss' as const, label: 'Loss' },
+                                ]).map(({ key, label }) => (
+                                  <div key={key} className="space-y-1.5">
+                                    <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <button type="button" className="flex items-center gap-2.5 w-full rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                                          <div className="h-5 w-5 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
+                                          <span className="uppercase text-xs text-muted-foreground flex-1 text-left">{customColors[key]}</span>
+                                        </button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-3 space-y-3" align="start">
+                                        <HexColorPicker color={customColors[key]} onChange={(c) => setCustomColors({ [key]: c })} />
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-8 w-8 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
+                                          <Input value={customColors[key]} maxLength={7} className="h-8 font-mono text-sm uppercase" onChange={(e) => {
+                                            let v = e.target.value;
+                                            if (!v.startsWith('#')) v = '#' + v;
+                                            if (/^#[0-9a-fA-F]{0,6}$/.test(v) && v.length === 7) setCustomColors({ [key]: v.toLowerCase() });
+                                          }} />
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <ProGate featureName="Theme Studio">
+                              <ThemeStudio />
+                            </ProGate>
                           </div>
-
-                          <ProGate featureName="Theme Studio">
-                            <ThemeStudio />
-                          </ProGate>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dashboard */}
-                {MARKET_DATA_ENABLED && (
-                  <div className="rounded-xl border border-border/70 overflow-hidden">
-                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dashboard</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">What appears in the strip at the top of your dashboard</p>
-                    </div>
-                    <div className="divide-y divide-border/50">
-                      <div className="px-4 sm:px-5 py-5 flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium">Live market prices</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">A ticker of the symbols you trade</p>
-                        </div>
-                        <Switch
-                          checked={settings.showMarketPrices}
-                          onCheckedChange={(c) => updateSettings({ showMarketPrices: c })}
-                        />
-                      </div>
-                      <div className="px-4 sm:px-5 py-5 flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-medium">Macro snapshot</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Fed funds rate, Treasury yields, CPI, and unemployment</p>
-                        </div>
-                        <Switch
-                          checked={settings.showMacroSnapshot}
-                          onCheckedChange={(c) => updateSettings({ showMacroSnapshot: c })}
-                        />
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  </SettingsGroup>
+
+                  {MARKET_DATA_ENABLED && (
+                    <SettingsGroup title="Dashboard" description="What appears in the strip at the top of your dashboard.">
+                      <SettingRow label="Live market prices" description="A ticker of the symbols you trade">
+                        <Switch checked={settings.showMarketPrices} onCheckedChange={(c) => updateSettings({ showMarketPrices: c })} aria-label="Live market prices" />
+                      </SettingRow>
+                      <SettingRow label="Macro snapshot" description="Fed funds rate, Treasury yields, CPI, and unemployment">
+                        <Switch checked={settings.showMacroSnapshot} onCheckedChange={(c) => updateSettings({ showMacroSnapshot: c })} aria-label="Macro snapshot" />
+                      </SettingRow>
+                    </SettingsGroup>
+                  )}
               </section>
 
               {/* ── ACCOUNTS ────────────────────────────────────────────── */}
               <section
                 id="accounts"
                 ref={(el) => { sectionRefs.current['accounts'] = el; }}
-                className="scroll-mt-24 space-y-4"
+                aria-labelledby="settings-accounts"
+                className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
-                    <Wallet aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight">Accounts</h2>
-                    <p className="text-xs text-muted-foreground">Manage trading accounts to track performance separately</p>
-                  </div>
-                </div>
+                  <SectionHeading id="settings-accounts" title="Accounts" />
 
-                <div className="rounded-xl border border-border/70 overflow-hidden divide-y divide-border/50">
-                  {accounts.map((account) => (
-                    <div key={account.id}>
-                      {editForm?.id === account.id ? (
-                        <div className="p-5 space-y-4">
-                          <p className="text-sm font-semibold flex items-center gap-1.5"><PencilSimple className="h-4 w-4" /> Edit Account</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Account Name</Label>
-                              <Input placeholder="e.g. Main Live Account" value={editForm.name} onChange={(e) => setEditForm(p => p ? { ...p, name: e.target.value } : null)} />
+                  <SettingsGroup title="Trading accounts" description="Each account keeps its own trades, so performance is tracked separately.">
+                    {accounts.map((account) => (
+                      <div key={account.id}>
+                        {editForm?.id === account.id ? (
+                          <div className="px-5 py-5 space-y-4">
+                            <p className="text-sm font-semibold">Edit account</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Account name</Label>
+                                <Input placeholder="e.g. Main Live Account" value={editForm.name} onChange={(e) => setEditForm(p => p ? { ...p, name: e.target.value } : null)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Account type</Label>
+                                <Select value={editForm.type} onValueChange={(v: TradingAccount['type']) => setEditForm(p => p ? { ...p, type: v } : null)}>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="demo">Demo</SelectItem>
+                                    <SelectItem value="live">Live</SelectItem>
+                                    <SelectItem value="prop-firm">Prop Firm</SelectItem>
+                                    <SelectItem value="paper">Paper</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Broker</Label>
+                                <BrokerSelect value={editForm.broker} onChange={(v) => setEditForm(p => p ? { ...p, broker: v } : null)} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Currency</Label>
+                                <Select value={editForm.currency} onValueChange={(v) => setEditForm(p => p ? { ...p, currency: v } : null)}>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>{CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Broker time zone (CSV import)</Label>
+                                <Select value={editForm.brokerTimezone || 'device'} onValueChange={(v) => setEditForm(p => p ? { ...p, brokerTimezone: v === 'device' ? undefined : v } : null)}>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Balance (optional)</Label>
+                                <UnitInput prefix={getSymbolForCurrency(editForm.currency)} placeholder="10000" value={editForm.balance ?? ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: parseNumberInput(e.target.value) } : null)} />
+                              </div>
+                              <div className="flex items-center gap-2 pt-5">
+                                <Switch checked={editForm.isDefault} onCheckedChange={(c) => setEditForm(p => p ? { ...p, isDefault: c } : null)} />
+                                <Label className="text-xs">Set as default</Label>
+                              </div>
                             </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Account Type</Label>
-                              <Select value={editForm.type} onValueChange={(v: TradingAccount['type']) => setEditForm(p => p ? { ...p, type: v } : null)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="demo">Demo</SelectItem>
-                                  <SelectItem value="live">Live</SelectItem>
-                                  <SelectItem value="prop-firm">Prop Firm</SelectItem>
-                                  <SelectItem value="paper">Paper</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Broker</Label>
-                              <BrokerSelect value={editForm.broker} onChange={(v) => setEditForm(p => p ? { ...p, broker: v } : null)} />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Currency</Label>
-                              <Select value={editForm.currency} onValueChange={(v) => setEditForm(p => p ? { ...p, currency: v } : null)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>{CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Broker Time Zone (CSV Import)</Label>
-                              <Select value={editForm.brokerTimezone || 'device'} onValueChange={(v) => setEditForm(p => p ? { ...p, brokerTimezone: v === 'device' ? undefined : v } : null)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs">Balance (Optional)</Label>
-                              <UnitInput prefix={getSymbolForCurrency(editForm.currency)} placeholder="10000" value={editForm.balance ?? ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: parseNumberInput(e.target.value) } : null)} />
-                            </div>
-                            <div className="flex items-center gap-2 pt-5">
-                              <Switch checked={editForm.isDefault} onCheckedChange={(c) => setEditForm(p => p ? { ...p, isDefault: c } : null)} />
-                              <Label className="text-xs">Set as default</Label>
+                            <div className="flex items-center gap-2 pt-1">
+                              <Button size="sm" onClick={() => { if (editForm.name && editForm.broker) { updateAccount(editForm.id, editForm); if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) updateSettings({ currency: editForm.currency }); setEditForm(null); } }} disabled={!editForm.name || !editForm.broker} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}>Save</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditForm(null)}>Cancel</Button>
+                              {(!editForm.name || !editForm.broker) && (
+                                <span className="text-[11px] text-muted-foreground">{!editForm.name ? 'Enter an account name' : 'Pick a broker'} to save</span>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 pt-1">
-                            <Button size="sm" onClick={() => { if (editForm.name && editForm.broker) { updateAccount(editForm.id, editForm); if (activeAccount && editForm.id === activeAccount.id && editForm.currency !== settings.currency) updateSettings({ currency: editForm.currency }); setEditForm(null); } }} disabled={!editForm.name || !editForm.broker} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}>Save</Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditForm(null)}>Cancel</Button>
-                            {(!editForm.name || !editForm.broker) && (
-                              <span className="text-[11px] text-muted-foreground">{!editForm.name ? 'Enter an account name' : 'Pick a broker'} to save</span>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 sm:px-5 py-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium">{account.name}</span>
-                              {account.isDefault && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '15'), color: themeColors.profit }}>Default</span>}
-                              {activeAccount?.id === account.id && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}>Active</span>}
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">{account.type.replace('-', ' ')}</span>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium">{account.name}</span>
+                                {account.isDefault && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '15'), color: themeColors.profit }}>Default</span>}
+                                {activeAccount?.id === account.id && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}>Active</span>}
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">{account.type.replace('-', ' ')}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{account.broker} · {account.currency}{account.balance ? ` · ${formatCurrency(account.balance, false)}` : ''}</p>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{account.broker} · {account.currency}{account.balance ? ` · ${formatCurrency(account.balance, false)}` : ''}</p>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {!account.isDefault && (
+                                <button onClick={() => updateAccount(account.id, { isDefault: true })} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors">Set default</button>
+                              )}
+                              <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors flex items-center gap-1"><PencilSimple className="h-3.5 w-3.5" /> Edit</button>
+                              <button onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1} className="text-xs text-destructive hover:text-destructive/80 px-3 py-2 rounded hover:bg-destructive/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Delete</button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {!account.isDefault && (
-                              <button onClick={() => updateAccount(account.id, { isDefault: true })} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors">Set default</button>
-                            )}
-                            <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors flex items-center gap-1"><PencilSimple className="h-3.5 w-3.5" /> Edit</button>
-                            <button onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1} className="text-xs text-destructive hover:text-destructive/80 px-3 py-2 rounded hover:bg-destructive/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Delete</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {showAddAccount && (
-                    <div className="p-5 space-y-4">
-                      <p className="text-sm font-semibold">Add Account</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Account Name</Label>
-                          <Input placeholder="e.g. Main Live Account" value={accountForm.name} onChange={(e) => setAccountForm(p => ({ ...p, name: e.target.value }))} />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Account Type</Label>
-                          <Select value={accountForm.type} onValueChange={(v: TradingAccount['type']) => setAccountForm(p => ({ ...p, type: v }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="demo">Demo</SelectItem>
-                              <SelectItem value="live">Live</SelectItem>
-                              <SelectItem value="prop-firm">Prop Firm</SelectItem>
-                              <SelectItem value="paper">Paper</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Broker</Label>
-                          <BrokerSelect value={accountForm.broker} onChange={(v) => setAccountForm(p => ({ ...p, broker: v }))} />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Currency</Label>
-                          <Select value={accountForm.currency} onValueChange={(v) => setAccountForm(p => ({ ...p, currency: v }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>{CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Broker Time Zone (CSV Import)</Label>
-                          <Select value={accountForm.brokerTimezone || 'device'} onValueChange={(v) => setAccountForm(p => ({ ...p, brokerTimezone: v === 'device' ? '' : v }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Initial Balance (Optional)</Label>
-                          <UnitInput prefix={getSymbolForCurrency(accountForm.currency)} placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
-                        </div>
-                        <div className="flex items-center gap-2 pt-5">
-                          <Switch checked={accountForm.isDefault} onCheckedChange={(c) => setAccountForm(p => ({ ...p, isDefault: c }))} />
-                          <Label className="text-xs">Set as default</Label>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: parseNumberInput(accountForm.balance), brokerTimezone: accountForm.brokerTimezone || undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false,brokerTimezone:'' }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}>Add Account</Button>
-                        <Button size="sm" variant="outline" onClick={() => setShowAddAccount(false)}>Cancel</Button>
-                        {(!accountForm.name || !accountForm.broker) && (
-                          <span className="text-[11px] text-muted-foreground">{!accountForm.name ? 'Enter an account name' : 'Pick a broker'} to add</span>
                         )}
                       </div>
-                    </div>
-                  )}
+                    ))}
 
-                  {!showAddAccount && !editForm && (
-                    !isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT ? (
-                      <Link
-                        to="/pricing"
-                        onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Multiple Accounts' })}
-                        className="flex w-full items-center justify-center gap-2 px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                      >
-                        <Lock className="h-4 w-4" />
-                        Upgrade to Pro for unlimited accounts
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={() => setShowAddAccount(true)}
-                        className="flex w-full items-center justify-center gap-2 px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                      >
-                        <span className="text-lg leading-none">+</span>
-                        Add Account
-                      </button>
-                    )
-                  )}
-                </div>
+                    {showAddAccount && (
+                      <div className="px-5 py-5 space-y-4">
+                        <p className="text-sm font-semibold">Add account</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Account name</Label>
+                            <Input placeholder="e.g. Main Live Account" value={accountForm.name} onChange={(e) => setAccountForm(p => ({ ...p, name: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Account type</Label>
+                            <Select value={accountForm.type} onValueChange={(v: TradingAccount['type']) => setAccountForm(p => ({ ...p, type: v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="demo">Demo</SelectItem>
+                                <SelectItem value="live">Live</SelectItem>
+                                <SelectItem value="prop-firm">Prop Firm</SelectItem>
+                                <SelectItem value="paper">Paper</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Broker</Label>
+                            <BrokerSelect value={accountForm.broker} onChange={(v) => setAccountForm(p => ({ ...p, broker: v }))} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Currency</Label>
+                            <Select value={accountForm.currency} onValueChange={(v) => setAccountForm(p => ({ ...p, currency: v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>{CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Broker time zone (CSV import)</Label>
+                            <Select value={accountForm.brokerTimezone || 'device'} onValueChange={(v) => setAccountForm(p => ({ ...p, brokerTimezone: v === 'device' ? '' : v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Initial balance (optional)</Label>
+                            <UnitInput prefix={getSymbolForCurrency(accountForm.currency)} placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
+                          </div>
+                          <div className="flex items-center gap-2 pt-5">
+                            <Switch checked={accountForm.isDefault} onCheckedChange={(c) => setAccountForm(p => ({ ...p, isDefault: c }))} />
+                            <Label className="text-xs">Set as default</Label>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button size="sm" onClick={() => { if (demoGuard('add accounts')) return; if (accountForm.name && accountForm.broker) { addAccount({ ...accountForm, balance: parseNumberInput(accountForm.balance), brokerTimezone: accountForm.brokerTimezone || undefined }); setAccountForm({ name:'',type:'demo',broker:'',currency:'USD',balance:'',isDefault:false,brokerTimezone:'' }); setShowAddAccount(false); } }} disabled={!accountForm.name || !accountForm.broker} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText || '#fff' }}>Add Account</Button>
+                          <Button size="sm" variant="outline" onClick={() => setShowAddAccount(false)}>Cancel</Button>
+                          {(!accountForm.name || !accountForm.broker) && (
+                            <span className="text-[11px] text-muted-foreground">{!accountForm.name ? 'Enter an account name' : 'Pick a broker'} to add</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!showAddAccount && !editForm && (
+                      !isPro && accounts.length >= FREE_TRADING_ACCOUNT_LIMIT ? (
+                        <Link
+                          to="/pricing"
+                          onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Multiple Accounts' })}
+                          className="flex w-full items-center gap-2 px-5 py-3.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                        >
+                          <Lock className="h-4 w-4" />
+                          Upgrade to Pro for unlimited accounts
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowAddAccount(true)}
+                          className="flex w-full items-center gap-2 px-5 py-3.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                          Add account
+                        </button>
+                      )
+                    )}
+                  </SettingsGroup>
               </section>
 
               {/* ── RISK ────────────────────────────────────────────────── */}
               <section
                 id="risk"
                 ref={(el) => { sectionRefs.current['risk'] = el; }}
-                className="scroll-mt-24 space-y-4"
+                aria-labelledby="settings-risk"
+                className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
-                    <Gauge aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight">Risk Management</h2>
-                    <p className="text-xs text-muted-foreground">Protect your capital with smart position sizing</p>
-                  </div>
-                </div>
+                  <SectionHeading id="settings-risk" title="Risk" />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {/* Parameters */}
-                  <div className="lg:col-span-2 rounded-xl border border-border/70 overflow-hidden">
-                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parameters</p>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <h3 className="text-sm font-semibold">Position sizing</h3>
+                      <p className="text-xs text-muted-foreground">How much of the account one trade may put at risk.</p>
                     </div>
-                    <div className="divide-y divide-border/50">
-                      <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                        <div className="sm:w-44 shrink-0">
-                          <p className="text-sm font-medium">Risk per Trade</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">% of account per trade</p>
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="relative max-w-[160px]">
-                            <Input type="number" name="riskPerTrade" inputMode="decimal" autoComplete="off" step="0.1" min="0.1" max="10" value={settings.riskPerTrade} onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })} className="h-10 pr-7" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {/* Inputs */}
+                      <div className="lg:col-span-2 rounded-xl border border-border/70 bg-card divide-y divide-border/50 overflow-hidden">
+                        <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
+                          <div className="sm:w-44 shrink-0">
+                            <p className="text-sm font-medium">Risk per trade</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">% of the account per trade</p>
                           </div>
-                          <div className="space-y-1 max-w-[160px]">
-                            <Progress className="h-1.5" value={(settings.riskPerTrade / 5) * 100} indicatorColor={settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss} />
+                          <div className="flex-1 space-y-2">
+                            <div className="relative max-w-[160px]">
+                              <Input type="number" name="riskPerTrade" inputMode="decimal" autoComplete="off" step="0.1" min="0.1" max="10" value={settings.riskPerTrade} onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })} className="h-9 pr-7" />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                            </div>
+                            <div className="flex items-center gap-2 max-w-[160px]">
+                              <Progress className="h-1 flex-1" value={(settings.riskPerTrade / 5) * 100} indicatorColor={settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss} />
+                            </div>
                             <p className="text-xs text-muted-foreground">
-                              {settings.riskPerTrade <= 2 ? 'Conservative — recommended' : settings.riskPerTrade <= 4 ? 'Moderate risk' : 'High risk'}
+                              {settings.riskPerTrade <= 2 ? 'Conservative, the usual recommendation' : settings.riskPerTrade <= 4 ? 'Moderate' : 'High risk'}
                             </p>
                           </div>
                         </div>
-                      </div>
-                      <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                        <div className="sm:w-44 shrink-0">
-                          <p className="text-sm font-medium">Account Size</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Total trading capital</p>
-                        </div>
-                        <div className="flex-1">
-                          <div className="relative max-w-[160px]">
-                            <Input type="number" name="accountSize" inputMode="decimal" autoComplete="off" step="1000" value={settings.accountSize} onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })} placeholder="10000" className="h-10 pl-6" />
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{getCurrencySymbol()}</span>
+                        <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
+                          <div className="sm:w-44 shrink-0">
+                            <p className="text-sm font-medium">Account size</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Total trading capital</p>
+                          </div>
+                          <div className="flex-1">
+                            <div className="relative max-w-[160px]">
+                              <Input type="number" name="accountSize" inputMode="decimal" autoComplete="off" step="1000" value={settings.accountSize} onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })} placeholder="10000" className="h-9 pl-6" />
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{getCurrencySymbol()}</span>
+                            </div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Calculator: plain figures, no tiles */}
+                      <div className="rounded-xl border border-border/70 bg-card overflow-hidden flex flex-col">
+                        <div className="px-5 pt-4 pb-3">
+                          <p className="text-sm font-medium">What that means</p>
+                        </div>
+                        <dl className="px-5 pb-4 divide-y divide-border/50 flex-1">
+                          {[
+                            { label: 'Max risk per trade', value: formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false), emphasis: true },
+                            { label: 'Account balance', value: formatCurrency(settings.accountSize, false) },
+                            { label: 'Losing trades to zero', value: settings.riskPerTrade > 0 ? String(Math.round(100 / settings.riskPerTrade)) : '—' },
+                          ].map(({ label, value, emphasis }) => (
+                            <div key={label} className="flex items-baseline justify-between gap-4 py-2.5">
+                              <dt className="text-xs text-muted-foreground">{label}</dt>
+                              <dd className={`tabular-nums ${emphasis ? 'text-base font-semibold' : 'text-sm font-medium'}`}>{value}</dd>
+                            </div>
+                          ))}
+                        </dl>
                       </div>
                     </div>
                   </div>
 
-                  {/* Calculator */}
-                  <div className="rounded-xl border border-border/70 overflow-hidden">
-                    <div className="px-5 py-3.5 bg-muted/30 border-b border-border/70">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Calculator</p>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {[
-                        { label: 'Max risk per trade', value: formatCurrency((settings.accountSize * settings.riskPerTrade) / 100, false), color: themeColors.profit },
-                        { label: 'Account balance', value: formatCurrency(settings.accountSize, false), color: themeColors.primary },
-                        { label: 'Trades to blow account', value: settings.riskPerTrade > 0 ? String(Math.round(100 / settings.riskPerTrade)) : '—', color: themeColors.loss },
-                      ].map(({ label, value, color }) => (
-                        <div key={label} className="rounded-lg p-3 bg-muted/40">
-                          <p className="text-xs text-muted-foreground">{label}</p>
-                          <p className="text-lg font-bold mt-0.5" style={{ color }}>{value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Guidelines — static reference content, collapsed by default */}
-                <div className="rounded-xl border border-border/70 overflow-hidden">
-                  <Accordion type="single" collapsible>
-                    <AccordionItem value="guidelines" className="border-0">
-                      <AccordionTrigger className="px-5 py-3.5 bg-muted/30 hover:no-underline">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Risk guidelines</span>
-                      </AccordionTrigger>
-                      <AccordionContent className="p-5 space-y-4 border-t border-border/70">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {[
-                        { label: 'Conservative', range: '1–2%', color: themeColors.profit, desc: 'Beginners, steady growth' },
-                        { label: 'Moderate', range: '2–3%', color: themeColors.primary, desc: 'Experienced traders' },
-                        { label: 'Aggressive', range: '3–5%', color: themeColors.loss, desc: 'Proven systems only' },
-                        { label: 'Dangerous', range: '5%+', color: themeColors.loss, desc: 'High blow-up risk', pulse: true },
-                      ].map(({ label, range, color, desc, pulse }) => (
-                        <div key={label} className="rounded-lg p-3 bg-muted/40">
-                          <div className="mb-1.5">
-                            <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+                  <SettingsGroup title="Guidelines" description="A reference for picking a risk level.">
+                    <Accordion type="single" collapsible>
+                      <AccordionItem value="guidelines" className="border-0">
+                        <AccordionTrigger className="px-5 py-4 hover:no-underline">
+                          <span className="text-sm font-medium">How much to risk per trade</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-5 pb-5 space-y-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {[
+                              { label: 'Conservative', range: '1–2%', color: themeColors.profit, desc: 'Beginners, steady growth' },
+                              { label: 'Moderate', range: '2–3%', color: themeColors.primary, desc: 'Experienced traders' },
+                              { label: 'Aggressive', range: '3–5%', color: themeColors.loss, desc: 'Proven systems only' },
+                              { label: 'Dangerous', range: '5%+', color: themeColors.loss, desc: 'High blow-up risk' },
+                            ].map(({ label, range, color, desc }) => (
+                              <div key={label} className="rounded-lg p-3 bg-muted/40">
+                                <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+                                <p className="text-base font-bold mt-1">{range}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                              </div>
+                            ))}
                           </div>
-                          <p className="text-base font-bold">{range}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="rounded-lg p-4 bg-muted/40 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {['Never risk more than you can afford to lose', 'Always use stop losses on every trade', 'Keep risk consistent across all trades', 'Size positions based on distance to stop loss'].map(tip => (
-                        <div key={tip} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-profit" />
-                          <span>{tip}</span>
-                        </div>
-                      ))}
-                    </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
+                          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {['Never risk more than you can afford to lose', 'Always use stop losses on every trade', 'Keep risk consistent across all trades', 'Size positions based on distance to stop loss'].map(tip => (
+                              <li key={tip} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-profit" />
+                                <span>{tip}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </SettingsGroup>
               </section>
 
               {/* ── DATA ────────────────────────────────────────────────── */}
               <section
                 id="data"
                 ref={(el) => { sectionRefs.current['data'] = el; }}
-                className="scroll-mt-24 space-y-4"
+                aria-labelledby="settings-data"
+                className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
-                    <Database aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight">Data &amp; Privacy</h2>
-                    <p className="text-xs text-muted-foreground">Export, import, and manage your data</p>
-                  </div>
-                </div>
+                  <SectionHeading id="settings-data" title="Data & privacy" />
 
-                <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden">
-                  {/* Backup */}
-                  <div className="p-5 space-y-4">
-                    <div>
-                      <p className="text-sm font-medium">Backup &amp; Restore</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Export all data or restore from a previous backup</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+                  <SettingsGroup title="Backup" description="Export a copy of everything, or restore from one.">
+                    <SettingRow label="Export" description="Download everything as a JSON file, screenshots included">
                       <Button variant="outline" size="sm" onClick={exportData}>
                         <DownloadSimple className="mr-2 h-3.5 w-3.5" />
-                        Export Data
+                        Export data
                       </Button>
-<Button variant="outline" size="sm" onClick={() => document.getElementById('import-data')?.click()}>
+                    </SettingRow>
+                    <SettingRow label="Restore" description="Import a backup file. Replaces what is on this device">
+                      <Button variant="outline" size="sm" onClick={() => document.getElementById('import-data')?.click()}>
                         <UploadSimple className="mr-2 h-3.5 w-3.5" />
-                        Import Data
+                        Import data
                       </Button>
                       <input id="import-data" type="file" accept=".json" className="hidden" onChange={importData} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Storage used</span>
-                        <span style={{ color: parseFloat(storageUsed.mb) / 10 > 0.8 ? themeColors.loss : undefined }}>{storageUsed.mb} MB / ~10 MB</span>
+                    </SettingRow>
+                    <SettingRow label="Storage used" description={`${storageUsed.mb} MB of about 10 MB on this device`}>
+                      <div className="w-full sm:w-44">
+                        <Progress className="h-1" value={storageUsed.pct} indicatorColor={storageUsed.pct > 80 ? themeColors.loss : themeColors.profit} />
                       </div>
-                      <Progress className="h-1.5" value={storageUsed.pct} indicatorColor={storageUsed.pct > 80 ? themeColors.loss : themeColors.profit} />
-                    </div>
+                    </SettingRow>
                     {!isPro && needsBackup && (
-                      <div className="rounded-lg p-3 bg-amber-500/5 border border-amber-500/20">
-                        <p className="text-sm font-medium">{lastBackup ? `Last backup: ${daysSince} days ago` : 'No backup yet'}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">Free tier data is stored locally. Back up regularly to avoid data loss.</p>
-                        <Button size="sm" variant="outline" onClick={exportData} className="h-7 text-xs">Backup Now</Button>
-                      </div>
+                      <SettingRow label={lastBackup ? `Last backup ${daysSince} days ago` : 'No backup yet'} description="Free plan data lives on this device only. Back up regularly.">
+                        <Button size="sm" variant="outline" onClick={exportData}>Back up now</Button>
+                      </SettingRow>
                     )}
                     {!isPro && (
-                      <div className="rounded-lg p-3 bg-muted/40">
-                        <p className="text-sm font-medium">Want automatic cloud backup?</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 mb-2">Pro users get automatic sync across all devices.</p>
-                        <Link to="/pricing"><Button size="sm" variant="outline" className="h-7 text-xs">Upgrade to Pro</Button></Link>
-                      </div>
+                      <SettingRow label="Automatic cloud backup" description="Pro syncs your data across every device">
+                        <Link to="/pricing"><Button size="sm" variant="outline">Upgrade to Pro</Button></Link>
+                      </SettingRow>
                     )}
-                  </div>
+                  </SettingsGroup>
 
-                  {/* Danger zone */}
-                  <div className="px-5 py-4 space-y-2">
-                    <p className="text-sm font-medium text-destructive">Danger Zone</p>
+                  <SettingsGroup title="Privacy" description="What this site is allowed to remember about you.">
+                    <SettingRow label="Cookie preferences" description="Choose whether optional analytics cookies are set">
+                      <Button variant="outline" size="sm" onClick={openCookieSettings}>
+                        <Cookie className="mr-2 h-3.5 w-3.5" />
+                        Manage cookies
+                      </Button>
+                    </SettingRow>
+                  </SettingsGroup>
+
+                  <SettingsGroup title="Danger zone" description="Permanent actions. There is no undo.">
                     {user && !isDemo ? (
-                      <>
-                        <p className="text-xs text-muted-foreground">Permanently delete your account, all data, and cancel any active subscription. This cannot be undone.</p>
-                        <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteAccountConfirm(true)}>Delete My Account</Button>
-                      </>
+                      <SettingRow label="Delete my account" description="Removes your account, all data, and any active subscription. Cannot be undone.">
+                        <Button variant="destructive" size="sm" onClick={() => setShowDeleteAccountConfirm(true)}>Delete account</Button>
+                      </SettingRow>
                     ) : (
-                      <>
-                        <p className="text-xs text-muted-foreground">Permanently deletes all trades, journals, goals, and settings. Cannot be undone.</p>
-                        <Button variant="destructive" size="sm" className="mt-1" onClick={() => setShowDeleteConfirm(true)}>Delete All Data</Button>
-                      </>
+                      <SettingRow label="Delete all data" description="Removes every trade, journal entry, goal, and setting. Cannot be undone.">
+                        <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>Delete all data</Button>
+                      </SettingRow>
                     )}
-                  </div>
-                </div>
+                  </SettingsGroup>
               </section>
 
               {/* ── NOTIFICATIONS ─────────────────────────────────────── */}
               <section
                 id="notifications"
                 ref={(el) => { sectionRefs.current['notifications'] = el; }}
-                className="scroll-mt-24 space-y-4"
+                aria-labelledby="settings-notifications"
+                className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
-                    <Bell aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight">Notifications</h2>
-                    <p className="text-xs text-muted-foreground">Manage push notification preferences</p>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden">
-                  <PushNotificationPrompt />
-                </div>
+                  <SectionHeading id="settings-notifications" title="Notifications" />
+                  <SettingsGroup title="Push notifications" description="Reminders sent to this device so you keep your logging streak.">
+                    <PushNotificationPrompt />
+                  </SettingsGroup>
               </section>
 
               {/* ── SUBSCRIPTION ────────────────────────────────────────── */}
               <section
                 id="subscription"
                 ref={(el) => { sectionRefs.current['subscription'] = el; }}
-                className="scroll-mt-24 space-y-4"
+                aria-labelledby="settings-subscription"
+                className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-muted/60 border border-border/60 shrink-0">
-                    <CreditCard aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight">Subscription</h2>
-                    <p className="text-xs text-muted-foreground">Manage your plan and billing</p>
-                  </div>
-                </div>
+                  <SectionHeading id="settings-subscription" title="Subscription" />
 
-                <div className="rounded-xl border border-border/70 divide-y divide-border/50 overflow-hidden">
-                  <div className="p-5 space-y-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Current Plan</p>
+                  <SettingsGroup title="Plan" description="Your current plan, billing, and sync status.">
                     {isPro ? (
-                      <div className="space-y-3">
-                        <div className={`flex items-center justify-between p-4 rounded-lg border ${isDev ? 'bg-violet-500/5 border-violet-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <ProBadge size="md" variant={isDev ? 'dev' : 'pro'} />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 capitalize">
-                              {isDev ? 'Developer account' : trialEndsAt ? 'Free trial' : subscription ? `${subscription.planType} plan` : 'Pro'}
-                            </p>
-                          </div>
+                      <>
+                        <SettingRow
+                          label={<span className="flex items-center gap-2"><ProBadge variant={isDev ? 'dev' : 'pro'} /><span className="capitalize">{isDev ? 'Developer account' : trialEndsAt ? 'Free trial' : subscription ? `${subscription.planType} plan` : 'Pro'}</span></span>}
+                          description={
+                            trialEndsAt
+                              ? `Trial ends ${new Date(trialEndsAt).toLocaleDateString()}. No card on file, nothing is charged.`
+                              : !trialEndsAt && subscription?.currentPeriodEnd && subscription.planType !== 'lifetime'
+                                ? `${subscription.status === 'cancelled' ? 'Access until' : subscription.status === 'on_trial' ? 'Trial ends' : 'Renews'} ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
+                                : undefined
+                          }
+                        >
                           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 capitalize">
                             {isDev ? 'Active' : trialEndsAt || subscription?.status === 'on_trial' ? 'Trial' : subscription?.status || 'Active'}
                           </Badge>
-                        </div>
-                        {/* trialEndsAt set means the trial is the entitlement — any
-                            subscription object left over is stale (cancelled/expired)
-                            and its dates would only mislead here */}
-                        {!trialEndsAt && subscription?.currentPeriodEnd && subscription.planType !== 'lifetime' && (
-                          <p className="text-xs text-muted-foreground">
-                            {subscription.status === 'cancelled' ? 'Access until' : subscription.status === 'on_trial' ? 'Trial ends on' : 'Renews on'}{' '}
-                            {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                          </p>
-                        )}
+                        </SettingRow>
                         {trialEndsAt && (
-                          <div className="space-y-3">
-                            <p className="text-xs text-muted-foreground">
-                              Your free Pro trial ends on {new Date(trialEndsAt).toLocaleDateString()} — no card on file, nothing is charged. Upgrade to keep Pro after it ends.
-                            </p>
+                          <SettingRow label="Keep Pro after the trial" description="Pick a plan now so nothing changes when the trial ends">
                             <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
                               <Crown className="mr-2 h-3.5 w-3.5" />
                               Keep Pro
                             </Button>
-                          </div>
+                          </SettingRow>
                         )}
                         {subscription?.stripeCustomerId && (
-                          <Button variant="outline" size="sm" disabled={portalLoading} onClick={async () => {
-                            // Opening the Stripe portal is a Cloud Function + Stripe
-                            // round-trip that can take a few seconds (cold start), so
-                            // show a pending state immediately — otherwise the button
-                            // looks dead and gets clicked repeatedly. Keep the spinner
-                            // through the redirect; only clear it if the call fails.
-                            setPortalLoading(true);
-                            try {
-                              const { redirectToPortal } = await import('@/lib/stripe');
-                              await redirectToPortal();
-                            } catch {
-                              toast.error('Failed to open subscription portal');
-                              setPortalLoading(false);
-                            }
-                          }}>
-                            {portalLoading ? (
-                              <><CircleNotch className="h-4 w-4 animate-spin" /> Opening…</>
-                            ) : 'Manage Subscription'}
-                          </Button>
+                          <SettingRow label="Billing" description="Update your card, download invoices, or cancel">
+                            <Button variant="outline" size="sm" disabled={portalLoading} onClick={async () => {
+                              // Opening the Stripe portal is a Cloud Function + Stripe
+                              // round-trip that can take a few seconds (cold start), so
+                              // show a pending state immediately — otherwise the button
+                              // looks dead and gets clicked repeatedly. Keep the spinner
+                              // through the redirect; only clear it if the call fails.
+                              setPortalLoading(true);
+                              try {
+                                const { redirectToPortal } = await import('@/lib/stripe');
+                                await redirectToPortal();
+                              } catch {
+                                toast.error('Failed to open subscription portal');
+                                setPortalLoading(false);
+                              }
+                            }}>
+                              {portalLoading ? (
+                                <><CircleNotch className="h-4 w-4 animate-spin" /> Opening…</>
+                              ) : 'Manage subscription'}
+                            </Button>
+                          </SettingRow>
                         )}
-                      </div>
+                        <SettingRow label="Cloud sync" description={lastSyncTime ? `Last synced ${new Date(lastSyncTime).toLocaleTimeString()}` : 'Your trades sync automatically across all devices'}>
+                          <span className="flex items-center gap-2 text-sm">
+                            <span className={`h-2 w-2 rounded-full shrink-0${syncStatus === 'syncing' ? ' animate-pulse' : ''}`} style={{ backgroundColor: syncStatus === 'synced' ? themeColors.profit : syncStatus === 'syncing' ? themeColors.primary : syncStatus === 'error' ? themeColors.loss : 'hsl(var(--muted-foreground) / 0.4)' }} />
+                            <span className="capitalize">{syncStatus === 'idle' ? 'Not connected' : syncStatus}</span>
+                          </span>
+                        </SettingRow>
+                      </>
                     ) : (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-semibold">Free</p>
-                            <p className="text-xs text-muted-foreground">You're on the free plan</p>
-                          </div>
-                          <Badge variant="outline">Free</Badge>
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Upgrade to unlock</p>
-                          <ul className="space-y-1.5">
+                      <>
+                        <SettingRow label="Free plan" description="Everything on this device, with the free limits">
+                          <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
+                            <Crown className="mr-2 h-3.5 w-3.5" />
+                            Upgrade to Pro
+                          </Button>
+                        </SettingRow>
+                        <div className="px-5 py-4">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">Pro unlocks</p>
+                          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
                             {PRO_FEATURES.map(f => (
-                              <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Check className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
+                              <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
                                 {f}
                               </li>
                             ))}
                           </ul>
                         </div>
-                        <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
-                          <Crown className="mr-2 h-3.5 w-3.5" />
-                          Upgrade to Pro
-                        </Button>
-                      </div>
+                      </>
                     )}
-                  </div>
+                  </SettingsGroup>
 
-                  {isPro && (
-                    <div className="px-5 py-4 space-y-3">
-                      <div>
-                        <p className="text-sm font-medium">Cloud Sync</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Your trades sync automatically across all devices</p>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0${syncStatus === 'syncing' ? ' animate-pulse' : ''}`} style={{ backgroundColor: syncStatus === 'synced' ? '#22c55e' : syncStatus === 'syncing' ? '#f59e0b' : syncStatus === 'error' ? '#ef4444' : 'hsl(var(--muted-foreground) / 0.4)' }} />
-                        <div>
-                          <p className="text-sm font-medium capitalize">{syncStatus === 'idle' ? 'Not connected' : syncStatus}</p>
-                          {lastSyncTime && <p className="text-xs text-muted-foreground">Last synced {new Date(lastSyncTime).toLocaleTimeString()}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Referral Program */}
                   {!isDemo && (
-                    <div className="px-5 py-4 border-t border-border/70">
-                      <ReferralCard />
-                    </div>
+                    <SettingsGroup title="Referrals" description="Invite other traders and earn Pro time.">
+                      <div className="px-5 py-4">
+                        <ReferralCard />
+                      </div>
+                    </SettingsGroup>
                   )}
-                </div>
               </section>
 
             </div>
+          </div>
         </div>
 
         <AppFooter />

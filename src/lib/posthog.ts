@@ -1,4 +1,5 @@
 import posthog from 'posthog-js';
+import { analyticsConsentGiven } from './cookie-consent';
 
 const key = import.meta.env.VITE_POSTHOG_KEY;
 const host = '/api/ingest';
@@ -17,8 +18,7 @@ export function isAnalyticsBlocked(): boolean {
 export function initPostHog() {
   if (!key || typeof window === 'undefined') return;
 
-  const consent = localStorage.getItem('cookieConsent');
-  const analyticsAllowed = consent ? JSON.parse(consent).analytics === true : false;
+  const analyticsAllowed = analyticsConsentGiven();
 
   posthog.init(key, {
     api_host: host,
@@ -98,7 +98,31 @@ export function updatePostHogConsent(analyticsAllowed: boolean) {
   if (analyticsAllowed) {
     posthog.set_config({ persistence: 'localStorage+cookie', autocapture: true });
   } else {
+    // Withdrawing consent must actually remove what was stored, not just stop
+    // writing to it. reset() drops the identity, then the ph_* cookie and
+    // localStorage entries are cleared by hand because switching persistence
+    // to memory leaves them in place.
+    posthog.reset();
     posthog.set_config({ persistence: 'memory', autocapture: false });
+    clearPostHogStorage();
+  }
+}
+
+function clearPostHogStorage(): void {
+  try {
+    for (const raw of document.cookie.split(';')) {
+      const name = raw.split('=')[0].trim();
+      if (!name.startsWith('ph_')) continue;
+      const host = window.location.hostname;
+      for (const domain of ['', `; domain=${host}`, `; domain=.${host.replace(/^www\./, '')}`]) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/${domain}`;
+      }
+    }
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('ph_')) localStorage.removeItem(key);
+    }
+  } catch {
+    // noop
   }
 }
 

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
 import { isAnalyticsBlocked } from '@/lib/posthog';
+import { analyticsConsentGiven } from '@/lib/cookie-consent';
 
 const PAGE_NAMES: Record<string, string> = {
   '/': 'Landing',
@@ -59,10 +60,7 @@ export function PostHogTracker() {
     if (!posthog) return;
 
     if (user && !isDemo) {
-      const consent = localStorage.getItem('cookieConsent');
-      const analyticsAllowed = consent ? JSON.parse(consent).analytics === true : false;
-
-      if (analyticsAllowed && !isAnalyticsBlocked()) {
+      if (analyticsConsentGiven() && !isAnalyticsBlocked()) {
         posthog.identify(user.uid, {
           email: user.email ?? undefined,
           name: user.displayName ?? undefined,

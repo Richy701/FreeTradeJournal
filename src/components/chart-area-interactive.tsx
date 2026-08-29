@@ -117,7 +117,7 @@ function DailyTooltip({ active, payload, profit, loss, symbol }: any) {
 export function ChartAreaInteractive() {
   const [view, setView] = useState<ChartView>('equity')
   // Get theme colors and demo data
-  const { themeColors } = useThemePresets()
+  const { themeColors, chartStyle } = useThemePresets()
   const { getCurrencySymbol } = useSettings()
   const symbol = getCurrencySymbol()
   const { getAnalyticsTrades } = useDemoData()
@@ -356,7 +356,7 @@ export function ChartAreaInteractive() {
                       <stop offset={1} stopColor={themeColors.loss} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.35} />
+                  {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.35} />}
                   <XAxis
                     dataKey="trade"
                     type="number"
@@ -385,9 +385,10 @@ export function ChartAreaInteractive() {
                   />
                   <Area
                     dataKey="cumulative"
-                    type="monotone"
+                    type={chartStyle.curveType}
                     baseValue={0}
                     fill="url(#equityFill)"
+                    fillOpacity={chartStyle.fill ? 1 : 0}
                     stroke="url(#equityStroke)"
                     strokeWidth={2}
                     dot={(props: any) => {
@@ -430,7 +431,7 @@ export function ChartAreaInteractive() {
                   }}
                   barCategoryGap="20%"
                 >
-                  <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.35} />
+                  {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.35} />}
                   <XAxis
                     dataKey="dateShort"
                     tickLine={false}

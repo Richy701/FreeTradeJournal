@@ -1,135 +1,125 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cookie, X, LockSimple, ChartBar, GearSix } from '@phosphor-icons/react';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { updatePostHogConsent } from '@/lib/posthog';
+import {
+  OPEN_COOKIE_SETTINGS_EVENT,
+  analyticsConsentGiven,
+  isCookieConsentPending,
+  writeCookieConsent,
+} from '@/lib/cookie-consent';
 
+/**
+ * Cookie consent panel. Non-blocking card, bottom-left on desktop and a
+ * full-width sheet on mobile. Nothing optional is set until a choice is made;
+ * Accept and Decline carry equal weight; Manage exposes the one real choice
+ * (analytics) as a switch. Reopens via openCookieSettings() so consent can be
+ * withdrawn as easily as it was given.
+ */
 export const CookieConsent = () => {
-  const [showBanner, setShowBanner] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [manage, setManage] = useState(false);
+  const [analytics, setAnalytics] = useState(false);
+  const titleId = useId();
+  const descId = useId();
 
   useEffect(() => {
-    const consent = localStorage.getItem('cookieConsent');
-    if (!consent) {
-      setTimeout(() => setShowBanner(true), 1000);
+    if (isCookieConsentPending()) {
+      const t = setTimeout(() => setOpen(true), 1000);
+      return () => clearTimeout(t);
     }
   }, []);
 
-  const handleAcceptAll = () => {
-    localStorage.setItem('cookieConsent', JSON.stringify({
-      necessary: true,
-      analytics: true,
-      functional: true,
-      timestamp: new Date().toISOString()
-    }));
-    updatePostHogConsent(true);
-    setShowBanner(false);
-  };
+  useEffect(() => {
+    const reopen = () => {
+      setAnalytics(analyticsConsentGiven());
+      setManage(true);
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
+    return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
+  }, []);
 
-  const handleAcceptNecessary = () => {
-    localStorage.setItem('cookieConsent', JSON.stringify({
-      necessary: true,
-      analytics: false,
-      functional: false,
-      timestamp: new Date().toISOString()
-    }));
-    updatePostHogConsent(false);
-    setShowBanner(false);
-  };
-
-  const handleCustomize = () => {
-    setShowDetails(!showDetails);
+  const decide = (allowAnalytics: boolean) => {
+    writeCookieConsent(allowAnalytics);
+    updatePostHogConsent(allowAnalytics);
+    setOpen(false);
+    setManage(false);
   };
 
   return (
     <AnimatePresence>
-      {showBanner && (
+      {open && (
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
+          role="dialog"
+          aria-labelledby={titleId}
+          aria-describedby={descId}
+          initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed bottom-0 left-0 right-0 z-50 p-3 sm:p-4"
+          exit={{ y: 24, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+          className="fixed inset-x-0 bottom-0 z-50 p-3 sm:inset-x-auto sm:left-4 sm:bottom-4 sm:p-0 sm:w-[380px]"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
         >
-          <div className="max-w-2xl mx-auto">
-            <Card className="border-border shadow-lg">
-              <CardContent className="p-4 sm:p-5">
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleAcceptNecessary}
-                    className="absolute top-0 right-0 h-6 w-6 p-0"
-                    aria-label="Close cookie banner"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
+          <div className="rounded-xl border border-border bg-card text-card-foreground shadow-xl p-5">
+            <h2 id={titleId} className="text-sm font-semibold">Cookies</h2>
+            <p id={descId} className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              We use one optional set of cookies, for analytics, so we can see which features get used.
+              Nothing optional is set until you choose.{' '}
+              <Link to="/cookie-policy" className="underline underline-offset-2 hover:text-foreground">
+                Cookie policy
+              </Link>
+            </p>
 
-                  <div className="flex flex-col items-center text-center mb-3">
-                    <Cookie className="w-5 h-5 text-amber-500 mb-2" />
-                    <h3 className="text-sm font-semibold mb-1">Cookie Preferences</h3>
-                    <p className="text-xs text-muted-foreground">
-                      We use cookies to improve your experience and analyze platform usage.
-                    </p>
+            {manage && (
+              <div className="mt-4 rounded-lg border border-border/70 divide-y divide-border/50">
+                <div className="flex items-start justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium">Necessary</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Sign-in session and your own journal data. Always on.</p>
                   </div>
-
-                    {showDetails && (
-                      <div className="grid gap-2 mb-3 text-xs justify-items-center">
-                        <div className="flex items-center gap-2">
-                          <LockSimple className="w-3.5 h-3.5 text-green-500" />
-                          <span className="font-medium">Necessary</span>
-                          <span className="text-muted-foreground">Always active</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <ChartBar className="w-3.5 h-3.5 text-amber-500" />
-                          <span className="font-medium">Analytics</span>
-                          <span className="text-muted-foreground">Usage insights</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <GearSix className="w-3.5 h-3.5 text-purple-500" />
-                          <span className="font-medium">Functional</span>
-                          <span className="text-muted-foreground">Enhanced features</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap justify-center gap-2">
-                      <Button
-                        onClick={handleAcceptAll}
-                        size="sm"
-                        className="h-8 px-4 text-xs bg-amber-500 hover:bg-amber-600 text-black"
-                      >
-                        Accept All
-                      </Button>
-                      <Button
-                        onClick={handleAcceptNecessary}
-                        variant="secondary"
-                        size="sm"
-                        className="h-8 px-4 text-xs"
-                      >
-                        Necessary Only
-                      </Button>
-                      <Button
-                        onClick={handleCustomize}
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-4 text-xs"
-                      >
-                        {showDetails ? 'Hide' : 'Details'}
-                      </Button>
-                    </div>
-
-                  <p className="text-[10px] text-muted-foreground mt-2.5 text-center">
-                    By using our site, you agree to our{' '}
-                    <Link to="/privacy" className="text-amber-500 hover:underline">
-                      Privacy Policy
-                    </Link>
-                  </p>
+                  <Switch checked disabled aria-label="Necessary cookies, always on" className="mt-0.5" />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-start justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium">Analytics</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">PostHog usage data linked to your account. Off by default.</p>
+                  </div>
+                  <Switch
+                    checked={analytics}
+                    onCheckedChange={setAnalytics}
+                    aria-label="Analytics cookies"
+                    className="mt-0.5"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {manage ? (
+                <Button size="sm" variant="outline" className="h-8 px-4 text-xs flex-1 sm:flex-none" onClick={() => decide(analytics)}>
+                  Save choices
+                </Button>
+              ) : (
+                <>
+                  <Button size="sm" variant="outline" className="h-8 px-4 text-xs flex-1 sm:flex-none" onClick={() => decide(true)}>
+                    Accept analytics
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-8 px-4 text-xs flex-1 sm:flex-none" onClick={() => decide(false)}>
+                    Decline
+                  </Button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setManage((m) => !m)}
+                className="ml-auto text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                {manage ? 'Back' : 'Manage'}
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

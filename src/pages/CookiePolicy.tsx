@@ -1,4 +1,5 @@
 import { SiteHeader } from '@/components/site-header';
+import { openCookieSettings } from '@/lib/cookie-consent';
 import { AppFooter } from '@/components/app-footer';
 import { Link } from 'react-router-dom';
 import { FeedbackLink } from '@/components/feedback-link';
@@ -96,9 +97,9 @@ export default function CookiePolicy() {
           <LegalSection title="Managing Cookies">
             <p className="mb-3">You can control cookies through:</p>
             <ul className="space-y-1 pl-4 list-disc">
-              <li><strong className="text-foreground">The consent banner</strong> — accept or decline analytics cookies when you first visit; your choice is remembered</li>
+              <li><strong className="text-foreground">Cookie settings</strong> — accept or decline analytics cookies when you first visit, and change your mind any time: <button type="button" onClick={openCookieSettings} className="text-amber-500 hover:underline">open cookie settings</button></li>
               <li><strong className="text-foreground">Browser settings</strong> — most browsers let you view, manage, and delete cookies</li>
-              <li><strong className="text-foreground">App settings</strong> — clear your local data via Settings → Data Management</li>
+              <li><strong className="text-foreground">App settings</strong> — Settings → Data &amp; Privacy has the same cookie settings, plus export and clear for your local data</li>
             </ul>
             <p className="mt-3"><strong className="text-foreground">Note:</strong> Disabling essential cookies or clearing local storage will sign you out and may result in loss of locally stored trading data. Export your data first.</p>
           </LegalSection>

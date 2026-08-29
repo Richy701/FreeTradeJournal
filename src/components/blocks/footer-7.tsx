@@ -1,4 +1,5 @@
 import React from "react";
+import { openCookieSettings } from '@/lib/cookie-consent';
 import { Link, useLocation } from "react-router-dom";
 import { XIcon } from '@/components/icons/brand-icons';
 import { ArrowUp } from '@phosphor-icons/react';
@@ -85,6 +86,11 @@ export const Footer7 = ({
   const location = useLocation();
 
   const handleHashLink = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href === '#cookie-settings') {
+      e.preventDefault();
+      openCookieSettings();
+      return;
+    }
     // Handle hash links like /#features
     if (href.startsWith('/#')) {
       const hash = href.substring(1); // Remove the leading /

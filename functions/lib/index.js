@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendBirthdayLifetimeEmails = exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
+exports.sendBirthdayLifetimeClosingEmails = exports.sendBirthdayLifetimeEmails = exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.mtSyncPush = exports.createMtSyncKey = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -67,6 +67,7 @@ const ReferralEmail_1 = require("./emails/ReferralEmail");
 const CheckoutRecoveryEmail_1 = require("./emails/CheckoutRecoveryEmail");
 const trade_ideas_1 = require("./trade-ideas");
 const birthday_send_1 = require("./birthday-send");
+const birthday_closing_send_1 = require("./birthday-closing-send");
 admin.initializeApp();
 const db = admin.firestore();
 // ─── PostHog Analytics ──────────────────────────────────────
@@ -5313,5 +5314,14 @@ exports.sendBirthdayLifetimeEmails = functions
     .timeZone("Europe/London")
     .onRun(async () => {
     return (0, birthday_send_1.runBirthdaySend)({ db, getResend, getUnsubscribeUrl, reportError });
+});
+// Closing reminder for the same offer, the day before it ends. Date guard
+// inside runBirthdayClosingSend means only 3 Sep 2026 actually sends.
+exports.sendBirthdayLifetimeClosingEmails = functions
+    .runWith({ timeoutSeconds: 540, memory: "1GB" })
+    .pubsub.schedule("0 14 3 9 *")
+    .timeZone("Europe/London")
+    .onRun(async () => {
+    return (0, birthday_closing_send_1.runBirthdayClosingSend)({ db, getResend, getUnsubscribeUrl, reportError });
 });
 //# sourceMappingURL=index.js.map

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Bell, BellSlash, SpinnerGap } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
@@ -25,7 +25,32 @@ export function PushNotificationPrompt() {
     check();
   }, []);
 
-  if (isDemo || !user || checking || !supported) return null;
+  // Rendered inside a Settings card: every state is one row, label and
+  // description on the left, the control on the right.
+  const Row = ({ label, description, children }: { label: string; description: string; children?: ReactNode }) => (
+    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+      <div className="min-w-0">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+      </div>
+      {children && <div className="shrink-0">{children}</div>}
+    </div>
+  );
+
+  if (checking) {
+    return <Row label="Streak reminders" description="Checking notification status…" />;
+  }
+
+  if (isDemo || !user || !supported) {
+    return (
+      <Row
+        label="Streak reminders"
+        description={isDemo || !user
+          ? 'Sign in to turn on streak reminders.'
+          : 'This browser does not support push notifications. On iPhone, add the app to your Home Screen first.'}
+      />
+    );
+  }
 
   const handleEnable = async () => {
     setLoading(true);
@@ -80,58 +105,21 @@ export function PushNotificationPrompt() {
 
   if (subscribed) {
     return (
-      <div className="p-5 space-y-3">
-        <div className="flex items-start gap-3">
-          <Bell className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium">Notifications enabled</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              You will receive daily reminders to log your trades.
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDisable}
-          disabled={loading}
-          className="h-7 text-xs"
-        >
-          {loading ? (
-            <SpinnerGap className="mr-1.5 h-3 w-3 animate-spin" />
-          ) : (
-            <BellSlash className="mr-1.5 h-3 w-3" />
-          )}
-          Disable notifications
+      <Row label="Streak reminders" description="On. You will get a daily reminder to log your trades.">
+        <Button variant="outline" size="sm" onClick={handleDisable} disabled={loading}>
+          {loading ? <SpinnerGap className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <BellSlash className="mr-1.5 h-3.5 w-3.5" />}
+          Turn off
         </Button>
-      </div>
+      </Row>
     );
   }
 
   return (
-    <div className="p-5 space-y-3">
-      <div className="flex items-start gap-3">
-        <Bell className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-        <div className="flex-1">
-          <p className="text-sm font-medium">Get streak reminders</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            We'll remind you to log your trades so you never break your streak.
-          </p>
-        </div>
-      </div>
-      <Button
-        size="sm"
-        onClick={handleEnable}
-        disabled={loading}
-        className="h-7 text-xs"
-      >
-        {loading ? (
-          <SpinnerGap className="mr-1.5 h-3 w-3 animate-spin" />
-        ) : (
-          <Bell className="mr-1.5 h-3 w-3" />
-        )}
-        Enable notifications
+    <Row label="Streak reminders" description="A daily reminder to log your trades so you never break your streak.">
+      <Button size="sm" onClick={handleEnable} disabled={loading}>
+        {loading ? <SpinnerGap className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Bell className="mr-1.5 h-3.5 w-3.5" />}
+        Turn on
       </Button>
-    </div>
+    </Row>
   );
 }

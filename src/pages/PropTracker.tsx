@@ -448,7 +448,7 @@ function profitBarColor(pct: number, themeColors: { profit: string; primary: str
 
 export default function PropTracker() {
   const storage = useUserStorage()
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors, alpha, chartStyle } = useThemePresets()
   const { isPro } = useProStatus()
   const { isDemo } = useAuth()
   const demoGuard = useDemoGuard()
@@ -2316,11 +2316,12 @@ export default function PropTracker() {
                                       }}
                                     />
                                     <Area
-                                      type="monotone"
+                                      type={chartStyle.curveType}
                                       dataKey="value"
                                       stroke={lineColor}
                                       strokeWidth={2}
                                       fill="url(#pnlGradient)"
+                                      fillOpacity={chartStyle.fill ? 1 : 0}
                                       baseValue={0}
                                       dot={false}
                                       activeDot={{ r: 3, strokeWidth: 0, fill: lineColor }}
