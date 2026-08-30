@@ -35,3 +35,23 @@ When I say 'push to git', run the git add/commit/push commands immediately. Comm
 ## Changelog Conventions
 
 The changelog is for END USERS only. Only add entries for user-facing changes (new features, visible UI changes, behavior users will notice). Never add changelog entries for internal or technical fixes (refactors, build tooling, analytics tracking, server config, deploy plumbing) — these are invisible to users and must not be surfaced. If it's unclear whether a change is user-facing, ASK before adding an entry. When you do add an entry, keep `LATEST_CHANGELOG_VERSION` in sync.
+
+## Communication
+
+Explain findings in plain English first: what happened and what it means for users or revenue. Put technical detail (file paths, stack traces, framework internals) underneath, not up front. Changelog entries and any customer-facing copy are written for a trader who doesn't code: no file names, no framework names, no "refactored".
+
+## Autonomy Boundaries
+
+Never create, draft, schedule, or send an outbound email, Gmail draft, Resend broadcast, or customer message unless explicitly asked in that message. Before any campaign send, show the copy and the recipient count and wait for approval. On long runs, stop and summarise after each step that changes code, so scope can be redirected early. If the same error happens twice in a row, stop and report instead of working around it.
+
+## Audits
+
+An "audit" is READ-ONLY unless the request says otherwise. Deliver a findings list ranked by user/revenue impact with an effort estimate (S/M/L) per item, then wait to be told which ones to build.
+
+## Verifying Claims
+
+Do not assert that a feature, config, or secret is "missing", "unused", or "not in the repo" without checking git history (`git log -S`), the provider dashboard (Vercel, Stripe, PostHog, Resend), and env/config files first. If uncertain, say "I couldn't find X in <places checked>" rather than "X doesn't exist".
+
+## Which Surface?
+
+Before fixing a UI bug, confirm which surface is meant. There are multiple footers/headers/tickers (app, landing page, email templates, prerendered SEO pages, the separate Shopify store). State the assumption explicitly or ask one question before editing.

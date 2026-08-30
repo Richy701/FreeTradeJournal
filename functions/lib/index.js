@@ -1941,7 +1941,21 @@ exports.processDeferredReferrals = functions.pubsub
 });
 // Subscription statuses the client's isActivePro counts as paid Pro — shared
 // by both admin migration callables so they can't drift apart.
-const ACTIVE_SUB_STATUSES = ["active", "on_trial", "past_due"];
+/**
+ * Period end for a subscription, tolerant of API version. From API
+ * 2025-03-31 `current_period_end` lives on each subscription item, not the
+ * subscription; webhook payloads follow the endpoint's version, so read the
+ * item first and fall back to the legacy top-level field. Returns null when
+ * neither is present instead of throwing "Invalid time value".
+ */
+function subscriptionPeriodEndIso(sub) {
+    const ts = sub.items?.data?.[0]?.current_period_end ??
+        sub.current_period_end;
+    return typeof ts === "number" && Number.isFinite(ts)
+        ? new Date(ts * 1000).toISOString()
+        : null;
+}
+const ACTIVE_SUB_STATUSES = ["active", "on_trial"];
 function hasActiveSubscription(d) {
     return !!d?.subscription && ACTIVE_SUB_STATUSES.includes(d.subscription.status);
 }
@@ -2580,7 +2594,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                         planType: getPlanTypeFromPriceId(priceId),
                         stripeCustomerId: customerId,
                         stripeSubscriptionId: sub.id,
-                        currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+                        currentPeriodEnd: subscriptionPeriodEndIso(sub),
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                     };
@@ -2700,9 +2714,9 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 }
                 const priceId = sub.items.data[0]?.price.id || "";
                 const status = mapStripeStatus(sub.status);
-                // past_due keeps Pro during Stripe's dunning retries (see client
-                // isActivePro); dunning failure moves to cancelled/unpaid → not pro.
-                const isPro = status === "active" || status === "on_trial" || status === "past_due";
+                // No grace period: past_due (failed charge) ends Pro until a retry
+                // succeeds and Stripe sends the sub back as active.
+                const isPro = status === "active" || status === "on_trial";
                 // Lifetime owners keep Pro forever: a leftover subscription (bought
                 // monthly, then bought lifetime) renewing or churning must not
                 // overwrite the lifetime entitlement.
@@ -2718,7 +2732,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                         planType: getPlanTypeFromPriceId(priceId),
                         stripeCustomerId: sub.customer,
                         stripeSubscriptionId: sub.id,
-                        currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+                        currentPeriodEnd: subscriptionPeriodEndIso(sub),
                         updatedAt: new Date().toISOString(),
                     },
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -2811,9 +2825,7 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 try {
                     const userRecord = await admin.auth().getUser(firebaseUid);
                     if (userRecord.email) {
-                        const periodEnd = sub.current_period_end
-                            ? new Date(sub.current_period_end * 1000).toISOString()
-                            : null;
+                        const periodEnd = subscriptionPeriodEndIso(sub);
                         await sendCancellationEmail(userRecord.email, userRecord.displayName || undefined, periodEnd);
                     }
                 }
@@ -2839,14 +2851,23 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 const firebaseUid = sub.metadata?.firebase_uid;
                 if (!firebaseUid)
                     break;
+                // Lifetime owners are never touched by a stray subscription invoice.
+                const failedUser = (await db.collection("users").doc(firebaseUid).get()).data();
+                if (failedUser?.subscription?.planType === "lifetime") {
+                    console.log(`invoice.payment_failed for ${firebaseUid} ignored — user owns lifetime`);
+                    break;
+                }
+                // No grace period: Pro ends on the failed charge. It is restored by
+                // customer.subscription.updated when a retry succeeds.
                 await db.collection("users").doc(firebaseUid).set({
+                    isPro: false,
                     subscription: {
                         status: "past_due",
                         updatedAt: new Date().toISOString(),
                     },
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
-                console.log(`invoice.payment_failed for ${firebaseUid}`);
+                console.log(`invoice.payment_failed for ${firebaseUid} — Pro revoked`);
                 try {
                     await getPostHog().captureImmediate({
                         distinctId: firebaseUid,
