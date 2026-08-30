@@ -2105,6 +2105,22 @@ export const processDeferredReferrals = functions.pubsub
 
 // Subscription statuses the client's isActivePro counts as paid Pro — shared
 // by both admin migration callables so they can't drift apart.
+/**
+ * Period end for a subscription, tolerant of API version. From API
+ * 2025-03-31 `current_period_end` lives on each subscription item, not the
+ * subscription; webhook payloads follow the endpoint's version, so read the
+ * item first and fall back to the legacy top-level field. Returns null when
+ * neither is present instead of throwing "Invalid time value".
+ */
+function subscriptionPeriodEndIso(sub: Stripe.Subscription): string | null {
+  const ts =
+    (sub.items?.data?.[0] as any)?.current_period_end ??
+    (sub as any).current_period_end;
+  return typeof ts === "number" && Number.isFinite(ts)
+    ? new Date(ts * 1000).toISOString()
+    : null;
+}
+
 const ACTIVE_SUB_STATUSES = ["active", "on_trial", "past_due"];
 function hasActiveSubscription(d: FirebaseFirestore.DocumentData | undefined): boolean {
   return !!d?.subscription && ACTIVE_SUB_STATUSES.includes(d.subscription.status);
@@ -2857,7 +2873,7 @@ export const stripeWebhook = functions.https.onRequest(
               planType: getPlanTypeFromPriceId(priceId),
               stripeCustomerId: customerId,
               stripeSubscriptionId: sub.id,
-              currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+              currentPeriodEnd: subscriptionPeriodEndIso(sub),
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
@@ -3001,7 +3017,7 @@ export const stripeWebhook = functions.https.onRequest(
                 planType: getPlanTypeFromPriceId(priceId),
                 stripeCustomerId: sub.customer as string,
                 stripeSubscriptionId: sub.id,
-                currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
+                currentPeriodEnd: subscriptionPeriodEndIso(sub),
                 updatedAt: new Date().toISOString(),
               },
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -3106,9 +3122,7 @@ export const stripeWebhook = functions.https.onRequest(
           try {
             const userRecord = await admin.auth().getUser(firebaseUid);
             if (userRecord.email) {
-              const periodEnd = (sub as any).current_period_end
-                ? new Date((sub as any).current_period_end * 1000).toISOString()
-                : null;
+              const periodEnd = subscriptionPeriodEndIso(sub);
               await sendCancellationEmail(userRecord.email, userRecord.displayName || undefined, periodEnd);
             }
           } catch (emailErr) {
