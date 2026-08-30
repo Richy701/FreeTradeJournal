@@ -74,11 +74,10 @@ function isFutureIso(date: string | null | undefined): boolean {
 
 function isActivePro(sub: SubscriptionInfo | null): boolean {
   if (!sub) return false;
-  // past_due = Stripe is still retrying the card (dunning, up to ~2 weeks).
-  // Locking out on the first failed charge churned users whose card recovered
-  // on retry; if dunning fails Stripe moves the sub to cancelled/unpaid,
-  // which ends access here.
-  return sub.status === 'active' || sub.status === 'on_trial' || sub.status === 'past_due';
+  // No grace period: a failed charge (past_due) ends Pro immediately. Access
+  // comes back on its own once Stripe's retry succeeds (subscription.updated
+  // → active).
+  return sub.status === 'active' || sub.status === 'on_trial';
 }
 
 interface ProProviderProps {

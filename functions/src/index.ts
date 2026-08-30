@@ -2121,7 +2121,7 @@ function subscriptionPeriodEndIso(sub: Stripe.Subscription): string | null {
     : null;
 }
 
-const ACTIVE_SUB_STATUSES = ["active", "on_trial", "past_due"];
+const ACTIVE_SUB_STATUSES = ["active", "on_trial"];
 function hasActiveSubscription(d: FirebaseFirestore.DocumentData | undefined): boolean {
   return !!d?.subscription && ACTIVE_SUB_STATUSES.includes(d.subscription.status);
 }
@@ -2996,9 +2996,9 @@ export const stripeWebhook = functions.https.onRequest(
 
           const priceId = sub.items.data[0]?.price.id || "";
           const status = mapStripeStatus(sub.status);
-          // past_due keeps Pro during Stripe's dunning retries (see client
-          // isActivePro); dunning failure moves to cancelled/unpaid → not pro.
-          const isPro = status === "active" || status === "on_trial" || status === "past_due";
+          // No grace period: past_due (failed charge) ends Pro until a retry
+          // succeeds and Stripe sends the sub back as active.
+          const isPro = status === "active" || status === "on_trial";
 
           // Lifetime owners keep Pro forever: a leftover subscription (bought
           // monthly, then bought lifetime) renewing or churning must not
@@ -3149,8 +3149,18 @@ export const stripeWebhook = functions.https.onRequest(
           const firebaseUid = sub.metadata?.firebase_uid;
           if (!firebaseUid) break;
 
+          // Lifetime owners are never touched by a stray subscription invoice.
+          const failedUser = (await db.collection("users").doc(firebaseUid).get()).data();
+          if (failedUser?.subscription?.planType === "lifetime") {
+            console.log(`invoice.payment_failed for ${firebaseUid} ignored — user owns lifetime`);
+            break;
+          }
+
+          // No grace period: Pro ends on the failed charge. It is restored by
+          // customer.subscription.updated when a retry succeeds.
           await db.collection("users").doc(firebaseUid).set(
             {
+              isPro: false,
               subscription: {
                 status: "past_due",
                 updatedAt: new Date().toISOString(),
@@ -3159,7 +3169,7 @@ export const stripeWebhook = functions.https.onRequest(
             },
             { merge: true },
           );
-          console.log(`invoice.payment_failed for ${firebaseUid}`);
+          console.log(`invoice.payment_failed for ${firebaseUid} — Pro revoked`);
           try {
             await getPostHog().captureImmediate({
               distinctId: firebaseUid,
