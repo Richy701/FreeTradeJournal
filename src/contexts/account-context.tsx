@@ -170,10 +170,19 @@ export function AccountProvider({ children }: AccountProviderProps) {
     setLoading(false);
   }, [userId, initialSyncDone, syncVersion]);
 
-  // Save accounts whenever they change
+  // Save accounts whenever they change.
+  // Skip when the serialized value is identical to what's already stored: this
+  // effect also fires on every mount with the just-loaded list, and pushing
+  // that through setItem marks `accounts` as a local edit for cloud sync. On a
+  // device with stale localStorage, that dirty mark made the stale list win
+  // over the cloud copy and silently deleted accounts created on other devices
+  // (Abdoul, 2026-08-31). A real edit always produces a different string and
+  // still syncs normally.
   useEffect(() => {
     if (accounts.length > 0 && !loading) {
-      UserStorage.setItem(userId, 'accounts', JSON.stringify(accounts));
+      const serialized = JSON.stringify(accounts);
+      if (UserStorage.getItem(userId, 'accounts') === serialized) return;
+      UserStorage.setItem(userId, 'accounts', serialized);
     }
   }, [accounts, loading, userId]);
 
