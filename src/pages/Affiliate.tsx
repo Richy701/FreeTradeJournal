@@ -30,7 +30,7 @@ const AFFILIATE_FAQS = [
   },
   {
     question: 'Do I need a Pro subscription to track prop firm trades?',
-    answer: 'No. Trade logging, analytics, the prop firm dashboard, and PropTracker are all free. Pro adds AI-powered trade coaching, automated reviews, cloud sync, and advanced exports starting at $12.99/mo with a 14-day free trial.',
+    answer: 'No. Trade logging, analytics, the prop firm dashboard, and PropTracker are all free. Pro adds AI-powered trade coaching, automated reviews, cloud sync, and advanced exports starting at $12.99/mo.',
   },
   {
     question: 'What markets do these prop firms support?',

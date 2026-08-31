@@ -2607,16 +2607,8 @@ export const createCheckoutSession = functions.https.onCall(
       );
     }
 
-    // One card trial per person. hadTrial is set by the webhook on a completed
-    // on_trial checkout, and by onUserCreated for tombstoned delete-and-resignup
-    // accounts, so both the second-trial and the trial-farming cases stay shut.
-    //
-    // The no-card signup trial (trialProExpiresAt) deliberately does NOT count.
-    // It used to: the two stacked to 28 free days. onUserCreated stopped minting
-    // it at LIFETIME_RETIRES_AT, so nothing can stack anymore — all the clause
-    // did after the cutoff was charge ~2,438 existing users on day one while the
-    // pricing page advertised a free trial to them.
-    const hadTrial = userDoc.data()?.hadTrial === true;
+    // Trials retired 2026-08-31 (0 of 14 ever converted, all with 0 trades):
+    // subscriptions charge from day one. The free tier is the trial.
     const isLifetime = priceId === process.env.STRIPE_PRICE_LIFETIME;
 
     // The pricing card hides itself outside the sale windows; this guard
@@ -2719,8 +2711,6 @@ export const createCheckoutSession = functions.https.onCall(
         params.subscription_data = {
           metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
         };
-        // One free trial per user — cancel/resubscribe pays from day one.
-        if (!hadTrial) params.subscription_data.trial_period_days = 14;
       } else {
         params.payment_intent_data = {
           metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
@@ -3216,9 +3206,8 @@ export const stripeWebhook = functions.https.onRequest(
           const email = userRecord?.email || data.email;
           if (!email) break;
 
-          // hadTrial is set by the webhook on completed on_trial checkouts —
-          // the copy must not promise a trial createCheckoutSession won't grant.
-          const trialAvailable = data.hadTrial !== true;
+          // Trials retired 2026-08-31 — recovery copy must never promise one.
+          const trialAvailable = false;
           await sendCheckoutRecoveryEmail(email, userRecord?.displayName || data.displayName || undefined, trialAvailable, firebaseUid);
           await userRef.set(
             { checkoutRecoveryEmailedAt: admin.firestore.FieldValue.serverTimestamp() },

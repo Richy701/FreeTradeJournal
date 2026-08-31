@@ -35,7 +35,7 @@ const FEATURES = [
   {
     icon: <Brain className="h-5 w-5" />,
     title: 'AI Trade Coaching',
-    desc: 'Get AI-powered feedback on your trades, risk alerts for loss streaks, and strategy tagging. Pro feature with 14-day free trial.',
+    desc: 'Get AI-powered feedback on your trades, risk alerts for loss streaks, and strategy tagging. Pro feature.',
   },
   {
     icon: <Infinity className="h-5 w-5" />,

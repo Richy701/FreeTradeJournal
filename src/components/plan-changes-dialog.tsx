@@ -132,7 +132,7 @@ export function PlanChangesDialog() {
             style={{ backgroundColor: alpha(themeColors.primary, '14') }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Pro trials now start at checkout
+              The signup trial has ended
             </p>
             <p className="mt-2 text-sm leading-relaxed">
               Every new account used to get 14 days of Pro, no card needed. That worked until people
@@ -140,11 +140,11 @@ export function PlanChangesDialog() {
               again after that.
             </p>
             <p className="mt-2 text-sm leading-relaxed">
-              So the trial now sits at checkout instead. Pick monthly or yearly, the first 14 days
-              are free, and you can cancel before day 14 without being charged.
+              So we have retired trials altogether. The free plan is the way to try
+              FreeTradeJournal now, and Pro starts the moment you subscribe.
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              If you already had your 14 days, upgrading now starts your plan straight away.
+              Upgrading starts your plan straight away.
             </p>
           </div>
 

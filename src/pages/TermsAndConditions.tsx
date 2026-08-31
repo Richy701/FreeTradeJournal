@@ -48,7 +48,7 @@ export default function TermsAndConditions() {
           <LegalSection title="Pro Subscription & Payments">
             <p className="mb-3">Pro subscriptions are billed through <strong className="text-foreground">Stripe</strong>. By subscribing, you agree to the following:</p>
             <ul className="space-y-1 pl-4 list-disc">
-              <li><strong className="text-foreground">Monthly/Yearly plans</strong> include a 14-day free trial for new subscribers. You will not be charged until the trial ends. Cancel any time during the trial and you won't be charged.</li>
+              <li><strong className="text-foreground">Monthly/Yearly plans</strong> are billed at the start of each billing period. Cancel any time and you keep access until the end of the period you paid for.</li>
               <li>Monthly and yearly plans automatically renew at the end of each billing period unless cancelled.</li>
               <li><strong className="text-foreground">Lifetime plans</strong> are a one-time purchase granting permanent Pro access. No trial applies. The Lifetime plan may be withdrawn from sale at any time; purchases made while it was available are unaffected and keep Pro access permanently.</li>
               <li>Prices are displayed in USD and may be subject to applicable taxes.</li>

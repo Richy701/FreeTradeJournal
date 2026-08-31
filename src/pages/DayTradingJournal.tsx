@@ -25,7 +25,7 @@ const FEATURES = [
   {
     icon: <Brain className="h-5 w-5" />,
     title: 'AI Trade Review',
-    desc: 'Get AI-powered feedback on each trade — entry timing, risk/reward, and whether the setup matched your strategy. Pro feature with 14-day free trial.',
+    desc: 'Get AI-powered feedback on each trade — entry timing, risk/reward, and whether the setup matched your strategy. Pro feature.',
   },
   {
     icon: <FileArrowDown className="h-5 w-5" />,
@@ -48,7 +48,7 @@ const FAQS = [
   { q: 'Is this good for scalping and quick trades?', a: 'Yes. Every trade logs entry and exit timestamps. You get P&L per trade and can filter by time of day to see which sessions are most profitable.' },
   { q: 'Can I set a daily trade limit?', a: 'Yes. Use the Goals feature to set a maximum number of trades per day. The dashboard shows your progress against the limit so you catch overtrading early.' },
   { q: 'What brokers can I import from?', a: 'Any broker that exports CSV. The parser handles Tradovate, MetaTrader 5, NinjaTrader, and generic CSV formats. Entry, exit, quantity, and commissions are mapped automatically.' },
-  { q: 'How does the AI trade review work?', a: 'Select any trade and the AI analyzes your entry, exit, risk/reward, and whether the setup matched your tagged strategy. It gives specific feedback, not generic advice. This is a Pro feature with a 14-day free trial.' },
+  { q: 'How does the AI trade review work?', a: 'Select any trade and the AI analyzes your entry, exit, risk/reward, and whether the setup matched your tagged strategy. It gives specific feedback, not generic advice. This is a Pro feature.' },
   { q: 'Does the calendar heatmap show daily totals?', a: 'Yes. Each day is color-coded by net P&L. Green for profitable days, red for losing days. Click any day to see the individual trades.' },
   { q: 'Is this actually free?', a: 'Yes. Trade logging, analytics, CSV import, goal tracking, and the calendar heatmap are free forever. No credit card. Pro adds AI coaching, cloud sync, and exports.' },
 ];

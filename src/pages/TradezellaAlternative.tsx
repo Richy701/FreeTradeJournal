@@ -16,7 +16,7 @@ const COMPARISON_ROWS = [
   { label: 'Cheapest paid plan', ftj: '$12.99/month', other: '$35/month (Essential)' },
   { label: 'Annual price', ftj: '$99.99/year', other: '$315/year (Essential)' },
   { label: 'Top-tier price', ftj: '$99.99/year — one Pro tier, everything included', other: '$891/year (Ultra)' },
-  { label: 'Free trial on paid plan', ftj: '14 days', other: 'See tradezella.com' },
+  { label: 'Free trial on paid plan', ftj: 'None — free plan instead', other: 'See tradezella.com' },
   { label: 'Trade import', ftj: 'CSV/Excel from any broker', other: 'Automatic broker sync' },
   { label: 'AI coaching on the free plan', ftj: 'Yes — 20 analyses/month', other: 'No free plan' },
   { label: 'Prop-firm evaluation tracker', ftj: 'Built in (PropTracker)', other: 'Not a dedicated feature' },
@@ -42,7 +42,7 @@ const FAQS = [
   { question: 'How do I switch from TradeZella to FreeTradeJournal?', answer: 'Export your trades to CSV — from TradeZella or directly from your broker — then use FreeTradeJournal\'s CSV import. The column-mapping step handles different export formats, so you do not need to reformat anything by hand.' },
   { question: 'Does FreeTradeJournal sync with my broker automatically?', answer: 'Not yet. Trades come in via CSV or Excel import from any broker, or manual entry. Automatic sync is in development.' },
   { question: 'Does FreeTradeJournal work for prop firm traders?', answer: 'Yes — this is where it is strongest. PropTracker tracks evaluation progress, drawdown, and daily loss limits across FTMO, Apex, Topstep, and other firms, alongside your journal and analytics.' },
-  { question: 'Can I try Pro before paying?', answer: 'Yes. Pro subscriptions come with a 14-day free trial. You will not be charged until the trial ends, and you can cancel any time before then.' },
+  { question: 'Can I try Pro before paying?', answer: 'The free plan is the try: use the core journal for as long as you like before deciding. When you want the full feature set, upgrade to Pro and cancel anytime.' },
 ];
 
 export default function TradezellaAlternative() {

@@ -16,7 +16,7 @@ const COMPARISON_ROWS = [
   { label: 'Cheapest paid plan', ftj: '$12.99/month', other: '$29.95/month (Pro)' },
   { label: 'Annual price', ftj: '$99.99/year', other: '$312.60/year (Pro)' },
   { label: 'AI features', ftj: 'Included — free plan gets 20 analyses/month', other: 'From the $49.95/month Premium tier' },
-  { label: 'Free trial', ftj: '14 days on Pro', other: '7 days' },
+  { label: 'Free trial', ftj: 'Free plan instead — no time limit', other: '7 days' },
   { label: 'Trade import', ftj: 'CSV/Excel from any broker', other: 'Automatic sync, hundreds of brokers' },
   { label: 'Prop-firm evaluation tracker', ftj: 'Built in (PropTracker)', other: 'Not a dedicated feature' },
 ];
@@ -41,7 +41,7 @@ const FAQS = [
   { question: 'How do I switch from TraderSync to FreeTradeJournal?', answer: 'Export your trades to CSV — from TraderSync or directly from your broker — then use FreeTradeJournal\'s CSV import. The column-mapping step handles different export formats, so you do not need to reformat anything by hand.' },
   { question: 'Does FreeTradeJournal sync with my broker automatically?', answer: 'Not yet. Trades come in via CSV or Excel import from any broker, or manual entry. Automatic sync is in development.' },
   { question: 'I trade stocks and options — is FreeTradeJournal right for me?', answer: 'You can log any instrument, but the analytics are built first for forex and futures. If you need options-specific analytics like spread tracking, TraderSync is honestly the stronger fit today.' },
-  { question: 'Can I try Pro before paying?', answer: 'Yes. Pro subscriptions come with a 14-day free trial — twice the length of TraderSync\'s. You will not be charged until the trial ends, and you can cancel any time before then.' },
+  { question: 'Can I try Pro before paying?', answer: 'The free plan is the try: use the core journal for as long as you like before deciding. When you want the full feature set, upgrade to Pro and cancel anytime.' },
 ];
 
 export default function TradersyncAlternative() {

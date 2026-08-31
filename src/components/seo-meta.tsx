@@ -93,7 +93,7 @@ const pageMeta: Record<string, SEOMetaProps> = {
   },
   '/pricing': {
     title: 'Pricing | Free Forever + Pro Plans from $12.99/mo | FreeTradeJournal',
-    description: 'Free forever with unlimited trades, analytics, and CSV import. Upgrade to Pro for AI coaching, cloud sync, and advanced exports. Plans from $12.99/mo with 14-day free trial.',
+    description: 'Free forever with unlimited trades, analytics, and CSV import. Upgrade to Pro for AI coaching, cloud sync, and advanced exports. Plans from $12.99/mo.',
     keywords: 'trading journal pricing, free trading journal, pro trading tools, AI trading coach, trading analytics subscription, trade analysis pricing'
   },
   '/forex-trading-journal': {

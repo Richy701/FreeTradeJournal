@@ -15,7 +15,7 @@ const COMPARISON_ROWS = [
   { label: 'Free plan', ftj: 'Yes — free forever, no card', other: 'No' },
   { label: 'Monthly billing option', ftj: 'Yes — $12.99/month', other: 'No — $197 paid upfront per term' },
   { label: 'Annual price', ftj: '$99.99/year', other: '$197/year term' },
-  { label: 'Free trial', ftj: '14 days on Pro', other: 'None — 14-day money-back guarantee instead' },
+  { label: 'Free trial', ftj: 'Free plan instead — no time limit', other: 'None — 14-day money-back guarantee instead' },
   { label: 'AI coaching', ftj: 'Included — free plan gets 20 analyses/month', other: 'Statistics-based analytics' },
   { label: 'Prop-firm evaluation tracker', ftj: 'Built in (PropTracker)', other: 'Not a dedicated feature' },
   { label: 'Trade import', ftj: 'CSV/Excel from any broker', other: 'Broker import templates' },
@@ -23,7 +23,7 @@ const COMPARISON_ROWS = [
 
 const FTJ_WINS = [
   { title: 'Free to start, cheap to stay', desc: 'Edgewonk has no free version — you pay $197 upfront before you know if it fits how you trade. FreeTradeJournal\'s free plan has no time limit, and Pro is $12.99/month or $99.99/year, about half Edgewonk\'s term price.' },
-  { title: 'Pay monthly if you want', desc: 'Edgewonk bills the full term upfront. FreeTradeJournal has a monthly option, and Pro subscriptions start with a 14-day free trial rather than a refund process.' },
+  { title: 'Pay monthly if you want', desc: 'Edgewonk bills the full term upfront. FreeTradeJournal has a monthly option, so you can start small and cancel whenever you like.' },
   { title: 'AI coaching, not just statistics', desc: 'Edgewonk gives you statistics to interpret yourself. FreeTradeJournal\'s AI reads your trades and journal entries and tells you in plain English what is working, what is not, and what to do about it.' },
   { title: 'Prop-firm tracking built in', desc: 'PropTracker monitors evaluation progress, drawdown limits, and daily loss across FTMO, Apex, Topstep, and other firms. Edgewonk does not treat funded-account tracking as a dedicated feature.' },
   { title: 'News and economic calendar included', desc: 'Market news and an economic calendar sit next to your journal, so you can flag which trades happened into red-folder events.' },
@@ -37,11 +37,11 @@ const OTHER_WINS = [
 
 const FAQS = [
   { question: 'Is FreeTradeJournal really free?', answer: 'Yes. The free plan includes unlimited trade logging, dashboard analytics over your last 30 days, up to 20 journal entries, two trading accounts, CSV/Excel import and export, and 5 AI coaching runs per month (automatic tips and prompts are free). No credit card required. Pro ($12.99/month or $99.99/year) removes the limits and adds cloud sync.' },
-  { question: 'How does the price compare to Edgewonk?', answer: 'Edgewonk is $197 paid upfront for a fixed term, with no free version and no monthly option. FreeTradeJournal is free to start, $12.99/month if you want Pro, or $99.99/year — about half Edgewonk\'s price with a free trial instead of a refund process.' },
+  { question: 'How does the price compare to Edgewonk?', answer: 'Edgewonk is $197 paid upfront for a fixed term, with no free version and no monthly option. FreeTradeJournal is free to start, $12.99/month if you want Pro, or $99.99/year — about half Edgewonk\'s price, with a free plan you can use before paying anything.' },
   { question: 'How do I switch from Edgewonk to FreeTradeJournal?', answer: 'Export your trades to CSV — from Edgewonk or directly from your broker — then use FreeTradeJournal\'s CSV import. The column-mapping step handles different export formats, so you do not need to reformat anything by hand.' },
   { question: 'Does FreeTradeJournal track trading psychology like Edgewonk\'s Tiltmeter?', answer: 'You can tag emotions on every trade and journal entry, and the AI coach flags patterns like revenge trading in plain English. Edgewonk\'s Tiltmeter goes deeper on discipline statistics; FreeTradeJournal focuses on telling you what to change rather than charting it.' },
   { question: 'Does FreeTradeJournal sync with my broker automatically?', answer: 'Not yet. Trades come in via CSV or Excel import from any broker, or manual entry. Automatic sync is in development.' },
-  { question: 'Can I try Pro before paying?', answer: 'Yes. Pro subscriptions come with a 14-day free trial. You will not be charged until the trial ends, and you can cancel any time before then.' },
+  { question: 'Can I try Pro before paying?', answer: 'The free plan is the try: use the core journal for as long as you like before deciding. When you want the full feature set, upgrade to Pro and cancel anytime.' },
 ];
 
 export default function EdgewonkAlternative() {
