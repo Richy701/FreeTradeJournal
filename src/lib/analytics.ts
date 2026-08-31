@@ -99,6 +99,20 @@ function scalarProps(
   return Object.keys(out).length ? out : undefined;
 }
 
+// Set for the browser session when demo mode is entered, read at signup so
+// demo→signup conversion is measurable. sessionStorage (not the demo user's
+// storage) because it must survive exitDemoMode's wipe and the full page load
+// the demo-guard toast triggers on its way to /signup.
+export const DEMO_VISITED_KEY = 'ftj-demo-visited';
+
+export function demoAttribution(): { from_demo: boolean } {
+  try {
+    return { from_demo: sessionStorage.getItem(DEMO_VISITED_KEY) === 'true' };
+  } catch {
+    return { from_demo: false };
+  }
+}
+
 /**
  * Track a named event in PostHog with optional properties.
  * Silently swallows errors so analytics never breaks the app.

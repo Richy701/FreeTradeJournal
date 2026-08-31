@@ -105,7 +105,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
 
 function ResultTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card/50 p-4">
+    <div className="p-4">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <p className="text-lg font-semibold tabular-nums font-mono text-foreground leading-tight">{value}</p>
       {sub && <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>}
@@ -485,7 +485,7 @@ export function PositionSizeCalculator() {
         </div>
 
         {results && (
-          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+          <div className="rounded-xl border border-border/60 bg-card/50 grid grid-cols-2 [&>div]:border-border/60 [&>div:nth-child(odd)]:border-r [&>div:nth-child(-n+2)]:border-b">
             <ResultTile
               label="Target risk"
               value={`${ccy}${fmt(results.riskAmount)}`}

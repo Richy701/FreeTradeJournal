@@ -49,7 +49,7 @@ export function DemoBanner() {
   return (
     <div
       ref={bannerRef}
-      className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg transition-transform duration-300 ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
       style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + 0.625rem)` }}

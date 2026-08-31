@@ -74,6 +74,11 @@ export function PostHogTracker() {
       }
     } else {
       posthog.reset();
+      // reset() wipes super properties, so re-flag after it: while in demo,
+      // every event/pageview carries demo_session so demo traffic is
+      // separable from ordinary anonymous traffic. Exiting demo lands in the
+      // plain reset() path, which clears the flag again.
+      if (isDemo) posthog.register({ demo_session: true });
     }
   }, [user, isDemo, posthog, isPro, subscription, trialEndsAt]);
 

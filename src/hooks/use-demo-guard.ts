@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
+import { trackEvent } from '@/lib/analytics';
 
 /**
  * Read-only demo guard.
@@ -26,6 +27,7 @@ export function useDemoGuard() {
   return useCallback(
     (action: string = 'do that'): boolean => {
       if (!isDemo) return false;
+      trackEvent('demo_action_blocked', { action });
       // Fixed id so simultaneous guarded calls (e.g. a handler that updates both
       // settings and an account) collapse into one toast instead of stacking.
       toast.info(`This is a read-only demo. Sign up free to ${action}.`, {

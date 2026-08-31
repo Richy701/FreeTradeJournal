@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { clearOnboardingData } from '@/utils/onboarding';
 import { isBadEmail } from '@/lib/email-validation';
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent, demoAttribution } from '@/lib/analytics';
 import { googleAuthErrorMessage } from '@/lib/auth-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +95,7 @@ export default function Signup() {
     try {
       const displayName = `${formData.firstName} ${formData.lastName}`.trim();
       const user = await signUp(formData.email, formData.password, displayName);
-      trackEvent('signup_completed');
+      trackEvent('signup_completed', demoAttribution());
       clearOnboardingData(user.uid);
       handlerNavigated.current = true;
       navigate('/verify-email');
@@ -127,7 +127,7 @@ export default function Signup() {
     try {
       const { user: googleUser, isNewUser } = await signInWithGoogle();
       if (isNewUser) {
-        trackEvent('signup_completed');
+        trackEvent('signup_completed', demoAttribution());
         clearOnboardingData(googleUser.uid);
         handlerNavigated.current = true;
         navigate('/onboarding');

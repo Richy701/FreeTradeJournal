@@ -61,9 +61,9 @@ export function WelcomeDialog({ open, onOpenChange, onPost, onShowRules }: Welco
             </p>
             <div className="rounded-xl border p-4 space-y-2.5 bg-background/60">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Your record builds from linked trades</p>
-              <dl className="grid grid-cols-3 gap-2 text-center tabular-nums">
+              <dl className="grid grid-cols-3 divide-x divide-border/60 text-center tabular-nums">
                 {([['Ideas', '12'], ['Worked', '8'], ['Hit rate', '67%']] as const).map(([label, value]) => (
-                  <div key={label} className="rounded-lg border bg-muted/30 py-2 flex flex-col-reverse">
+                  <div key={label} className="py-2 flex flex-col-reverse">
                     <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt>
                     <dd className="text-base font-bold leading-tight">{value}</dd>
                   </div>

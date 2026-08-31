@@ -6,6 +6,7 @@ import { DEMO_USER } from '@/data/demo-data';
 import { UserStorage } from '@/utils/user-storage';
 import { setAICacheUser } from '@/utils/ai-cache';
 import { seedDemoStorage, clearDemoStorage } from '@/services/demo-service';
+import { trackEvent, DEMO_VISITED_KEY } from '@/lib/analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -284,9 +285,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsDemo(true);
     setLoading(false);
     document.documentElement.dataset.demo = 'true';
+    trackEvent('demo_entered');
+    try {
+      sessionStorage.setItem(DEMO_VISITED_KEY, 'true');
+    } catch {
+      // Attribution only — never block entering demo
+    }
   };
 
   const exitDemoMode = () => {
+    trackEvent('demo_exited');
     clearDemoStorage();
     setUser(null);
     setIsDemo(false);

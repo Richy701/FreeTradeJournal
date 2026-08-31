@@ -191,10 +191,9 @@ function getSectionConfig(title: string) {
 function AnalysisSection({ section }: { section: ParsedSection }) {
   const config = getSectionConfig(section.title);
   const Icon = config.icon;
-  const isSnapshot = section.title.toLowerCase().includes('snapshot') || section.title.toLowerCase().includes('performance');
 
   return (
-    <div className={`rounded-lg p-4 bg-card border border-border ${isSnapshot ? 'bg-muted/50' : ''}`}>
+    <div className="py-4 first:pt-0 last:pb-0">
       <div className="flex items-center gap-2 mb-2.5">
         <Icon className="h-4 w-4 shrink-0" style={{ color: config.color }} />
         <h3 className="font-semibold text-sm text-foreground">{section.title}</h3>
@@ -247,17 +246,17 @@ function SampleAnalysisPreview() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="divide-y divide-border/60">
           {SAMPLE_SECTIONS.map((section, i) => (
             <AnalysisSection
               key={i}
               section={{ ...section, content: section.content.replace(/\$/g, sym).replace(/ EST\b/g, '') }}
             />
           ))}
-          <p className="text-xs text-muted-foreground pt-2 text-right">
-            Based on 38 trades · Sample output. Your analysis will use your real trades
-          </p>
         </div>
+        <p className="text-xs text-muted-foreground pt-3 text-right border-t border-border/50 mt-4">
+          Based on 38 trades · Sample output. Your analysis will use your real trades
+        </p>
       </CardContent>
     </div>
   );
@@ -489,26 +488,10 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
             </div>
           ) : sections.length > 0 ? (
             <div className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {sections.map((section, i) => {
-                  const isWide = (t: string) => /snapshot|performance|action/i.test(t)
-                  let wide = isWide(section.title)
-                  // Half-width sections pair up. When a run of them is odd,
-                  // the last one goes full width rather than leaving a hole.
-                  if (!wide) {
-                    let runStart = i
-                    while (runStart > 0 && !isWide(sections[runStart - 1].title)) runStart--
-                    let runEnd = i
-                    while (runEnd < sections.length - 1 && !isWide(sections[runEnd + 1].title)) runEnd++
-                    const runLength = runEnd - runStart + 1
-                    wide = runLength % 2 === 1 && i === runEnd
-                  }
-                  return (
-                    <div key={i} className={wide ? 'sm:col-span-2' : ''}>
-                      <AnalysisSection section={section} />
-                    </div>
-                  )
-                })}
+              <div className="divide-y divide-border/60">
+                {sections.map((section, i) => (
+                  <AnalysisSection key={i} section={section} />
+                ))}
               </div>
               {!isStreaming && result && (
                 <div className="flex items-center justify-between pt-3 border-t border-border/50">

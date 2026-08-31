@@ -95,8 +95,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 @layer base {
   :root {
-    /* FreeTradeJournal light theme — warm white */
-    --background: 40 20% 97%;
+    /* FreeTradeJournal light theme — near-white with a hint of warmth */
+    --background: 40 10% 98.5%;
     --foreground: 30 10% 8%;
     --card: 0 0% 100%;
     --card-foreground: 30 10% 8%;
@@ -104,16 +104,16 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --popover-foreground: 30 10% 8%;
     --primary: 43 96% 56%; /* Amber/gold - premium finance */
     --primary-foreground: 26 83% 8%; /* Dark brown-black */
-    --secondary: 43 35% 93%;
+    --secondary: 43 18% 95.5%;
     --secondary-foreground: 30 10% 12%;
-    --muted: 40 18% 93%;
+    --muted: 40 10% 95.5%;
     --muted-foreground: 35 8% 40%;
-    --accent: 43 40% 91%;
+    --accent: 43 20% 93%;
     --accent-foreground: 30 10% 12%;
     --destructive: 0 76% 50%; /* Trading red - same as dark theme */
     --destructive-foreground: 0 0% 100%;
-    --border: 40 12% 87%;
-    --input: 40 12% 87%;
+    --border: 40 8% 89%;
+    --input: 40 8% 89%;
     --ring: 43 96% 56%; /* Amber/gold ring */
     --radius: 0.85rem;
     /* Trading data colors — overridden per color-theme by ThemePresetsProvider */
@@ -124,13 +124,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --chart-3: 0 84% 60%;
     --chart-4: 43 96% 40%;
     --chart-5: 43 43% 46%;
-    --sidebar-background: 40 18% 95%;
+    --sidebar-background: 40 8% 97%;
     --sidebar-foreground: 30 10% 20%;
     --sidebar-primary: 30 10% 12%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 43 35% 90%;
+    --sidebar-accent: 43 18% 93%;
     --sidebar-accent-foreground: 30 10% 12%;
-    --sidebar-border: 40 12% 84%;
+    --sidebar-border: 40 8% 87%;
     --sidebar-ring: 43 96% 56%;
   }
 

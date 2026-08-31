@@ -3,6 +3,7 @@ import {
   hexToHslString,
   perceivedLuma,
   contrastText,
+  contrastRatio,
   deriveChartVars,
   deriveSurfaceVars,
   deriveSeriesPalette,
@@ -149,6 +150,10 @@ const themePresets: Record<string, ThemePreset> = {
     },
     dark: {
       loss: '#f8fafc', // slate-50 - clean white for losses in dark mode
+    },
+    light: {
+      profit: '#d97706', // amber-600 - gold that stays readable on white
+      primary: '#d97706',
     }
   },
 
@@ -177,6 +182,10 @@ const themePresets: Record<string, ThemePreset> = {
       profit: '#67e8f9', // cyan-300 - ice blue
       loss: '#e879f9',   // fuchsia-400 - cool magenta
       primary: '#0891b2' // cyan-600 - deep ice
+    },
+    light: {
+      profit: '#0e7490', // cyan-700 - ice blue readable on white
+      loss: '#c026d3',   // fuchsia-600
     }
   },
 
@@ -186,6 +195,9 @@ const themePresets: Record<string, ThemePreset> = {
       profit: '#fcd34d', // amber-300 - bright gold
       loss: '#dc2626',   // red-600 - crimson but brighter than red-800
       primary: '#dc2626' // red-600 - bold crimson
+    },
+    light: {
+      profit: '#d97706', // amber-600 - gold readable on white
     }
   },
 
@@ -903,6 +915,28 @@ function resolveModeColors(
     if (!explicit.primary && brightness(colors.primary) < 80) {
       colors.primary = brighten(colors.primary, 1.3)
     }
+  } else {
+    // Light-mode mirror of the dark safety net: pale colors (yellows, limes,
+    // light cyans) wash out to grey on white surfaces. Colors without an
+    // explicit light override that fall badly short of readable contrast get
+    // darkened until they reach ~3:1 against white. Uniform RGB scaling keeps
+    // the hue, so a theme keeps its identity.
+    const darken = (hex: string) => {
+      let current = hex
+      for (let i = 0; i < 8 && contrastRatio(current, '#ffffff') < 3; i++) {
+        const ch = (offset: number) =>
+          Math.max(0, Math.round(parseInt(current.slice(offset, offset + 2), 16) * 0.9))
+            .toString(16).padStart(2, '0')
+        current = `#${ch(1)}${ch(3)}${ch(5)}`
+      }
+      return current
+    }
+
+    for (const key of ['primary', 'profit', 'loss'] as const) {
+      if (!explicit[key] && contrastRatio(colors[key], '#ffffff') < 2.2) {
+        colors[key] = darken(colors[key])
+      }
+    }
   }
 
   return colors
@@ -1106,7 +1140,10 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     // by side. Profit/loss stay the default green/red (monochrome greys them).
     const mode = isDarkMode ? 'dark' : 'light'
     const adjustedColors = isDemo
-      ? { ...resolveModeColors('default', customColors, mode), primary: resolveModeColors('monochrome', customColors, mode).primary }
+      // Base gold, not the mode-resolved one: demo resets CSS vars to brand
+      // amber, so the inline primary must stay the matching bright gold in
+      // both modes (monochrome's light override would split the palettes).
+      ? { ...resolveModeColors('default', customColors, mode), primary: themePresets.monochrome.colors.primary }
       : resolveModeColors(currentTheme, customColors, mode)
     return {
       ...adjustedColors,

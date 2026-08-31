@@ -24,6 +24,25 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.90.1',
+    date: '2026-08-31',
+    summary: 'Light mode is brighter and theme colours are easier to read.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'A brighter light mode',
+        description: 'The light mode background had a beige-grey tint that made whole pages look dull. The page, sidebar and panels are now near-white with just a hint of warmth, so cards and colours stand out the way they should. Dark mode is unchanged.',
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Theme colours readable in light mode',
+        description: 'Some themes used bright colours that faded into the white background in light mode, leaving profit figures and accents looking washed out or grey. Golds, cyans and limes now shift to deeper shades on light screens, so Deep Yellow, Ice, Crimson, Sunset and others stay clear in both modes.',
+      },
+    ],
+  },
+  {
     version: '2.90.0',
     date: '2026-08-29',
     summary: 'Chart controls in the Theme Studio, and a rebuilt Settings page.',
@@ -3172,4 +3191,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.90.0'
+export const LATEST_CHANGELOG_VERSION = '2.90.1'

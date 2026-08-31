@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { clearOnboardingData } from '@/utils/onboarding';
 
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent, demoAttribution } from '@/lib/analytics';
 import { googleAuthErrorMessage } from '@/lib/auth-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,7 +91,7 @@ export default function Login() {
     try {
       const { user: googleUser, isNewUser } = await signInWithGoogle();
       if (isNewUser) {
-        trackEvent('signup_completed');
+        trackEvent('signup_completed', demoAttribution());
         clearOnboardingData(googleUser.uid);
         handlerNavigated.current = true;
         navigate('/onboarding', { replace: true });

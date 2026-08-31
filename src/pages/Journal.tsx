@@ -167,7 +167,7 @@ function renderJournalMarkdown(content: string): string {
   });
 }
 
-// Renders entry content (as markdown) clamped to ~3 lines with a Read more/Show
+// Renders entry content (as markdown) clamped to ~10 lines with a Read more/Show
 // less toggle. The toggle only appears when content actually overflows the
 // collapsed height (measured), so entries that already fit don't show a dead
 // "Read more". Uses a max-height clamp rather than line-clamp because markdown
@@ -195,7 +195,7 @@ function ExpandableContent({ content, color }: { content: string; color: string 
     <div>
       <div
         ref={ref}
-        className={`text-sm leading-relaxed text-foreground/90 break-words [&>*:first-child]:mt-0 ${!expanded ? 'max-h-[5.5rem] overflow-hidden' : ''}`}
+        className={`text-sm leading-relaxed text-foreground/90 break-words [&>*:first-child]:mt-0 ${!expanded ? 'max-h-[15rem] overflow-hidden' : ''}`}
         style={
           !expanded && overflowing
             ? {
@@ -1478,7 +1478,7 @@ export default function Journal() {
               <p className="text-xs text-muted-foreground">Average trade P&L grouped by your market sentiment when you journaled</p>
             </CardHeader>
             <CardContent className="px-5 pb-5">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 divide-x divide-border/60">
                 {([
                   { key: 'bullish', label: 'Bullish' },
                   { key: 'neutral', label: 'Neutral' },
@@ -1492,7 +1492,7 @@ export default function Journal() {
                   return (
                     <div
                       key={key}
-                      className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-2"
+                      className="px-4 first:pl-0 last:pr-0 space-y-2"
                     >
                       <p className="text-xs font-medium text-muted-foreground">{label}</p>
                       {stat.avg !== null ? (
@@ -2459,7 +2459,7 @@ export default function Journal() {
                     <ExpandableContent content={entry.content} color={themeColors.primary} />
 
                     {linkedTrade && (
-                      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+                      <div className="border-t border-border/60 pt-3 space-y-2">
                         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                           <LinkSimple className="h-3 w-3" />
                           Linked Trade
@@ -2489,7 +2489,7 @@ export default function Journal() {
                     )}
 
                     {linkedTrades.length > 1 && (
-                      <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+                      <div className="border-t border-border/60 pt-3 space-y-2">
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                             <LinkSimple className="h-3 w-3" />
@@ -2535,7 +2535,7 @@ export default function Journal() {
                     )}
 
                     {((entry.emotions && entry.emotions.length > 0) || entry.tags.length > 0) && (
-                      <div className="flex flex-wrap items-center gap-1.5 bg-muted/40 rounded-lg px-3 py-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-3">
                         {/* Emotions are filled chips, tags are outlined, so the two read as different things */}
                         {entry.emotions && entry.emotions.map((emotion) => (
                           <Badge
