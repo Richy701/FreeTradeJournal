@@ -192,7 +192,7 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
+                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
                   {formatPnl(metrics.totalPnL)}
                 </div>
                 <div className="mt-3 space-y-0.5">
@@ -232,7 +232,7 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
+                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
                   {formatPercentage(metrics.winRate)}
                 </div>
                 <div className="mt-3 space-y-0.5">
@@ -293,7 +293,7 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight text-foreground">
+                <div className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
                   {metrics.totalTrades.toLocaleString()}
                 </div>
                 <div className="mt-3 space-y-0.5">
@@ -347,7 +347,7 @@ export function SectionCards() {
           <CardContent>
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
+                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                   {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
                 </div>
                 <div className="mt-3 space-y-0.5">

@@ -1486,7 +1486,7 @@ export default function TradeLog() {
                 </Button>
               )}
               <div className="flex items-center sm:ml-1">
-                <PnlDisplayToggle />
+                <PnlDisplayToggle className="w-full sm:w-auto" itemClassName="flex-1 sm:flex-none" />
               </div>
             </div>
           </div>
@@ -2522,7 +2522,9 @@ export default function TradeLog() {
                     PF: {quickStats.profitFactor >= 999 ? '∞' : quickStats.profitFactor.toFixed(2)}x
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {quickStats.validRRCount} trades with R:R data
+                    {quickStats.validRRCount === 0
+                      ? 'Add a stop loss and take profit to your trades to see this'
+                      : `${quickStats.validRRCount} trades with R:R data`}
                   </p>
                 </div>
               </CardContent>

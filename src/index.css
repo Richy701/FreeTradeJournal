@@ -49,6 +49,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 /* Display font for headings */
 .font-display {
   font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 /* Noise texture overlay for premium feel */

@@ -950,14 +950,14 @@ export function CalendarHeatmap() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 p-3 sm:p-4">
           <div className="px-3 sm:px-4 border-r border-border/40 last:border-r-0">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Monthly P&L</div>
-            <div className="text-lg sm:text-2xl font-bold" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+            <div className="text-lg sm:text-2xl font-bold tabular-nums" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
               {formatPnl(monthlyStats.totalPnL)}
             </div>
             {monthlyStats.bestDay && (
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1">
-                <span>Best <span className="font-semibold" style={{color: themeColors.profit}}>{formatPnl(monthlyStats.bestDay.pnl)}</span></span>
+                <span>Best <span className="font-semibold tabular-nums" style={{color: themeColors.profit}}>{formatPnl(monthlyStats.bestDay.pnl)}</span></span>
                 {monthlyStats.worstDay && monthlyStats.worstDay.pnl < 0 && (
-                  <span>Worst <span className="font-semibold" style={{color: themeColors.loss}}>{formatPnl(monthlyStats.worstDay.pnl)}</span></span>
+                  <span>Worst <span className="font-semibold tabular-nums" style={{color: themeColors.loss}}>{formatPnl(monthlyStats.worstDay.pnl)}</span></span>
                 )}
               </div>
             )}
@@ -965,7 +965,7 @@ export function CalendarHeatmap() {
 
           <div className="px-3 sm:px-4 border-r border-border/40 max-sm:border-r-0">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Win Rate</div>
-            <div className="text-lg sm:text-2xl font-bold" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
+            <div className="text-lg sm:text-2xl font-bold tabular-nums" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
               {monthlyStats.winRate.toFixed(1)}%
             </div>
             <div className="text-[10px] text-muted-foreground mt-1">
@@ -977,7 +977,7 @@ export function CalendarHeatmap() {
 
           <div className="px-3 sm:px-4 border-r border-border/40 max-sm:mt-3 max-sm:pt-3 max-sm:border-t max-sm:border-border/30">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Trades</div>
-            <div className="text-lg sm:text-2xl font-bold" style={{color: themeColors.primary}}>
+            <div className="text-lg sm:text-2xl font-bold tabular-nums" style={{color: themeColors.primary}}>
               {monthlyStats.totalTrades}
             </div>
             <div className="text-[10px] text-muted-foreground mt-1">
@@ -1094,7 +1094,7 @@ export function CalendarHeatmap() {
                             {hasData && (
                               <div className="flex items-center justify-center h-full">
                                 {/* Mobile */}
-                                <div className={cn("sm:hidden text-[10px] font-black tracking-tighter leading-none drop-shadow-sm px-0.5", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
+                                <div className={cn("sm:hidden text-[10px] font-black tracking-tighter tabular-nums leading-none drop-shadow-sm px-0.5", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
                                   {pnlMode === 'percent'
                                     ? fmtCompactPct(day.pnl)
                                     : Math.abs(day.pnl) >= 1000
@@ -1105,7 +1105,7 @@ export function CalendarHeatmap() {
                                   }
                                 </div>
                                 {/* Desktop */}
-                                <div className={cn("hidden sm:block text-xl font-black tracking-tighter leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
+                                <div className={cn("hidden sm:block text-xl font-black tracking-tighter tabular-nums leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
                                   {fmtCompact(day.pnl)}
                                 </div>
                               </div>
