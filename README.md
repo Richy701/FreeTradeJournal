@@ -6,17 +6,21 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Interactive Dashboard
 
-- Fully customizable — show or hide any section and drag widgets (or use arrow keys) into your preferred order; layout persists and syncs across devices on Pro
+- Fully customizable — show or hide any section and drag widgets into your preferred order straight from the page (or use arrow keys); layout persists and syncs across devices on Pro
 - Time period filter — 7D, 30D, 90D, YTD, and All buttons scope your stats, equity curve, and symbol breakdowns to any range (ranges past 30 days are part of Pro)
 - Real-time P&L tracking with a redesigned full-width equity curve — green above your break-even line, red below, with Net, Peak, and max-drawdown figures and a per-trade hover breakdown
 - Live market-prices ticker plus a FRED macro snapshot (Fed funds rate, Treasury yields, CPI, unemployment) at the top of the dashboard — each toggleable in Settings for a cleaner view
 - Account balance displayed on the Total P&L card — starting balance + total return
 - Color-coded performance metrics — win rate, profit factor, total trades, and P&L percentage based on your actual account balance
 - Clickable stat cards that link directly to the Trade Log
-- Daily P&L calendar heatmap with Trading Days count and weekly P&L totals per week
+- Daily P&L calendar heatmap with Trading Days count and weekly P&L totals per week, switchable between money and percentage of account, with scheduled news events shown on their days
+- Combined view of all your accounts at once — every stat, chart, and calendar figure across every account, alongside the per-account views
 - Redesigned calendar day view — click a day to see its P&L, win rate, every trade closed that day, and your journal notes, with quick buttons to add a note or log a trade
 - Daily P&L bar view with best day, worst day, and average-per-day figures
-- AI-powered Trading Coach with psychological pattern detection
+- **Time of Day and Trading Sessions** — which hours of the day and which market windows (Asia, London, New York) you actually make money in, as horizontal bars or a radar, switchable between P&L, win rate, and trade count
+- Live market sessions strip showing which markets are open right now, and a market news feed from trader-focused sources
+- Position size calculator with an AI risk check on the size you are about to take
+- AI-powered Trading Coach with psychological pattern detection — Coach FTJ on the dashboard opens with a briefing on how today went
 - Tilt Meter that learns your usual trading hours from your history and flags entries outside them — counting double when they follow a loss (classic revenge-trading signal)
 - Full multi-currency support — every chart, stat, email, and AI feature uses your chosen account currency instead of assuming dollars
 - Actionable empty states with "Add Trade" and "Import CSV" buttons
@@ -27,7 +31,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Advanced Trade Logging
 
-- Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads)
+- Manual trade entry with comprehensive fields (entry/exit prices, stop loss, take profit, commissions, swaps, spreads) — one-tap direction, times filled in for you, a live P&L preview before you save, and the form remembers what you last traded per account
+- **Screenshot trade import** — upload a photo or screenshot of your closed trades and AI reads them into a preview you check before anything is saved (3 free imports, then 20 a day on Pro)
+- Import from the Add Trade dialog — CSV and screenshot import live inside the same dialog as manual entry, so there is one place to get trades in
 - CSV import with live preview, validation, and smart column mapping
 - Support for Tradovate (Orders, Orders History, and Trades exports), Interactive Brokers (IBKR), MetaTrader 5 (including position history from IC Markets, Pepperstone, and similar), NinjaTrader, DAS Trader, TopStep, standard CSV, and Excel (.xlsx/.xls)
 - Full timestamp preservation on import — entry and exit times carry over from your broker export instead of defaulting to midnight
@@ -35,7 +41,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - IBKR: supports both Closed Positions and Trades/Executions formats with automatic opening/closing execution matching
 - DAS Trader: pairs per-fill rows into complete round trips — short sells, partial exits, and position flips included — picking up the trading date from the file name on time-only daily exports
 - TopStep FIFO order pairing with side-aware queues and futures contract multipliers
-- Regional format support — European semicolon/comma-decimal files, tab-separated files, 12-hour AM/PM times, day-first (DD/MM) dates, and reports with title rows above the data
+- Regional format support — European semicolon/comma-decimal files, tab-separated files, 12-hour AM/PM times, day-first (DD/MM and DD-MM-YYYY) dates with swapped day/month detection, and reports with title rows above the data
+- Import guards — imports refuse column mappings that would store prices as profits, and drop duplicate rows within a file
 - **AI column mapping (Pro)** — unrecognized CSVs get their columns mapped automatically by AI; mapped layouts are remembered and reapplied the next time you import the same broker's export
 - Interactive column mapping UI for unknown/custom CSV formats (free)
 - Stock trades fully supported — tickers are recognised and P&L uses share-based math (price move × share count)
@@ -61,14 +68,18 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Mood vs P&L correlation — see your average return when you were bullish, neutral, or bearish
 - Emotion tracking across 20+ emotional states to identify patterns
 - Screenshot and chart attachment support via drag-and-drop — images are compressed and stored efficiently in IndexedDB, and Pro syncs them to the cloud across devices
-- Trade linking to connect journal entries to specific trades
+- Trade linking to connect journal entries to specific trades — one entry can cover several trades, and linked trades show their results inside the entry
+- Journal opens with the day already written down — a draft of what you traded and how it went, ready to add to
+- Daily calendar notes can carry chart screenshots
 - Per-account journals — each trading account keeps its own entries, matching how trades work
 - Tag system with search and filtering (date range, market, P&L, mood)
 - Free plan includes up to 20 journal entries (existing entries always stay readable and editable); Pro unlocks unlimited journaling
 
 ### Goals & Risk Management
 
-- Organised into Goals, Risk Limits, and Achievements tabs — each area easy to find instead of one long stacked page
+- Goals, risk limits, and achievements on one screen, with goals that reset with their period
+- Risk limits show what sticking to them is worth — how much you would have kept by respecting each rule
+- Risk alerts follow you around the app — a breached limit is flagged wherever you are, not only on the Goals page
 - Goal types: profit target, win rate, trade count, risk/reward, max loss, max drawdown
 - Edit goals in place — change the target, type, or period without deleting and recreating
 - Daily, weekly, and monthly goal periods with live progress tracking that follows your active account
@@ -91,7 +102,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Best/worst trading hours and days analysis
 - Personalized coaching tips based on your performance data, with 24-hour caching and auto-refresh when trade data changes
 - **Import Insight** — import 10+ trades by CSV and the AI immediately gives you a first read of your history: the three things that stand out and where to start
-- Free accounts include 20 AI queries per month with a live remaining-quota display; Pro unlocks the full AI suite
+- Free accounts include 20 AI queries per month with a live remaining-quota display; automatic tips, prompts, and alerts do not use them up. Pro unlocks the full AI suite
 
 ### Pro Features (Powered by Stripe)
 
@@ -110,6 +121,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - **PDF Trading Wrapped** — Spotify Wrapped-style PDF report with gradient backgrounds, donut charts, equity curve with filled area, day-of-week bar charts, streak visualizations, trader personality archetypes, and fun facts
 - **Cloud Sync** — Real-time Firestore sync via Cloud Functions proxy (bypasses content blockers and ad blockers), keeping data safe across devices with automatic restore on new devices
 - **PropTracker Screenshot Import** — upload billing or payout screenshots and AI vision extracts transactions automatically (multiple files, drag & drop, duplicate detection)
+- **Screenshot trade import** — 20 a day on Pro (3 in total on the free plan)
 - Pro status managed via Stripe webhooks → Firebase Cloud Functions → Firestore
 - ProGate component with feature-specific copy, amber CTA button, and price anchor for all gated features
 - ProBadge indicator in the sidebar for subscribed users
@@ -117,6 +129,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### PropTracker
 
+- Rebuilt around your accounts — the page opens on the accounts you are actually trading, with a Performance tab of real analytics behind them
 - Dedicated prop firm tracker with real firm logos for 15 built-in firms (TopStep, Apex, FTMO, The5ers, FundedNext, Tradeify, Take Profit Trader, and more)
 - One card per account (evaluation, funded, instant, express) with firm brand color accents
 - Log every fee (evaluation, reset, monthly) and every payout against each account
@@ -131,7 +144,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - **Success Rate Dashboard (Pro)** — pass rate, total attempts vs funded, average cost-to-fund, money wasted on failed accounts, best firm by ROI
 - **Cost Recovery Tracker** — per-account indicator showing how much more in payouts until break-even, or profit earned after costs recovered
 - Spend by Firm pie chart and cumulative P&L over time area chart (Pro)
-- AI Analysis powered by GPT-5.6 — 1-10 score card, challenge progress tracking, cross-firm pattern analysis (pass rate, cost per attempt, reset count), ROI breakdown with break-even analysis, and actionable next steps (Pro, 5/day)
+- AI Analysis powered by GPT-5.6 — 1-10 score card, challenge progress tracking, cross-firm pattern analysis (pass rate, cost per attempt, reset count), ROI breakdown with break-even analysis, and actionable next steps; the coach remembers its last review (Pro, 5/day)
 - **Screenshot Import (Pro)** — upload a billing or payout screenshot and AI vision auto-extracts all transactions; supports multiple files, drag & drop, and duplicate detection
 - Deadline alerts when a prop firm account expires within 7 days
 - Account size quick-select chips and firm logo dropdown in the add/edit form
@@ -147,6 +160,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Per-account trade isolation and filtering — saving on one account never overwrites another account's data
 - Account deletion automatically cleans up orphaned trades — no stale data blocking CSV re-imports
 - Inline account editing in Settings — edit form replaces the card in-place for better UX
+- Rebuilt Settings page and a profile page that opens with your numbers; the sidebar is grouped by area
 - Account switcher in the sidebar with type and broker info per account
 - Theme-colored initial avatars in the header and sidebar (adapts to active color theme)
 
@@ -155,6 +169,8 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - 14 accent themes — Default, Ocean Blue, Neon, Sunset, Purple, Deep Yellow, Rose Gold, Mint Frost, Ice, Crimson, Mono Black & White, Sage, Clean, Wine
 - 4 full themes — Forest, Graphite, Terminal, and Midnight — that restyle the entire app including backgrounds, cards, and sidebar, in both light and dark mode
 - **Theme Studio (Pro)** — build a theme that is completely yours: separate colors for dark mode, background and sidebar tinting, corner-radius control, a live light/dark preview, and readability warnings for low-contrast colors
+- Chart controls in the Theme Studio — smooth, straight, or stepped lines, fill and grid toggles, and six series colours for multi-symbol charts
+- Light mode keeps theme colours readable — bright golds, cyans, and limes shift to deeper shades on white
 - Custom color picker with hex input — create your own theme with any primary, profit, and loss colors (free)
 - Grouped theme picker — accent colors, full themes, and your custom theme, with mini app previews for full themes
 - Dashboard and analytics charts follow your theme colors
@@ -163,6 +179,13 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - No color flash on load — your theme applies before first paint
 - Dynamic profit/loss and primary color customization
 - Theme persistence across sessions
+
+### Trade Ideas (Beta)
+
+- A Community feed where anyone signed in can post a setup before taking it — symbol, long or short, entry, stop, target, and why, with the planned reward-to-risk shown as you type and one chart screenshot allowed
+- Link a trade from your Trade Log to your own idea and the post shows Worked, Lost, or Break even with the P&L; your record counts it on your Profile
+- You pick a handle and avatar the first time you post; your real name and email stay private, and posting needs a verified email
+- Team updates from FreeTradeJournal sit in the same feed
 
 ### What's New & Release Notes
 
@@ -184,7 +207,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Referral Program
 
-- **Invite 5 friends, earn 14 days of Pro free** — referral link with one-click copy and native share
+- **Stacking rewards** — 3 referrals earns 14 days of Pro, 10 earns another 30, 25 earns another 90, and 50 earns another 180, each added on top of any Pro time you already have; referral link with one-click copy and native share
 - Prominent referral banner on the Dashboard with progress tracker
 - Friends must sign up, verify email, wait 7 days, and log their first trade for the referral to count
 - Anti-fraud: email dedup (catches Gmail dot/plus tricks), circular referral prevention, account age gate
@@ -193,10 +216,9 @@ A free, modern trading journal and analytics platform for traders who want to tr
 
 ### Conversion & Upgrade Flow
 
-- **14-day free Pro trial on any subscription** — start a monthly or yearly plan and the first 14 days are free (unlimited AI coaching, cloud sync, PDF reports, full analytics); a card is required at checkout and you can cancel any time before it ends. The card-free signup trial ran until 7 August 2026 and has been retired; the free plan itself stays card-free forever
-- Trial email flow — trial started confirmation, 2-day ending reminder, and conversion confirmation when trial converts to paid
+- **Monthly or yearly Pro, cancel any time** — the free plan is card-free forever and never expires; Pro charges from day one (the free trials ran until 31 August 2026 and have been retired)
 - AI sample previews behind ProGate blur — free users see realistic example output for AI Trade Analysis, Goal Coach, and Risk Alerts
-- Pricing page with monthly and yearly plans plus trial messaging and FAQ (the lifetime plan retired on 7 August 2026; existing owners keep it forever)
+- Pricing page with monthly and yearly plans and FAQ (the lifetime plan retired on 7 August 2026; existing owners keep it forever)
 - Cloud sync warning on dashboard with prominent "Enable Cloud Sync →" CTA button
 - PropTracker screenshot import button visible to free users with lock indicator (was hidden entirely)
 
@@ -236,7 +258,7 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - `prefers-reduced-motion` respected across hero animations, onboarding transitions, and logo carousel
 - Proper `<label>` / `htmlFor` / `id` associations on all form fields (Dashboard trade modal, Journal entries, file uploads)
 - Semantic heading hierarchy (`<h1>`) on every page for screen readers and SEO
-- Consistent `font-display` (Sora) typography across landing page and app
+- One typeface (Geist) across landing page and app
 - SiteHeader with breadcrumbs visible on mobile (condensed current page name)
 - FAQ accordion items have `id` attributes for deep linking
 - Mobile touch targets scoped to action buttons only — inline links and tabs unaffected
@@ -263,7 +285,6 @@ A free, modern trading journal and analytics platform for traders who want to tr
 - Pro upgrade and cancellation confirmation emails
 - Day 7 and Day 14 retention campaigns with bad email filtering
 - Weekly recap email summarising your trading week, respecting each account's currency
-- Trial started, trial ending (2-day reminder), and trial conversion emails
 - Referral credited and reward earned notifications
 - Hosted PNG banner, List-Unsubscribe headers, and unsubscribe link in all emails
 
@@ -328,7 +349,7 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 
 ## How to Use
 
-1. **Sign Up / Login** — Create an account with email (with verification), sign in with Google, or use Apple Sign-In. Includes forgot/reset password flow
+1. **Sign Up / Login** — Create an account with email (with verification) or sign in with Google. Includes forgot/reset password flow
 2. **Setup** — Name your first trading account, pick a type (Live, Demo, Prop Firm), and set your starting balance
 3. **Dashboard** — View your trading performance at a glance
 4. **Add Trades** — Manual entry or CSV import from your broker
@@ -353,20 +374,20 @@ The build step includes TypeScript compilation, Vite bundling, and Puppeteer-bas
 | --- | --- |
 | **Framework** | React 19 + TypeScript |
 | **Build Tool** | Vite 7 |
-| **Authentication** | Firebase Auth (Google OAuth + Apple Sign-In + Email/Password) |
+| **Authentication** | Firebase Auth (Google OAuth + Email/Password) |
 | **UI Components** | shadcn/ui (Radix UI + Tailwind CSS) |
 | **Charts** | Recharts |
 | **Animations** | Framer Motion |
 | **Forms** | React Hook Form + Zod |
-| **State Management** | React Context API + Zustand |
+| **State Management** | React Context API |
 | **Routing** | React Router DOM v7 |
 | **Date Handling** | date-fns |
 | **Email** | Resend |
+| **Typography** | Geist |
 | **Icons** | Phosphor Icons + Lucide React |
-| **Analytics** | Vercel Analytics + PostHog + Google Analytics |
+| **Analytics** | Vercel Analytics + PostHog |
 | **Video** | Remotion |
 | **SEO** | Build-time prerendering with Puppeteer |
-| **Virtualization** | react-window |
 | **Spreadsheets** | SheetJS (xlsx) |
 | **PDF Generation** | jsPDF + jspdf-autotable |
 | **AI** | OpenAI (via Firebase Cloud Functions) |
