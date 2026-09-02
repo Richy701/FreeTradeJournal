@@ -7,7 +7,8 @@ interface Logo {
   name: string;
   url?: string;
   className?: string;
-  style?: string;
+  /** Per-logo <img> size/treatment overrides (e.g. "h-12", "h-[72px]") */
+  imgClassName?: string;
 }
 
 interface LogoCarouselProps {
@@ -28,7 +29,6 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
           imgElement.src = imgElement.dataset.src || '';
           imgElement.removeAttribute('data-src');
           imgElement.classList.remove('logo-lazy');
-          imgElement.style.opacity = '0.5';
         };
         newImg.src = imgElement.dataset.src || '';
       });
@@ -56,16 +56,22 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
   }, []);
 
   return (
-    <div ref={carouselRef} className={cn("relative w-full overflow-hidden", className)}>
-      <div className="absolute left-0 top-0 z-10 h-full w-12 sm:w-32 bg-gradient-to-r from-background to-transparent" />
-      <div className="absolute right-0 top-0 z-10 h-full w-12 sm:w-32 bg-gradient-to-l from-background to-transparent" />
-
+    <div
+      ref={carouselRef}
+      className={cn(
+        "group relative w-full overflow-hidden",
+        "[mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]",
+        className
+      )}
+    >
       <div className="relative flex overflow-hidden py-8">
-        <div className="flex items-center gap-12 whitespace-nowrap animate-marquee will-change-transform motion-reduce:[animation-play-state:paused]">
+        {/* No flex gap: uniform per-item margins keep both halves exactly equal
+            so the -50% marquee translate loops without a visible seam. */}
+        <div className="flex items-center whitespace-nowrap animate-marquee will-change-transform motion-reduce:[animation-play-state:paused] group-hover:[animation-play-state:paused]">
           {[...logos, ...logos].map((logo, idx) => (
             <div
               key={idx}
-              className="flex items-center justify-center flex-shrink-0 mx-4"
+              className="flex items-center justify-center flex-shrink-0 mx-10"
             >
               {logo.url ? (
                 <img
@@ -77,10 +83,10 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                   loading="lazy"
                   decoding="async"
                   className={cn(
-                    "h-16 w-auto max-w-[180px] opacity-50 hover:opacity-80 transition-opacity duration-300 object-contain logo-lazy",
-                    logo.name === "FundingPips" && "dark:brightness-0 dark:invert",
-                    logo.name === "The5ers" && "dark:brightness-0 dark:invert brightness-0",
-                    logo.name === "FTMO" && "dark:brightness-0 dark:invert"
+                    // Assets are the brands' white/dark-bg variants: shown as-is
+                    // in dark mode, flattened to black for light mode.
+                    "h-16 w-auto max-w-[200px] opacity-60 hover:opacity-100 transition-opacity duration-300 object-contain logo-lazy brightness-0 dark:brightness-100",
+                    logo.imgClassName
                   )}
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';

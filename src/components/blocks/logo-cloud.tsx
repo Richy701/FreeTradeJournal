@@ -2,49 +2,24 @@ import { Link } from "react-router-dom";
 import { LogoCarousel } from "@/components/blocks/logo-carousel";
 
 export function LogoCloud() {
-  const propFirms = [
-    { 
-      name: "E8 Markets",
-      url: "/logos/e8-markets-logo.webp",
-      className: "text-[#6366F1] font-black",
-      style: "height: 48px; width: auto; max-width: 140px;"
-    },
-    { 
-      name: "Funded FX", 
-      url: "/logos/funded-fx-logo.webp",
-      className: "text-[#8B5CF6] font-black" 
-    },
-    { 
-      name: "FundingPips", 
-      url: "/logos/fundingpips-logo-alt.webp",
-      className: "text-[#10B981] font-black"
-    },
-    { 
-      name: "TopStep", 
-      url: "/logos/topstep-logo.webp",
-      className: "text-[#F97316] font-black",
-      style: "height: 72px; width: auto; max-width: 220px;"
-    },
-    { 
-      name: "FTMO", 
-      url: "/logos/ftmo-logo-dark.svg",
-      className: "text-[#0066FF] font-black" 
-    },
-    { 
-      name: "Alpha Capital Group", 
-      url: "/logos/alpha-capital-group-logo.webp",
-      className: "text-[#EC4899] font-black" 
-    },
-    { 
-      name: "Apex Trader Funding", 
-      url: "/logos/apex-trader-funding-logo.webp",
-      className: "text-[#3B82F6] font-black" 
-    },
-    { 
-      name: "The5ers", 
-      url: "/logos/the5ers-logo.webp",
-      className: "text-[#DC2626] font-black"
-    }
+  // Official current brand assets (white/dark-background variants), sourced
+  // from each brand's own site or press kit. Heights are tuned per aspect
+  // ratio so every mark carries similar visual weight in the marquee.
+  const brands = [
+    { name: "FTMO", url: "/logos/ftmo.svg", imgClassName: "h-10" },
+    { name: "TradingView", url: "/logos/tradingview.svg", imgClassName: "h-9" },
+    { name: "Topstep", url: "/logos/topstep.png", imgClassName: "h-10" },
+    { name: "OANDA", url: "/logos/oanda.svg", imgClassName: "h-11" },
+    { name: "Apex Trader Funding", url: "/logos/apex-trader-funding.svg", imgClassName: "h-10" },
+    { name: "Interactive Brokers", url: "/logos/interactive-brokers.svg", imgClassName: "h-9" },
+    { name: "The5ers", url: "/logos/the5ers-logo.webp", imgClassName: "h-10 dark:brightness-0 dark:invert" },
+    { name: "NinjaTrader", url: "/logos/ninjatrader.svg", imgClassName: "h-9" },
+    { name: "E8 Markets", url: "/logos/e8-markets.svg", imgClassName: "h-10" },
+    { name: "Tradovate", url: "/logos/tradovate.png", imgClassName: "h-10" },
+    { name: "Alpha Capital Group", url: "/logos/alpha-capital-group.svg", imgClassName: "h-10" },
+    { name: "FundedNext", url: "/logos/fundednext.png", imgClassName: "h-8" },
+    { name: "FundingPips", url: "/logos/fundingpips.svg", imgClassName: "h-10" },
+    { name: "My Funded Futures", url: "/logos/my-funded-futures.svg", imgClassName: "h-10" },
   ];
 
   return (
@@ -58,7 +33,7 @@ export function LogoCloud() {
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        <LogoCarousel logos={propFirms} />
+        <LogoCarousel logos={brands} />
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
           Compatible with every prop firm, broker, and market

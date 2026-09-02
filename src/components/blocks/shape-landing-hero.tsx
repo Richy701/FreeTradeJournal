@@ -230,12 +230,13 @@ function HeroGeometric({
                             className="flex items-center justify-center gap-3 mb-8 sm:mb-10"
                         >
                             <div className="flex -space-x-2.5">
+                                {/* First letters of the reviewers on the testimonials section, in the same order they render */}
                                 {[
-                                    { initials: 'JM', bg: 'bg-amber-500' },
-                                    { initials: 'AR', bg: 'bg-yellow-600' },
-                                    { initials: 'KT', bg: 'bg-amber-600' },
-                                    { initials: 'DS', bg: 'bg-yellow-500' },
-                                    { initials: 'LP', bg: 'bg-amber-400' },
+                                    { initials: 'B', bg: 'bg-amber-500' },
+                                    { initials: 'A', bg: 'bg-yellow-600' },
+                                    { initials: 'J', bg: 'bg-amber-600' },
+                                    { initials: 'G', bg: 'bg-yellow-500' },
+                                    { initials: 'R', bg: 'bg-amber-400' },
                                 ].map((user, i) => (
                                     <div
                                         key={i}

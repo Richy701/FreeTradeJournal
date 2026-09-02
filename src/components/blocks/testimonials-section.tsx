@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Star } from '@phosphor-icons/react';
+import { Quotes, Star } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { posthog } from '@/lib/posthog';
 
@@ -74,7 +74,7 @@ export function TestimonialsSection() {
 
         {/* Grid — 4 reviews orphan badly in a 3-column grid, so give them a 2x2 */}
         <div className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 gap-4",
+          "grid grid-cols-1 sm:grid-cols-2 gap-5",
           testimonials.length === 4 ? "max-w-4xl mx-auto w-full" : "lg:grid-cols-3"
         )}>
           {testimonials.map((t) => (
@@ -89,20 +89,19 @@ export function TestimonialsSection() {
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
     <div className={cn(
-      "flex flex-col gap-4 p-6 rounded-2xl border border-border/60 bg-card/50",
-      "hover:border-border hover:bg-card transition-colors duration-200"
+      "flex flex-col gap-5 p-6 sm:p-7 rounded-2xl border border-border bg-card",
+      "shadow-sm hover:shadow-md hover:border-amber-500/30 transition-all duration-200"
     )}>
       {/* Stars */}
       {testimonial.rating > 0 && (
-        <div className="flex gap-0.5">
+        <div className="flex gap-1" aria-label={`${testimonial.rating} out of 5 stars`}>
           {[1, 2, 3, 4, 5].map((s) => (
             <Star
               key={s}
+              weight="fill"
               className={cn(
                 "h-4 w-4",
-                s <= testimonial.rating
-                  ? "fill-amber-400 text-amber-400"
-                  : "fill-muted text-muted-foreground/20"
+                s <= testimonial.rating ? "text-amber-500" : "text-muted-foreground/25"
               )}
             />
           ))}
@@ -110,14 +109,17 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       )}
 
       {/* Quote */}
-      <p className="text-sm leading-relaxed text-foreground/80 flex-1">
-        "{testimonial.quote}"
-      </p>
+      <div className="flex-1 flex flex-col gap-2">
+        <Quotes weight="fill" className="h-6 w-6 text-amber-500/40" aria-hidden="true" />
+        <p className="text-base leading-7 text-foreground/90">
+          {testimonial.quote}
+        </p>
+      </div>
 
       {/* Author */}
-      <div className="flex items-center gap-3 pt-2 border-t border-border/40">
-        <div className="h-8 w-8 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-          <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+      <div className="flex items-center gap-3 pt-4 border-t border-border/60">
+        <div className="h-9 w-9 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
             {testimonial.name.charAt(0).toUpperCase()}
           </span>
         </div>

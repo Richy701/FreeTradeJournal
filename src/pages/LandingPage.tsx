@@ -35,15 +35,16 @@ export default function LandingPage() {
       {/* Navigation overlay */}
       <header className="absolute top-0 left-0 right-0 z-50" style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}>
         <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
             <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
-            <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
+            {/* Wordmark hides on the narrowest phones (<380px) so the header never exceeds the viewport; below sm it also drops a size. */}
+            <span className="hidden min-[380px]:inline text-base sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
           </Link>
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
+            <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-2 sm:px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
               Pricing
             </Link>
-            <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
+            <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-2 sm:px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
               Sign In
             </Link>
             <ThemeToggle />
@@ -210,7 +211,7 @@ export default function LandingPage() {
         description="Finally know if your prop firm journey is actually profitable. Log every evaluation fee, reset cost, and payout across all your accounts. See invested vs earned, net P&L per firm, and get an AI-powered verdict on which firms are worth your money."
         images={[
           { src: "/images/screenshots/prop-tracker-screenshot.webp", alt: "PropTracker" },
-          { src: "/images/screenshots/prop-tracker-firms-screenshot.webp", alt: "PropTracker firm accounts" }
+          { src: "/images/screenshots/prop-tracker-performance-screenshot.webp", alt: "PropTracker performance analytics" }
         ]}
         imageLayout="stack"
         reverseLayout={false}

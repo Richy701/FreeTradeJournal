@@ -251,7 +251,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                         alt={img.alt}
                                         className={index === 0 ? undefined : "h-full"}
                                         imgClassName={cn(
-                                            index === 0 ? "w-full h-auto object-contain" : "w-full h-full object-cover",
+                                            index === 0 ? "w-full h-auto object-contain" : "w-full h-full object-contain bg-black",
                                             img.className
                                         )}
                                     />

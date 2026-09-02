@@ -1,8 +1,6 @@
 import React from 'react';
-import { useCurrentFrame, useVideoConfig } from 'remotion';
 import { BookOpen } from '@phosphor-icons/react';
-import SceneContainer from '../shared/SceneContainer';
-import { staggeredOpacity, staggeredTranslateY, iconScale } from '../shared/animations';
+import ScreenshotScene from '../shared/ScreenshotScene';
 
 interface JournalSceneProps {
   backgroundColor?: string;
@@ -17,65 +15,16 @@ const JournalScene: React.FC<JournalSceneProps> = ({
   foregroundColor = '#ffffff',
   primaryColor = '#f59e0b',
   mutedColor = '#a1a1aa',
-  isMobile,
-}) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const titleSize = 32;
-  const subtitleSize = 16;
-
-  return (
-    <SceneContainer backgroundColor={backgroundColor}>
-      <div
-        style={{
-          opacity: staggeredOpacity(frame, fps, 0),
-          transform: `scale(${iconScale(frame, fps)})`,
-        }}
-      >
-        <BookOpen
-          size={64}
-          color={primaryColor}
-          strokeWidth={1.5}
-        />
-      </div>
-      <div
-        style={{
-          opacity: staggeredOpacity(frame, fps, 1),
-          transform: `translateY(${staggeredTranslateY(frame, fps, 1)}px)`,
-        }}
-      >
-        <h2
-          style={{
-            fontSize: titleSize,
-            fontWeight: 700,
-            color: foregroundColor,
-            margin: 0,
-            marginTop: 24,
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-          }}
-        >
-          Journal Your Journey
-        </h2>
-      </div>
-      <div
-        style={{
-          opacity: staggeredOpacity(frame, fps, 2),
-          transform: `translateY(${staggeredTranslateY(frame, fps, 2)}px)`,
-        }}
-      >
-        <p
-          style={{
-            fontSize: subtitleSize,
-            color: mutedColor,
-            marginTop: 12,
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-          }}
-        >
-          Document strategies, track mindset, and learn from every trade
-        </p>
-      </div>
-    </SceneContainer>
-  );
-};
+}) => (
+  <ScreenshotScene
+    src="/images/screenshots/trading-journal-screenshot.webp"
+    title="Journal Your Journey"
+    subtitle="Document strategies, track mindset, and learn from every trade"
+    icon={<BookOpen size={48} color={primaryColor} strokeWidth={1.5} />}
+    backgroundColor={backgroundColor}
+    foregroundColor={foregroundColor}
+    mutedColor={mutedColor}
+  />
+);
 
 export default JournalScene;

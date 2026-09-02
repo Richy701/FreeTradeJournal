@@ -202,39 +202,6 @@ export const Footer7 = ({
                 </motion.div>
               ))}
             </div>
-            {/* Badges */}
-            <div className="flex flex-row gap-3 lg:flex-col lg:gap-4 lg:ml-auto lg:items-end">
-              {/* Product Hunt Badge */}
-              <a
-                href="https://www.producthunt.com/products/freetradejournal?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-freetradejournal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opacity-80 hover:opacity-100 transition-opacity duration-200"
-              >
-                <img
-                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1012535&theme=neutral&t=1757000479250"
-                  alt="FreeTradeJournal - Track, analyse, and improve your trading performance | Product Hunt"
-                  className="w-[150px] h-[32px] sm:w-[200px] sm:h-[43px] lg:w-[250px] lg:h-[54px]"
-                  width="250"
-                  height="54"
-                />
-              </a>
-              {/* Peerlist Badge */}
-              <a
-                href="https://peerlist.io/richy7/project/free-trade-journal"
-                target="_blank"
-                rel="noreferrer"
-                className="opacity-80 hover:opacity-100 transition-opacity duration-200"
-              >
-                <img
-                  src="https://peerlist.io/api/v1/projects/embed/PRJHEOG6A7OOGQDDMIO6KA9M7ABO7A?showUpvote=false&theme=light"
-                  alt="Free Trade journal"
-                  className="w-auto h-[32px] sm:h-[43px] lg:h-[54px]"
-                  width={250}
-                  height={54}
-                />
-              </a>
-            </div>
           </div>
         </div>
         {/* Gradient bottom divider */}
