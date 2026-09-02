@@ -43,10 +43,12 @@ registerRoute(
   })
 );
 
-// SPA navigation fallback
+// SPA navigation fallback. /__/ is Firebase's reserved namespace: the Google
+// sign-in popup opens /__/auth/handler on this origin (proxied in vercel.json)
+// and must reach the network, not the cached app shell.
 const navigationHandler = createHandlerBoundToURL('/index.html');
 const navigationRoute = new NavigationRoute(navigationHandler, {
-  denylist: [/^\/api/],
+  denylist: [/^\/api/, /^\/__\//],
 });
 registerRoute(navigationRoute);
 
