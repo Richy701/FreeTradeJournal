@@ -923,8 +923,10 @@ export function createTradeIdeaFunctions(deps: TradeIdeaDeps) {
     await profileRef(uid).delete().catch((err) => console.error("cleanupUserTradeIdeas: profile delete failed", err));
   }
 
+  // Feature retired 2026-09-08: callable kept for existing data + account
+  // deletion cleanup, but no warm instance while nothing calls it.
   const tradeIdeas = functions
-    .runWith({ minInstances: 1 })
+    .runWith({ minInstances: 0 })
     .https.onCall(reported<{ action?: string } & Record<string, unknown>>("tradeIdeas", async (data, context) => {
       const { action, ...payload } = data ?? {};
       const handler = typeof action === "string" ? handlers[action] : undefined;

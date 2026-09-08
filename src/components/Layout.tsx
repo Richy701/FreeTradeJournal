@@ -5,7 +5,6 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { MobileHeader } from '@/components/mobile-header';
 import { DemoBanner } from '@/components/demo-banner';
 import { FounderOfferAnnouncement } from '@/components/founder-offer-announcement';
-import { TradeIdeasAnnouncement } from '@/components/trade-ideas-announcement';
 import { LifetimeFarewellDialog } from '@/components/lifetime-farewell-dialog';
 import { BirthdayLifetimeDialog } from '@/components/birthday-lifetime-dialog';
 import { BirthdayLifetimeAnnouncement } from '@/components/birthday-lifetime-announcement';
@@ -54,7 +53,6 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         <DemoBanner />
         <FounderOfferAnnouncement />
         <BirthdayLifetimeAnnouncement />
-        <TradeIdeasAnnouncement />
         <MobileHeader />
         <motion.main
           id="main-content"

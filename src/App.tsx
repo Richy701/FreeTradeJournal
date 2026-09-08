@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { RouteSpinner } from '@/components/route-spinner';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -59,7 +59,6 @@ const ForexTradingJournal = lazyWithRetry(() => import('@/pages/ForexTradingJour
 const FuturesTradingTracker = lazyWithRetry(() => import('@/pages/FuturesTradingTracker'));
 const PropFirmDashboard = lazyWithRetry(() => import('@/pages/PropFirmDashboard'));
 const TradeIdeas = lazyWithRetry(() => import('@/pages/TradeIdeas'))
-const CommunityIdeas = lazyWithRetry(() => import('@/pages/CommunityIdeas'))
 const Coach = lazyWithRetry(() => import('@/pages/Coach'));
 const DayTradingJournal = lazyWithRetry(() => import('@/pages/DayTradingJournal'));
 const OnlineTradingJournal = lazyWithRetry(() => import('@/pages/OnlineTradingJournal'));
@@ -185,7 +184,8 @@ function App() {
                   <Route path="/calculator" element={<Calculator />} />
                   <Route path="/journal" element={<Journal />} />
                   <Route path="/ideas" element={<TradeIdeas />} />
-                  <Route path="/trade-ideas" element={<CommunityIdeas />} />
+                  {/* Community Trade Ideas beta retired 2026-09-08; old links land on the dashboard */}
+                  <Route path="/trade-ideas" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
                 </Route>

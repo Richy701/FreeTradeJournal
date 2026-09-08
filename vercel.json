@@ -1,10 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/commission-report",
-      "schedule": "0 8 * * 1"
-    }
-  ],
   "redirects": [
     {
       "source": "/online-trading-journal",

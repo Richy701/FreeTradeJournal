@@ -27,7 +27,6 @@ const ROUTES = [
   ['coach', '/coach'],
   ['prop-tracker', '/prop-tracker'],
   ['ideas', '/ideas'],
-  ['trade-ideas', '/trade-ideas'],
   ['calculator', '/calculator'],
   ['settings', '/settings'],
 ]

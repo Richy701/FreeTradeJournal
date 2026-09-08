@@ -24,6 +24,18 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.91.0',
+    date: '2026-09-08',
+    summary: 'Trade Ideas beta paused.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Trade Ideas paused',
+        description: 'The Community section and the Trade Ideas feed have been taken out of the sidebar while we rethink it. Nothing you posted has been deleted, and the results you linked from your Trade Log are kept.',
+      },
+    ],
+  },
+  {
     version: '2.90.1',
     date: '2026-08-31',
     summary: 'Light mode is brighter and theme colours are easier to read.',
@@ -3191,4 +3203,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.90.1'
+export const LATEST_CHANGELOG_VERSION = '2.91.0'

@@ -2387,33 +2387,13 @@ exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutS
         LIVE_SUB_STATUSES.includes(existingSub?.status)) {
         throw new functions.https.HttpsError("failed-precondition", "You already have an active subscription. Switch plans from Settings → Subscription.");
     }
-    // Partner ref links pre-apply the partner's discount code so referrals
-    // don't pay full price by forgetting the code. Codes are resolved by name
-    // (they get deactivated/recreated on coupon changes; names are stable).
-    const PARTNER_CODES = {
-        eunice: { subscription: "GWORLZ20", lifetime: "GWORLZLIFE" },
-    };
     let autoPromoId = "";
-    const partnerCodes = ref ? PARTNER_CODES[ref] : undefined;
-    if (partnerCodes) {
-        try {
-            const found = await getStripe().promotionCodes.list({
-                code: isLifetime ? partnerCodes.lifetime : partnerCodes.subscription,
-                active: true,
-                limit: 1,
-            });
-            autoPromoId = found.data[0]?.id ?? "";
-        }
-        catch {
-            // Lookup failed — fall back to the manual promo-code field
-        }
-    }
     // The pricing page advertises the discounted lifetime price, so apply the
     // code for the buyer instead of trusting them to retype it at checkout.
     // FOUNDER149 until Aug 7 2026, FTJBIRTHDAY for the birthday week. Each
     // code's expiry also lives in Stripe — when it lapses, this quietly falls
     // back to the manual promo-code field.
-    if (!autoPromoId && isLifetime) {
+    if (isLifetime) {
         try {
             const found = await getStripe().promotionCodes.list({
                 code: Date.now() < LIFETIME_RETIRES_AT ? "FOUNDER149" : BIRTHDAY_PROMO_CODE,
