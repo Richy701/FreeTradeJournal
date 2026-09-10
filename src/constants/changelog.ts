@@ -24,6 +24,47 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.92.0',
+    date: '2026-09-10',
+    summary: 'Turn coaching into a weekly habit.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Clearer feature pictures',
+        description: 'Feature screenshots keep their proportions in consistent previews. Select Enlarge to inspect the full picture without leaving the release notes.',
+      },
+      {
+        type: 'fixed',
+        text: 'Trade Insights and AI Coach work in the demo',
+        description: 'Fixed a crash when opening the analysis panels in demo mode.',
+      },
+      {
+        type: 'new',
+        text: 'A quick review after every trade',
+        highlight: true,
+        image: { src: '/screenshots/post-trade-review.png', alt: 'Post-trade review with plan-following choices and a reflection saved to the journal.' },
+        link: { to: '/trades', label: 'Review a trade' },
+        description: 'Open Quick review from a trade, record whether you followed your plan, and write what you would repeat or change. Your reflection saves directly to a linked post-trade journal entry. Reopen it to update the same review, while your other journal notes stay intact.',
+      },
+      {
+        type: 'new',
+        text: 'Your weekly focus',
+        highlight: true,
+        image: { src: '/screenshots/weekly-focus.png', alt: 'Weekly focus with a seven-day calendar and daily habit check-in buttons.' },
+        link: { to: '/coach#weekly-focus', label: 'Choose your weekly focus' },
+        description: 'Choose one habit from Coach FTJ or write your own, then check in over seven days. Record whether you followed it, missed it, or did not trade. Your dashboard brings you back to your active focus. Explore an active week and a completed review in the demo.',
+      },
+      {
+        type: 'new',
+        text: 'Review, reflect, and repeat',
+        highlight: true,
+        image: { src: '/screenshots/weekly-focus-review.png', alt: 'End-of-week focus review showing recorded days and a reflection form.' },
+        link: { to: '/coach#weekly-focus', label: 'Open your focus' },
+        description: 'After seven days, see how often you followed your habit and save a reflection before choosing your next focus. You can correct check-ins or end a focus early. Each trading account keeps its own history, included in backups and Pro cloud sync.',
+      },
+    ],
+  },
+  {
     version: '2.91.1',
     date: '2026-09-10',
     summary: 'Easier trade search, clearer mobile controls, and AI reviews you can keep reading.',
@@ -3235,4 +3276,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.91.1'
+export const LATEST_CHANGELOG_VERSION = '2.92.0'

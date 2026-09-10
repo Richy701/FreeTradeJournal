@@ -7,7 +7,7 @@ import { AnalysisUpgradeOffer } from './analysis-upgrade-offer';
 import { ProGate } from './pro-gate';
 
 const state = vi.hoisted(() => ({
-  auth: { user: { uid: 'returning', metadata: { creationTime: '2025-01-01' } }, isDemo: false, hadSession: true },
+  auth: { user: { uid: 'returning', metadata: { creationTime: '2025-01-01' } } as { uid: string; metadata?: { creationTime: string } }, isDemo: false, hadSession: true },
   pro: { isPro: false, isLoading: false, hasAIAccess: false, freeAiQuota: { remaining: 0, limit: 5 } },
   track: vi.fn(),
 }));
@@ -48,6 +48,14 @@ function renderOffer(count = 10) {
 }
 
 describe('post-analysis annual offer', () => {
+  it.each([true, false])('handles missing account metadata without crashing (demo: %s)', isDemo => {
+    state.auth.user = { uid: isDemo ? 'demo-user' : 'missing-metadata' };
+    state.auth.isDemo = isDemo;
+    expect(() => renderOffer()).not.toThrow();
+    expect(container.querySelector('aside')).toBeNull();
+    expect(state.track).not.toHaveBeenCalled();
+  });
+
   it('shows full annual billing, links to the selected plans, and counts visibility once', () => {
     renderOffer();
     expect(container.textContent).toContain('$99.99');
@@ -63,7 +71,7 @@ describe('post-analysis annual offer', () => {
     if (condition === 'pro') state.pro.isPro = true;
     if (condition === 'demo') state.auth.isDemo = true;
     if (condition === 'loading') state.pro.isLoading = true;
-    if (condition === 'new') state.auth.user.metadata.creationTime = new Date().toISOString();
+    if (condition === 'new') state.auth.user.metadata!.creationTime = new Date().toISOString();
     if (condition === 'first_session') state.auth.hadSession = false;
     renderOffer(condition === 'under_ten' ? 9 : 10);
     expect(container.querySelector('aside')).toBeNull();

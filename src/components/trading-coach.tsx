@@ -382,7 +382,7 @@ const TIP_SEVERITY_ORDER: Record<string, number> = {
 const AI_COACH_CACHE_KEY = 'ftj-ai-coaching-tips'
 const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
 
-export function TradingCoach() {
+export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: string) => void } = {}) {
   const { themeColors, alpha } = useThemePresets()
   const { getCurrencySymbol, formatCurrency } = useSettings()
   const { getTrades, isDemo } = useDemoData()
@@ -1501,7 +1501,7 @@ export function TradingCoach() {
             <>
               {leadTip && (
                 <div className="group flex items-start gap-3">
-                  <p className="text-sm leading-relaxed flex-1"><Emphasize text={cleanDashes(leadTip.message)} /></p>
+                  <div className="min-w-0 flex-1"><p className="text-sm leading-relaxed"><Emphasize text={cleanDashes(leadTip.message)} /></p>{onChooseFocus && <Button variant="outline" size="sm" className="mt-3 min-h-11" onClick={() => onChooseFocus(cleanDashes(leadTip.message))}>Use this tip for my weekly focus</Button>}</div>
                   <button
                     type="button"
                     onClick={() => dismissTip(leadTip.key)}
@@ -1521,6 +1521,7 @@ export function TradingCoach() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold leading-snug">{cleanDashes(tip.title)}</p>
                         <p className="text-sm text-muted-foreground leading-relaxed mt-1"><Emphasize text={cleanDashes(tip.message)} /></p>
+                        {onChooseFocus && <Button variant="outline" size="sm" className="mt-3 min-h-11 whitespace-normal text-left" onClick={() => onChooseFocus(cleanDashes(tip.message))}>Use this tip for my weekly focus</Button>}
                       </div>
                       <button
                         type="button"

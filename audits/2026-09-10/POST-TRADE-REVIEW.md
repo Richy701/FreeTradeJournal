@@ -1,0 +1,11 @@
+# Post-trade review
+
+Quick review is available on each Trade Log row and mobile trade card. The shadcn dialog records plan adherence and a reflection, saving a linked post-trade entry in the existing journal store. Strategy and emotions use the trade's existing fields. Existing journal notes are preserved; subsequent quick reviews update the same marked entry and retain title, tags, screenshots and other journal metadata. An exact-entry journal URL opens that entry for editing.
+
+The feature uses existing account-scoped journal storage, backup and Pro sync. It introduces no new storage key, backend endpoint, AI call or charge. Demo saves use the existing read-only guard. Loading gates wait for authentication, account and Pro status, plus initial Pro sync. Saves re-read storage, validate the trade is still present, reject corrupt journal data and preserve unrelated entries. A changed review is rejected rather than silently overwriting a draft based on an old version. This does not claim transactional cross-device conflict resolution.
+
+Validation: 342 tests passed across 36 files, including five new model tests. The actual Trade Log and Journal browser fixture passed create, reopen, update without duplicates, exact-entry navigation and storage-failure preservation. Screenshots at 390px and 1280px and both themes were captured; mobile and desktop dark screenshots were visually inspected. The screenshot is included in v2.92.0 release notes and What's New. Browser fixtures use existing demo trades and mocked account/auth state; external requests are blocked. Live cloud delivery was not exercised.
+
+## Separate demo issue reported during implementation
+
+A fresh real demo session, with service workers disabled, reproduces a crash on both `/ideas` and `/coach`. React's error boundary reports `Cannot read properties of undefined (reading 'creationTime')` in the shared `AnalysisUpgradeOffer`. The date is read before the demo exclusion, and the demo user has no metadata. The user approved an early demo exclusion and optional metadata access. Both missing-metadata regression cases failed before the fix. The shared offer now excludes demo users before reading metadata and safely handles metadata being absent.

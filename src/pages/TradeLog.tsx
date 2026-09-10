@@ -61,6 +61,7 @@ import { TradeLogFilters, TradeLogFilterPills, EMPTY_FILTERS, countActiveFilters
 import { AIJournalPrompts } from '@/components/ai-journal-prompts';
 import { ImportInsightDialog } from '@/components/import-insight-dialog';
 import { ScreenshotTradeImportDialog } from '@/components/screenshot-trade-import-dialog';
+import { PostTradeReview } from '@/components/post-trade-review';
 import { AITradeReview } from '@/components/ai-trade-review';
 import { AIStrategyTagger } from '@/components/ai-strategy-tagger';
 import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
@@ -189,6 +190,7 @@ export default function TradeLog() {
 
   // AI feature state
   const [journalPromptTrade, setJournalPromptTrade] = useState<Trade | null>(null);
+  const [quickReviewTrade, setQuickReviewTrade] = useState<Trade | null>(null);
   const [reviewingTradeId, setReviewingTradeId] = useState<string | null>(null);
   const [isStrategyTaggerOpen, setIsStrategyTaggerOpen] = useState(false);
 
@@ -2851,6 +2853,7 @@ export default function TradeLog() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Quick review" onClick={() => setQuickReviewTrade(trade)}><Note className="h-4 w-4" /></Button>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -2994,6 +2997,7 @@ export default function TradeLog() {
                       )}
 
                       <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/20">
+                        <Button variant="secondary" className="col-span-2 min-h-11" onClick={() => setQuickReviewTrade(trade)}><Note className="h-4 w-4" />Quick review</Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -3454,6 +3458,7 @@ export default function TradeLog() {
 
       
       </div>
+      {quickReviewTrade && <PostTradeReview trade={quickReviewTrade} onClose={() => setQuickReviewTrade(null)} />}
       {/* AI Features */}
       <AIJournalPrompts
         trade={journalPromptTrade}

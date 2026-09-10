@@ -1,3 +1,4 @@
+import { FeatureScreenshot } from '@/components/feature-screenshot'
 import { useState } from 'react'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
@@ -112,11 +113,10 @@ export default function Changelog() {
                                 <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                               )}
                               {item.highlight && item.image && (
-                                <img
+                                <FeatureScreenshot
                                   src={item.image.src}
                                   alt={item.image.alt}
-                                  loading="lazy"
-                                  className="mt-3 w-full rounded-lg border border-border/60"
+                                  className="mt-3 rounded-lg border border-border/60"
                                 />
                               )}
                             </li>

@@ -9,6 +9,8 @@ import {
   DEMO_TRADING_RISK_RULES,
 } from '@/data/demo-data';
 import { UserStorage } from '@/utils/user-storage';
+import { createDemoWeeklyFocus } from '@/data/demo-weekly-focus';
+import { WEEKLY_FOCUS_KEY } from '@/lib/weekly-focus';
 
 // The fake uid used to scope the demo sandbox in localStorage. Every demo write
 // lands under `user_demo-user_*` and is wiped on exit, so it never touches a
@@ -38,6 +40,7 @@ export async function seedDemoStorage(): Promise<void> {
     ['propFirmTransactions', JSON.stringify(DEMO_PROP_TRANSACTIONS)],
     ['tradingGoals', JSON.stringify(DEMO_TRADING_GOALS)],
     ['riskRules', JSON.stringify(DEMO_TRADING_RISK_RULES)],
+    [WEEKLY_FOCUS_KEY, JSON.stringify(createDemoWeeklyFocus(DEMO_ACCOUNT_ID))],
     ['onboardingCompleted', 'true'],
   ];
   await Promise.all(

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { readFocusRecords } from '@/lib/weekly-focus';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { HexColorPicker } from 'react-colorful';
 import { toast } from 'sonner';
@@ -246,7 +247,7 @@ export default function Settings() {
   const [editForm, setEditForm] = useState<TradingAccount | null>(null);
 
   const exportData = async () => {
-    const keys = ['trades','accounts','journalEntries','tradingGoals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions'];
+    const keys = ['trades','accounts','journalEntries','tradingGoals','riskRules','settings','onboarding','onboardingCompleted','propFirmAccounts','propFirmTransactions','coachingFocus'];
     const raw: Record<string, any> = {};
     keys.forEach(k => { const v = userStorage.getItem(k); if (v) try { raw[k] = JSON.parse(v); } catch { raw[k] = v; } });
 
@@ -289,6 +290,7 @@ export default function Settings() {
     reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
+        const coachingFocus = data.coachingFocus !== undefined ? readFocusRecords(JSON.stringify(data.coachingFocus)) : undefined;
         const writes: Promise<void>[] = [];
         if (data.trades) writes.push(userStorage.setItem('trades', JSON.stringify(data.trades)));
         if (data.accounts) writes.push(userStorage.setItem('accounts', JSON.stringify(data.accounts)));
@@ -300,6 +302,7 @@ export default function Settings() {
         if (data.onboardingCompleted !== undefined) writes.push(userStorage.setItem('onboardingCompleted', String(data.onboardingCompleted)));
         if (data.propFirmAccounts) writes.push(userStorage.setItem('propFirmAccounts', JSON.stringify(data.propFirmAccounts)));
         if (data.propFirmTransactions) writes.push(userStorage.setItem('propFirmTransactions', JSON.stringify(data.propFirmTransactions)));
+        if (coachingFocus) writes.push(userStorage.setItem('coachingFocus', JSON.stringify(coachingFocus)));
 
         // Restore screenshot bytes bundled by v2.1 backups
         if (data.images && typeof data.images === 'object') {

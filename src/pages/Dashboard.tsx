@@ -1,4 +1,5 @@
 import { startOfWeek } from '@/lib/week'
+import { WeeklyFocus } from '@/components/weekly-focus'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { trackGateHit } from '@/lib/track-activity';
 import { trackEvent } from '@/lib/analytics'
@@ -769,6 +770,7 @@ export default function Dashboard() {
       <SiteHeader />
 
       <GettingStartedChecklist refreshKey={dataVersion} />
+      <WeeklyFocus compact />
 
       <ImportInsightDialog
         open={!!importInsightTrades}
@@ -1131,14 +1133,10 @@ export default function Dashboard() {
                           Cancel
                         </Button>
                         <Button
-                          size="sm"
-                          className="shadow-sm gap-2 px-5"
                           onClick={handleSaveTrade}
                           disabled={!tradeForm.symbol || (!tradeForm.pnl && (!tradeForm.entryPrice || !tradeForm.exitPrice))}
-                          style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                         >
-                          <CurrencyDollar className="h-3.5 w-3.5" />
-                          Save Trade
+                          Save trade
                         </Button>
                       </div>
                     </div>

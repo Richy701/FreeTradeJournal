@@ -1,3 +1,4 @@
+import { PLAN_ANSWERS, type PlanAnswer } from '@/lib/post-trade-review';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { trackActivity, trackGateHit } from '@/lib/track-activity';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -108,6 +109,7 @@ interface Trade {
 }
 
 interface JournalEntry {
+  quickReview?: { tradeId: string; plan: PlanAnswer };
   id: string;
   title: string;
   content: string;
@@ -624,6 +626,14 @@ export default function Journal() {
   // when one covers exactly those trades. Otherwise open a new pre-linked entry.
   useEffect(() => {
     if (isLoadingTrades || !entriesLoaded) return;
+    const entryId = searchParams.get('entry');
+    if (entryId) {
+      const entry = entries.find(item => item.id === entryId);
+      if (entry) startEdit(entry);
+      searchParams.delete('entry');
+      setSearchParams(searchParams, { replace: true });
+      return;
+    }
     const param = searchParams.get('trade');
     if (!param) return;
     const ids = Array.from(new Set(param.split(',').map(s => s.trim()).filter(Boolean)))
@@ -2433,6 +2443,7 @@ export default function Journal() {
                                 {linkedTrade.symbol} {formatCurrency(linkedTrade.pnl, true)}
                               </Badge>
                             )}
+                            {entry.quickReview && <Badge variant="outline">{PLAN_ANSWERS[entry.quickReview.plan]}</Badge>}
                             {linkedTrades.length > 1 && (
                               <Badge
                                 variant="outline"

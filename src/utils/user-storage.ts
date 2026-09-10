@@ -39,7 +39,7 @@ export function isSettingsDirty(uid: string | null): boolean {
 // local edits haven't reached the cloud. Both live here (not sync-engine.ts)
 // because offline dirty-marking below needs them and the engine already
 // imports from this module — the engine re-exports nothing; it imports these.
-export const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'] as const;
+export const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings', 'coachingFocus'] as const;
 export const SYNC_DIRTY_PREFIX = 'ftj_sync_dirty_';
 
 // Records a local edit to a synced key made while the sync engine is NOT

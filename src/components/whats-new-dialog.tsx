@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Plus, Lightning, Bug, CaretRight, CaretDown, ArrowSquareOut } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
+import { FeatureScreenshot } from '@/components/feature-screenshot'
 
 const typeConfig: Record<ChangelogItemType, { label: string; icon: typeof Plus; color: string; bg: string }> = {
   new: { label: 'New', icon: Plus, color: '#22c55e', bg: '#22c55e15' },
@@ -44,11 +45,10 @@ function FeatureCard({ item, index, onNavigate }: { item: ChangelogItem; index: 
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms`, animationDuration: '350ms' }}
     >
       {item.image && (
-        <img
+        <FeatureScreenshot
           src={item.image.src}
           alt={item.image.alt}
-          loading="lazy"
-          className="w-full border-b border-border/60"
+          className="border-b border-border/60"
         />
       )}
       <div className="p-3.5">

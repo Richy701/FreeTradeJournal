@@ -17,9 +17,9 @@ const dollars = (price: number) => `$${price.toFixed(2)}`;
 export function AnalysisUpgradeOffer({ tradeCount }: { tradeCount: number }) {
   const { user, isDemo, hadSession } = useAuth();
   const { isPro, isLoading } = useProStatus();
-  const createdAt = Date.parse(user?.metadata.creationTime ?? '');
-  if (!user || isDemo || isLoading || isPro || !hadSession || tradeCount < 10 ||
-      !Number.isFinite(createdAt) || Date.now() - createdAt < DAY) return null;
+  if (!user || isDemo || isLoading || isPro || !hadSession || tradeCount < 10) return null;
+  const createdAt = Date.parse(user.metadata?.creationTime ?? '');
+  if (!Number.isFinite(createdAt) || Date.now() - createdAt < DAY) return null;
 
   return <EligibleOffer key={user.uid} uid={user.uid} tradeCount={tradeCount} />;
 }

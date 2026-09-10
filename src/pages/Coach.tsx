@@ -5,11 +5,19 @@ import { AppFooter } from "@/components/app-footer"
 import { useThemePresets } from "@/contexts/theme-presets"
 import { useDemoData } from "@/hooks/use-demo-data"
 import { Brain } from "@phosphor-icons/react"
+import { useState } from 'react'
+import { WeeklyFocus, type FocusSuggestion } from '@/components/weekly-focus'
+import { useAccounts } from '@/contexts/account-context'
+import { trackEvent } from '@/lib/analytics'
+import { useAuth } from '@/contexts/auth-context'
 
 export default function Coach() {
   const { themeColors, alpha } = useThemePresets()
   const { getTrades } = useDemoData()
   const trades = getTrades() || []
+  const { activeAccount, isAllAccounts } = useAccounts()
+  const { user } = useAuth()
+  const [suggestion, setSuggestion] = useState<(FocusSuggestion & { accountId: string; userId?: string }) | undefined>()
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -30,7 +38,11 @@ export default function Coach() {
       </div>
 
       <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <TradingCoach />
+        <WeeklyFocus suggestion={suggestion?.accountId === activeAccount?.id && suggestion?.userId === user?.uid ? suggestion : undefined} />
+        <TradingCoach onChooseFocus={!isAllAccounts && activeAccount ? message => {
+          setSuggestion({ message, selection: Date.now(), accountId: activeAccount.id, userId: user?.uid })
+          trackEvent('weekly_focus_tip_selected')
+        } : undefined} />
         <AIAnalysis trades={trades as any} />
       </div>
       <AppFooter />

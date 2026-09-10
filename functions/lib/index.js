@@ -4581,7 +4581,7 @@ function sanitizeScreenshotTrades(raw) {
 // Must match the client list in src/services/sync-engine.ts — a key missing
 // here is silently rejected as "Invalid sync key" ('settings' was missing for
 // weeks and Pro settings sync never reached Firestore).
-const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings'];
+const SYNC_KEYS = ['trades', 'journalEntries', 'goals', 'tradingGoals', 'accounts', 'riskRules', 'onboardingCompleted', 'onboarding', 'propFirmAccounts', 'propFirmTransactions', 'settings', 'coachingFocus'];
 // ─── Chunk-aware sync doc reads ──
 // Values ≤ SYNC_CHUNK_CHARS live inline in the key's doc ({data, updatedAt}) —
 // the original format, unchanged for every existing user. Larger values are
@@ -4653,7 +4653,7 @@ exports.syncData = functions.https.onCall(async (data, context) => {
     // that must propagate — blocking it made deleted trades resurrect). The
     // unmarked case still guards fresh devices pushing default empty state.
     const isEmpty = value === '[]' || value === '{}' || value === '' || value === 'null';
-    if (isEmpty && allowEmpty !== true && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals' || key === 'tradingGoals' || key === 'riskRules' || key === 'propFirmAccounts' || key === 'propFirmTransactions')) {
+    if (isEmpty && allowEmpty !== true && (key === 'trades' || key === 'accounts' || key === 'journalEntries' || key === 'goals' || key === 'tradingGoals' || key === 'riskRules' || key === 'propFirmAccounts' || key === 'propFirmTransactions' || key === 'coachingFocus')) {
         console.warn(`[syncData] Blocked empty ${key} from syncing for ${uid}`);
         return { success: false, reason: 'empty_data_blocked' };
     }
