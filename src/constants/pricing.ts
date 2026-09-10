@@ -1,5 +1,7 @@
 import type { PricingPlan } from '@/types/subscription';
 
+export const ANALYSIS_UPGRADE_SOURCE = 'analysis_annual_v1';
+
 // Max journal entries a free (non-Pro) account can create. Existing entries are
 // never deleted — users already over the cap keep and can edit them; only
 // creating NEW entries past the cap is blocked. Pro is unlimited.

@@ -223,12 +223,12 @@ export default function Signup() {
               onChange={handleChange}
               required
               autoComplete="new-password"
-              className="h-11 pr-10 bg-background/60 border-border/50"
+              className="h-11 pr-12 bg-background/60 border-border/50"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

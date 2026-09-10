@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
 import { ArrowRight, SealCheck, Check, X, SpinnerGap } from '@phosphor-icons/react';
@@ -11,7 +11,7 @@ import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FREE_FEATURES, PRO_FEATURES, PRICING_PLANS, isLifetimeOnSale, isBirthdayLifetimeWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
+import { ANALYSIS_UPGRADE_SOURCE, FREE_FEATURES, PRO_FEATURES, PRICING_PLANS, isLifetimeOnSale, isBirthdayLifetimeWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
@@ -43,8 +43,9 @@ function FrequencyTab({
   return (
     <button
       onClick={() => onSelect(text)}
+      aria-pressed={selected}
       className={cn(
-        'relative w-fit px-4 py-2 text-sm font-semibold capitalize text-foreground transition-colors',
+        'relative w-fit rounded-full px-4 py-2 text-sm font-semibold capitalize text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         discount && 'flex items-center justify-center gap-2.5',
       )}
     >
@@ -310,7 +311,12 @@ export default function Pricing() {
   const { isPro, subscription, openCheckout } = useProStatus();
   const navigate = useNavigate();
   const { themeColors, alpha } = useThemePresets();
-  const [frequency, setFrequency] = useState<Frequency>('yearly');
+  const [searchParams] = useSearchParams();
+  const offerSource = searchParams.get('source') === ANALYSIS_UPGRADE_SOURCE ? ANALYSIS_UPGRADE_SOURCE : undefined;
+  const [frequency, setFrequency] = useState<Frequency>(() => searchParams.get('plan') === 'monthly' ? 'monthly' : 'yearly');
+  useEffect(() => {
+    if (offerSource) setFrequency(searchParams.get('plan') === 'monthly' ? 'monthly' : 'yearly');
+  }, [searchParams, offerSource]);
   // priceId currently being sent to Stripe — the checkout Cloud Function can
   // cold-start for several seconds, so CTAs must show progress and block
   // double-clicks (each click would create another checkout session).
@@ -320,7 +326,7 @@ export default function Pricing() {
   // Dedicated funnel step so pricing → cta → checkout_started → checkout_completed
   // can be built as one funnel in PostHog
   useEffect(() => {
-    trackEvent('pricing_viewed', { logged_in: !!user, is_pro: isPro });
+    trackEvent('pricing_viewed', { logged_in: !!user, is_pro: isPro, ...(offerSource ? { offer_source: offerSource } : {}) });
     // Stripe sends cancelled checkouts back here — say so instead of
     // silently landing on the page the user just left.
     const params = new URLSearchParams(window.location.search);
@@ -334,13 +340,13 @@ export default function Pricing() {
 
   const handleUpgrade = async (priceId: string, plan: string, source?: string) => {
     if (checkoutLoading) return;
-    trackEvent('pricing_cta_clicked', source ? { plan, source } : { plan });
+    trackEvent('pricing_cta_clicked', { plan, ...(source ? { source } : {}), ...(offerSource ? { offer_source: offerSource } : {}) });
     if (!user) {
       sessionStorage.setItem('pendingCheckoutPriceId', priceId);
       navigate('/signup');
       return;
     }
-    trackEvent('checkout_started', { plan, priceId });
+    trackEvent('checkout_started', { plan, priceId, ...(offerSource ? { offer_source: offerSource } : {}) });
     setCheckoutLoading(priceId);
     try {
       // openCheckout toasts on failure and resolves either way; on success the

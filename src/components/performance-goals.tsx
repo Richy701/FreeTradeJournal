@@ -892,6 +892,7 @@ export function PerformanceGoals() {
                   return (
                     <button
                       key={opt.type}
+                      aria-pressed={selected}
                       type="button"
                       onClick={() => setNewGoal({ ...newGoal, type: opt.type, target: GOAL_TYPE_DEFAULTS[opt.type] })}
                       className="rounded-lg border px-2 py-2.5 flex flex-col items-center gap-1.5 text-xs font-medium transition-colors"
@@ -915,6 +916,7 @@ export function PerformanceGoals() {
                   return (
                     <button
                       key={p}
+                      aria-pressed={selected}
                       type="button"
                       onClick={() => setNewGoal({ ...newGoal, period: p })}
                       className="rounded-lg border px-2 py-2 text-xs font-medium capitalize transition-colors"
@@ -930,12 +932,13 @@ export function PerformanceGoals() {
             </div>
 
             <div className="space-y-2">
-              <Label>Target</Label>
+              <Label htmlFor="goal-target">Target</Label>
               <div className="relative">
                 {newGoal.type === 'profit' && (
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{currencySymbol}</span>
                 )}
                 <Input
+                  id="goal-target"
                   type="number"
                   min={0}
                   step={newGoal.type === 'riskReward' ? 0.1 : 1}
@@ -1026,6 +1029,7 @@ export function PerformanceGoals() {
                     return (
                       <button
                         key={opt.type}
+                        aria-pressed={selected}
                         type="button"
                         onClick={() => setEditingRule({ ...editingRule, type: opt.type })}
                         className="w-full rounded-lg border px-3 py-2.5 flex items-center gap-3 text-left transition-colors"
@@ -1046,10 +1050,11 @@ export function PerformanceGoals() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Limit</Label>
+                <Label htmlFor="risk-limit-value">Limit</Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{currencySymbol}</span>
                   <Input
+                    id="risk-limit-value"
                     type="number"
                     min={0}
                     className="pl-7"
@@ -1065,6 +1070,7 @@ export function PerformanceGoals() {
                     return (
                       <button
                         key={chip.value}
+                        aria-pressed={selected}
                         type="button"
                         onClick={() => setEditingRule({ ...editingRule, value: chip.value })}
                         className="rounded-full border px-2.5 py-1 text-xs tabular-nums transition-colors"
@@ -1080,8 +1086,9 @@ export function PerformanceGoals() {
               </div>
               {riskRules.some(r => r.id === editingRule.id) && (
                 <div className="flex items-center justify-between">
-                  <Label>Enable Limit</Label>
+                  <Label htmlFor="risk-limit-enabled">Enable Limit</Label>
                   <Switch
+                    id="risk-limit-enabled"
                     checked={editingRule.enabled}
                     onCheckedChange={(checked) => setEditingRule({ ...editingRule, enabled: checked })}
                   />

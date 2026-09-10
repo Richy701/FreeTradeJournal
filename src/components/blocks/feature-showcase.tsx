@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ResponsiveImage } from "@/components/responsive-image";
 import { useAuth } from "@/contexts/auth-context";
@@ -28,6 +28,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     imageLayout = 'stack',
 }) => {
     const { enterDemoMode } = useAuth();
+    const reduceMotion = useReducedMotion();
     const [selectedImage, setSelectedImage] = useState<{ src: string; alt: string } | null>(null);
 
     // Auto-rotate for multi-image stack sections. Paused while hovering (the
@@ -35,10 +36,10 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
     const [activeImage, setActiveImage] = useState(0);
     const [rotationPaused, setRotationPaused] = useState(false);
     React.useEffect(() => {
-        if (imageLayout !== 'stack' || images.length <= 1 || rotationPaused || selectedImage) return;
+        if (imageLayout !== 'stack' || images.length <= 1 || rotationPaused || selectedImage || reduceMotion) return;
         const id = setInterval(() => setActiveImage((i) => (i + 1) % images.length), 5000);
         return () => clearInterval(id);
-    }, [imageLayout, images.length, rotationPaused, selectedImage]);
+    }, [imageLayout, images.length, rotationPaused, selectedImage, reduceMotion]);
 
     // The lightbox triggers are styled containers, not <button>s — these props
     // make them reachable and operable by keyboard and visible to screen readers.
@@ -234,6 +235,8 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/70 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             onMouseEnter={() => setRotationPaused(true)}
                             onMouseLeave={() => setRotationPaused(false)}
+                            onFocus={() => setRotationPaused(true)}
+                            onBlur={() => setRotationPaused(false)}
                             {...lightboxTriggerProps(images[activeImage])}
                         >
                             {images.map((img, index) => (
@@ -258,7 +261,7 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-4 flex justify-center gap-2">
+                        <div className="mt-1 flex justify-center" onFocus={() => setRotationPaused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setRotationPaused(false); }}>
                             {images.map((img, index) => (
                                 <button
                                     key={img.src}
@@ -266,13 +269,15 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                                     aria-label={`Show screenshot: ${img.alt}`}
                                     aria-current={index === activeImage}
                                     onClick={() => setActiveImage(index)}
-                                    className={cn(
-                                        "h-2 rounded-full transition-all duration-300",
+                                    className="flex h-11 w-11 items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                    <span aria-hidden="true" className={cn(
+                                        "h-2 rounded-full transition-[width,background-color] duration-300",
                                         index === activeImage
                                             ? "w-6 bg-amber-500"
                                             : "w-2 bg-border hover:bg-muted-foreground/40"
-                                    )}
-                                />
+                                    )} />
+                                </button>
                             ))}
                         </div>
                     </motion.div>
@@ -282,9 +287,9 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
 
     return (
         <section className="relative py-14 sm:py-16 overflow-hidden">
-            <div className="w-full max-w-[1600px] px-6 relative z-10 mx-auto">
+            <div className="w-full max-w-7xl px-4 sm:px-6 relative z-10 mx-auto">
                 <motion.div
-                    className={`grid grid-cols-1 gap-12 lg:gap-20 w-full items-center ${layoutClasses}`}
+                    className={`grid grid-cols-1 gap-8 sm:gap-10 lg:gap-16 w-full items-center ${layoutClasses}`}
                     variants={containerVariants}
                     initial="hidden"
                     whileInView="visible"
@@ -301,11 +306,11 @@ const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
                             </h2>
                         </div>
 
-                        <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
+                        <p className="max-w-xl text-muted-foreground text-base md:text-lg leading-relaxed text-pretty">
                             {description}
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-center lg:justify-start">
+                        <div className="flex flex-col sm:flex-row gap-3 mt-1 justify-center lg:justify-start">
                             <Link
                                 to="/dashboard"
                                 onClick={() => enterDemoMode()}

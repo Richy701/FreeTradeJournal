@@ -299,6 +299,7 @@ export default function Journal() {
   // Entry id awaiting delete confirmation (in-app dialog, not window.confirm)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
   // Screenshot refs on the entry being edited that couldn't be resolved on this
   // device (evicted IndexedDB, other-device idb: refs). Kept verbatim on save so
   // an unrelated edit can never silently destroy them.
@@ -1401,7 +1402,7 @@ export default function Journal() {
       </div>
 
       {/* pb-24 on mobile keeps the last row clear of the floating add button */}
-      <div className="flex-1 w-full px-4 pt-6 pb-24 sm:px-6 sm:pb-6 lg:px-8 space-y-6">
+      <div className="flex flex-col flex-1 w-full px-4 pt-6 pb-24 sm:px-6 sm:pb-6 lg:px-8 gap-6">
 
         {(nearFreeJournalLimit || atFreeJournalLimit) && (
           <NoticeBanner
@@ -1421,6 +1422,19 @@ export default function Journal() {
           />
         )}
 
+        {entries.length > 0 && (
+          <Button
+            variant="outline"
+            className="sm:hidden w-full"
+            aria-expanded={showStatistics}
+            aria-controls="journal-statistics"
+            onClick={() => setShowStatistics(value => !value)}
+          >
+            {showStatistics ? 'Hide journal statistics' : 'Show journal statistics'}
+          </Button>
+        )}
+
+        <div id="journal-statistics" className={showStatistics ? 'space-y-6' : 'hidden space-y-6 sm:block'}>
         {/* Quick Stats */}
         {entries.length > 0 && (
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -1515,6 +1529,8 @@ export default function Journal() {
             </CardContent>
           </Card>
         )}
+
+        </div>
 
         {showNewEntry && (
           <div
@@ -2025,9 +2041,12 @@ export default function Journal() {
             <div className="relative flex-1">
               <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search entries..."
+                type="search"
+                aria-label="Search journal entries"
+                placeholder="Search entries…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setSearchTerm(''); }}
                 className="pl-10 bg-background/50 border-muted-foreground/20 focus:border-primary/50"
               />
             </div>
@@ -2036,6 +2055,8 @@ export default function Journal() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
+                aria-expanded={showFilters}
+                aria-controls="journal-filters"
                 className="gap-2 flex-1 sm:flex-initial"
               >
                 <Funnel className="h-4 w-4" />
@@ -2102,7 +2123,7 @@ export default function Journal() {
           
           {/* Filter Panel */}
           {showFilters && (
-            <Card className="">
+            <Card id="journal-filters">
               <CardContent className="pt-6 sm:pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Date Range Filter */}
@@ -2194,6 +2215,7 @@ export default function Journal() {
                       <Input
                         type="number"
                         placeholder="Min"
+                        aria-label="Minimum profit or loss"
                         value={pnlRange.min}
                         onChange={(e) => setPnlRange({ ...pnlRange, min: e.target.value })}
                         className="bg-background/50 border-muted-foreground/20"
@@ -2201,6 +2223,7 @@ export default function Journal() {
                       <Input
                         type="number"
                         placeholder="Max"
+                        aria-label="Maximum profit or loss"
                         value={pnlRange.max}
                         onChange={(e) => setPnlRange({ ...pnlRange, max: e.target.value })}
                         className="bg-background/50 border-muted-foreground/20"

@@ -127,9 +127,9 @@ export default function ResetPassword() {
                   </p>
                 </div>
               </div>
-              <Link to="/forgot-password">
-                <Button className="w-full h-11">Request a new reset link</Button>
-              </Link>
+              <Button asChild className="w-full h-11">
+                <Link to="/forgot-password">Request a new reset link</Link>
+              </Button>
             </div>
           )}
 
@@ -193,12 +193,12 @@ export default function ResetPassword() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className="h-11 pr-10"
+                    className="h-11 pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -230,12 +230,12 @@ export default function ResetPassword() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className="h-11 pr-10"
+                    className="h-11 pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={showConfirm ? 'Hide password' : 'Show password'}
                   >
                     {showConfirm ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

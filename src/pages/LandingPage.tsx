@@ -54,6 +54,7 @@ export default function LandingPage() {
 
       {/* Hero Section with A/B Testing */}
       <HeroGeometric
+        homepage
         title1="The Free Trading Journal"
         title2="That Improves Your Results"
         eyebrow={isBirthdayLifetimeWindow() ? <BirthdayLandingPill /> : undefined}

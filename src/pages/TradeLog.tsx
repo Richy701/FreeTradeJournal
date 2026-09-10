@@ -31,7 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen, Image as ImageIcon, CaretRight } from '@phosphor-icons/react';
+import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen, Image as ImageIcon, CaretRight, MagnifyingGlass, X, Funnel, CaretDown } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
 import { InstrumentCombobox } from '@/components/instrument-combobox';
 import { PropFirmSelect } from '@/components/prop-firm-select';
@@ -216,6 +216,8 @@ export default function TradeLog() {
   };
 
   // Filter state (persisted per user)
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
   const [filters, setFilters] = useState<TradeFilters>(() => {
     try {
       const saved = userStorage.getItem('tradeLogFilters');
@@ -239,7 +241,12 @@ export default function TradeLog() {
 
   // Apply active filters to the account-scoped trade list
   const displayedTrades = useMemo(() => {
+    const terms = (filters.query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
     const filtered = trades.filter((trade) => {
+      if (terms.length > 0) {
+        const searchable = [trade.symbol, trade.strategy, trade.notes, trade.emotions, trade.side].filter(Boolean).join(' ').toLowerCase();
+        if (!terms.every(term => searchable.includes(term))) return false;
+      }
       if (filters.symbols.length > 0 && !filters.symbols.includes(trade.symbol)) return false;
       if (filters.sides.length > 0 && !filters.sides.includes(trade.side)) return false;
       if (filters.markets.length > 0 && !filters.markets.includes(detectMarketFromSymbol(trade.symbol))) return false;
@@ -1389,25 +1396,31 @@ export default function TradeLog() {
       {/* Header */}
       <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex flex-col lg:flex-row justify-between items-center lg:items-center gap-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
                 <ChartLineUp className="h-5 w-5" style={{ color: themeColors.primary }} />
               </div>
               <div className="space-y-0.5">
                 <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Log</h1>
-                <p className="text-sm text-muted-foreground">Record, review, and analyze every trade.</p>
+                <p className="text-sm text-muted-foreground">Your trading history, ready to review.</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <Button
                 size="sm"
+                className="h-10 flex-1 sm:h-9 sm:flex-none"
                 onClick={() => openTradeDialog('manual')}
                 style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Trade
               </Button>
+              <Button variant="outline" size="sm" className="h-10 flex-1 sm:h-9 sm:flex-none" onClick={() => openTradeDialog('import')}>
+                <UploadSimple className="mr-2 h-4 w-4" aria-hidden="true" />
+                Import Trades
+              </Button>
+              <div className="w-full sm:hidden" />
               <input
                 id="csv-import"
                 type="file"
@@ -1418,7 +1431,7 @@ export default function TradeLog() {
 
               <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={trades.length === 0}>
+                  <Button variant="ghost" size="sm" className="flex-1 sm:flex-none" disabled={trades.length === 0}>
                     <DownloadSimple className="mr-2 h-4 w-4" />
                     Export
                   </Button>
@@ -2354,10 +2367,30 @@ export default function TradeLog() {
       </Dialog>
 
       {/* Main Content */}
-      <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <div className="flex flex-1 flex-col w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 gap-6 sm:gap-8">
         {/* Stats */}
+        <div className="sm:hidden">
+          <dl className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card">
+            {[
+              { label: 'Total P&L', value: formatPnl(quickStats.totalPnL), detail: `${quickStats.totalTrades} trades${activeFilterCount ? ' matching filters' : ''}`, color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss },
+              { label: 'Win rate', value: `${quickStats.winRate.toFixed(1)}%`, detail: `${quickStats.winCount} wins · ${quickStats.lossCount} losses`, color: quickStats.winRate >= 50 ? themeColors.profit : themeColors.loss },
+              { label: 'Best trade', value: formatPnl(quickStats.bestTrade), detail: quickStats.bestTradeSymbol || 'No trades yet', color: themeColors.profit },
+              { label: 'Average R:R', value: quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '—', detail: quickStats.validRRCount ? `${quickStats.validRRCount} trades with R:R` : 'Add stop loss & take profit', color: undefined },
+            ].map((stat, index) => (
+              <div key={stat.label} className={cn('min-w-0 p-3.5', index < 2 && 'border-b', index % 2 === 0 && 'border-r')}>
+                <dt className="text-xs text-muted-foreground">{stat.label}</dt>
+                <dd className="mt-1 break-words text-xl font-semibold tracking-tight tabular-nums" style={{ color: stat.color }}>{stat.value}</dd>
+                <dd className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{stat.detail}</dd>
+              </div>
+            ))}
+          </dl>
+          <Button variant="ghost" size="sm" className="mt-1 w-full gap-2 text-xs text-muted-foreground" aria-expanded={showDetailedStats} aria-controls="trade-log-statistics" onClick={() => setShowDetailedStats(value => !value)}>
+            {showDetailedStats ? 'Hide detailed statistics' : 'Show detailed statistics'}
+            <CaretDown className={cn('h-3.5 w-3.5 transition-transform', showDetailedStats && 'rotate-180')} aria-hidden="true" />
+          </Button>
+        </div>
         <TooltipProvider>
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 mb-6">
+        <div id="trade-log-statistics" className={cn('gap-4 sm:gap-6 sm:grid sm:grid-cols-2 2xl:grid-cols-4', showDetailedStats ? 'grid' : 'hidden')}>
             {/* Total P&L */}
             <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -2535,17 +2568,17 @@ export default function TradeLog() {
         {/* Trades Table */}
         <Card className="">
           <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg font-semibold">All Trades</CardTitle>
+                  <CardTitle className="text-lg font-semibold">{activeFilterCount ? 'Matching Trades' : 'All Trades'}</CardTitle>
                   {trades.length > 0 && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
                       {activeFilterCount > 0 ? `${displayedTrades.length} of ${trades.length}` : trades.length}
                     </span>
                   )}
                 </div>
-                <CardDescription>
+                <CardDescription role="status" aria-live="polite" aria-atomic="true">
                   {trades.length === 0
                     ? 'No trades logged yet'
                     : activeFilterCount > 0
@@ -2556,6 +2589,34 @@ export default function TradeLog() {
                 </CardDescription>
               </div>
               {trades.length > 0 && (
+                <div className="relative w-full sm:max-w-xs">
+                  <MagnifyingGlass className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  <Input
+                    type="search"
+                    aria-label="Search trades"
+                    placeholder="Search symbol, strategy, or notes…"
+                    value={filters.query || ''}
+                    onChange={event => setFilters({ ...filters, query: event.target.value })}
+                    onKeyDown={event => { if (event.key === 'Escape') setFilters({ ...filters, query: '' }); }}
+                    className="h-10 bg-background pl-9 pr-10 [&::-webkit-search-cancel-button]:hidden"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  {filters.query && (
+                    <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-10 w-10" aria-label="Clear trade search" onClick={() => setFilters({ ...filters, query: '' })}>
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            {trades.length > 0 && (
+              <div className="space-y-3 border-t pt-3">
+                <Button variant="outline" size="sm" className="w-full justify-between sm:hidden" aria-expanded={showMobileFilters} aria-controls="trade-log-filter-controls" onClick={() => setShowMobileFilters(value => !value)}>
+                  <span className="flex items-center gap-2"><Funnel className="h-4 w-4" aria-hidden="true" />Filter & sort</span>
+                  <CaretDown className={cn('h-4 w-4 transition-transform', showMobileFilters && 'rotate-180')} aria-hidden="true" />
+                </Button>
+                <div id="trade-log-filter-controls" className={cn('sm:block', !showMobileFilters && 'hidden')}>
                 <TradeLogFilters
                   filters={filters}
                   onChange={setFilters}
@@ -2563,8 +2624,9 @@ export default function TradeLog() {
                   marketOptions={marketOptions}
                   strategyOptions={strategyOptions}
                 />
-              )}
-            </div>
+                </div>
+              </div>
+            )}
             {activeFilterCount > 0 && (
               <div className="pt-3">
                 <TradeLogFilterPills filters={filters} onChange={setFilters} />
@@ -2623,11 +2685,11 @@ export default function TradeLog() {
                   <ChartBar className="h-6 w-6" style={{ color: themeColors.primary }} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-base font-semibold">No trades match your filters</h3>
-                  <p className="text-sm text-muted-foreground">Try removing a filter to see more trades.</p>
+                  <h3 className="text-base font-semibold">No matching trades</h3>
+                  <p className="text-sm text-muted-foreground">Try another search or remove a filter. Your saved trades are still here.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setFilters({ ...EMPTY_FILTERS })}>
-                  Clear all filters
+                  Reset search & filters
                 </Button>
               </div>
             ) : (

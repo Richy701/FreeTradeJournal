@@ -10,6 +10,8 @@ interface ProGateProps {
   children: ReactNode;
   featureName: string;
   featureDescription?: string;
+  /** A result already generated using an authorised AI run stays readable. */
+  completedAIResult?: boolean;
 }
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
@@ -33,13 +35,14 @@ const WALL_GATES: Record<string, ActivityGate> = {
 
 const isAIFeature = (name: string) => name.startsWith('AI ') || name === 'Coach FTJ';
 
-export function ProGate({ children, featureName, featureDescription }: ProGateProps) {
+export function ProGate({ children, featureName, featureDescription, completedAIResult = false }: ProGateProps) {
   const { isPro, isLoading, hasAIAccess, freeAiQuota } = useProStatus();
   const { isDemo } = useAuth();
 
   // Locked wall = not pro, and not in the free-AI-allowance teaser branch below.
   const quotaExceeded = isAIFeature(featureName) && !!freeAiQuota && freeAiQuota.remaining === 0;
-  const showsWall = !isLoading && !isPro && !(isAIFeature(featureName) && hasAIAccess && freeAiQuota);
+  const keepResultVisible = completedAIResult && isAIFeature(featureName);
+  const showsWall = !isLoading && !isPro && !keepResultVisible && !(isAIFeature(featureName) && hasAIAccess && freeAiQuota);
   useEffect(() => {
     if (showsWall) {
       trackEvent('pro_gate_shown', { feature: featureName, quotaExceeded });
@@ -63,6 +66,8 @@ export function ProGate({ children, featureName, featureDescription }: ProGatePr
   if (isPro) {
     return <>{children}</>;
   }
+
+  if (keepResultVisible) return <>{children}</>;
 
   if (isAIFeature(featureName) && hasAIAccess && freeAiQuota) {
     return (

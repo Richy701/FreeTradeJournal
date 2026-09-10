@@ -304,7 +304,7 @@ export function PositionSizeCalculator() {
             {state.mode === 'forex' ? (
               <Field label="Account currency">
                 <Select value={state.accountCurrency} onValueChange={v => set({ accountCurrency: v as AccountCurrency })}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Account currency" className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {ACCOUNT_CURRENCIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
@@ -312,12 +312,13 @@ export function PositionSizeCalculator() {
               </Field>
             ) : (
               <Field label="Account currency" hint="Futures settle in US dollars.">
-                <Input value="USD" disabled className="h-10" />
+                <Input aria-label="Account currency" value="USD" disabled className="h-10" />
               </Field>
             )}
             <Field label="Account balance">
               <Input
                 type="number" inputMode="decimal" min="0" placeholder="10000"
+                aria-label="Account balance"
                 value={state.balance} onChange={e => set({ balance: e.target.value })}
                 className="h-10"
               />
@@ -333,6 +334,7 @@ export function PositionSizeCalculator() {
               />
               <Input
                 type="number" inputMode="decimal" min="0" step="0.1" placeholder={state.riskMode === 'percent' ? '1' : '100'}
+                aria-label={state.riskMode === 'percent' ? 'Risk per trade (%)' : `Risk per trade (${state.mode === 'futures' ? 'USD' : state.accountCurrency})`}
                 value={state.riskValue} onChange={e => set({ riskValue: e.target.value })}
                 className="h-10"
               />
@@ -343,7 +345,7 @@ export function PositionSizeCalculator() {
             <>
               <Field label="Currency pair" hint={pairSpec.note}>
                 <Select value={state.pair} onValueChange={pair => set({ pair })}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Currency pair" className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(pairGroups).map(([group, pairs]) => (
                       <SelectGroup key={group}>
@@ -358,6 +360,7 @@ export function PositionSizeCalculator() {
                 <Field label="Stop loss (pips)">
                   <Input
                     type="number" inputMode="decimal" min="0" placeholder="20"
+                    aria-label="Stop loss (pips)"
                     value={state.stopPips} onChange={e => set({ stopPips: e.target.value })}
                     className="h-10"
                   />
@@ -365,6 +368,7 @@ export function PositionSizeCalculator() {
                 <Field label="Take profit (pips)">
                   <Input
                     type="number" inputMode="decimal" min="0" placeholder="Optional"
+                    aria-label="Take profit (pips)"
                     value={state.tpPips} onChange={e => set({ tpPips: e.target.value })}
                     className="h-10"
                   />
@@ -381,6 +385,7 @@ export function PositionSizeCalculator() {
                     <ArrowsLeftRight className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       type="number" inputMode="decimal" min="0" step="0.0001"
+                      aria-label={`Exchange rate: 1 ${pairSpec.quote} in ${state.accountCurrency}`}
                       value={manualRate !== '' ? manualRate : (liveRate !== null ? String(Number(liveRate.toFixed(5))) : '')}
                       onChange={e => setManualRate(e.target.value)}
                       placeholder={rateFailed ? 'e.g. 1.2650' : 'Fetching...'}
@@ -394,7 +399,7 @@ export function PositionSizeCalculator() {
             <>
               <Field label="Contract">
                 <Select value={state.contract} onValueChange={contract => set({ contract })}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Contract" className="h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(contractGroups).map(([group, contracts]) => (
                       <SelectGroup key={group}>
@@ -411,6 +416,7 @@ export function PositionSizeCalculator() {
                 <Field label={`Stop loss (${state.stopUnit})`}>
                   <Input
                     type="number" inputMode="decimal" min="0" placeholder="40"
+                    aria-label={`Stop loss (${state.stopUnit})`}
                     value={state.stopValue} onChange={e => set({ stopValue: e.target.value })}
                     className="h-10"
                   />
@@ -426,6 +432,7 @@ export function PositionSizeCalculator() {
               <Field label={`Take profit (${state.stopUnit})`}>
                 <Input
                   type="number" inputMode="decimal" min="0" placeholder="Optional"
+                  aria-label={`Take profit (${state.stopUnit})`}
                   value={state.tpValue} onChange={e => set({ tpValue: e.target.value })}
                   className="h-10"
                 />

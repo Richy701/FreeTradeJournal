@@ -72,6 +72,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                   >
                     <Link
                       to={item.url}
+                      aria-current={active ? 'page' : undefined}
                       onClick={() => {
                         trackEvent('sidebar_nav_clicked', { item: item.title, url: item.url })
                         isMobile && setOpenMobile(false)

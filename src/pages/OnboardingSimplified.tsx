@@ -414,7 +414,7 @@ export default function OnboardingSimplified() {
               animate="visible"
             >
               <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">How long have you been trading?</h2>
+                <h1 className="text-3xl font-bold tracking-tight">How long have you been trading?</h1>
                 <p className="text-muted-foreground">This helps us personalise your dashboard and tips</p>
               </motion.div>
 
@@ -425,6 +425,7 @@ export default function OnboardingSimplified() {
                   return (
                     <button
                       key={opt.value}
+                      aria-pressed={selected}
                       onClick={() => setData({ ...data, experienceLevel: opt.value })}
                       className={selectionCardClass(selected)}
                     >
@@ -472,7 +473,7 @@ export default function OnboardingSimplified() {
               animate="visible"
             >
               <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">What type of account?</h2>
+                <h1 className="text-3xl font-bold tracking-tight">What type of account?</h1>
                 <p className="text-muted-foreground">Choose how you trade</p>
               </motion.div>
 
@@ -483,6 +484,7 @@ export default function OnboardingSimplified() {
                   return (
                     <button
                       key={opt.value}
+                      aria-pressed={selected}
                       onClick={() => setData({ ...data, accountType: opt.value })}
                       className={selectionCardClass(selected)}
                     >
@@ -525,7 +527,7 @@ export default function OnboardingSimplified() {
               animate="visible"
             >
               <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Name your account</h2>
+                <h1 className="text-3xl font-bold tracking-tight">Name your account</h1>
                 <p className="text-muted-foreground">A few quick details to get you set up</p>
               </motion.div>
 
@@ -543,12 +545,12 @@ export default function OnboardingSimplified() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Currency</Label>
+                    <Label htmlFor="onboarding-currency">Currency</Label>
                     <Select
                       value={data.currency}
                       onValueChange={(value) => setData({ ...data, currency: value })}
                     >
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger id="onboarding-currency" className="h-11">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -629,9 +631,9 @@ export default function OnboardingSimplified() {
               </motion.div>
 
               <div className="space-y-2">
-                <motion.h2 variants={activeFadeUpItem} className="text-3xl font-bold tracking-tight">
+                <motion.h1 variants={activeFadeUpItem} className="text-3xl font-bold tracking-tight">
                   You're all set!
-                </motion.h2>
+                </motion.h1>
                 <motion.p variants={activeFadeUpItem} className="text-muted-foreground">
                   Your account is ready. Start logging trades, and your AI Coach is in the sidebar whenever you want feedback.
                 </motion.p>
@@ -704,7 +706,7 @@ export default function OnboardingSimplified() {
         <header className="flex items-center gap-4 px-6 py-4 border-b border-border/50">
           <div className="flex items-center gap-2">
             <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold text-sm">FreeTradeJournal</span>
+            <span className="hidden sm:inline font-bold text-sm">FreeTradeJournal</span>
           </div>
           <div className="flex-1 mx-8">
             <Skeleton className="h-1.5 w-full rounded-full" />
@@ -741,13 +743,13 @@ export default function OnboardingSimplified() {
         {/* Logo */}
         <div className="flex items-center gap-2 shrink-0">
           <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-lg" />
-          <span className="font-bold text-sm">FreeTradeJournal</span>
+          <span className="hidden sm:inline font-bold text-sm">FreeTradeJournal</span>
         </div>
 
         {/* Progress bar */}
-        <div className="flex-1 mx-4">
+        <div className="flex-1 min-w-0 sm:mx-4">
           {currentStep > 1 && (
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden max-w-sm mx-auto">
+            <div role="progressbar" aria-label="Account setup progress" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={currentStep} className="h-1.5 bg-muted rounded-full overflow-hidden max-w-sm mx-auto">
               <motion.div
                 className="h-full bg-primary rounded-full"
                 initial={false}
@@ -768,7 +770,7 @@ export default function OnboardingSimplified() {
           {currentStep > 1 && currentStep < 5 && (
             <button
               onClick={() => goToStep(currentStep - 1)}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Go back"
             >
               <CaretLeft className="h-5 w-5" />
@@ -778,7 +780,7 @@ export default function OnboardingSimplified() {
             <button
               onClick={handleSkipOnboarding}
               disabled={loading}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="min-h-11 px-2 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Skip
             </button>

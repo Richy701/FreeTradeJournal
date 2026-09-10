@@ -86,12 +86,14 @@ function HeroGeometric({
     cta,
     compact = false,
     eyebrow,
+    homepage = false,
 }: {
     title1?: string;
     title2?: string;
     subtitle?: string;
     /** Optional pill rendered above the headline (e.g. a time-limited offer). */
     eyebrow?: React.ReactNode;
+    homepage?: boolean;
     showCTA?: boolean;
     cta?: React.ReactNode;
     compact?: boolean;
@@ -112,7 +114,7 @@ function HeroGeometric({
     };
 
     return (
-        <div className={`relative ${compact ? 'min-h-[60vh]' : 'min-h-dvh'} w-full flex items-center justify-center overflow-hidden bg-background noise-overlay`}>
+        <div className={`relative ${homepage ? 'min-h-[720px] py-28 sm:min-h-[780px] sm:py-32' : compact ? 'min-h-[60vh]' : 'min-h-dvh'} w-full flex items-center justify-center overflow-hidden bg-background noise-overlay`}>
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-yellow-600/[0.08] dark:from-amber-500/[0.05] dark:to-yellow-600/[0.05] blur-3xl" />
 
             <div className="absolute inset-0 overflow-hidden">
@@ -182,7 +184,7 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 md:mb-10 tracking-tight leading-[1.1] sm:leading-tight">
+                        <h1 className={cn("font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 md:mb-10 tracking-tight leading-[1.1] sm:leading-tight", homepage && 'text-balance')}>
                             <span className="bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80 block">
                                 {title1}
                             </span>
@@ -202,7 +204,7 @@ function HeroGeometric({
                         initial="hidden"
                         animate="visible"
                     >
-                        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 md:mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-2 sm:px-4">
+                        <p className={cn("text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 md:mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-2 sm:px-4", homepage && 'text-base font-normal tracking-normal text-pretty')}>
                             {subtitle ?? "Free professional trading journal with AI-powered insights. Track, analyze, and optimize your performance — upgrade to Pro for coaching, trade reviews, and smart alerts."}
                         </p>
                     </motion.div>
@@ -263,14 +265,14 @@ function HeroGeometric({
                                     enterDemoMode();
                                     navigate('/dashboard');
                                 }}
-                                className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]"
+                                className={cn("bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]", homepage && 'h-12 min-w-[208px] sm:min-w-[208px]')}
                             >
                                 View Live Demo
                             </Button>
                             <Button
                                 asChild
                                 variant="outline"
-                                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                                className={cn("px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10", homepage && 'h-12 min-w-[208px] sm:min-w-[208px]')}
                             >
                                 <Link to="/signup">Sign Up Free</Link>
                             </Button>

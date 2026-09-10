@@ -1,0 +1,7050 @@
+[
+  {
+    "mode": "public",
+    "route": "/",
+    "width": 1440,
+    "actualPath": "/",
+    "title": "Free Trading Journal \u2014 Forex, Futures & Stock Tracker (2026)",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The Free Trading JournalThat Improves Your Results"
+      },
+      {
+        "level": "H2",
+        "text": "Professional trading journal & analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Real-Time Metrics"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Market Support"
+      },
+      {
+        "level": "H3",
+        "text": "Coach FTJ"
+      },
+      {
+        "level": "H3",
+        "text": "Calendar Heatmap"
+      },
+      {
+        "level": "H2",
+        "text": "Real-TimePerformance Dashboard"
+      },
+      {
+        "level": "H2",
+        "text": "Comprehensive TradeLogging & Management"
+      },
+      {
+        "level": "H2",
+        "text": "Visual PerformanceCalendar Heatmap"
+      },
+      {
+        "level": "H2",
+        "text": "Trading Journal& Analysis"
+      },
+      {
+        "level": "H2",
+        "text": "Smart Goals &Risk Management"
+      },
+      {
+        "level": "H2",
+        "text": "AI-PoweredTrade Analysis"
+      },
+      {
+        "level": "H2",
+        "text": "Advanced TradeInsights & Analytics"
+      },
+      {
+        "level": "H2",
+        "text": "Prop FirmROI Tracker"
+      },
+      {
+        "level": "H2",
+        "text": "Frequently Asked Questions"
+      },
+      {
+        "level": "H3",
+        "text": "What markets and instruments can I track?"
+      },
+      {
+        "level": "H3",
+        "text": "How does FreeTradeJournal calculate my P&L?"
+      },
+      {
+        "level": "H3",
+        "text": "What analytics and metrics will I get?"
+      },
+      {
+        "level": "H3",
+        "text": "Is my trading data secure?"
+      },
+      {
+        "level": "H3",
+        "text": "How much does it cost?"
+      },
+      {
+        "level": "H3",
+        "text": "Does it work with prop firms like FTMO?"
+      },
+      {
+        "level": "H3",
+        "text": "What's included in the Pro plan?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I see what the app looks like before signing up?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I cancel or change my Pro plan anytime?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/",
+    "width": 390,
+    "actualPath": "/",
+    "title": "Free Trading Journal \u2014 Forex, Futures & Stock Tracker (2026)",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The Free Trading JournalThat Improves Your Results"
+      },
+      {
+        "level": "H2",
+        "text": "Professional trading journal & analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Real-Time Metrics"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Market Support"
+      },
+      {
+        "level": "H3",
+        "text": "Coach FTJ"
+      },
+      {
+        "level": "H3",
+        "text": "Calendar Heatmap"
+      },
+      {
+        "level": "H2",
+        "text": "Real-TimePerformance Dashboard"
+      },
+      {
+        "level": "H2",
+        "text": "Comprehensive TradeLogging & Management"
+      },
+      {
+        "level": "H2",
+        "text": "Visual PerformanceCalendar Heatmap"
+      },
+      {
+        "level": "H2",
+        "text": "Trading Journal& Analysis"
+      },
+      {
+        "level": "H2",
+        "text": "Smart Goals &Risk Management"
+      },
+      {
+        "level": "H2",
+        "text": "AI-PoweredTrade Analysis"
+      },
+      {
+        "level": "H2",
+        "text": "Advanced TradeInsights & Analytics"
+      },
+      {
+        "level": "H2",
+        "text": "Prop FirmROI Tracker"
+      },
+      {
+        "level": "H2",
+        "text": "Frequently Asked Questions"
+      },
+      {
+        "level": "H3",
+        "text": "What markets and instruments can I track?"
+      },
+      {
+        "level": "H3",
+        "text": "How does FreeTradeJournal calculate my P&L?"
+      },
+      {
+        "level": "H3",
+        "text": "What analytics and metrics will I get?"
+      },
+      {
+        "level": "H3",
+        "text": "Is my trading data secure?"
+      },
+      {
+        "level": "H3",
+        "text": "How much does it cost?"
+      },
+      {
+        "level": "H3",
+        "text": "Does it work with prop firms like FTMO?"
+      },
+      {
+        "level": "H3",
+        "text": "What's included in the Pro plan?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I see what the app looks like before signing up?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I cancel or change my Pro plan anytime?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/login",
+    "width": 1440,
+    "actualPath": "/login",
+    "title": "Login | FreeTradeJournal - Access Your Trading Journal",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "Welcome back,trader."
+      },
+      {
+        "level": "H1",
+        "text": "Sign in"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/login",
+    "width": 390,
+    "actualPath": "/login",
+    "title": "Login | FreeTradeJournal - Access Your Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Welcome back, trader."
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/signup",
+    "width": 1440,
+    "actualPath": "/signup",
+    "title": "Sign Up Free | FreeTradeJournal - Start Your Trading Journal",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "Start yourtrading journal."
+      },
+      {
+        "level": "H1",
+        "text": "Create your account"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/signup",
+    "width": 390,
+    "actualPath": "/signup",
+    "title": "Sign Up Free | FreeTradeJournal - Start Your Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Start your trading journal."
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/forgot-password",
+    "width": 1440,
+    "actualPath": "/forgot-password",
+    "title": "Reset Password | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "Reset your password"
+      },
+      {
+        "level": "H1",
+        "text": "Forgot your password?"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/forgot-password",
+    "width": 390,
+    "actualPath": "/forgot-password",
+    "title": "Reset Password | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Reset your password"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/reset-password",
+    "width": 1440,
+    "actualPath": "/reset-password",
+    "title": "Set New Password | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "Create a new password"
+      },
+      {
+        "level": "H1",
+        "text": "Set new password"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/reset-password",
+    "width": 390,
+    "actualPath": "/reset-password",
+    "title": "Set New Password | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Create a new password"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/verify-email",
+    "width": 1440,
+    "actualPath": "/login",
+    "title": "Login | FreeTradeJournal - Access Your Trading Journal",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "Welcome back,trader."
+      },
+      {
+        "level": "H1",
+        "text": "Sign in"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/verify-email",
+    "width": 390,
+    "actualPath": "/login",
+    "title": "Login | FreeTradeJournal - Access Your Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Welcome back, trader."
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/privacy",
+    "width": 1440,
+    "actualPath": "/privacy",
+    "title": "Privacy Policy | FreeTradeJournal - Your Data Protection",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Privacy Policy"
+      },
+      {
+        "level": "H2",
+        "text": "Overview"
+      },
+      {
+        "level": "H2",
+        "text": "Information We Collect"
+      },
+      {
+        "level": "H3",
+        "text": "Account Information"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Data"
+      },
+      {
+        "level": "H3",
+        "text": "Payment Information"
+      },
+      {
+        "level": "H3",
+        "text": "AI Features"
+      },
+      {
+        "level": "H3",
+        "text": "Analytics & Diagnostics"
+      },
+      {
+        "level": "H3",
+        "text": "Market Data"
+      },
+      {
+        "level": "H2",
+        "text": "How We Use Your Information"
+      },
+      {
+        "level": "H2",
+        "text": "Data Storage & Security"
+      },
+      {
+        "level": "H2",
+        "text": "Third-Party Services"
+      },
+      {
+        "level": "H2",
+        "text": "Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Your Rights"
+      },
+      {
+        "level": "H2",
+        "text": "Data Retention"
+      },
+      {
+        "level": "H2",
+        "text": "Children's Privacy"
+      },
+      {
+        "level": "H2",
+        "text": "Changes to This Policy"
+      },
+      {
+        "level": "H2",
+        "text": "Contact Us"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/privacy",
+    "width": 390,
+    "actualPath": "/privacy",
+    "title": "Privacy Policy | FreeTradeJournal - Your Data Protection",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Privacy Policy"
+      },
+      {
+        "level": "H2",
+        "text": "Overview"
+      },
+      {
+        "level": "H2",
+        "text": "Information We Collect"
+      },
+      {
+        "level": "H3",
+        "text": "Account Information"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Data"
+      },
+      {
+        "level": "H3",
+        "text": "Payment Information"
+      },
+      {
+        "level": "H3",
+        "text": "AI Features"
+      },
+      {
+        "level": "H3",
+        "text": "Analytics & Diagnostics"
+      },
+      {
+        "level": "H3",
+        "text": "Market Data"
+      },
+      {
+        "level": "H2",
+        "text": "How We Use Your Information"
+      },
+      {
+        "level": "H2",
+        "text": "Data Storage & Security"
+      },
+      {
+        "level": "H2",
+        "text": "Third-Party Services"
+      },
+      {
+        "level": "H2",
+        "text": "Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Your Rights"
+      },
+      {
+        "level": "H2",
+        "text": "Data Retention"
+      },
+      {
+        "level": "H2",
+        "text": "Children's Privacy"
+      },
+      {
+        "level": "H2",
+        "text": "Changes to This Policy"
+      },
+      {
+        "level": "H2",
+        "text": "Contact Us"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/terms",
+    "width": 1440,
+    "actualPath": "/terms",
+    "title": "Terms & Conditions | FreeTradeJournal - Service Terms",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Terms and Conditions"
+      },
+      {
+        "level": "H2",
+        "text": "Acceptance of Terms"
+      },
+      {
+        "level": "H2",
+        "text": "Description of Service"
+      },
+      {
+        "level": "H2",
+        "text": "Account Registration"
+      },
+      {
+        "level": "H2",
+        "text": "Pro Subscription & Payments"
+      },
+      {
+        "level": "H3",
+        "text": "Refunds"
+      },
+      {
+        "level": "H2",
+        "text": "Free Tier"
+      },
+      {
+        "level": "H2",
+        "text": "Not Financial Advice"
+      },
+      {
+        "level": "H2",
+        "text": "Data Accuracy"
+      },
+      {
+        "level": "H2",
+        "text": "Acceptable Use"
+      },
+      {
+        "level": "H2",
+        "text": "Intellectual Property"
+      },
+      {
+        "level": "H2",
+        "text": "Service Availability"
+      },
+      {
+        "level": "H2",
+        "text": "Account Termination"
+      },
+      {
+        "level": "H2",
+        "text": "Limitation of Liability"
+      },
+      {
+        "level": "H2",
+        "text": "Privacy"
+      },
+      {
+        "level": "H2",
+        "text": "Modifications"
+      },
+      {
+        "level": "H2",
+        "text": "Governing Law"
+      },
+      {
+        "level": "H2",
+        "text": "Contact"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/terms",
+    "width": 390,
+    "actualPath": "/terms",
+    "title": "Terms & Conditions | FreeTradeJournal - Service Terms",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Terms and Conditions"
+      },
+      {
+        "level": "H2",
+        "text": "Acceptance of Terms"
+      },
+      {
+        "level": "H2",
+        "text": "Description of Service"
+      },
+      {
+        "level": "H2",
+        "text": "Account Registration"
+      },
+      {
+        "level": "H2",
+        "text": "Pro Subscription & Payments"
+      },
+      {
+        "level": "H3",
+        "text": "Refunds"
+      },
+      {
+        "level": "H2",
+        "text": "Free Tier"
+      },
+      {
+        "level": "H2",
+        "text": "Not Financial Advice"
+      },
+      {
+        "level": "H2",
+        "text": "Data Accuracy"
+      },
+      {
+        "level": "H2",
+        "text": "Acceptable Use"
+      },
+      {
+        "level": "H2",
+        "text": "Intellectual Property"
+      },
+      {
+        "level": "H2",
+        "text": "Service Availability"
+      },
+      {
+        "level": "H2",
+        "text": "Account Termination"
+      },
+      {
+        "level": "H2",
+        "text": "Limitation of Liability"
+      },
+      {
+        "level": "H2",
+        "text": "Privacy"
+      },
+      {
+        "level": "H2",
+        "text": "Modifications"
+      },
+      {
+        "level": "H2",
+        "text": "Governing Law"
+      },
+      {
+        "level": "H2",
+        "text": "Contact"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/cookie-policy",
+    "width": 1440,
+    "actualPath": "/cookie-policy",
+    "title": "Cookie Policy | FreeTradeJournal - How We Use Cookies",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Cookie Policy"
+      },
+      {
+        "level": "H2",
+        "text": "What Are Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Cookies We Use"
+      },
+      {
+        "level": "H2",
+        "text": "Essential Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Functional Storage"
+      },
+      {
+        "level": "H2",
+        "text": "Analytics"
+      },
+      {
+        "level": "H2",
+        "text": "Third-Party Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Managing Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Updates to This Policy"
+      },
+      {
+        "level": "H2",
+        "text": "Related Policies"
+      },
+      {
+        "level": "H2",
+        "text": "Contact Us"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/cookie-policy",
+    "width": 390,
+    "actualPath": "/cookie-policy",
+    "title": "Cookie Policy | FreeTradeJournal - How We Use Cookies",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Cookie Policy"
+      },
+      {
+        "level": "H2",
+        "text": "What Are Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Cookies We Use"
+      },
+      {
+        "level": "H2",
+        "text": "Essential Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Functional Storage"
+      },
+      {
+        "level": "H2",
+        "text": "Analytics"
+      },
+      {
+        "level": "H2",
+        "text": "Third-Party Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Managing Cookies"
+      },
+      {
+        "level": "H2",
+        "text": "Updates to This Policy"
+      },
+      {
+        "level": "H2",
+        "text": "Related Policies"
+      },
+      {
+        "level": "H2",
+        "text": "Contact Us"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/documentation",
+    "width": 1440,
+    "actualPath": "/documentation",
+    "title": "How to Use FreeTradeJournal | Free Trading Journal Setup Guide & Tutorials",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Documentation"
+      },
+      {
+        "level": "H2",
+        "text": "Quick Start"
+      },
+      {
+        "level": "H2",
+        "text": "Dashboard"
+      },
+      {
+        "level": "H2",
+        "text": "Trade Logging"
+      },
+      {
+        "level": "H2",
+        "text": "Calendar Heatmap"
+      },
+      {
+        "level": "H2",
+        "text": "Trading Journal"
+      },
+      {
+        "level": "H2",
+        "text": "Goals & Risk Management"
+      },
+      {
+        "level": "H2",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H2",
+        "text": "Advanced Analytics"
+      },
+      {
+        "level": "H2",
+        "text": "AI Features"
+      },
+      {
+        "level": "H2",
+        "text": "Trade Insights"
+      },
+      {
+        "level": "H2",
+        "text": "Themes"
+      },
+      {
+        "level": "H2",
+        "text": "Filtering & Search"
+      },
+      {
+        "level": "H2",
+        "text": "Export & Reporting"
+      },
+      {
+        "level": "H2",
+        "text": "FAQ"
+      },
+      {
+        "level": "H3",
+        "text": "Is my trading data secure?"
+      },
+      {
+        "level": "H3",
+        "text": "What does the Free plan include?"
+      },
+      {
+        "level": "H3",
+        "text": "What file formats can I import?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use this for tax reporting?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal provide trading advice?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I export my data?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use this offline?"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/documentation",
+    "width": 390,
+    "actualPath": "/documentation",
+    "title": "How to Use FreeTradeJournal | Free Trading Journal Setup Guide & Tutorials",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Documentation"
+      },
+      {
+        "level": "H2",
+        "text": "Quick Start"
+      },
+      {
+        "level": "H2",
+        "text": "Dashboard"
+      },
+      {
+        "level": "H2",
+        "text": "Trade Logging"
+      },
+      {
+        "level": "H2",
+        "text": "Calendar Heatmap"
+      },
+      {
+        "level": "H2",
+        "text": "Trading Journal"
+      },
+      {
+        "level": "H2",
+        "text": "Goals & Risk Management"
+      },
+      {
+        "level": "H2",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H2",
+        "text": "Advanced Analytics"
+      },
+      {
+        "level": "H2",
+        "text": "AI Features"
+      },
+      {
+        "level": "H2",
+        "text": "Trade Insights"
+      },
+      {
+        "level": "H2",
+        "text": "Themes"
+      },
+      {
+        "level": "H2",
+        "text": "Filtering & Search"
+      },
+      {
+        "level": "H2",
+        "text": "Export & Reporting"
+      },
+      {
+        "level": "H2",
+        "text": "FAQ"
+      },
+      {
+        "level": "H3",
+        "text": "Is my trading data secure?"
+      },
+      {
+        "level": "H3",
+        "text": "What does the Free plan include?"
+      },
+      {
+        "level": "H3",
+        "text": "What file formats can I import?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use this for tax reporting?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal provide trading advice?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I export my data?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use this offline?"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/changelog",
+    "width": 1440,
+    "actualPath": "/changelog",
+    "title": "Changelog | FreeTradeJournal - Latest Updates & New Features",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Release Notes"
+      },
+      {
+        "level": "H2",
+        "text": "Trade Ideas beta paused."
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H2",
+        "text": "Light mode is brighter and theme colours are easier to read."
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Fixes"
+      },
+      {
+        "level": "H2",
+        "text": "Chart controls in the Theme Studio, and a rebuilt Settings page."
+      },
+      {
+        "level": "H3",
+        "text": "New features"
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Fixes"
+      },
+      {
+        "level": "H2",
+        "text": "Import from the Add Trade dialog, a clearer calendar day view, and news events on the calendar."
+      },
+      {
+        "level": "H3",
+        "text": "New features"
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H2",
+        "text": "Chart screenshots on daily calendar notes, and redrawn Time of Day and Trading Sessions charts."
+      },
+      {
+        "level": "H3",
+        "text": "New features"
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/changelog",
+    "width": 390,
+    "actualPath": "/changelog",
+    "title": "Changelog | FreeTradeJournal - Latest Updates & New Features",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Release Notes"
+      },
+      {
+        "level": "H2",
+        "text": "Trade Ideas beta paused."
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H2",
+        "text": "Light mode is brighter and theme colours are easier to read."
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Fixes"
+      },
+      {
+        "level": "H2",
+        "text": "Chart controls in the Theme Studio, and a rebuilt Settings page."
+      },
+      {
+        "level": "H3",
+        "text": "New features"
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Fixes"
+      },
+      {
+        "level": "H2",
+        "text": "Import from the Add Trade dialog, a clearer calendar day view, and news events on the calendar."
+      },
+      {
+        "level": "H3",
+        "text": "New features"
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      },
+      {
+        "level": "H2",
+        "text": "Chart screenshots on daily calendar notes, and redrawn Time of Day and Trading Sessions charts."
+      },
+      {
+        "level": "H3",
+        "text": "New features"
+      },
+      {
+        "level": "H3",
+        "text": "Improvements"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog",
+    "width": 1440,
+    "actualPath": "/blog",
+    "title": "Trading Blog | FreeTradeJournal \u2014 Prop Firm & Journaling Guides",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade smarter"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)"
+      },
+      {
+        "level": "H2",
+        "text": "I Let an AI Coach Read My Trading Journal. Here's What It Caught."
+      },
+      {
+        "level": "H2",
+        "text": "How to Import DAS Trader Exports Into a Trading Journal (Free)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journal for Prop Firm Traders (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Pass a Topstep Combine (The Mindset Nobody Talks About)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Track Multiple Prop Firm Accounts in One Place (For Free)"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog",
+    "width": 390,
+    "actualPath": "/blog",
+    "title": "Trading Blog | FreeTradeJournal \u2014 Prop Firm & Journaling Guides",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade smarter"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)"
+      },
+      {
+        "level": "H2",
+        "text": "I Let an AI Coach Read My Trading Journal. Here's What It Caught."
+      },
+      {
+        "level": "H2",
+        "text": "How to Import DAS Trader Exports Into a Trading Journal (Free)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journal for Prop Firm Traders (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Pass a Topstep Combine (The Mindset Nobody Talks About)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Track Multiple Prop Firm Accounts in One Place (For Free)"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/pricing",
+    "width": 1440,
+    "actualPath": "/pricing",
+    "title": "Pricing | Free Forever + Pro Plans from $12.99/mo | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Free Trading Journal, Pro When You Need It"
+      },
+      {
+        "level": "H2",
+        "text": "Free"
+      },
+      {
+        "level": "H2",
+        "text": "Pro YearlyMost Popular"
+      },
+      {
+        "level": "H2",
+        "text": "Free vs Pro"
+      },
+      {
+        "level": "H2",
+        "text": "How we compare"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is the free plan really free forever?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I cancel my Pro subscription anytime?"
+      },
+      {
+        "level": "H3",
+        "text": "What happens to my data if I downgrade?"
+      },
+      {
+        "level": "H3",
+        "text": "Is cloud sync included in the free plan?"
+      },
+      {
+        "level": "H3",
+        "text": "What AI features does Pro include?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/pricing",
+    "width": 390,
+    "actualPath": "/pricing",
+    "title": "Pricing | Free Forever + Pro Plans from $12.99/mo | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Free Trading Journal, Pro When You Need It"
+      },
+      {
+        "level": "H2",
+        "text": "Free"
+      },
+      {
+        "level": "H2",
+        "text": "Pro YearlyMost Popular"
+      },
+      {
+        "level": "H2",
+        "text": "Free vs Pro"
+      },
+      {
+        "level": "H2",
+        "text": "How we compare"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is the free plan really free forever?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I cancel my Pro subscription anytime?"
+      },
+      {
+        "level": "H3",
+        "text": "What happens to my data if I downgrade?"
+      },
+      {
+        "level": "H3",
+        "text": "Is cloud sync included in the free plan?"
+      },
+      {
+        "level": "H3",
+        "text": "What AI features does Pro include?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/forex-trading-journal",
+    "width": 1440,
+    "actualPath": "/forex-trading-journal",
+    "title": "Free Forex Trading Journal | MT4/MT5 Import & Auto Pip P&L | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Pip,Improve Every Trade"
+      },
+      {
+        "level": "H2",
+        "text": "Every pip tracked.Every edge visible."
+      },
+      {
+        "level": "H3",
+        "text": "Pair Logging"
+      },
+      {
+        "level": "H3",
+        "text": "Pip Calculation"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Account"
+      },
+      {
+        "level": "H3",
+        "text": "Free Forever"
+      },
+      {
+        "level": "H2",
+        "text": "Four fields in.One honest record out."
+      },
+      {
+        "level": "H3",
+        "text": "Pick the pair and direction"
+      },
+      {
+        "level": "H3",
+        "text": "Enter your prices"
+      },
+      {
+        "level": "H3",
+        "text": "Add size and costs"
+      },
+      {
+        "level": "H3",
+        "text": "Write down why you took it"
+      },
+      {
+        "level": "H2",
+        "text": "Export the file.Drop it in."
+      },
+      {
+        "level": "H3",
+        "text": "The MT5 preamble"
+      },
+      {
+        "level": "H3",
+        "text": "European number formats"
+      },
+      {
+        "level": "H3",
+        "text": "Commission and swap"
+      },
+      {
+        "level": "H3",
+        "text": "Forex precision"
+      },
+      {
+        "level": "H2",
+        "text": "The pairs you thinkmake you money."
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "Does it work with MT4, or only MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "Which brokers can I import from?"
+      },
+      {
+        "level": "H3",
+        "text": "How are yen pairs handled?"
+      },
+      {
+        "level": "H3",
+        "text": "Is swap tracked separately from commission?"
+      },
+      {
+        "level": "H3",
+        "text": "Does it work on my phone?"
+      },
+      {
+        "level": "H3",
+        "text": "What do I get without paying?"
+      },
+      {
+        "level": "H3",
+        "text": "What happens to my trades if I stop paying?"
+      },
+      {
+        "level": "H3",
+        "text": "Do I have to sign up to look around?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/forex-trading-journal",
+    "width": 390,
+    "actualPath": "/forex-trading-journal",
+    "title": "Free Forex Trading Journal | MT4/MT5 Import & Auto Pip P&L | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Pip,Improve Every Trade"
+      },
+      {
+        "level": "H2",
+        "text": "Every pip tracked.Every edge visible."
+      },
+      {
+        "level": "H3",
+        "text": "Pair Logging"
+      },
+      {
+        "level": "H3",
+        "text": "Pip Calculation"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Account"
+      },
+      {
+        "level": "H3",
+        "text": "Free Forever"
+      },
+      {
+        "level": "H2",
+        "text": "Four fields in.One honest record out."
+      },
+      {
+        "level": "H3",
+        "text": "Pick the pair and direction"
+      },
+      {
+        "level": "H3",
+        "text": "Enter your prices"
+      },
+      {
+        "level": "H3",
+        "text": "Add size and costs"
+      },
+      {
+        "level": "H3",
+        "text": "Write down why you took it"
+      },
+      {
+        "level": "H2",
+        "text": "Export the file.Drop it in."
+      },
+      {
+        "level": "H3",
+        "text": "The MT5 preamble"
+      },
+      {
+        "level": "H3",
+        "text": "European number formats"
+      },
+      {
+        "level": "H3",
+        "text": "Commission and swap"
+      },
+      {
+        "level": "H3",
+        "text": "Forex precision"
+      },
+      {
+        "level": "H2",
+        "text": "The pairs you thinkmake you money."
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "Does it work with MT4, or only MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "Which brokers can I import from?"
+      },
+      {
+        "level": "H3",
+        "text": "How are yen pairs handled?"
+      },
+      {
+        "level": "H3",
+        "text": "Is swap tracked separately from commission?"
+      },
+      {
+        "level": "H3",
+        "text": "Does it work on my phone?"
+      },
+      {
+        "level": "H3",
+        "text": "What do I get without paying?"
+      },
+      {
+        "level": "H3",
+        "text": "What happens to my trades if I stop paying?"
+      },
+      {
+        "level": "H3",
+        "text": "Do I have to sign up to look around?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/futures-trading-tracker",
+    "width": 1440,
+    "actualPath": "/futures-trading-tracker",
+    "title": "Free Futures Trading Journal | ES, NQ, CL & Tradovate Import | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Contract,Sharpen Every Edge"
+      },
+      {
+        "level": "H2",
+        "text": "Every tick counted.Every contract covered."
+      },
+      {
+        "level": "H3",
+        "text": "Contract Logging"
+      },
+      {
+        "level": "H3",
+        "text": "P&L Calculation"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Account"
+      },
+      {
+        "level": "H3",
+        "text": "Free to Start"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "What do I log for each trade?"
+      },
+      {
+        "level": "H3",
+        "text": "How does P&L calculation work?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I import from Tradovate or MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "What analytics do I get?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track multiple accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the futures tracker free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/futures-trading-tracker",
+    "width": 390,
+    "actualPath": "/futures-trading-tracker",
+    "title": "Free Futures Trading Journal | ES, NQ, CL & Tradovate Import | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Contract,Sharpen Every Edge"
+      },
+      {
+        "level": "H2",
+        "text": "Every tick counted.Every contract covered."
+      },
+      {
+        "level": "H3",
+        "text": "Contract Logging"
+      },
+      {
+        "level": "H3",
+        "text": "P&L Calculation"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Account"
+      },
+      {
+        "level": "H3",
+        "text": "Free to Start"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "What do I log for each trade?"
+      },
+      {
+        "level": "H3",
+        "text": "How does P&L calculation work?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I import from Tradovate or MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "What analytics do I get?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track multiple accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the futures tracker free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/prop-firm-dashboard",
+    "width": 1440,
+    "actualPath": "/prop-firm-dashboard",
+    "title": "Free Prop Firm Dashboard | Track FTMO, Apex & TopStep Accounts | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Prop FirmChallenge & Payout"
+      },
+      {
+        "level": "H2",
+        "text": "Stop guessing.Know your real numbers."
+      },
+      {
+        "level": "H3",
+        "text": "Account Tracking"
+      },
+      {
+        "level": "H3",
+        "text": "PropTracker"
+      },
+      {
+        "level": "H3",
+        "text": "Goal Setting"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Firm"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Free to Start"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "How do I track prop firm accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "Which prop firms does this work with?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track fees, resets, and payouts?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I set drawdown and loss goals?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track multiple accounts at once?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the prop firm dashboard free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/prop-firm-dashboard",
+    "width": 390,
+    "actualPath": "/prop-firm-dashboard",
+    "title": "Free Prop Firm Dashboard | Track FTMO, Apex & TopStep Accounts | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Prop FirmChallenge & Payout"
+      },
+      {
+        "level": "H2",
+        "text": "Stop guessing.Know your real numbers."
+      },
+      {
+        "level": "H3",
+        "text": "Account Tracking"
+      },
+      {
+        "level": "H3",
+        "text": "PropTracker"
+      },
+      {
+        "level": "H3",
+        "text": "Goal Setting"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Firm"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Free to Start"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "How do I track prop firm accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "Which prop firms does this work with?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track fees, resets, and payouts?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I set drawdown and loss goals?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track multiple accounts at once?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the prop firm dashboard free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/day-trading-journal",
+    "width": 1440,
+    "actualPath": "/day-trading-journal",
+    "title": "Free Day Trading Journal (2026) | Log Scalps & Intraday Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Log Every Scalp,Fix Every Mistake"
+      },
+      {
+        "level": "H2",
+        "text": "Every scalp logged.Every pattern visible."
+      },
+      {
+        "level": "H3",
+        "text": "Session Tracking"
+      },
+      {
+        "level": "H3",
+        "text": "Overtrading Detection"
+      },
+      {
+        "level": "H3",
+        "text": "AI Trade Review"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Free Forever"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "Is this good for scalping and quick trades?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I set a daily trade limit?"
+      },
+      {
+        "level": "H3",
+        "text": "What brokers can I import from?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the AI trade review work?"
+      },
+      {
+        "level": "H3",
+        "text": "Does the calendar heatmap show daily totals?"
+      },
+      {
+        "level": "H3",
+        "text": "Is this actually free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/day-trading-journal",
+    "width": 390,
+    "actualPath": "/day-trading-journal",
+    "title": "Free Day Trading Journal (2026) | Log Scalps & Intraday Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Log Every Scalp,Fix Every Mistake"
+      },
+      {
+        "level": "H2",
+        "text": "Every scalp logged.Every pattern visible."
+      },
+      {
+        "level": "H3",
+        "text": "Session Tracking"
+      },
+      {
+        "level": "H3",
+        "text": "Overtrading Detection"
+      },
+      {
+        "level": "H3",
+        "text": "AI Trade Review"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "Free Forever"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "Is this good for scalping and quick trades?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I set a daily trade limit?"
+      },
+      {
+        "level": "H3",
+        "text": "What brokers can I import from?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the AI trade review work?"
+      },
+      {
+        "level": "H3",
+        "text": "Does the calendar heatmap show daily totals?"
+      },
+      {
+        "level": "H3",
+        "text": "Is this actually free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/online-trading-journal",
+    "width": 1440,
+    "actualPath": "/online-trading-journal",
+    "title": "Free Online Trading Journal (2026) | No Download Required | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Your Trading Journal,Online & Free"
+      },
+      {
+        "level": "H2",
+        "text": "No install needed.Full journal in your browser."
+      },
+      {
+        "level": "H3",
+        "text": "No Download Required"
+      },
+      {
+        "level": "H3",
+        "text": "Access Anywhere"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "AI Trade Coaching"
+      },
+      {
+        "level": "H3",
+        "text": "Free Forever"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "Do I need to install anything?"
+      },
+      {
+        "level": "H3",
+        "text": "Does it work on my phone?"
+      },
+      {
+        "level": "H3",
+        "text": "Is my data safe in the browser?"
+      },
+      {
+        "level": "H3",
+        "text": "What markets does this support?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I import my existing trades?"
+      },
+      {
+        "level": "H3",
+        "text": "How is this free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/online-trading-journal",
+    "width": 390,
+    "actualPath": "/online-trading-journal",
+    "title": "Free Online Trading Journal (2026) | No Download Required | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Your Trading Journal,Online & Free"
+      },
+      {
+        "level": "H2",
+        "text": "No install needed.Full journal in your browser."
+      },
+      {
+        "level": "H3",
+        "text": "No Download Required"
+      },
+      {
+        "level": "H3",
+        "text": "Access Anywhere"
+      },
+      {
+        "level": "H3",
+        "text": "CSV Import"
+      },
+      {
+        "level": "H3",
+        "text": "Full Analytics"
+      },
+      {
+        "level": "H3",
+        "text": "AI Trade Coaching"
+      },
+      {
+        "level": "H3",
+        "text": "Free Forever"
+      },
+      {
+        "level": "H2",
+        "text": "Common questions.Straight answers."
+      },
+      {
+        "level": "H3",
+        "text": "Do I need to install anything?"
+      },
+      {
+        "level": "H3",
+        "text": "Does it work on my phone?"
+      },
+      {
+        "level": "H3",
+        "text": "Is my data safe in the browser?"
+      },
+      {
+        "level": "H3",
+        "text": "What markets does this support?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I import my existing trades?"
+      },
+      {
+        "level": "H3",
+        "text": "How is this free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/affiliate",
+    "width": 1440,
+    "actualPath": "/affiliate",
+    "title": "Best Prop Firm Deals & Discounts (2026) | Exclusive Codes | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Prop FirmAffiliate Partners"
+      },
+      {
+        "level": "H2",
+        "text": "Save on your nextchallenge."
+      },
+      {
+        "level": "H3",
+        "text": "The5%ers"
+      },
+      {
+        "level": "H3",
+        "text": "FTMO"
+      },
+      {
+        "level": "H3",
+        "text": "FundedNext"
+      },
+      {
+        "level": "H3",
+        "text": "Top One Futures"
+      },
+      {
+        "level": "H3",
+        "text": "Apex Trader Funding"
+      },
+      {
+        "level": "H2",
+        "text": "Beyond thejournal."
+      },
+      {
+        "level": "H3",
+        "text": "TradingView"
+      },
+      {
+        "level": "H3",
+        "text": "Involio"
+      },
+      {
+        "level": "H2",
+        "text": "Compare propfirms."
+      },
+      {
+        "level": "H2",
+        "text": "Prop Firm Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Are these prop firm discount codes legit?"
+      },
+      {
+        "level": "H3",
+        "text": "Which prop firm is best for beginners?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the cheapest prop firm challenge?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use FreeTradeJournal to track my prop firm challenge?"
+      },
+      {
+        "level": "H3",
+        "text": "Do I need a Pro subscription to track prop firm trades?"
+      },
+      {
+        "level": "H3",
+        "text": "What markets do these prop firms support?"
+      },
+      {
+        "level": "H3",
+        "text": "How do prop firm payouts work?"
+      },
+      {
+        "level": "H3",
+        "text": "Will more prop firms be added?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/affiliate",
+    "width": 390,
+    "actualPath": "/affiliate",
+    "title": "Best Prop Firm Deals & Discounts (2026) | Exclusive Codes | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Prop FirmAffiliate Partners"
+      },
+      {
+        "level": "H2",
+        "text": "Save on your nextchallenge."
+      },
+      {
+        "level": "H3",
+        "text": "The5%ers"
+      },
+      {
+        "level": "H3",
+        "text": "FTMO"
+      },
+      {
+        "level": "H3",
+        "text": "FundedNext"
+      },
+      {
+        "level": "H3",
+        "text": "Top One Futures"
+      },
+      {
+        "level": "H3",
+        "text": "Apex Trader Funding"
+      },
+      {
+        "level": "H2",
+        "text": "Beyond thejournal."
+      },
+      {
+        "level": "H3",
+        "text": "TradingView"
+      },
+      {
+        "level": "H3",
+        "text": "Involio"
+      },
+      {
+        "level": "H2",
+        "text": "Compare propfirms."
+      },
+      {
+        "level": "H2",
+        "text": "Prop Firm Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Are these prop firm discount codes legit?"
+      },
+      {
+        "level": "H3",
+        "text": "Which prop firm is best for beginners?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the cheapest prop firm challenge?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use FreeTradeJournal to track my prop firm challenge?"
+      },
+      {
+        "level": "H3",
+        "text": "Do I need a Pro subscription to track prop firm trades?"
+      },
+      {
+        "level": "H3",
+        "text": "What markets do these prop firms support?"
+      },
+      {
+        "level": "H3",
+        "text": "How do prop firm payouts work?"
+      },
+      {
+        "level": "H3",
+        "text": "Will more prop firms be added?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/ftmo-review",
+    "width": 1440,
+    "actualPath": "/ftmo-review",
+    "title": "FTMO Review (2026) | Honest Pros, Cons & Challenge Breakdown | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "FTMO Review(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "What isFTMO?"
+      },
+      {
+        "level": "H2",
+        "text": "The honestbreakdown."
+      },
+      {
+        "level": "H3",
+        "text": "Industry reputation"
+      },
+      {
+        "level": "H3",
+        "text": "Up to $2M funding"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-asset trading"
+      },
+      {
+        "level": "H3",
+        "text": "80--90% profit split"
+      },
+      {
+        "level": "H3",
+        "text": "Free verification retake"
+      },
+      {
+        "level": "H3",
+        "text": "Reliable payouts"
+      },
+      {
+        "level": "H3",
+        "text": "Two-step can be slow"
+      },
+      {
+        "level": "H3",
+        "text": "Strict risk limits"
+      },
+      {
+        "level": "H3",
+        "text": "Higher challenge fees"
+      },
+      {
+        "level": "H3",
+        "text": "No futures contracts"
+      },
+      {
+        "level": "H2",
+        "text": "FTMO Questions"
+      },
+      {
+        "level": "H3",
+        "text": "How does the FTMO challenge work?"
+      },
+      {
+        "level": "H3",
+        "text": "How much does an FTMO challenge cost?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the FTMO profit split?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I trade futures on FTMO?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FTMO allow Expert Advisors (EAs)?"
+      },
+      {
+        "level": "H3",
+        "text": "How do FTMO payouts work?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my FTMO challenge with FreeTradeJournal?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/ftmo-review",
+    "width": 390,
+    "actualPath": "/ftmo-review",
+    "title": "FTMO Review (2026) | Honest Pros, Cons & Challenge Breakdown | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "FTMO Review(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "What isFTMO?"
+      },
+      {
+        "level": "H2",
+        "text": "The honestbreakdown."
+      },
+      {
+        "level": "H3",
+        "text": "Industry reputation"
+      },
+      {
+        "level": "H3",
+        "text": "Up to $2M funding"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-asset trading"
+      },
+      {
+        "level": "H3",
+        "text": "80--90% profit split"
+      },
+      {
+        "level": "H3",
+        "text": "Free verification retake"
+      },
+      {
+        "level": "H3",
+        "text": "Reliable payouts"
+      },
+      {
+        "level": "H3",
+        "text": "Two-step can be slow"
+      },
+      {
+        "level": "H3",
+        "text": "Strict risk limits"
+      },
+      {
+        "level": "H3",
+        "text": "Higher challenge fees"
+      },
+      {
+        "level": "H3",
+        "text": "No futures contracts"
+      },
+      {
+        "level": "H2",
+        "text": "FTMO Questions"
+      },
+      {
+        "level": "H3",
+        "text": "How does the FTMO challenge work?"
+      },
+      {
+        "level": "H3",
+        "text": "How much does an FTMO challenge cost?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the FTMO profit split?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I trade futures on FTMO?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FTMO allow Expert Advisors (EAs)?"
+      },
+      {
+        "level": "H3",
+        "text": "How do FTMO payouts work?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my FTMO challenge with FreeTradeJournal?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/the5ers-review",
+    "width": 1440,
+    "actualPath": "/the5ers-review",
+    "title": "The5%ers Review (2026) | Instant Funding & Scaling to $4M | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The5%ers Review(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "What isThe5%ers?"
+      },
+      {
+        "level": "H2",
+        "text": "The honestbreakdown."
+      },
+      {
+        "level": "H3",
+        "text": "Instant funding"
+      },
+      {
+        "level": "H3",
+        "text": "Scaling to $4M"
+      },
+      {
+        "level": "H3",
+        "text": "Flexible evaluations"
+      },
+      {
+        "level": "H3",
+        "text": "Up to 100% profit split"
+      },
+      {
+        "level": "H3",
+        "text": "Established reputation"
+      },
+      {
+        "level": "H3",
+        "text": "100+ instruments"
+      },
+      {
+        "level": "H3",
+        "text": "Lower starting split"
+      },
+      {
+        "level": "H3",
+        "text": "Tighter instant drawdown"
+      },
+      {
+        "level": "H3",
+        "text": "Slow scaling timeline"
+      },
+      {
+        "level": "H3",
+        "text": "No CME futures"
+      },
+      {
+        "level": "H2",
+        "text": "The5%ers Questions"
+      },
+      {
+        "level": "H3",
+        "text": "What is The5%ers instant funding?"
+      },
+      {
+        "level": "H3",
+        "text": "How much does a The5%ers challenge cost?"
+      },
+      {
+        "level": "H3",
+        "text": "What is The5%ers profit split?"
+      },
+      {
+        "level": "H3",
+        "text": "What can I trade on The5%ers?"
+      },
+      {
+        "level": "H3",
+        "text": "How do The5%ers payouts work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is The5%ers discount code ZBY34 legit?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my The5%ers account with FreeTradeJournal?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/the5ers-review",
+    "width": 390,
+    "actualPath": "/the5ers-review",
+    "title": "The5%ers Review (2026) | Instant Funding & Scaling to $4M | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The5%ers Review(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "What isThe5%ers?"
+      },
+      {
+        "level": "H2",
+        "text": "The honestbreakdown."
+      },
+      {
+        "level": "H3",
+        "text": "Instant funding"
+      },
+      {
+        "level": "H3",
+        "text": "Scaling to $4M"
+      },
+      {
+        "level": "H3",
+        "text": "Flexible evaluations"
+      },
+      {
+        "level": "H3",
+        "text": "Up to 100% profit split"
+      },
+      {
+        "level": "H3",
+        "text": "Established reputation"
+      },
+      {
+        "level": "H3",
+        "text": "100+ instruments"
+      },
+      {
+        "level": "H3",
+        "text": "Lower starting split"
+      },
+      {
+        "level": "H3",
+        "text": "Tighter instant drawdown"
+      },
+      {
+        "level": "H3",
+        "text": "Slow scaling timeline"
+      },
+      {
+        "level": "H3",
+        "text": "No CME futures"
+      },
+      {
+        "level": "H2",
+        "text": "The5%ers Questions"
+      },
+      {
+        "level": "H3",
+        "text": "What is The5%ers instant funding?"
+      },
+      {
+        "level": "H3",
+        "text": "How much does a The5%ers challenge cost?"
+      },
+      {
+        "level": "H3",
+        "text": "What is The5%ers profit split?"
+      },
+      {
+        "level": "H3",
+        "text": "What can I trade on The5%ers?"
+      },
+      {
+        "level": "H3",
+        "text": "How do The5%ers payouts work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is The5%ers discount code ZBY34 legit?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my The5%ers account with FreeTradeJournal?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/top-one-futures-review",
+    "width": 1440,
+    "actualPath": "/top-one-futures-review",
+    "title": "Top One Futures Review (2026) | Best Futures Prop Firm? | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Top One FuturesReview (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "What is Top OneFutures?"
+      },
+      {
+        "level": "H2",
+        "text": "The honestbreakdown."
+      },
+      {
+        "level": "H3",
+        "text": "Futures-focused"
+      },
+      {
+        "level": "H3",
+        "text": "Multiple eval options"
+      },
+      {
+        "level": "H3",
+        "text": "Up to $500K funding"
+      },
+      {
+        "level": "H3",
+        "text": "No scaling requirements"
+      },
+      {
+        "level": "H3",
+        "text": "All major contracts"
+      },
+      {
+        "level": "H3",
+        "text": "90% profit split"
+      },
+      {
+        "level": "H3",
+        "text": "Futures only"
+      },
+      {
+        "level": "H3",
+        "text": "Newer firm"
+      },
+      {
+        "level": "H3",
+        "text": "Fewer resources"
+      },
+      {
+        "level": "H3",
+        "text": "Platform restrictions"
+      },
+      {
+        "level": "H2",
+        "text": "Top One Futures Questions"
+      },
+      {
+        "level": "H3",
+        "text": "What is Top One Futures?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the Top One Futures evaluation work?"
+      },
+      {
+        "level": "H3",
+        "text": "What futures contracts can I trade?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the profit split?"
+      },
+      {
+        "level": "H3",
+        "text": "How do payouts work at Top One Futures?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use NinjaTrader or Tradovate?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my Top One Futures account with FreeTradeJournal?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/top-one-futures-review",
+    "width": 390,
+    "actualPath": "/top-one-futures-review",
+    "title": "Top One Futures Review (2026) | Best Futures Prop Firm? | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Top One FuturesReview (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "What is Top OneFutures?"
+      },
+      {
+        "level": "H2",
+        "text": "The honestbreakdown."
+      },
+      {
+        "level": "H3",
+        "text": "Futures-focused"
+      },
+      {
+        "level": "H3",
+        "text": "Multiple eval options"
+      },
+      {
+        "level": "H3",
+        "text": "Up to $500K funding"
+      },
+      {
+        "level": "H3",
+        "text": "No scaling requirements"
+      },
+      {
+        "level": "H3",
+        "text": "All major contracts"
+      },
+      {
+        "level": "H3",
+        "text": "90% profit split"
+      },
+      {
+        "level": "H3",
+        "text": "Futures only"
+      },
+      {
+        "level": "H3",
+        "text": "Newer firm"
+      },
+      {
+        "level": "H3",
+        "text": "Fewer resources"
+      },
+      {
+        "level": "H3",
+        "text": "Platform restrictions"
+      },
+      {
+        "level": "H2",
+        "text": "Top One Futures Questions"
+      },
+      {
+        "level": "H3",
+        "text": "What is Top One Futures?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the Top One Futures evaluation work?"
+      },
+      {
+        "level": "H3",
+        "text": "What futures contracts can I trade?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the profit split?"
+      },
+      {
+        "level": "H3",
+        "text": "How do payouts work at Top One Futures?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I use NinjaTrader or Tradovate?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my Top One Futures account with FreeTradeJournal?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/tradezella-alternative",
+    "width": 1440,
+    "actualPath": "/tradezella-alternative",
+    "title": "TradeZella Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "TradeZella Alternative(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Same job.Very different price."
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournalvs TradeZella."
+      },
+      {
+        "level": "H2",
+        "text": "Where each oneactually wins."
+      },
+      {
+        "level": "H3",
+        "text": "A real free plan"
+      },
+      {
+        "level": "H3",
+        "text": "A third of the price"
+      },
+      {
+        "level": "H3",
+        "text": "AI coaching from day one"
+      },
+      {
+        "level": "H3",
+        "text": "Prop-firm tracking built in"
+      },
+      {
+        "level": "H3",
+        "text": "One plan, everything included"
+      },
+      {
+        "level": "H3",
+        "text": "Automatic broker sync"
+      },
+      {
+        "level": "H3",
+        "text": "Backtesting and replay"
+      },
+      {
+        "level": "H3",
+        "text": "Larger community"
+      },
+      {
+        "level": "H2",
+        "text": "Switching from TradeZella Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H3",
+        "text": "How much cheaper is FreeTradeJournal than TradeZella?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I switch from TradeZella to FreeTradeJournal?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal sync with my broker automatically?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work for prop firm traders?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I try Pro before paying?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/tradezella-alternative",
+    "width": 390,
+    "actualPath": "/tradezella-alternative",
+    "title": "TradeZella Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "TradeZella Alternative(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Same job.Very different price."
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournalvs TradeZella."
+      },
+      {
+        "level": "H2",
+        "text": "Where each oneactually wins."
+      },
+      {
+        "level": "H3",
+        "text": "A real free plan"
+      },
+      {
+        "level": "H3",
+        "text": "A third of the price"
+      },
+      {
+        "level": "H3",
+        "text": "AI coaching from day one"
+      },
+      {
+        "level": "H3",
+        "text": "Prop-firm tracking built in"
+      },
+      {
+        "level": "H3",
+        "text": "One plan, everything included"
+      },
+      {
+        "level": "H3",
+        "text": "Automatic broker sync"
+      },
+      {
+        "level": "H3",
+        "text": "Backtesting and replay"
+      },
+      {
+        "level": "H3",
+        "text": "Larger community"
+      },
+      {
+        "level": "H2",
+        "text": "Switching from TradeZella Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H3",
+        "text": "How much cheaper is FreeTradeJournal than TradeZella?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I switch from TradeZella to FreeTradeJournal?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal sync with my broker automatically?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work for prop firm traders?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I try Pro before paying?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/tradersync-alternative",
+    "width": 1440,
+    "actualPath": "/tradersync-alternative",
+    "title": "TraderSync Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "TraderSync Alternative(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "The AI you want,without the Elite tier."
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournalvs TraderSync."
+      },
+      {
+        "level": "H2",
+        "text": "Where each oneactually wins."
+      },
+      {
+        "level": "H3",
+        "text": "A real free plan"
+      },
+      {
+        "level": "H3",
+        "text": "AI without the Premium tier"
+      },
+      {
+        "level": "H3",
+        "text": "Less than half the price"
+      },
+      {
+        "level": "H3",
+        "text": "Prop-firm tracking built in"
+      },
+      {
+        "level": "H3",
+        "text": "One plan, everything included"
+      },
+      {
+        "level": "H3",
+        "text": "Automatic broker sync"
+      },
+      {
+        "level": "H3",
+        "text": "Stocks and options depth"
+      },
+      {
+        "level": "H3",
+        "text": "Market replay"
+      },
+      {
+        "level": "H2",
+        "text": "Switching from TraderSync Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the price compare to TraderSync?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I switch from TraderSync to FreeTradeJournal?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal sync with my broker automatically?"
+      },
+      {
+        "level": "H3",
+        "text": "I trade stocks and options \u2014 is FreeTradeJournal right for me?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I try Pro before paying?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/tradersync-alternative",
+    "width": 390,
+    "actualPath": "/tradersync-alternative",
+    "title": "TraderSync Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "TraderSync Alternative(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "The AI you want,without the Elite tier."
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournalvs TraderSync."
+      },
+      {
+        "level": "H2",
+        "text": "Where each oneactually wins."
+      },
+      {
+        "level": "H3",
+        "text": "A real free plan"
+      },
+      {
+        "level": "H3",
+        "text": "AI without the Premium tier"
+      },
+      {
+        "level": "H3",
+        "text": "Less than half the price"
+      },
+      {
+        "level": "H3",
+        "text": "Prop-firm tracking built in"
+      },
+      {
+        "level": "H3",
+        "text": "One plan, everything included"
+      },
+      {
+        "level": "H3",
+        "text": "Automatic broker sync"
+      },
+      {
+        "level": "H3",
+        "text": "Stocks and options depth"
+      },
+      {
+        "level": "H3",
+        "text": "Market replay"
+      },
+      {
+        "level": "H2",
+        "text": "Switching from TraderSync Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the price compare to TraderSync?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I switch from TraderSync to FreeTradeJournal?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal sync with my broker automatically?"
+      },
+      {
+        "level": "H3",
+        "text": "I trade stocks and options \u2014 is FreeTradeJournal right for me?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I try Pro before paying?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/edgewonk-alternative",
+    "width": 1440,
+    "actualPath": "/edgewonk-alternative",
+    "title": "Edgewonk Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Edgewonk Alternative(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Answers,not just statistics."
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournalvs Edgewonk."
+      },
+      {
+        "level": "H2",
+        "text": "Where each oneactually wins."
+      },
+      {
+        "level": "H3",
+        "text": "Free to start, cheap to stay"
+      },
+      {
+        "level": "H3",
+        "text": "Pay monthly if you want"
+      },
+      {
+        "level": "H3",
+        "text": "AI coaching, not just statistics"
+      },
+      {
+        "level": "H3",
+        "text": "Prop-firm tracking built in"
+      },
+      {
+        "level": "H3",
+        "text": "News and economic calendar included"
+      },
+      {
+        "level": "H3",
+        "text": "Depth of custom statistics"
+      },
+      {
+        "level": "H3",
+        "text": "Emotional analytics depth"
+      },
+      {
+        "level": "H3",
+        "text": "A decade of refinement"
+      },
+      {
+        "level": "H2",
+        "text": "Switching from Edgewonk Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the price compare to Edgewonk?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I switch from Edgewonk to FreeTradeJournal?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal track trading psychology like Edgewonk's Tiltmeter?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal sync with my broker automatically?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I try Pro before paying?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/edgewonk-alternative",
+    "width": 390,
+    "actualPath": "/edgewonk-alternative",
+    "title": "Edgewonk Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Edgewonk Alternative(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Answers,not just statistics."
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournalvs Edgewonk."
+      },
+      {
+        "level": "H2",
+        "text": "Where each oneactually wins."
+      },
+      {
+        "level": "H3",
+        "text": "Free to start, cheap to stay"
+      },
+      {
+        "level": "H3",
+        "text": "Pay monthly if you want"
+      },
+      {
+        "level": "H3",
+        "text": "AI coaching, not just statistics"
+      },
+      {
+        "level": "H3",
+        "text": "Prop-firm tracking built in"
+      },
+      {
+        "level": "H3",
+        "text": "News and economic calendar included"
+      },
+      {
+        "level": "H3",
+        "text": "Depth of custom statistics"
+      },
+      {
+        "level": "H3",
+        "text": "Emotional analytics depth"
+      },
+      {
+        "level": "H3",
+        "text": "A decade of refinement"
+      },
+      {
+        "level": "H2",
+        "text": "Switching from Edgewonk Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the price compare to Edgewonk?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I switch from Edgewonk to FreeTradeJournal?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal track trading psychology like Edgewonk's Tiltmeter?"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal sync with my broker automatically?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I try Pro before paying?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/position-size-calculator",
+    "width": 1440,
+    "actualPath": "/position-size-calculator",
+    "title": "Free Position Size Calculator \u2014 Forex Lots & Futures Contracts | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Position Size CalculatorForex & Futures"
+      },
+      {
+        "level": "H2",
+        "text": "One formula,no guessing."
+      },
+      {
+        "level": "H2",
+        "text": "Futures tick valuesat a glance."
+      },
+      {
+        "level": "H2",
+        "text": "Sized the trade? Now track it."
+      },
+      {
+        "level": "H2",
+        "text": "Position sizing questions Questions"
+      },
+      {
+        "level": "H3",
+        "text": "How is forex position size calculated?"
+      },
+      {
+        "level": "H3",
+        "text": "How is futures position size calculated?"
+      },
+      {
+        "level": "H3",
+        "text": "What percentage of my account should I risk per trade?"
+      },
+      {
+        "level": "H3",
+        "text": "How do pips work on gold?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the difference between ticks and points in futures?"
+      },
+      {
+        "level": "H3",
+        "text": "Why does the calculator round down instead of to the nearest size?"
+      },
+      {
+        "level": "H3",
+        "text": "Is this calculator free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/position-size-calculator",
+    "width": 390,
+    "actualPath": "/position-size-calculator",
+    "title": "Free Position Size Calculator \u2014 Forex Lots & Futures Contracts | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Position Size CalculatorForex & Futures"
+      },
+      {
+        "level": "H2",
+        "text": "One formula,no guessing."
+      },
+      {
+        "level": "H2",
+        "text": "Futures tick valuesat a glance."
+      },
+      {
+        "level": "H2",
+        "text": "Sized the trade? Now track it."
+      },
+      {
+        "level": "H2",
+        "text": "Position sizing questions Questions"
+      },
+      {
+        "level": "H3",
+        "text": "How is forex position size calculated?"
+      },
+      {
+        "level": "H3",
+        "text": "How is futures position size calculated?"
+      },
+      {
+        "level": "H3",
+        "text": "What percentage of my account should I risk per trade?"
+      },
+      {
+        "level": "H3",
+        "text": "How do pips work on gold?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the difference between ticks and points in futures?"
+      },
+      {
+        "level": "H3",
+        "text": "Why does the calculator round down instead of to the nearest size?"
+      },
+      {
+        "level": "H3",
+        "text": "Is this calculator free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/prop-tracker",
+    "width": 1440,
+    "actualPath": "/prop-tracker",
+    "title": "PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Prop Firm Fee,Payout & Account"
+      },
+      {
+        "level": "H2",
+        "text": "Stop guessing.Know your real numbers."
+      },
+      {
+        "level": "H3",
+        "text": "Fee Tracking"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Firm"
+      },
+      {
+        "level": "H3",
+        "text": "True Net P&L"
+      },
+      {
+        "level": "H3",
+        "text": "Account Status"
+      },
+      {
+        "level": "H3",
+        "text": "Payout History"
+      },
+      {
+        "level": "H3",
+        "text": "Free to Start"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/prop-tracker",
+    "width": 390,
+    "actualPath": "/prop-tracker",
+    "title": "PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Track Every Prop Firm Fee,Payout & Account"
+      },
+      {
+        "level": "H2",
+        "text": "Stop guessing.Know your real numbers."
+      },
+      {
+        "level": "H3",
+        "text": "Fee Tracking"
+      },
+      {
+        "level": "H3",
+        "text": "Multi-Firm"
+      },
+      {
+        "level": "H3",
+        "text": "True Net P&L"
+      },
+      {
+        "level": "H3",
+        "text": "Account Status"
+      },
+      {
+        "level": "H3",
+        "text": "Payout History"
+      },
+      {
+        "level": "H3",
+        "text": "Free to Start"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/audit-missing-page",
+    "width": 1440,
+    "actualPath": "/audit-missing-page",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "404"
+      },
+      {
+        "level": "H2",
+        "text": "Page Not Found"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/audit-missing-page",
+    "width": 390,
+    "actualPath": "/audit-missing-page",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "404"
+      },
+      {
+        "level": "H2",
+        "text": "Page Not Found"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/audit-missing-post",
+    "width": 1440,
+    "actualPath": "/blog",
+    "title": "Trading Blog | FreeTradeJournal \u2014 Prop Firm & Journaling Guides",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade smarter"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)"
+      },
+      {
+        "level": "H2",
+        "text": "I Let an AI Coach Read My Trading Journal. Here's What It Caught."
+      },
+      {
+        "level": "H2",
+        "text": "How to Import DAS Trader Exports Into a Trading Journal (Free)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journal for Prop Firm Traders (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Pass a Topstep Combine (The Mindset Nobody Talks About)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Track Multiple Prop Firm Accounts in One Place (For Free)"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/audit-missing-post",
+    "width": 390,
+    "actualPath": "/blog",
+    "title": "Trading Blog | FreeTradeJournal \u2014 Prop Firm & Journaling Guides",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade smarter"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)"
+      },
+      {
+        "level": "H2",
+        "text": "I Let an AI Coach Read My Trading Journal. Here's What It Caught."
+      },
+      {
+        "level": "H2",
+        "text": "How to Import DAS Trader Exports Into a Trading Journal (Free)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)"
+      },
+      {
+        "level": "H2",
+        "text": "The Best Free Trading Journal for Prop Firm Traders (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Pass a Topstep Combine (The Mindset Nobody Talks About)"
+      },
+      {
+        "level": "H2",
+        "text": "How to Track Multiple Prop Firm Accounts in One Place (For Free)"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/fundednext-trading-journal",
+    "width": 1440,
+    "actualPath": "/fundednext-trading-journal",
+    "title": "FundedNext Trading Journal | Track Stellar Challenge Rules & Import MT5 Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "FundedNext Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a FundedNextaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What FundedNextmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L against the loss limit"
+      },
+      {
+        "level": "H3",
+        "text": "Drawdown from your starting balance"
+      },
+      {
+        "level": "H3",
+        "text": "Progress to the profit target"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your challenges"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromMT5."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking FundedNext with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with FundedNext accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I import FundedNext trades from MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the FundedNext daily loss limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the FundedNext maximum loss static or trailing?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track more than one FundedNext account?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/fundednext-trading-journal",
+    "width": 390,
+    "actualPath": "/fundednext-trading-journal",
+    "title": "FundedNext Trading Journal | Track Stellar Challenge Rules & Import MT5 Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "FundedNext Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a FundedNextaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What FundedNextmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L against the loss limit"
+      },
+      {
+        "level": "H3",
+        "text": "Drawdown from your starting balance"
+      },
+      {
+        "level": "H3",
+        "text": "Progress to the profit target"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your challenges"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromMT5."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking FundedNext with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with FundedNext accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I import FundedNext trades from MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the FundedNext daily loss limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the FundedNext maximum loss static or trailing?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track more than one FundedNext account?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/ftmo-trading-journal",
+    "width": 1440,
+    "actualPath": "/ftmo-trading-journal",
+    "title": "FTMO Trading Journal | Track Challenge Rules & Import MT5 or cTrader Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "FTMO Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a FTMOaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What FTMOmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L against the 5% limit"
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the loss floor"
+      },
+      {
+        "level": "H3",
+        "text": "Progress to the profit target"
+      },
+      {
+        "level": "H3",
+        "text": "Best-day share for the 1-Step"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your challenges"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromMT5 or cTrader."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking FTMO with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with FTMO accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I export my FTMO trades?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the FTMO daily loss limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the FTMO max loss static or trailing?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the FTMO Best Day Rule?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my FTMO account alongside other prop firms?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/ftmo-trading-journal",
+    "width": 390,
+    "actualPath": "/ftmo-trading-journal",
+    "title": "FTMO Trading Journal | Track Challenge Rules & Import MT5 or cTrader Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "FTMO Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a FTMOaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What FTMOmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L against the 5% limit"
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the loss floor"
+      },
+      {
+        "level": "H3",
+        "text": "Progress to the profit target"
+      },
+      {
+        "level": "H3",
+        "text": "Best-day share for the 1-Step"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your challenges"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromMT5 or cTrader."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking FTMO with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with FTMO accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I export my FTMO trades?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the FTMO daily loss limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the FTMO max loss static or trailing?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the FTMO Best Day Rule?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track my FTMO account alongside other prop firms?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/apex-trading-journal",
+    "width": 1440,
+    "actualPath": "/apex-trading-journal",
+    "title": "Apex Trading Journal | Track Trailing Drawdown & Import Tradovate Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Apex Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a Apex Trader Fundingaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What Apex Trader Fundingmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the trailing floor"
+      },
+      {
+        "level": "H3",
+        "text": "Best-day share for the consistency rule"
+      },
+      {
+        "level": "H3",
+        "text": "Qualifying-day progress"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost across up to 20 accounts"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromTradovate or Rithmic."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking Apex Trader Funding with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with Apex accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the Apex trailing drawdown work?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the Apex 50% consistency rule?"
+      },
+      {
+        "level": "H3",
+        "text": "Did Apex change its rules in 2026?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track several Apex accounts at once?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/apex-trading-journal",
+    "width": 390,
+    "actualPath": "/apex-trading-journal",
+    "title": "Apex Trading Journal | Track Trailing Drawdown & Import Tradovate Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Apex Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a Apex Trader Fundingaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What Apex Trader Fundingmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the trailing floor"
+      },
+      {
+        "level": "H3",
+        "text": "Best-day share for the consistency rule"
+      },
+      {
+        "level": "H3",
+        "text": "Qualifying-day progress"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost across up to 20 accounts"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromTradovate or Rithmic."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking Apex Trader Funding with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with Apex accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the Apex trailing drawdown work?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the Apex 50% consistency rule?"
+      },
+      {
+        "level": "H3",
+        "text": "Did Apex change its rules in 2026?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I track several Apex accounts at once?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/funding-pips-trading-journal",
+    "width": 1440,
+    "actualPath": "/funding-pips-trading-journal",
+    "title": "Funding Pips Trading Journal | Track Challenge Rules & Import MT5 Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Funding Pips Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a Funding Pipsaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What Funding Pipsmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L against the loss limit"
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the static floor"
+      },
+      {
+        "level": "H3",
+        "text": "Progress to the phase target"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your challenges"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromMT5."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking Funding Pips with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with Funding Pips accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I import Funding Pips trades from MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the Funding Pips daily loss limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the Funding Pips max loss static or trailing?"
+      },
+      {
+        "level": "H3",
+        "text": "Which Funding Pips model is easiest to track?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/funding-pips-trading-journal",
+    "width": 390,
+    "actualPath": "/funding-pips-trading-journal",
+    "title": "Funding Pips Trading Journal | Track Challenge Rules & Import MT5 Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Funding Pips Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a Funding Pipsaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What Funding Pipsmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L against the loss limit"
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the static floor"
+      },
+      {
+        "level": "H3",
+        "text": "Progress to the phase target"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your challenges"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromMT5."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking Funding Pips with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with Funding Pips accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I import Funding Pips trades from MT5?"
+      },
+      {
+        "level": "H3",
+        "text": "How does the Funding Pips daily loss limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "Is the Funding Pips max loss static or trailing?"
+      },
+      {
+        "level": "H3",
+        "text": "Which Funding Pips model is easiest to track?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/topstep-trading-journal",
+    "width": 1440,
+    "actualPath": "/topstep-trading-journal",
+    "title": "Topstep Trading Journal | Track Combine Rules & Import TopstepX Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Topstep Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a Topstepaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What Topstepmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the trailing floor"
+      },
+      {
+        "level": "H3",
+        "text": "Best-day share for the consistency target"
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L discipline"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your Combines"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromTopstepX."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking Topstep with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with Topstep accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I export my trades from TopstepX?"
+      },
+      {
+        "level": "H3",
+        "text": "How does Topstep's Maximum Loss Limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the Topstep consistency rule?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I still use NinjaTrader or Tradovate with Topstep?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/topstep-trading-journal",
+    "width": 390,
+    "actualPath": "/topstep-trading-journal",
+    "title": "Topstep Trading Journal | Track Combine Rules & Import TopstepX Trades | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Topstep Trading Journal(2026)"
+      },
+      {
+        "level": "H2",
+        "text": "Tracking a Topstepaccount."
+      },
+      {
+        "level": "H2",
+        "text": "What Topstepmakes you track."
+      },
+      {
+        "level": "H2",
+        "text": "Every rule,tracked for you."
+      },
+      {
+        "level": "H3",
+        "text": "Equity curve against the trailing floor"
+      },
+      {
+        "level": "H3",
+        "text": "Best-day share for the consistency target"
+      },
+      {
+        "level": "H3",
+        "text": "Daily P&L discipline"
+      },
+      {
+        "level": "H3",
+        "text": "The true cost of your Combines"
+      },
+      {
+        "level": "H3",
+        "text": "A record of the bad days"
+      },
+      {
+        "level": "H2",
+        "text": "Import fromTopstepX."
+      },
+      {
+        "level": "H2",
+        "text": "Tracking Topstep with FreeTradeJournal Questions"
+      },
+      {
+        "level": "H3",
+        "text": "Does FreeTradeJournal work with Topstep accounts?"
+      },
+      {
+        "level": "H3",
+        "text": "How do I export my trades from TopstepX?"
+      },
+      {
+        "level": "H3",
+        "text": "How does Topstep's Maximum Loss Limit work?"
+      },
+      {
+        "level": "H3",
+        "text": "What is the Topstep consistency rule?"
+      },
+      {
+        "level": "H3",
+        "text": "Can I still use NinjaTrader or Tradovate with Topstep?"
+      },
+      {
+        "level": "H3",
+        "text": "Is FreeTradeJournal really free?"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal"
+      },
+      {
+        "level": "H3",
+        "text": "Product"
+      },
+      {
+        "level": "H3",
+        "text": "Trading Tools"
+      },
+      {
+        "level": "H3",
+        "text": "Prop Firms"
+      },
+      {
+        "level": "H3",
+        "text": "Compare"
+      },
+      {
+        "level": "H3",
+        "text": "Legal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/ai-trading-coach",
+    "width": 1440,
+    "actualPath": "/blog/ai-trading-coach",
+    "title": "I Let an AI Coach Read My Trading Journal. Here's What It Caught. | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "I Let an AI Coach Read My Trading Journal. Here's What It Caught."
+      },
+      {
+        "level": "H2",
+        "text": "What it actually sees"
+      },
+      {
+        "level": "H2",
+        "text": "The journal review is the humbling part"
+      },
+      {
+        "level": "H2",
+        "text": "What it costs"
+      },
+      {
+        "level": "H2",
+        "text": "The honest pitch"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/ai-trading-coach",
+    "width": 390,
+    "actualPath": "/blog/ai-trading-coach",
+    "title": "I Let an AI Coach Read My Trading Journal. Here's What It Caught. | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "I Let an AI Coach Read My Trading Journal. Here's What It Caught."
+      },
+      {
+        "level": "H2",
+        "text": "What it actually sees"
+      },
+      {
+        "level": "H2",
+        "text": "The journal review is the humbling part"
+      },
+      {
+        "level": "H2",
+        "text": "What it costs"
+      },
+      {
+        "level": "H2",
+        "text": "The honest pitch"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/best-free-trading-journal-prop-firm",
+    "width": 1440,
+    "actualPath": "/blog/best-free-trading-journal-prop-firm",
+    "title": "The Best Free Trading Journal for Prop Firm Traders (2026) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The Best Free Trading Journal for Prop Firm Traders (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "The Problem With Existing Journals"
+      },
+      {
+        "level": "H2",
+        "text": "What FreeTradeJournal Does Differently"
+      },
+      {
+        "level": "H2",
+        "text": "Track Every Trade, Spot Every Pattern"
+      },
+      {
+        "level": "H2",
+        "text": "Who It's For"
+      },
+      {
+        "level": "H2",
+        "text": "Getting Started"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/best-free-trading-journal-prop-firm",
+    "width": 390,
+    "actualPath": "/blog/best-free-trading-journal-prop-firm",
+    "title": "The Best Free Trading Journal for Prop Firm Traders (2026) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The Best Free Trading Journal for Prop Firm Traders (2026)"
+      },
+      {
+        "level": "H2",
+        "text": "The Problem With Existing Journals"
+      },
+      {
+        "level": "H2",
+        "text": "What FreeTradeJournal Does Differently"
+      },
+      {
+        "level": "H2",
+        "text": "Track Every Trade, Spot Every Pattern"
+      },
+      {
+        "level": "H2",
+        "text": "Who It's For"
+      },
+      {
+        "level": "H2",
+        "text": "Getting Started"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/best-free-trading-journals-2026",
+    "width": 1440,
+    "actualPath": "/blog/best-free-trading-journals-2026",
+    "title": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)"
+      },
+      {
+        "level": "H2",
+        "text": "The quick comparison"
+      },
+      {
+        "level": "H2",
+        "text": "The free ones, one at a time"
+      },
+      {
+        "level": "H3",
+        "text": "FreeTradeJournal (mine)"
+      },
+      {
+        "level": "H3",
+        "text": "Tradervue"
+      },
+      {
+        "level": "H3",
+        "text": "TradesViz"
+      },
+      {
+        "level": "H3",
+        "text": "Stonk Journal"
+      },
+      {
+        "level": "H3",
+        "text": "Trademetria"
+      },
+      {
+        "level": "H3",
+        "text": "Myfxbook"
+      },
+      {
+        "level": "H3",
+        "text": "Google Sheets or Excel"
+      },
+      {
+        "level": "H2",
+        "text": "The paid ones people ask about"
+      },
+      {
+        "level": "H2",
+        "text": "How to choose"
+      },
+      {
+        "level": "H2",
+        "text": "Frequently asked questions"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/best-free-trading-journals-2026",
+    "width": 390,
+    "actualPath": "/blog/best-free-trading-journals-2026",
+    "title": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)"
+      },
+      {
+        "level": "H2",
+        "text": "The quick comparison"
+      },
+      {
+        "level": "H2",
+        "text": "The free ones, one at a time"
+      },
+      {
+        "level": "H3",
+        "text": "FreeTradeJournal (mine)"
+      },
+      {
+        "level": "H3",
+        "text": "Tradervue"
+      },
+      {
+        "level": "H3",
+        "text": "TradesViz"
+      },
+      {
+        "level": "H3",
+        "text": "Stonk Journal"
+      },
+      {
+        "level": "H3",
+        "text": "Trademetria"
+      },
+      {
+        "level": "H3",
+        "text": "Myfxbook"
+      },
+      {
+        "level": "H3",
+        "text": "Google Sheets or Excel"
+      },
+      {
+        "level": "H2",
+        "text": "The paid ones people ask about"
+      },
+      {
+        "level": "H2",
+        "text": "How to choose"
+      },
+      {
+        "level": "H2",
+        "text": "Frequently asked questions"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/das-trader-import",
+    "width": 1440,
+    "actualPath": "/blog/das-trader-import",
+    "title": "How to Import DAS Trader Exports Into a Trading Journal (Free) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Import DAS Trader Exports Into a Trading Journal (Free)"
+      },
+      {
+        "level": "H2",
+        "text": "Exporting from DAS"
+      },
+      {
+        "level": "H2",
+        "text": "What the importer actually does"
+      },
+      {
+        "level": "H2",
+        "text": "Why bother journaling executions properly"
+      },
+      {
+        "level": "H2",
+        "text": "The cost"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/das-trader-import",
+    "width": 390,
+    "actualPath": "/blog/das-trader-import",
+    "title": "How to Import DAS Trader Exports Into a Trading Journal (Free) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Import DAS Trader Exports Into a Trading Journal (Free)"
+      },
+      {
+        "level": "H2",
+        "text": "Exporting from DAS"
+      },
+      {
+        "level": "H2",
+        "text": "What the importer actually does"
+      },
+      {
+        "level": "H2",
+        "text": "Why bother journaling executions properly"
+      },
+      {
+        "level": "H2",
+        "text": "The cost"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/how-to-pass-topstep-combine",
+    "width": 1440,
+    "actualPath": "/blog/how-to-pass-topstep-combine",
+    "title": "How to Pass a Topstep Combine (The Mindset Nobody Talks About) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Pass a Topstep Combine (The Mindset Nobody Talks About)"
+      },
+      {
+        "level": "H2",
+        "text": "The Math Nobody Does"
+      },
+      {
+        "level": "H2",
+        "text": "Fail Fast, Learn Faster"
+      },
+      {
+        "level": "H2",
+        "text": "What to Do After a Blown Combine"
+      },
+      {
+        "level": "H2",
+        "text": "The Combine Is Cheap. The Payout Is Not."
+      },
+      {
+        "level": "H2",
+        "text": "One Rule to Pass More Combines"
+      },
+      {
+        "level": "H2",
+        "text": "Track Everything"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/how-to-pass-topstep-combine",
+    "width": 390,
+    "actualPath": "/blog/how-to-pass-topstep-combine",
+    "title": "How to Pass a Topstep Combine (The Mindset Nobody Talks About) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Pass a Topstep Combine (The Mindset Nobody Talks About)"
+      },
+      {
+        "level": "H2",
+        "text": "The Math Nobody Does"
+      },
+      {
+        "level": "H2",
+        "text": "Fail Fast, Learn Faster"
+      },
+      {
+        "level": "H2",
+        "text": "What to Do After a Blown Combine"
+      },
+      {
+        "level": "H2",
+        "text": "The Combine Is Cheap. The Payout Is Not."
+      },
+      {
+        "level": "H2",
+        "text": "One Rule to Pass More Combines"
+      },
+      {
+        "level": "H2",
+        "text": "Track Everything"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/mt4-mt5-trading-journal",
+    "width": 1440,
+    "actualPath": "/blog/mt4-mt5-trading-journal",
+    "title": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)"
+      },
+      {
+        "level": "H2",
+        "text": "Export your history from MetaTrader"
+      },
+      {
+        "level": "H2",
+        "text": "Drop it into FreeTradeJournal"
+      },
+      {
+        "level": "H2",
+        "text": "What you get on the other side"
+      },
+      {
+        "level": "H2",
+        "text": "What about automatic sync?"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/mt4-mt5-trading-journal",
+    "width": 390,
+    "actualPath": "/blog/mt4-mt5-trading-journal",
+    "title": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)"
+      },
+      {
+        "level": "H2",
+        "text": "Export your history from MetaTrader"
+      },
+      {
+        "level": "H2",
+        "text": "Drop it into FreeTradeJournal"
+      },
+      {
+        "level": "H2",
+        "text": "What you get on the other side"
+      },
+      {
+        "level": "H2",
+        "text": "What about automatic sync?"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/prop-firm-tracker",
+    "width": 1440,
+    "actualPath": "/blog/prop-firm-tracker",
+    "title": "How to Track Multiple Prop Firm Accounts in One Place (For Free) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Track Multiple Prop Firm Accounts in One Place (For Free)"
+      },
+      {
+        "level": "H2",
+        "text": "The Spreadsheet Problem"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal's Prop Tracker"
+      },
+      {
+        "level": "H2",
+        "text": "Why This Matters for Passing Combines"
+      },
+      {
+        "level": "H2",
+        "text": "It's Free to Start"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "public",
+    "route": "/blog/prop-firm-tracker",
+    "width": 390,
+    "actualPath": "/blog/prop-firm-tracker",
+    "title": "How to Track Multiple Prop Firm Accounts in One Place (For Free) | FreeTradeJournal Blog",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "How to Track Multiple Prop Firm Accounts in One Place (For Free)"
+      },
+      {
+        "level": "H2",
+        "text": "The Spreadsheet Problem"
+      },
+      {
+        "level": "H2",
+        "text": "FreeTradeJournal's Prop Tracker"
+      },
+      {
+        "level": "H2",
+        "text": "Why This Matters for Passing Combines"
+      },
+      {
+        "level": "H2",
+        "text": "It's Free to Start"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/dashboard",
+    "width": 1440,
+    "actualPath": "/dashboard",
+    "title": "Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Good evening, Demo!"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/dashboard",
+    "width": 390,
+    "actualPath": "/dashboard",
+    "title": "Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Good evening, Demo!"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/prop-tracker",
+    "width": 1440,
+    "actualPath": "/prop-tracker",
+    "title": "PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "PropTracker"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [
+      "Accounts4",
+      "Performance",
+      "AI Coach"
+    ],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/prop-tracker",
+    "width": 390,
+    "actualPath": "/prop-tracker",
+    "title": "PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "PropTracker"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [
+      "Accounts4",
+      "Performance",
+      "AI Coach"
+    ],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/coach",
+    "width": 1440,
+    "actualPath": "/coach",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "AI Coach"
+      },
+      {
+        "level": "H3",
+        "text": "Performance Snapshot"
+      },
+      {
+        "level": "H3",
+        "text": "Key Patterns Detected"
+      },
+      {
+        "level": "H3",
+        "text": "Strengths to Double Down On"
+      },
+      {
+        "level": "H3",
+        "text": "Critical Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Action Plan"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/coach",
+    "width": 390,
+    "actualPath": "/coach",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "AI Coach"
+      },
+      {
+        "level": "H3",
+        "text": "Performance Snapshot"
+      },
+      {
+        "level": "H3",
+        "text": "Key Patterns Detected"
+      },
+      {
+        "level": "H3",
+        "text": "Strengths to Double Down On"
+      },
+      {
+        "level": "H3",
+        "text": "Critical Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Action Plan"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/trades",
+    "width": 1440,
+    "actualPath": "/trades",
+    "title": "Trade Log | FreeTradeJournal - Track All Your Trades",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade Log"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/trades",
+    "width": 390,
+    "actualPath": "/trades",
+    "title": "Trade Log | FreeTradeJournal - Track All Your Trades",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade Log"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/goals",
+    "width": 1440,
+    "actualPath": "/goals",
+    "title": "Trading Goals & Risk Management | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Goals & Risk"
+      },
+      {
+        "level": "H2",
+        "text": "Risk"
+      },
+      {
+        "level": "H2",
+        "text": "Goals"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/goals",
+    "width": 390,
+    "actualPath": "/goals",
+    "title": "Trading Goals & Risk Management | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Goals & Risk"
+      },
+      {
+        "level": "H2",
+        "text": "Risk"
+      },
+      {
+        "level": "H2",
+        "text": "Goals"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/calculator",
+    "width": 1440,
+    "actualPath": "/calculator",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Position Calculator"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/calculator",
+    "width": 390,
+    "actualPath": "/calculator",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Position Calculator"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/journal",
+    "width": 1440,
+    "actualPath": "/journal",
+    "title": "Trading Journal & Notes | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trading Journal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/journal",
+    "width": 390,
+    "actualPath": "/journal",
+    "title": "Trading Journal & Notes | FreeTradeJournal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trading Journal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/ideas",
+    "width": 1440,
+    "actualPath": "/ideas",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade Insights"
+      },
+      {
+        "level": "H3",
+        "text": "Performance Snapshot"
+      },
+      {
+        "level": "H3",
+        "text": "Key Patterns Detected"
+      },
+      {
+        "level": "H3",
+        "text": "Strengths to Double Down On"
+      },
+      {
+        "level": "H3",
+        "text": "Critical Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Action Plan"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/ideas",
+    "width": 390,
+    "actualPath": "/ideas",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Trade Insights"
+      },
+      {
+        "level": "H3",
+        "text": "Performance Snapshot"
+      },
+      {
+        "level": "H3",
+        "text": "Key Patterns Detected"
+      },
+      {
+        "level": "H3",
+        "text": "Strengths to Double Down On"
+      },
+      {
+        "level": "H3",
+        "text": "Critical Improvements"
+      },
+      {
+        "level": "H3",
+        "text": "Action Plan"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/trade-ideas",
+    "width": 1440,
+    "actualPath": "/dashboard",
+    "title": "Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Good evening, Demo!"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/trade-ideas",
+    "width": 390,
+    "actualPath": "/dashboard",
+    "title": "Trading Dashboard | FreeTradeJournal - Performance Analytics & Metrics",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Good evening, Demo!"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/settings",
+    "width": 1440,
+    "actualPath": "/settings",
+    "title": "Settings | FreeTradeJournal - Account Preferences",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "General"
+      },
+      {
+        "level": "H3",
+        "text": "Appearance"
+      },
+      {
+        "level": "H3",
+        "text": "Color theme"
+      },
+      {
+        "level": "H3",
+        "text": "Dashboard"
+      },
+      {
+        "level": "H2",
+        "text": "Accounts"
+      },
+      {
+        "level": "H3",
+        "text": "Trading accounts"
+      },
+      {
+        "level": "H2",
+        "text": "Risk"
+      },
+      {
+        "level": "H3",
+        "text": "Position sizing"
+      },
+      {
+        "level": "H3",
+        "text": "Guidelines"
+      },
+      {
+        "level": "H3",
+        "text": "How much to risk per trade"
+      },
+      {
+        "level": "H2",
+        "text": "Data & privacy"
+      },
+      {
+        "level": "H3",
+        "text": "Backup"
+      },
+      {
+        "level": "H3",
+        "text": "Privacy"
+      },
+      {
+        "level": "H3",
+        "text": "Danger zone"
+      },
+      {
+        "level": "H2",
+        "text": "Notifications"
+      },
+      {
+        "level": "H3",
+        "text": "Push notifications"
+      },
+      {
+        "level": "H2",
+        "text": "Subscription"
+      },
+      {
+        "level": "H3",
+        "text": "Plan"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/settings",
+    "width": 390,
+    "actualPath": "/settings",
+    "title": "Settings | FreeTradeJournal - Account Preferences",
+    "headings": [
+      {
+        "level": "H2",
+        "text": "General"
+      },
+      {
+        "level": "H3",
+        "text": "Appearance"
+      },
+      {
+        "level": "H3",
+        "text": "Color theme"
+      },
+      {
+        "level": "H3",
+        "text": "Dashboard"
+      },
+      {
+        "level": "H2",
+        "text": "Accounts"
+      },
+      {
+        "level": "H3",
+        "text": "Trading accounts"
+      },
+      {
+        "level": "H2",
+        "text": "Risk"
+      },
+      {
+        "level": "H3",
+        "text": "Position sizing"
+      },
+      {
+        "level": "H3",
+        "text": "Guidelines"
+      },
+      {
+        "level": "H3",
+        "text": "How much to risk per trade"
+      },
+      {
+        "level": "H2",
+        "text": "Data & privacy"
+      },
+      {
+        "level": "H3",
+        "text": "Backup"
+      },
+      {
+        "level": "H3",
+        "text": "Privacy"
+      },
+      {
+        "level": "H3",
+        "text": "Danger zone"
+      },
+      {
+        "level": "H2",
+        "text": "Notifications"
+      },
+      {
+        "level": "H3",
+        "text": "Push notifications"
+      },
+      {
+        "level": "H2",
+        "text": "Subscription"
+      },
+      {
+        "level": "H3",
+        "text": "Plan"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/profile",
+    "width": 1440,
+    "actualPath": "/profile",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Profile"
+      },
+      {
+        "level": "H2",
+        "text": "Recent trades"
+      },
+      {
+        "level": "H2",
+        "text": "Active goals"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/profile",
+    "width": 390,
+    "actualPath": "/profile",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Profile"
+      },
+      {
+        "level": "H2",
+        "text": "Recent trades"
+      },
+      {
+        "level": "H2",
+        "text": "Active goals"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/onboarding",
+    "width": 1440,
+    "actualPath": "/onboarding",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Welcome to FreeTradeJournal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  },
+  {
+    "mode": "demo",
+    "route": "/onboarding",
+    "width": 390,
+    "actualPath": "/onboarding",
+    "title": "FreeTradeJournal - Free Trading Journal",
+    "headings": [
+      {
+        "level": "H1",
+        "text": "Welcome to FreeTradeJournal"
+      }
+    ],
+    "unnamedButtons": [],
+    "unlabeledInputs": [],
+    "overflow": false,
+    "tabs": [],
+    "errors": []
+  }
+]

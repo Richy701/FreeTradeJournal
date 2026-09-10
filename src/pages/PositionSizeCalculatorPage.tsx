@@ -118,12 +118,12 @@ export default function PositionSizeCalculatorPage() {
             <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
               A calculator tells you the right size for one trade. A journal tells you whether your sizing, stops, and risk rules actually work across a hundred. FreeTradeJournal is free forever, with no card required.
             </p>
-            <Link to="/signup">
-              <Button size="lg" className="gap-2">
+            <Button asChild size="lg" className="gap-2">
+              <Link to="/signup">
                 Start your free journal
                 <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </section>
 

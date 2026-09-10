@@ -1,0 +1,562 @@
+[
+  {
+    "name": "login-password",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Welcome back, trader."
+    ]
+  },
+  {
+    "name": "signup-password",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Start your trading journal."
+    ]
+  },
+  {
+    "name": "password-recovery",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Reset your password"
+    ]
+  },
+  {
+    "name": "changelog-fixed",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Release Notes",
+      "Light mode is brighter and theme colours are easier to read.",
+      "Fixes",
+      "Chart controls in the Theme Studio, and a rebuilt Settings page.",
+      "Fixes",
+      "A tidy-up across the trade log, dashboard and insights, plus a fix for hiding coach tips.",
+      "Fixes",
+      "One journal entry can now cover several trades.",
+      "Fixes",
+      "CSV imports now read dates written as 19-08-2026 correctly.",
+      "Fixes"
+    ]
+  },
+  {
+    "name": "changelog-expanded",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Release Notes",
+      "Trade Ideas beta paused.",
+      "Improvements",
+      "Light mode is brighter and theme colours are easier to read.",
+      "Improvements",
+      "Fixes",
+      "Chart controls in the Theme Studio, and a rebuilt Settings page.",
+      "New features",
+      "Improvements",
+      "Fixes",
+      "Import from the Add Trade dialog, a clearer calendar day view, and news events on the calendar.",
+      "New features",
+      "Improvements",
+      "Chart screenshots on daily calendar notes, and redrawn Time of Day and Trading Sessions charts.",
+      "New features",
+      "Improvements",
+      "A tidy-up across the trade log, dashboard and insights, plus a fix for hiding coach tips.",
+      "Improvements",
+      "Fixes",
+      "Trade Ideas: a shared feed of setups from other traders, in beta.",
+      "New features",
+      "Improvements",
+      "One journal entry can now cover several trades.",
+      "New features",
+      "Fixes",
+      "The sidebar is grouped and easier to scan, and the profile page has been rebuilt around your numbers.",
+      "Improvements",
+      "Your risk limits now show what sticking to them is worth, and the journal opens with the day already written down.",
+      "New features"
+    ]
+  },
+  {
+    "name": "pricing-monthly",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Free Trading Journal, Pro When You Need It",
+      "Free",
+      "Pro MonthlyMost Popular",
+      "Free vs Pro",
+      "How we compare",
+      "Common questions",
+      "Is the free plan really free forever?",
+      "Can I cancel my Pro subscription anytime?",
+      "What happens to my data if I downgrade?",
+      "Is cloud sync included in the free plan?",
+      "What AI features does Pro include?",
+      "FreeTradeJournal",
+      "Product",
+      "Trading Tools",
+      "Prop Firms",
+      "Compare",
+      "Legal"
+    ]
+  },
+  {
+    "name": "pricing-yearly",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Free Trading Journal, Pro When You Need It",
+      "Free",
+      "Pro YearlyMost Popular",
+      "Free vs Pro",
+      "How we compare",
+      "Common questions",
+      "Is the free plan really free forever?",
+      "Can I cancel my Pro subscription anytime?",
+      "What happens to my data if I downgrade?",
+      "Is cloud sync included in the free plan?",
+      "What AI features does Pro include?",
+      "FreeTradeJournal",
+      "Product",
+      "Trading Tools",
+      "Prop Firms",
+      "Compare",
+      "Legal"
+    ]
+  },
+  {
+    "name": "pricing-faq",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Free Trading Journal, Pro When You Need It",
+      "Free",
+      "Pro YearlyMost Popular",
+      "Free vs Pro",
+      "How we compare",
+      "Common questions",
+      "Is the free plan really free forever?",
+      "Can I cancel my Pro subscription anytime?",
+      "What happens to my data if I downgrade?",
+      "Is cloud sync included in the free plan?",
+      "What AI features does Pro include?",
+      "FreeTradeJournal",
+      "Product",
+      "Trading Tools",
+      "Prop Firms",
+      "Compare",
+      "Legal"
+    ]
+  },
+  {
+    "name": "home-light",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "The Free Trading JournalThat Improves Your Results",
+      "Professional trading journal & analytics",
+      "Real-Time Metrics",
+      "Multi-Market Support",
+      "Coach FTJ",
+      "Calendar Heatmap",
+      "Real-TimePerformance Dashboard",
+      "Comprehensive TradeLogging & Management",
+      "Visual PerformanceCalendar Heatmap",
+      "Trading Journal& Analysis",
+      "Smart Goals &Risk Management",
+      "AI-PoweredTrade Analysis",
+      "Advanced TradeInsights & Analytics",
+      "Prop FirmROI Tracker",
+      "Frequently Asked Questions",
+      "What markets and instruments can I track?",
+      "How does FreeTradeJournal calculate my P&L?",
+      "What analytics and metrics will I get?",
+      "Is my trading data secure?",
+      "How much does it cost?",
+      "Does it work with prop firms like FTMO?",
+      "What's included in the Pro plan?",
+      "Can I see what the app looks like before signing up?",
+      "Can I cancel or change my Pro plan anytime?",
+      "FreeTradeJournal",
+      "Product",
+      "Trading Tools",
+      "Prop Firms",
+      "Compare",
+      "Legal"
+    ]
+  },
+  {
+    "name": "login-light",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Welcome back, trader."
+    ]
+  },
+  {
+    "name": "documentation-light",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Documentation",
+      "Quick Start",
+      "Dashboard",
+      "Trade Logging",
+      "Calendar Heatmap",
+      "Trading Journal",
+      "Goals & Risk Management",
+      "CSV Import",
+      "Advanced Analytics",
+      "AI Features",
+      "Trade Insights",
+      "Themes",
+      "Filtering & Search",
+      "Export & Reporting",
+      "FAQ",
+      "Is my trading data secure?",
+      "What does the Free plan include?",
+      "What file formats can I import?",
+      "Can I use this for tax reporting?",
+      "Does FreeTradeJournal provide trading advice?",
+      "How do I export my data?",
+      "Can I use this offline?"
+    ]
+  },
+  {
+    "name": "pricing-light",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Free Trading Journal, Pro When You Need It",
+      "Free",
+      "Pro YearlyMost Popular",
+      "Free vs Pro",
+      "How we compare",
+      "Common questions",
+      "Is the free plan really free forever?",
+      "Can I cancel my Pro subscription anytime?",
+      "What happens to my data if I downgrade?",
+      "Is cloud sync included in the free plan?",
+      "What AI features does Pro include?",
+      "FreeTradeJournal",
+      "Product",
+      "Trading Tools",
+      "Prop Firms",
+      "Compare",
+      "Legal"
+    ]
+  },
+  {
+    "name": "calculator-forex",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Position Calculator"
+    ]
+  },
+  {
+    "name": "calculator-futures",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Position Calculator"
+    ]
+  },
+  {
+    "name": "calculator-points",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Position Calculator"
+    ]
+  },
+  {
+    "name": "journal-mobile",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Trading Journal"
+    ]
+  },
+  {
+    "name": "journal-no-results",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Trading Journal",
+      "No entries found"
+    ]
+  },
+  {
+    "name": "journal-filters",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Trading Journal"
+    ]
+  },
+  {
+    "name": "settings-general",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "settings-edit-account",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "settings-accounts",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "settings-risk",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "settings-data",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "settings-notifications",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "settings-subscription",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "General",
+      "Appearance",
+      "Color theme",
+      "Dashboard",
+      "Accounts",
+      "Trading accounts",
+      "Risk",
+      "Position sizing",
+      "Guidelines",
+      "How much to risk per trade",
+      "Data & privacy",
+      "Backup",
+      "Privacy",
+      "Danger zone",
+      "Notifications",
+      "Push notifications",
+      "Subscription",
+      "Plan"
+    ]
+  },
+  {
+    "name": "goals",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Goals & Risk",
+      "Risk",
+      "Goals"
+    ]
+  },
+  {
+    "name": "goals-dialog",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "New Goal"
+    ]
+  },
+  {
+    "name": "risk-dialog",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Add Risk Limit"
+    ]
+  },
+  {
+    "name": "ideas",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Trade Insights",
+      "Performance Snapshot",
+      "Key Patterns Detected",
+      "Strengths to Double Down On",
+      "Critical Improvements",
+      "Action Plan"
+    ]
+  },
+  {
+    "name": "onboarding-experience-360",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "How long have you been trading?"
+    ]
+  },
+  {
+    "name": "onboarding-experience-390",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "How long have you been trading?"
+    ]
+  },
+  {
+    "name": "onboarding-experience-1440",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "How long have you been trading?"
+    ]
+  },
+  {
+    "name": "onboarding-account",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "What type of account?"
+    ]
+  },
+  {
+    "name": "onboarding-details",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "Name your account"
+    ]
+  },
+  {
+    "name": "onboarding-ready",
+    "overflow": false,
+    "unlabeled": [],
+    "headings": [
+      "You're all set!",
+      "Quick summary"
+    ]
+  }
+]

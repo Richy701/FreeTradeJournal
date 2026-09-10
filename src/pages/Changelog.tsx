@@ -49,11 +49,12 @@ export default function Changelog() {
             <button
               key={option.value}
               type="button"
+              aria-pressed={filter === option.value}
               onClick={() => {
                 setFilter(option.value)
                 setVisibleCount(PAGE_SIZE)
               }}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 filter === option.value
                   ? 'bg-foreground text-background'
                   : 'border border-border text-muted-foreground hover:text-foreground'

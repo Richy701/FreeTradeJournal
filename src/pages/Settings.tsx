@@ -76,7 +76,7 @@ function BrokerSelect({ value, onChange }: { value: string; onChange: (v: string
           }
         }}
       >
-        <SelectTrigger><SelectValue placeholder="Select broker…" /></SelectTrigger>
+        <SelectTrigger aria-label="Broker"><SelectValue placeholder="Select broker…" /></SelectTrigger>
         <SelectContent>
           {BROKERS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
           <SelectItem value={BROKER_CUSTOM}>Custom…</SelectItem>
@@ -85,6 +85,7 @@ function BrokerSelect({ value, onChange }: { value: string; onChange: (v: string
       {(showCustom || customActive) && (
         <Input
           className="mt-2"
+          aria-label="Custom broker name"
           placeholder="Enter prop firm / broker name"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -612,7 +613,7 @@ export default function Settings() {
                                         <HexColorPicker color={customColors[key]} onChange={(c) => setCustomColors({ [key]: c })} />
                                         <div className="flex items-center gap-2">
                                           <div className="h-8 w-8 rounded-md border shrink-0" style={{ backgroundColor: customColors[key] }} />
-                                          <Input value={customColors[key]} maxLength={7} className="h-8 font-mono text-sm uppercase" onChange={(e) => {
+                                          <Input aria-label={`${label} color hex code`} value={customColors[key]} maxLength={7} className="h-8 font-mono text-sm uppercase" onChange={(e) => {
                                             let v = e.target.value;
                                             if (!v.startsWith('#')) v = '#' + v;
                                             if (/^#[0-9a-fA-F]{0,6}$/.test(v) && v.length === 7) setCustomColors({ [key]: v.toLowerCase() });
@@ -663,13 +664,13 @@ export default function Settings() {
                             <p className="text-sm font-semibold">Edit account</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-1.5">
-                                <Label className="text-xs">Account name</Label>
-                                <Input placeholder="e.g. Main Live Account" value={editForm.name} onChange={(e) => setEditForm(p => p ? { ...p, name: e.target.value } : null)} />
+                                <Label htmlFor="edit-account-name" className="text-xs">Account name</Label>
+                                <Input id="edit-account-name" placeholder="e.g. Main Live Account" value={editForm.name} onChange={(e) => setEditForm(p => p ? { ...p, name: e.target.value } : null)} />
                               </div>
                               <div className="space-y-1.5">
                                 <Label className="text-xs">Account type</Label>
                                 <Select value={editForm.type} onValueChange={(v: TradingAccount['type']) => setEditForm(p => p ? { ...p, type: v } : null)}>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectTrigger aria-label="Account type"><SelectValue /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="demo">Demo</SelectItem>
                                     <SelectItem value="live">Live</SelectItem>
@@ -685,23 +686,23 @@ export default function Settings() {
                               <div className="space-y-1.5">
                                 <Label className="text-xs">Currency</Label>
                                 <Select value={editForm.currency} onValueChange={(v) => setEditForm(p => p ? { ...p, currency: v } : null)}>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectTrigger aria-label="Currency"><SelectValue /></SelectTrigger>
                                   <SelectContent>{CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                                 </Select>
                               </div>
                               <div className="space-y-1.5">
                                 <Label className="text-xs">Broker time zone (CSV import)</Label>
                                 <Select value={editForm.brokerTimezone || 'device'} onValueChange={(v) => setEditForm(p => p ? { ...p, brokerTimezone: v === 'device' ? undefined : v } : null)}>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectTrigger aria-label="Broker time zone (CSV import)"><SelectValue /></SelectTrigger>
                                   <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
                                 </Select>
                               </div>
                               <div className="space-y-1.5">
                                 <Label className="text-xs">Balance (optional)</Label>
-                                <UnitInput prefix={getSymbolForCurrency(editForm.currency)} placeholder="10000" value={editForm.balance ?? ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: parseNumberInput(e.target.value) } : null)} />
+                                <UnitInput aria-label="Balance (optional)" prefix={getSymbolForCurrency(editForm.currency)} placeholder="10000" value={editForm.balance ?? ''} onChange={(e) => setEditForm(p => p ? { ...p, balance: parseNumberInput(e.target.value) } : null)} />
                               </div>
                               <div className="flex items-center gap-2 pt-5">
-                                <Switch checked={editForm.isDefault} onCheckedChange={(c) => setEditForm(p => p ? { ...p, isDefault: c } : null)} />
+                                <Switch aria-label="Set as default account" checked={editForm.isDefault} onCheckedChange={(c) => setEditForm(p => p ? { ...p, isDefault: c } : null)} />
                                 <Label className="text-xs">Set as default</Label>
                               </div>
                             </div>
@@ -741,13 +742,13 @@ export default function Settings() {
                         <p className="text-sm font-semibold">Add account</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1.5">
-                            <Label className="text-xs">Account name</Label>
-                            <Input placeholder="e.g. Main Live Account" value={accountForm.name} onChange={(e) => setAccountForm(p => ({ ...p, name: e.target.value }))} />
+                            <Label htmlFor="new-account-name" className="text-xs">Account name</Label>
+                            <Input id="new-account-name" placeholder="e.g. Main Live Account" value={accountForm.name} onChange={(e) => setAccountForm(p => ({ ...p, name: e.target.value }))} />
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-xs">Account type</Label>
                             <Select value={accountForm.type} onValueChange={(v: TradingAccount['type']) => setAccountForm(p => ({ ...p, type: v }))}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger aria-label="Account type"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="demo">Demo</SelectItem>
                                 <SelectItem value="live">Live</SelectItem>
@@ -763,23 +764,23 @@ export default function Settings() {
                           <div className="space-y-1.5">
                             <Label className="text-xs">Currency</Label>
                             <Select value={accountForm.currency} onValueChange={(v) => setAccountForm(p => ({ ...p, currency: v }))}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger aria-label="Currency"><SelectValue /></SelectTrigger>
                               <SelectContent>{CURRENCIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-xs">Broker time zone (CSV import)</Label>
                             <Select value={accountForm.brokerTimezone || 'device'} onValueChange={(v) => setAccountForm(p => ({ ...p, brokerTimezone: v === 'device' ? '' : v }))}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger aria-label="Broker time zone (CSV import)"><SelectValue /></SelectTrigger>
                               <SelectContent>{BROKER_TIMEZONES.map(z => <SelectItem key={z.value || 'device'} value={z.value || 'device'}>{z.label}</SelectItem>)}</SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-xs">Initial balance (optional)</Label>
-                            <UnitInput prefix={getSymbolForCurrency(accountForm.currency)} placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
+                            <UnitInput aria-label="Initial balance (optional)" prefix={getSymbolForCurrency(accountForm.currency)} placeholder="10000" value={accountForm.balance} onChange={(e) => setAccountForm(p => ({ ...p, balance: e.target.value }))} />
                           </div>
                           <div className="flex items-center gap-2 pt-5">
-                            <Switch checked={accountForm.isDefault} onCheckedChange={(c) => setAccountForm(p => ({ ...p, isDefault: c }))} />
+                            <Switch aria-label="Set as default account" checked={accountForm.isDefault} onCheckedChange={(c) => setAccountForm(p => ({ ...p, isDefault: c }))} />
                             <Label className="text-xs">Set as default</Label>
                           </div>
                         </div>
@@ -841,7 +842,7 @@ export default function Settings() {
                           </div>
                           <div className="flex-1 space-y-2">
                             <div className="relative max-w-[160px]">
-                              <Input type="number" name="riskPerTrade" inputMode="decimal" autoComplete="off" step="0.1" min="0.1" max="10" value={settings.riskPerTrade} onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })} className="h-9 pr-7" />
+                              <Input aria-label="Risk per trade (%)" type="number" name="riskPerTrade" inputMode="decimal" autoComplete="off" step="0.1" min="0.1" max="10" value={settings.riskPerTrade} onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })} className="h-9 pr-7" />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                             </div>
                             <div className="flex items-center gap-2 max-w-[160px]">
@@ -859,7 +860,7 @@ export default function Settings() {
                           </div>
                           <div className="flex-1">
                             <div className="relative max-w-[160px]">
-                              <Input type="number" name="accountSize" inputMode="decimal" autoComplete="off" step="1000" value={settings.accountSize} onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })} placeholder="10000" className="h-9 pl-6" />
+                              <Input aria-label="Default account size" type="number" name="accountSize" inputMode="decimal" autoComplete="off" step="1000" value={settings.accountSize} onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })} placeholder="10000" className="h-9 pl-6" />
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{getCurrencySymbol()}</span>
                             </div>
                           </div>

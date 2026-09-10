@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { User, SignOut, UserPlus, Eye, ArrowLeft } from '@phosphor-icons/react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useUserStorage } from "@/utils/user-storage"
@@ -204,8 +204,8 @@ export function SiteHeader({ className }: { className?: string }) {
                     {item.label}
                   </BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={item.href}>
-                    {item.label}
+                  <BreadcrumbLink asChild>
+                    <Link to={item.href}>{item.label}</Link>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProGate } from '@/components/pro-gate';
 import { AIFeedback } from '@/components/ai-feedback';
+import { AnalysisUpgradeOffer } from '@/components/analysis-upgrade-offer';
 import { useThemePresets } from '@/contexts/theme-presets';
 import { useSettings } from '@/contexts/settings-context';
 import { useProStatus } from '@/contexts/pro-context';
@@ -315,7 +316,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta?.usage]);
 
-  if (!hasAIAccess) {
+  if (!hasAIAccess && !result?.analysis && !isStreaming) {
     return (
       <Card>
         <ProGate featureName="AI Trade Analysis">
@@ -328,6 +329,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
   const filteredTrades = filterTrades(trades, period);
 
   const handleAnalyze = async () => {
+    if (!hasAIAccess) return;
     // Demo mode never calls the backend — re-show the pre-built analysis.
     if (isDemo) {
       setResult({
@@ -397,7 +399,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
 
   return (
     <Card>
-      <ProGate featureName="AI Trade Analysis">
+      <ProGate featureName="AI Trade Analysis" completedAIResult={!!result?.analysis || isStreaming}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -494,12 +496,15 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 ))}
               </div>
               {!isStreaming && result && (
-                <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                  <AIFeedback feature="AI Trade Analysis" responseId={String(result.timestamp)} />
-                  <p className="text-xs text-muted-foreground">
-                    Based on {result.tradeCount} trades · {new Date(result.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </div>
+                <>
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <AIFeedback feature="AI Trade Analysis" responseId={String(result.timestamp)} />
+                    <p className="text-xs text-muted-foreground">
+                      Based on {result.tradeCount} trades · {new Date(result.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <AnalysisUpgradeOffer tradeCount={trades.length} />
+                </>
               )}
             </div>
           ) : isStreaming ? (

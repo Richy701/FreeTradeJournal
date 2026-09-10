@@ -1,0 +1,60 @@
+import { beforeEach, afterEach, expect, it, vi } from 'vitest';
+const { remote, pending, mode, calls } = vi.hoisted(() => ({
+  remote: {} as Record<string, string>,
+  pending: [] as Array<() => void>,
+  mode: { defer: false, rejectPull: false },
+  calls: { pulls: 0 },
+}));
+vi.mock('@/lib/firebase-lazy', () => ({ getFirebaseAuth: async () => ({}), getFirebaseFirestore: async () => ({}) }));
+vi.mock('firebase/functions', () => ({
+  getFunctions: () => ({}),
+  httpsCallable: (_: unknown, name: string) => async (p: {key: string; value: string}) => {
+    if (name === 'getSyncData') {
+      calls.pulls++;
+      if (mode.rejectPull) throw new Error('offline');
+      return {data: {data: {...remote}}};
+    }
+    if (mode.defer) await new Promise<void>(resolve => pending.push(() => {remote[p.key] = p.value; resolve();}));
+    else remote[p.key] = p.value;
+    return {data: {success: true}};
+  },
+}));
+import { SyncEngine } from '@/services/sync-engine';
+import { UserStorage, SYNC_DIRTY_PREFIX, setSyncRef } from '@/utils/user-storage';
+let engine: SyncEngine;
+beforeEach(() => {
+  vi.useFakeTimers(); localStorage.clear(); setSyncRef(null);
+  for (const k of Object.keys(remote)) delete remote[k];
+  pending.length = 0; mode.defer = false; mode.rejectPull = false; calls.pulls = 0;
+});
+afterEach(() => { engine?.disable(); vi.useRealTimers(); });
+it('reproduces resurrection of an offline-deleted trade on reconnect', async () => {
+  remote.trades = '[{"id":"kept"},{"id":"deleted"}]';
+  localStorage.setItem('user_audit_trades', '[{"id":"kept"}]');
+  localStorage.setItem(SYNC_DIRTY_PREFIX + 'audit', '["trades"]');
+  engine = new SyncEngine('audit'); await engine.enable();
+  expect(JSON.parse(UserStorage.getItem('audit', 'trades')!).map((t: {id: string}) => t.id)).toContain('deleted');
+});
+it('reproduces ignoring a successful remote delete-all on a clean device', async () => {
+  remote.trades = '[]'; localStorage.setItem('user_audit_trades', '[{"id":"deleted"}]');
+  engine = new SyncEngine('audit'); await engine.enable();
+  expect(UserStorage.getItem('audit', 'trades')).toContain('deleted');
+});
+it('reproduces an older overlapping save winning and overwriting local data on poll', async () => {
+  remote.trades = '[]'; engine = new SyncEngine('audit'); await engine.enable();
+  mode.defer = true;
+  const old = engine.syncKey('trades', '[{"id":"old"}]');
+  await vi.waitFor(() => expect(pending).toHaveLength(1));
+  const latest = engine.syncKey('trades', '[{"id":"old"},{"id":"new"}]');
+  await vi.waitFor(() => expect(pending).toHaveLength(2));
+  localStorage.setItem('user_audit_trades', '[{"id":"old"},{"id":"new"}]');
+  pending[1](); await latest; pending[0](); await old;
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(UserStorage.getItem('audit', 'trades')).not.toContain('new');
+});
+it('reproduces retries continuing beyond maxRetries=3', async () => {
+  mode.rejectPull = true; engine = new SyncEngine('audit'); await engine.enable();
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(calls.pulls).toBe(6);
+  expect(engine.initialPullDone).toBe(false);
+});

@@ -21,6 +21,7 @@ export type SortField = 'date' | 'pnl' | 'symbol';
 export type SortDir = 'asc' | 'desc';
 
 export interface TradeFilters {
+  query: string;
   symbols: string[];
   sides: Array<'long' | 'short'>;
   markets: string[];
@@ -33,6 +34,7 @@ export interface TradeFilters {
 }
 
 export const EMPTY_FILTERS: TradeFilters = {
+  query: '',
   symbols: [],
   sides: [],
   markets: [],
@@ -47,6 +49,7 @@ export const EMPTY_FILTERS: TradeFilters = {
 /** Sort is intentionally excluded — it is not a "filter" and never produces a pill. */
 export function countActiveFilters(f: TradeFilters): number {
   return (
+    (f.query?.trim() ? 1 : 0) +
     f.symbols.length +
     f.sides.length +
     f.markets.length +
@@ -173,7 +176,7 @@ export function TradeLogFilters({
   const sortLabel = SORT_FIELDS.find((f) => f.value === filters.sortBy)?.label ?? 'Date';
 
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+    <div className="flex flex-wrap items-center gap-2">
         <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Funnel className="h-3.5 w-3.5" />
           Filter
@@ -365,6 +368,9 @@ export function TradeLogFilterPills({
     onChange({ ...filters, [key]: filters[key].filter((v) => v !== value) });
 
   const pills: Array<{ key: string; label: string; onRemove: () => void }> = [];
+  if (filters.query?.trim()) {
+    pills.push({ key: 'query', label: `Search: ${filters.query.trim()}`, onRemove: () => onChange({ ...filters, query: '' }) });
+  }
   filters.symbols.forEach((s) =>
     pills.push({ key: `sym-${s}`, label: s, onRemove: () => removeFrom('symbols', s) }),
   );
@@ -405,11 +411,11 @@ export function TradeLogFilterPills({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {pills.map((p) => (
-        <Badge key={p.key} variant="outline" className="gap-1 bg-muted/50 pl-2 pr-1 py-0.5 font-medium">
-          {p.label}
+        <Badge key={p.key} variant="outline" className="max-w-full gap-1 bg-muted/50 pl-2 pr-1 py-0.5 font-medium">
+          <span className="truncate">{p.label}</span>
           <button
             onClick={p.onRemove}
-            className="rounded-sm p-0.5 transition-colors hover:bg-muted-foreground/20"
+            className="shrink-0 rounded-sm p-1.5 transition-colors hover:bg-muted-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={`Remove ${p.label} filter`}
           >
             <X className="h-3 w-3" />

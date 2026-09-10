@@ -14,11 +14,11 @@ import { RiskBreachMonitor } from '@/components/risk-breach-monitor';
 import { useAuth } from '@/contexts/auth-context';
 
 // The sidebar writes its open/closed state to this cookie on every toggle;
-// read it back so the choice survives reloads. First visit starts collapsed.
+// read it back so the choice survives reloads. Show navigation on first visit.
 function readSidebarCookie(): boolean {
-  if (typeof document === 'undefined') return false;
+  if (typeof document === 'undefined') return true;
   const m = document.cookie.match(/(?:^|; )sidebar_state=(true|false)/);
-  return m ? m[1] === 'true' : false;
+  return m ? m[1] === 'true' : true;
 }
 
 export default function Layout({ children }: { children?: React.ReactNode }) {

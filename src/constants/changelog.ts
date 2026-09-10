@@ -24,6 +24,38 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.91.1',
+    date: '2026-09-10',
+    summary: 'Easier trade search, clearer mobile controls, and AI reviews you can keep reading.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Find and review trades faster',
+        description: 'Search your Trade Log by symbol, strategy, notes, direction, or emotions. Import is easier to reach, and compact mobile statistics and filters leave more room for your trades and journal entries.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer controls on phones and keyboards',
+        description: 'Onboarding navigation fits smaller screens, password buttons are easier to tap, and calculator, account, goal, and risk controls have clearer accessible labels. Selected filters and pricing options are easier to identify.',
+      },
+      {
+        type: 'improved',
+        text: 'A tidier product tour',
+        description: 'The homepage has more consistent spacing and easier screenshot controls. Screenshot rotation pauses for keyboard interaction and respects your reduced-motion preference.',
+      },
+      {
+        type: 'fixed',
+        text: 'Read your final free analysis',
+        description: 'Using your last free coaching run no longer hides the trade analysis you just received. You can finish reading it before deciding whether to upgrade.',
+      },
+      {
+        type: 'improved',
+        text: 'Pro options after your review',
+        description: 'Returning free traders may see annual and monthly Pro options below a completed trade analysis. Dismiss the offer to hide it for 30 days on that browser.',
+      },
+    ],
+  },
+  {
     version: '2.91.0',
     date: '2026-09-08',
     summary: 'Trade Ideas beta paused.',
@@ -3203,4 +3235,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.91.0'
+export const LATEST_CHANGELOG_VERSION = '2.91.1'
