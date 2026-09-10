@@ -92,3 +92,32 @@ describe('stale device with an unsynced accounts edit', () => {
     expect(orphans).toEqual([]);
   });
 });
+
+describe('stale device with an unsynced trades edit', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    for (const k of Object.keys(remote)) delete remote[k];
+    pushed.length = 0;
+    setSyncRef(null);
+    localStorage.setItem(SYNC_DIRTY_PREFIX + UID, JSON.stringify(['trades']));
+  });
+
+  it('must not delete cloud trades it has never seen, and keeps its own unsynced one', async () => {
+    remote.trades = JSON.stringify([
+      { id: 'cloud-1', accountId: 'a' },
+      { id: 'cloud-2', accountId: 'a' },
+    ]);
+    // This device is behind: it never saw cloud-2, and has an unsynced trade.
+    localStorage.setItem(`user_${UID}_trades`, JSON.stringify([
+      { id: 'cloud-1', accountId: 'a' },
+      { id: 'local-only', accountId: 'a' },
+    ]));
+
+    const engine = new SyncEngine(UID);
+    await engine.enable();
+    engine.disable();
+
+    const finalIds = JSON.parse(remote.trades).map((t: { id: string }) => t.id).sort();
+    expect(finalIds).toEqual(['cloud-1', 'cloud-2', 'local-only']);
+  });
+});

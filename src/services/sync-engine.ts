@@ -1,6 +1,6 @@
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { UserStorage, isSettingsDirty, clearSettingsDirty, SYNC_KEYS, SYNC_DIRTY_PREFIX } from '@/utils/user-storage';
-import { collectReferencedAccountIds, mergeAccountsPreservingReferenced } from '@/lib/account-merge';
+import { collectReferencedAccountIds, mergeAccountsPreservingReferenced, mergeCollectionById } from '@/lib/account-merge';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
 type SyncKey = typeof SYNC_KEYS[number];
@@ -63,29 +63,39 @@ export class SyncEngine {
     if (this.dirtyKeys.delete(key)) this.persistDirty();
   }
 
-  // A dirty key keeps its local value and skips the pull. For `accounts` that
-  // is destructive: a stale device's list then flushes over the cloud copy and
-  // every account created elsewhere is deleted, stranding its trades. Instead,
-  // fold back any remote account that still has trades or journal entries
-  // pointing at it — a deliberately deleted account has none, because deleting
-  // one removes its records first. Returns true when local was updated.
-  private rescueDroppedAccounts(remoteData: Record<string, string>): boolean {
-    const localAccounts = UserStorage.getItem(this.uid, 'accounts');
-    const referenced = collectReferencedAccountIds(
-      UserStorage.getItem(this.uid, 'trades'),
-      UserStorage.getItem(this.uid, 'journalEntries'),
-      remoteData['trades'],
-      remoteData['journalEntries'],
-    );
-    const merged = mergeAccountsPreservingReferenced(
-      localAccounts,
-      remoteData['accounts'],
-      referenced,
-    );
+  // A dirty key keeps its local value and skips the pull, then flushes that
+  // local value over the cloud. For a collection that is destructive: every
+  // record only the cloud has is deleted, however the device ended up behind.
+  // Fold the cloud-only records in first, so a device that is behind can never
+  // delete another device's work. Local still wins on records both sides have,
+  // which is the point of the dirty mark. Object-shaped keys merge to nothing
+  // and fall through unchanged.
+  //
+  // `accounts` additionally keeps the referenced-record rule, so an account the
+  // user deliberately deleted (which removes its trades and journal entries in
+  // the same action) does not come back. Returns true when local was updated.
+  private mergeRemoteIntoLocal(key: string, remoteData: Record<string, string>): boolean {
+    const local = UserStorage.getItem(this.uid, key);
+    const remote = remoteData[key];
+    if (!local || !remote) return false;
+
+    let merged: string | null;
+    if (key === 'accounts') {
+      const referenced = collectReferencedAccountIds(
+        UserStorage.getItem(this.uid, 'trades'),
+        UserStorage.getItem(this.uid, 'journalEntries'),
+        remoteData['trades'],
+        remoteData['journalEntries'],
+      );
+      merged = mergeAccountsPreservingReferenced(local, remote, referenced);
+    } else {
+      merged = mergeCollectionById(local, remote);
+    }
     if (!merged) return false;
-    UserStorage.setItem(this.uid, 'accounts', merged, true);
-    this.notifyChange('accounts');
-    console.warn('[Sync] Kept remote accounts that still have records attached');
+
+    UserStorage.setItem(this.uid, key, merged, true);
+    this.notifyChange(key);
+    console.warn(`[Sync] Folded remote-only ${key} records into the local copy before flushing`);
     return true;
   }
 
@@ -185,7 +195,7 @@ export class SyncEngine {
           if (this.dirtyKeys.has(key)) {
             // Local wins, but an accounts flush must not strand records that
             // belong to accounts only the cloud knows about.
-            if (key === 'accounts') this.rescueDroppedAccounts(remoteData);
+            this.mergeRemoteIntoLocal(key, remoteData);
             console.log(`[Sync] Keeping local unsynced ${key} over remote (will flush)`);
             continue;
           }
@@ -271,7 +281,7 @@ export class SyncEngine {
         // push fails (offline, >1MB), pulling the older remote here would
         // DELETE the very data the failed push was trying to save.
         if (this.dirtyKeys.has(key)) {
-          if (key === 'accounts') this.rescueDroppedAccounts(remoteData);
+          this.mergeRemoteIntoLocal(key, remoteData);
           continue;
         }
 

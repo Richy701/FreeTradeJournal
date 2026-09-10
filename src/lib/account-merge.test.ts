@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { collectReferencedAccountIds, mergeAccountsPreservingReferenced } from './account-merge';
+import {
+  collectReferencedAccountIds,
+  mergeAccountsPreservingReferenced,
+  mergeCollectionById,
+} from './account-merge';
 
 const accounts = (...ids: string[]) => JSON.stringify(ids.map((id) => ({ id, name: id })));
 const records = (...accountIds: string[]) =>
@@ -69,5 +73,33 @@ describe('mergeAccountsPreservingReferenced', () => {
     expect(mergeAccountsPreservingReferenced(accounts('a'), null, referenced)).toBeNull();
     expect(mergeAccountsPreservingReferenced('not json', accounts('b'), referenced)).toBeNull();
     expect(mergeAccountsPreservingReferenced(accounts('a'), '{"nope":1}', referenced)).toBeNull();
+  });
+});
+
+describe('mergeCollectionById', () => {
+  const recs = (...ids: string[]) => JSON.stringify(ids.map((id) => ({ id })));
+
+  it('folds in records only the remote has', () => {
+    const merged = mergeCollectionById(recs('a'), recs('a', 'b'));
+    expect(JSON.parse(merged!).map((r: { id: string }) => r.id)).toEqual(['a', 'b']);
+  });
+
+  it('keeps the local version of a record both sides have', () => {
+    const local = JSON.stringify([{ id: 'a', note: 'mine' }]);
+    const remote = JSON.stringify([{ id: 'a', note: 'theirs' }, { id: 'b' }]);
+    const merged = JSON.parse(mergeCollectionById(local, remote)!);
+    expect(merged[0]).toEqual({ id: 'a', note: 'mine' });
+    expect(merged.map((r: { id: string }) => r.id)).toEqual(['a', 'b']);
+  });
+
+  it('returns null when local already has everything', () => {
+    expect(mergeCollectionById(recs('a', 'b'), recs('a'))).toBeNull();
+    expect(mergeCollectionById(recs('a'), recs('a'))).toBeNull();
+  });
+
+  it('is inert on object-shaped and malformed payloads', () => {
+    expect(mergeCollectionById('{"theme":"dark"}', '{"theme":"light"}')).toBeNull();
+    expect(mergeCollectionById(recs('a'), 'not json')).toBeNull();
+    expect(mergeCollectionById(null, recs('a'))).toBeNull();
   });
 });

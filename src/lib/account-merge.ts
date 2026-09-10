@@ -75,3 +75,41 @@ export function mergeAccountsPreservingReferenced(
 
   return JSON.stringify([...(local as MergeableAccount[]), ...rescued]);
 }
+
+/**
+ * Union two record collections by id, local winning on conflicts.
+ *
+ * This is the general form of the rule above, used when a key is held as an
+ * unsynced local edit. In that state the engine keeps the local copy and
+ * pushes it, which for a collection means every record only the cloud has is
+ * deleted. Folding the cloud-only records in first means a device that is
+ * behind can never delete another device's work, however it ended up behind.
+ *
+ * Returns null when local already contains everything remote has, so callers
+ * can skip the write.
+ */
+export function mergeCollectionById(
+  localJson: string | null | undefined,
+  remoteJson: string | null | undefined,
+): string | null {
+  if (!localJson || !remoteJson) return null;
+
+  let local: unknown;
+  let remote: unknown;
+  try {
+    local = JSON.parse(localJson);
+    remote = JSON.parse(remoteJson);
+  } catch {
+    return null;
+  }
+  // Object-shaped keys (settings, goals, risk rules) have no ids to merge on.
+  if (!Array.isArray(local) || !Array.isArray(remote)) return null;
+
+  const localIds = new Set(
+    (local as MergeableAccount[]).map((r) => r?.id).filter((id): id is string => !!id),
+  );
+  const missing = (remote as MergeableAccount[]).filter((r) => r?.id && !localIds.has(r.id));
+  if (missing.length === 0) return null;
+
+  return JSON.stringify([...(local as MergeableAccount[]), ...missing]);
+}
