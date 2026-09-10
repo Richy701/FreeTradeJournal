@@ -1,5 +1,6 @@
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-lazy';
 import { UserStorage, isSettingsDirty, clearSettingsDirty, SYNC_KEYS, SYNC_DIRTY_PREFIX } from '@/utils/user-storage';
+import { collectReferencedAccountIds, mergeAccountsPreservingReferenced } from '@/lib/account-merge';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 
 type SyncKey = typeof SYNC_KEYS[number];
@@ -60,6 +61,32 @@ export class SyncEngine {
 
   private clearDirty(key: string) {
     if (this.dirtyKeys.delete(key)) this.persistDirty();
+  }
+
+  // A dirty key keeps its local value and skips the pull. For `accounts` that
+  // is destructive: a stale device's list then flushes over the cloud copy and
+  // every account created elsewhere is deleted, stranding its trades. Instead,
+  // fold back any remote account that still has trades or journal entries
+  // pointing at it — a deliberately deleted account has none, because deleting
+  // one removes its records first. Returns true when local was updated.
+  private rescueDroppedAccounts(remoteData: Record<string, string>): boolean {
+    const localAccounts = UserStorage.getItem(this.uid, 'accounts');
+    const referenced = collectReferencedAccountIds(
+      UserStorage.getItem(this.uid, 'trades'),
+      UserStorage.getItem(this.uid, 'journalEntries'),
+      remoteData['trades'],
+      remoteData['journalEntries'],
+    );
+    const merged = mergeAccountsPreservingReferenced(
+      localAccounts,
+      remoteData['accounts'],
+      referenced,
+    );
+    if (!merged) return false;
+    UserStorage.setItem(this.uid, 'accounts', merged, true);
+    this.notifyChange('accounts');
+    console.warn('[Sync] Kept remote accounts that still have records attached');
+    return true;
   }
 
   // The ledger in localStorage is shared across tabs; the in-memory set is
@@ -156,6 +183,9 @@ export class SyncEngine {
           // edit, oversized push) win over the older remote copy — pulling here
           // would silently delete them. They flush right after the pull.
           if (this.dirtyKeys.has(key)) {
+            // Local wins, but an accounts flush must not strand records that
+            // belong to accounts only the cloud knows about.
+            if (key === 'accounts') this.rescueDroppedAccounts(remoteData);
             console.log(`[Sync] Keeping local unsynced ${key} over remote (will flush)`);
             continue;
           }
@@ -240,7 +270,10 @@ export class SyncEngine {
         // Never pull over local edits that haven't reached the cloud — when a
         // push fails (offline, >1MB), pulling the older remote here would
         // DELETE the very data the failed push was trying to save.
-        if (this.dirtyKeys.has(key)) continue;
+        if (this.dirtyKeys.has(key)) {
+          if (key === 'accounts') this.rescueDroppedAccounts(remoteData);
+          continue;
+        }
 
         const remoteValue = remoteData[key];
         if (!remoteValue) continue;

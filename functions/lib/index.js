@@ -4635,7 +4635,9 @@ exports.syncData = functions.https.onCall(async (data, context) => {
     if (!userDoc.exists || !isEntitledPro(userDoc.data())) {
         throw new functions.https.HttpsError("permission-denied", "Cloud sync is a Pro feature.");
     }
-    const { key, value, allowEmpty } = data;
+    const { key, allowEmpty } = data;
+    // Reassigned by the accounts guard below when it rescues still-referenced accounts.
+    let value = data.value;
     if (!key || !SYNC_KEYS.includes(key)) {
         throw new functions.https.HttpsError("invalid-argument", "Invalid sync key.");
     }
@@ -4655,25 +4657,65 @@ exports.syncData = functions.https.onCall(async (data, context) => {
         console.warn(`[syncData] Blocked empty ${key} from syncing for ${uid}`);
         return { success: false, reason: 'empty_data_blocked' };
     }
-    // CRITICAL: Don't let a default-only account list overwrite real accounts
-    // that are referenced by existing trades
+    // CRITICAL: an accounts write may never strand data.
+    //
+    // Two failures land here, both seen in production (Abdoul, 2026-08-31 and
+    // again 2026-09-10):
+    //  1. A fresh device pushes a default-only list over real accounts.
+    //  2. A device whose `accounts` key is stuck dirty never pulls the cloud
+    //     list and flushes its own stale copy on every sign-in, deleting
+    //     accounts created elsewhere and orphaning their trades.
+    //
+    // The rule that separates a deliberate delete from a clobber: deleting an
+    // account in-app removes its trades and journal entries first, so a genuinely
+    // deleted account has nothing pointing at it. An account that still has
+    // trades or journal entries attached was NOT deleted on purpose — so we
+    // rescue it back into the incoming list instead of letting the write strand
+    // its data. Clients running old bundles are covered too, which is why this
+    // lives on the server as well as in the sync engine.
+    //
+    // The client-side twin of this rule is mergeAccountsPreservingReferenced in
+    // src/lib/account-merge.ts — change both together.
     if (key === 'accounts') {
         try {
             const incoming = JSON.parse(value);
-            const allDefaults = Array.isArray(incoming) && incoming.length > 0 &&
-                incoming.every((a) => a.id?.startsWith('default-'));
-            if (allDefaults) {
+            if (Array.isArray(incoming)) {
                 // Chunk-aware: reading .data directly would return undefined for a
                 // chunked trades doc and silently disable this guard.
-                const tradesValue = await readSyncValue(uid, 'trades');
-                if (tradesValue) {
-                    const trades = JSON.parse(tradesValue);
-                    const tradeAccountIds = new Set(trades.map((t) => t.accountId).filter(Boolean));
-                    const incomingIds = new Set(incoming.map((a) => a.id));
-                    const hasOrphanedTrades = [...tradeAccountIds].some(id => !incomingIds.has(id));
-                    if (hasOrphanedTrades) {
-                        console.warn(`[syncData] Blocked default-only accounts from overwriting trade-linked accounts for ${uid}`);
-                        return { success: false, reason: 'would_orphan_trades' };
+                const [tradesValue, entriesValue, prevAccountsValue] = await Promise.all([
+                    readSyncValue(uid, 'trades'),
+                    readSyncValue(uid, 'journalEntries'),
+                    readSyncValue(uid, 'accounts'),
+                ]);
+                const referenced = new Set();
+                for (const raw of [tradesValue, entriesValue]) {
+                    if (!raw)
+                        continue;
+                    try {
+                        const records = JSON.parse(raw);
+                        if (Array.isArray(records)) {
+                            for (const r of records)
+                                if (r?.accountId)
+                                    referenced.add(r.accountId);
+                        }
+                    }
+                    catch { /* unparseable payload — nothing to protect */ }
+                }
+                const incomingIds = new Set(incoming.map((a) => a.id));
+                // Guard 1: a default-only seed list must never strand real trades.
+                const allDefaults = incoming.length > 0 &&
+                    incoming.every((a) => a.id?.startsWith('default-'));
+                if (allDefaults && [...referenced].some((id) => !incomingIds.has(id))) {
+                    console.warn(`[syncData] Blocked default-only accounts from overwriting trade-linked accounts for ${uid}`);
+                    return { success: false, reason: 'would_orphan_trades' };
+                }
+                // Guard 2: rescue accounts this write drops that still have data.
+                const prevAccounts = prevAccountsValue ? JSON.parse(prevAccountsValue) : [];
+                if (Array.isArray(prevAccounts)) {
+                    const rescued = prevAccounts.filter((a) => a?.id && !incomingIds.has(a.id) && referenced.has(a.id));
+                    if (rescued.length > 0) {
+                        value = JSON.stringify([...incoming, ...rescued]);
+                        console.warn(`[syncData] Rescued ${rescued.length} still-referenced account(s) dropped by an accounts write for ${uid}: ${rescued.map((a) => a.id).join(', ')}`);
                     }
                 }
             }

@@ -25,7 +25,7 @@ vi.mock('@/contexts/auth-context', () => ({
     return { user, isDemo: false, loading: false, signIn, signUp, signInWithGoogle };
   },
 }));
-vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
+vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn(), demoAttribution: () => ({ from_demo: false }) }));
 vi.mock('@/utils/onboarding', () => ({ clearOnboardingData: vi.fn() }));
 vi.mock('@/lib/firebase-lazy', () => ({ getFirebaseAuth: vi.fn(async () => ({})) }));
 vi.mock('firebase/auth', () => ({}));
