@@ -1620,6 +1620,14 @@ function isNinjaTraderGrid(headers: string[]): boolean {
   return hasMarketPos && hasProfit && hasCommission;
 }
 
+// A P&L column labelled "Net" (Net P/L, Net P&L, Net PnL, Net Profit) is already
+// after commissions by definition. Treating it as gross subtracted the file's
+// Commission column a second time, so imported totals came in below the file's.
+export function isNetPnlHeader(header: string | undefined): boolean {
+  const h = (header || '').trim().toLowerCase();
+  return /\bnet\b/.test(h) && !/\bgross\b/.test(h);
+}
+
 // Wrong-file detection: people upload open-position snapshots, account
 // statements, or order histories — files that can never map to closed trades
 // because the required columns (close price, realized P&L) don't exist in
@@ -1886,10 +1894,6 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
       if (isGenericOrdersFormat(headers)) return parseGenericOrders(lines, headers);
     }
 
-    // NinjaTrader's "Profit" is already net of commissions — flag it so the
-    // importer doesn't double-subtract the Commission column.
-    const pnlIsNet = isNinjaTraderGrid(headers);
-
     // Find column indices
     const columnIndices = {
       symbol: findColumnIndex(headers, COLUMN_MAPPINGS.standard.symbol),
@@ -1904,6 +1908,9 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
       fees: findColumnIndex(headers, COLUMN_MAPPINGS.standard.fees),
     };
 
+    // NinjaTrader's "Profit" and any "Net ..." P&L column are already net of
+    // commissions — flag them so the importer doesn't double-subtract costs.
+    const pnlIsNet = isNinjaTraderGrid(headers) || isNetPnlHeader(headers[columnIndices.pnl]);
 
     // Validate required columns
     const requiredColumns = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
@@ -2097,10 +2104,12 @@ function parseCSVWithMappingsCore(csvContent: string, mappings: Record<string, n
     const lines = rawLines.slice(headerRow);
     const decimalComma = detectDecimalComma(lines.slice(1), delimiter);
 
-    // NinjaTrader's "Profit" is already net of commissions — detect it from the
-    // header row so the importer doesn't double-subtract the Commission column,
-    // even when the file is imported via a manual/AI column mapping.
-    const pnlIsNet = isNinjaTraderGrid(parseCSVLine(lines[0] || '', delimiter));
+    // NinjaTrader's "Profit" and any "Net ..." P&L column are already net of
+    // commissions — detect it from the header row so the importer doesn't
+    // double-subtract costs, even when imported via a manual/AI column mapping.
+    const headerCells = parseCSVLine(lines[0] || '', delimiter);
+    const pnlIsNet = isNinjaTraderGrid(headerCells)
+      || (mappings.pnl >= 0 && isNetPnlHeader(headerCells[mappings.pnl]));
 
     // Infer DD/MM vs MM/DD across the chosen date column.
     let dayFirst: boolean | undefined;

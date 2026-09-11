@@ -50,6 +50,7 @@ const webpush = __importStar(require("web-push"));
 const crypto = __importStar(require("crypto"));
 const WelcomeEmail_1 = require("./emails/WelcomeEmail");
 const sync_chunks_1 = require("./sync-chunks");
+const free_allowance_1 = require("./free-allowance");
 const ProUpgradeEmail_1 = require("./emails/ProUpgradeEmail");
 const CancellationEmail_1 = require("./emails/CancellationEmail");
 const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
@@ -452,6 +453,26 @@ function trialTombstoneRef(email) {
     const hash = crypto.createHash("sha256").update(normalizeEmail(email)).digest("hex");
     return db.collection("trialTombstones").doc(hash);
 }
+// Put the free AI + screenshot-import counts a deleted account had back onto
+// the new account for the same email (see free-allowance.ts). Keeps the higher
+// count, so a quick AI call that lands before this runs isn't wiped either.
+async function restoreFreeAllowances(uid, tombstone) {
+    const monthStr = new Date().toISOString().slice(0, 7);
+    const todayStr = new Date().toISOString().split("T")[0];
+    const meta = db.collection("users").doc(uid).collection("meta");
+    const aiRef = meta.doc("freeAiUsage");
+    const shotRef = meta.doc("screenshotImport");
+    await db.runTransaction(async (tx) => {
+        const [ai, shot] = await Promise.all([tx.get(aiRef), tx.get(shotRef)]);
+        const mergedAi = (0, free_allowance_1.mergeFreeAiUsage)(ai.data(), tombstone.freeAiUsage, monthStr, todayStr);
+        if (mergedAi)
+            tx.set(aiRef, mergedAi);
+        const carried = Number(tombstone.screenshotFreeUsed) || 0;
+        if (carried > (Number(shot.data()?.freeUsed) || 0)) {
+            tx.set(shotRef, { freeUsed: carried }, { merge: true });
+        }
+    });
+}
 // ─── Signup Velocity Guard (anti-abuse) ─────────────────────
 // Firebase Auth account creation itself can't be blocked from a plain onCreate
 // trigger, so the guard gates the costly side effects instead: welcome email,
@@ -565,9 +586,11 @@ exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     let trialAlreadyUsed = false;
     if (user.email) {
         try {
-            trialAlreadyUsed = (await trialTombstoneRef(user.email).get()).exists;
+            const tombstone = await trialTombstoneRef(user.email).get();
+            trialAlreadyUsed = tombstone.exists;
             if (trialAlreadyUsed) {
                 console.log(`Trial tombstone hit for ${user.uid} — no signup trial granted`);
+                await restoreFreeAllowances(user.uid, tombstone.data() || {});
             }
         }
         catch (err) {
@@ -4844,6 +4867,19 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
         console.error(`[deleteUserAccount] Stripe cleanup error:`, err.message);
         // Continue with deletion even if Stripe fails
     }
+    // 1b. Snapshot the free allowances before meta/ is wiped, so step 5c can
+    // carry them onto the tombstone (delete-and-resignup must not reset them).
+    let freeAiUsage;
+    let screenshotFreeUsed = 0;
+    try {
+        const meta = db.collection("users").doc(uid).collection("meta");
+        const [ai, shot] = await Promise.all([meta.doc("freeAiUsage").get(), meta.doc("screenshotImport").get()]);
+        freeAiUsage = ai.data();
+        screenshotFreeUsed = Number(shot.data()?.freeUsed) || 0;
+    }
+    catch (err) {
+        console.error(`[deleteUserAccount] Free allowance snapshot error:`, err.message);
+    }
     // 2. Delete Firestore subcollections (sync, meta, pushSubscriptions).
     // Guarded per-subcollection so one failure can't abort the whole deletion
     // and leave a sign-in-capable account half-deleted.
@@ -4916,13 +4952,25 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
         console.error(`[deleteUserAccount] Storage cleanup error:`, err.message);
     }
     // 5c. Trial tombstone: remember — by email hash only, no raw PII — that this
-    // email already used its signup trial, so delete-and-resignup can't reset it.
+    // email already used its signup trial and how much of its free AI and
+    // screenshot allowance it spent, so delete-and-resignup can't reset either.
+    // Counts merge with any earlier tombstone (higher wins): an account deleted
+    // before it ever used AI must not erase what a previous account spent.
     try {
         if (email !== "unknown") {
-            await trialTombstoneRef(email).set({
-                trialUsed: true,
-                deletedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
+            const ref = trialTombstoneRef(email);
+            const monthStr = new Date().toISOString().slice(0, 7);
+            const todayStr = new Date().toISOString().split("T")[0];
+            await db.runTransaction(async (tx) => {
+                const prev = (await tx.get(ref)).data();
+                const mergedAi = (0, free_allowance_1.mergeFreeAiUsage)(prev?.freeAiUsage, freeAiUsage, monthStr, todayStr);
+                tx.set(ref, {
+                    trialUsed: true,
+                    deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    screenshotFreeUsed: Math.max(Number(prev?.screenshotFreeUsed) || 0, screenshotFreeUsed),
+                    ...(mergedAi ? { freeAiUsage: mergedAi } : {}),
+                }, { merge: true });
+            });
             console.log(`[deleteUserAccount] Wrote trial tombstone`);
         }
     }

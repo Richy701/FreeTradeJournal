@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { parseCSV, findColumnIndex, parseCSVHeaders, dateFromFileName, detectNonTradeExport } from './csv-parser';
+import { parseCSV, parseCSVWithMappings, findColumnIndex, parseCSVHeaders, dateFromFileName, detectNonTradeExport, isNetPnlHeader } from './csv-parser';
+import { buildImportedTrades } from './import-trades';
 
 describe('findColumnIndex', () => {
   it('prefers an exact header match over a substring collision', () => {
@@ -143,6 +144,41 @@ describe('parseCSV — NinjaTrader Grid (Trade Performance) export', () => {
   it('flags Profit as already-net so commissions are not subtracted twice', () => {
     const [win] = parseCSV(csv).trades;
     expect(win.pnlIsNet).toBe(true);
+  });
+});
+
+describe('parseCSV — "Net P/L" column alongside a Commission column', () => {
+  // Apex/Rithmic-style file: "Net P/L" is already after commissions, so the
+  // imported total must equal the column's sum (what the preview shows).
+  const csv = [
+    'Symbol,Side,Qty,Entry Price,Exit Price,Entry Time,Exit Time,Commission,Net P/L',
+    'MNQU6,Buy,1,23500.00,23510.00,09/08/2026 09:31:05,09/08/2026 09:32:10,1.24,18.76',
+    'MNQU6,Sell,1,23520.00,23515.00,09/08/2026 09:40:00,09/08/2026 09:41:30,1.24,8.76',
+  ].join('\n');
+
+  it('keeps the imported net total equal to the Net P/L column', () => {
+    const built = buildImportedTrades(parseCSV(csv).trades, { fileName: 'x.csv', accountId: 'a' });
+    const total = built.reduce((s, t) => s + t.pnl, 0);
+    expect(total).toBeCloseTo(27.52, 2);
+    // Commission is still recorded, with gross reconstructed on top of net
+    expect(built[0].commission).toBeCloseTo(1.24, 2);
+    expect(built[0].brokerPnL).toBeCloseTo(20, 2);
+  });
+
+  it('does the same when the columns are mapped by hand', () => {
+    const r = parseCSVWithMappings(csv, {
+      symbol: 0, side: 1, quantity: 2, openPrice: 3, closePrice: 4,
+      openTime: 5, closeTime: 6, commission: 7, fees: -1, pnl: 8,
+    });
+    expect(r.trades.every(t => t.pnlIsNet)).toBe(true);
+  });
+
+  it('still treats a plain or Gross P&L column as before costs', () => {
+    expect(isNetPnlHeader('Net P/L')).toBe(true);
+    expect(isNetPnlHeader('Net Profit')).toBe(true);
+    expect(isNetPnlHeader('Realized P&L')).toBe(false);
+    expect(isNetPnlHeader('Gross P/L')).toBe(false);
+    expect(isNetPnlHeader('Profit')).toBe(false);
   });
 });
 

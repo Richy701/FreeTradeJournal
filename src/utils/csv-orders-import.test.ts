@@ -69,15 +69,31 @@ describe('mapped-import price-as-pnl guard (parseCSVWithMappings)', () => {
   });
 });
 
-describe('intra-batch duplicate rows (dedupeImportedTrades)', () => {
-  it('drops identical rows within one import batch', () => {
-    const t = {
-      symbol: 'MNQU26', side: 'long', entryPrice: 29400, exitPrice: 29420,
-      lotSize: 1, pnl: 40,
-      entryTime: new Date('2026-08-06T10:00:00Z'), exitTime: new Date('2026-08-06T10:10:00Z'),
-    };
+describe('identical rows (dedupeImportedTrades)', () => {
+  const t = {
+    symbol: 'MNQU26', side: 'long', entryPrice: 29400, exitPrice: 29420,
+    lotSize: 1, pnl: 40,
+    entryTime: new Date('2026-08-06T10:00:00Z'), exitTime: new Date('2026-08-06T10:10:00Z'),
+  };
+
+  // Rithmic/Apex split one order into separate 1-contract fills at the same
+  // price and second — those are real trades, not duplicates.
+  it('keeps identical rows within one file', () => {
     const { newTrades, skippedCount } = dedupeImportedTrades([], [{ ...t }, { ...t }]);
-    expect(newTrades).toHaveLength(1);
+    expect(newTrades).toHaveLength(2);
+    expect(skippedCount).toBe(0);
+  });
+
+  it('re-importing the same file skips every row, including identical ones', () => {
+    const existing = [{ ...t }, { ...t }];
+    const { newTrades, skippedCount } = dedupeImportedTrades(existing, [{ ...t }, { ...t }]);
+    expect(newTrades).toHaveLength(0);
+    expect(skippedCount).toBe(2);
+  });
+
+  it('matches one-for-one: a file with one more copy than the account imports only the extra', () => {
+    const { newTrades, skippedCount } = dedupeImportedTrades([{ ...t }], [{ ...t }, { ...t }, { ...t }]);
+    expect(newTrades).toHaveLength(2);
     expect(skippedCount).toBe(1);
   });
 });

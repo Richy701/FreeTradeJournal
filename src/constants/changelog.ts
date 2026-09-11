@@ -24,6 +24,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.92.1',
+    date: '2026-09-11',
+    summary: 'CSV imports now match the preview.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Imported totals match the preview',
+        description: 'Separate fills at the same price and second were being skipped as duplicates, and files with a Net P/L column had commissions taken off twice. Every trade in your file now imports, and your total matches what the preview showed.',
+      },
+    ],
+  },
+  {
     version: '2.92.0',
     date: '2026-09-10',
     summary: 'Turn coaching into a weekly habit.',
@@ -3276,4 +3289,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.92.0'
+export const LATEST_CHANGELOG_VERSION = '2.92.1'

@@ -191,18 +191,28 @@ export function tradeFingerprint(t: Fingerprintable): string {
 }
 
 // Skip trades already present (same symbol/side/prices/size/pnl/timestamps).
-// Fingerprints of accepted trades are added as we go, so identical rows WITHIN
-// one import batch are also collapsed — not just rows matching existing trades.
+// Matching is one-for-one: each existing trade absorbs at most one identical
+// incoming row. Re-importing a file still skips every row, but identical rows
+// WITHIN one file all import — Rithmic/Apex split an order into separate
+// one-contract fills at the same price and second, and collapsing them silently
+// dropped real trades (preview 67 trades, account 64).
 export function dedupeImportedTrades<T extends Fingerprintable>(
   existing: Fingerprintable[],
   incoming: T[]
 ): { newTrades: T[]; skippedCount: number } {
-  const seen = new Set(existing.map(tradeFingerprint));
+  const remaining = new Map<string, number>();
+  for (const t of existing) {
+    const fp = tradeFingerprint(t);
+    remaining.set(fp, (remaining.get(fp) ?? 0) + 1);
+  }
   const newTrades: T[] = [];
   for (const t of incoming) {
     const fp = tradeFingerprint(t);
-    if (seen.has(fp)) continue;
-    seen.add(fp);
+    const left = remaining.get(fp) ?? 0;
+    if (left > 0) {
+      remaining.set(fp, left - 1);
+      continue;
+    }
     newTrades.push(t);
   }
   return { newTrades, skippedCount: incoming.length - newTrades.length };
