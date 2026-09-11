@@ -1,4 +1,5 @@
 import { PLAN_ANSWERS, type PlanAnswer } from '@/lib/post-trade-review';
+import { PostTradeReview } from '@/components/post-trade-review';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { trackActivity, trackGateHit } from '@/lib/track-activity';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -85,6 +86,8 @@ import {
 } from '@/components/ui/select';
 
 interface Trade {
+  accountId?: string
+  emotions?: string
   id: string
   symbol: string
   side: 'long' | 'short'
@@ -109,6 +112,8 @@ interface Trade {
 }
 
 interface JournalEntry {
+  lesson?: string;
+  lessonPinned?: boolean;
   quickReview?: { tradeId: string; plan: PlanAnswer };
   id: string;
   title: string;
@@ -282,6 +287,8 @@ export default function Journal() {
   const { getTrades: getDemoTrades, getJournalEntries: getDemoEntries } = useDemoData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [reviewTradeId, setReviewTradeId] = useState('');
+  const [quickReviewTrade, setQuickReviewTrade] = useState<Trade | null>(null);
   const [totalEntryCount, setTotalEntryCount] = useState(0);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(true);
@@ -353,6 +360,10 @@ export default function Journal() {
     entryType: 'general' as 'general' | 'pre-trade' | 'post-trade',
     entryDate: toLocalDateInput(new Date())
   });
+
+  const reviewTrades = useMemo(() => [...trades].sort((a, b) => new Date(b.exitTime).getTime() - new Date(a.exitTime).getTime()), [trades]);
+  const chosenReviewTrade = reviewTrades.find(trade => trade.id === reviewTradeId) ?? reviewTrades[0];
+  const carriedLesson = !isAllAccounts ? entries.find(entry => entry.lessonPinned && entry.lesson?.trim()) : undefined;
 
   // The trades behind newEntry.tradeIds, in link order. Derived, so the form
   // can never show a trade the entry doesn't actually reference.
@@ -1414,6 +1425,27 @@ export default function Journal() {
       {/* pb-24 on mobile keeps the last row clear of the floating add button */}
       <div className="flex flex-col flex-1 w-full px-4 pt-6 pb-24 sm:px-6 sm:pb-6 lg:px-8 gap-6">
 
+        {!isAllAccounts && !showNewEntry && reviewTrades.length > 0 && (
+          <Card>
+            <CardContent className="p-4 sm:p-5 space-y-4">
+              <div>
+                <h2 className="font-semibold">A quick review. One lesson for next time.</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Choose a trade, reflect on your plan, and take one useful lesson into your next session.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <label htmlFor="journal-review-trade" className="text-xs text-muted-foreground">Trade to review</label>
+                  <select id="journal-review-trade" value={chosenReviewTrade?.id ?? ''} onChange={event => setReviewTradeId(event.target.value)} className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm">
+                    {reviewTrades.map(trade => <option key={trade.id} value={trade.id}>{trade.symbol} · {format(new Date(trade.exitTime), 'd MMM yyyy HH:mm')} · {formatCurrency(trade.pnl, true)}</option>)}
+                  </select>
+                </div>
+                <Button className="min-h-11 shrink-0" disabled={!entriesLoaded || isLoadingTrades} onClick={() => { if (chosenReviewTrade) setQuickReviewTrade(chosenReviewTrade); }}>Quick review</Button>
+                <Button variant="outline" className="min-h-11 shrink-0" onClick={openNewEntry}>Write a full entry</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {(nearFreeJournalLimit || atFreeJournalLimit) && (
           <NoticeBanner
             tone="warning"
@@ -1604,6 +1636,14 @@ export default function Journal() {
                 </Button>
               ))}
             </div>
+
+            {newEntry.entryType === 'pre-trade' && carriedLesson && (
+              <aside className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2" aria-label="Lesson for your next trade">
+                <h3 className="text-sm font-semibold">Your lesson for this plan</h3>
+                <p className="text-sm whitespace-pre-wrap break-words">{carriedLesson.lesson}</p>
+                <p className="text-xs text-muted-foreground">From {carriedLesson.title} · {format(new Date(carriedLesson.date), 'd MMM yyyy')}</p>
+              </aside>
+            )}
 
             {/* Writing */}
             <div className="rounded-xl border bg-card/50 p-5 space-y-4">
@@ -2568,6 +2608,7 @@ export default function Journal() {
                       </div>
                     )}
 
+                    {entry.lesson && <div className="rounded-lg border bg-muted/20 p-3 text-sm space-y-1"><p className="font-medium">{entry.lessonPinned ? 'Lesson for my next plan' : 'Lesson for next time'}</p><p className="whitespace-pre-wrap break-words">{entry.lesson}</p></div>}
                     {((entry.emotions && entry.emotions.length > 0) || entry.tags.length > 0) && (
                       <div className="flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-3">
                         {/* Emotions are filled chips, tags are outlined, so the two read as different things */}
@@ -2620,6 +2661,7 @@ export default function Journal() {
         trades={trades}
       />
 
+      {quickReviewTrade && <PostTradeReview trade={quickReviewTrade} captureLesson onClose={() => { setQuickReviewTrade(null); setRefreshKey(value => value + 1); }} />}
       <AIJournalOnSave
         data={onSaveCoachData}
         onClose={() => setOnSaveCoachData(null)}

@@ -27,4 +27,21 @@ describe('post-trade journal reviews', () => {
   it('rejects blank and overlong reflections', () => {
     for (const content of ['  ', 'x'.repeat(5001)]) expect(() => saveTradeReview([], trade, 'yes', content, now)).toThrow();
   });
+  it('replaces only this account’s pinned lesson and preserves earlier lessons', () => {
+    const lesson = { emotion: 'calm', lesson: ' Wait for confirmation. ', carryForward: true };
+    const first = saveTradeReview([], trade, 'yes', 'Good entry', now, lesson).entry;
+    const other = { ...first, id: 'other-account', accountId: 'account-b' };
+    const result = saveTradeReview([first, other], { ...trade, id: 'trade-b' }, 'partly', 'Late entry', now, { ...lesson, lesson: 'Respect my entry trigger.' });
+    expect(result.entry).toMatchObject({ lesson: 'Respect my entry trigger.', lessonPinned: true, emotions: ['calm'] });
+    expect(result.entries.find(entry => entry.id === first.id)).toMatchObject({ lesson: 'Wait for confirmation.', lessonPinned: false });
+    expect(result.entries.find(entry => entry.id === other.id)?.lessonPinned).toBe(true);
+  });
+  it('preserves lessons through the existing trade-log save and allows unpinning', () => {
+    const first = saveTradeReview([], trade, 'yes', 'Good entry', now, { emotion: 'calm', lesson: 'Wait.', carryForward: true }).entry;
+    expect(saveTradeReview([first], trade, 'no', 'Revised', now).entry).toMatchObject({ lesson: 'Wait.', lessonPinned: true });
+    expect(saveTradeReview([first], trade, 'no', 'Revised', now, { emotion: '', lesson: 'Wait.', carryForward: false }).entry).toMatchObject({ lesson: 'Wait.', lessonPinned: false });
+  });
+  it('rejects an empty or overlong carried lesson', () => {
+    for (const lesson of [' ', 'x'.repeat(301)]) expect(() => saveTradeReview([], trade, 'yes', 'Reflection', now, { emotion: '', lesson, carryForward: true })).toThrow();
+  });
 });

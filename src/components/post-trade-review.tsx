@@ -16,19 +16,21 @@ import { useUserStorage } from '@/utils/user-storage';
 import { useDemoGuard } from '@/hooks/use-demo-guard';
 import { trackEvent } from '@/lib/analytics';
 import { trackActivity } from '@/lib/track-activity';
+import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing';
 import { findTradeReview, PLAN_ANSWERS, readReviewEntries, saveTradeReview, type PlanAnswer, type ReviewTrade } from '@/lib/post-trade-review';
 
-export function PostTradeReview({ trade, onClose }: { trade: ReviewTrade; onClose: () => void }) {
+export function PostTradeReview({ trade, onClose, captureLesson = false }: { trade: ReviewTrade; onClose: () => void; captureLesson?: boolean }) {
   const { user, loading } = useAuth();
   const { isInScope, loading: accountsLoading } = useAccounts();
   const { isPro, isLoading } = useProStatus();
   const { initialSyncDone } = useSync();
   if (loading || accountsLoading || isLoading || !user || !isInScope(trade) || (isPro && !initialSyncDone)) return null;
-  return <ReviewEditor key={`${user.uid}:${trade.accountId}:${trade.id}`} trade={trade} onClose={onClose} />;
+  return <ReviewEditor key={`${user.uid}:${trade.accountId}:${trade.id}`} trade={trade} onClose={onClose} captureLesson={captureLesson} />;
 }
 
-function ReviewEditor({ trade, onClose }: { trade: ReviewTrade; onClose: () => void }) {
+function ReviewEditor({ trade, onClose, captureLesson }: { trade: ReviewTrade; onClose: () => void; captureLesson: boolean }) {
   const storage = useUserStorage();
+  const { isPro } = useProStatus();
   const demoGuard = useDemoGuard();
   const [initial] = useState(() => {
     try { return { entry: findTradeReview(readReviewEntries(storage.getItem('journalEntries')), trade), error: '' }; }
@@ -36,6 +38,10 @@ function ReviewEditor({ trade, onClose }: { trade: ReviewTrade; onClose: () => v
   });
   const [plan, setPlan] = useState<PlanAnswer | ''>(initial.entry?.quickReview?.plan ?? '');
   const [content, setContent] = useState(initial.entry?.content ?? '');
+  const initialEmotions = initial.entry?.emotions;
+  const [emotion, setEmotion] = useState(Array.isArray(initialEmotions) ? initialEmotions.join(', ') : trade.emotions ?? '');
+  const [lesson, setLesson] = useState(initial.entry?.lesson ?? '');
+  const [carryForward, setCarryForward] = useState(initial.entry?.lessonPinned ?? false);
   const [savedId, setSavedId] = useState(initial.entry?.id);
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
@@ -59,10 +65,11 @@ function ReviewEditor({ trade, onClose }: { trade: ReviewTrade; onClose: () => v
           const currentTrade = trades.find(item => item.id === trade.id && item.accountId === trade.accountId);
           if (!currentTrade) throw new Error('This trade is no longer available. Close the review and reload your trade log.');
           previous = storage.getItem('journalEntries');
-          const result = saveTradeReview(readReviewEntries(previous), currentTrade, plan, content, new Date().toISOString());
+          const result = saveTradeReview(readReviewEntries(previous), currentTrade, plan, content, new Date().toISOString(), captureLesson ? { emotion, lesson, carryForward } : undefined);
           // Do not overwrite a review changed in another open view while this draft was being written.
           const current = findTradeReview(readReviewEntries(previous), currentTrade);
-          if (current && (current.content !== initial.entry?.content || current.quickReview?.plan !== initial.entry?.quickReview?.plan)) throw new Error('This review changed elsewhere. Close and reopen it to load the latest version.');
+          if (!isPro && !current && result.entries.length > FREE_JOURNAL_ENTRY_LIMIT) throw new Error(`You've reached the free limit of ${FREE_JOURNAL_ENTRY_LIMIT} journal entries. Upgrade to Pro to add more, or edit an existing review.`);
+          if (JSON.stringify(current) !== JSON.stringify(initial.entry)) throw new Error('This review changed elsewhere. Close and reopen it to load the latest version.');
           writing = true;
           await storage.setItem('journalEntries', JSON.stringify(result.entries));
           notifyDataChange(); setSavedId(result.entry.id);
@@ -81,7 +88,20 @@ function ReviewEditor({ trade, onClose }: { trade: ReviewTrade; onClose: () => v
               {(Object.entries(PLAN_ANSWERS) as [PlanAnswer, string][]).map(([value, label]) => <Label key={value} htmlFor={`review-plan-${value}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm font-normal has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"><RadioGroupItem id={`review-plan-${value}`} value={value} />{label}</Label>)}
             </RadioGroup>
           </div>
+          {captureLesson && <div className="space-y-2">
+            <Label htmlFor="review-emotion">How did you feel? <span className="font-normal text-muted-foreground">Optional</span></Label>
+            <select id="review-emotion" value={emotion} onChange={event => setEmotion(event.target.value)} className="flex h-11 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="">Choose an emotion</option>
+              {Array.from(new Set([...(emotion ? [emotion] : []), 'calm', 'confident', 'focused', 'patient', 'anxious', 'frustrated', 'impulsive', 'fearful', 'greedy'])).map(value => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </div>}
           <div className="space-y-2"><Label htmlFor="trade-review-reflection">What would you repeat or change?</Label><Textarea id="trade-review-reflection" value={content} onChange={event => setContent(event.target.value)} maxLength={5000} required className="min-h-32" aria-describedby="trade-review-help" /><p id="trade-review-help" className="text-xs text-muted-foreground">Focus on your decisions, even if the trade made money. Saved as a linked post-trade journal entry.</p></div>
+          {captureLesson && <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+            <Label htmlFor="review-lesson">One lesson for next time <span className="font-normal text-muted-foreground">Optional</span></Label>
+            <Textarea id="review-lesson" value={lesson} onChange={event => setLesson(event.target.value)} maxLength={300} className="min-h-20" />
+            <Label className="flex min-h-11 items-center gap-3 text-sm font-normal"><input type="checkbox" checked={carryForward} onChange={event => setCarryForward(event.target.checked)} className="h-4 w-4 accent-primary" />Carry this lesson into my next plan</Label>
+            <p className="text-xs text-muted-foreground">Replaces the current reminder for this account. Your earlier lessons stay in your journal.</p>
+          </div>}
         </fieldset>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-wrap items-center gap-2"><Button type="submit" className="min-h-11" disabled={saving || !!initial.error || !plan || !content.trim()}>{saving ? 'Saving…' : savedId ? 'Update review' : 'Save to journal'}</Button><Button type="button" variant="ghost" className="min-h-11" disabled={saving} onClick={onClose}>Cancel</Button>{savedId && <Button asChild variant="link" disabled={saving}><Link to={`/journal?entry=${encodeURIComponent(savedId)}`} onClick={onClose}>Open in journal</Link></Button>}</div>

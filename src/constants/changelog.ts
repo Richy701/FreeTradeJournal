@@ -24,6 +24,20 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.93.0',
+    date: '2026-09-11',
+    summary: 'Take your journal lessons into your next trade.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Quick reviews from your journal',
+        description: 'Choose a trade and record whether you followed your plan, how you felt, and what you would repeat or change. Save one lesson as a reminder for your next pre-trade plan, with a separate reminder for each account.',
+        link: { to: '/journal', label: 'Review a trade' },
+      },
+    ],
+  },
+  {
     version: '2.92.1',
     date: '2026-09-11',
     summary: 'CSV imports now match the preview.',
@@ -3289,4 +3303,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.92.1'
+export const LATEST_CHANGELOG_VERSION = '2.93.0'

@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, Crosshair, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, CurrencyDollar, Fire, Image as ImageIcon, CaretRight, ArrowRight } from '@phosphor-icons/react'
+import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, Image as ImageIcon, CaretRight, ArrowRight } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
@@ -681,17 +681,19 @@ export default function Dashboard() {
   const getGreeting = () => {
     const hour = new Date().getHours()
     // Limit firstName length to prevent layout shift with very long names
-    const firstName = user?.displayName?.split(' ')[0]?.substring(0, 15) || 'Trader'
-    
+    const rawName = user?.displayName?.split(' ')[0]?.substring(0, 15) || 'Trader'
+    // Google display names are often all lowercase
+    const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
+
     // Use consistent greeting length to prevent layout shift
     if (hour >= 5 && hour < 12) {
-      return `Good morning, ${firstName}!`
+      return `Good morning, ${firstName}`
     } else if (hour >= 12 && hour < 17) {
-      return `Good afternoon, ${firstName}!`
+      return `Good afternoon, ${firstName}`
     } else if (hour >= 17 && hour < 22) {
-      return `Good evening, ${firstName}!`
+      return `Good evening, ${firstName}`
     } else {
-      return `Welcome back, ${firstName}!`
+      return `Welcome back, ${firstName}`
     }
   }
 
@@ -879,18 +881,18 @@ export default function Dashboard() {
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
           <div className="flex flex-col gap-3">
-            {/* Greeting + Date */}
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
-                {getGreeting()}
-              </h1>
-              <span className="text-sm text-muted-foreground">
+            {/* Date + Greeting */}
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
                 })}
-              </span>
+              </p>
+              <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
+                {getGreeting()}
+              </h1>
             </div>
 
             {/* Insight + action button */}
@@ -1656,7 +1658,7 @@ export default function Dashboard() {
 // disagrees with the metric cards below (both filter through the same
 // dashboard period and use the settings currency).
 function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const { formatCurrency } = useSettings()
   const { period } = useDashboardPeriod()
   const { streak: loggingStreak } = useLoggingStreak()
@@ -1664,8 +1666,8 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
   if (!allTrades || allTrades.length === 0) {
     return (
       <div className="flex flex-wrap items-center justify-start gap-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground">
-          No trades yet -- log your first trade to see live stats
+        <span className="text-sm text-muted-foreground">
+          No trades yet. Log your first trade to see live stats.
         </span>
       </div>
     )
@@ -1679,7 +1681,7 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
   if (trades.length === 0) {
     return (
       <div className="flex flex-wrap items-center justify-start gap-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           No trades in this period
         </span>
       </div>
@@ -1706,59 +1708,41 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
   const weekPnlColor = weekPnl >= 0 ? themeColors.profit : themeColors.loss
   const winRateColor = winRate >= 50 ? themeColors.profit : themeColors.loss
 
-  const chips: React.ReactNode[] = []
-
-  chips.push(
-    <span key="count" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
-      <ChartLineUp className="h-3 w-3" weight="bold" />
-      {trades.length} trades
-    </span>
-  )
-
+  // Neutral counts stay in the text colour; only signed results get profit/loss colour
+  const stats: { key: string; value: string; label: string; color?: string }[] = [
+    { key: 'count', value: String(trades.length), label: ' trades' },
+  ]
   if (loggingStreak >= 2) {
-    chips.push(
-      <span key="logstreak" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '10'), color: themeColors.primary }}>
-        <Fire className="h-3 w-3" weight="bold" />
-        {loggingStreak}-day logging streak
-      </span>
-    )
+    stats.push({ key: 'logstreak', value: String(loggingStreak), label: '-day logging streak' })
   }
-
   if (streak >= 3 && streakPositive) {
-    chips.push(
-      <span key="streak" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '10'), color: themeColors.profit }}>
-        <TrendUp className="h-3 w-3" weight="bold" />
-        {streak}-trade win streak
-      </span>
-    )
+    stats.push({ key: 'streak', value: String(streak), label: '-trade win streak', color: themeColors.profit })
   }
-
   if (thisWeek.length > 0) {
-    chips.push(
-      <span key="week" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(weekPnlColor, '10'), color: weekPnlColor }}>
-        <CurrencyDollar className="h-3 w-3" weight="bold" />
-        {formatCurrency(weekPnl, true)} this week
-      </span>
-    )
+    stats.push({ key: 'week', value: formatCurrency(weekPnl, true), label: ' this week', color: weekPnlColor })
   } else {
-    chips.push(
-      <span key="pnl" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(pnlColor, '10'), color: pnlColor }}>
-        <CurrencyDollar className="h-3 w-3" weight="bold" />
-        {formatCurrency(totalPnl, true)} P&L
-      </span>
-    )
+    stats.push({ key: 'pnl', value: formatCurrency(totalPnl, true), label: ' P&L', color: pnlColor })
   }
+  stats.push({ key: 'wr', value: `${winRate}%`, label: ' win rate', color: winRateColor })
 
-  chips.push(
-    <span key="wr" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: alpha(winRateColor, '10'), color: winRateColor }}>
-      <Crosshair className="h-3 w-3" weight="bold" />
-      {winRate}% win rate
-    </span>
-  )
-
+  // Each stat carries its own leading divider; the wrapper's negative margin +
+  // overflow clip hides the divider on whichever stat starts a line, so a
+  // wrapped row on mobile never begins with a stray bar.
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {chips}
+    <div className="overflow-hidden">
+      <div className="-ml-3 flex flex-wrap items-center gap-y-1 text-sm text-muted-foreground">
+        {stats.map((s) => (
+          <span
+            key={s.key}
+            className="relative whitespace-nowrap pl-3 pr-3 before:absolute before:left-0 before:top-1/2 before:h-3.5 before:w-px before:-translate-y-1/2 before:bg-border before:content-['']"
+          >
+            <span className="font-semibold tabular-nums text-foreground" style={s.color ? { color: s.color } : undefined}>
+              {s.value}
+            </span>
+            {s.label}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }

@@ -5,6 +5,8 @@ export type ReviewEntry = {
   id: string; title: string; content: string; accountId?: string;
   tradeId?: string; tradeIds?: string[];
   quickReview?: { tradeId: string; plan: PlanAnswer };
+  lesson?: string;
+  lessonPinned?: boolean;
   [key: string]: unknown;
 };
 
@@ -21,8 +23,11 @@ export function findTradeReview(entries: ReviewEntry[], trade: ReviewTrade) {
   return entries.find(entry => entry.quickReview?.tradeId === trade.id && entry.accountId === trade.accountId);
 }
 
-export function saveTradeReview(entries: ReviewEntry[], trade: ReviewTrade, plan: PlanAnswer, content: string, now: string): { entries: ReviewEntry[]; entry: ReviewEntry } {
+export type ReviewLesson = { emotion: string; lesson: string; carryForward: boolean };
+
+export function saveTradeReview(entries: ReviewEntry[], trade: ReviewTrade, plan: PlanAnswer, content: string, now: string, lesson?: ReviewLesson): { entries: ReviewEntry[]; entry: ReviewEntry } {
   if (!(plan in PLAN_ANSWERS) || !content.trim() || content.length > 5000) throw new Error('Choose a plan answer and write a reflection of up to 5,000 characters.');
+  if (lesson && (lesson.lesson.length > 300 || (lesson.carryForward && !lesson.lesson.trim()))) throw new Error('Write a lesson of up to 300 characters to carry forward.');
   const existing = findTradeReview(entries, trade);
   const entry: ReviewEntry = existing ? {
     ...existing, content: content.trim(), quickReview: { tradeId: trade.id, plan }, updatedAt: now,
@@ -33,5 +38,16 @@ export function saveTradeReview(entries: ReviewEntry[], trade: ReviewTrade, plan
     mood: 'neutral', entryType: 'post-trade', accountId: trade.accountId,
     tradeId: trade.id, tradeIds: [trade.id], quickReview: { tradeId: trade.id, plan },
   };
-  return { entry, entries: existing ? entries.map(item => item.id === existing.id ? entry : item) : [entry, ...entries] };
+  if (lesson) {
+    entry.lesson = lesson.lesson.trim();
+    entry.lessonPinned = lesson.carryForward;
+    entry.emotions = lesson.emotion ? [lesson.emotion] : [];
+  }
+  const remaining = entries.map(item => {
+    if (item.id === existing?.id) return entry;
+    return lesson?.carryForward && item.accountId === trade.accountId && item.lessonPinned
+      ? { ...item, lessonPinned: false }
+      : item;
+  });
+  return { entry, entries: existing ? remaining : [entry, ...remaining] };
 }
