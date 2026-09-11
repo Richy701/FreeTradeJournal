@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildImportedTrades, detectMarketFromSymbol } from './import-trades';
+import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, planImport } from './import-trades';
 import type { ParsedTrade } from './csv-parser';
 
 const baseTrade: ParsedTrade = {
@@ -91,5 +91,32 @@ describe('buildImportedTrades — broker timezone', () => {
   it('survives a corrupt timezone value without breaking the import', () => {
     const [t] = buildImportedTrades([baseTrade], { ...opts, brokerTimezone: 'Garbage/Zone' });
     expect(t.entryTime.getTime()).toBe(new Date('2026-07-02T09:12:00').getTime());
+  });
+});
+
+describe('re-import after a cost-handling change', () => {
+  // Trades imported before the Sep 2026 "Net P/L" fix were saved with
+  // commission taken off twice. Re-importing the same file now yields a
+  // different P&L; the duplicate check must still recognise the trades.
+  it('skips trades that match on everything but P&L', () => {
+    const [before] = buildImportedTrades([baseTrade], opts);
+    const [after] = buildImportedTrades([{ ...baseTrade, pnlIsNet: true }], opts);
+    expect(after.pnl).not.toBeCloseTo(before.pnl, 2);
+    const { newTrades, skippedCount } = dedupeImportedTrades([before], [after]);
+    expect(newTrades).toHaveLength(0);
+    expect(skippedCount).toBe(1);
+  });
+});
+
+describe('planImport (what the preview shows)', () => {
+  it('reports net P&L and the duplicates the import will skip', () => {
+    const second = { ...baseTrade, entryDate: '2026-07-02T10:00:00', exitDate: '2026-07-02T10:05:00', pnl: '20' };
+    const [existing] = buildImportedTrades([baseTrade], opts);
+    const plan = planImport([baseTrade, second], [existing], opts);
+    expect(plan.built).toHaveLength(2); // index-aligned with the parsed rows
+    expect(plan.skippedCount).toBe(1);
+    expect(plan.newTrades).toHaveLength(1);
+    // 20 gross - 0.78 commission: the preview total is what gets saved
+    expect(plan.newTrades[0].pnl).toBeCloseTo(19.22, 2);
   });
 });

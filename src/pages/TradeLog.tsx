@@ -68,7 +68,7 @@ import { AIRiskAlertMonitor } from '@/components/ai-risk-alert';
 import { ProUpgradeCard } from '@/components/pro-upgrade-card';
 import { useProStatus } from '@/contexts/pro-context';
 import { notifyDataChange } from '@/contexts/sync-context';
-import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, buildColumnMapping, type ColumnMapping, type ImportedTrade } from '@/utils/import-trades';
+import { buildImportedTrades, dedupeImportedTrades, planImport, detectMarketFromSymbol, buildColumnMapping, type ColumnMapping, type ImportedTrade } from '@/utils/import-trades';
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog';
 import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory';
 import { rescueFailedImport } from '@/utils/csv-import-flow';
@@ -185,6 +185,20 @@ export default function TradeLog() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null });
+
+  // What the preview's import will actually save (net of costs, duplicates
+  // removed), so its numbers match the trade log afterwards. Mirrors
+  // handleConfirmImport, which dedupes against the full `trades` list.
+  const importPlan = useMemo(() => {
+    if (!csvPreview.parseResult || !csvPreview.file) return null;
+    return planImport(csvPreview.parseResult.trades, trades, {
+      fileName: csvPreview.file.name,
+      accountId: activeAccount?.id || '',
+      brokerTimezone: activeAccount?.brokerTimezone,
+    });
+  }, [csvPreview.parseResult, csvPreview.file, trades, activeAccount?.id, activeAccount?.brokerTimezone]);
+  // Per-row P&L as it will be saved (index-aligned with the parsed rows).
+  const previewRowPnl = (index: number, raw: string) => importPlan?.built[index]?.pnl ?? parseFloat(raw);
 
   const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null);
 
@@ -3161,6 +3175,14 @@ export default function TradeLog() {
                 <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
                   {csvPreview.parseResult.summary.successfulParsed} trades
                 </span>
+                {importPlan && importPlan.skippedCount > 0 && (
+                  <>
+                    <span className="text-muted-foreground text-sm">·</span>
+                    <span className="text-sm text-muted-foreground">
+                      {importPlan.skippedCount} already imported
+                    </span>
+                  </>
+                )}
                 {csvPreview.parseResult.summary.failed > 0 && (
                   <>
                     <span className="text-muted-foreground text-sm">·</span>
@@ -3181,9 +3203,9 @@ export default function TradeLog() {
               </div>
 
               {/* Trade Summary Stats */}
-              {csvPreview.parseResult.trades.length > 0 && (() => {
-                const trades = csvPreview.parseResult!.trades;
-                const pnls = trades.map(t => parseFloat(t.pnl));
+              {importPlan && importPlan.newTrades.length > 0 && (() => {
+                const trades = importPlan.newTrades;
+                const pnls = trades.map(t => t.pnl);
                 const totalPnl = pnls.reduce((sum, p) => sum + p, 0);
                 const winCount = pnls.filter(p => p > 0).length;
                 const winRate = trades.length > 0 ? (winCount / trades.length) * 100 : 0;
@@ -3262,12 +3284,12 @@ export default function TradeLog() {
                           <span
                             className="font-bold text-sm"
                             style={{
-                              color: parseFloat(trade.pnl) >= 0
+                              color: previewRowPnl(index, trade.pnl) >= 0
                                 ? themeColors.profit
                                 : themeColors.loss
                             }}
                           >
-                            {parseFloat(trade.pnl) >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}
+                            {previewRowPnl(index, trade.pnl) >= 0 ? '+' : ''}${previewRowPnl(index, trade.pnl).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -3331,12 +3353,12 @@ export default function TradeLog() {
                             <TableCell
                               className="font-bold"
                               style={{
-                                color: parseFloat(trade.pnl) >= 0
+                                color: previewRowPnl(index, trade.pnl) >= 0
                                   ? themeColors.profit
                                   : themeColors.loss
                               }}
                             >
-                              {parseFloat(trade.pnl) >= 0 ? '+' : ''}${parseFloat(trade.pnl).toFixed(2)}
+                              {previewRowPnl(index, trade.pnl) >= 0 ? '+' : ''}${previewRowPnl(index, trade.pnl).toFixed(2)}
                             </TableCell>
                             <TableCell className="text-muted-foreground text-sm">
                               {new Date(trade.date).toLocaleDateString()}
@@ -3405,10 +3427,15 @@ export default function TradeLog() {
               {/* Actions */}
               <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="text-sm text-muted-foreground">
-                  {csvPreview.parseResult.trades.length > 0 ? (
+                  {importPlan && importPlan.newTrades.length > 0 ? (
                     <span className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
-                      Ready to import {csvPreview.parseResult.trades.length} trades
+                      Ready to import {importPlan.newTrades.length} trades
+                    </span>
+                  ) : csvPreview.parseResult.trades.length > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
+                      Every trade in this file is already imported
                     </span>
                   ) : (
                     <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
@@ -3432,7 +3459,7 @@ export default function TradeLog() {
                   </Button>
                   <Button
                     onClick={handleConfirmImport}
-                    disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
+                    disabled={csvUploadState.isUploading || !importPlan || importPlan.newTrades.length === 0}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                     className="hover:opacity-90 shadow-lg px-6 font-medium"
                   >
@@ -3444,7 +3471,7 @@ export default function TradeLog() {
                     ) : (
                       <span className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
-                        Import {csvPreview.parseResult.trades.length} Trades
+                        Import {importPlan?.newTrades.length ?? 0} Trades
                       </span>
                     )}
                   </Button>

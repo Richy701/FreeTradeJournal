@@ -180,14 +180,18 @@ type Fingerprintable = {
   exitPrice: number;
   lotSize?: number;
   quantity?: number;
-  pnl: number;
   entryTime: Date | string | number;
   exitTime: Date | string | number;
 };
 
+// P&L is deliberately NOT part of the identity: symbol, side, both prices, size
+// and both timestamps already pin a trade down, and P&L is a derived value that
+// changes whenever the import's cost handling does (e.g. the Sep 2026 "Net P/L"
+// fix). Keeping it made a re-import of a previously imported file look like new
+// trades and doubled them.
 export function tradeFingerprint(t: Fingerprintable): string {
   const lot = t.lotSize ?? t.quantity ?? 0;
-  return `${t.symbol}|${t.side}|${t.entryPrice}|${t.exitPrice}|${lot}|${t.pnl}|${new Date(t.entryTime).getTime()}|${new Date(t.exitTime).getTime()}`;
+  return `${t.symbol}|${t.side}|${t.entryPrice}|${t.exitPrice}|${lot}|${new Date(t.entryTime).getTime()}|${new Date(t.exitTime).getTime()}`;
 }
 
 // Skip trades already present (same symbol/side/prices/size/pnl/timestamps).
@@ -216,4 +220,18 @@ export function dedupeImportedTrades<T extends Fingerprintable>(
     newTrades.push(t);
   }
   return { newTrades, skippedCount: incoming.length - newTrades.length };
+}
+
+// What an import will actually save, for the preview: the same conversion
+// (net P&L after costs) and the same duplicate check the confirm step runs, so
+// the preview's totals match the account afterwards. `built` stays index-aligned
+// with `parsed` for per-row display.
+export function planImport(
+  parsed: ParsedTrade[],
+  existingAccountTrades: Fingerprintable[],
+  opts: Parameters<typeof buildImportedTrades>[1]
+): { built: ImportedTrade[]; newTrades: ImportedTrade[]; skippedCount: number } {
+  const built = buildImportedTrades(parsed, opts);
+  const { newTrades, skippedCount } = dedupeImportedTrades(existingAccountTrades, built);
+  return { built, newTrades, skippedCount };
 }

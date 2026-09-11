@@ -10,7 +10,7 @@ import { useProStatus } from '@/contexts/pro-context'
 import { useAccounts } from '@/contexts/account-context'
 import { useSettings } from '@/contexts/settings-context'
 import { notifyDataChange } from '@/contexts/sync-context'
-import { buildImportedTrades, dedupeImportedTrades, buildColumnMapping, type ColumnMapping, type ImportedTrade } from '@/utils/import-trades'
+import { buildImportedTrades, dedupeImportedTrades, planImport, buildColumnMapping, type ColumnMapping, type ImportedTrade } from '@/utils/import-trades'
 import { ScreenshotTradeImportDialog } from '@/components/screenshot-trade-import-dialog'
 import { ColumnMappingDialog } from '@/components/column-mapping-dialog'
 import { headerSignature, rememberMapping, trackImportMapped } from '@/utils/csv-import-memory'
@@ -206,6 +206,23 @@ export default function Dashboard() {
     file: File | null;
     parseResult: CSVParseResult | null;
   }>({ show: false, file: null, parseResult: null })
+  // What the preview's import will actually save (net of costs, duplicates of
+  // trades already in this account removed), so its numbers match the
+  // dashboard afterwards. Mirrors handleConfirmImport.
+  const importPlan = useMemo(() => {
+    if (!csvPreview.parseResult || !csvPreview.file) return null
+    let existingTrades: any[] = []
+    try { existingTrades = JSON.parse(userStorage.getItem('trades') || '[]') } catch { existingTrades = [] }
+    const accountTrades = existingTrades.filter((t: any) => belongsToAccount(t, activeAccount?.id || ''))
+    return planImport(csvPreview.parseResult.trades, accountTrades, {
+      fileName: csvPreview.file.name,
+      accountId: activeAccount?.id || '',
+      source: 'Dashboard',
+      brokerTimezone: activeAccount?.brokerTimezone,
+    })
+  }, [csvPreview.parseResult, csvPreview.file, userStorage, activeAccount?.id, activeAccount?.brokerTimezone, dataVersion])
+  // Per-row P&L as it will be saved (index-aligned with the parsed rows).
+  const previewRowPnl = (index: number, raw: string) => importPlan?.built[index]?.pnl ?? parseFloat(raw)
   const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null)
   const [importProgress, setImportProgress] = useState<{
     active: boolean;
@@ -1313,6 +1330,14 @@ export default function Dashboard() {
                 <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
                   {csvPreview.parseResult.summary.successfulParsed} trades
                 </span>
+                {importPlan && importPlan.skippedCount > 0 && (
+                  <>
+                    <span className="text-muted-foreground text-sm">·</span>
+                    <span className="text-sm text-muted-foreground">
+                      {importPlan.skippedCount} already imported
+                    </span>
+                  </>
+                )}
                 {csvPreview.parseResult.summary.failed > 0 && (
                   <>
                     <span className="text-muted-foreground text-sm">·</span>
@@ -1333,9 +1358,9 @@ export default function Dashboard() {
               </div>
 
               {/* Trade Summary Stats */}
-              {csvPreview.parseResult.trades.length > 0 && (() => {
-                const trades = csvPreview.parseResult!.trades;
-                const pnls = trades.map(t => parseFloat(t.pnl));
+              {importPlan && importPlan.newTrades.length > 0 && (() => {
+                const trades = importPlan.newTrades;
+                const pnls = trades.map(t => t.pnl);
                 const totalPnl = pnls.reduce((sum, p) => sum + p, 0);
                 const winCount = pnls.filter(p => p > 0).length;
                 const winRate = trades.length > 0 ? (winCount / trades.length) * 100 : 0;
@@ -1414,12 +1439,12 @@ export default function Dashboard() {
                           <span
                             className="font-bold text-sm"
                             style={{
-                              color: parseFloat(trade.pnl) >= 0
+                              color: previewRowPnl(index, trade.pnl) >= 0
                                 ? themeColors.profit
                                 : themeColors.loss
                             }}
                           >
-                            {formatCurrencyFromSettings(parseFloat(trade.pnl), true)}
+                            {formatCurrencyFromSettings(previewRowPnl(index, trade.pnl), true)}
                           </span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -1480,12 +1505,12 @@ export default function Dashboard() {
                             <TableCell
                               className="font-bold"
                               style={{
-                                color: parseFloat(trade.pnl) >= 0
+                                color: previewRowPnl(index, trade.pnl) >= 0
                                   ? themeColors.profit
                                   : themeColors.loss
                               }}
                             >
-                              {formatCurrencyFromSettings(parseFloat(trade.pnl), true)}
+                              {formatCurrencyFromSettings(previewRowPnl(index, trade.pnl), true)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1551,10 +1576,15 @@ export default function Dashboard() {
               {/* Actions */}
               <div className="flex flex-col items-center gap-3 pt-4 border-t border-border flex-shrink-0">
                 <div className="text-sm text-muted-foreground">
-                  {csvPreview.parseResult.trades.length > 0 ? (
+                  {importPlan && importPlan.newTrades.length > 0 ? (
                     <span className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
-                      Ready to import {csvPreview.parseResult.trades.length} trades
+                      Ready to import {importPlan.newTrades.length} trades
+                    </span>
+                  ) : csvPreview.parseResult.trades.length > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
+                      Every trade in this file is already imported
                     </span>
                   ) : (
                     <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
@@ -1578,7 +1608,7 @@ export default function Dashboard() {
                   </Button>
                   <Button
                     onClick={handleConfirmImport}
-                    disabled={csvUploadState.isUploading || csvPreview.parseResult.trades.length === 0}
+                    disabled={csvUploadState.isUploading || !importPlan || importPlan.newTrades.length === 0}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                     className="hover:opacity-90 shadow-lg px-6 font-medium"
                   >
@@ -1590,7 +1620,7 @@ export default function Dashboard() {
                     ) : (
                       <span className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4" />
-                        Import {csvPreview.parseResult.trades.length} Trades
+                        Import {importPlan?.newTrades.length ?? 0} Trades
                       </span>
                     )}
                   </Button>
