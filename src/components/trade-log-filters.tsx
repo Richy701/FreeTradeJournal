@@ -27,6 +27,7 @@ export interface TradeFilters {
   markets: string[];
   outcome: TradeOutcome;
   strategies: string[];
+  tags: string[];
   dateFrom?: Date;
   dateTo?: Date;
   sortBy: SortField;
@@ -40,6 +41,7 @@ export const EMPTY_FILTERS: TradeFilters = {
   markets: [],
   outcome: 'all',
   strategies: [],
+  tags: [],
   dateFrom: undefined,
   dateTo: undefined,
   sortBy: 'date',
@@ -54,6 +56,7 @@ export function countActiveFilters(f: TradeFilters): number {
     f.sides.length +
     f.markets.length +
     f.strategies.length +
+    f.tags.length +
     (f.outcome !== 'all' ? 1 : 0) +
     (f.dateFrom ? 1 : 0) +
     (f.dateTo ? 1 : 0)
@@ -147,14 +150,16 @@ export function TradeLogFilters({
   symbolOptions,
   marketOptions,
   strategyOptions,
+  tagOptions = [],
 }: {
   filters: TradeFilters;
   onChange: (next: TradeFilters) => void;
   symbolOptions: string[];
   marketOptions: string[];
   strategyOptions: string[];
+  tagOptions?: string[];
 }) {
-  const toggle = (key: 'symbols' | 'markets' | 'strategies', value: string) => {
+  const toggle = (key: 'symbols' | 'markets' | 'strategies' | 'tags', value: string) => {
     const arr = filters[key];
     onChange({
       ...filters,
@@ -211,6 +216,13 @@ export function TradeLogFilters({
           options={strategyOptions.map((s) => ({ value: s, label: s }))}
           selected={filters.strategies}
           onToggle={(v) => toggle('strategies', v)}
+        />
+
+        <FacetPopover
+          label="Tags"
+          options={tagOptions.map((t) => ({ value: t, label: t }))}
+          selected={filters.tags}
+          onToggle={(v) => toggle('tags', v)}
         />
 
         {/* Outcome */}
@@ -364,7 +376,7 @@ export function TradeLogFilterPills({
   filters: TradeFilters;
   onChange: (next: TradeFilters) => void;
 }) {
-  const removeFrom = (key: 'symbols' | 'markets' | 'strategies', value: string) =>
+  const removeFrom = (key: 'symbols' | 'markets' | 'strategies' | 'tags', value: string) =>
     onChange({ ...filters, [key]: filters[key].filter((v) => v !== value) });
 
   const pills: Array<{ key: string; label: string; onRemove: () => void }> = [];
@@ -386,6 +398,9 @@ export function TradeLogFilterPills({
   );
   filters.strategies.forEach((s) =>
     pills.push({ key: `strat-${s}`, label: s, onRemove: () => removeFrom('strategies', s) }),
+  );
+  filters.tags.forEach((t) =>
+    pills.push({ key: `tag-${t}`, label: `#${t}`, onRemove: () => removeFrom('tags', t) }),
   );
   if (filters.outcome !== 'all') {
     const lbl = OUTCOME_OPTIONS.find((o) => o.value === filters.outcome)?.label ?? filters.outcome;

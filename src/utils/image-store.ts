@@ -121,6 +121,23 @@ export async function uploadCloudImage(uid: string, dataUrl: string): Promise<st
   return `fb:${path}`;
 }
 
+/**
+ * Report a failed cloud upload. Callers fall back to local IndexedDB so the
+ * user never sees an error — which is exactly how a Storage rules/IAM change
+ * silently turned off cross-device screenshots for every Pro user for weeks
+ * (Aug 18 – Sep 2026). Keep the fallback, but make the failure visible.
+ */
+export function reportCloudImageFailure(err: unknown, source: string): void {
+  console.error(`Cloud screenshot upload failed (${source}):`, err);
+  import('@/lib/posthog')
+    .then(({ posthog }) => {
+      posthog.captureException(err instanceof Error ? err : new Error(String(err)), {
+        source: `cloud-image-upload:${source}`,
+      });
+    })
+    .catch(() => {});
+}
+
 export async function deleteCloudImage(refOrPath: string): Promise<void> {
   const path = isCloudRef(refOrPath) ? refOrPath.slice(3) : refOrPath;
   try {

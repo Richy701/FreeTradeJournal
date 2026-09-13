@@ -11,6 +11,8 @@ import { DatePicker } from '@/components/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { trackEvent } from '@/lib/analytics';
 import { Badge } from '@/components/ui/badge';
+import { TagInput } from '@/components/tag-input';
+import { parseTagString, dedupeTags } from '@/lib/tags';
 import { 
   TrendUp, 
   TrendDown, 
@@ -60,6 +62,7 @@ import {
   uploadCloudImage,
   deleteCloudImage,
   resolveImageRef,
+  reportCloudImageFailure,
 } from '@/utils/image-store';
 import { StoredImage } from '@/components/stored-image';
 import { useDemoData } from '@/hooks/use-demo-data';
@@ -320,6 +323,58 @@ export default function Journal() {
   const [pendingDiscard, setPendingDiscard] = useState<(() => void) | null>(null);
   const editorBaselineRef = useRef<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  // True while stranded local screenshots are being copied to the cloud (Pro)
+  // so overlapping loads don't upload the same image twice.
+  const cloudHealRef = useRef(false);
+
+  // Upload stranded local (`idb:`) screenshots to Firebase Storage and replace
+  // the refs with `fb:` ones. Re-reads storage right before writing so a save
+  // that landed mid-upload is not clobbered; the local copy is kept, so a lost
+  // race at worst re-uploads next load rather than leaving a dangling ref.
+  const healLocalScreenshots = async (all: any[], uid: string) => {
+    if (cloudHealRef.current) return;
+    const stranded: string[] = [];
+    for (const e of all) {
+      for (const s of e.screenshots || []) {
+        if (typeof s === 'string' && isImageRef(s)) stranded.push(s);
+      }
+    }
+    if (stranded.length === 0) return;
+    cloudHealRef.current = true;
+    try {
+      const swaps = new Map<string, string>();
+      for (const refStr of stranded) {
+        const data = await getImage(refStr.slice(4));
+        if (!data) continue; // lives on another device; nothing to upload here
+        try {
+          swaps.set(refStr, await uploadCloudImage(uid, data));
+        } catch (err) {
+          reportCloudImageFailure(err, 'journal-heal-local');
+          return; // Storage is unavailable; try again on a later load
+        }
+      }
+      if (swaps.size === 0) return;
+      const raw = userStorage.getItem('journalEntries');
+      const fresh: any[] = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(fresh)) return;
+      let changed = false;
+      for (const e of fresh) {
+        if (!Array.isArray(e.screenshots)) continue;
+        e.screenshots = e.screenshots.map((s: any) => {
+          const next = typeof s === 'string' ? swaps.get(s) : undefined;
+          if (next) changed = true;
+          return next ?? s;
+        });
+      }
+      if (!changed) return;
+      await userStorage.setItem('journalEntries', JSON.stringify(fresh));
+      setRefreshKey(prev => prev + 1);
+    } catch (err) {
+      console.error('Journal cloud heal failed:', err);
+    } finally {
+      cloudHealRef.current = false;
+    }
+  };
 
   // Reload entries/trades when they change elsewhere (Trade Log, CSV import,
   // dashboard calendar quick-add, other tabs).
@@ -544,7 +599,10 @@ export default function Journal() {
                     refs.push(await uploadCloudImage(user.uid, s));
                     changed = true;
                     continue;
-                  } catch { /* fall through to local IndexedDB */ }
+                  } catch (err) {
+                    reportCloudImageFailure(err, 'journal-migrate-inline');
+                    // fall through to local IndexedDB
+                  }
                 }
                 const id = newImageId();
                 try {
@@ -575,6 +633,12 @@ export default function Journal() {
           .filter((e: any) => scopeAccounts.length === 0 || isInScope(e))
           .map((e: any) => ({ ...e, date: new Date(e.date) }));
         setEntries(mine);
+
+        // Pro: any `idb:` ref whose image exists in THIS browser is a screenshot
+        // that never reached the cloud (a failed/denied upload fell back to
+        // local storage, so it is invisible on every other device). Copy it up
+        // in the background and swap the ref, without blocking the page.
+        if (isPro && user?.uid) void healLocalScreenshots(all, user.uid);
       } catch (error) {
         console.error('Error loading journal entries:', error);
       } finally {
@@ -587,7 +651,7 @@ export default function Journal() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, activeAccount, scopeAccounts, accountsLoading, refreshKey]);
+  }, [isDemo, activeAccount, scopeAccounts, accountsLoading, refreshKey, isPro]);
 
   // Load trades scoped to the active account (mirrors the entry scoping above);
   // re-runs on account switch and when trades change elsewhere.
@@ -771,7 +835,8 @@ export default function Journal() {
         if (isPro && user?.uid) {
           try {
             stored = await uploadCloudImage(user.uid, img.dataUrl);
-          } catch {
+          } catch (err) {
+            reportCloudImageFailure(err, 'journal-save');
             stored = null; // fall back to local storage below
           }
         }
@@ -1167,6 +1232,13 @@ export default function Journal() {
     });
     return Array.from(tags).sort();
   }, [entries]);
+
+  // One vocabulary across the journal and the trade log, so a setup tagged on
+  // a trade is offered here with the same spelling.
+  const tagSuggestions = useMemo(
+    () => dedupeTags([...allTags, ...trades.flatMap(t => t.tags || [])]).sort((a, b) => a.localeCompare(b)),
+    [allTags, trades],
+  );
 
   // Filter and sort entries
   const filteredAndSortedEntries = useMemo(() => {
@@ -1900,12 +1972,12 @@ export default function Journal() {
                       <Tag className="h-3 w-3" />
                       Tags
                     </label>
-                    <Input
+                    <TagInput
                       id="journal-tags-input"
-                      placeholder="e.g., EUR/USD, analysis, strategy"
-                      value={newEntry.tags}
-                      onChange={(e) => setNewEntry({ ...newEntry, tags: e.target.value })}
-                      className="bg-background/60 border-border/50 h-11"
+                      placeholder="e.g. FVG, Order Block, NFP"
+                      value={parseTagString(newEntry.tags)}
+                      onChange={(tags) => setNewEntry({ ...newEntry, tags: tags.join(', ') })}
+                      suggestions={tagSuggestions}
                     />
                   </div>
                 </div>

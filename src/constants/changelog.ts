@@ -24,6 +24,33 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.94.0',
+    date: '2026-09-13',
+    summary: 'Tag your setups and find them again.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Custom tags on trades',
+        description: 'Add your own tags to any trade, like FVG, Order Block or NFP. Tags you have used before appear as one-tap suggestions, and the same list is shared with your journal so spellings stay consistent.',
+        image: { src: '/screenshots/trade-tags.png', alt: 'Trade form with custom tags added and suggested tags shown below the field.' },
+        link: { to: '/trades', label: 'Tag a trade' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Filter the Trade Log by tag',
+        description: 'A new Tags filter sits next to Strategy, so you can pull up every trade for one setup and see how it really performs. Tags also show under the strategy on each row and are included in search.',
+        image: { src: '/screenshots/trade-tags-filter.png', alt: 'Trade Log filtered by a tag, with tags shown under each strategy.' },
+      },
+      {
+        type: 'improved',
+        text: 'Journal tags with suggestions',
+        description: 'The journal tag field now works the same way as the trade form, with chips and suggestions from your existing tags.',
+      },
+    ],
+  },
+  {
     version: '2.93.0',
     date: '2026-09-11',
     summary: 'Take your journal lessons into your next trade.',
@@ -3303,4 +3330,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.93.0'
+export const LATEST_CHANGELOG_VERSION = '2.94.0'

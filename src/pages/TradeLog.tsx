@@ -20,6 +20,8 @@ import { recordFirstTradeIfNeeded } from '@/lib/first-trade';
 import { trackTradeLogged } from '@/lib/track-trade';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { TagInput } from '@/components/tag-input';
+import { dedupeTags } from '@/lib/tags';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -260,13 +262,14 @@ export default function TradeLog() {
     const terms = (filters.query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
     const filtered = trades.filter((trade) => {
       if (terms.length > 0) {
-        const searchable = [trade.symbol, trade.strategy, trade.notes, trade.emotions, trade.side].filter(Boolean).join(' ').toLowerCase();
+        const searchable = [trade.symbol, trade.strategy, trade.notes, trade.emotions, trade.side, ...(trade.tags || [])].filter(Boolean).join(' ').toLowerCase();
         if (!terms.every(term => searchable.includes(term))) return false;
       }
       if (filters.symbols.length > 0 && !filters.symbols.includes(trade.symbol)) return false;
       if (filters.sides.length > 0 && !filters.sides.includes(trade.side)) return false;
       if (filters.markets.length > 0 && !filters.markets.includes(detectMarketFromSymbol(trade.symbol))) return false;
       if (filters.strategies.length > 0 && !filters.strategies.includes(trade.strategy || '')) return false;
+      if (filters.tags.length > 0 && !(trade.tags || []).some((t) => filters.tags.includes(t))) return false;
       if (filters.outcome === 'win' && !(trade.pnl > 0)) return false;
       if (filters.outcome === 'loss' && !(trade.pnl < 0)) return false;
       if (filters.outcome === 'breakeven' && trade.pnl !== 0) return false;
@@ -349,6 +352,27 @@ export default function TradeLog() {
     () => Array.from(new Set(trades.map((t) => t.strategy).filter((s): s is string => !!s))).sort(),
     [trades],
   );
+  // Tags already on these trades, for the filter facet.
+  const tagOptions = useMemo(
+    () => dedupeTags(trades.flatMap((t) => t.tags || [])).sort((a, b) => a.localeCompare(b)),
+    [trades],
+  );
+  // Tags used anywhere by this user (every account's trades plus journal
+  // entries), offered as one-tap suggestions in the trade form so the same
+  // setup names are reused instead of drifting (FVG vs fvg vs Fair Value Gap).
+  const tagSuggestions = useMemo(() => {
+    const pool: string[] = [...tagOptions];
+    try {
+      const rawTrades = userStorage.getItem('trades');
+      const all = rawTrades ? JSON.parse(rawTrades) : [];
+      if (Array.isArray(all)) all.forEach((t: { tags?: string[] }) => pool.push(...(t?.tags || [])));
+      const rawEntries = userStorage.getItem('journalEntries');
+      const entries = rawEntries ? JSON.parse(rawEntries) : [];
+      if (Array.isArray(entries)) entries.forEach((e: { tags?: string[] }) => pool.push(...(e?.tags || [])));
+    } catch { /* corrupt or missing storage: fall back to the loaded trades */ }
+    return dedupeTags(pool).sort((a, b) => a.localeCompare(b));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagOptions, isDialogOpen]);
 
   const activeFilterCount = countActiveFilters(filters);
 
@@ -2100,6 +2124,25 @@ export default function TradeLog() {
                         />
                         <FormField
                           control={form.control}
+                          name="tags"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium" htmlFor="trade-tags-input">Tags</FormLabel>
+                              <FormControl>
+                                <TagInput
+                                  id="trade-tags-input"
+                                  value={field.value ?? []}
+                                  onChange={field.onChange}
+                                  suggestions={tagSuggestions}
+                                  placeholder="e.g. FVG, Order Block, NFP"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
                           name="emotions"
                           render={({ field }) => {
                             const selected = field.value ? field.value.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
@@ -2639,6 +2682,7 @@ export default function TradeLog() {
                   symbolOptions={symbolOptions}
                   marketOptions={marketOptions}
                   strategyOptions={strategyOptions}
+                  tagOptions={tagOptions}
                 />
                 </div>
               </div>
@@ -2861,8 +2905,17 @@ export default function TradeLog() {
                             <Badge variant="outline" className="bg-muted/50 font-medium">
                               {trade.strategy}
                             </Badge>
-                          ) : (
+                          ) : !(trade.tags && trade.tags.length > 0) ? (
                             <span className="text-muted-foreground font-medium">-</span>
+                          ) : null}
+                          {trade.tags && trade.tags.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {trade.tags.map((tag) => (
+                                <span key={tag} className="rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </TableCell>
                         <TableCell>
@@ -2995,13 +3048,18 @@ export default function TradeLog() {
                         )}
                       </div>
                       
-                      {(trade.strategy || trade.emotions) && (
+                      {(trade.strategy || trade.emotions || (trade.tags && trade.tags.length > 0)) && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {trade.strategy && (
                             <Badge variant="outline" className="bg-muted/50 font-medium">
                               {trade.strategy}
                             </Badge>
                           )}
+                          {trade.tags?.map((tag) => (
+                            <Badge key={tag} variant="outline" className="bg-muted/30 text-muted-foreground font-medium text-xs">
+                              #{tag}
+                            </Badge>
+                          ))}
                           {trade.emotions && trade.emotions.split(',').map(e => e.trim()).filter(Boolean).map(e => (
                             <Badge key={e} variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-500 font-medium text-xs">
                               {e}

@@ -15,7 +15,7 @@ import { useUserStorage } from '@/utils/user-storage'
 import { getTradeDefaults, rememberTradeDefaults } from '@/utils/trade-defaults'
 import { useProStatus } from '@/contexts/pro-context'
 import { useAuth } from '@/contexts/auth-context'
-import { compressImage, putImage, newImageId, uploadCloudImage } from '@/utils/image-store'
+import { compressImage, putImage, newImageId, uploadCloudImage, reportCloudImageFailure } from '@/utils/image-store'
 import { StoredImage } from '@/components/stored-image'
 import { FREE_JOURNAL_ENTRY_LIMIT } from '@/constants/pricing'
 import { instrumentGroupsFor, type MarketType } from '@/constants/trading'
@@ -374,7 +374,12 @@ export function CalendarHeatmap() {
       for (const img of journalImages) {
         let stored: string | null = null
         if (isPro && user?.uid) {
-          try { stored = await uploadCloudImage(user.uid, img.dataUrl) } catch { stored = null }
+          try {
+            stored = await uploadCloudImage(user.uid, img.dataUrl)
+          } catch (err) {
+            reportCloudImageFailure(err, 'calendar-note')
+            stored = null
+          }
         }
         if (!stored) {
           await putImage(img.id, img.dataUrl)
