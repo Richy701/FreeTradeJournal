@@ -939,7 +939,7 @@ export const sendDay7NudgeEmails = functions.pubsub
         await getResend().emails.send({
           from: FROM_EMAIL,
           to: email,
-          subject: "A week in — have you logged a trade yet?",
+          subject: "Have you logged your first trade yet?",
           html,
           headers: unsubHeaders(doc.id),
         }, { idempotencyKey: `day7/${doc.id}` });
@@ -988,7 +988,7 @@ export const sendDay14UpgradeEmails = functions.pubsub
         await getResend().emails.send({
           from: FROM_EMAIL,
           to: email,
-          subject: "What's included in FreeTradeJournal Pro",
+          subject: "What’s included in FreeTradeJournal Pro",
           html,
           headers: unsubHeaders(doc.id),
         }, { idempotencyKey: `day14/${doc.id}` });

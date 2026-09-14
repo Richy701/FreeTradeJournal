@@ -20,7 +20,23 @@ The current local email design and copy have been approved by the user. Update m
 | `activation-proof` | `ActivationProofEmail.tsx` |
 | `activation-ai-grade` | `ActivationAiGradeEmail.tsx` |
 
-These mappings come from source comments. Confirm each against the live Resend template and automation before updating. Live inventory was blocked by an invalid-key error on the available Resend connection; it has not been verified in this session.
+These mappings come from source comments. The remaining four hosted templates map by alias: `day-3-nudge` → `Day3NudgeEmail.tsx`, `day-7-nudge` → `Day7NudgeEmail.tsx`, `day-14-upgrade` → `Day14UpgradeEmail.tsx`, `day-21-backup` → `Day21BackupEmail.tsx`.
+
+Verified 14 September 2026 against the live Resend account: all seven templates are published, and their HTML and plain text match a fresh render of the local sources exactly (personalisation tag `{{contact.firstName | default: trader}}`, mailto unsubscribe, official image URLs). Every referenced image and link returns 200. The "Onboarding: Activation Sequence" automation sends activation-ai-grade, day-3-nudge, activation-import, activation-proof and day-7-nudge in that order; "Onboarding: Conversion Drip" sends day-14-upgrade and day-21-backup.
+
+## Subjects
+
+Each subject lives in up to three places and must be kept identical: the automation step (which overrides the template), the hosted template, and the Cloud Function fallback in `functions/src/index.ts` for the day 3/7/14/21 emails. The activation emails have no Cloud Function fallback. Aligned 14 September 2026:
+
+| Alias | Subject |
+| --- | --- |
+| `activation-ai-grade` | Review your next trade with Coach FTJ |
+| `day-3-nudge` | How to add your first trade |
+| `activation-import` | Import your trading history from a CSV |
+| `activation-proof` | See your win rate and results by setup |
+| `day-7-nudge` | Have you logged your first trade yet? |
+| `day-14-upgrade` | What’s included in FreeTradeJournal Pro |
+| `day-21-backup` | How to back up your trading journal |
 
 Inspect the live inventory for any additional matching templates. Do not invent aliases or create duplicate templates just because a local component exists.
 
