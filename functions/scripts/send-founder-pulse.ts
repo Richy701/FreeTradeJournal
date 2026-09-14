@@ -13,6 +13,7 @@ import { Resend } from 'resend'
 import * as React from 'react'
 import { render } from '@react-email/components'
 import { FounderPulseEmail, RankedRow } from '../src/emails/FounderPulseEmail'
+import { activityTiming } from '../src/internal-report-data'
 import * as path from 'path'
 import * as fs from 'fs'
 
@@ -34,7 +35,8 @@ const POSTHOG_KEY = process.env.POSTHOG_PERSONAL_KEY || process.env.POSTHOG_PERS
 if (!POSTHOG_KEY) throw new Error('POSTHOG_PERSONAL_KEY env var is required')
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
+const previewOnly = process.argv.includes('--preview')
+if (!previewOnly && !RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 
 // In-app routes only — the landing page gets scraper/scanner blasts with
 // rotating anonymous IDs that would wreck every number in this email.
@@ -56,7 +58,8 @@ async function hogql(query: string, attempt = 1): Promise<any[][]> {
     }
     throw new Error(`PostHog query failed after ${attempt} attempts: ${json.error || res.status}`)
   }
-  return json.results || []
+  if (!Array.isArray(json.results)) throw new Error('PostHog did not return report rows')
+  return json.results
 }
 
 // ── Window: last 7 full UTC days, vs the 7 before ─────────
@@ -110,17 +113,6 @@ const PAGE_LABELS: Record<string, string> = {
   '/profile': 'Profile',
 }
 
-// UTC hour → trading-session description (summer offsets; close enough
-// year-round for a one-line label).
-function sessionLabel(hourUtc: number): string {
-  if (hourUtc >= 13 && hourUtc < 16) return 'the London/New York overlap'
-  if (hourUtc >= 7 && hourUtc < 13) return 'the London session'
-  if (hourUtc >= 16 && hourUtc < 21) return 'the New York session'
-  return 'the Asia-Pacific session'
-}
-
-const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
 async function main() {
   console.log(`Founder pulse for ${winStart} → ${winEnd} (prev: ${prevStart})`)
 
@@ -162,7 +154,7 @@ async function main() {
   const topCountryUsers = Number(countries[0]?.[1] || 1)
   const topCountries: RankedRow[] = countries.slice(0, 5).map(r => ({
     label: countryName(String(r[0])),
-    value: `${r[1]} ${Number(r[1]) === 1 ? 'trader' : 'traders'}`,
+    value: `${r[1]} ${Number(r[1]) === 1 ? 'visitor' : 'visitors'}`,
     share: Number(r[1]) / topCountryUsers,
   }))
 
@@ -173,7 +165,7 @@ async function main() {
     share: Number(r[1]) / topPageUsers,
   }))
 
-  const busiestHourNum = hourRows[0] ? Number(hourRows[0][0]) : 14
+  const timing = activityTiming(dayRows[0] ? Number(dayRows[0][0]) : undefined, hourRows[0] ? Number(hourRows[0][0]) : undefined)
   const props = {
     weekLabel: weekLabel(),
     peakOnline: peak ? Number(peak[1]) : 0,
@@ -187,20 +179,24 @@ async function main() {
     countriesCount: countries.length,
     countriesPrev: Number(countryPrevRows[0]?.[0] || 0),
     topCountries,
-    busiestDay: DAY_NAMES[Number(dayRows[0]?.[0] || 1)],
-    busiestHour: `${String(busiestHourNum).padStart(2, '0')}:00 to ${String((busiestHourNum + 1) % 24).padStart(2, '0')}:00 UTC`,
-    busiestSession: sessionLabel(busiestHourNum),
+    ...timing,
     topPages,
   }
 
   console.log(JSON.stringify(props, null, 2))
 
   const html = await render(React.createElement(FounderPulseEmail, props))
+  if (previewOnly) {
+    fs.writeFileSync('/tmp/ftj-founder-pulse.html', html)
+    fs.writeFileSync('/tmp/ftj-founder-pulse.json', JSON.stringify(props, null, 2))
+    console.log('Local preview saved. No email sent.')
+    return
+  }
   const resend = new Resend(RESEND_API_KEY)
   const result = await resend.emails.send({
     from: FROM,
     to: TO,
-    subject: `Pulse: peak ${props.peakOnline} online, ${props.countriesCount} countries, ${props.signups} signups`,
+    subject: `Founder pulse: ${props.activeUsers} active visitors, ${props.signups} signup events`,
     html,
   })
   if (result.error) {

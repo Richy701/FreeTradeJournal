@@ -3,6 +3,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from "path"
+import { changelog, LATEST_CHANGELOG_VERSION } from './src/constants/changelog'
 import { fetchMarketFeed, FEED_TABS } from './api/_lib/market-feed'
 import { parseGifQuery, searchGifs } from './api/_lib/gifs'
 
@@ -131,6 +132,12 @@ export default defineConfig(({ mode }) => {
 
   return {
   plugins: [
+    {
+      name: 'published-email-release-feed',
+      generateBundle() {
+        this.emitFile({ type: 'asset', fileName: 'email-releases.json', source: JSON.stringify({ version: LATEST_CHANGELOG_VERSION, builtAt: new Date().toISOString(), entries: changelog }) })
+      },
+    },
     devTwelveDataQuoteCache(),
     devNewsFeed(),
     devGifSearch(),

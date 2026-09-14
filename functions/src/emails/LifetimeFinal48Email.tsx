@@ -65,7 +65,7 @@ export function LifetimeFinal48Email({
         <Text style={styles.paragraph}>
           This is the only email I will send you about this. If lifetime is not for you, no hard feelings — the free journal stays free.
         </Text>
-        <Text style={{ ...styles.paragraph, margin: 0, color: '#f5f5f6', fontWeight: 600 }}>
+        <Text style={{ ...styles.paragraph, margin: 0, color: styles.strong.color, fontWeight: 600 }}>
           Richy, FreeTradeJournal
         </Text>
       </Section>

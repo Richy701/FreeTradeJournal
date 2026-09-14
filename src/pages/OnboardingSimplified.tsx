@@ -1,3 +1,4 @@
+import { hasExistingOnboardingData } from '@/utils/onboarding';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
@@ -10,6 +11,7 @@ import { LIFETIME_RETIRES_AT } from '@/constants/pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UnitInput } from '@/components/money-input';
+import { parseOnboardingBalance } from '@/lib/onboarding-balance';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Check, Rocket, CaretLeft, Wallet, Monitor, Buildings, FileText, Plant, ChartBar, Lightning, Trophy, BookOpen, Target } from '@phosphor-icons/react';
@@ -114,12 +116,12 @@ export default function OnboardingSimplified() {
   const persistOnboardingToFirestore = useCallback(async () => {
     if (!user) return;
     try {
-      const { getFirebaseFirestore } = await import('@/lib/firebase-lazy');
-      const db = await getFirebaseFirestore();
-      const { doc, setDoc } = await import('firebase/firestore');
-      await setDoc(doc(db, 'users', user.uid), { onboardingCompleted: true }, { merge: true });
+      const { getFirebaseFunctions } = await import('@/lib/firebase-lazy');
+      const { httpsCallable } = await import('firebase/functions');
+      await httpsCallable(await getFirebaseFunctions(), 'completeOnboarding')({});
     } catch {
-      // Non-critical — localStorage is the primary source of truth
+      // Keep local setup usable if the connection or server is unavailable.
+      toast.warning('Setup is saved on this device, but we could not save completion to your account.');
     }
   }, [user]);
 
@@ -135,10 +137,7 @@ export default function OnboardingSimplified() {
 
       try {
         // Check if user already has local data
-        const hasLocalAccounts = userStorage.getItem('accounts') !== null;
-        const hasLocalTrades = userStorage.getItem('trades') !== null;
-
-        if (hasLocalAccounts && hasLocalTrades) {
+        if (hasExistingOnboardingData(user.uid)) {
           // User has local data, no need to check remote
           setCheckingRemoteData(false);
           return;
@@ -270,6 +269,12 @@ export default function OnboardingSimplified() {
   };
 
   const handleComplete = async () => {
+    const balance = parseOnboardingBalance(data.currentBalance);
+    if (balance === null) {
+      toast.error('Enter a valid starting balance. Use 0 if the account is unfunded.');
+      goToStep(4);
+      return;
+    }
     setLoading(true);
 
     const newAccount = {
@@ -277,7 +282,7 @@ export default function OnboardingSimplified() {
       type: data.accountType,
       broker: data.broker || 'Not specified',
       currency: data.currency,
-      balance: parseFloat(data.currentBalance) || DEFAULT_VALUES.STARTING_BALANCE,
+      balance,
       isDefault: true
     };
 
@@ -596,7 +601,13 @@ export default function OnboardingSimplified() {
               </motion.div>
 
               <motion.div variants={activeFadeUpItem}>
-                <Button onClick={() => goToStep(5)} size="lg" className="w-full">
+                <Button onClick={() => {
+                  if (parseOnboardingBalance(data.currentBalance) === null) {
+                    toast.error('Enter a valid starting balance. Use 0 if the account is unfunded.');
+                    return;
+                  }
+                  goToStep(5);
+                }} size="lg" className="w-full">
                   Continue
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

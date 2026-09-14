@@ -25,16 +25,17 @@ export function AllAccountsAnnouncementEmail({ firstName, unsubscribeUrl }: AllA
       preview="See every account combined in one view, and calendar days as percentages."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>All your accounts, one view</Heading>
         <Text style={styles.paragraph}>
           {firstName ? `${firstName}, two` : 'Two'} things went live today. A trader asked for both, and they were good ideas. Both are free, on every plan.
         </Text>
+        <EmailButton href={URLS.dashboard}>See your accounts combined</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={{ ...styles.h1, fontSize: '19px' }}>
           See every account combined
         </Heading>
@@ -50,12 +51,12 @@ export function AllAccountsAnnouncementEmail({ firstName, unsubscribeUrl }: AllA
         <Text style={styles.paragraph}>
           The combined view is for looking, not editing: to add or change trades, switch back to a single account. And if your accounts use different currencies, you get one combined view per currency, since adding dollars to euros would give a meaningless total.
         </Text>
-        <EmailButton href={URLS.dashboard}>See your accounts combined</EmailButton>
+        <EmailButton variant="secondary" href={URLS.dashboard}>See your accounts combined</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={{ ...styles.h1, fontSize: '19px' }}>
           Your calendar, in percentages
         </Heading>
@@ -76,7 +77,7 @@ export function AllAccountsAnnouncementEmail({ firstName, unsubscribeUrl }: AllA
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Text style={styles.fine}>
           Both of these started as a suggestion from a trader who uses the app every day. If something about FreeTradeJournal should work differently for how you trade, reply to this email and tell me.
         </Text>

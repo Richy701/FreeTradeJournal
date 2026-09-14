@@ -1,3 +1,4 @@
+import { reliableEmailSender } from '../src/email-delivery'
 /**
  * Trade Ideas (beta, v2.87.0) announcement. Product news, so it goes to
  * EVERYONE incl. Pro and lifetime. One-off campaign; dedup field:
@@ -90,6 +91,8 @@ function getUnsubscribeUrl(uid: string): string {
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 const resend = new Resend(RESEND_API_KEY)
+
+resend.emails.send = reliableEmailSender(resend.emails.send.bind(resend.emails))
 
 // ── Test mode: render + send one copy, touch nothing ──────
 async function sendTest() {

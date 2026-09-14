@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
-import { UserStorage } from '@/utils/user-storage';
+import { hasCompletedOnboarding, hasExistingOnboardingData } from '@/utils/onboarding';
 import { notifyDataChange } from '@/contexts/sync-context';
 
 /**
@@ -11,28 +11,31 @@ import { notifyDataChange } from '@/contexts/sync-context';
 export function useAutoRestore() {
   const { user } = useAuth();
   const { isPro, isLoading: isProLoading } = useProStatus();
-  const [isRestoring, setIsRestoring] = useState(false);
-  const [restoreComplete, setRestoreComplete] = useState(false);
-  const [restoreFailed, setRestoreFailed] = useState(false);
+  const userId = user?.uid ?? null;
+  const identity = `${userId}:${isPro}`;
+  const [result, setResult] = useState<{ identity: string; failed: boolean } | null>(null);
 
   useEffect(() => {
-    if (!user || isProLoading) return;
+    if (!userId || isProLoading) return;
+    let cancelled = false;
+    const finish = (failed = false) => {
+      if (!cancelled) setResult({ identity, failed });
+    };
     if (!isPro) {
-      setRestoreComplete(true);
+      finish();
       return;
     }
 
     // Check if user already has local data
-    const hasLocalData = UserStorage.hasUserData(user.uid);
+    const hasLocalData = hasCompletedOnboarding(userId) || hasExistingOnboardingData(userId);
     if (hasLocalData) {
-      setRestoreComplete(true);
+      finish();
       return;
     }
 
     // Pro user with no local data - try to restore via Cloud Function (bypasses content blockers)
-    const userId = user.uid; // Capture for use in async function
     async function restoreFromFirestore() {
-      setIsRestoring(true);
+      let failed = false;
       try {
         const [{ getFirebaseAuth }, { getFunctions, httpsCallable }] = await Promise.all([
           import('@/lib/firebase-lazy'),
@@ -43,6 +46,7 @@ export function useAutoRestore() {
         const getSyncDataFn = httpsCallable(functions, 'getSyncData');
 
         const result = await getSyncDataFn({}) as { data: { data: Record<string, string> } };
+        if (cancelled) return;
         const syncData = result.data.data;
 
         let restoredAny = false;
@@ -64,15 +68,20 @@ export function useAutoRestore() {
         }
       } catch (error) {
         console.error('[AutoRestore] Failed to restore from Firestore:', error);
-        setRestoreFailed(true);
+        failed = true;
       } finally {
-        setIsRestoring(false);
-        setRestoreComplete(true);
+        finish(failed);
       }
     }
 
-    restoreFromFirestore();
-  }, [user, isPro, isProLoading]);
+    void restoreFromFirestore();
+    return () => { cancelled = true; };
+  }, [userId, identity, isPro, isProLoading]);
 
-  return { isRestoring, restoreComplete, restoreFailed };
+  const restoreComplete = !isProLoading && result?.identity === identity;
+  return {
+    isRestoring: !!userId && isPro && !isProLoading && !restoreComplete,
+    restoreComplete,
+    restoreFailed: restoreComplete && (result?.failed ?? false),
+  };
 }

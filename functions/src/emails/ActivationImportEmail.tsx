@@ -23,25 +23,18 @@ export function ActivationImportEmail({ firstName, unsubscribeUrl }: ActivationI
       preview="Drop in your broker export and backfill your whole history at once."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
-        <Heading style={styles.h1}>Hey {firstName}, skip the manual entry.</Heading>
+      <Section className="email-content" style={styles.content}>
+        <Heading style={styles.h1}>{firstName ? `${firstName}, skip the manual entry.` : 'Skip the manual entry.'}</Heading>
         <Text style={styles.paragraph}>
-          If typing trades in is the holdup — don't. Export from your broker and import your whole history in one go. Two minutes and your journal is full.
+          Bring your trading history with you. Export a CSV from your broker, then import it into your journal in one go.
         </Text>
+        <EmailButton href={URLS.trades}>Import my trades</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
       <NumberedSteps heading="Import in three steps" steps={steps} />
 
-      <Hr style={styles.divider} />
-
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          No more excuses about time. Your trades are one upload away.
-        </Text>
-        <EmailButton href={URLS.trades}>Import my trades</EmailButton>
-      </Section>
     </EmailShell>
   )
 }

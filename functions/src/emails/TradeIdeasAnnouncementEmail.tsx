@@ -85,22 +85,23 @@ export function TradeIdeasAnnouncementEmail({ firstName, unsubscribeUrl }: Trade
       preview="Post a setup before you take it. Link the trade after. The result shows for everyone."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Eyebrow>New, in beta</Eyebrow>
         <Heading style={styles.h1}>
           {firstName ? `${firstName}, Trade Ideas is live.` : 'Trade Ideas is live.'}
         </Heading>
         <Text style={styles.paragraph}>
-          A shared feed of setups from other FreeTradeJournal traders. You post a trade before you take it, link the real trade after, and the result shows on the idea for everyone. So the feed does not just show setups, it shows which ones worked.
+          Share a setup before you trade it, then link the result from your journal. Explore ideas from other traders and see how they worked out.
         </Text>
         <Text style={styles.paragraph}>
-          It is free on every plan. There is a new Community section in the sidebar. Here is how it works.
+          Free on every plan. Find Trade Ideas under Community in the sidebar.
         </Text>
+        <EmailButton href={`${BASE_URL}/trade-ideas`}>Open Trade Ideas</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Step n={1} title="Post a setup before you take it" />
         <Img
           src={`${BASE_URL}/screenshots/trade-ideas-post.png`}
@@ -109,13 +110,13 @@ export function TradeIdeasAnnouncementEmail({ firstName, unsubscribeUrl }: Trade
           style={screenshot}
         />
         <Text style={styles.paragraph}>
-          Pick the market and symbol, long or short, then entry, stop and target, and say why. The form works out your planned reward-to-risk as you type and will not let you post a stop on the wrong side of the entry. One chart screenshot can go with it. The first time you post you choose a handle and an avatar. Your real name and email are never shown.
+          Add your entry, stop, target and reasoning, with an optional chart screenshot. The form calculates reward-to-risk and checks your stop. You post under a handle, not your real name or email.
         </Text>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Step n={2} title="Read and like what others post" />
         <Img
           src={`${BASE_URL}/screenshots/trade-ideas-feed.png`}
@@ -124,13 +125,13 @@ export function TradeIdeasAnnouncementEmail({ firstName, unsubscribeUrl }: Trade
           style={screenshot}
         />
         <Text style={styles.paragraph}>
-          The feed shows every open idea with its entry, stop and target, and the reasoning underneath. Like the ones you rate. Anything that breaks the rules can be reported and comes down after three reports.
+          Browse entries, stops, targets and reasoning. Like useful ideas and report anything that breaks the rules.
         </Text>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Step n={3} title="Link the trade, show the result" />
         <Img
           src={`${BASE_URL}/screenshots/trade-ideas-link-trade.png`}
@@ -139,14 +140,14 @@ export function TradeIdeasAnnouncementEmail({ firstName, unsubscribeUrl }: Trade
           style={screenshot}
         />
         <Text style={styles.paragraph}>
-          Once you have taken the trade and logged it, open your idea and press Link a trade. Pick it from your Trade Log and the idea shows Worked, Lost or Break even with the P&amp;L. Your record on the page counts it. You cannot type a result in by hand, it has to come from a real logged trade.
+          After logging the trade, choose Link a trade on your idea. Its outcome and P&amp;L come from that recorded trade, so results cannot be entered by hand.
         </Text>
-        <EmailButton href={`${BASE_URL}/trade-ideas`}>Open Trade Ideas</EmailButton>
+        <EmailButton variant="secondary" href={`${BASE_URL}/trade-ideas`}>Open Trade Ideas</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Section style={rulesBox}>
           <Text style={rulesHead}>The rules, in short</Text>
           <Text style={ruleLine}>Your own setups only, and every setup has a stop.</Text>
@@ -158,7 +159,7 @@ export function TradeIdeasAnnouncementEmail({ firstName, unsubscribeUrl }: Trade
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Text style={styles.paragraph}>
           It is a beta. If something should work differently for how you trade, use Send feedback on the Trade Ideas page. I read every one.
         </Text>

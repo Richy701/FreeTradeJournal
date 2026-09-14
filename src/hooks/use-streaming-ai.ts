@@ -22,7 +22,7 @@ interface UseStreamingAIReturn {
   isStreaming: boolean;
   error: string | null;
   meta: StreamMeta | null;
-  startStream: (endpoint: 'analysis' | 'assist', data: any) => Promise<string>;
+  startStream: (endpoint: 'analysis' | 'assist', data: any, onComplete?: () => void) => Promise<string>;
   abort: () => void;
 }
 
@@ -38,7 +38,7 @@ export function useStreamingAI(): UseStreamingAIReturn {
     abortRef.current?.abort();
   }, []);
 
-  const startStream = useCallback(async (endpoint: 'analysis' | 'assist', data: any): Promise<string> => {
+  const startStream = useCallback(async (endpoint: 'analysis' | 'assist', data: any, onComplete?: () => void): Promise<string> => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -69,6 +69,7 @@ export function useStreamingAI(): UseStreamingAIReturn {
     }
 
     let fullText = '';
+    let receivedDone = false;
 
     try {
       const auth = await getFirebaseAuth();
@@ -120,6 +121,7 @@ export function useStreamingAI(): UseStreamingAIReturn {
               setStreamText(fullText);
             }
             if (event.done) {
+              receivedDone = true;
               setMeta({ usage: event.usage, freeUsage: event.freeUsage });
             }
           } catch (e) {
@@ -139,6 +141,7 @@ export function useStreamingAI(): UseStreamingAIReturn {
       abortRef.current = null;
     }
 
+    if (receivedDone && fullText.trim() && !controller.signal.aborted) onComplete?.();
     return fullText;
   }, [isDemo]);
 

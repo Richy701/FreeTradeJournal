@@ -6,6 +6,7 @@ import { clearOnboardingData } from '@/utils/onboarding';
 
 import { trackEvent, demoAttribution } from '@/lib/analytics';
 import { googleAuthErrorMessage } from '@/lib/auth-errors';
+import { loginDestination } from '@/lib/login-destination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +39,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectPath = location.state?.from?.pathname || '/dashboard';
+  const redirectPath = loginDestination(location.state?.from);
 
   // Already signed in (and not just browsing in demo mode): skip the form.
   // The sign-in handlers own where a fresh sign-in lands (a new Google user

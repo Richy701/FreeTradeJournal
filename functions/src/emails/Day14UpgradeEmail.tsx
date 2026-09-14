@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, FeatureList, styles } from './components'
-import { URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
+import { ProductPreview, EmailShell, EmailButton, FeatureList, styles } from './components'
+import { BASE_URL, URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
 
 interface Day14UpgradeEmailProps {
   firstName: string
@@ -9,10 +9,10 @@ interface Day14UpgradeEmailProps {
 }
 
 const proFeatures = [
-  { label: 'AI Trade Review', desc: 'A personalised breakdown of each trade — what you did right, what cost you money, and what to do differently.' },
-  { label: 'PropTracker AI Analysis', desc: 'An honest verdict on your prop firms. Which are worth it, which are draining you, and what to do about it.' },
-  { label: 'AI Goal Coach', desc: "Reads your actual trade data and tells you exactly where you're falling short of your targets." },
-  { label: 'Cloud Sync', desc: 'Your trades, journal, and settings backed up across every device. Never lose your data.' },
+  { label: 'AI Trade Review', desc: 'Review what worked and what to improve in a trade.' },
+  { label: 'PropTracker AI Analysis', desc: 'Review performance across your prop firm accounts.' },
+  { label: 'AI Goal Coach', desc: 'Get coaching based on your goals and trading record.' },
+  { label: 'Cloud Sync', desc: 'Keep your journal backed up across devices.' },
 ]
 
 export function Day14UpgradeEmail({ firstName, tradeCount, unsubscribeUrl }: Day14UpgradeEmailProps) {
@@ -22,33 +22,29 @@ export function Day14UpgradeEmail({ firstName, tradeCount, unsubscribeUrl }: Day
 
   return (
     <EmailShell
-      preview="You've been logging. Here's what Pro does with that data."
+      preview="Pro includes additional AI coaching and cloud sync."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, you've` : "You've"} built two weeks of trading data.
+          What’s included in Pro
         </Heading>
         <Text style={styles.paragraph}>
-          You've been logging {tradeLabel} and building a real record of your performance. That puts you ahead of most traders.
+          {firstName ? `${firstName}, you` : 'You'} have started recording {tradeLabel}. If you want to access your journal on other devices, Pro includes cloud sync.
         </Text>
         <Text style={styles.paragraph}>
-          But logging trades is only half of it. Pro reads that data and turns it into actual coaching — telling you what's working, what's costing you, and where your edge is slipping.
-        </Text>
-      </Section>
-
-      <Hr style={styles.divider} />
-
-      <FeatureList heading="What Pro does with your data" items={proFeatures} />
-
-      <Hr style={styles.divider} />
-
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          Pro is <strong style={styles.strong}>{PRICE_MONTHLY}</strong> or {PRICE_YEARLY}. Cancel anytime — everything you've logged stays exactly as it is.
+          It also includes more AI coaching for trade reviews, goals and prop firm accounts.
         </Text>
         <EmailButton href={URLS.pricing}>See Pro features</EmailButton>
+        <Text style={styles.fine}>Pro is {PRICE_MONTHLY} or {PRICE_YEARLY}. Cancel anytime.</Text>
       </Section>
+
+      <ProductPreview src={`${BASE_URL}/screenshots/proptracker-coach-tab.png`} alt="PropTracker account analysis" caption="PropTracker account analysis" />
+
+      <Hr style={styles.divider} />
+
+      <FeatureList heading="Pro features" items={proFeatures} />
+
     </EmailShell>
   )
 }

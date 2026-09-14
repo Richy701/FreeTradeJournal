@@ -1,3 +1,4 @@
+import { reliableEmailSender } from '../src/email-delivery'
 /**
  * First-birthday send (28 Aug 2026): lifetime back for one week at $199
  * (code FTJBIRTHDAY, auto-applied at checkout). Standalone offer email, no
@@ -93,6 +94,8 @@ function getUnsubscribeUrl(uid: string): string {
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 const resend = new Resend(RESEND_API_KEY)
+
+resend.emails.send = reliableEmailSender(resend.emails.send.bind(resend.emails))
 
 // ── Test mode: render + send one copy, touch nothing ──────
 async function sendTest() {

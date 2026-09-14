@@ -15,6 +15,8 @@ const FIELDS = [
   { key: 'pnl', label: 'P&L', required: true },
   { key: 'openTime', label: 'Entry Time', required: false },
   { key: 'closeTime', label: 'Exit Time', required: false },
+  { key: 'commission', label: 'Commission', required: false },
+  { key: 'fees', label: 'Fees', required: false },
 ] as const;
 
 interface ColumnMappingDialogProps {

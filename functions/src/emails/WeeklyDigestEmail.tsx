@@ -37,9 +37,9 @@ export function WeeklyDigestEmail({ firstName, tradeCount, winRate, pnl, bestTra
       unsubscribeUrl={unsubscribeUrl}
       footerNote="Sent every Monday. Reply if you have feedback — I read every one."
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={{ ...styles.content, paddingBottom: hasActivity ? '24px' : 0 }}>
         <Eyebrow>{weekLabel}</Eyebrow>
-        <Heading style={styles.h1}>
+        <Heading style={{ ...styles.h1, marginBottom: 0 }}>
           {hasActivity
             ? `${firstName ? firstName + ', here' : 'Here'}'s your week.`
             : `${firstName ? firstName + ', your' : 'Your'} journal was quiet this week.`
@@ -49,23 +49,23 @@ export function WeeklyDigestEmail({ firstName, tradeCount, winRate, pnl, bestTra
 
       {hasActivity ? (
         <>
-          <Section style={{ padding: '0 24px 24px' }}>
+          <Section className="email-content" style={{ ...styles.content, paddingTop: 0, paddingBottom: '24px' }}>
             <StatGrid stats={stats} />
           </Section>
 
           <Hr style={styles.divider} />
 
-          <Section style={styles.content}>
+          <Section className="email-content" style={styles.content}>
             <Text style={styles.paragraph}>
-              Open your dashboard to see your full equity curve, calendar heatmap, and trade breakdown.
+              Review your equity curve, calendar and trade breakdowns.
             </Text>
             <EmailButton href={URLS.dashboard}>View full dashboard</EmailButton>
           </Section>
         </>
       ) : (
-        <Section style={styles.content}>
+        <Section className="email-content" style={{ ...styles.content, paddingTop: '16px' }}>
           <Text style={styles.paragraph}>
-            No trades logged this week. Even logging one trade keeps the habit alive and your data building.
+            If you traded this week, add the trades you want to review. Taking a week off is fine too.
           </Text>
           <EmailButton href={URLS.trades}>Log a trade</EmailButton>
         </Section>
@@ -73,9 +73,9 @@ export function WeeklyDigestEmail({ firstName, tradeCount, winRate, pnl, bestTra
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          How are we doing? Tell us what to improve — it takes 30 seconds.
+      <Section className="email-content" style={styles.content}>
+        <Text style={{ ...styles.fine, margin: 0 }}>
+          Something would make this recap more useful?
         </Text>
         <EmailButton href={URLS.feedbackFromDigest} variant="secondary">Share feedback</EmailButton>
       </Section>

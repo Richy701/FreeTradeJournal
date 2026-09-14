@@ -1,3 +1,5 @@
+import { useAuth } from '@/contexts/auth-context'
+import { markCoachCompleted } from '@/lib/coach-completion'
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AIFeedback } from '@/components/ai-feedback'
@@ -16,7 +18,7 @@ import { useUserStorage } from '@/utils/user-storage'
 import { buildSessionReview } from '@/lib/session-review'
 import { getRuleLabel, type RiskRule } from '@/lib/risk-rules'
 // Aggregation shared with AI Analysis / Coaching Tips payloads; unit-tested in trade-aggregates.test.ts
-import { computeTradeAggregates } from '@/utils/trade-aggregates'
+import { computeTradeAggregates, MAX_BUCKETS } from '@/utils/trade-aggregates'
 import { getAICache, setAICache } from '@/utils/ai-cache'
 import { renderMarkdown } from '@/lib/markdown'
 import { Progress } from '@/components/ui/progress'
@@ -383,6 +385,7 @@ const AI_COACH_CACHE_KEY = 'ftj-ai-coaching-tips'
 const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
 
 export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: string) => void } = {}) {
+  const { user } = useAuth()
   const { themeColors, alpha } = useThemePresets()
   const { getCurrencySymbol, formatCurrency } = useSettings()
   const { getTrades, isDemo } = useDemoData()
@@ -572,6 +575,10 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
       perSymbol: chatAggregates.perSymbol,
       perStrategy: chatAggregates.strategiesTagged ? chatAggregates.perStrategy : [],
       strategiesTagged: chatAggregates.strategiesTagged,
+      perTag: chatAggregates.tagsTagged ? chatAggregates.perTag.slice(0, MAX_BUCKETS) : [],
+      tagsTagged: chatAggregates.tagsTagged,
+      perMistake: chatAggregates.perMistake.slice(0, MAX_BUCKETS),
+      mistakeImpact: chatAggregates.mistakeImpact,
       perSide: chatAggregates.perSide,
       perWeekday: chatAggregates.perWeekday,
       perSession: chatAggregates.perSession,
@@ -609,7 +616,7 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
           history: chatMessages.slice(-6),
           ...context,
         },
-      })
+      }, () => { if (!isDemo && user) markCoachCompleted(user.uid) })
 
       if (result) {
         // Hand off to the typewriter — the message is committed by the effect
@@ -626,7 +633,7 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
         content: isQuota ? msg : 'Sorry, I could not respond right now. Try again.',
       }])
     }
-  }, [chatStreaming, finishingText, chatMessages, buildChatContext, startStream])
+  }, [chatStreaming, finishingText, chatMessages, buildChatContext, startStream, isDemo, user])
 
   const clearChat = useCallback(() => {
     setChatMessages([])
@@ -1003,6 +1010,10 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
             strategiesTagged: chatAggregates.strategiesTagged,
             perSymbol: chatAggregates.perSymbol,
             perStrategy: chatAggregates.perStrategy,
+            perTag: chatAggregates.tagsTagged ? chatAggregates.perTag.slice(0, MAX_BUCKETS) : [],
+            tagsTagged: chatAggregates.tagsTagged,
+            perMistake: chatAggregates.perMistake.slice(0, MAX_BUCKETS),
+            mistakeImpact: chatAggregates.mistakeImpact,
             perSide: chatAggregates.perSide,
             perWeekday: chatAggregates.perWeekday,
             perSession: chatAggregates.perSession,

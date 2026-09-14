@@ -17,6 +17,15 @@ describe('getFuturesMultiplier', () => {
     expect(getFuturesMultiplier('CLZ25')).toBe(1000);
   });
 
+  it('strips NinjaTrader-style expiry suffixes', () => {
+    expect(futuresBaseSymbol('MNQ 09-26')).toBe('MNQ');
+    expect(futuresBaseSymbol('ES 12-25')).toBe('ES');
+    expect(futuresBaseSymbol('MNQ SEP26')).toBe('MNQ');
+    expect(futuresBaseSymbol('CL Dec2025')).toBe('CL');
+    expect(getFuturesMultiplier('MNQ 09-26')).toBe(2);
+    expect(getFuturesMultiplier('ES 12-25')).toBe(50);
+  });
+
   it('does not confuse micro symbols with their parent contract', () => {
     // MES must never resolve via substring "ES"
     expect(getFuturesMultiplier('MESM5')).toBe(5);

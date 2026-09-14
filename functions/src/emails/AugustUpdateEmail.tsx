@@ -29,16 +29,17 @@ export function AugustUpdateEmail({ firstName, unsubscribeUrl }: AugustUpdateEma
       preview="Import trades from a screenshot, log trades faster, see all your accounts in one view, and a rebuilt Goals & Risk page."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>What changed this month</Heading>
         <Text style={styles.paragraph}>
           {firstName ? `${firstName}, a` : 'A'} lot went live in the last few days. Here are the four you will notice first, and a short list of the rest. Everything below works on the free plan.
         </Text>
+        <EmailButton href={URLS.dashboard}>Open your journal</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={h2}>
           Import trades from a screenshot
         </Heading>
@@ -54,12 +55,12 @@ export function AugustUpdateEmail({ firstName, unsubscribeUrl }: AugustUpdateEma
         <Text style={styles.paragraph}>
           Free accounts get 3 screenshot imports to try it. Pro gets 20 a day. On the Trade Log, the Import button now offers <strong style={styles.strong}>CSV</strong> or <strong style={styles.strong}>Screenshot</strong>.
         </Text>
-        <EmailButton href={URLS.trades}>Import from a screenshot</EmailButton>
+        <EmailButton href={URLS.trades} variant="secondary">Import from a screenshot</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={h2}>
           Logging a trade is faster
         </Heading>
@@ -80,7 +81,7 @@ export function AugustUpdateEmail({ firstName, unsubscribeUrl }: AugustUpdateEma
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={h2}>
           All your accounts, one view
         </Heading>
@@ -101,7 +102,7 @@ export function AugustUpdateEmail({ firstName, unsubscribeUrl }: AugustUpdateEma
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={h2}>
           Goals &amp; Risk, rebuilt
         </Heading>
@@ -146,7 +147,7 @@ export function AugustUpdateEmail({ firstName, unsubscribeUrl }: AugustUpdateEma
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Text style={styles.paragraph}>
           Two of these started as a request from a trader who uses the app every day. If something about FreeTradeJournal should work differently for how you trade, send a feature request from inside the app. I read every one.
         </Text>

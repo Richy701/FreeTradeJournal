@@ -12,36 +12,29 @@ interface ActivationProofEmailProps {
 }
 
 const reveals = [
-  { label: 'Your real win rate', desc: 'Not what it feels like — what it actually is.' },
-  { label: 'Which setups pay', desc: 'And which ones quietly bleed you.' },
-  { label: 'Your emotional patterns', desc: 'The state of mind behind your worst trades.' },
+  { label: 'Win rate', desc: 'The percentage of logged trades that closed in profit.' },
+  { label: 'Results by setup', desc: 'Compare the results of the strategies you record.' },
+  { label: 'Trading notes', desc: 'Keep your reasoning and observations with each trade.' },
 ]
 
 export function ActivationProofEmail({ firstName, unsubscribeUrl }: ActivationProofEmailProps) {
   return (
     <EmailShell
-      preview="The traders who improve all keep a record. That's where the edge starts."
+      preview="Keep a record of your trades and see the patterns for yourself."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
-        <Heading style={styles.h1}>Hey {firstName}, here's the difference.</Heading>
+      <Section className="email-content" style={styles.content}>
+        <Heading style={styles.h1}>{firstName ? `${firstName}, review your trading results.` : 'Review your trading results.'}</Heading>
         <Text style={styles.paragraph}>
-          The traders who actually get better aren't smarter — they keep a record. Logging your trades is how you see what's working, cut what isn't, and stop repeating the same mistake.
-        </Text>
-      </Section>
-
-      <Hr style={styles.divider} />
-
-      <FeatureList heading="What logging reveals" items={reveals} />
-
-      <Hr style={styles.divider} />
-
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          It starts with one trade. Log it and watch the picture build.
+          Add your trades to compare results by setup and check your win rate. Include your notes so you can revisit why you took each trade.
         </Text>
         <EmailButton href={URLS.trades}>Start my journal</EmailButton>
       </Section>
+
+      <Hr style={styles.divider} />
+
+      <FeatureList heading="In your journal" items={reveals} />
+
     </EmailShell>
   )
 }

@@ -1,3 +1,4 @@
+import { COACH_COMPLETION_EVENT, hasCompletedCoach } from '@/lib/coach-completion';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, X, CaretDown, CaretUp, CaretRight, BookOpen, Target, TrendUp, Robot } from '@phosphor-icons/react';
@@ -60,6 +61,16 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
     if (stored !== null) return stored === '1';
     return false;
   });
+  const [coachVersion, setCoachVersion] = useState(0);
+  useEffect(() => {
+    const refresh = () => setCoachVersion(version => version + 1);
+    window.addEventListener(COACH_COMPLETION_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(COACH_COMPLETION_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
   const [items, setItems] = useState<ChecklistItem[]>([]);
 
   useEffect(() => {
@@ -88,7 +99,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
     const DEFAULT_GOAL_IDS = new Set(['1', '2']);
     const hasGoals = Array.isArray(goals) && goals.some((g: { id?: string }) => !DEFAULT_GOAL_IDS.has(g.id ?? ''));
 
-    const hasUsedAiCoach = localStorage.getItem('ftj-ai-coaching-tips') !== null;
+    const hasUsedAiCoach = hasCompletedCoach(user.uid);
 
     const checklist: ChecklistItem[] = [
       {
@@ -130,7 +141,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
           ? 'Get personalised coaching based on your trading patterns.'
           : `You have ${freeAiQuota?.limit ?? 5} free AI coaching runs every month -- try your AI trading coach.`,
         icon: Robot,
-        href: '/dashboard',
+        href: '/coach',
         done: hasUsedAiCoach,
       }] : []),
     ];
@@ -152,7 +163,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
       localStorage.setItem(dismissKey, '1');
       setDismissed(true);
     }
-  }, [user, isDemo, isPro, userStorage, refreshKey, hasAIAccess, freeAiQuota]);
+  }, [user, isDemo, isPro, userStorage, refreshKey, hasAIAccess, freeAiQuota, coachVersion]);
 
   function dismiss() {
     if (!user) return;

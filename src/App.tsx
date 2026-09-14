@@ -43,6 +43,7 @@ const PropTracker = lazyWithRetry(() => import('@/pages/PropTracker'));
 // lazyWithRetry self-heals stale-chunk failures after a deploy (see lazy-with-retry.ts).
 const LandingPage = lazyWithRetry(() => import('@/pages/LandingPage'));
 const Login = lazyWithRetry(() => import('@/pages/Login'));
+const EmailRoundups = lazyWithRetry(() => import('@/pages/EmailRoundups'));
 const Dashboard = lazyWithRetry(() => import('@/pages/Dashboard'));
 const TradeLog = lazyWithRetry(() => import('@/pages/TradeLog'));
 const Goals = lazyWithRetry(() => import('@/pages/Goals'));
@@ -174,6 +175,7 @@ function App() {
                 {/* Prop Tracker — public landing for guests, full app for authenticated users */}
                 {/* Protected routes */}
                 <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                <Route path="/admin/email-roundups" element={<ProtectedRoute><EmailRoundups /></ProtectedRoute>} />
 
                 <Route element={<AppShell />}>
                   <Route path="/dashboard" element={<Dashboard />} />

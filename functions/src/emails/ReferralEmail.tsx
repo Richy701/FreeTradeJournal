@@ -18,7 +18,7 @@ export function ReferralEmail({ rewardEarned, newUserName, remaining, rewardDays
         ? `${newUserName} was the referral that unlocked ${rewardDays} days of Pro.`
         : `${newUserName} signed up with your link and logged their first trade.`}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Eyebrow>{rewardEarned ? 'Reward unlocked' : 'Referral confirmed'}</Eyebrow>
         {rewardEarned ? (
           <>

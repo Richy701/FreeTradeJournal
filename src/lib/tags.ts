@@ -25,3 +25,24 @@ export function dedupeTags(tags: string[]): string[] {
   return out;
 }
 
+
+/**
+ * A tag that starts with "!" marks a mistake ("!chased", "!moved-stop") rather
+ * than a setup. Mistakes get their own cost breakdown in Insights and are kept
+ * out of the setup table, so a trader can see what a habit is costing them.
+ */
+export const MISTAKE_PREFIX = '!';
+
+export function isMistakeTag(tag: string): boolean {
+  return normalizeTag(tag).startsWith(MISTAKE_PREFIX);
+}
+
+/** The tag without its mistake marker, for display ("!chased" → "chased"). */
+export function tagLabel(tag: string): string {
+  return normalizeTag(tag).replace(/^!+/, '').trim();
+}
+
+/** Case-insensitive grouping key, so "FVG" and "fvg" land in one bucket. */
+export function tagKey(tag: string): string {
+  return tagLabel(tag).toLowerCase();
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePnlDisplay } from '@/hooks/use-pnl-display';
 import { PnlDisplayToggle } from '@/components/pnl-display-toggle';
@@ -21,7 +21,7 @@ import { trackTradeLogged } from '@/lib/track-trade';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { TagInput } from '@/components/tag-input';
-import { dedupeTags } from '@/lib/tags';
+import { dedupeTags, isMistakeTag } from '@/lib/tags';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { Plus, PencilSimple, Trash, UploadSimple, DownloadSimple, ChartBar, FileText, FileArrowDown, Calendar, Brain, Tag, BookOpen, Image as ImageIcon, CaretRight, MagnifyingGlass, X, Funnel, CaretDown } from '@phosphor-icons/react';
 import { PDFReportDialog } from '@/components/pdf-report-dialog';
@@ -252,6 +252,17 @@ export default function TradeLog() {
     return { ...EMPTY_FILTERS };
   });
 
+  // Deep link: /trades?tag=FVG (from the Insights tag tables) opens the log
+  // filtered to that tag, then drops the param so a refresh does not re-apply it.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const tag = searchParams.get('tag');
+    if (!tag) return;
+    setFilters(prev => ({ ...prev, tags: [tag] }));
+    searchParams.delete('tag');
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   // Persist filters whenever they change
   useEffect(() => {
     userStorage.setItem('tradeLogFilters', JSON.stringify(filters));
@@ -269,7 +280,10 @@ export default function TradeLog() {
       if (filters.sides.length > 0 && !filters.sides.includes(trade.side)) return false;
       if (filters.markets.length > 0 && !filters.markets.includes(detectMarketFromSymbol(trade.symbol))) return false;
       if (filters.strategies.length > 0 && !filters.strategies.includes(trade.strategy || '')) return false;
-      if (filters.tags.length > 0 && !(trade.tags || []).some((t) => filters.tags.includes(t))) return false;
+      if (filters.tags.length > 0) {
+        const wanted = filters.tags.map((t) => t.toLowerCase());
+        if (!(trade.tags || []).some((t) => wanted.includes(t.toLowerCase()))) return false;
+      }
       if (filters.outcome === 'win' && !(trade.pnl > 0)) return false;
       if (filters.outcome === 'loss' && !(trade.pnl < 0)) return false;
       if (filters.outcome === 'breakeven' && trade.pnl !== 0) return false;
@@ -2134,9 +2148,12 @@ export default function TradeLog() {
                                   value={field.value ?? []}
                                   onChange={field.onChange}
                                   suggestions={tagSuggestions}
-                                  placeholder="e.g. FVG, Order Block, NFP"
+                                  placeholder="e.g. FVG, Order Block, !chased"
                                 />
                               </FormControl>
+                              <FormDescription className="text-xs">
+                                Start a tag with ! to mark a mistake, like !chased or !moved-stop. Insights shows what each setup makes and what each mistake costs.
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -2911,8 +2928,8 @@ export default function TradeLog() {
                           {trade.tags && trade.tags.length > 0 && (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {trade.tags.map((tag) => (
-                                <span key={tag} className="rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
-                                  #{tag}
+                                <span key={tag} className={`rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 text-[10px] font-medium leading-none ${isMistakeTag(tag) ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                  {isMistakeTag(tag) ? tag : `#${tag}`}
                                 </span>
                               ))}
                             </div>
@@ -3056,8 +3073,8 @@ export default function TradeLog() {
                             </Badge>
                           )}
                           {trade.tags?.map((tag) => (
-                            <Badge key={tag} variant="outline" className="bg-muted/30 text-muted-foreground font-medium text-xs">
-                              #{tag}
+                            <Badge key={tag} variant="outline" className={`bg-muted/30 font-medium text-xs ${isMistakeTag(tag) ? 'text-destructive' : 'text-muted-foreground'}`}>
+                              {isMistakeTag(tag) ? tag : `#${tag}`}
                             </Badge>
                           ))}
                           {trade.emotions && trade.emotions.split(',').map(e => e.trim()).filter(Boolean).map(e => (

@@ -8,6 +8,8 @@ export type ChangelogItem = {
    *  "+N more". Aim for 3-4 per release. Without any flags, the dialog falls
    *  back to the first three items. */
   highlight?: boolean
+  /** Include/exclude this item in the monthly email shortlist. Fixes default to excluded. */
+  roundup?: boolean
   /** Screenshot rendered under the item in the What's New dialog and on
    *  /changelog. Use a site-relative path under public/. */
   image?: { src: string; alt: string }
@@ -23,6 +25,43 @@ export type ChangelogEntry = {
 }
 
 export const changelog: ChangelogEntry[] = [
+  {
+    version: '2.95.0',
+    date: '2026-09-14',
+    summary: 'See what each setup makes and each mistake costs, plus NinjaTrader executions import.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Setups and mistakes by tag in Insights',
+        description: 'Trade Insights now lists every tag with its trade count, win rate, average per trade and net result. Start a tag with ! to mark a mistake, like !chased or !moved-stop, and a second table shows what each habit has cost you compared with your clean trades. Tap a tag to open those trades in the log.',
+        image: { src: '/screenshots/tag-performance.png', alt: 'Trade Insights showing a table of setups by tag and a table of what mistakes cost.' },
+        link: { to: '/ideas', label: 'See your tags' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Import NinjaTrader executions',
+        description: 'Export the Executions tab from NinjaTrader and drop the file in. Fills are paired into completed trades automatically, including partial exits and reversals, and the per-fill commission is carried onto each trade.',
+        link: { to: '/trades', label: 'Import a file' },
+      },
+      {
+        type: 'improved',
+        text: 'Commission and fees in manual column mapping',
+        description: 'When a file is not recognised and you map the columns by hand, you can now point to your Commission and Fees columns so they are subtracted from your P&L.',
+      },
+    ],
+  },
+  {
+    version: '2.94.1',
+    date: '2026-09-14',
+    summary: 'Clearer emails, easier reading and smoother links.',
+    items: [
+      { type: 'improved', text: 'Emails that are easier to read and act on', description: 'Updated emails use clearer headings, real product previews and shorter messages. Welcome emails explain how to get started, while subscription confirmations focus on your plan and receipt.' },
+      { type: 'fixed', text: 'Email links remember where you were going', description: 'Signing in from an email keeps the subscription section or feedback form you intended to open.' },
+      { type: 'improved', text: 'Clearer cancellation messages', description: 'Cancellation emails distinguish between stopping your next renewal and the end of your Pro subscription.' },
+    ],
+  },
   {
     version: '2.94.0',
     date: '2026-09-13',
@@ -3330,4 +3369,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.94.0'
+export const LATEST_CHANGELOG_VERSION = '2.95.0'

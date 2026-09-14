@@ -20,7 +20,7 @@ export function TrialStartedEmail({ firstName, trialEndDate, unsubscribeUrl }: T
       preview={`Your ${TRIAL_DAYS}-day Pro trial has started. Every feature is unlocked — here is what to try first.`}
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Eyebrow>{TRIAL_DAYS}-day free trial</Eyebrow>
         <Heading style={styles.h1}>
           {firstName ? `Your trial has started, ${firstName}.` : 'Your trial has started.'}

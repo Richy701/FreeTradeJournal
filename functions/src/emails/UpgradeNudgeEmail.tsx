@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, FeatureList, styles } from './components'
-import { URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
+import { ProductPreview, EmailShell, EmailButton, FeatureList, styles } from './components'
+import { BASE_URL, URLS, PRICE_MONTHLY, PRICE_YEARLY } from './facts'
 
 interface UpgradeNudgeEmailProps {
   firstName: string
@@ -8,42 +8,38 @@ interface UpgradeNudgeEmailProps {
 }
 
 const proFeatures = [
-  { label: 'AI Trade Review', desc: 'A personalised breakdown of each trade. What you did right, what cost you money, and what to do next time.' },
-  { label: 'PropTracker AI Analysis', desc: 'An honest verdict on your prop firms. Which are profitable, which are draining you, and what to do about it.' },
-  { label: 'AI Goal Coach', desc: "Reads your actual trading data and tells you exactly where you're falling short of your goals." },
-  { label: 'Cloud Sync', desc: 'Your trades, journal, and settings backed up across every device. Never lose your data.' },
+  { label: 'AI Trade Review', desc: 'Review what worked and what to improve in a trade.' },
+  { label: 'PropTracker AI Analysis', desc: 'Review performance across your prop firm accounts.' },
+  { label: 'AI Goal Coach', desc: 'Get coaching based on your goals and trading record.' },
+  { label: 'Cloud Sync', desc: 'Keep your journal backed up across devices.' },
 ]
 
 export function UpgradeNudgeEmail({ firstName, unsubscribeUrl }: UpgradeNudgeEmailProps) {
   return (
     <EmailShell
-      preview="Turn your trades into personalised AI coaching."
+      preview="Compare Pro features and pricing."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, ready to` : 'Ready to'} get serious about your trading?
+          AI coaching and cloud sync
         </Heading>
         <Text style={styles.paragraph}>
-          You signed up for FreeTradeJournal to take your trading seriously. Pro is where it gets powerful.
+          {firstName ? `${firstName}, Pro` : 'Pro'} gives you more AI coaching and keeps your journal synced across devices.
         </Text>
         <Text style={styles.paragraph}>
-          It turns your trades into personalised AI coaching — the stuff that actually moves your numbers.
-        </Text>
-      </Section>
-
-      <Hr style={styles.divider} />
-
-      <FeatureList heading="What you unlock with Pro" items={proFeatures} />
-
-      <Hr style={styles.divider} />
-
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          Pro is <strong style={styles.strong}>{PRICE_MONTHLY}</strong> — or {PRICE_YEARLY}, which works out 36% cheaper. Cancel anytime. Your free data stays exactly as it is.
+          See the included features below, or open the pricing page to compare plans.
         </Text>
         <EmailButton href={URLS.pricing}>See Pro features</EmailButton>
+        <Text style={styles.fine}>Pro is {PRICE_MONTHLY} or {PRICE_YEARLY}. Cancel anytime.</Text>
       </Section>
+
+      <ProductPreview src={`${BASE_URL}/screenshots/proptracker-coach-tab.png`} alt="PropTracker coaching for trading accounts" caption="PropTracker account analysis" />
+
+      <Hr style={styles.divider} />
+
+      <FeatureList heading="Included with Pro" items={proFeatures} />
+
     </EmailShell>
   )
 }

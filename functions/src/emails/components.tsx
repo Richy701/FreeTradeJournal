@@ -1,29 +1,29 @@
 import * as React from 'react'
 import {
   Html, Head, Body, Container, Section, Img, Text,
-  Hr, Link, Preview, Font,
+  Hr, Link, Preview,
 } from '@react-email/components'
 import { URLS } from './facts'
 
 // ─── Design tokens ──────────────────────────────────────────
-// Refined-dark card system: near-black page, elevated card, amber accent.
-// All text colors pass 4.5:1 on the card background.
+// Product email system: neutral surfaces, charcoal type, FTJ amber actions.
+// Main copy and supporting copy use separate, readable text weights.
 
 export const tone = {
-  page: '#0f0f10',
-  card: '#17181a',
-  cardBorder: '#26272b',
-  inset: '#1d1e21',
-  insetBorder: '#2b2c31',
-  divider: '#232327',
-  heading: '#f5f5f6',
-  body: '#b6b6bd',
-  muted: '#8b8b93',
-  faint: '#6e6e76',
+  page: '#f3f4f6',
+  card: '#ffffff',
+  cardBorder: '#e5e7eb',
+  inset: '#f3f4f6',
+  insetBorder: '#e5e7eb',
+  divider: '#e5e7eb',
+  heading: '#18181b',
+  body: '#3f3f46',
+  muted: '#52525b',
+  faint: '#71717a',
   amber: '#f59e0b',
   amberInk: '#1a1305',
-  green: '#34d399',
-  red: '#f87171',
+  green: '#196e4b',
+  red: '#a63330',
 }
 
 const fontStack = "Inter, -apple-system, 'Segoe UI', Arial, sans-serif"
@@ -32,15 +32,16 @@ const fontStack = "Inter, -apple-system, 'Segoe UI', Arial, sans-serif"
 
 export const styles = {
   h1: {
-    fontSize: '25px',
+    fontSize: '34px',
+    fontFamily: fontStack,
     fontWeight: 700,
     color: tone.heading,
-    margin: '0 0 14px',
-    lineHeight: '1.3',
+    margin: '0 0 16px',
+    lineHeight: '1.15',
     letterSpacing: '-0.01em',
   } as React.CSSProperties,
   paragraph: {
-    fontSize: '15px',
+    fontSize: '16px',
     color: tone.body,
     lineHeight: '1.6',
     margin: '0 0 16px',
@@ -49,13 +50,13 @@ export const styles = {
     color: tone.heading,
   } as React.CSSProperties,
   fine: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: tone.muted,
     lineHeight: '1.6',
     margin: '16px 0 0',
   } as React.CSSProperties,
   content: {
-    padding: '28px 32px',
+    padding: '36px 24px',
   } as React.CSSProperties,
   divider: {
     borderColor: tone.divider,
@@ -78,28 +79,34 @@ export function EmailShell({ preview, children, unsubscribeUrl, footerNote }: Em
   return (
     <Html lang="en">
       <Head>
-        <Font
-          fontFamily="Inter"
-          fallbackFontFamily="Arial"
-          webFont={{ url: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2', format: 'woff2' }}
-          fontWeight={400}
-          fontStyle="normal"
-        />
-        <meta name="color-scheme" content="dark" />
-        <meta name="supported-color-schemes" content="dark" />
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>{`
+          @media only screen and (max-width: 479px) {
+            .email-content, .email-header { padding-left: 20px !important; padding-right: 20px !important; }
+            .email-page-content { padding: 16px 8px !important; }
+            .email-content h1 { font-size: 28px !important; }
+            .email-feature-cell { display: block !important; width: auto !important; padding: 20px 0 !important; }
+          }
+          @media only screen and (min-width: 480px) {
+            .email-content, .email-header { padding-left: 32px !important; padding-right: 32px !important; }
+          }
+        `}</style>
       </Head>
       <Preview>{preview}</Preview>
-      <Body style={pageStyle}>
+      <Body className="email-page" style={pageStyle}>
+        <Section className="email-page-content" style={{ padding: '32px 12px' }}>
         <Container style={containerStyle}>
 
           <Section style={cardStyle}>
             {/* Brand header — table layout, no flex (Outlook) */}
-            <Section style={headerStyle}>
+            <Section className="email-header" style={headerStyle}>
               <table role="presentation" cellPadding={0} cellSpacing={0} border={0}>
                 <tbody>
                   <tr>
                     <td style={{ verticalAlign: 'middle' }}>
-                      <Img src={URLS.logo} width="26" height="26" alt="FreeTradeJournal" style={logoStyle} />
+                      <Img src={URLS.logo} width="32" height="32" alt="FreeTradeJournal" style={logoStyle} />
                     </td>
                     <td style={{ verticalAlign: 'middle', paddingLeft: '10px' }}>
                       <Text style={brandStyle}>FreeTradeJournal</Text>
@@ -133,6 +140,7 @@ export function EmailShell({ preview, children, unsubscribeUrl, footerNote }: Em
           </Section>
 
         </Container>
+        </Section>
       </Body>
     </Html>
   )
@@ -142,7 +150,7 @@ const pageStyle: React.CSSProperties = {
   backgroundColor: tone.page,
   fontFamily: fontStack,
   margin: 0,
-  padding: '32px 12px',
+  padding: 0,
 }
 const containerStyle: React.CSSProperties = {
   maxWidth: '600px',
@@ -150,12 +158,11 @@ const containerStyle: React.CSSProperties = {
 }
 const cardStyle: React.CSSProperties = {
   backgroundColor: tone.card,
-  border: `1px solid ${tone.cardBorder}`,
-  borderRadius: '12px',
-  overflow: 'hidden',
+  border: 'none',
+  borderRadius: 0,
 }
 const headerStyle: React.CSSProperties = {
-  padding: '20px 32px',
+  padding: '24px',
 }
 const logoStyle: React.CSSProperties = {
   borderRadius: '6px',
@@ -170,22 +177,26 @@ const brandStyle: React.CSSProperties = {
 }
 const footerStyle: React.CSSProperties = {
   padding: '20px 24px 0',
-  textAlign: 'center' as const,
+  textAlign: 'left' as const,
+  borderTop: `1px solid ${tone.divider}`,
+  marginTop: '28px',
 }
 const footerTextStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: tone.faint,
+  fontSize: '14px',
+  color: tone.muted,
   lineHeight: '1.6',
   margin: '0 0 8px',
 }
 const footerLinksStyle: React.CSSProperties = {
-  fontSize: '12px',
-  color: tone.faint,
+  fontSize: '14px',
+  color: tone.muted,
   margin: 0,
 }
 const footerLinkStyle: React.CSSProperties = {
   color: tone.muted,
   textDecoration: 'underline',
+  display: 'inline-block',
+  padding: '8px 4px',
 }
 
 // ─── Eyebrow badge ──────────────────────────────────────────
@@ -196,17 +207,17 @@ export function Eyebrow({ children, quiet }: { children: React.ReactNode; quiet?
       <tbody>
         <tr>
           <td style={{
-            backgroundColor: quiet ? tone.inset : '#2a2113',
+            backgroundColor: quiet ? tone.inset : '#f7e3ad',
             borderRadius: '999px',
             padding: '4px 12px',
           }}>
             <Text style={{
               margin: 0,
-              fontSize: '11px',
+              fontSize: '12px',
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase' as const,
-              color: quiet ? tone.muted : tone.amber,
+              color: quiet ? tone.muted : '#77510a',
               lineHeight: '16px',
             }}>
               {children}
@@ -233,9 +244,9 @@ export function EmailButton({ href, children, variant = 'primary' }: {
           <td
             align="center"
             style={{
-              backgroundColor: primary ? tone.amber : tone.inset,
+                backgroundColor: primary ? tone.amber : 'transparent',
               borderRadius: '8px',
-              border: primary ? `1px solid ${tone.amber}` : `1px solid ${tone.insetBorder}`,
+                border: primary ? `1px solid ${tone.amber}` : 'none',
             }}
           >
             <a
@@ -243,12 +254,12 @@ export function EmailButton({ href, children, variant = 'primary' }: {
               target="_blank"
               style={{
                 display: 'inline-block',
-                padding: '14px 28px',
-                fontSize: '15px',
+                padding: primary ? '14px 24px' : '14px 0',
+                fontSize: '16px',
                 fontWeight: 700,
                 fontFamily: fontStack,
-                color: primary ? tone.amberInk : tone.heading,
-                textDecoration: 'none',
+                color: primary ? tone.amberInk : tone.body,
+                textDecoration: primary ? 'none' : 'underline',
                 lineHeight: '20px',
               }}
             >
@@ -266,10 +277,10 @@ export function EmailButton({ href, children, variant = 'primary' }: {
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <Text style={{
-      fontSize: '11px',
+      fontSize: '12px',
       fontWeight: 700,
-      color: tone.amber,
-      letterSpacing: '0.08em',
+      color: tone.heading,
+      letterSpacing: '0.12em',
       textTransform: 'uppercase' as const,
       margin: '0 0 18px',
     }}>
@@ -285,43 +296,55 @@ export interface Feature {
   desc: string
 }
 
+export function ProductPreview({ src, alt, caption }: { src: string; alt: string; caption: string }) {
+  return (
+    <Section className="email-content" style={{ ...styles.content, paddingTop: 0 }}>
+      <Img src={src} alt={alt} width="536" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }} />
+      <Text style={{ ...styles.fine, fontSize: '12px', margin: '12px 0 0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{caption}</Text>
+    </Section>
+  )
+}
+
 export function FeatureList({ heading, items }: { heading: string; items: Feature[] }) {
   return (
-    <Section style={styles.content}>
+    <Section className="email-content" style={styles.content}>
       <SectionLabel>{heading}</SectionLabel>
-      {items.map((f, i) => (
-        <React.Fragment key={f.label}>
-          <Text style={featureTitleStyle}>{f.label}</Text>
-          <Text style={featureDescStyle}>{f.desc}</Text>
-          {i < items.length - 1 && <Hr style={featureDividerStyle} />}
-        </React.Fragment>
-      ))}
+      <table role="presentation" width="100%" cellPadding={0} cellSpacing={0} style={{ tableLayout: 'fixed' }}>
+        <tbody>
+          {Array.from({ length: Math.ceil(items.length / 2) }, (_, row) => (
+            <tr key={row}>
+              {items.slice(row * 2, row * 2 + 2).map((feature, col) => (
+                <td className="email-feature-cell" key={feature.label} width="50%" style={{ verticalAlign: 'top', padding: col === 0 ? '20px 20px 20px 0' : '20px 0 20px 20px', borderTop: `1px solid ${tone.divider}` }}>
+                  <Text style={{ ...styles.fine, margin: '0 0 10px', fontFamily: 'monospace', color: '#77510a' }}>{String(row * 2 + col + 1).padStart(2, '0')}</Text>
+                  <Text style={featureTitleStyle}>{feature.label}</Text>
+                  <Text style={featureDescStyle}>{feature.desc}</Text>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Section>
   )
 }
 
 const featureTitleStyle: React.CSSProperties = {
-  fontSize: '14px',
+  fontSize: '15px',
   fontWeight: 600,
   color: tone.heading,
   margin: '0 0 4px',
 }
 const featureDescStyle: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: '14px',
   color: tone.muted,
   lineHeight: '1.6',
   margin: 0,
 }
-const featureDividerStyle: React.CSSProperties = {
-  borderColor: tone.divider,
-  margin: '14px 0',
-}
-
 // ─── Numbered steps ─────────────────────────────────────────
 
 export function NumberedSteps({ heading, steps }: { heading: string; steps: string[] }) {
   return (
-    <Section style={styles.content}>
+    <Section className="email-content" style={{ ...styles.content, backgroundColor: tone.inset }}>
       <SectionLabel>{heading}</SectionLabel>
       <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%">
         <tbody>
@@ -344,12 +367,12 @@ export function NumberedSteps({ heading, steps }: { heading: string; steps: stri
 const stepNumStyle: React.CSSProperties = {
   fontSize: '12px',
   fontWeight: 700,
-  color: tone.amber,
+  color: '#77510a',
   margin: 0,
   lineHeight: '21px',
 }
 const stepTextStyle: React.CSSProperties = {
-  fontSize: '14px',
+  fontSize: '15px',
   color: tone.body,
   lineHeight: '1.5',
   margin: 0,
@@ -369,7 +392,7 @@ export function ReceiptBlock({ heading, rows, receiptUrl }: {
   receiptUrl?: string
 }) {
   return (
-    <Section style={styles.content}>
+    <Section className="email-content" style={styles.content}>
       <SectionLabel>{heading}</SectionLabel>
       <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%" style={receiptBoxStyle}>
         <tbody>
@@ -406,13 +429,13 @@ const receiptCellStyle: React.CSSProperties = {
   padding: '12px 16px',
 }
 const receiptLabelStyle: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: '14px',
   color: tone.muted,
   margin: 0,
   lineHeight: '1.5',
 }
 const receiptValueStyle: React.CSSProperties = {
-  fontSize: '13px',
+  fontSize: '14px',
   fontWeight: 600,
   color: tone.heading,
   margin: 0,
@@ -441,7 +464,7 @@ export function StatGrid({ stats }: { stats: Stat[] }) {
   const rows: Stat[][] = []
   for (let i = 0; i < stats.length; i += 2) rows.push(stats.slice(i, i + 2))
   return (
-    <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%" style={{ borderCollapse: 'separate' as const, borderSpacing: '8px' }}>
+    <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%" style={{ tableLayout: 'fixed', borderCollapse: 'separate' as const, borderSpacing: '8px' }}>
       <tbody>
         {rows.map((row, r) => (
           <tr key={r}>
@@ -475,9 +498,10 @@ const statValueStyle: React.CSSProperties = {
   fontWeight: 700,
   margin: '0 0 2px',
   lineHeight: '1.2',
+  overflowWrap: 'anywhere',
 }
 const statLabelStyle: React.CSSProperties = {
-  fontSize: '11px',
+  fontSize: '12px',
   fontWeight: 600,
   color: tone.muted,
   textTransform: 'uppercase' as const,

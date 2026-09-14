@@ -604,6 +604,259 @@ function parseIBKRTrades(lines: string[], headers: string[]): CSVParseResult {
   return result;
 }
 
+// ─── Shared fill → round-trip pairing ──────────────────────
+//
+// Fill-level exports (Tradovate Orders, NinjaTrader Executions, TopstepX order
+// histories) carry one row per fill, not per trade. This engine walks each
+// instrument's fills in time order with a signed net position and a FIFO queue
+// of open fills, emitting one ParsedTrade per (opening fill, closing fill)
+// slice. Partial fills and position flips (crossing zero) are handled.
+//
+// Per-fill commission/fees are prorated across the slices a fill contributes
+// to and carried onto the trade, so the importer subtracts them exactly once.
+// The last slice of a fill takes the remainder, so the per-fill total is
+// preserved to the cent.
+export interface PairableFill {
+  /** Fills are paired within this key (usually the instrument, or account|instrument). */
+  group: string;
+  /** Symbol written onto the resulting trade and used for the futures multiplier. */
+  symbol: string;
+  side: 'Buy' | 'Sell';
+  price: number;
+  qty: number;
+  /** Sort key (ms). Ties keep file order. */
+  sortKey: number;
+  /** Local "YYYY-MM-DDTHH:mm:ss" (parseDateString output) for the trade's entry/exit date. */
+  timeIso: string;
+  commission?: number;
+  fees?: number;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+export function pairFillsFifo(fills: PairableFill[], result: CSVParseResult, dates: string[]): void {
+  const sorted = fills
+    .map((fill, index) => ({ fill, index }))
+    .sort((a, b) => (a.fill.sortKey - b.fill.sortKey) || (a.index - b.index))
+    .map(x => x.fill);
+
+  const groups = new Map<string, PairableFill[]>();
+  for (const fill of sorted) {
+    if (!groups.has(fill.group)) groups.set(fill.group, []);
+    groups.get(fill.group)!.push(fill);
+  }
+
+  // A fill's remaining quantity and unallocated costs while it sits in the
+  // queue (or while it is being consumed as the closing side).
+  type Leg = { price: number; qty: number; timeIso: string; symbol: string; commission: number; fees: number; hasCosts: boolean };
+  const legOf = (fill: PairableFill, qty: number): Leg => ({
+    price: fill.price,
+    qty,
+    timeIso: fill.timeIso,
+    symbol: fill.symbol,
+    commission: fill.commission ?? 0,
+    fees: fill.fees ?? 0,
+    hasCosts: fill.commission !== undefined || fill.fees !== undefined,
+  });
+  // Take `matched` contracts' share of a leg's remaining costs (exact on the last slice).
+  const takeCosts = (leg: Leg, matched: number): { commission: number; fees: number } => {
+    const last = matched >= leg.qty;
+    const commission = last ? leg.commission : round2(leg.commission * matched / leg.qty);
+    const fees = last ? leg.fees : round2(leg.fees * matched / leg.qty);
+    leg.commission = round2(leg.commission - commission);
+    leg.fees = round2(leg.fees - fees);
+    return { commission, fees };
+  };
+
+  for (const [group, groupFills] of groups) {
+    const openQueue: Leg[] = [];
+    let position = 0; // signed net position: > 0 long, < 0 short
+
+    for (const fill of groupFills) {
+      const signedQty = fill.side === 'Buy' ? fill.qty : -fill.qty;
+      const prevPosition = position;
+      const isClosing = prevPosition !== 0 && Math.sign(signedQty) !== Math.sign(prevPosition);
+
+      if (isClosing) {
+        const closingQty = Math.min(Math.abs(signedQty), Math.abs(prevPosition));
+        // The closing leg keeps the fill's FULL quantity so its costs prorate
+        // over every contract, including any that flip into a new position.
+        const closeLeg = legOf(fill, fill.qty);
+        const isLong = prevPosition > 0;
+        const multiplier = getFuturesMultiplier(fill.symbol);
+
+        let remaining = closingQty;
+        while (remaining > 0 && openQueue.length > 0) {
+          const open = openQueue[0];
+          const matched = Math.min(remaining, open.qty);
+
+          const pnl = isLong
+            ? (fill.price - open.price) * matched * multiplier
+            : (open.price - fill.price) * matched * multiplier;
+
+          const openCosts = takeCosts(open, matched);
+          const closeCosts = takeCosts(closeLeg, matched);
+          const hasCosts = open.hasCosts || closeLeg.hasCosts;
+          const commission = round2(openCosts.commission + closeCosts.commission);
+          const fees = round2(openCosts.fees + closeCosts.fees);
+
+          dates.push(fill.timeIso);
+          result.trades.push({
+            symbol: fill.symbol,
+            side: isLong ? 'long' : 'short',
+            entryPrice: open.price.toFixed(6),
+            exitPrice: fill.price.toFixed(6),
+            quantity: matched.toString(),
+            pnl: pnl.toFixed(2),
+            date: fill.timeIso,
+            entryDate: open.timeIso,
+            exitDate: fill.timeIso,
+            ...(hasCosts ? { commission: commission.toFixed(2), fees: fees.toFixed(2) } : {}),
+          });
+          result.summary.successfulParsed++;
+
+          remaining -= matched;
+          open.qty -= matched;
+          closeLeg.qty -= matched;
+          if (open.qty <= 0) openQueue.shift();
+        }
+
+        // Crossing zero: the remainder opens a new position the other way. Its
+        // share of the fill's costs is whatever the closing slices did not take.
+        const overflowQty = Math.abs(signedQty) - closingQty;
+        if (overflowQty > 0) {
+          const overflow = legOf(fill, overflowQty);
+          overflow.commission = closeLeg.commission;
+          overflow.fees = closeLeg.fees;
+          openQueue.push(overflow);
+        }
+      } else {
+        openQueue.push(legOf(fill, fill.qty));
+      }
+
+      position = prevPosition + signedQty;
+    }
+
+    const unmatchedQty = openQueue.reduce((sum, o) => sum + o.qty, 0);
+    if (unmatchedQty > 0) {
+      result.errors.push(`${group}: ${unmatchedQty} contract(s) still open (no matching close)`);
+    }
+  }
+}
+
+// ─── NinjaTrader Executions export ─────────────────────────
+//
+// NinjaTrader 8's Executions tab exports one row per FILL: Instrument, Action
+// (Buy / Sell / Buy to cover / Sell short), Quantity, Price, Time, ID, E/X
+// (Entry/Exit), Position, Order ID, Name, Commission, Rate, Account, Connection.
+// The "E/X" column is unique to this layout. The "Trades" grid export (one row
+// per round-trip with "Market pos." and "Profit") is a different file and goes
+// through the generic path with pnlIsNet — see isNinjaTraderGrid.
+export function isNinjaTraderExecutions(headers: string[]): boolean {
+  const h = headers.map(x => x.trim().toLowerCase());
+  return (
+    h.includes('e/x') &&
+    h.includes('instrument') &&
+    h.includes('action') &&
+    h.includes('price') &&
+    h.includes('time') &&
+    (h.includes('quantity') || h.includes('qty'))
+  );
+}
+
+function parseNinjaTraderExecutions(lines: string[], headers: string[], delimiter: string, decimalComma: boolean): CSVParseResult {
+  const result: CSVParseResult = {
+    success: false, trades: [], errors: [],
+    summary: { totalRows: 0, successfulParsed: 0, failed: 0, dateRange: null },
+  };
+
+  const h = headers.map(x => x.trim().toLowerCase());
+  const col = {
+    instrument: h.indexOf('instrument'),
+    action:     h.indexOf('action'),
+    quantity:   h.indexOf('quantity') >= 0 ? h.indexOf('quantity') : h.indexOf('qty'),
+    price:      h.indexOf('price'),
+    time:       h.indexOf('time'),
+    commission: h.findIndex(x => x === 'commission' || x === 'commissions'),
+    account:    h.indexOf('account'),
+  };
+
+  const rows: string[][] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const fields = parseCSVLine(line, delimiter);
+    if (fields.every(f => !f.trim())) continue;
+    rows.push(fields);
+  }
+
+  // NinjaTrader writes times in the machine's locale ("9/8/2026 9:31:05 AM" or
+  // "08/09/2026 09:31:05"), so infer day-first from the whole column.
+  const timeSamples = rows.map(f => f[col.time] || '');
+  const dayFirst = detectDayFirst(timeSamples) ?? resolveAmbiguousDayFirst(timeSamples);
+
+  const fills: PairableFill[] = [];
+  for (let r = 0; r < rows.length; r++) {
+    const fields = rows[r];
+    result.summary.totalRows++;
+    const rowNo = r + 2;
+
+    const instrument = (fields[col.instrument] || '').trim();
+    const action = (fields[col.action] || '').trim().toLowerCase();
+    const qty = Math.abs(parseFloat(cleanNumeric(fields[col.quantity] || '', decimalComma)) || 0);
+    const price = parseFloat(cleanNumeric(fields[col.price] || '', decimalComma));
+    const timeRaw = (fields[col.time] || '').trim();
+
+    if (!instrument || !qty || !isFinite(price) || price <= 0 || !timeRaw) {
+      result.errors.push(`Row ${rowNo}: Missing instrument, quantity, price, or time`);
+      result.summary.failed++;
+      continue;
+    }
+
+    // "Buy to cover" closes a short; "Sell short" opens one. Net-position
+    // pairing only needs the direction of the fill.
+    const side: 'Buy' | 'Sell' | null =
+      action.startsWith('buy') ? 'Buy' : action.startsWith('sell') ? 'Sell' : null;
+    if (!side) {
+      result.errors.push(`Row ${rowNo}: Unrecognized action "${fields[col.action]}"`);
+      result.summary.failed++;
+      continue;
+    }
+
+    const timeIso = parseDateString(timeRaw, dayFirst);
+    const account = col.account >= 0 ? (fields[col.account] || '').trim() : '';
+    const commission = col.commission >= 0
+      ? Math.abs(parseCurrency(fields[col.commission] || '', decimalComma))
+      : undefined;
+
+    fills.push({
+      group: account ? `${account}|${instrument}` : instrument,
+      symbol: instrument,
+      side,
+      price,
+      qty,
+      sortKey: new Date(timeIso).getTime(),
+      timeIso,
+      commission,
+    });
+  }
+
+  const dates: string[] = [];
+  pairFillsFifo(fills, result, dates);
+
+  if (dates.length > 0) {
+    const sorted = dates.sort();
+    result.summary.dateRange = { earliest: sorted[0], latest: sorted[sorted.length - 1] };
+  }
+  result.success = result.trades.length > 0;
+  if (!result.success) {
+    result.errors.push('No completed trades found. Ensure your NinjaTrader Executions export contains both entry and exit fills.');
+  }
+  return result;
+}
+
 // ─── Tradovate Detection & Parsing ─────────────────────────
 
 function isTradovateFormat(headers: string[]): boolean {
@@ -710,108 +963,17 @@ function parseTradovateOrders(lines: string[], headers: string[]): CSVParseResul
     });
   }
 
-  fills.sort((a, b) => {
-    const tA = parseTradovateTimestamp(a.fillTime) || parseTradovateTimestamp(a.date);
-    const tB = parseTradovateTimestamp(b.fillTime) || parseTradovateTimestamp(b.date);
-    return tA - tB;
-  });
-
-  // Group by product to pair buys with sells
-  const groups = new Map<string, TradovateFill[]>();
-  for (const fill of fills) {
-    const key = fill.product;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(fill);
-  }
-
   const dates: string[] = [];
-
-  for (const [, productFills] of groups) {
-    // Net position tracking with FIFO queue
-    // Position > 0 = long, < 0 = short
-    type OpenEntry = { price: number; qty: number; fillTime: string; date: string; symbol: string };
-    const openQueue: OpenEntry[] = [];
-    let position = 0; // net signed position
-
-    for (const fill of productFills) {
-      const signedQty = fill.side === 'Buy' ? fill.qty : -fill.qty;
-      const prevPosition = position;
-      const newPosition = position + signedQty;
-
-      // Check if this fill is (partially) closing an existing position
-      // Closing = moving position toward zero (opposite direction of current position)
-      const isClosing = prevPosition !== 0 && Math.sign(signedQty) !== Math.sign(prevPosition);
-
-      if (isClosing) {
-        let closingQty = Math.min(Math.abs(signedQty), Math.abs(prevPosition));
-        const exitPrice = fill.price;
-        const isLong = prevPosition > 0;
-        const multiplier = getFuturesMultiplier(fill.symbol);
-
-        let remaining = closingQty;
-        while (remaining > 0 && openQueue.length > 0) {
-          const open = openQueue[0];
-          const matched = Math.min(remaining, open.qty);
-
-          const pnl = isLong
-            ? (exitPrice - open.price) * matched * multiplier
-            : (open.price - exitPrice) * matched * multiplier;
-
-          const entryDateStr = parseDateString(open.fillTime || open.date);
-          const exitDateStr = parseDateString(fill.fillTime || fill.date);
-          const tradeDate = exitDateStr;
-          dates.push(tradeDate);
-
-          result.trades.push({
-            symbol: fill.symbol,
-            side: isLong ? 'long' : 'short',
-            entryPrice: open.price.toFixed(6),
-            exitPrice: exitPrice.toFixed(6),
-            quantity: matched.toString(),
-            pnl: pnl.toFixed(2),
-            date: tradeDate,
-            entryDate: entryDateStr,
-            exitDate: exitDateStr,
-          });
-          result.summary.successfulParsed++;
-
-          remaining -= matched;
-          open.qty -= matched;
-          if (open.qty <= 0) openQueue.shift();
-        }
-
-        // If the fill flipped position (crossed zero), the remainder is a new opening
-        const overflowQty = Math.abs(signedQty) - closingQty;
-        if (overflowQty > 0) {
-          openQueue.push({
-            price: fill.price,
-            qty: overflowQty,
-            fillTime: fill.fillTime,
-            date: fill.date,
-            symbol: fill.symbol,
-          });
-        }
-      } else {
-        // Pure opening fill (same direction as position, or position is flat)
-        openQueue.push({
-          price: fill.price,
-          qty: fill.qty,
-          fillTime: fill.fillTime,
-          date: fill.date,
-          symbol: fill.symbol,
-        });
-      }
-
-      position = newPosition;
-    }
-
-    const unmatchedQty = openQueue.reduce((sum, o) => sum + o.qty, 0);
-    if (unmatchedQty > 0) {
-      result.errors.push(
-        `${productFills[0].product}: ${unmatchedQty} contract(s) still open (no matching close)`
-      );
-    }
-  }
+  pairFillsFifo(fills.map(f => ({
+    // Pair within the product (MNQ) but keep the contract (MNQM6) on the trade.
+    group: f.product,
+    symbol: f.symbol,
+    side: f.side,
+    price: f.price,
+    qty: f.qty,
+    sortKey: parseTradovateTimestamp(f.fillTime) || parseTradovateTimestamp(f.date),
+    timeIso: parseDateString(f.fillTime || f.date),
+  })), result, dates);
 
   if (dates.length > 0) {
     const sorted = dates.sort();
@@ -1585,7 +1747,8 @@ function findStandardHeaderRow(lines: string[], delimiter: string): number {
     if (
       isIBKRClosedPositions(headers) || isIBKRTradesFormat(headers) ||
       isTopStepOrderFormat(headers) || isTradovateFormat(headers) ||
-      isTradovatePerformanceFormat(headers) || isDASTraderFormat(headers)
+      isTradovatePerformanceFormat(headers) || isDASTraderFormat(headers) ||
+      isNinjaTraderExecutions(headers)
     ) return i;
   }
 
@@ -1745,76 +1908,16 @@ function parseGenericOrders(lines: string[], headers: string[]): CSVParseResult 
     fills.push({ time, raw, symbol, side, qty, price });
   }
 
-  fills.sort((a, b) => a.time - b.time);
-
-  const groups = new Map<string, OrderFill[]>();
-  for (const fill of fills) {
-    if (!groups.has(fill.symbol)) groups.set(fill.symbol, []);
-    groups.get(fill.symbol)!.push(fill);
-  }
-
   const dates: string[] = [];
-
-  for (const [symbol, symbolFills] of groups) {
-    // Net-position FIFO pairing, same model as parseTradovateOrders.
-    type OpenEntry = { price: number; qty: number; raw: string };
-    const openQueue: OpenEntry[] = [];
-    let position = 0;
-
-    for (const fill of symbolFills) {
-      const signedQty = fill.side === 'Buy' ? fill.qty : -fill.qty;
-      const prevPosition = position;
-      const isClosing = prevPosition !== 0 && Math.sign(signedQty) !== Math.sign(prevPosition);
-
-      if (isClosing) {
-        const closingQty = Math.min(Math.abs(signedQty), Math.abs(prevPosition));
-        const isLong = prevPosition > 0;
-        const multiplier = getFuturesMultiplier(symbol);
-
-        let remaining = closingQty;
-        while (remaining > 0 && openQueue.length > 0) {
-          const open = openQueue[0];
-          const matched = Math.min(remaining, open.qty);
-          const pnl = isLong
-            ? (fill.price - open.price) * matched * multiplier
-            : (open.price - fill.price) * matched * multiplier;
-
-          const entryDateStr = parseDateString(open.raw);
-          const exitDateStr = parseDateString(fill.raw);
-          dates.push(exitDateStr);
-
-          result.trades.push({
-            symbol,
-            side: isLong ? 'long' : 'short',
-            entryPrice: open.price.toFixed(6),
-            exitPrice: fill.price.toFixed(6),
-            quantity: matched.toString(),
-            pnl: pnl.toFixed(2),
-            date: exitDateStr,
-            entryDate: entryDateStr,
-            exitDate: exitDateStr,
-          });
-          result.summary.successfulParsed++;
-
-          remaining -= matched;
-          open.qty -= matched;
-          if (open.qty <= 0) openQueue.shift();
-        }
-
-        const overflowQty = Math.abs(signedQty) - closingQty;
-        if (overflowQty > 0) openQueue.push({ price: fill.price, qty: overflowQty, raw: fill.raw });
-      } else {
-        openQueue.push({ price: fill.price, qty: fill.qty, raw: fill.raw });
-      }
-
-      position = prevPosition + signedQty;
-    }
-
-    const unmatchedQty = openQueue.reduce((sum, o) => sum + o.qty, 0);
-    if (unmatchedQty > 0) {
-      result.errors.push(`${symbol}: ${unmatchedQty} contract(s) still open (no matching close)`);
-    }
-  }
+  pairFillsFifo(fills.map(f => ({
+    group: f.symbol,
+    symbol: f.symbol,
+    side: f.side,
+    price: f.price,
+    qty: f.qty,
+    sortKey: f.time,
+    timeIso: parseDateString(f.raw),
+  })), result, dates);
 
   if (dates.length > 0) {
     const sorted = dates.sort();
@@ -1879,6 +1982,10 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
       result.errors.push('Could not detect columns \u2014 the file may use an unsupported delimiter or format.');
       return result;
     }
+
+    // NinjaTrader exports follow the machine locale, so this one runs for any
+    // delimiter and decimal style.
+    if (isNinjaTraderExecutions(headers)) return parseNinjaTraderExecutions(lines, headers, delimiter, decimalComma);
 
     // Broker-specific detectors are comma-delimited US formats.
     if (delimiter === ',') {

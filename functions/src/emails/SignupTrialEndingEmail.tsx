@@ -20,7 +20,7 @@ export function SignupTrialEndingEmail({ firstName, trialEndDate, unsubscribeUrl
       preview={`Your free Pro trial ends on ${trialEndDate} — nothing will be charged.`}
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Eyebrow>Your trial is ending</Eyebrow>
         <Heading style={styles.h1}>
           {firstName ? `${firstName}, your free Pro trial ends soon.` : 'Your free Pro trial ends soon.'}
@@ -37,7 +37,7 @@ export function SignupTrialEndingEmail({ firstName, trialEndDate, unsubscribeUrl
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Text style={styles.paragraph}>
           Keeping it is {PRICE_MONTHLY} or {PRICE_YEARLY} — cancel anytime from Settings.
         </Text>

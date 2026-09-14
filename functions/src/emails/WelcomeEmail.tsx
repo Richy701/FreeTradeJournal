@@ -1,35 +1,26 @@
 import { Section, Text, Heading } from '@react-email/components'
-import { Hr } from '@react-email/components'
-import { EmailShell, EmailButton, FeatureList, styles } from './components'
-import { URLS, FREE_AI_COACHING_RUNS_PER_MONTH } from './facts'
+import { EmailShell, EmailButton, ProductPreview, styles } from './components'
+import { BASE_URL, URLS } from './facts'
 
 interface WelcomeEmailProps {
   firstName: string
 }
 
-const features = [
-  { label: 'Trade log', desc: 'Unlimited trades — type them in or import a CSV from any broker in one go.' },
-  { label: 'Analytics', desc: 'P&L curve, win rate, calendar heatmap, and breakdowns by symbol and setup.' },
-  { label: 'AI coach', desc: `${FREE_AI_COACHING_RUNS_PER_MONTH} free AI coaching runs a month, and the automatic tips and prompts are free — get any trade reviewed in plain English.` },
-  { label: 'Goals & risk', desc: 'Set targets and risk rules that keep your discipline honest.' },
-]
-
 export function WelcomeEmail({ firstName }: WelcomeEmailProps) {
   return (
-    <EmailShell preview="Most traders never track a single trade. You just changed that.">
-      <Section style={styles.content}>
+    <EmailShell preview="Your journal is ready. Start with one trade or import your broker CSV.">
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `Welcome, ${firstName}.` : 'Welcome.'}
+          Welcome to FreeTradeJournal
         </Heading>
+        <Text style={styles.paragraph}>{firstName ? `Hi ${firstName},` : 'Hi there,'}</Text>
         <Text style={styles.paragraph}>
-          Your journal is set up. Track your trades, spot the patterns behind your wins and losses, and build the discipline most traders never develop.
+          Thanks for signing up. You can add trades individually or import a CSV from your broker. Your dashboard will show the P&amp;L and win rate for the trades you log.
         </Text>
         <EmailButton href={URLS.dashboard}>Open your journal</EmailButton>
       </Section>
 
-      <Hr style={styles.divider} />
-
-      <FeatureList heading="What you can do for free" items={features} />
+      <ProductPreview src={`${BASE_URL}/screenshots/coach-ftj-briefing.png`} alt="The FreeTradeJournal dashboard with trading statistics and Coach FTJ insights" caption="The FreeTradeJournal dashboard" />
     </EmailShell>
   )
 }

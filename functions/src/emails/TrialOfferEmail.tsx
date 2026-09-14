@@ -14,7 +14,13 @@ const features = [
   { label: 'Cloud Sync', desc: 'Your journal backed up and available on every device.' },
 ]
 
-export function TrialOfferEmail({ firstName, unsubscribeUrl }: TrialOfferEmailProps) {
+// Legacy send scripts import this name. Fail before producing sendable HTML:
+// this campaign promised a checkout trial that was retired on 31 Aug 2026.
+export function TrialOfferEmail(_props: TrialOfferEmailProps): React.ReactElement {
+  throw new Error('This trial-offer campaign is retired and cannot be sent.')
+}
+
+export function ArchivedTrialOfferEmail({ firstName, unsubscribeUrl }: TrialOfferEmailProps) {
   return (
     <EmailShell
       preview={`${TRIAL_DAYS} days of Pro, free. No catch, no commitment.`}
@@ -42,7 +48,7 @@ export function TrialOfferEmail({ firstName, unsubscribeUrl }: TrialOfferEmailPr
         <Text style={styles.paragraph}>
           If you have been journaling your trades you already have data worth analysing. The AI features will show you things you probably have not spotted yet.
         </Text>
-        <Text style={{ ...styles.paragraph, margin: 0, color: '#f5f5f6', fontWeight: 600 }}>
+        <Text style={{ ...styles.paragraph, margin: 0, color: styles.strong.color, fontWeight: 600 }}>
           Richy, FreeTradeJournal
         </Text>
       </Section>

@@ -1,8 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { hasCompletedOnboarding } from '@/utils/onboarding';
-import { UserStorage } from '@/utils/user-storage';
+import { hasCompletedOnboarding, hasExistingOnboardingData } from '@/utils/onboarding';
 import { useAutoRestore } from '@/hooks/use-auto-restore';
 import { useFirestoreOnboardingCheck } from '@/hooks/use-firestore-onboarding-check';
 
@@ -70,11 +69,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!isDemo) {
     const hasOnboarding = localOnboardingDone || completedInFirestore;
 
-    // Additional check: if user has data (accounts/trades), skip onboarding even if flag is missing
-    const hasData = userId && (
-      UserStorage.getItem(userId, 'accounts') !== null ||
-      UserStorage.getItem(userId, 'trades') !== null
-    );
+    const hasData = hasExistingOnboardingData(userId);
 
     // If restore failed, be conservative — don't re-onboard a returning user whose restore just errored
     const safeToRedirect = !restoreFailed;

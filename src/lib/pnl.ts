@@ -75,9 +75,14 @@ export function forexQuoteCurrency(symbol: string): string | null {
   return CURRENCY_CODES.has(tail) ? tail : null;
 }
 
-/** Strip the month/year code from a futures contract name (MNQH6 → MNQ, ESU24 → ES). */
+/** Strip the month/year code from a futures contract name (MNQH6 → MNQ, ESU24 → ES).
+    NinjaTrader names contracts "MNQ 09-26" (executions) or "MNQ SEP26" (grid),
+    so those expiry suffixes are stripped too — otherwise the multiplier lookup
+    misses and a 10-point MNQ move imports as $10 instead of $20. */
 export function futuresBaseSymbol(contractName: string): string {
-  return contractName.trim().toUpperCase().replace(/[FGHJKMNQUVXZ]\d{1,2}$/, '');
+  return contractName.trim().toUpperCase()
+    .replace(/\s+(\d{2}-\d{2}|(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\d{2,4})$/, '')
+    .replace(/[FGHJKMNQUVXZ]\d{1,2}$/, '');
 }
 
 /** Dollars per 1.0 price move for ONE contract. Falls back to 1 for unknown symbols. */

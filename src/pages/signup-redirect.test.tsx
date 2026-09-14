@@ -53,8 +53,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function mount(path: string) {
-  window.history.replaceState({}, '', path);
+function mount(path: string, state?: unknown) {
+  window.history.replaceState({ usr: state }, '', path);
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -66,6 +66,7 @@ function mount(path: string) {
           <Route path="/login" element={<Login />} />
           <Route path="/onboarding" element={<div data-testid="onboarding">onboarding</div>} />
           <Route path="/dashboard" element={<div data-testid="dashboard">dashboard</div>} />
+          <Route path="/settings" element={<div>settings</div>} />
         </Routes>
       </BrowserRouter>
     );
@@ -101,5 +102,24 @@ describe('fresh Google sign-up lands on onboarding', () => {
     await act(async () => { setAuthUser({ uid: 'existing', emailVerified: true }); });
     await act(async () => { await new Promise(r => setTimeout(r, 50)); });
     expect(window.location.pathname).toBe('/dashboard');
+  });
+});
+
+describe('returning users following email links', () => {
+  it('keeps the subscription tab after Google login', async () => {
+    signInWithGoogle.mockImplementationOnce(async () => {
+      const user = { uid: 'returning-user', emailVerified: true };
+      setAuthUser(user);
+      return { user, isNewUser: false };
+    });
+    mount('/login', { from: { pathname: '/settings', search: '?tab=subscription', hash: '#subscription' } });
+    await clickGoogle();
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe('/settings?tab=subscription#subscription');
+  });
+
+  it('keeps the digest feedback action when an existing session is restored', async () => {
+    mount('/login', { from: { pathname: '/dashboard', search: '?feedback=digest' } });
+    await act(async () => { setAuthUser({ uid: 'returning-user', emailVerified: true }); });
+    expect(window.location.pathname + window.location.search).toBe('/dashboard?feedback=digest');
   });
 });

@@ -18,6 +18,7 @@ const EXPECTED_TRADES: Record<string, number> = {
   'mt5-position-history.csv': 2,
   'standard-mt5-like.csv': 2,
   'das-trades.csv': 4,
+  'ninjatrader-executions.csv': 5,
 };
 
 describe('CSV fixture corpus — real broker exports import cleanly', () => {

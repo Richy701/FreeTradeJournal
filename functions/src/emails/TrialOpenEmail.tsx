@@ -18,7 +18,13 @@ const proFeatures = [
 // Two variants off one template: users with a real trade record get their own
 // number as the hook ("your 47 trades"); everyone else gets the plain
 // trial-open message. The send script picks per recipient.
-export function TrialOpenEmail({ firstName, tradeCount, unsubscribeUrl }: TrialOpenEmailProps) {
+// Legacy campaign entry point is deliberately disabled. Preserve the old
+// template under an explicit archive name for historical reference only.
+export function TrialOpenEmail(_props: TrialOpenEmailProps): React.ReactElement {
+  throw new Error('This trial-open campaign is retired and cannot be sent.')
+}
+
+export function ArchivedTrialOpenEmail({ firstName, tradeCount, unsubscribeUrl }: TrialOpenEmailProps) {
   const hasRecord = (tradeCount ?? 0) >= 5
 
   return (

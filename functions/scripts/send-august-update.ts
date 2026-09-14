@@ -1,3 +1,4 @@
+import { reliableEmailSender } from '../src/email-delivery'
 /**
  * August update roundup — trade form refresh, all-accounts view, Goals & Risk rebuild
  *  (v2.78 – v2.81, shipped 14–17 Aug 2026). Goes to EVERYONE incl. Pro/lifetime — it's
@@ -91,6 +92,8 @@ function getUnsubscribeUrl(uid: string): string {
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 const resend = new Resend(RESEND_API_KEY)
+
+resend.emails.send = reliableEmailSender(resend.emails.send.bind(resend.emails))
 
 // ── Test mode: render + send one copy, touch nothing ──────
 async function sendTest() {

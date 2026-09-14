@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
 import { EmailShell, EmailButton, NumberedSteps, styles } from './components'
-import { URLS, PRICE_MONTHLY, TRIAL_DAYS } from './facts'
+import { URLS, PRICE_MONTHLY } from './facts'
 
 interface Day21BackupEmailProps {
   firstName: string
@@ -8,26 +8,27 @@ interface Day21BackupEmailProps {
 }
 
 const options = [
-  'Export a backup now — go to Settings → Data Management → Export Backup and save the file somewhere safe.',
-  'Enable cloud sync with Pro — your trades sync automatically across all your devices, so nothing lives in only one browser.',
+  'Save a backup from Settings → Data and keep the file somewhere safe.',
+  'Use Pro cloud sync to keep your journal backed up across your devices.',
 ]
 
 export function Day21BackupEmail({ firstName, unsubscribeUrl }: Day21BackupEmailProps) {
   return (
     <EmailShell
-      preview="Your trades are only saved in your browser. Here's how to protect them."
+      preview="Save a backup of your journal, or keep it synced with Pro."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, your data isn't backed up.` : "Your data isn't backed up."}
+          {firstName ? `${firstName}, keep your journal safe.` : 'Keep your journal safe.'}
         </Heading>
         <Text style={styles.paragraph}>
-          You have been journaling for three weeks now — and your trades are only saved in your browser's local storage.
+          On the free plan, your journal is stored in this browser. If you have not saved a backup recently, now is a good time.
         </Text>
         <Text style={styles.paragraph}>
-          That means <strong style={styles.strong}>clearing your browser data, using a different device, or even a browser update</strong> could wipe everything.
+          Save a copy before clearing browser data or moving to another device.
         </Text>
+        <EmailButton href={`${URLS.settings}?tab=data`}>Open backup settings</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
@@ -36,22 +37,11 @@ export function Day21BackupEmail({ firstName, unsubscribeUrl }: Day21BackupEmail
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          Cloud sync is included in every Pro plan, starting at {PRICE_MONTHLY} with a <strong style={styles.strong}>{TRIAL_DAYS}-day free trial</strong>.
+      <Section className="email-content" style={styles.content}>
+        <Text style={styles.fine}>
+          Cloud sync is included in every Pro plan, starting at {PRICE_MONTHLY}. Your subscription starts when you upgrade. Cancel anytime.
         </Text>
-        <table role="presentation" cellPadding={0} cellSpacing={0} border={0}>
-          <tbody>
-            <tr>
-              <td><EmailButton href={URLS.pricing}>Enable cloud sync</EmailButton></td>
-            </tr>
-            <tr>
-              <td style={{ paddingTop: '12px' }}>
-                <EmailButton href={URLS.settings} variant="secondary">Export a backup</EmailButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <EmailButton href={URLS.pricing} variant="secondary">See Pro cloud sync</EmailButton>
       </Section>
     </EmailShell>
   )

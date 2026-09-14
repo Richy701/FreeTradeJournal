@@ -11,6 +11,8 @@ export const SIGNIFICANCE_THRESHOLD = 25 // buckets/overall below this are flagg
 export const MAX_BUCKETS = 6 // cap groups serialized into AI payloads (top N by trade count)
 export const MIN_STRATEGY_TAGGED_RATIO = 0.2 // need >=20% of trades tagged before we show any strategy edge
 
+import { isMistakeTag, tagKey, tagLabel } from '@/lib/tags'
+
 // CSV/demo/legacy pnl can be NaN/undefined; coerce to a finite number once.
 const safeNum = (v: unknown): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : 0
@@ -25,6 +27,21 @@ export interface AggregatableTrade {
   entryTime?: Date | null
   exitTime?: Date | null
   emotions?: string | null
+  /** Custom tags. A leading "!" marks a mistake tag (see src/lib/tags.ts). */
+  tags?: string[] | null
+}
+
+/**
+ * Trades carrying at least one mistake tag versus the rest. `avgPnl` is the
+ * average per trade in money, so the gap between the two is what a mistake
+ * costs on average; `taggedNetPnl` is the total left on the table.
+ */
+export interface MistakeImpact {
+  taggedTrades: number
+  cleanTrades: number
+  taggedNetPnl: number
+  taggedAvgPnl: number
+  cleanAvgPnl: number
 }
 
 interface GroupAcc {
@@ -66,6 +83,14 @@ export interface TradeAggregates {
   perWeekday: GroupStat[]
   perSession: GroupStat[]
   perEmotion: GroupStat[]
+  /** Setup tags (mistake tags excluded), ranked by trade count, uncapped for tables. */
+  perTag: GroupStat[]
+  /** Mistake tags ("!" prefix), keyed without the marker, ranked by trade count. */
+  perMistake: GroupStat[]
+  /** Null until at least one trade carries a mistake tag. */
+  mistakeImpact: MistakeImpact | null
+  /** True when >= MIN_STRATEGY_TAGGED_RATIO of trades carry a setup tag. */
+  tagsTagged: boolean
 }
 
 function makeAcc(key: string): GroupAcc {
@@ -105,8 +130,13 @@ export function computeTradeAggregates(trades: AggregatableTrade[]): TradeAggreg
   const weekdayMap = new Map<string, GroupAcc>()
   const sessionMap = new Map<string, GroupAcc>()
   const emotionMap = new Map<string, GroupAcc>()
+  const tagMap = new Map<string, GroupAcc>()
+  const mistakeMap = new Map<string, GroupAcc>()
+  const mistakeTagged = makeAcc('mistake')
+  const clean = makeAcc('clean')
 
   let strategiesTaggedCount = 0 // trades with a real (non-empty) strategy
+  let tagsTaggedCount = 0 // trades with at least one setup tag
   let sumWinPnl = 0, winCount = 0
   let sumLossPnl = 0, lossCount = 0 // sumLossPnl kept negative
   let rrSum = 0, rrCount = 0
@@ -158,6 +188,31 @@ export function computeTradeAggregates(trades: AggregatableTrade[]): TradeAggreg
         pushTradeIntoAcc(emotionMap.get(emoKey)!, pnl, rr)
       }
     }
+
+    // Tags: one trade counts once per tag, grouped case-insensitively (the
+    // first spelling seen is the label). Mistake tags go to their own table,
+    // and the trade as a whole lands in the mistake-vs-clean comparison.
+    let hasSetupTag = false
+    let hasMistakeTag = false
+    if (Array.isArray(t.tags)) {
+      const seen = new Set<string>()
+      for (const raw of t.tags) {
+        if (typeof raw !== 'string') continue
+        const key = tagKey(raw)
+        if (!key) continue
+        const mistake = isMistakeTag(raw)
+        const mapKey = `${mistake ? '!' : ''}${key}`
+        if (seen.has(mapKey)) continue
+        seen.add(mapKey)
+        const map = mistake ? mistakeMap : tagMap
+        if (!map.has(key)) map.set(key, makeAcc(tagLabel(raw)))
+        pushTradeIntoAcc(map.get(key)!, pnl, rr)
+        if (mistake) hasMistakeTag = true
+        else hasSetupTag = true
+      }
+    }
+    if (hasSetupTag) tagsTaggedCount++
+    pushTradeIntoAcc(hasMistakeTag ? mistakeTagged : clean, pnl, rr)
   }
 
   // Rank by SAMPLE SIZE (trade count), never by raw dollar P&L.
@@ -178,12 +233,26 @@ export function computeTradeAggregates(trades: AggregatableTrade[]): TradeAggreg
   const perSession = Array.from(sessionMap.values()).map(finalizeAcc).sort(byCount)
   const perEmotion = Array.from(emotionMap.values()).map(finalizeAcc).sort(byCount).slice(0, MAX_BUCKETS)
 
+  const perTag = Array.from(tagMap.values()).map(finalizeAcc).sort(byCount)
+  const perMistake = Array.from(mistakeMap.values()).map(finalizeAcc).sort(byCount)
+  const mistakeImpact: MistakeImpact | null = mistakeTagged.count > 0
+    ? {
+        taggedTrades: mistakeTagged.count,
+        cleanTrades: clean.count,
+        taggedNetPnl: mistakeTagged.netPnl,
+        taggedAvgPnl: mistakeTagged.netPnl / mistakeTagged.count,
+        cleanAvgPnl: clean.count > 0 ? clean.netPnl / clean.count : 0,
+      }
+    : null
+
   const avgWin = winCount > 0 ? sumWinPnl / winCount : 0
   const avgLossAbs = lossCount > 0 ? Math.abs(sumLossPnl / lossCount) : 0
 
   // Only surface strategy claims when enough trades are actually tagged.
   const strategiesTagged = trades.length > 0 &&
     strategiesTaggedCount / trades.length >= MIN_STRATEGY_TAGGED_RATIO
+  const tagsTagged = trades.length > 0 &&
+    tagsTaggedCount / trades.length >= MIN_STRATEGY_TAGGED_RATIO
 
   return {
     hasEnoughData: trades.length >= SIGNIFICANCE_THRESHOLD,
@@ -200,5 +269,9 @@ export function computeTradeAggregates(trades: AggregatableTrade[]): TradeAggreg
     perWeekday,
     perSession,
     perEmotion,
+    perTag,
+    perMistake,
+    mistakeImpact,
+    tagsTagged,
   }
 }

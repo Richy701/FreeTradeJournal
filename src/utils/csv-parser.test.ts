@@ -147,6 +147,111 @@ describe('parseCSV — NinjaTrader Grid (Trade Performance) export', () => {
   });
 });
 
+describe('parseCSV — NinjaTrader Executions export', () => {
+  // NinjaTrader 8 "Executions" tab export: one row per FILL with an E/X column,
+  // NinjaTrader-style instrument names ("MNQ 09-26"), locale timestamps with
+  // AM/PM, "Sell short" / "Buy to cover" actions and a per-fill Commission.
+  const csv = [
+    'Instrument,Action,Quantity,Price,Time,ID,E/X,Position,Order ID,Name,Commission,Rate,Account,Connection',
+    'MNQ 09-26,Buy,2,23500.25,9/8/2026 9:31:05 AM,a1,Entry,2 L,o1,Entry,$1.04,1,Sim101,Playback101',
+    'MNQ 09-26,Sell,1,23510.25,9/8/2026 9:32:10 AM,a2,Exit,1 L,o2,Target1,$0.52,1,Sim101,Playback101',
+    'MNQ 09-26,Sell,1,23505.75,9/8/2026 9:33:40 AM,a3,Exit,-,o3,Target2,$0.52,1,Sim101,Playback101',
+    'MNQ 09-26,Sell short,1,23520.00,9/8/2026 9:40:00 AM,a4,Entry,1 S,o4,Entry,$0.52,1,Sim101,Playback101',
+    'MNQ 09-26,Buy to cover,1,23515.00,9/8/2026 9:41:30 AM,a5,Exit,-,o5,Stop1,$0.52,1,Sim101,Playback101',
+    'ES 12-26,Buy,1,5500.50,9/8/2026 10:05:00 AM,a6,Entry,1 L,o6,Entry,$2.25,1,Sim101,Playback101',
+    'ES 12-26,Sell,2,5504.50,9/8/2026 10:07:15 AM,a7,Exit,1 S,o7,Reverse,$4.50,1,Sim101,Playback101',
+    'ES 12-26,Buy,1,5502.00,9/8/2026 10:09:45 AM,a8,Exit,-,o8,Exit,$2.25,1,Sim101,Playback101',
+  ].join('\n');
+
+  it('auto-detects the layout and pairs fills into round-trip trades', () => {
+    const r = parseCSV(csv);
+    expect(r.success, `errors: ${r.errors.join('; ')}`).toBe(true);
+    expect(r.trades).toHaveLength(5);
+    expect(r.summary.failed).toBe(0);
+    expect(r.errors).toHaveLength(0); // everything closed, nothing left open
+  });
+
+  it('splits a partial exit into one trade per closing fill with multiplier-aware P&L', () => {
+    const [t1, t2] = parseCSV(csv).trades;
+    expect(t1.symbol).toBe('MNQ 09-26');
+    expect(t1.side).toBe('long');
+    expect(t1.quantity).toBe('1');
+    expect(t1.entryPrice).toBe('23500.250000');
+    expect(t1.exitPrice).toBe('23510.250000');
+    expect(t1.pnl).toBe('20.00'); // 10 pts x $2 (MNQ)
+    expect(t1.entryDate).toBe('2026-09-08T09:31:05');
+    expect(t1.exitDate).toBe('2026-09-08T09:32:10');
+    expect(t2.exitPrice).toBe('23505.750000');
+    expect(t2.pnl).toBe('11.00');
+  });
+
+  it('reads "Sell short" / "Buy to cover" as a short round-trip', () => {
+    const short = parseCSV(csv).trades[2];
+    expect(short.side).toBe('short');
+    expect(short.entryPrice).toBe('23520.000000');
+    expect(short.exitPrice).toBe('23515.000000');
+    expect(short.pnl).toBe('10.00');
+  });
+
+  it('handles a fill that flips the position (2-lot sell against a 1-lot long)', () => {
+    const [, , , esLong, esShort] = parseCSV(csv).trades;
+    expect(esLong.side).toBe('long');
+    expect(esLong.pnl).toBe('200.00'); // 4 pts x $50
+    expect(esShort.side).toBe('short');
+    expect(esShort.entryPrice).toBe('5504.500000');
+    expect(esShort.exitPrice).toBe('5502.000000');
+    expect(esShort.pnl).toBe('125.00'); // 2.5 pts x $50
+  });
+
+  it('prorates per-fill commission onto each trade so the file total is preserved', () => {
+    const trades = parseCSV(csv).trades;
+    expect(trades.map(t => t.commission)).toEqual(['1.04', '1.04', '1.04', '4.50', '4.50']);
+    const total = trades.reduce((s, t) => s + parseFloat(t.commission || '0'), 0);
+    expect(total).toBeCloseTo(12.12, 2); // sum of the Commission column
+    // P&L from prices is gross, so the importer subtracts commission once.
+    const built = buildImportedTrades(trades, { fileName: 'x.csv', accountId: 'a' });
+    expect(built[0].brokerPnL).toBeCloseTo(20, 2);
+    expect(built[0].commission).toBeCloseTo(1.04, 2);
+    expect(built[0].pnl).toBeCloseTo(18.96, 2);
+  });
+
+  it('imports a European-locale export (semicolons, decimal commas, day-first dates)', () => {
+    const eu = [
+      'Instrument;Action;Quantity;Price;Time;ID;E/X;Position;Order ID;Name;Commission;Rate;Account;Connection',
+      'MNQ 09-26;Buy;1;23500,25;14.09.2026 09:31:05;a1;Entry;1 L;o1;Entry;0,52;1;Sim101;Playback101',
+      'MNQ 09-26;Sell;1;23510,25;14.09.2026 09:32:10;a2;Exit;-;o2;Exit;0,52;1;Sim101;Playback101',
+    ].join('\n');
+    const r = parseCSV(eu);
+    expect(r.success, `errors: ${r.errors.join('; ')}`).toBe(true);
+    expect(r.trades).toHaveLength(1);
+    expect(r.trades[0].entryPrice).toBe('23500.250000');
+    expect(r.trades[0].pnl).toBe('20.00');
+    expect(r.trades[0].commission).toBe('1.04');
+    expect(r.trades[0].entryDate).toBe('2026-09-14T09:31:05');
+  });
+
+  it('reports fills that never closed instead of inventing a trade', () => {
+    const open = [
+      'Instrument,Action,Quantity,Price,Time,ID,E/X,Position,Order ID,Name,Commission,Rate,Account,Connection',
+      'MNQ 09-26,Buy,2,23500.25,9/8/2026 9:31:05 AM,a1,Entry,2 L,o1,Entry,$1.04,1,Sim101,Playback101',
+      'MNQ 09-26,Sell,1,23510.25,9/8/2026 9:32:10 AM,a2,Exit,1 L,o2,Target1,$0.52,1,Sim101,Playback101',
+    ].join('\n');
+    const r = parseCSV(open);
+    expect(r.trades).toHaveLength(1);
+    expect(r.errors.join(' ')).toMatch(/1 contract\(s\) still open/);
+  });
+
+  it('does not steal the NinjaTrader Trades grid export (round-trip rows)', () => {
+    const grid = [
+      'Instrument,Account,Market pos.,Qty,Entry time,Exit time,Entry price,Exit price,Profit,Commission',
+      'MNQ SEP26,DEMO,Long,1,7/2/2026 9:12,7/2/2026 9:13,30220,30245,$48.10 ,$0.78 ',
+    ].join('\n');
+    const r = parseCSV(grid);
+    expect(r.trades).toHaveLength(1);
+    expect(r.trades[0].pnlIsNet).toBe(true);
+  });
+});
+
 describe('parseCSV — "Net P/L" column alongside a Commission column', () => {
   // Apex/Rithmic-style file: "Net P/L" is already after commissions, so the
   // imported total must equal the column's sum (what the preview shows).

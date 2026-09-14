@@ -1,3 +1,4 @@
+import { reliableEmailSender } from '../src/email-delivery'
 /**
  * Trial-open announcement — tells every free user the 14-day card trial now
  * works for them (the hadTrial rule that locked out prior-trial accounts was
@@ -90,6 +91,8 @@ const auth = admin.auth()
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 const resend = new Resend(RESEND_API_KEY)
+
+resend.emails.send = reliableEmailSender(resend.emails.send.bind(resend.emails))
 
 // ── Main ──────────────────────────────────────────────────
 async function main() {

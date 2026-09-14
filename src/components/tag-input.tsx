@@ -1,7 +1,7 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import { X } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { normalizeTag, dedupeTags } from '@/lib/tags';
+import { normalizeTag, dedupeTags, isMistakeTag } from '@/lib/tags';
 
 interface TagInputProps {
   id?: string;
@@ -80,7 +80,11 @@ export function TagInput({
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex max-w-full items-center gap-1 rounded-md border border-border/70 bg-muted/60 py-0.5 pl-2 pr-1 text-xs font-medium"
+            className={cn(
+              'inline-flex max-w-full items-center gap-1 rounded-md border border-border/70 bg-muted/60 py-0.5 pl-2 pr-1 text-xs font-medium',
+              isMistakeTag(tag) && 'text-destructive',
+            )}
+            title={isMistakeTag(tag) ? 'Mistake tag' : undefined}
           >
             <span className="truncate">{tag}</span>
             <button

@@ -95,3 +95,67 @@ describe('computeTradeAggregates', () => {
     expect(Number.isFinite(agg.avgWin)).toBe(true);
   });
 });
+
+describe('computeTradeAggregates — custom tags', () => {
+  it('groups setup tags case-insensitively and keeps the first spelling', () => {
+    const agg = computeTradeAggregates([
+      mk({ tags: ['FVG'], pnl: 30 }),
+      mk({ tags: ['fvg'], pnl: -10 }),
+      mk({ tags: ['#FVG', 'Order Block'], pnl: 20 }),
+      mk({ tags: [], pnl: 5 }),
+    ]);
+    expect(agg.perTag.map(g => g.key)).toEqual(['FVG', 'Order Block']);
+    const fvg = agg.perTag[0];
+    expect(fvg.count).toBe(3);
+    expect(fvg.netPnl).toBeCloseTo(40, 5);
+    expect(fvg.avgPnl).toBeCloseTo(40 / 3, 5); // money per trade = the EV shown in the UI
+    expect(fvg.winRate).toBeCloseTo((2 / 3) * 100, 5);
+    expect(fvg.significant).toBe(false);
+  });
+
+  it('counts a tag once per trade even when the trade repeats it', () => {
+    const agg = computeTradeAggregates([mk({ tags: ['FVG', 'fvg'], pnl: 10 })]);
+    expect(agg.perTag[0].count).toBe(1);
+  });
+
+  it('splits "!" mistake tags out and measures what they cost', () => {
+    const agg = computeTradeAggregates([
+      mk({ tags: ['FVG', '!chased'], pnl: -40 }),
+      mk({ tags: ['!chased', '!moved stop'], pnl: -60 }),
+      mk({ tags: ['FVG'], pnl: 50 }),
+      mk({ tags: [], pnl: 30 }),
+    ]);
+    expect(agg.perTag.map(g => g.key)).toEqual(['FVG']); // mistakes never appear as setups
+    expect(agg.perMistake.map(g => g.key)).toEqual(['chased', 'moved stop']);
+    expect(agg.perMistake[0].count).toBe(2);
+    expect(agg.perMistake[0].netPnl).toBeCloseTo(-100, 5);
+
+    const impact = agg.mistakeImpact!;
+    expect(impact.taggedTrades).toBe(2);
+    expect(impact.cleanTrades).toBe(2);
+    expect(impact.taggedNetPnl).toBeCloseTo(-100, 5);
+    expect(impact.taggedAvgPnl).toBeCloseTo(-50, 5);
+    expect(impact.cleanAvgPnl).toBeCloseTo(40, 5);
+  });
+
+  it('reports no mistake impact and no tag coverage when nothing is tagged', () => {
+    const agg = computeTradeAggregates([mk({}), mk({ tags: null })]);
+    expect(agg.perTag).toEqual([]);
+    expect(agg.perMistake).toEqual([]);
+    expect(agg.mistakeImpact).toBeNull();
+    expect(agg.tagsTagged).toBe(false);
+  });
+
+  it('gates tagsTagged at the same 20% coverage as strategies, ignoring mistake-only trades', () => {
+    const covered = computeTradeAggregates([
+      mk({ tags: ['FVG'] }), mk({ tags: ['FVG'] }),
+      ...Array.from({ length: 8 }, () => mk({ tags: ['!late'] })),
+    ]);
+    expect(covered.tagsTagged).toBe(true); // 2 of 10 setup-tagged
+    const thin = computeTradeAggregates([
+      mk({ tags: ['FVG'] }),
+      ...Array.from({ length: 9 }, () => mk({})),
+    ]);
+    expect(thin.tagsTagged).toBe(false);
+  });
+});

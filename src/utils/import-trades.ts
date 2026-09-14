@@ -17,6 +17,8 @@ export const MAPPING_FIELDS: Record<string, string[]> = {
   pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L', 'Realized P/L', 'Realized P&L', 'Net Profit'],
   openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
   closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
+  commission: ['Commission', 'Commissions'],
+  fees: ['Fees', 'Fee', 'Total Fees', 'Net Fees', 'Exchange Fees'],
 };
 
 export interface ColumnMapping {

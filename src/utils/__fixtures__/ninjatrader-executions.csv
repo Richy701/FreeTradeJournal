@@ -1,0 +1,9 @@
+Instrument,Action,Quantity,Price,Time,ID,E/X,Position,Order ID,Name,Commission,Rate,Account,Connection
+MNQ 09-26,Buy,2,23500.25,9/8/2026 9:31:05 AM,a1f3e2c0,Entry,2 L,o1001,Entry,$1.04,1,Sim101,Playback101
+MNQ 09-26,Sell,1,23510.25,9/8/2026 9:32:10 AM,b2e4d3c1,Exit,1 L,o1002,Target1,$0.52,1,Sim101,Playback101
+MNQ 09-26,Sell,1,23505.75,9/8/2026 9:33:40 AM,c3d5e4b2,Exit,-,o1003,Target2,$0.52,1,Sim101,Playback101
+MNQ 09-26,Sell short,1,23520.00,9/8/2026 9:40:00 AM,d4c6f5a3,Entry,1 S,o1004,Entry,$0.52,1,Sim101,Playback101
+MNQ 09-26,Buy to cover,1,23515.00,9/8/2026 9:41:30 AM,e5b7a6f4,Exit,-,o1005,Stop1,$0.52,1,Sim101,Playback101
+ES 12-26,Buy,1,5500.50,9/8/2026 10:05:00 AM,f6a8b7e5,Entry,1 L,o1006,Entry,$2.25,1,Sim101,Playback101
+ES 12-26,Sell,2,5504.50,9/8/2026 10:07:15 AM,a7b9c8d6,Exit,1 S,o1007,Reverse,$4.50,1,Sim101,Playback101
+ES 12-26,Buy,1,5502.00,9/8/2026 10:09:45 AM,b8c0d9e7,Exit,-,o1008,Exit,$2.25,1,Sim101,Playback101

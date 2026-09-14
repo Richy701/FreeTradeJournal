@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useSettings } from '@/contexts/settings-context'
+import { computeTradeAggregates } from '@/utils/trade-aggregates'
 
 export interface TradeIdea {
   id: string
@@ -102,6 +103,7 @@ interface ParsedTrade {
   entryTime: Date
   exitTime: Date
   strategy?: string
+  tags?: string[]
 }
 
 // Read the stored P&L the same way the Dashboard does (t.pnl first), with
@@ -126,6 +128,7 @@ function parseTrades(rawTrades: any[]): ParsedTrade[] {
       entryTime: t.entryTime ? new Date(t.entryTime) : new Date(t.date || t.createdAt),
       exitTime: t.exitTime ? new Date(t.exitTime) : new Date(t.exitDate || t.date || t.createdAt),
       strategy: t.strategy || undefined,
+      tags: Array.isArray(t.tags) ? t.tags.filter((x: unknown) => typeof x === 'string') : undefined,
     }))
     .filter((t) => t.symbol && !isNaN(t.entryTime.getTime()))
 }
@@ -510,10 +513,24 @@ export function useTradeIdeas() {
     return generateIdeas(trades, charts, summary, formatCurrency)
   }, [trades, charts, summary, formatCurrency])
 
+  // Tag tables come from the shared, significance-aware aggregator (the same
+  // one the AI coach reads) rather than a fourth stats path.
+  const tagStats = useMemo(() => {
+    if (trades.length < 5) return null
+    const agg = computeTradeAggregates(trades)
+    return {
+      perTag: agg.perTag,
+      perMistake: agg.perMistake,
+      mistakeImpact: agg.mistakeImpact,
+      significanceThreshold: agg.significanceThreshold,
+    }
+  }, [trades])
+
   return {
     ideas,
     charts,
     summary,
+    tagStats,
     totalTrades: trades.length,
     hasEnoughData: trades.length >= 5,
     hiddenCount: analyticsData.hiddenCount,

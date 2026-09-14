@@ -9,7 +9,7 @@ interface EmailVerificationEmailProps {
 export function EmailVerificationEmail({ verificationLink, firstName }: EmailVerificationEmailProps) {
   return (
     <EmailShell preview="Verify your email to access FreeTradeJournal">
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
           {firstName ? `${firstName}, verify your email` : 'Verify your email'}
         </Heading>

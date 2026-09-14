@@ -1,6 +1,6 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, NumberedSteps, styles } from './components'
-import { URLS } from './facts'
+import { ProductPreview, EmailShell, EmailButton, NumberedSteps, styles } from './components'
+import { BASE_URL, URLS } from './facts'
 
 interface Day3NudgeEmailProps {
   firstName: string
@@ -16,30 +16,25 @@ const steps = [
 export function Day3NudgeEmail({ firstName, unsubscribeUrl }: Day3NudgeEmailProps) {
   return (
     <EmailShell
-      preview="You signed up a few days ago. Logging your first trade takes 60 seconds."
+      preview="Add a trade manually or import your broker CSV."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `Hey ${firstName}, your journal is waiting.` : 'Your journal is waiting.'}
+          {firstName ? `${firstName}, here’s how to add a trade.` : 'Here’s how to add a trade.'}
         </Heading>
         <Text style={styles.paragraph}>
-          You signed up a few days ago but have not logged a trade yet. It takes about <strong style={styles.strong}>60 seconds</strong>.
+          Open Trade Log and choose Add Trade. If you already have a trading history, you can import a CSV instead of entering each trade.
         </Text>
+        <EmailButton href={URLS.trades}>Log my first trade</EmailButton>
       </Section>
+
+      <ProductPreview src={`${BASE_URL}/screenshots/trade-form-refresh.png`} alt="The FreeTradeJournal trade-entry form" caption="Add Trade in FreeTradeJournal" />
 
       <Hr style={styles.divider} />
 
       <NumberedSteps heading="How to log your first trade" steps={steps} />
 
-      <Hr style={styles.divider} />
-
-      <Section style={styles.content}>
-        <Text style={styles.paragraph}>
-          It's completely free — no card, no trade limits. One logged trade is all it takes to see your first stats.
-        </Text>
-        <EmailButton href={URLS.trades}>Log my first trade</EmailButton>
-      </Section>
     </EmailShell>
   )
 }

@@ -322,20 +322,24 @@ export function AccountProvider({ children }: AccountProviderProps) {
       }
     }
 
-    setAccounts(prev => {
-      const remaining = prev.filter(acc => acc.id !== id);
-      if (!remaining.some(acc => acc.isDefault)) {
-        return remaining.map(acc =>
+    const nextAccounts = remainingAccounts.some(acc => acc.isDefault)
+      ? remainingAccounts
+      : remainingAccounts.map(acc =>
           acc.id === survivorDefault.id ? { ...acc, isDefault: true } : acc
         );
-      }
-      return remaining;
-    });
-    notifyDataChange();
 
+    // Persist the new list and active account BEFORE notifyDataChange. The
+    // notification bumps the sync version, which re-runs the load effect in
+    // the same commit as this state update — and that effect reads storage
+    // before the save effect has written the new state. Notifying first made
+    // it read the old list and put the deleted account straight back (with
+    // its trades and journal entries already purged above).
+    UserStorage.setItem(userId, 'accounts', JSON.stringify(nextAccounts));
+    setAccounts(nextAccounts);
     if (activeAccount?.id === id) {
-      setActiveAccount({ ...survivorDefault, isDefault: survivorDefault.isDefault || !remainingAccounts.some(a => a.isDefault) });
+      setActiveAccount(nextAccounts.find(acc => acc.id === survivorDefault.id) || survivorDefault);
     }
+    notifyDataChange();
   };
 
   const value: AccountContextType = useMemo(() => ({

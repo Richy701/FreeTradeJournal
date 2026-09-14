@@ -42,7 +42,7 @@ export function TrialAnnouncementEmail({ firstName, unsubscribeUrl }: TrialAnnou
         <Text style={styles.paragraph}>
           Why? Because the numbers only get useful once you can see all of them. Log your trades for the next two weeks and let the analytics and AI coach show you what they find.
         </Text>
-        <Text style={{ ...styles.paragraph, margin: 0, color: '#f5f5f6', fontWeight: 600 }}>
+        <Text style={{ ...styles.paragraph, margin: 0, color: styles.strong.color, fontWeight: 600 }}>
           Richy, FreeTradeJournal
         </Text>
       </Section>

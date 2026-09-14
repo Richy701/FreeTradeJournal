@@ -1,3 +1,4 @@
+import { reliableEmailSender } from '../src/email-delivery'
 /**
  * Upgrade nudge campaign — free users from Firebase Auth, excluding Pro users and already-sent.
  *
@@ -95,6 +96,8 @@ const auth = admin.auth()
 const RESEND_API_KEY = process.env.RESEND_API_KEY
 if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY env var is required')
 const resend = new Resend(RESEND_API_KEY)
+
+resend.emails.send = reliableEmailSender(resend.emails.send.bind(resend.emails))
 
 // ── Main ──────────────────────────────────────────────────
 async function main() {

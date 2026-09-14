@@ -24,16 +24,17 @@ export function FeatureAnnouncementEmail({ firstName, unsubscribeUrl }: FeatureA
       preview="A position size calculator with an AI risk check, and live market sessions on your dashboard."
       unsubscribeUrl={unsubscribeUrl}
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>Two new tools in your journal</Heading>
         <Text style={styles.paragraph}>
           {firstName ? `${firstName}, two` : 'Two'} things went live this week. Both are free, on every plan.
         </Text>
+        <EmailButton href={`${BASE_URL}/calculator`}>Open the calculator</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={{ ...styles.h1, fontSize: '19px' }}>
           A position size calculator that knows your trading
         </Heading>
@@ -52,12 +53,12 @@ export function FeatureAnnouncementEmail({ firstName, unsubscribeUrl }: FeatureA
         <Text style={styles.paragraph}>
           It's in the sidebar as Position Calculator.
         </Text>
-        <EmailButton href={`${BASE_URL}/calculator`}>Open the calculator</EmailButton>
+        <EmailButton variant="secondary" href={`${BASE_URL}/calculator`}>Open the calculator</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading as="h2" style={{ ...styles.h1, fontSize: '19px' }}>
           Market sessions, live on your dashboard
         </Heading>
@@ -78,7 +79,7 @@ export function FeatureAnnouncementEmail({ firstName, unsubscribeUrl }: FeatureA
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Text style={styles.fine}>
           Both tools are free and need nothing set up. The AI risk check uses your monthly AI allowance, the same as the coach.
         </Text>

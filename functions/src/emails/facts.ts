@@ -33,4 +33,4 @@ export const URLS = {
 }
 
 // One line, used wherever we state what Pro costs. Keeps every email consistent.
-export const PRICING_LINE = `Pro is ${PRICE_MONTHLY} or ${PRICE_YEARLY} — with a ${TRIAL_DAYS}-day free trial. Cancel anytime.`
+export const PRICING_LINE = `Pro is ${PRICE_MONTHLY} or ${PRICE_YEARLY}. Your subscription starts when you upgrade. Cancel anytime.`

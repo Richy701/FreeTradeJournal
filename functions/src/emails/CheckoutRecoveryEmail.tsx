@@ -11,10 +11,10 @@ interface CheckoutRecoveryEmailProps {
 }
 
 const features = [
-  { label: 'AI Trade Review', desc: 'A breakdown of every trade: what worked, what cost you, what to fix.' },
-  { label: 'AI Goal Coach', desc: 'Reads your data and tells you exactly where you are falling short.' },
-  { label: 'PropTracker AI Analysis', desc: 'An honest verdict on which prop firms are actually worth your money.' },
-  { label: 'Cloud Sync', desc: 'Your journal backed up and available on every device.' },
+  { label: 'AI Trade Review', desc: 'Review what worked and what to improve in a trade.' },
+  { label: 'AI Goal Coach', desc: 'Get coaching based on your goals and trading record.' },
+  { label: 'PropTracker AI Analysis', desc: 'Review performance across your prop firm accounts.' },
+  { label: 'Cloud Sync', desc: 'Keep your journal backed up across devices.' },
 ]
 
 export function CheckoutRecoveryEmail({ firstName, trialAvailable, unsubscribeUrl }: CheckoutRecoveryEmailProps) {
@@ -24,13 +24,13 @@ export function CheckoutRecoveryEmail({ firstName, trialAvailable, unsubscribeUr
       unsubscribeUrl={unsubscribeUrl}
       footerNote="You are receiving this because you started a Pro checkout on FreeTradeJournal. Reply if you have questions — I read every one."
     >
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Eyebrow>FreeTradeJournal Pro</Eyebrow>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, you left before finishing.` : 'You left before finishing.'}
+          {firstName ? `${firstName}, pick up where you left off.` : 'Pick up where you left off.'}
         </Heading>
         <Text style={styles.paragraph}>
-          You started a Pro checkout but did not complete it. Nothing was charged and nothing changed on your account.
+          Your Pro checkout was not completed. Nothing was charged, and your journal is still here.
         </Text>
         {trialAvailable ? (
           <Text style={styles.paragraph}>
@@ -52,11 +52,11 @@ export function CheckoutRecoveryEmail({ firstName, trialAvailable, unsubscribeUr
 
       <Hr style={styles.divider} />
 
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Text style={styles.paragraph}>
-          If something stopped you — the price, a missing feature, a card that would not go through — reply to this email and tell me. I read every one and I would rather fix the problem than send you another email.
+          Something stopped you? Reply with your question or what went wrong. I read every reply.
         </Text>
-        <Text style={{ ...styles.paragraph, margin: 0, color: '#f5f5f6', fontWeight: 600 }}>
+        <Text style={{ ...styles.paragraph, margin: 0, color: styles.strong.color, fontWeight: 600 }}>
           Richy, FreeTradeJournal
         </Text>
       </Section>

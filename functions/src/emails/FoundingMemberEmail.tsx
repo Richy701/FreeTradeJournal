@@ -57,7 +57,7 @@ export function FoundingMemberEmail({
         <Text style={styles.paragraph}>
           Why the discount? You were one of the first people to use FreeTradeJournal, and the journal is built by one person — founding members who own it outright are exactly whose feedback I want as it grows.
         </Text>
-        <Text style={{ ...styles.paragraph, margin: 0, color: '#f5f5f6', fontWeight: 600 }}>
+        <Text style={{ ...styles.paragraph, margin: 0, color: styles.strong.color, fontWeight: 600 }}>
           Richy, FreeTradeJournal
         </Text>
       </Section>

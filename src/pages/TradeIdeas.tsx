@@ -10,6 +10,7 @@ import { useTradeIdeas } from '@/hooks/use-trade-ideas'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { AIAnalysis } from '@/components/ai-analysis'
+import { TagPerformance } from '@/components/tag-performance'
 import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
 import { trackEvent } from '@/lib/analytics'
 import { niceAxis, niceAxisBoth } from '@/lib/chart-axis'
@@ -40,7 +41,7 @@ import type { ChartConfig } from '@/components/ui/chart'
 import { Progress } from '@/components/ui/progress'
 
 export default function TradeIdeas() {
-  const { ideas, charts, summary, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
+  const { ideas, charts, summary, tagStats, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
   const { themeColors, alpha, chartStyle } = useThemePresets()
   const { formatCurrency, getCurrencySymbol } = useSettings()
   // Axis ticks get a compact format (no decimals) so long values like $8,000.00
@@ -521,6 +522,15 @@ export default function TradeIdeas() {
                 </BarChart>
               </ChartContainer>
           </div>
+        )}
+
+        {tagStats != null && (
+          <TagPerformance
+            perTag={tagStats.perTag}
+            perMistake={tagStats.perMistake}
+            mistakeImpact={tagStats.mistakeImpact}
+            significanceThreshold={tagStats.significanceThreshold}
+          />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -8,7 +8,7 @@ interface PasswordResetEmailProps {
 export function PasswordResetEmail({ resetLink }: PasswordResetEmailProps) {
   return (
     <EmailShell preview="Reset your FreeTradeJournal password">
-      <Section style={styles.content}>
+      <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>Reset your password</Heading>
         <Text style={styles.paragraph}>
           We received a request to reset the password for your FreeTradeJournal account. Click the button below to choose a new one.
