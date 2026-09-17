@@ -9,6 +9,7 @@ import { installThirdPartyErrorFilter } from './lib/suppress-third-party-noise'
 import { installStaleChunkReloadListener } from './lib/lazy-with-retry'
 import { captureReferral } from './lib/referral'
 import { installTranslateDomGuard } from './lib/translate-dom-guard'
+import { installLoopCrashContext, noteComponentStack } from './lib/loop-crash-context'
 
 // Before React renders: page translators must not be able to crash the app.
 installTranslateDomGuard()
@@ -21,12 +22,23 @@ installThirdPartyErrorFilter()
 // failure reaches PostHog as an unhandled rejection.
 installStaleChunkReloadListener()
 
+// Start recording app activity before anything can crash (see the module).
+installLoopCrashContext()
+
 initPostHog();
 
 // Persist ?ref= partner attribution before any navigation strips it
 captureReferral();
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!, {
+  // Same as React's default (report to the window, where PostHog listens),
+  // but keep the component stack first so crash reports can include it.
+  onUncaughtError(error, errorInfo) {
+    noteComponentStack(errorInfo.componentStack)
+    if (typeof reportError === 'function') reportError(error)
+    else setTimeout(() => { throw error })
+  },
+}).render(
   <StrictMode>
     <App />
   </StrictMode>,

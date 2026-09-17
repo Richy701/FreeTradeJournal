@@ -1,5 +1,6 @@
 import posthog from 'posthog-js';
 import { analyticsConsentGiven } from './cookie-consent';
+import { getLoopCrashContext, isUpdateLoopError } from './loop-crash-context'
 
 const key = import.meta.env.VITE_POSTHOG_KEY;
 const host = '/api/ingest';
@@ -38,6 +39,11 @@ export function initPostHog() {
     before_send: (event) => {
       if (event?.event === '$exception') {
         const list = event.properties?.$exception_list;
+        // Rare React update-loop crash: attach what the app was doing so the
+        // next occurrence names the part of the page that was refreshing.
+        if (Array.isArray(list) && list.some((ex: { value?: string }) => isUpdateLoopError(ex?.value))) {
+          Object.assign(event.properties, getLoopCrashContext());
+        }
         const json = JSON.stringify(list ?? '');
         // Drop crashes from third-party embeds and browser extensions — not
         // actionable app errors, and TradingView's alone would eat the quota.
