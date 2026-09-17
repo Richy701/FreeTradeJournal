@@ -1,7 +1,7 @@
 // Source for the Resend-hosted template `activation-ai-grade` (Onboarding:
 // Activation Sequence automation). Not sent from index.ts — render with
-// firstName '__FIRSTNAME__' and replace with the Resend personalization tag
-// before pushing via the Resend API.
+// firstName '__FIRSTNAME__' and push with scripts/push-resend-templates.ts, which
+// swaps in the declared {{{NAME}}} template variable.
 import { Section, Text, Heading, Hr } from '@react-email/components'
 import { ProductPreview, EmailShell, EmailButton, FeatureList, styles } from './components'
 import { BASE_URL, URLS } from './facts'

@@ -12,6 +12,7 @@ import * as webpush from "web-push";
 import * as crypto from "crypto";
 import { activationCohorts, ActivationMember } from "./internal-report-data";
 import { ActivationReportEmail } from "./emails/ActivationReportEmail";
+import { automationHealth, failedEmailCount, AutomationHealth } from "./automation-health";
 import { InternalNotificationEmail } from "./emails/InternalNotificationEmail";
 import { WelcomeEmail } from "./emails/WelcomeEmail";
 import { splitSyncValue, joinSyncChunks, syncChunkDocId, SYNC_MAX_CHUNKS } from "./sync-chunks";
@@ -737,7 +738,9 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   }
 
   // Create Resend contact + fire signup event for automation drip sequences
-  const firstName = (user.displayName || user.email).split(" ")[0];
+  // No display name (email/password signups) → leave it blank so the hosted
+  // templates fall back to "trader" instead of greeting people by their email.
+  const firstName = (user.displayName || "").trim().split(" ")[0];
   try {
     await createResendContact(user.email, firstName, user.uid);
     await fireResendEvent("user.signed_up", user.email, { firstName });
@@ -783,7 +786,7 @@ export const sendDay3NudgeEmails = functions.pubsub
       if (!email) continue;
 
       try {
-        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const firstName = (data.displayName || "").trim().split(" ")[0];
         const html = await render(React.createElement(Day3NudgeEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
         await getResend().emails.send({
           from: FROM_EMAIL,
@@ -886,7 +889,7 @@ export const sendTrialEndingEmails = functions.pubsub
       if (!email) continue;
 
       try {
-        const firstName = (displayName || email).split(" ")[0];
+        const firstName = (displayName || "").trim().split(" ")[0] || "trader";
         const trialEndDate = new Date(data.trialProExpiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
         const html = await render(React.createElement(SignupTrialEndingEmail, { firstName, trialEndDate, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
         await getResend().emails.send({
@@ -934,7 +937,7 @@ export const sendDay7NudgeEmails = functions.pubsub
       if (!email) continue;
 
       try {
-        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const firstName = (data.displayName || "").trim().split(" ")[0];
         const html = await render(React.createElement(Day7NudgeEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
         await getResend().emails.send({
           from: FROM_EMAIL,
@@ -955,6 +958,20 @@ export const sendDay7NudgeEmails = functions.pubsub
     console.log(`Day-7 nudge: sent ${sent} emails`);
     return null;
   });
+
+// Resend binds an automation run to the API key that fired its trigger event.
+// The Sep 11 2026 key rotation deleted that key, so every Conversion Drip run
+// started before it is rejected at send ("API key is no longer active"). Those
+// signups get their Day 14 / Day 21 emails from the functions below instead.
+// Self-expiring: nobody created before the rotation is inside the day-21
+// window after Oct 3 2026, at which point this is equivalent to the plain flag.
+const RESEND_KEY_ROTATED_AT = Date.parse("2026-09-11T10:52:10Z");
+
+function coveredByResendAutomation(data: FirebaseFirestore.DocumentData): boolean {
+  if (!data.resendAutomationEnrolled) return false;
+  const created = typeof data.createdAt?.toMillis === "function" ? data.createdAt.toMillis() : 0;
+  return !(created && created < RESEND_KEY_ROTATED_AT);
+}
 
 // ─── Day 14 Upgrade Pitch (Scheduled) ───────────────────────────
 
@@ -977,13 +994,13 @@ export const sendDay14UpgradeEmails = functions.pubsub
       if (sent >= MAX_SENDS) break;
       const data = doc.data();
       // Only target free users who have logged at least one trade
-      if (data.resendAutomationEnrolled || data.emailOptOut || isEntitledPro(data) || data.day14UpgradeSentAt || !data.firstTradeLoggedAt) continue;
+      if (coveredByResendAutomation(data) || data.emailOptOut || data.signupThrottled || isEntitledPro(data) || data.day14UpgradeSentAt || !data.firstTradeLoggedAt) continue;
 
       const email = data.email;
       if (!email) continue;
 
       try {
-        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const firstName = (data.displayName || "").trim().split(" ")[0];
         const html = await render(React.createElement(Day14UpgradeEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
         await getResend().emails.send({
           from: FROM_EMAIL,
@@ -1025,13 +1042,13 @@ export const sendDay21BackupEmails = functions.pubsub
     for (const doc of allSnapshot.docs) {
       if (sent >= MAX_SENDS) break;
       const data = doc.data();
-      if (data.resendAutomationEnrolled || data.emailOptOut || isEntitledPro(data) || data.day21BackupSentAt || !data.firstTradeLoggedAt) continue;
+      if (coveredByResendAutomation(data) || data.emailOptOut || data.signupThrottled || isEntitledPro(data) || data.day21BackupSentAt || !data.firstTradeLoggedAt) continue;
 
       const email = data.email;
       if (!email) continue;
 
       try {
-        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const firstName = (data.displayName || "").trim().split(" ")[0];
         const html = await render(React.createElement(Day21BackupEmail, { firstName, unsubscribeUrl: getUnsubscribeUrl(doc.id) }));
         await getResend().emails.send({
           from: FROM_EMAIL,
@@ -1175,7 +1192,7 @@ export const sendWeeklyDigestEmails = functions
         const doc = batch[j];
         const data = doc.data();
         const { tradeCount, winRate, pnl, bestTrade } = batchStats[j];
-        const firstName = (data.displayName || data.email || "trader").split(" ")[0];
+        const firstName = (data.displayName || "").trim().split(" ")[0];
 
         try {
           const html = await render(React.createElement(WeeklyDigestEmail, {
@@ -1233,14 +1250,25 @@ export const sendActivationReport = functions
     const cohorts = activationCohorts(members, now);
     const latest = cohorts.filter(row => row.mature).at(-1);
     const asOf = new Date(now).toISOString().slice(0, 10);
+    // Failed Resend automation runs are otherwise invisible outside their dashboard.
+    let automations: AutomationHealth[] = [];
+    let failedEmails: { failed: number; subjects: string[] } | undefined;
+    try {
+      automations = await automationHealth(process.env.RESEND_API_KEY || "", now - 7 * 86400000);
+      failedEmails = await failedEmailCount(process.env.RESEND_API_KEY || "", now - 7 * 86400000);
+    } catch (err) {
+      console.error("Failed to check automation health:", err);
+      reportError(err, { fn: "sendActivationReport", stage: "automationHealth" });
+    }
+    const failedRuns = automations.reduce((sum, row) => sum + (row.failed || 0), 0) + (failedEmails?.failed || 0);
     const html = await render(React.createElement(ActivationReportEmail, {
-      cohorts, asOf, excluded: members.filter(member => member.throttled).length,
+      cohorts, asOf, excluded: members.filter(member => member.throttled).length, automations, failedEmails,
     }));
     try {
       await getResend().emails.send({
         from: FROM_EMAIL,
         to: FOUNDER_EMAIL,
-        subject: latest ? "Weekly activation: " + latest.rate + "% within seven days (" + latest.week + ")" : "Weekly activation: waiting for a complete cohort",
+        subject: (failedRuns ? "[" + failedRuns + " failed onboarding emails] " : "") + (latest ? "Weekly activation: " + latest.rate + "% within seven days (" + latest.week + ")" : "Weekly activation: waiting for a complete cohort"),
         html,
       }, { idempotencyKey: "activation-report/" + asOf });
       console.log("Activation report sent", { asOf, cohort: latest?.week });
@@ -2349,6 +2377,28 @@ export const resendWebhook = functions.https.onRequest(async (req, res) => {
         }
       }
       console.log(`Resend webhook: ${type} → opted out ${to}`);
+    }
+
+    // Unsubscribed through Resend's own link (the hosted automation templates
+    // use {{{RESEND_UNSUBSCRIBE_URL}}}) → honour it for our own sends too.
+    // One-way on purpose: a Resend re-subscribe never clears our opt-out.
+    if (type === "contact.updated" && data?.unsubscribed === true && typeof data?.email === "string") {
+      const snap = await db
+        .collection("users")
+        .where("normalizedEmail", "==", normalizeEmail(data.email))
+        .limit(1)
+        .get();
+      if (!snap.empty && !snap.docs[0].data()?.emailOptOut) {
+        await snap.docs[0].ref.set(
+          {
+            emailOptOut: true,
+            emailOptOutReason: "resend_unsubscribe",
+            emailOptOutAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+        console.log("Resend webhook: contact.updated → opted out a contact who unsubscribed in Resend");
+      }
     }
 
     res.status(200).send("ok");

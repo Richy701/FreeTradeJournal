@@ -1,14 +1,17 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
 import { EmailShell, SectionLabel, styles } from './components'
 import { ActivationCohort } from '../internal-report-data'
+import { AutomationHealth } from '../automation-health'
 
 export interface ActivationReportProps {
   cohorts: ActivationCohort[]
   excluded: number
   asOf: string
+  automations?: AutomationHealth[]
+  failedEmails?: { failed: number; subjects: string[] }
 }
 
-export function ActivationReportEmail({ cohorts, excluded, asOf }: ActivationReportProps) {
+export function ActivationReportEmail({ cohorts, excluded, asOf, automations, failedEmails }: ActivationReportProps) {
   const mature = cohorts.filter(row => row.mature)
   const latest = mature[mature.length - 1]
   const previous = mature[mature.length - 2]
@@ -24,6 +27,18 @@ export function ActivationReportEmail({ cohorts, excluded, asOf }: ActivationRep
         {gap !== null && previous && <Text style={{ ...styles.fine, margin: 0 }}>{gap > 0 ? '+' : ''}{gap} percentage points compared with the prior reported cohort ({previous.week}, {previous.signups} accounts).</Text>}
       </> : <Text style={{ ...styles.fine, margin: 0 }}>No complete cohort is ready to compare yet.</Text>}
     </Section>
+    {automations && automations.length > 0 && <>
+      <Hr style={styles.divider} />
+      <Section className="email-content" style={styles.content}>
+        <SectionLabel>Onboarding emails, last seven days</SectionLabel>
+        {automations.map(row => <Text key={row.name} style={{ ...styles.paragraph, margin: '0 0 8px', fontWeight: row.failed ? 700 : 400 }}>
+          {row.name}: {row.failed === null ? 'could not be checked' : row.failed === 0 ? 'no failed sends' : `${row.failed} failed ${row.failed === 1 ? 'run' : 'runs'}. Open Resend and check the error.`}
+        </Text>)}
+        {failedEmails && <Text style={{ ...styles.paragraph, margin: '0 0 8px', fontWeight: failedEmails.failed ? 700 : 400 }}>
+          Emails rejected after sending: {failedEmails.failed === 0 ? 'none' : `${failedEmails.failed} (${failedEmails.subjects.join('; ')}). Open the email in Resend to see the reason.`}
+        </Text>}
+      </Section>
+    </>}
     <Hr style={styles.divider} />
     <Section className="email-content" style={styles.content}>
       <SectionLabel>Recent signup cohorts</SectionLabel>
