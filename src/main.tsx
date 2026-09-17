@@ -8,6 +8,10 @@ import { initPostHog } from './lib/posthog'
 import { installThirdPartyErrorFilter } from './lib/suppress-third-party-noise'
 import { installStaleChunkReloadListener } from './lib/lazy-with-retry'
 import { captureReferral } from './lib/referral'
+import { installTranslateDomGuard } from './lib/translate-dom-guard'
+
+// Before React renders: page translators must not be able to crash the app.
+installTranslateDomGuard()
 
 // Register before PostHog init so blocked-TradingView chunk errors are filtered
 // out before its global exception handler sees them.

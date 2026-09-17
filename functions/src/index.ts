@@ -3364,6 +3364,19 @@ function modelTuning(model: string, temperature: number): { temperature?: number
   return model.startsWith("gpt-5.6") ? {} : { temperature };
 }
 
+// The gpt-5.6 family spends max_completion_tokens on hidden reasoning as well
+// as the visible answer. The per-feature maxTokens below were sized for the
+// visible answer only, so a longer think exhausted the budget and OpenAI
+// rejected the call ("Could not finish the message because max_tokens or
+// model output limit was reached"): coaching_tips, position_check and
+// journal_assist all failed this way after the Aug 4 2026 model switch.
+// Headroom is only billed when used; prompts still bound the visible length.
+const REASONING_HEADROOM_TOKENS = 1500;
+
+function completionBudget(model: string, visibleTokens: number): number {
+  return model.startsWith("gpt-5.6") ? visibleTokens + REASONING_HEADROOM_TOKENS : visibleTokens;
+}
+
 // Screenshot import needs a vision-capable model; not part of the quota
 // feature map, so it gets its own constant. Vision verified live on 5.6-luna
 // 2026-08-04 (extracted exact labels + dollar figures from a real PropTracker
@@ -3774,7 +3787,7 @@ export const analyzeTradesAI = functions.https.onCall(reported("analyzeTradesAI"
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_completion_tokens: 2000,
+      max_completion_tokens: completionBudget(FEATURE_MODELS.ai_analysis, 2000),
       ...modelTuning(FEATURE_MODELS.ai_analysis, 0.7),
     });
     analysis = completion.choices[0]?.message?.content || "No analysis generated.";
@@ -3896,7 +3909,7 @@ ${sampleRows.map((r) => JSON.stringify(r)).join("\n") || "(none provided)"}`;
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_completion_tokens: 400,
+      max_completion_tokens: completionBudget(FEATURE_MODELS.csv_mapping, 400),
       ...modelTuning(FEATURE_MODELS.csv_mapping, 0),
       response_format: { type: "json_object" },
     });
@@ -4775,7 +4788,7 @@ export const aiAssist = functions.https.onCall(reported("aiAssist", async (data,
         { role: "system", content: prompt.system + (JSON_OUTPUT_TYPES.has(request.type) ? "" : PLAIN_ENGLISH_STYLE) },
         { role: "user", content: prompt.user },
       ],
-      max_completion_tokens: prompt.maxTokens,
+      max_completion_tokens: completionBudget(model, prompt.maxTokens),
       ...modelTuning(model, prompt.temperature),
       // Enforced JSON object for the structured features (coaching_tips
       // {"tips":[...]}, strategy_tagger {"tags":[...]}) — kills silent
@@ -4982,7 +4995,7 @@ Rules:
           ],
         },
       ],
-      max_completion_tokens: maxTokens,
+      max_completion_tokens: completionBudget(SCREENSHOT_MODEL, maxTokens),
       ...modelTuning(SCREENSHOT_MODEL, 0),
       response_format: { type: "json_object" },
     });
@@ -5766,7 +5779,7 @@ export const aiStream = functions.https.onRequest(async (req, res) => {
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      max_completion_tokens: maxTokens,
+      max_completion_tokens: completionBudget(model, maxTokens),
       ...modelTuning(model, temperature),
       stream: true,
       // Token counts arrive on a final usage-only chunk (choices: []).

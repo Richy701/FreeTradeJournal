@@ -229,7 +229,12 @@ export default defineConfig(({ mode }) => {
     format: 'esm'
   },
   build: {
-    target: 'es2022',
+    // safari15: es2022 alone lets class `static {}` blocks from dependencies
+    // through, which Safari < 16.4 cannot parse ("Unexpected token '{'"), so
+    // the trade review chunk never loaded for those users.
+    target: ['es2022', 'safari15'],
+    // Keep stylesheet output exactly as before; only the JS needed lowering.
+    cssTarget: 'es2022',
     // 'hidden' emits .map files without a sourceMappingURL comment in the JS.
     // scripts/upload-sourcemaps.mjs uploads them to PostHog (crash
     // symbolication) and deletes them so they are never deployed publicly.
