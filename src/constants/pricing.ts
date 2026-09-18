@@ -142,7 +142,7 @@ export const PLAN_LIMIT_ROWS: { feature: string; free: string; pro: string }[] =
   { feature: 'Analytics history', free: `Last ${FREE_ANALYTICS_WINDOW_DAYS} days`, pro: 'Full history' },
   { feature: 'Journal entries', free: `Up to ${FREE_JOURNAL_ENTRY_LIMIT}`, pro: 'Unlimited' },
   { feature: 'Trading accounts', free: '2', pro: 'Unlimited' },
-  { feature: 'Prop firm accounts in PropTracker', free: '1', pro: 'Unlimited' },
+  { feature: 'Prop firm accounts', free: '1', pro: 'Unlimited' },
   { feature: 'AI queries', free: 'Monthly allowance', pro: 'Expanded' },
 ];
 

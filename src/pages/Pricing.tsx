@@ -146,7 +146,7 @@ function PricingCard({
                 {i > 0 && <ItemSeparator className="bg-border/60" />}
                 <Item size="sm" className="rounded-none">
                   <ItemTitle className="font-normal text-muted-foreground">{row.label}</ItemTitle>
-                  <ItemActions className="ml-auto text-sm font-medium text-foreground">{row.value}</ItemActions>
+                  <ItemActions className="ml-auto shrink-0 text-sm font-medium text-foreground">{row.value}</ItemActions>
                 </Item>
               </React.Fragment>
             ))}
@@ -335,7 +335,7 @@ export default function Pricing() {
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
               3,000+ traders already journaling
             </p>
-            <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
+            <h1 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl md:text-5xl">
               Free Trading Journal, <span className="text-amber-500">Pro When You Need It</span>
             </h1>
             <p className="mx-auto max-w-lg text-muted-foreground">
@@ -430,7 +430,8 @@ export default function Pricing() {
           <h2 className="text-2xl font-bold">How we <span className="text-amber-500">compare</span></h2>
           <p className="mt-2 text-muted-foreground">The cheapest paid plan from each journal, side by side</p>
 
-          <Card className="mt-8 overflow-hidden">
+          {/* Four columns do not fit a phone: the table is desktop-only and phones get one card per journal. */}
+          <Card className="mt-8 hidden overflow-hidden md:block">
           <Table className="[&_td:first-child]:pl-6 [&_th:first-child]:pl-6 [&_td:last-child]:pr-6 [&_th:last-child]:pr-6">
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -462,6 +463,33 @@ export default function Pricing() {
             Cheapest paid plan for each journal. Prices checked July to September 2026.
           </p>
           </Card>
+
+          <div className="mt-8 grid gap-4 md:hidden">
+            {COMPETITORS.map((journal) => (
+              <Card key={journal.name} className={cn(journal.own && 'border-amber-500/60')}>
+                <CardHeader className="flex-row items-center gap-3 space-y-0">
+                  <img src={journal.logo} alt="" className={cn('h-8 w-8 rounded-md', !journal.own && 'bg-muted/50 p-0.5')} />
+                  <CardTitle className={cn('text-base', journal.own && 'text-amber-600 dark:text-amber-400')}>{journal.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ItemGroup className="rounded-lg border border-border/60">
+                    {([['Free plan', journal.freePlan], ['Cheapest paid plan', journal.cheapest], ['Cost per year', journal.perYear]] as const).map(([label, value], i) => (
+                      <React.Fragment key={label}>
+                        {i > 0 && <ItemSeparator className="bg-border/60" />}
+                        <Item size="sm" className="rounded-none">
+                          <ItemTitle className="font-normal text-muted-foreground">{label}</ItemTitle>
+                          <ItemActions className="ml-auto shrink-0 text-right text-sm font-medium text-foreground">{value}</ItemActions>
+                        </Item>
+                      </React.Fragment>
+                    ))}
+                  </ItemGroup>
+                </CardContent>
+              </Card>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Cheapest paid plan for each journal. Prices checked July to September 2026.
+            </p>
+          </div>
         </section>
       </main>
 

@@ -11,6 +11,7 @@ import { MARKET_DATA_ENABLED } from '@/config/market-data'
 import { TrendUp, TrendDown } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 function formatMacro(ind: MacroIndicator): string {
   const sign = ind.unit === 'pp' && ind.value > 0 ? '+' : ''
@@ -131,7 +132,9 @@ export function MarketTicker() {
 
   return (
     // Wraps onto extra lines rather than scrolling sideways (this row has the full width now).
-    <div className="flex flex-wrap items-stretch gap-1.5 py-1">
+    // Macro indicators are hidden on phones (six pills wrapped into three lines);
+    // when only macro data is present the whole row hides with them.
+    <div className={cn('flex-wrap items-stretch gap-1.5 py-1', quotes.length > 0 ? 'flex' : 'hidden sm:flex')}>
       {quotes.map((q) => {
         const isUp = q.change >= 0
         const color = isUp ? themeColors.profit : themeColors.loss
@@ -157,7 +160,7 @@ export function MarketTicker() {
       })}
 
       {indicators.map((ind) => (
-        <Badge key={ind.id} variant="outline" className={PILL} title={`As of ${ind.date}`}>
+        <Badge key={ind.id} variant="outline" className={cn(PILL, 'hidden sm:inline-flex')} title={`As of ${ind.date}`}>
           <span className="uppercase tracking-wide">{ind.label}</span>
           <span className="font-semibold tabular-nums text-foreground">{formatMacro(ind)}</span>
           <MacroArrow change={ind.change} up={themeColors.profit} down={themeColors.loss} />

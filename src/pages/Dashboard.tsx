@@ -1724,9 +1724,10 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
 
   // One outline Badge per stat: value first, label muted. Wraps as chips on phones.
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
       {stats.map((s) => (
-        <Badge key={s.key} variant="outline" className="gap-1.5 rounded-md px-2.5 py-1 text-sm font-normal text-muted-foreground">
+        // Smaller on phones so the four chips fit on one line
+        <Badge key={s.key} variant="outline" className="gap-1 rounded-md px-2 py-0.5 text-xs font-normal text-muted-foreground sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-sm">
           <span className="font-semibold tabular-nums text-foreground" style={s.color ? { color: s.color } : undefined}>
             {s.value}
           </span>
