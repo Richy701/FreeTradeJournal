@@ -1,7 +1,8 @@
 import { FeatureScreenshot } from '@/components/feature-screenshot'
 import { useState } from 'react'
-import { SiteHeader } from '@/components/site-header'
-import { AppFooter } from '@/components/app-footer'
+import { MarketingHeader } from '@/components/marketing-header'
+import { Footer7 } from '@/components/blocks/footer-7'
+import { footerConfig } from '@/components/blocks/footer-config'
 import { Button } from '@/components/ui/button'
 import { changelog, type ChangelogItemType } from '@/constants/changelog'
 
@@ -35,10 +36,10 @@ export default function Changelog() {
   const latestVersion = changelog[0]?.version
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
+    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+      <MarketingHeader />
 
-      <div className="max-w-3xl mx-auto px-6 py-14">
+      <div className="max-w-6xl mx-auto px-6 py-14">
         <div className="mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Changelog</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Release Notes</h1>
@@ -70,8 +71,9 @@ export default function Changelog() {
           {visible.map((release, releaseIndex) => {
             const typesInRelease = sectionOrder.filter(type => release.items.some(item => item.type === type))
             return (
-              <div key={release.version}>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div key={release.version} className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-x-12">
+                <div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                   <time dateTime={release.date}>
                     {new Date(release.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </time>
@@ -94,7 +96,10 @@ export default function Changelog() {
                   ))}
                 </div>
 
-                <h2 className="mt-2.5 text-xl font-bold text-foreground">{release.summary}</h2>
+                </div>
+
+                <div className="max-w-2xl">
+                <h2 className="mt-2.5 lg:mt-0 text-xl font-bold text-foreground">{release.summary}</h2>
 
                 <div className="mt-6 space-y-8">
                   {sectionOrder.map(type => {
@@ -108,9 +113,9 @@ export default function Changelog() {
                         <ul className="list-disc pl-5 marker:text-muted-foreground/60 space-y-4">
                           {items.map((item, i) => (
                             <li key={i}>
-                              <p className="text-sm font-medium text-foreground">{item.text}</p>
+                              <p className="text-base font-medium text-foreground">{item.text}</p>
                               {item.highlight && item.description && (
-                                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                                <p className="mt-1 text-base text-muted-foreground leading-relaxed">{item.description}</p>
                               )}
                               {item.highlight && item.image && (
                                 <FeatureScreenshot
@@ -127,7 +132,9 @@ export default function Changelog() {
                   })}
                 </div>
 
-                {releaseIndex < visible.length - 1 && <div className="border-t border-border mt-12" />}
+                </div>
+
+                {releaseIndex < visible.length - 1 && <div className="border-t border-border mt-12 lg:col-span-2" />}
               </div>
             )
           })}
@@ -142,7 +149,7 @@ export default function Changelog() {
         )}
       </div>
 
-      <AppFooter />
+      <Footer7 {...footerConfig} />
     </div>
   )
 }

@@ -2,6 +2,7 @@
   {
     "slug": "fundednext-trading-journal",
     "name": "FundedNext",
+    "logo": "/logos/fundednext.png",
     "title": "FundedNext Trading Journal | Track Stellar Challenge Rules & Import MT5 Trades | FreeTradeJournal",
     "description": "Track your FundedNext Stellar challenge in a free trading journal. Monitor the daily loss limit, max loss, and profit target, import your MT5 trades, and see your real stats. Free, no credit card.",
     "keywords": "FundedNext trading journal, FundedNext journal, FundedNext tracker, FundedNext challenge tracker, Stellar challenge tracker, FundedNext daily loss limit, FundedNext drawdown tracker, FundedNext MT5 import, prop firm trading journal, FundedNext eval tracker",
@@ -61,6 +62,7 @@
   {
     "slug": "ftmo-trading-journal",
     "name": "FTMO",
+    "logo": "/logos/ftmo.svg",
     "title": "FTMO Trading Journal | Track Challenge Rules & Import MT5 or cTrader Trades | FreeTradeJournal",
     "description": "Track your FTMO Challenge in a free trading journal. Monitor the 5% daily loss and 10% max loss, watch progress to the profit target, and import trades from MT5 or cTrader. Free, no credit card.",
     "keywords": "FTMO trading journal, FTMO journal, FTMO challenge tracker, FTMO daily loss tracker, FTMO drawdown tracker, FTMO MT5 import, FTMO cTrader export, prop firm trading journal, FTMO eval tracker, FTMO account tracker",
@@ -122,6 +124,7 @@
   {
     "slug": "apex-trading-journal",
     "name": "Apex Trader Funding",
+    "logo": "/logos/apex-trader-funding.svg",
     "title": "Apex Trading Journal | Track Trailing Drawdown & Import Tradovate Trades | FreeTradeJournal",
     "description": "Track your Apex Trader Funding evaluation in a free journal. Monitor the trailing drawdown and payout consistency rule, and import trades from Tradovate or Rithmic. Free, no credit card.",
     "keywords": "Apex trading journal, Apex Trader Funding journal, Apex tracker, Apex evaluation tracker, Apex trailing drawdown tracker, Apex Tradovate import, Apex Rithmic export, futures prop firm journal, Apex consistency rule, Apex PA tracker",
@@ -180,6 +183,7 @@
   {
     "slug": "funding-pips-trading-journal",
     "name": "Funding Pips",
+    "logo": "/logos/fundingpips.svg",
     "title": "Funding Pips Trading Journal | Track Challenge Rules & Import MT5 Trades | FreeTradeJournal",
     "description": "Track your Funding Pips challenge in a free trading journal. Monitor the intraday daily loss limit and static max loss, watch your phase targets, and import trades from MT5, cTrader, or Match-Trader. Free, no credit card.",
     "keywords": "Funding Pips trading journal, FundingPips journal, Funding Pips tracker, Funding Pips challenge tracker, Funding Pips daily loss, Funding Pips drawdown tracker, Funding Pips MT5 import, prop firm trading journal, Funding Pips eval tracker, 2 step standard tracker",
@@ -239,6 +243,7 @@
   {
     "slug": "topstep-trading-journal",
     "name": "Topstep",
+    "logo": "/logos/topstep.png",
     "title": "Topstep Trading Journal | Track Combine Rules & Import TopstepX Trades | FreeTradeJournal",
     "description": "Track your Topstep Trading Combine in a free journal. Monitor the trailing Maximum Loss Limit and consistency target, and import trades straight from TopstepX's CSV export. Free, no credit card.",
     "keywords": "Topstep trading journal, Topstep journal, Topstep Combine tracker, TopstepX CSV export, TopstepX import, Topstep trailing drawdown tracker, Topstep consistency rule, futures prop firm journal, Topstep eval tracker, Topstep account tracker",

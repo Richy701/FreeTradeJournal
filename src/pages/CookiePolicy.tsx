@@ -1,28 +1,31 @@
-import { SiteHeader } from '@/components/site-header';
+import { MarketingHeader } from '@/components/marketing-header';
 import { openCookieSettings } from '@/lib/cookie-consent';
-import { AppFooter } from '@/components/app-footer';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
+import { ReadingPage, ReadingSection } from '@/components/reading-page';
 import { Link } from 'react-router-dom';
 import { FeedbackLink } from '@/components/feedback-link';
 
 export default function CookiePolicy() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
+    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+      <MarketingHeader />
 
-      <div className="max-w-4xl mx-auto px-6 py-14">
-        <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Cookie Policy</h1>
-          <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
-        </div>
+      <ReadingPage
+        header={
+          <>
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
+            <h1 className="font-display text-4xl font-bold tracking-tight">Cookie Policy</h1>
+            <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
+          </>
+        }
+      >
 
-        <div className="divide-y divide-border text-sm leading-relaxed text-muted-foreground">
-
-          <LegalSection title="What Are Cookies">
+          <ReadingSection title="What Are Cookies">
             <p>Cookies are small text files stored on your device when you visit a website. FreeTradeJournal uses cookies and similar technologies (such as browser storage) to keep you signed in, remember your preferences, and understand how the app is used.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Cookies We Use">
+          <ReadingSection title="Cookies We Use">
             <div className="mt-2 rounded-lg border border-border overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -50,13 +53,13 @@ export default function CookiePolicy() {
                 </tbody>
               </table>
             </div>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Essential Cookies">
+          <ReadingSection title="Essential Cookies">
             <p>These are required for FreeTradeJournal to function. They handle authentication, session persistence, and security. <strong className="text-foreground">These cannot be disabled</strong> without losing access to core features like signing in and saving your data.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Functional Storage">
+          <ReadingSection title="Functional Storage">
             <p>FreeTradeJournal is a <strong className="text-foreground">local-first</strong> application. Your trading data, journal entries, goals, and settings are stored in your browser's local storage. This data:</p>
             <ul className="mt-3 space-y-1 pl-4 list-disc">
               <li>Never leaves your device unless you use cloud sync or AI features</li>
@@ -64,18 +67,18 @@ export default function CookiePolicy() {
               <li>Is scoped to your user account</li>
               <li>Can be exported or deleted at any time via Settings</li>
             </ul>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Analytics">
+          <ReadingSection title="Analytics">
             <p>We use PostHog and Vercel Analytics to understand how the app is used, which features are popular, and where we can improve. Analytics cookies are <strong className="text-foreground">optional</strong> and only set if you accept them in the consent banner:</p>
             <ul className="mt-3 space-y-1 pl-4 list-disc">
               <li>If you accept, usage data is linked to your account (user ID and email) so we can understand how features are used</li>
               <li>If you decline, tracking is limited to your current session — nothing is stored on your device or linked to your account</li>
               <li>Analytics data is used solely for product improvement and never shared with third parties for marketing</li>
             </ul>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Third-Party Cookies">
+          <ReadingSection title="Third-Party Cookies">
             <p className="mb-3">The following services may set cookies when you use FreeTradeJournal:</p>
             <dl className="space-y-2">
               {[
@@ -92,9 +95,9 @@ export default function CookiePolicy() {
               ))}
             </dl>
             <p className="mt-3">Each service operates under its own privacy and cookie policies.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Managing Cookies">
+          <ReadingSection title="Managing Cookies">
             <p className="mb-3">You can control cookies through:</p>
             <ul className="space-y-1 pl-4 list-disc">
               <li><strong className="text-foreground">Cookie settings</strong> — accept or decline analytics cookies when you first visit, and change your mind any time: <button type="button" onClick={openCookieSettings} className="text-amber-500 hover:underline">open cookie settings</button></li>
@@ -102,36 +105,26 @@ export default function CookiePolicy() {
               <li><strong className="text-foreground">App settings</strong> — Settings → Data &amp; Privacy has the same cookie settings, plus export and clear for your local data</li>
             </ul>
             <p className="mt-3"><strong className="text-foreground">Note:</strong> Disabling essential cookies or clearing local storage will sign you out and may result in loss of locally stored trading data. Export your data first.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Updates to This Policy">
+          <ReadingSection title="Updates to This Policy">
             <p>We may update this policy to reflect changes in our practices or applicable laws. Changes will be posted on this page with an updated date.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Related Policies">
+          <ReadingSection title="Related Policies">
             <ul className="space-y-1 pl-4 list-disc">
               <li><Link to="/privacy" className="text-amber-500 hover:underline">Privacy Policy</Link></li>
               <li><Link to="/terms" className="text-amber-500 hover:underline">Terms and Conditions</Link></li>
             </ul>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Contact Us">
+          <ReadingSection title="Contact Us">
             <p>Questions about cookies? Reach us at <strong className="text-foreground">support@freetradejournal.com</strong> or through our <FeedbackLink>feedback form</FeedbackLink>.</p>
-          </LegalSection>
+          </ReadingSection>
 
-        </div>
-      </div>
+      </ReadingPage>
 
-      <AppFooter />
+      <Footer7 {...footerConfig} />
     </div>
-  );
-}
-
-function LegalSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="py-8 first:pt-0">
-      <h2 className="text-lg font-semibold text-foreground mb-3">{title}</h2>
-      {children}
-    </section>
   );
 }

@@ -1,23 +1,27 @@
+import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import NumberFlow from '@number-flow/react';
-import { ArrowRight, SealCheck, Check, X, SpinnerGap } from '@phosphor-icons/react';
+import { ArrowRight, Check } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { MarketingHeader } from '@/components/marketing-header';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ANALYSIS_UPGRADE_SOURCE, FREE_FEATURES, PRO_FEATURES, PRICING_PLANS, isLifetimeOnSale, isBirthdayLifetimeWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Item, ItemActions, ItemGroup, ItemSeparator, ItemTitle } from '@/components/ui/item';
+import { Spinner } from '@/components/ui/spinner';
+import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, isBirthdayLifetimeWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
 import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { redirectToPortal } from '@/lib/stripe';
-import { useThemePresets } from '@/contexts/theme-presets';
 import {
   Accordion,
   AccordionContent,
@@ -27,51 +31,6 @@ import {
 
 const FREQUENCIES = ['monthly', 'yearly'] as const;
 type Frequency = typeof FREQUENCIES[number];
-
-// ─── Frequency Toggle Tab ────────────────────────────────────
-function FrequencyTab({
-  text,
-  selected,
-  onSelect,
-  discount,
-}: {
-  text: string;
-  selected: boolean;
-  onSelect: (t: string) => void;
-  discount?: boolean;
-}) {
-  return (
-    <button
-      onClick={() => onSelect(text)}
-      aria-pressed={selected}
-      className={cn(
-        'relative w-fit rounded-full px-4 py-2 text-sm font-semibold capitalize text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        discount && 'flex items-center justify-center gap-2.5',
-      )}
-    >
-      <span className="relative z-10">{text}</span>
-      {selected && (
-        <motion.span
-          layoutId="pricing-tab"
-          transition={{ type: 'spring', duration: 0.4 }}
-          className="absolute inset-0 z-0 rounded-full bg-background shadow-sm"
-        />
-      )}
-      {discount && (
-        <Badge
-          className={cn(
-            'relative z-10 whitespace-nowrap text-xs shadow-none border-0',
-            selected
-              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/15'
-              : 'bg-muted text-muted-foreground hover:bg-muted',
-          )}
-        >
-          Save 36%
-        </Badge>
-      )}
-    </button>
-  );
-}
 
 // ─── Lifetime Retirement Countdown ───────────────────────────
 function LifetimeCountdown() {
@@ -121,6 +80,8 @@ interface CardProps {
   originalPrice?: number;
   subtitle: string;
   description: string;
+  // Real limits shown as label / value rows above the feature list
+  limits?: { label: string; value: string }[];
   features: string[];
   cta: string;
   banner?: React.ReactNode;
@@ -138,6 +99,7 @@ function PricingCard({
   originalPrice,
   subtitle,
   description,
+  limits,
   features,
   cta,
   banner,
@@ -149,154 +111,128 @@ function PricingCard({
   loading,
 }: CardProps) {
   return (
-    <div
-      className={cn(
-        'relative flex flex-col gap-6 overflow-hidden rounded-2xl border p-6 shadow-sm transition-all hover:shadow-md',
-        'bg-background text-foreground',
-        popular && 'outline outline-2 outline-amber-500 lg:scale-[1.06] lg:shadow-xl lg:shadow-amber-500/5 lg:z-10',
-        highlighted && 'border-amber-500/30 bg-amber-500/[0.03] dark:bg-amber-500/[0.06]',
-      )}
-    >
-      {/* Header */}
-      <h2 className="relative flex items-center gap-3 text-xl font-medium">
-        {name}
-        {popular && (
-          <Badge className="bg-amber-500 px-1.5 py-0 text-amber-950 text-[11px] hover:bg-amber-500 border-0">
-            Most Popular
-          </Badge>
+    <Card className={cn('flex flex-col', (popular || highlighted) && 'border-amber-500/60')}>
+      <CardHeader className="space-y-4">
+        <CardTitle className="flex min-h-8 items-center gap-3 text-xl font-medium">
+          {name}
+          {popular && (
+            <Badge className="border-0 bg-amber-500 px-1.5 py-0 text-[11px] text-amber-950 hover:bg-amber-500">
+              Most Popular
+            </Badge>
+          )}
+        </CardTitle>
+        <div>
+          {/* Fixed height: NumberFlow renders taller than plain text, which pushed the Pro price below Free's. */}
+          <div className="flex h-12 items-center gap-2">
+            {typeof price === 'number' && originalPrice !== undefined && (
+              <span className="text-xl font-medium text-muted-foreground line-through">${originalPrice}</span>
+            )}
+            {typeof price === 'number' ? (
+              <NumberFlow format={{ style: 'currency', currency: 'USD' }} value={price} className="text-4xl font-medium" />
+            ) : (
+              <span className="text-4xl font-medium">{price}</span>
+            )}
+          </div>
+          <p className="mt-1 text-xs font-medium text-muted-foreground">{subtitle}</p>
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex-1 space-y-4">
+        {banner}
+        {limits && (
+          <ItemGroup className="rounded-lg border border-border/60">
+            {limits.map((row, i) => (
+              <React.Fragment key={row.label}>
+                {i > 0 && <ItemSeparator className="bg-border/60" />}
+                <Item size="sm" className="rounded-none">
+                  <ItemTitle className="font-normal text-muted-foreground">{row.label}</ItemTitle>
+                  <ItemActions className="ml-auto text-sm font-medium text-foreground">{row.value}</ItemActions>
+                </Item>
+              </React.Fragment>
+            ))}
+          </ItemGroup>
         )}
-      </h2>
-
-      {/* Price */}
-      <div className="relative h-16">
-        {typeof price === 'number' ? (
-          <>
-            <div className="flex items-baseline gap-2">
-              {originalPrice !== undefined && (
-                <span className="text-xl font-medium text-muted-foreground line-through">
-                  ${originalPrice}
-                </span>
-              )}
-              <NumberFlow
-                format={{ style: 'currency', currency: 'USD' }}
-                value={price}
-                className="text-4xl font-medium"
-              />
-            </div>
-            <p className="-mt-1 text-xs font-medium text-muted-foreground">
-              {subtitle}
-            </p>
-          </>
-        ) : (
-          <>
-            <span className="text-4xl font-medium">{price}</span>
-            <p className="-mt-1 text-xs font-medium text-muted-foreground">
-              {subtitle}
-            </p>
-          </>
-        )}
-      </div>
-
-      {banner && <div className="relative">{banner}</div>}
-
-      {/* Features */}
-      <div className="relative flex-1 space-y-2">
-        <p className="text-sm font-medium text-foreground/80">
-          {description}
-        </p>
-        <ul className="space-y-2">
+        <p className="text-sm font-medium text-foreground/80">{description}</p>
+        <ul className="space-y-2.5">
           {features.map((feature) => (
-            <li
-              key={feature}
-              className={cn(
-                'flex items-center gap-2 text-sm font-medium',
-                'text-foreground/60',
-              )}
-            >
-              <SealCheck strokeWidth={1.5} size={16} className="flex-shrink-0" />
+            <li key={feature} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               {feature}
             </li>
           ))}
         </ul>
-      </div>
+      </CardContent>
 
-      {/* CTA */}
-      <div className="relative">
+      <CardFooter>
         {isCurrentPlan ? (
-          <Badge
-            variant="outline"
-            className="w-full justify-center py-2.5 text-sm font-medium border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10"
-          >
+          <Button variant="outline" className="h-11 w-full" disabled>
             Current Plan
-          </Badge>
+          </Button>
         ) : (
           <Button
-            className={cn(
-              'group w-full h-11 rounded-lg font-semibold gap-0 overflow-hidden',
-              popular && 'bg-amber-500 text-amber-950 hover:bg-amber-600',
-            )}
+            className={cn('h-11 w-full font-semibold', popular && 'bg-amber-500 text-amber-950 hover:bg-amber-600')}
             variant={popular ? 'default' : 'outline'}
             onClick={onCtaClick}
             disabled={disabled || loading}
           >
-            {loading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
+            {loading && <Spinner className="mr-2" />}
             {cta}
-            <span className="inline-flex w-0 overflow-hidden opacity-0 transition-all duration-200 group-hover:w-6 group-hover:pl-2 group-hover:opacity-100">
-              <ArrowRight className="h-4 w-4" />
-            </span>
+            {popular && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>
         )}
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }
 
 // ─── Feature Comparison Row ──────────────────────────────────
-function ComparisonRow({ feature, free, pro }: { feature: string; free: boolean; pro: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-3 px-1">
-      <span className="text-sm text-foreground/80">{feature}</span>
-      <div className="flex items-center gap-8 sm:gap-16">
-        <span className="w-8 flex justify-center">
-          {free ? (
-            <Check className="h-4 w-4 text-emerald-500" />
-          ) : (
-            <X className="h-4 w-4 text-muted-foreground/30" />
-          )}
-        </span>
-        <span className="w-8 flex justify-center">
-          {pro ? (
-            <Check className="h-4 w-4 text-amber-500" />
-          ) : (
-            <X className="h-4 w-4 text-muted-foreground/30" />
-          )}
-        </span>
-      </div>
-    </div>
-  );
-}
+
+
+// ─── Competitor comparison ───────────────────────────────────
+// Cheapest PAID plan for every journal, so the comparison is like for like.
+// TradeZella, TraderSync and Edgewonk figures match the verified tables on
+// their /…-alternative pages (July 2026); Tradervue from tradervue.com/site/pricing
+// (Sep 2026: Silver $29.95/mo, no annual price published, so 12 x monthly).
+// Re-verify before editing, and keep the alternative pages in step.
+const COMPETITORS: { name: string; logo: string; freePlan: string; cheapest: string; perYear: string; own?: boolean }[] = [
+  { name: 'FreeTradeJournal', logo: '/favicon.svg', freePlan: 'Yes, free forever', cheapest: '$12.99/month', perYear: '$99.99', own: true },
+  { name: 'Tradervue', logo: '/logos/tradervue.png', freePlan: 'Yes', cheapest: '$29.95/month (Silver)', perYear: '$359.40' },
+  { name: 'TradeZella', logo: '/logos/tradezella.png', freePlan: 'No', cheapest: '$35/month (Essential)', perYear: '$315' },
+  { name: 'TraderSync', logo: '/logos/tradersync.png', freePlan: 'No', cheapest: '$29.95/month (Pro)', perYear: '$312.60' },
+  { name: 'Edgewonk', logo: '/logos/edgewonk.png', freePlan: 'No', cheapest: '$197 paid upfront', perYear: '$197' },
+];
 
 // ─── FAQ ─────────────────────────────────────────────────────
+// Answers restate the app's real limits and the Terms (billing, cancellation,
+// refunds) — change those first, then these.
 const FAQS: { q: string; a: string; lifetime?: boolean }[] = [
   {
-    q: 'Is the free plan really free forever?',
-    a: 'Yes. No credit card required. The core journal — unlimited trades, 30 days of analytics, and up to 20 journal entries — is free for life. Upgrade to Pro for full analytics history and unlimited journaling.',
+    q: 'What do I get on the free plan, and for how long?',
+    a: `The free plan does not expire and needs no card. You can log unlimited trades, import from CSV or Excel, and use goals, risk rules and the calendar heatmap. The limits are dashboard analytics over the last ${FREE_ANALYTICS_WINDOW_DAYS} days, up to ${FREE_JOURNAL_ENTRY_LIMIT} journal entries, 2 trading accounts, 1 prop firm account and a monthly allowance of AI queries.`,
   },
   {
-    q: 'Can I cancel my Pro subscription anytime?',
-    a: 'Yes, cancel from Settings → Subscription at any time. You keep Pro access until the end of your billing period.',
+    q: 'When am I charged if I upgrade?',
+    a: 'Straight away. There is no trial period on Pro, because the free plan is the trial. Monthly and yearly plans are billed at the start of each billing period and renew automatically until you cancel.',
   },
   {
-    q: 'What happens to my data if I downgrade?',
-    a: 'Nothing is deleted. Your trades, journal entries, and goals are all still there. You just lose access to Pro features.',
+    q: 'Can I cancel, and can I get a refund?',
+    a: 'Cancel any time from Settings → Subscription and you keep Pro until the end of the period you paid for. Monthly and yearly subscriptions may be eligible for a refund within 7 days of the first charge if you have not used Pro features extensively. Email support@freetradejournal.com to ask.',
   },
   {
-    q: 'Is cloud sync included in the free plan?',
-    a: 'Free users store data locally in the browser. Pro includes cloud sync across devices so your journal is available everywhere.',
+    q: 'What happens to my trades and journal if I stop paying?',
+    a: `Nothing is deleted. Your trades, journal entries and goals all stay, and you can still export everything. Dashboard analytics go back to the last ${FREE_ANALYTICS_WINDOW_DAYS} days, and if you have more than ${FREE_JOURNAL_ENTRY_LIMIT} journal entries you keep and can edit them, but cannot add new ones until you are under the limit or back on Pro.`,
   },
   {
-    q: 'What AI features does Pro include?',
-    a: 'Coach FTJ, AI Trade Analysis, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, and AI Goal Coach — all powered by the latest OpenAI models.',
+    q: 'Can I switch between monthly and yearly?',
+    a: 'Yes. If you already subscribe, the button on the Pro card opens your billing portal, where you can change the billing interval without starting a second subscription.',
+  },
+  {
+    q: 'Can I import trades from my broker or prop firm?',
+    a: 'Yes, on both plans. Import a CSV or Excel export from any broker, including MetaTrader 4 and 5, cTrader, NinjaTrader and DAS Trader. If a column layout is not recognised, you map it once and the mapping is remembered. You can also import trades from a screenshot.',
+  },
+  {
+    q: 'Is my trading data private?',
+    a: 'Your journal is stored on your own device by default. It only goes to our servers if you turn on cloud sync, which is a Pro feature, or use an AI feature. AI requests are processed through OpenAI, are not used to train models, and are not stored permanently on our servers.',
   },
   {
     q: 'Is the lifetime deal really one payment?',
@@ -310,7 +246,6 @@ export default function Pricing() {
   const { user } = useAuth();
   const { isPro, subscription, openCheckout } = useProStatus();
   const navigate = useNavigate();
-  const { themeColors, alpha } = useThemePresets();
   const [searchParams] = useSearchParams();
   const offerSource = searchParams.get('source') === ANALYSIS_UPGRADE_SOURCE ? ANALYSIS_UPGRADE_SOURCE : undefined;
   const [frequency, setFrequency] = useState<Frequency>(() => searchParams.get('plan') === 'monthly' ? 'monthly' : 'yearly');
@@ -387,74 +322,53 @@ export default function Pricing() {
   const birthdayWeek = isBirthdayLifetimeWindow();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background pt-16 sm:pt-20">
       <SEOMeta />
-      {/* Header */}
-      <header className="bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
-            <span className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-              FreeTradeJournal
-            </span>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2">
-            {!user && (
-              <Link
-                to="/login"
-                className="text-foreground/80 hover:text-foreground transition-colors font-medium px-3 py-2 rounded-md text-sm"
-              >
-                Sign In
-              </Link>
-            )}
-            <ThemeToggle />
+      <MarketingHeader />
+
+      {/* Every section below shares one width so cards, tables and the FAQ
+          start and end on the same edges. */}
+      <main className={cn('mx-auto w-full px-4 sm:px-6', lifetimeAvailable ? 'max-w-5xl' : 'max-w-4xl')}>
+        {/* Hero + billing toggle */}
+        <section className="flex flex-col items-center gap-8 py-14 text-center sm:py-20">
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+              3,000+ traders already journaling
+            </p>
+            <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
+              Free Trading Journal, <span className="text-amber-500">Pro When You Need It</span>
+            </h1>
+            <p className="mx-auto max-w-lg text-muted-foreground">
+              The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.
+            </p>
           </div>
-        </div>
-      </header>
 
-      {/* Hero + Toggle */}
-      <section className="flex flex-col items-center gap-8 py-14 sm:py-20 px-4">
-        <div className="space-y-4 text-center">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-2">
-            3,000+ traders already journaling
-          </div>
-          <h1 className="font-display text-4xl font-bold md:text-5xl tracking-tight">
-            Free Trading Journal, <span className="text-amber-500">Pro When You Need It</span>
-          </h1>
-          <p className="text-muted-foreground max-w-lg mx-auto">
-            The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.
-          </p>
-        </div>
+          <Tabs value={frequency} onValueChange={(value) => setFrequency(value as Frequency)}>
+            <TabsList>
+              {FREQUENCIES.map((freq) => (
+                <TabsTrigger key={freq} value={freq} className="gap-2 px-4 capitalize">
+                  {freq}
+                  {freq === 'yearly' && (
+                    <Badge className="border-0 bg-amber-500/15 px-1.5 py-0 text-[11px] text-amber-700 shadow-none hover:bg-amber-500/15 dark:text-amber-400">
+                      Save 36%
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </section>
 
-        {/* Monthly / Yearly Toggle */}
-        <div className="flex w-fit rounded-full bg-muted/60 p-1">
-          {FREQUENCIES.map((freq) => (
-            <FrequencyTab
-              key={freq}
-              text={freq}
-              selected={frequency === freq}
-              onSelect={(t) => setFrequency(t as Frequency)}
-              discount={freq === 'yearly'}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Cards — 3 columns */}
-      <section className="px-4 pb-16 sm:pb-24">
-        <div
-          className={cn(
-            'grid w-full mx-auto gap-6',
-            lifetimeAvailable ? 'max-w-5xl lg:grid-cols-3' : 'max-w-3xl lg:grid-cols-2',
-          )}
-        >
+        {/* Plans */}
+        <section className={cn('grid gap-6 pb-20', lifetimeAvailable ? 'lg:grid-cols-3' : 'md:grid-cols-2')}>
           {/* Free */}
           <PricingCard
             name="Free"
             price="$0"
             subtitle="Free forever"
             description="Log, review, and improve"
-            features={FREE_FEATURES}
+            limits={PLAN_LIMIT_ROWS.map((row) => ({ label: row.feature, value: row.free }))}
+            features={PLAN_CARD_FREE_FEATURES}
             cta={!user ? 'Get Started Free' : isPro ? 'Included with Pro' : 'Current Plan'}
             isCurrentPlan={!!user && !isPro}
             onCtaClick={() => {
@@ -471,8 +385,9 @@ export default function Pricing() {
             name={`Pro ${activePlan.name}`}
             price={activePlan.price}
             subtitle={frequency === 'monthly' ? 'Per month · Cancel anytime' : 'Per year · Save 36%'}
-            description="For traders who want an edge"
-            features={activePlan.features}
+            description="Everything in Free, plus"
+            limits={PLAN_LIMIT_ROWS.map((row) => ({ label: row.feature, value: row.pro }))}
+            features={PLAN_PRO_ONLY_ROWS}
             cta={
               !user
                 ? 'Get Pro'
@@ -491,7 +406,7 @@ export default function Pricing() {
             loading={checkoutLoading === activePlan.priceId || portalLoading}
           />
 
-          {/* Lifetime — solid dark, no grid overlay */}
+          {/* Lifetime — retired; only renders while on sale or for existing owners */}
           {lifetimeAvailable && (
             <PricingCard
               name="Pro Lifetime"
@@ -508,193 +423,68 @@ export default function Pricing() {
               loading={checkoutLoading === lifetimePlan.priceId}
             />
           )}
-        </div>
-      </section>
+        </section>
 
-      {/* Feature Comparison */}
-      <section className="px-4 pb-16 sm:pb-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold mb-2">Free vs <span className="text-amber-500">Pro</span></h2>
-            <p className="text-muted-foreground text-base">Everything in Free, plus powerful tools to level up</p>
-          </div>
+        {/* Competitor comparison */}
+        <section className="pb-20">
+          <h2 className="text-2xl font-bold">How we <span className="text-amber-500">compare</span></h2>
+          <p className="mt-2 text-muted-foreground">The cheapest paid plan from each journal, side by side</p>
 
-          <div className="rounded-2xl border bg-background p-6 sm:p-8">
-            {/* Column Headers */}
-            <div className="flex items-center justify-between pb-4 mb-2 border-b">
-              <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Features</span>
-              <div className="flex items-center gap-8 sm:gap-16">
-                <span className="w-8 text-center text-sm font-semibold text-muted-foreground">Free</span>
-                <span className="w-8 text-center text-sm font-semibold text-amber-600 dark:text-amber-400">Pro</span>
-              </div>
-            </div>
-
-            {/* Free features — included in both */}
-            <div className="space-y-0 divide-y divide-border/50">
-              {FREE_FEATURES.map((f) => (
-                <ComparisonRow key={f} feature={f} free pro />
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div className="my-4 flex items-center gap-3">
-              <div className="flex-1 h-px bg-amber-500/20" />
-              <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs hover:bg-amber-500/10">
-                Pro only
-              </Badge>
-              <div className="flex-1 h-px bg-amber-500/20" />
-            </div>
-
-            {/* Pro-only features */}
-            <div className="space-y-0 divide-y divide-border/50">
-              {PRO_FEATURES.map((f) => (
-                <ComparisonRow key={f} feature={f} free={false} pro />
-              ))}
-            </div>
-
-            {/* CTA */}
-            {!isPro && (
-              <div className="mt-8 text-center space-y-2">
-                <Button
-                  className="bg-amber-500 text-amber-950 hover:bg-amber-600 font-semibold px-8"
-                  disabled={!!checkoutLoading}
-                  onClick={() => {
-                    if (user) {
-                      handleUpgrade(activePlan.priceId, activePlan.interval, 'comparison_table');
-                    } else {
-                      // Logged-out users get the free signup they were promised —
-                      // don't seed a Pro checkout behind a "Get Started Free" label
-                      trackEvent('pricing_cta_clicked', { plan: 'free', source: 'comparison_table' });
-                      navigate('/signup');
-                    }
-                  }}
-                >
-                  {checkoutLoading && <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />}
-                  {user ? 'Get Pro' : 'Get Started Free'}
-                </Button>
-                <p className="text-xs text-muted-foreground">Cancel anytime · No hidden fees</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Competitor Comparison */}
-      <section className="px-4 pb-16 sm:pb-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold mb-2">How we <span className="text-amber-500">compare</span></h2>
-            <p className="text-muted-foreground text-base">Same features, fraction of the price</p>
-          </div>
-
-          <div className="rounded-2xl border bg-background overflow-hidden">
-            {/* FTJ Row */}
-            <div className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-4 bg-amber-500/[0.06] border-b-2 border-amber-500/20">
-              <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 rounded-lg shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-foreground text-sm sm:text-base truncate">FreeTradeJournal</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
-                    You
-                  </span>
-                </div>
-                <div className="mt-1.5 h-2 rounded-full bg-amber-500/10 max-w-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-amber-500"
-                    initial={{width: 0}}
-                    whileInView={{width: '27%'}}
-                    viewport={{once: true}}
-                    transition={{duration: 0.8, ease: 'easeOut'}}
-                  />
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-xl sm:text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">$12.99</span>
-                <span className="text-xs text-muted-foreground">/mo</span>
-              </div>
-            </div>
-
-            {/* Competitor Rows */}
-            {[
-              {name: 'Tradervue', logo: '/logos/tradervue.png', price: '$49', unit: '/mo', bar: '100%', multiplier: '3.8x', delay: 0.1},
-              {name: 'TraderSync', logo: '/logos/tradersync.png', price: '$29.95', unit: '/mo', bar: '61%', multiplier: '2.3x', delay: 0.2},
-              {name: 'TradeZella', logo: '/logos/tradezella.png', price: '$29', unit: '/mo', bar: '59%', multiplier: '2.2x', delay: 0.3},
-              {name: 'Edgewonk', logo: '/logos/edgewonk.png', price: '$169', unit: '/yr', bar: '29%', multiplier: '1.1x', delay: 0.4},
-            ].map((comp) => (
-              <div key={comp.name} className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 border-b border-border/50 last:border-0">
-                <img src={comp.logo} alt={comp.name} className="h-7 w-7 rounded-md shrink-0 bg-muted/50 p-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground/80 truncate">{comp.name}</span>
-                    <span className="text-[9px] font-semibold tabular-nums px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                      {comp.multiplier}
+          <Card className="mt-8 overflow-hidden">
+          <Table className="[&_td:first-child]:pl-6 [&_th:first-child]:pl-6 [&_td:last-child]:pr-6 [&_th:last-child]:pr-6">
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead>Journal</TableHead>
+                <TableHead>Free plan</TableHead>
+                <TableHead>Cheapest paid plan</TableHead>
+                <TableHead className="text-right">Cost per year</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {COMPETITORS.map((row) => (
+                <TableRow key={row.name}>
+                  <TableCell>
+                    <span className={cn('flex items-center gap-3', row.own ? 'font-semibold' : 'text-foreground/80')}>
+                      <img src={row.logo} alt="" className={cn('h-7 w-7 shrink-0 rounded-md', !row.own && 'bg-muted/50 p-0.5')} />
+                      {row.name}
                     </span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 rounded-full bg-muted/60 max-w-full overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full bg-muted-foreground/20"
-                      initial={{width: 0}}
-                      whileInView={{width: comp.bar}}
-                      viewport={{once: true}}
-                      transition={{duration: 0.8, delay: comp.delay, ease: 'easeOut'}}
-                    />
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-semibold tabular-nums text-foreground/60">{comp.price}</span>
-                  <span className="text-xs text-muted-foreground">{comp.unit}</span>
-                </div>
-              </div>
-            ))}
-
-            {/* Savings Footer */}
-            <div className="px-5 sm:px-6 py-4 bg-amber-500/[0.04] border-t border-amber-500/10">
-              <p className="text-sm text-center text-foreground/70">
-                Save up to <span className="font-bold text-amber-600 dark:text-amber-400">$488/year</span> compared to Tradervue on the yearly plan — with AI features they don't even offer.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+                  </TableCell>
+                  <TableCell className={row.own ? 'font-medium text-foreground' : 'text-muted-foreground'}>{row.freePlan}</TableCell>
+                  <TableCell className={row.own ? 'font-medium text-foreground' : 'text-muted-foreground'}>{row.cheapest}</TableCell>
+                  <TableCell className={cn('text-right tabular-nums', row.own ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-foreground/70')}>
+                    {row.perYear}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <p className="border-t px-6 py-3 text-xs text-muted-foreground">
+            Cheapest paid plan for each journal. Prices checked July to September 2026.
+          </p>
+          </Card>
+        </section>
+      </main>
 
       {/* Real approved testimonials from Firestore — renders nothing until some exist */}
       <TestimonialsSection />
 
       {/* FAQ */}
-      <section className="px-4 pb-16 sm:pb-24">
-        <div className="max-w-2xl mx-auto">
-          <motion.div
-            className="text-center mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl font-bold mb-2">Common <span className="text-amber-500">questions</span></h2>
-            <p className="text-muted-foreground text-base">Everything you need to know before upgrading</p>
-          </motion.div>
+      <section className={cn('mx-auto w-full px-4 pb-16 sm:px-6 sm:pb-24', lifetimeAvailable ? 'max-w-5xl' : 'max-w-4xl')}>
+        <h2 className="text-2xl font-bold">Common <span className="text-amber-500">questions</span></h2>
+        <p className="mt-2 text-muted-foreground">Billing, limits, your data and imports</p>
 
-          <Accordion type="single" collapsible className="w-full">
-            {FAQS.filter((faq) => !faq.lifetime || lifetimeAvailable).map((faq, index) => (
-              <motion.div
-                key={faq.q}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: index * 0.06, ease: 'easeOut' }}
-                viewport={{ once: true, margin: '-30px' }}
-              >
-                <AccordionItem value={`faq-${index}`} className="border-b border-border py-1">
-                  <AccordionTrigger className="text-left hover:no-underline hover:text-amber-500 transition-colors duration-200 py-4">
-                    <span className="text-base font-medium pr-4">{faq.q}</span>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm leading-relaxed text-muted-foreground pb-4 pr-4">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              </motion.div>
-            ))}
-          </Accordion>
-        </div>
+        <Accordion type="single" collapsible className="mt-6 w-full">
+          {FAQS.filter((faq) => !faq.lifetime || lifetimeAvailable).map((faq, index) => (
+            <AccordionItem key={faq.q} value={`faq-${index}`}>
+              <AccordionTrigger className="py-4 text-left text-base font-medium hover:no-underline">
+                {faq.q}
+              </AccordionTrigger>
+              <AccordionContent className="pb-4 text-sm leading-relaxed text-muted-foreground">
+                {faq.a}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </section>
 
       <div className="mt-auto">

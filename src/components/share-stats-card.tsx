@@ -16,6 +16,7 @@ import { useDemoData } from '@/hooks/use-demo-data';
 import { useAccounts } from '@/contexts/account-context';
 import { toast } from 'sonner';
 import { startOfMonth, startOfQuarter, startOfYear } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Period = 'all' | 'month' | 'quarter' | 'year';
 
@@ -540,14 +541,23 @@ export function ShareStatsCard({ children }: { children?: React.ReactNode }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button variant="outline" className="gap-2 h-11 touch-manipulation" aria-label="Share Stats">
-            <ShareNetwork className="h-4 w-4" />
-            <span className="hidden sm:inline">Share Stats</span>
-          </Button>
-        )}
-      </DialogTrigger>
+      {children ? (
+        <DialogTrigger asChild>{children}</DialogTrigger>
+      ) : (
+        // Icon-only: a secondary action next to the labelled Add Trade button.
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="h-11 w-11 touch-manipulation" aria-label="Share Stats">
+                  <ShareNetwork className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Share Stats</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
       <DialogContent className="w-[95vw] max-w-[700px] bg-[#0c0e16] border-white/[0.06] p-0 overflow-hidden gap-0 [&>button]:text-white/70 [&>button:hover]:text-white" overlayClassName="backdrop-blur-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-5 pt-5 pb-3 pr-12">
           <DialogHeader className="space-y-0">

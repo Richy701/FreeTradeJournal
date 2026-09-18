@@ -1,28 +1,31 @@
-import { SiteHeader } from '@/components/site-header';
-import { AppFooter } from '@/components/app-footer';
+import { MarketingHeader } from '@/components/marketing-header';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
+import { ReadingPage, ReadingSection } from '@/components/reading-page';
 import { Link } from 'react-router-dom';
 import { FeedbackLink } from '@/components/feedback-link';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
+    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+      <MarketingHeader />
 
-      <div className="max-w-4xl mx-auto px-6 py-14">
-        <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
-          <h1 className="font-display text-4xl font-bold tracking-tight">Privacy Policy</h1>
-          <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
-        </div>
+      <ReadingPage
+        header={
+          <>
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
+            <h1 className="font-display text-4xl font-bold tracking-tight">Privacy Policy</h1>
+            <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
+          </>
+        }
+      >
 
-        <div className="divide-y divide-border text-sm leading-relaxed text-muted-foreground">
-
-          <LegalSection title="Overview">
+          <ReadingSection title="Overview">
             <p>FreeTradeJournal ("we", "us", "our") is committed to protecting your privacy. This policy explains what information we collect, how we use it, and your rights.</p>
             <p className="mt-3">FreeTradeJournal is a <strong className="text-foreground">local-first</strong> application. Your trading data is stored on your device by default and is never sent to our servers unless you explicitly enable cloud sync or use features that require server communication (e.g. AI analysis, Pro subscriptions).</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Information We Collect">
+          <ReadingSection title="Information We Collect">
             <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mb-2">Account Information</h3>
             <p>When you create an account, we collect:</p>
             <ul className="mt-2 space-y-1 pl-4 list-disc">
@@ -55,9 +58,9 @@ export default function PrivacyPolicy() {
 
             <h3 className="font-semibold text-foreground text-[13px] uppercase tracking-wide mt-6 mb-2">Market Data</h3>
             <p>Live quotes, news, and economic data shown in the app are fetched from Twelve Data, Finnhub, and FRED through our own servers. These providers receive the symbols being requested but never your identity or trading data.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="How We Use Your Information">
+          <ReadingSection title="How We Use Your Information">
             <ul className="space-y-1 pl-4 list-disc">
               <li>Provide, maintain, and improve the application</li>
               <li>Authenticate your account and manage sessions</li>
@@ -69,9 +72,9 @@ export default function PrivacyPolicy() {
               <li>Provide customer support</li>
             </ul>
             <p className="mt-3">We <strong className="text-foreground">never</strong> sell, rent, or share your personal data with third parties for marketing purposes.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Data Storage & Security">
+          <ReadingSection title="Data Storage & Security">
             <p>Your trading data is stored locally on your device by default. When cloud features are used:</p>
             <ul className="mt-3 space-y-1 pl-4 list-disc">
               <li><strong className="text-foreground">Authentication</strong> is managed by Firebase Authentication with industry-standard encryption</li>
@@ -79,9 +82,9 @@ export default function PrivacyPolicy() {
               <li><strong className="text-foreground">All data in transit</strong> is encrypted using TLS/SSL</li>
               <li><strong className="text-foreground">Payment data</strong> is handled by Stripe, a PCI DSS Level 1 certified provider</li>
             </ul>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Third-Party Services">
+          <ReadingSection title="Third-Party Services">
             <p className="mb-3">We use the following third-party services:</p>
             <dl className="space-y-2">
               {[
@@ -104,13 +107,13 @@ export default function PrivacyPolicy() {
               ))}
             </dl>
             <p className="mt-3">Each service has its own privacy policy. We encourage you to review them.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Cookies">
+          <ReadingSection title="Cookies">
             <p>We use essential cookies for authentication and session management. Analytics cookies are used to understand app usage. For full details, see our <Link to="/cookie-policy" className="text-amber-500 hover:underline">Cookie Policy</Link>.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Your Rights">
+          <ReadingSection title="Your Rights">
             <p className="mb-3">You have the right to:</p>
             <dl className="space-y-2">
               {[
@@ -128,37 +131,27 @@ export default function PrivacyPolicy() {
               ))}
             </dl>
             <p className="mt-3">To exercise any of these rights, go to <strong className="text-foreground">Settings → Data Management</strong> or contact us directly.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Data Retention">
+          <ReadingSection title="Data Retention">
             <p>Local data remains on your device until you clear it. Cloud data is retained while your account is active. If you delete your account, all associated cloud data is permanently removed within 30 days, and your email address is removed from our mailing list.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Children's Privacy">
+          <ReadingSection title="Children's Privacy">
             <p>FreeTradeJournal is not intended for use by anyone under the age of 18. We do not knowingly collect personal information from minors.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Changes to This Policy">
+          <ReadingSection title="Changes to This Policy">
             <p>We may update this policy from time to time. Material changes will be communicated via the app or email. The "Last updated" date at the top reflects the most recent revision.</p>
-          </LegalSection>
+          </ReadingSection>
 
-          <LegalSection title="Contact Us">
+          <ReadingSection title="Contact Us">
             <p>Questions about this policy? Reach us at <strong className="text-foreground">support@freetradejournal.com</strong> or through our <FeedbackLink>feedback form</FeedbackLink>.</p>
-          </LegalSection>
+          </ReadingSection>
 
-        </div>
-      </div>
+      </ReadingPage>
 
-      <AppFooter />
+      <Footer7 {...footerConfig} />
     </div>
-  );
-}
-
-function LegalSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="py-8 first:pt-0">
-      <h2 className="text-lg font-semibold text-foreground mb-3">{title}</h2>
-      {children}
-    </section>
   );
 }

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Quotes, Star } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
 import { posthog } from '@/lib/posthog';
 
 interface Testimonial {
@@ -57,18 +60,33 @@ export function TestimonialsSection() {
 
   if (loading || testimonials.length === 0) return null;
 
+  const rated = testimonials.filter((t) => t.rating > 0);
+  const averageRating = rated.length ? rated.reduce((sum, t) => sum + t.rating, 0) / rated.length : null;
+
   return (
     <section className="w-full py-16 sm:py-24 px-4">
       <div className="max-w-6xl mx-auto flex flex-col gap-12">
-        {/* Header */}
-        <div className="flex flex-col gap-3 text-center">
-          <p className="text-sm font-medium text-amber-600 dark:text-amber-500 uppercase tracking-widest">Traders love it</p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Real results from{' '}
-            <span className="text-amber-600 dark:text-amber-500">real traders</span>
+        {/* Header — the average is computed from the reviews shown, never typed in */}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-sm font-medium uppercase tracking-widest text-amber-600 dark:text-amber-500">Reviews</p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            What traders say{' '}
+            <span className="text-amber-600 dark:text-amber-500">after using it</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Join thousands of traders who use FreeTradeJournal to build consistency and find their edge.
+          {averageRating !== null && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="flex gap-0.5" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} weight="fill" className={cn('h-4 w-4', s <= Math.round(averageRating) ? 'text-amber-500' : 'text-muted-foreground/25')} />
+                ))}
+              </span>
+              <span>
+                <span className="font-semibold text-foreground">{averageRating.toFixed(1)}</span> out of 5 from traders who left a review
+              </span>
+            </div>
+          )}
+          <p className="mx-auto max-w-xl text-muted-foreground">
+            Written by people who journal their trades here. The words and ratings are their own.
           </p>
         </div>
 
@@ -88,10 +106,8 @@ export function TestimonialsSection() {
 
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
-    <div className={cn(
-      "flex flex-col gap-5 p-6 sm:p-7 rounded-2xl border border-border bg-card",
-      "shadow-sm hover:shadow-md hover:border-amber-500/30 transition-all duration-200"
-    )}>
+    <Card className="flex flex-col transition-colors duration-200 hover:border-amber-500/30">
+      <CardContent className="flex flex-1 flex-col gap-5 p-6 sm:p-7">
       {/* Stars */}
       {testimonial.rating > 0 && (
         <div className="flex gap-1" aria-label={`${testimonial.rating} out of 5 stars`}>
@@ -116,20 +132,24 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
         </p>
       </div>
 
+      </CardContent>
+
       {/* Author */}
-      <div className="flex items-center gap-3 pt-4 border-t border-border/60">
-        <div className="h-9 w-9 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-            {testimonial.name.charAt(0).toUpperCase()}
-          </span>
-        </div>
-        <div className="flex flex-col min-w-0">
-          <span className="text-sm font-semibold truncate">{testimonial.name}</span>
-          {testimonial.role && (
-            <span className="text-xs text-muted-foreground truncate">{testimonial.role}</span>
-          )}
-        </div>
-      </div>
-    </div>
+      <CardFooter className="border-t border-border/60 p-3 sm:p-4">
+        <Item size="sm" className="w-full px-3 py-1">
+          <ItemMedia>
+            <Avatar className="h-9 w-9 border border-amber-500/20">
+              <AvatarFallback className="bg-amber-500/15 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                {testimonial.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>{testimonial.name}</ItemTitle>
+            {testimonial.role && <ItemDescription className="text-xs">{testimonial.role}</ItemDescription>}
+          </ItemContent>
+        </Item>
+      </CardFooter>
+    </Card>
   );
 }

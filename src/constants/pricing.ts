@@ -123,3 +123,35 @@ export const PRO_FEATURES = [
   'Priority email support',
   'Early access to new features',
 ];
+
+// Pricing page plan cards: the limit rows show the actual value on each plan.
+// Prop account limit mirrors FREE_ACCOUNT_LIMIT in pages/PropTracker.tsx and
+// the trading account limit mirrors FREE_TRADING_ACCOUNT_LIMIT in
+// contexts/account-context.tsx — keep them in step. AI is worded, not
+// numbered, because the free allowance is split across two quotas.
+// Free card checklist: the free features that are not one of the limit rows.
+export const PLAN_CARD_FREE_FEATURES = [
+  'Unlimited trades',
+  'Goals & risk management',
+  'CSV/Excel import & export',
+  'Calendar heatmap',
+  'Dark mode & themes',
+];
+
+export const PLAN_LIMIT_ROWS: { feature: string; free: string; pro: string }[] = [
+  { feature: 'Analytics history', free: `Last ${FREE_ANALYTICS_WINDOW_DAYS} days`, pro: 'Full history' },
+  { feature: 'Journal entries', free: `Up to ${FREE_JOURNAL_ENTRY_LIMIT}`, pro: 'Unlimited' },
+  { feature: 'Trading accounts', free: '2', pro: 'Unlimited' },
+  { feature: 'Prop firm accounts in PropTracker', free: '1', pro: 'Unlimited' },
+  { feature: 'AI queries', free: 'Monthly allowance', pro: 'Expanded' },
+];
+
+export const PLAN_PRO_ONLY_ROWS = [
+  'Advanced analytics & charts',
+  'Coach FTJ & AI risk alerts',
+  'AI trade review & strategy tagger',
+  'Cloud sync across devices',
+  'PDF trade reports',
+  'Priority email support',
+  'Early access to new features',
+];

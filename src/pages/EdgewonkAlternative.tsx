@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/blocks/footer-7';
@@ -7,7 +5,7 @@ import { footerConfig } from '@/components/blocks/footer-config';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { MarketingHeader } from '@/components/marketing-header';
 import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
-import { ArrowRight } from '@phosphor-icons/react';
+import { ClosingCta } from '@/components/closing-cta';
 
 // Edgewonk pricing verified 2026-08-10 against edgewonk.com/pricing
 // ($197 per term, no free plan, 14-day refund). Re-check before editing.
@@ -161,33 +159,15 @@ export default function EdgewonkAlternative() {
               </div>
             </div>
 
-            <div className="mt-8 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-amber-500">Try the free plan first</p>
-                <p className="text-xs text-muted-foreground mt-0.5">No credit card. Import your trades and see your stats in minutes.</p>
-              </div>
-              <Link to="/signup">
-                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-8 py-2.5 rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
-                  Start free
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/tradezella-alternative">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground text-sm px-4">
-                  TradeZella alternative
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/tradersync-alternative">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground text-sm px-4">
-                  TraderSync alternative
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+            <ClosingCta
+              title="Try the free plan first"
+              subtitle="No credit card. Import your trades and see your stats in minutes."
+              primary={{ label: 'Start free', to: '/signup' }}
+              related={[
+                { label: 'TradeZella alternative', to: '/tradezella-alternative' },
+                { label: 'TraderSync alternative', to: '/tradersync-alternative' },
+              ]}
+            />
           </div>
         </section>
 

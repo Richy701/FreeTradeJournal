@@ -108,7 +108,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --secondary: 43 18% 95.5%;
     --secondary-foreground: 30 10% 12%;
     --muted: 40 10% 95.5%;
-    --muted-foreground: 35 8% 40%;
+    /* 32%: about 7.5:1 on the near-white background (40% measured 5.4:1). */
+    --muted-foreground: 35 8% 32%;
     --accent: 43 20% 93%;
     --accent-foreground: 30 10% 12%;
     --destructive: 0 76% 50%; /* Trading red - same as dark theme */
@@ -148,7 +149,9 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     --secondary: 35 15% 13%;
     --secondary-foreground: 40 20% 98%;
     --muted: 35 10% 14%;
-    --muted-foreground: 35 8% 55%;
+    /* 64%: about 8:1 on the near-black background. 55% measured 6.4:1, which
+       passed AA but read as dim at 12-14px (e2e/harness/contrast-audit.mjs). */
+    --muted-foreground: 35 8% 64%;
     --accent: 40 20% 14%;
     --accent-foreground: 40 20% 98%;
     --destructive: 0 76% 50%; /* Trading red */

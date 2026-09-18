@@ -8,8 +8,9 @@ import { useUserStorage } from '@/utils/user-storage'
 import { resolveDisplaySymbol } from '@/services/market-data'
 import type { MacroIndicator } from '@/services/macro-data'
 import { MARKET_DATA_ENABLED } from '@/config/market-data'
-import { TrendUp, TrendDown, Minus } from '@phosphor-icons/react'
+import { TrendUp, TrendDown } from '@phosphor-icons/react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Badge } from '@/components/ui/badge'
 
 function formatMacro(ind: MacroIndicator): string {
   const sign = ind.unit === 'pp' && ind.value > 0 ? '+' : ''
@@ -18,12 +19,15 @@ function formatMacro(ind: MacroIndicator): string {
 
 // Macro direction is shown neutrally — for these series "up" is not inherently
 // good or bad, so we avoid the profit/loss coloring used for price changes.
-function MacroArrow({ change }: { change: number }) {
-  if (Math.abs(change) < 0.005) return <Minus className="h-3 w-3 text-muted-foreground" weight="bold" />
+function MacroArrow({ change, up, down }: { change: number; up: string; down: string }) {
+  if (Math.abs(change) < 0.005) return null
   return change > 0
-    ? <TrendUp className="h-3 w-3 text-muted-foreground" weight="bold" />
-    : <TrendDown className="h-3 w-3 text-muted-foreground" weight="bold" />
+    ? <TrendUp className="h-3 w-3" weight="bold" style={{ color: up }} />
+    : <TrendDown className="h-3 w-3" weight="bold" style={{ color: down }} />
 }
+
+// Same outline Badge as the dashboard stat chips, so both rows read as one system.
+const PILL = 'gap-1.5 rounded-md px-2.5 py-1 text-sm font-normal text-muted-foreground'
 
 const MARKET_DEFAULTS: Record<string, string[]> = {
   forex:   ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD'],
@@ -34,7 +38,7 @@ const MIXED_DEFAULTS = ['EURUSD', 'GBPUSD', 'USDJPY', 'GC', 'ES', 'NQ']
 const MAX_SYMBOLS = 6
 
 export function MarketTicker() {
-  const { themeColors, alpha } = useThemePresets()
+  const { themeColors } = useThemePresets()
   const { getTrades } = useDemoData()
   const userStorage = useUserStorage()
   const { settings } = useSettings()
@@ -100,7 +104,8 @@ export function MarketTicker() {
   const { quotes, isLoading, error } = useMarketData(settings.showMarketPrices ? topSymbols : [])
   const { indicators } = useMacroData(settings.showMacroSnapshot)
 
-  if (!MARKET_DATA_ENABLED) return null
+  // An empty marker lets the dashboard hide this widget's row entirely.
+  if (!MARKET_DATA_ENABLED) return <span data-widget-empty hidden />
 
   if (isLoading && quotes.length === 0 && indicators.length === 0) {
     return (
@@ -121,25 +126,20 @@ export function MarketTicker() {
         </p>
       )
     }
-    return null
+    return <span data-widget-empty hidden />
   }
 
   return (
-    <div className="flex items-stretch gap-1.5 overflow-x-auto scrollbar-hide py-1">
+    // Wraps onto extra lines rather than scrolling sideways (this row has the full width now).
+    <div className="flex flex-wrap items-stretch gap-1.5 py-1">
       {quotes.map((q) => {
         const isUp = q.change >= 0
         const color = isUp ? themeColors.profit : themeColors.loss
-
         return (
-          <div
-            key={q.symbol}
-            className="shrink-0 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 transition-colors hover:bg-muted/50"
-          >
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-              {q.symbol}
-            </span>
+          <Badge key={q.symbol} variant="outline" className={PILL}>
+            <span className="uppercase tracking-wide">{q.symbol}</span>
             {!q.isProxy && (
-              <span className="text-[13px] leading-none font-semibold text-foreground tabular-nums font-mono">
+              <span className="font-semibold tabular-nums text-foreground">
                 {q.price < 10
                   ? q.price.toFixed(4)
                   : q.price < 1000
@@ -147,47 +147,22 @@ export function MarketTicker() {
                     : q.price.toLocaleString('en-US', { maximumFractionDigits: 2 })}
               </span>
             )}
-            <span
-              className="flex items-center gap-0.5 text-[10px] font-semibold tabular-nums font-mono px-1.5 py-0.5 rounded leading-none"
-              style={{
-                color,
-                backgroundColor: alpha(color, '10'),
-              }}
-            >
-              {isUp ? (
-                <TrendUp className="h-2.5 w-2.5" weight="bold" />
-              ) : (
-                <TrendDown className="h-2.5 w-2.5" weight="bold" />
-              )}
+            <span className="flex items-center gap-0.5 font-semibold tabular-nums" style={{ color }}>
+              {isUp ? <TrendUp className="h-3 w-3" weight="bold" /> : <TrendDown className="h-3 w-3" weight="bold" />}
               {isUp ? '+' : ''}
               {q.changePercent.toFixed(2)}%
             </span>
-          </div>
+          </Badge>
         )
       })}
 
-      {indicators.length > 0 && (
-        <>
-          {quotes.length > 0 && (
-            <span className="shrink-0 self-stretch w-px my-1.5 bg-border mx-1" aria-hidden />
-          )}
-          {indicators.map((ind) => (
-            <div
-              key={ind.id}
-              className="shrink-0 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 transition-colors hover:bg-muted/50"
-              title={`As of ${ind.date}`}
-            >
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap">
-                {ind.label}
-              </span>
-              <span className="text-[13px] leading-none font-semibold text-foreground tabular-nums font-mono">
-                {formatMacro(ind)}
-              </span>
-              <MacroArrow change={ind.change} />
-            </div>
-          ))}
-        </>
-      )}
+      {indicators.map((ind) => (
+        <Badge key={ind.id} variant="outline" className={PILL} title={`As of ${ind.date}`}>
+          <span className="uppercase tracking-wide">{ind.label}</span>
+          <span className="font-semibold tabular-nums text-foreground">{formatMacro(ind)}</span>
+          <MacroArrow change={ind.change} up={themeColors.profit} down={themeColors.loss} />
+        </Badge>
+      ))}
     </div>
   )
 }

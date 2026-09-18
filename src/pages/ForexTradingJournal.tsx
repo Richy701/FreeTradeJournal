@@ -10,6 +10,7 @@ import { MarketingHeader } from '@/components/marketing-header';
 import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
 import { ArrowRight, CurrencyDollar, Calculator, ChartBar, Buildings, Infinity, FileArrowDown } from '@phosphor-icons/react';
 import { ImageLightbox } from '@/components/ui/image-lightbox';
+import { FeatureScreenshot } from '@/components/feature-screenshot';
 
 const FEATURES = [
   {
@@ -309,7 +310,9 @@ export default function ForexTradingJournal() {
               </h2>
             </div>
 
-            <div className="space-y-4 max-w-3xl">
+            {/* Text beside the screen it describes, so the section uses its full width */}
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-14 lg:items-center">
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Most traders can name their best pair and are wrong about it. Once your history is in, the breakdown by symbol settles the argument: win rate, average winner against average loser, and net result per pair, with costs already taken out. It is common to find that one pair has been quietly funding the losses on another for months.
               </p>
@@ -319,6 +322,12 @@ export default function ForexTradingJournal() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Underneath that sit the numbers you would expect: profit factor, expectancy, max drawdown, largest and average win and loss, consecutive loss streaks, and an equity curve. Free accounts see this for the last 30 days. Pro opens the full history — though your trade log, exports, and calendar heatmap always cover everything you have logged, on either plan.
               </p>
+            </div>
+            <FeatureScreenshot
+              src="/screenshots/hours-sessions-breakdown.png"
+              alt="FreeTradeJournal dashboard showing profit by currency pair, the share of trades per symbol, results by time of day and results by trading session"
+              className="rounded-xl border border-border/60"
+            />
             </div>
           </div>
         </section>

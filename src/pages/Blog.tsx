@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from '@phosphor-icons/react';
-import { SiteHeader } from '@/components/site-header';
-import { AppFooter } from '@/components/app-footer';
+import { MarketingHeader } from '@/components/marketing-header';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { SEOMeta } from '@/components/seo-meta';
 import { posts, type BlogPost } from '@/lib/blog';
 
@@ -33,15 +34,15 @@ export default function Blog() {
   const [featured, ...rest] = posts;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 sm:pt-20">
       <SEOMeta
         title="Trading Blog | FreeTradeJournal — Prop Firm & Journaling Guides"
         description="Guides on prop firm trading, passing combines, and building a journaling habit that makes you consistent — from the team behind FreeTradeJournal."
         keywords="trading blog, prop firm blog, topstep guide, trading journal tips, funded trader blog"
       />
-      <SiteHeader />
+      <MarketingHeader />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
         {/* Masthead */}
         <div className="mb-12 sm:mb-16 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Blog</p>
@@ -135,7 +136,7 @@ export default function Blog() {
         )}
       </div>
 
-      <AppFooter />
+      <Footer7 {...footerConfig} />
     </div>
   );
 }

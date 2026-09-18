@@ -881,7 +881,8 @@ export default function Dashboard() {
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
         <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
           <div className="flex flex-col gap-3">
-            {/* Date + Greeting */}
+            {/* Greeting on the left, quick actions on the right */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', {
@@ -895,14 +896,8 @@ export default function Dashboard() {
               </h1>
             </div>
 
-            {/* Insight + action button */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="max-w-2xl">
-                <HeaderInsightChips trades={analyticsData.trades || []} />
-              </div>
-
-              {/* Quick Actions - inline with title on desktop */}
-              <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
+              {/* Quick actions */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0 sm:justify-end">
               {isDemo ? (
                 <Link to="/signup" onClick={() => exitDemoMode()}>
                   <Button
@@ -1247,6 +1242,17 @@ export default function Dashboard() {
               )}
             </div>
             </div>
+
+            {/* Stat chips on the left, period + $/% controls on the right */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <HeaderInsightChips trades={analyticsData.trades || []} />
+              {tradeCount > 0 && (
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <DashboardPeriodPills />
+                  <PnlDisplayToggle />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1256,15 +1262,6 @@ export default function Dashboard() {
         {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
             reorderable stack so widget visibility/order changes never affect it. */}
         <FreeAIBanner />
-        {/* Pills normally render inside the market-prices widget row (ticker
-            left, pills right) — this standalone row is the fallback when that
-            widget is hidden via Customize. */}
-        {tradeCount > 0 && !visibleWidgets.some(w => w.id === 'market-prices') && (
-          <div className="flex justify-end gap-2">
-            <DashboardPeriodPills />
-            <PnlDisplayToggle />
-          </div>
-        )}
         {tradeCount === 0 && !isDemo && (
           <div className="rounded-2xl border bg-card/50 px-6 py-10 sm:py-12 text-center flex flex-col items-center">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
@@ -1710,39 +1707,32 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
 
   // Neutral counts stay in the text colour; only signed results get profit/loss colour
   const stats: { key: string; value: string; label: string; color?: string }[] = [
-    { key: 'count', value: String(trades.length), label: ' trades' },
+    { key: 'count', value: String(trades.length), label: 'trades' },
   ]
   if (loggingStreak >= 2) {
-    stats.push({ key: 'logstreak', value: String(loggingStreak), label: '-day logging streak' })
+    stats.push({ key: 'logstreak', value: String(loggingStreak), label: 'days logged in a row' })
   }
   if (streak >= 3 && streakPositive) {
-    stats.push({ key: 'streak', value: String(streak), label: '-trade win streak', color: themeColors.profit })
+    stats.push({ key: 'streak', value: String(streak), label: 'wins in a row', color: themeColors.profit })
   }
   if (thisWeek.length > 0) {
-    stats.push({ key: 'week', value: formatCurrency(weekPnl, true), label: ' this week', color: weekPnlColor })
+    stats.push({ key: 'week', value: formatCurrency(weekPnl, true), label: 'this week', color: weekPnlColor })
   } else {
-    stats.push({ key: 'pnl', value: formatCurrency(totalPnl, true), label: ' P&L', color: pnlColor })
+    stats.push({ key: 'pnl', value: formatCurrency(totalPnl, true), label: 'P&L', color: pnlColor })
   }
-  stats.push({ key: 'wr', value: `${winRate}%`, label: ' win rate', color: winRateColor })
+  stats.push({ key: 'wr', value: `${winRate}%`, label: 'win rate', color: winRateColor })
 
-  // Each stat carries its own leading divider; the wrapper's negative margin +
-  // overflow clip hides the divider on whichever stat starts a line, so a
-  // wrapped row on mobile never begins with a stray bar.
+  // One outline Badge per stat: value first, label muted. Wraps as chips on phones.
   return (
-    <div className="overflow-hidden">
-      <div className="-ml-3 flex flex-wrap items-center gap-y-1 text-sm text-muted-foreground">
-        {stats.map((s) => (
-          <span
-            key={s.key}
-            className="relative whitespace-nowrap pl-3 pr-3 before:absolute before:left-0 before:top-1/2 before:h-3.5 before:w-px before:-translate-y-1/2 before:bg-border before:content-['']"
-          >
-            <span className="font-semibold tabular-nums text-foreground" style={s.color ? { color: s.color } : undefined}>
-              {s.value}
-            </span>
-            {s.label}
+    <div className="flex flex-wrap items-center gap-2">
+      {stats.map((s) => (
+        <Badge key={s.key} variant="outline" className="gap-1.5 rounded-md px-2.5 py-1 text-sm font-normal text-muted-foreground">
+          <span className="font-semibold tabular-nums text-foreground" style={s.color ? { color: s.color } : undefined}>
+            {s.value}
           </span>
-        ))}
-      </div>
+          {s.label}
+        </Badge>
+      ))}
     </div>
   )
 }

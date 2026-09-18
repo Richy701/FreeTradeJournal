@@ -32,6 +32,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // Ordering/visibility live in the registry so the sheet and the on-dashboard
 // rearrange mode share exactly one implementation.
@@ -127,12 +128,19 @@ export function CustomizeSheet() {
 
   return (
     <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="default" className="gap-2 h-11 touch-manipulation" aria-label="Customize">
-          <GearSix className="h-4 w-4" />
-          <span className="hidden sm:inline">Customize</span>
-        </Button>
-      </SheetTrigger>
+      {/* Icon-only: a secondary action next to the labelled Add Trade button. */}
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="h-11 w-11 touch-manipulation" aria-label="Customize">
+                <GearSix className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Customize</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <SheetContent side="right" className="flex flex-col">
         <SheetHeader className="shrink-0">
           <SheetTitle>Customize dashboard</SheetTitle>

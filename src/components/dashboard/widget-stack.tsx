@@ -55,7 +55,7 @@ function SortableWidget({ id, label, children, handleHoverBg }: SortableWidgetPr
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="group relative">
+    <div ref={setNodeRef} style={style} className="group relative has-[[data-widget-empty]]:hidden">
       <button
         type="button"
         {...attributes}

@@ -26,6 +26,29 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.96.0',
+    date: '2026-09-18',
+    summary: 'A clearer pricing page, easier-to-read text and a tidier dashboard header.',
+    items: [
+      {
+        type: 'improved',
+        text: 'Pricing page redesigned',
+        description: 'Clearer plan cards that show your actual limits on each plan, and an honest side-by-side of what other journals charge for their cheapest paid plan.',
+        link: { to: '/pricing', label: 'See pricing' },
+      },
+      {
+        type: 'improved',
+        text: 'Easier-to-read text in dark and light mode',
+        description: 'Secondary text across the app is now a stronger grey, so small labels and descriptions no longer fade into the background.',
+      },
+      {
+        type: 'improved',
+        text: 'Tidier dashboard header',
+        description: 'Your stats appear as chips, the period and $/% controls sit beside them, and market prices wrap onto a second line instead of scrolling sideways.',
+      },
+    ],
+  },
+  {
     version: '2.95.0',
     date: '2026-09-14',
     summary: 'See what each setup makes and each mistake costs, plus NinjaTrader executions import.',
@@ -3369,4 +3392,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.95.0'
+export const LATEST_CHANGELOG_VERSION = '2.96.0'

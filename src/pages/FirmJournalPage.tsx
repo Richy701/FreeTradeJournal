@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ClosingCta } from '@/components/closing-cta';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/blocks/footer-7';
@@ -7,7 +7,7 @@ import { footerConfig } from '@/components/blocks/footer-config';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { MarketingHeader } from '@/components/marketing-header';
 import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
-import { ArrowRight, ArrowSquareOut } from '@phosphor-icons/react';
+import { READING_MEASURE } from '@/components/reading-page';
 
 // One page per prop firm, driven entirely by src/data/firm-pages.json.
 // Adding a firm = adding one JSON entry; routes, meta, prerender, and the
@@ -17,6 +17,7 @@ import { ArrowRight, ArrowSquareOut } from '@phosphor-icons/react';
 export interface FirmPage {
   slug: string;
   name: string;
+  logo: string;
   title: string;
   description: string;
   keywords: string;
@@ -54,7 +55,7 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
         />
 
         <section className="py-20 px-4 sm:px-6 bg-background">
-          <div className="container mx-auto max-w-4xl">
+          <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Why a journal</p>
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
@@ -62,16 +63,19 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
                 <span className="text-amber-500">account.</span>
               </h2>
             </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none space-y-4 text-muted-foreground leading-relaxed">
-              {page.intro.map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-16 lg:items-start">
+              <div className={`${READING_MEASURE} space-y-4 text-muted-foreground leading-relaxed`}>
+                {page.intro.map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
+              <FirmAtAGlance page={page} />
             </div>
           </div>
         </section>
 
         <section className="py-20 px-4 sm:px-6 bg-background">
-          <div className="container mx-auto max-w-4xl">
+          <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">The rules</p>
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
@@ -97,7 +101,7 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
         </section>
 
         <section className="py-20 px-4 sm:px-6 bg-background">
-          <div className="container mx-auto max-w-4xl">
+          <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">How FreeTradeJournal helps</p>
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
@@ -106,7 +110,7 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
               </h2>
             </div>
 
-            <div className="divide-y divide-border/40">
+            <div className="grid lg:grid-cols-2 lg:gap-x-16 [&>*]:border-b [&>*]:border-border/40">
               {page.tracking.map((item, i) => (
                 <div key={i} className="flex items-start gap-6 py-5">
                   <span className="text-[11px] font-mono text-emerald-500/50 pt-0.5 w-6 shrink-0 select-none">{String(i + 1).padStart(2, '0')}</span>
@@ -121,7 +125,7 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
         </section>
 
         <section className="py-20 px-4 sm:px-6 bg-background">
-          <div className="container mx-auto max-w-4xl">
+          <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Getting your trades in</p>
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
@@ -130,50 +134,27 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
               </h2>
             </div>
 
-            <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed mb-8">
+            <div className="text-muted-foreground leading-relaxed mb-8">
               <p>{page.importIntro}</p>
             </div>
 
-            <div className="divide-y divide-border/40">
+            {/* Two columns on desktop; the numbers carry the reading order (across, then down). */}
+            <div className="grid lg:grid-cols-2 lg:gap-x-16 [&>*]:border-b [&>*]:border-border/40">
               {page.importSteps.map((step, i) => (
-                <div key={i} className="flex items-start gap-6 py-4">
+                <div key={i} className="flex items-start gap-6 py-5">
                   <span className="text-[11px] font-mono text-amber-500/50 pt-0.5 w-6 shrink-0 select-none">{String(i + 1).padStart(2, '0')}</span>
                   <p className="text-sm text-muted-foreground leading-relaxed flex-1 min-w-0">{step}</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-10 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-amber-500">Track your {page.name} account free</p>
-                <p className="text-xs text-muted-foreground mt-0.5">No credit card. Import your trades and see your stats in minutes.</p>
-              </div>
-              <Link to="/signup">
-                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-8 py-2.5 rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
-                  Start free
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {page.affiliate && (
-                <a href={page.affiliate.url} target="_blank" rel="noopener noreferrer sponsored">
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground text-sm px-4">
-                    {page.affiliate.label}
-                    <ArrowSquareOut className="ml-2 h-4 w-4" />
-                  </Button>
-                </a>
-              )}
-              {page.related.map((link) => (
-                <Link key={link.to} to={link.to}>
-                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground text-sm px-4">
-                    {link.label}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              ))}
-            </div>
+            <ClosingCta
+              title={`Track your ${page.name} account free`}
+              subtitle="No credit card. Import your trades and see your stats in minutes."
+              primary={{ label: 'Start free', to: '/signup' }}
+              secondary={page.affiliate ? { label: page.affiliate.label, href: page.affiliate.url } : undefined}
+              related={page.related}
+            />
           </div>
         </section>
 
@@ -187,5 +168,41 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
         <Footer7 {...footerConfig} />
       </div>
     </>
+  );
+}
+
+// The headline numbers beside the intro, taken from the same verified rules
+// as the full table below. Picks one row per topic by label, since firms name
+// their rules differently (FTMO "Maximum loss", Apex "Trailing drawdown").
+const GLANCE_TOPICS = [/account sizes?/i, /target/i, /daily loss/i, /maximum loss|max loss|trailing drawdown/i, /profit split|payout split/i];
+
+function FirmAtAGlance({ page }: { page: FirmPage }) {
+  const rows = GLANCE_TOPICS
+    .map((topic) => page.rules.find((rule) => topic.test(rule.label)))
+    .filter((rule): rule is FirmPage['rules'][number] => Boolean(rule));
+
+  return (
+    <Card>
+      <CardHeader className="border-b border-border/50">
+        {/* Official white-on-transparent logo: dark panel in light mode so it stays visible. */}
+        <div className="inline-flex self-start items-center rounded-xl bg-zinc-950 dark:bg-transparent px-4 py-3 dark:p-0">
+          <img src={page.logo} alt={`${page.name} logo`} className="h-9 w-auto max-w-[200px] object-contain" />
+        </div>
+        <p className="pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{page.name} at a glance</p>
+      </CardHeader>
+      <CardContent className="pt-4 sm:pt-6">
+        <dl className="space-y-4">
+          {rows.map((rule) => (
+            <div key={rule.label}>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{rule.label}</dt>
+              <dd className="mt-1 text-sm leading-relaxed text-foreground">{rule.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-5 text-xs text-muted-foreground">
+          Rules verified {new Date(`${page.rulesVerified}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}. Full table below.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

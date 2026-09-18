@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { SiteHeader } from '@/components/site-header';
-import { AppFooter } from '@/components/app-footer';
+import { MarketingHeader } from '@/components/marketing-header';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { FeedbackLink } from '@/components/feedback-link';
 import { ProBadge } from '@/components/pro-badge';
 import {
@@ -57,8 +58,8 @@ export default function Documentation() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
+    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+      <MarketingHeader />
 
       <div className="max-w-6xl mx-auto px-6 py-14">
         <div className="mb-12">
@@ -234,7 +235,7 @@ export default function Documentation() {
         </div>
       </div>
 
-      <AppFooter />
+      <Footer7 {...footerConfig} />
     </div>
   );
 }

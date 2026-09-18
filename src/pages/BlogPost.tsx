@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from '@phosphor-icons/react';
-import { SiteHeader } from '@/components/site-header';
-import { AppFooter } from '@/components/app-footer';
+import { MarketingHeader } from '@/components/marketing-header';
+import { Footer7 } from '@/components/blocks/footer-7';
+import { footerConfig } from '@/components/blocks/footer-config';
 import { SEOMeta } from '@/components/seo-meta';
 import { getPost, posts, renderMarkdown } from '@/lib/blog';
 
@@ -42,14 +43,14 @@ function ReadingProgress() {
 // The first paragraph renders larger as an editorial lead; inline product
 // screenshots get a proper frame so they read as figures, not page chrome.
 const PROSE =
-  '[&>p:first-of-type]:text-lg [&>p:first-of-type]:text-foreground/90 ' +
+  '[&>p:first-of-type]:text-xl [&>p:first-of-type]:text-foreground/90 ' +
   '[&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:mt-12 [&_h2]:mb-4 ' +
   '[&_h3]:font-display [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-8 [&_h3]:mb-3 ' +
-  '[&_p]:leading-[1.8] [&_p]:mb-5 [&_p]:text-foreground/85 ' +
+  '[&_p]:text-lg [&_p]:leading-[1.8] [&_p]:mb-5 [&_p]:text-foreground/85 ' +
   '[&_a]:text-amber-500 [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-amber-600 ' +
   '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-5 [&_ul]:space-y-1.5 ' +
   '[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-5 [&_ol]:space-y-1.5 ' +
-  '[&_li]:leading-relaxed [&_li]:text-foreground/85 ' +
+  '[&_li]:text-lg [&_li]:leading-relaxed [&_li]:text-foreground/85 ' +
   '[&_strong]:font-semibold [&_strong]:text-foreground ' +
   '[&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-6 ' +
   '[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-sm ' +
@@ -71,18 +72,18 @@ export default function BlogPost() {
   const nextPost = posts[(posts.findIndex((p) => p.slug === post.slug) + 1) % posts.length];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 sm:pt-20">
       <SEOMeta
         title={`${post.title} | FreeTradeJournal Blog`}
         description={post.subtitle || post.title}
         keywords={post.tags.join(', ')}
         image={post.coverImage}
       />
-      <SiteHeader />
+      <MarketingHeader />
       <ReadingProgress />
 
       <div>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16">
+        <div className="max-w-[39rem] mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16">
           <Link
             to="/blog"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-8"
@@ -108,7 +109,7 @@ export default function BlogPost() {
         </div>
       </div>
 
-      <article className="max-w-3xl mx-auto px-4 sm:px-6 pt-2 pb-16">
+      <article className="max-w-[39rem] mx-auto px-4 sm:px-6 pt-2 pb-16">
         <div
           className={PROSE}
           // Repo-authored markdown only — see renderMarkdown in src/lib/blog.ts
@@ -164,7 +165,7 @@ export default function BlogPost() {
         )}
       </article>
 
-      <AppFooter />
+      <Footer7 {...footerConfig} />
     </div>
   );
 }

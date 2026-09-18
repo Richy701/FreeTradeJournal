@@ -1,8 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable } from '@/components/data-table'
-import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
-import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
 import { CalendarHeatmap } from '@/components/calendar-heatmap'
 import { TradingCoach } from '@/components/trading-coach'
 import { DemoCtaCard } from '@/components/demo-cta-card'
@@ -38,23 +36,13 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     id: 'market-prices',
     label: 'Market prices',
     removable: true,
-    // Period pills share this row (ticker left, pills right) so they don't
-    // float alone; Dashboard renders a standalone fallback when this widget
-    // is hidden.
-    render: ({ tradeCount }) => (
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-        <div className="min-w-0 flex-1">
-          <Suspense fallback={null}>
-            <MarketTicker />
-          </Suspense>
-        </div>
-        {tradeCount > 0 && (
-          <div className="flex justify-end gap-2 lg:shrink-0">
-            <DashboardPeriodPills />
-            <PnlDisplayToggle />
-          </div>
-        )}
-      </div>
+    // Period pills live in the dashboard greeting row, so this widget is only
+    // the ticker. When there is no market data the ticker marks itself empty
+    // and WidgetStack hides the whole row, gap included.
+    render: () => (
+      <Suspense fallback={null}>
+        <MarketTicker />
+      </Suspense>
     ),
   },
   {
