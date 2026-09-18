@@ -1243,9 +1243,13 @@ export default function Dashboard() {
             </div>
             </div>
 
-            {/* Stat chips on the left, period + $/% controls on the right */}
+            {/* Stat chips on the left, period + $/% controls on the right. The chips
+                are desktop-only: on a phone the stat cards just below show the same
+                numbers, and the header was four stacked rows of pills. */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <HeaderInsightChips trades={analyticsData.trades || []} />
+              <div className="hidden sm:block">
+                <HeaderInsightChips trades={analyticsData.trades || []} />
+              </div>
               {tradeCount > 0 && (
                 <div className="flex flex-shrink-0 items-center gap-2">
                   <DashboardPeriodPills />
