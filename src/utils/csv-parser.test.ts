@@ -644,6 +644,21 @@ describe('detectNonTradeExport', () => {
       .toBe('order-history');
   });
 
+  it('flags the Tradovate account summary (one total per day, no trades)', () => {
+    expect(detectNonTradeExport(['Account ID', 'Account Name', 'Trade Date', 'Total Amount', 'Total Realized PNL']))
+      .toBe('daily-summary');
+  });
+
+  it('flags the Tradovate cash history (balance changes, not trades)', () => {
+    expect(detectNonTradeExport(['Account', 'Transaction ID', 'Timestamp', 'Date', 'Delta', 'Amount', 'Cash Change Type', 'Currency', 'Contract']))
+      .toBe('cash-history');
+  });
+
+  it('does not mistake a trade export with a total P&L column for a daily summary', () => {
+    expect(detectNonTradeExport(['Symbol', 'Side', 'Qty', 'Entry Price', 'Exit Price', 'Total PnL']))
+      .toBeNull();
+  });
+
   it('never flags a file that carries a realized result column', () => {
     expect(detectNonTradeExport(['Symbol', 'Side', 'Qty', 'Entry', 'Exit', 'Realized P/L', 'Status']))
       .toBeNull();

@@ -1796,17 +1796,31 @@ export function isNetPnlHeader(header: string | undefined): boolean {
 // because the required columns (close price, realized P&L) don't exist in
 // them. Only consulted after parsing has already failed, so a match means
 // "wrong export type", not "unrecognized format".
-export type NonTradeExportKind = 'open-positions' | 'account-statement' | 'order-history';
+export type NonTradeExportKind = 'open-positions' | 'account-statement' | 'order-history' | 'daily-summary' | 'cash-history';
 
 export const NON_TRADE_EXPORT_MESSAGES: Record<NonTradeExportKind, string> = {
   'open-positions': 'This file looks like a snapshot of your open positions — it has no closing prices or final profit. In your broker, export your closed trades (sometimes called trade history or realized P&L) and import that instead.',
   'account-statement': 'This file looks like an account statement — deposits, withdrawals and balances, not trades. In your broker, export your closed trades (sometimes called trade history) and import that instead.',
   'order-history': 'This file looks like a list of individual orders, not completed trades. In your broker, export your closed trades or trade history report and import that instead.',
+  'daily-summary': 'This file is a daily account summary. It has one total per day and no individual trades. Export your list of trades instead. In Tradovate that is the Orders or Performance report.',
+  'cash-history': 'This file is a cash history. It lists money moving in and out of the account, not trades. Export your list of trades instead. In Tradovate that is the Orders or Performance report.',
 };
 
 export function detectNonTradeExport(headers: string[]): NonTradeExportKind | null {
   const h = headers.map(x => x.trim().toLowerCase());
   const anyCol = (...terms: string[]) => terms.some(t => h.some(col => col.includes(t)));
+
+  // Tradovate's Cash History report: one row per balance change. Its "Contract"
+  // column would otherwise pass for an instrument below.
+  if (anyCol('cash change type')) return 'cash-history';
+
+  // Tradovate's Account Summary report: one row per DAY ("Total Realized PNL").
+  // Checked before the realized-result rule, which it would otherwise satisfy
+  // and send the user to a column mapping that can never work.
+  const hasDailyTotal = h.some(col => col.startsWith('total ') && (col.includes('pnl') || col.includes('p&l') || col.includes('p/l')));
+  if (hasDailyTotal && !anyCol('symbol', 'instrument', 'ticker', 'contract', 'product', 'side', 'price')) {
+    return 'daily-summary';
+  }
 
   // A realized-result column means the file is the right kind and just needs
   // column mapping — never steer those users away.
