@@ -1,7 +1,9 @@
 // Broker-timezone handling for CSV imports.
 //
 // Broker CSVs carry naive wall-clock times written in the BROKER's clock (an
-// MT5 server is typically EET/EEST; Tradovate exports US Central). The legacy
+// MT5 server is typically EET/EEST). Tradovate and NinjaTrader export in the
+// zone the platform DISPLAYS, which defaults to the device clock, so those
+// users usually want "Same as this device", not US Central. The legacy
 // import path fed those strings to `new Date(...)`, which interprets them in
 // whatever timezone the importing browser happens to be in — so the same file
 // produced different stored epochs on different machines (7h spread measured).
@@ -14,10 +16,10 @@
 // offsets) so DST is handled: Europe/Athens tracks EET/EEST, which is the
 // de-facto MT4/MT5 server clock (UTC+2 winter / UTC+3 summer).
 export const BROKER_TIMEZONES: { value: string; label: string }[] = [
-  { value: '', label: 'Same as this device' },
+  { value: '', label: 'Same as this device (Tradovate, NinjaTrader)' },
   { value: 'Europe/Athens', label: 'MT4/MT5 server time (UTC+2/+3)' },
   { value: 'UTC', label: 'UTC / GMT' },
-  { value: 'America/Chicago', label: 'US Central (Tradovate, Topstep, CME)' },
+  { value: 'America/Chicago', label: 'US Central (CME exchange time)' },
   { value: 'America/New_York', label: 'US Eastern' },
   { value: 'Europe/London', label: 'UK (London)' },
 ];
