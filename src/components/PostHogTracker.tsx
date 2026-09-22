@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { usePostHog } from 'posthog-js/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
-import { isAnalyticsBlocked } from '@/lib/posthog';
+import { isAnalyticsBlocked, posthog } from '@/lib/posthog';
 import { COOKIE_CONSENT_CHANGED_EVENT, analyticsConsentGiven } from '@/lib/cookie-consent';
 
 const PAGE_NAMES: Record<string, string> = {
@@ -31,7 +30,6 @@ const PAGE_NAMES: Record<string, string> = {
 };
 
 export function PostHogTracker() {
-  const posthog = usePostHog();
   const location = useLocation();
   const { user, loading, isDemo } = useAuth();
   const { isPro, subscription, trialEndsAt } = useProStatus();
@@ -55,14 +53,14 @@ export function PostHogTracker() {
 
   // Track pageviews on route change
   useEffect(() => {
-    if (posthog && !isAnalyticsBlocked()) {
+    if (!isAnalyticsBlocked()) {
       posthog.capture('$pageview', {
         $current_url: window.location.href,
       });
     }
     const pageName = PAGE_NAMES[location.pathname] || location.pathname;
     trackEvent('page_viewed', { page: pageName, path: location.pathname });
-  }, [location.pathname, posthog]);
+  }, [location.pathname]);
 
   // Identify user on login (only with analytics consent), reset on logout.
   //
@@ -73,7 +71,7 @@ export function PostHogTracker() {
   // now runs only when there is an identity to drop, so logged-out visitors
   // also keep one anonymous id across visits.
   useEffect(() => {
-    if (!posthog || loading) return;
+    if (loading) return;
 
     if (user && !isDemo) {
       if (analyticsConsentGiven() && !isAnalyticsBlocked()) {
@@ -89,14 +87,14 @@ export function PostHogTracker() {
         });
       }
     } else {
-      if (posthog._isIdentified()) posthog.reset();
+      posthog.resetIfIdentified();
       // While in demo, every event/pageview carries demo_session so demo
       // traffic is separable from ordinary anonymous traffic; cleared
       // explicitly on exit since reset() no longer runs on every load.
       if (isDemo) posthog.register({ demo_session: true });
       else posthog.unregister('demo_session');
     }
-  }, [user, loading, isDemo, posthog, isPro, subscription, trialEndsAt, consentVersion]);
+  }, [user, loading, isDemo, isPro, subscription, trialEndsAt, consentVersion]);
 
   return null;
 }

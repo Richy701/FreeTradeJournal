@@ -12,17 +12,16 @@ const state = vi.hoisted(() => ({
   posthog: {
     identify: vi.fn(),
     reset: vi.fn(),
+    resetIfIdentified: vi.fn(),
     register: vi.fn(),
     unregister: vi.fn(),
     capture: vi.fn(),
-    _isIdentified: vi.fn(() => false),
   },
 }));
-vi.mock('posthog-js/react', () => ({ usePostHog: () => state.posthog }));
 vi.mock('@/contexts/auth-context', () => ({ useAuth: () => state.auth }));
 vi.mock('@/contexts/pro-context', () => ({ useProStatus: () => state.pro }));
 vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn() }));
-vi.mock('@/lib/posthog', () => ({ isAnalyticsBlocked: () => false }));
+vi.mock('@/lib/posthog', () => ({ isAnalyticsBlocked: () => false, posthog: state.posthog }));
 
 let root: Root;
 let container: HTMLDivElement;
@@ -38,7 +37,6 @@ beforeEach(() => {
   state.pro.isPro = false;
   state.pro.subscription = null;
   for (const fn of Object.values(state.posthog)) fn.mockClear();
-  state.posthog._isIdentified.mockReturnValue(false);
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -51,31 +49,32 @@ afterEach(() => {
 describe('PostHogTracker identity', () => {
   it('never resets the anonymous id while auth is still resolving, so identify merges the real browsing history', () => {
     render();
-    expect(state.posthog.reset).not.toHaveBeenCalled();
+    expect(state.posthog.resetIfIdentified).not.toHaveBeenCalled();
 
     state.auth.user = { uid: 'uid-1', email: 'a@b.c' };
     state.auth.loading = false;
     render();
 
-    expect(state.posthog.reset).not.toHaveBeenCalled();
+    expect(state.posthog.resetIfIdentified).not.toHaveBeenCalled();
     expect(state.posthog.identify).toHaveBeenCalledWith('uid-1', expect.objectContaining({ email: 'a@b.c' }));
   });
 
   it('keeps the anonymous id across loads for logged-out visitors', () => {
     state.auth.loading = false;
     render();
+    // Only a stale identity may be dropped; an unconditional reset would mint
+    // a fresh anonymous id on every load.
     expect(state.posthog.reset).not.toHaveBeenCalled();
+    expect(state.posthog.resetIfIdentified).toHaveBeenCalledTimes(1);
   });
 
   it('still drops the identity on logout', () => {
     state.auth.user = { uid: 'uid-1' };
     state.auth.loading = false;
     render();
-    state.posthog._isIdentified.mockReturnValue(true);
-
     state.auth.user = null;
     render();
-    expect(state.posthog.reset).toHaveBeenCalledTimes(1);
+    expect(state.posthog.resetIfIdentified).toHaveBeenCalledTimes(1);
   });
 
   it('identifies as soon as analytics consent is granted after login', () => {

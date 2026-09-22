@@ -24,8 +24,6 @@ const SpeedInsights = lazy(() => import('@vercel/speed-insights/react').then(m =
 const CookieConsent = lazyWithRetry(() => import('@/components/CookieConsent').then(m => ({ default: m.CookieConsent })));
 const PWAInstallPrompt = lazyWithRetry(() => import('@/components/PWAInstallPrompt').then(m => ({ default: m.PWAInstallPrompt })));
 const PWAUpdateNotification = lazyWithRetry(() => import('@/components/PWAUpdateNotification').then(m => ({ default: m.PWAUpdateNotification })));
-import { PostHogProvider } from 'posthog-js/react';
-import { posthog } from '@/lib/posthog';
 import firmPagesJson from '@/data/firm-pages.json';
 import type { FirmPage } from '@/pages/FirmJournalPage';
 
@@ -93,7 +91,6 @@ function App() {
   }, []);
 
   return (
-    <PostHogProvider client={posthog}>
     <ThemeProvider defaultTheme="dark" storageKey="ftj-theme">
       <ThemePresetsProvider>
         <AuthProvider>
@@ -205,7 +202,6 @@ function App() {
         </AuthProvider>
       </ThemePresetsProvider>
     </ThemeProvider>
-    </PostHogProvider>
   );
 }
 

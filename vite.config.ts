@@ -253,7 +253,9 @@ export default defineConfig(({ mode }) => {
           'vendor-animation': ['framer-motion'],
           'vendor-icons': ['@phosphor-icons/react'],
           'vendor-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
-          'vendor-remotion': ['remotion', '@remotion/player']
+          'vendor-remotion': ['remotion', '@remotion/player'],
+          // Loaded on demand from src/lib/posthog.ts; keep it out of the main chunk.
+          'vendor-analytics': ['posthog-js']
         },
         assetFileNames: (assetInfo) => {
           if (!assetInfo.name) return `assets/[name]-[hash][extname]`

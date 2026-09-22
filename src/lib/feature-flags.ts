@@ -59,7 +59,7 @@ export function useFeature(flag: string, fallback = false): boolean {
 export function activeFlagValues(): Record<string, string | boolean> | undefined {
   if (isAnalyticsBlocked()) return undefined;
   try {
-    const variants = posthog.featureFlags.getFlagVariants();
+    const variants = posthog.getFlagVariants();
     return Object.keys(variants).length ? variants : undefined;
   } catch {
     return undefined;
