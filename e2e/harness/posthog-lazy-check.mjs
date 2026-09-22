@@ -13,8 +13,13 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = process.env.HARNESS_ROOT || path.resolve(__dirname, '../..')
+// HARNESS_URL=https://www.freetradejournal.com runs the same check against a
+// deployed site instead of a local preview (event POSTs are still swallowed,
+// so the run never lands in analytics).
+const liveUrl = process.env.HARNESS_URL
 const PORT = 5299
-const server = await preview({ root, preview: { port: PORT, strictPort: true }, logLevel: 'error' })
+const server = liveUrl ? null : await preview({ root, preview: { port: PORT, strictPort: true }, logLevel: 'error' })
+const baseUrl = liveUrl ?? `http://localhost:${PORT}`
 // posthog-js also treats navigator.webdriver === true as a bot and drops every
 // event; this flag keeps Chromium from announcing automation.
 const browser = await chromium.launch({ args: ['--disable-blink-features=AutomationControlled'] })
@@ -50,7 +55,7 @@ try {
   const otherRequests = []
   page.on('request', (r) => {
     const u = r.url()
-    if (!u.startsWith(`http://localhost:${PORT}/assets/`) && !u.includes('/api/ingest/')) otherRequests.push(`${r.method()} ${u.slice(0, 120)}`)
+    if (!u.startsWith(`${baseUrl}/assets/`) && !u.includes('/api/ingest/')) otherRequests.push(`${r.method()} ${u.slice(0, 120)}`)
   })
   // Mirror the production rewrites in vercel.json for the SDK's own config,
   // helper scripts and flags calls (real PostHog replies, nothing recorded),
@@ -67,6 +72,7 @@ try {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":1}' })
       return
     }
+    if (liveUrl) { await route.continue(); return }
     const rest = url.pathname.replace(/^\/api\/ingest\//, '')
     const upstream = rest.startsWith('static/')
       ? `https://eu-assets.i.posthog.com/${rest}${url.search}`
@@ -93,7 +99,7 @@ try {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgentData', { get: () => undefined, configurable: true })
   })
-  await page.goto(`http://localhost:${PORT}/`)
+  await page.goto(`${baseUrl}/`)
   await page.waitForLoadState('networkidle').catch(() => {})
   await page.waitForTimeout(6000)
 
@@ -134,7 +140,7 @@ try {
   failures.push(`harness error: ${e.message}`)
 } finally {
   await browser.close()
-  await server.close()
+  await server?.close()
 }
 
 if (failures.length) {
