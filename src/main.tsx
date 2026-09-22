@@ -25,7 +25,18 @@ installStaleChunkReloadListener()
 // Start recording app activity before anything can crash (see the module).
 installLoopCrashContext()
 
-initPostHog();
+// PostHog is not needed to paint the landing page. Starting it once the browser
+// has an idle slice keeps its SDK work and network probe off the critical render path.
+function startPostHogWhenIdle() {
+  const start = () => initPostHog();
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(start, { timeout: 3000 });
+  } else {
+    setTimeout(start, 0);
+  }
+}
+
+startPostHogWhenIdle();
 
 // Persist ?ref= partner attribution before any navigation strips it
 captureReferral();
