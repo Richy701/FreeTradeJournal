@@ -9,6 +9,8 @@ export const COOKIE_CONSENT_VERSION = 2;
 const CONSENT_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
 
 export const OPEN_COOKIE_SETTINGS_EVENT = 'ftj:open-cookie-settings';
+/** Fired once a consent choice is saved and applied, so PostHogTracker can identify in the same tab. */
+export const COOKIE_CONSENT_CHANGED_EVENT = 'ftj:cookie-consent-changed';
 
 export interface CookieConsent {
   necessary: true;

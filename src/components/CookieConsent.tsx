@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { updatePostHogConsent } from '@/lib/posthog';
 import {
+  COOKIE_CONSENT_CHANGED_EVENT,
   OPEN_COOKIE_SETTINGS_EVENT,
   analyticsConsentGiven,
   isCookieConsentPending,
@@ -45,6 +46,9 @@ export const CookieConsent = () => {
   const decide = (allowAnalytics: boolean) => {
     writeCookieConsent(allowAnalytics);
     updatePostHogConsent(allowAnalytics);
+    // After persistence has switched, so a logged-in user who accepts the
+    // banner is identified now rather than on their next Pro-status change.
+    window.dispatchEvent(new CustomEvent(COOKIE_CONSENT_CHANGED_EVENT));
     setOpen(false);
     setManage(false);
   };

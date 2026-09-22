@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePostHog } from 'posthog-js/react';
 import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
 import { isAnalyticsBlocked } from '@/lib/posthog';
-import { analyticsConsentGiven } from '@/lib/cookie-consent';
+import { COOKIE_CONSENT_CHANGED_EVENT, analyticsConsentGiven } from '@/lib/cookie-consent';
 
 const PAGE_NAMES: Record<string, string> = {
   '/': 'Landing',
@@ -33,9 +33,18 @@ const PAGE_NAMES: Record<string, string> = {
 export function PostHogTracker() {
   const posthog = usePostHog();
   const location = useLocation();
-  const { user, isDemo } = useAuth();
+  const { user, loading, isDemo } = useAuth();
   const { isPro, subscription, trialEndsAt } = useProStatus();
   const sessionTracked = useRef(false);
+  // Bumped when the cookie banner is answered, so a user who accepts analytics
+  // after logging in is identified right away instead of on the next
+  // Pro-status change (which for one payer was only after checkout).
+  const [consentVersion, setConsentVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setConsentVersion((v) => v + 1);
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, bump);
+  }, []);
 
   // Track session start once
   useEffect(() => {
@@ -55,9 +64,16 @@ export function PostHogTracker() {
     trackEvent('page_viewed', { page: pageName, path: location.pathname });
   }, [location.pathname, posthog]);
 
-  // Identify user on login (only with analytics consent), reset on logout
+  // Identify user on login (only with analytics consent), reset on logout.
+  //
+  // Waits for auth to resolve: on every page load user is null for a moment,
+  // and calling reset() there minted a fresh anonymous id, so identify() then
+  // merged that throwaway id and the visitor's real pre-signup browsing
+  // (landing, pricing views, gate hits) stayed orphaned in PostHog. reset()
+  // now runs only when there is an identity to drop, so logged-out visitors
+  // also keep one anonymous id across visits.
   useEffect(() => {
-    if (!posthog) return;
+    if (!posthog || loading) return;
 
     if (user && !isDemo) {
       if (analyticsConsentGiven() && !isAnalyticsBlocked()) {
@@ -73,14 +89,14 @@ export function PostHogTracker() {
         });
       }
     } else {
-      posthog.reset();
-      // reset() wipes super properties, so re-flag after it: while in demo,
-      // every event/pageview carries demo_session so demo traffic is
-      // separable from ordinary anonymous traffic. Exiting demo lands in the
-      // plain reset() path, which clears the flag again.
+      if (posthog._isIdentified()) posthog.reset();
+      // While in demo, every event/pageview carries demo_session so demo
+      // traffic is separable from ordinary anonymous traffic; cleared
+      // explicitly on exit since reset() no longer runs on every load.
       if (isDemo) posthog.register({ demo_session: true });
+      else posthog.unregister('demo_session');
     }
-  }, [user, isDemo, posthog, isPro, subscription, trialEndsAt]);
+  }, [user, loading, isDemo, posthog, isPro, subscription, trialEndsAt, consentVersion]);
 
   return null;
 }
