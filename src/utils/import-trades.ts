@@ -4,7 +4,7 @@
 // the dashboard import shipped invalid dates and dropped commissions/fees.)
 import { findColumnIndex, parseCSVHeaders, type ParsedTrade } from './csv-parser';
 import { computePnlPercentage } from '@/lib/pnl';
-import { zonedTimeToUtc } from './timezone';
+import { BROKER_TIMEZONES, zonedTimeToUtc } from './timezone';
 
 // Column synonyms offered when auto-detection fails and the user maps manually.
 // Kept in one place so the Trade Log and Dashboard mapping dialogs stay in sync.
@@ -231,9 +231,35 @@ export function dedupeImportedTrades<T extends Fingerprintable>(
 export function planImport(
   parsed: ParsedTrade[],
   existingAccountTrades: Fingerprintable[],
-  opts: Parameters<typeof buildImportedTrades>[1]
-): { built: ImportedTrade[]; newTrades: ImportedTrade[]; skippedCount: number } {
+  opts: Parameters<typeof buildImportedTrades>[1],
+  now: number = Date.now()
+): { built: ImportedTrade[]; newTrades: ImportedTrade[]; skippedCount: number; futureTradeCount: number; blockedReason: string | null } {
   const built = buildImportedTrades(parsed, opts);
   const { newTrades, skippedCount } = dedupeImportedTrades(existingAccountTrades, built);
-  return { built, newTrades, skippedCount };
+  const futureTradeCount = countFutureTrades(newTrades, now);
+  const blockedReason = futureTradeCount > 0 ? futureImportMessage(futureTradeCount, opts.brokerTimezone) : null;
+  return { built, newTrades, skippedCount, futureTradeCount, blockedReason };
+}
+
+// A closed trade cannot end after the moment it is imported. When converted
+// times land in the future the account's broker time zone is wrong for this
+// file (a Jakarta trader with US Central set stored every trade 12h late,
+// Sep 2026), so the import is blocked instead of filing trades on the wrong
+// day. The pre-conversion guard in csv-parser only warns, tolerates 48h and
+// runs before the zone is applied, so it cannot catch this. Small tolerance
+// covers a device clock that is a little off.
+export const FUTURE_IMPORT_TOLERANCE_MS = 30 * 60 * 1000;
+
+export function countFutureTrades(trades: { exitTime: Date }[], now: number = Date.now()): number {
+  const limit = now + FUTURE_IMPORT_TOLERANCE_MS;
+  return trades.filter(t => t.exitTime.getTime() > limit).length;
+}
+
+export function futureImportMessage(count: number, brokerTimezone?: string): string {
+  const n = `${count} trade${count === 1 ? '' : 's'} in this file ${count === 1 ? 'closes' : 'close'} in the future, which can't be right.`;
+  if (brokerTimezone) {
+    const label = BROKER_TIMEZONES.find(z => z.value === brokerTimezone)?.label || brokerTimezone;
+    return `${n} This account reads file times as ${label}. Tradovate and NinjaTrader files use the time shown on your screen, so set this account's broker time zone to "Same as this device" under Settings, Accounts, then import again.`;
+  }
+  return `${n} Check the dates in the file and your computer's clock, then import again.`;
 }

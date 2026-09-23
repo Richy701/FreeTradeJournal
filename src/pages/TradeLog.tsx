@@ -1013,6 +1013,8 @@ export default function TradeLog() {
   // New function to actually perform the import after confirmation
   const handleConfirmImport = async () => {
     if (!csvPreview.parseResult || !csvPreview.file) return;
+    // The preview already refused this file (trades dated after now).
+    if (importPlan?.blockedReason) return;
     
     setCsvUploadState({ isUploading: true });
     setCsvPreview({ show: false, file: null, parseResult: null });
@@ -3500,9 +3502,24 @@ export default function TradeLog() {
               )}
 
               {/* Actions */}
+              {importPlan?.blockedReason && (
+                <div
+                  className="flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm flex-shrink-0"
+                  style={{ backgroundColor: alpha(themeColors.loss, '08'), borderColor: alpha(themeColors.loss, '20') }}
+                >
+                  <Warning className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: themeColors.loss }} />
+                  <span>{importPlan.blockedReason}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="text-sm text-muted-foreground">
-                  {importPlan && importPlan.newTrades.length > 0 ? (
+                  {importPlan?.blockedReason ? (
+                    <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
+                      <Warning className="h-4 w-4" />
+                      Import blocked until the dates are right
+                    </span>
+                  ) : importPlan && importPlan.newTrades.length > 0 ? (
                     <span className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
                       Ready to import {importPlan.newTrades.length} trades
@@ -3520,9 +3537,11 @@ export default function TradeLog() {
                   )}
                 </div>
 
-                <p className="text-xs text-muted-foreground">
-                  Already imported this file before? No worries — duplicate trades are automatically detected and skipped.
-                </p>
+                {!importPlan?.blockedReason && (
+                  <p className="text-xs text-muted-foreground">
+                    Already imported this file before? No worries — duplicate trades are automatically detected and skipped.
+                  </p>
+                )}
 
                 <div className="flex gap-3">
                   <Button
@@ -3534,7 +3553,7 @@ export default function TradeLog() {
                   </Button>
                   <Button
                     onClick={handleConfirmImport}
-                    disabled={csvUploadState.isUploading || !importPlan || importPlan.newTrades.length === 0}
+                    disabled={csvUploadState.isUploading || !importPlan || importPlan.newTrades.length === 0 || !!importPlan.blockedReason}
                     style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                     className="hover:opacity-90 shadow-lg px-6 font-medium"
                   >

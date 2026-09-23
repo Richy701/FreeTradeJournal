@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildImportedTrades, dedupeImportedTrades, detectMarketFromSymbol, planImport } from './import-trades';
+import { buildImportedTrades, countFutureTrades, dedupeImportedTrades, detectMarketFromSymbol, futureImportMessage, planImport } from './import-trades';
 import type { ParsedTrade } from './csv-parser';
 
 const baseTrade: ParsedTrade = {
@@ -118,5 +118,38 @@ describe('planImport (what the preview shows)', () => {
     expect(plan.newTrades).toHaveLength(1);
     // 20 gross - 0.78 commission: the preview total is what gets saved
     expect(plan.newTrades[0].pnl).toBeCloseTo(19.22, 2);
+  });
+});
+
+describe('planImport — trades dated after the import (wrong broker time zone)', () => {
+  // Christian, Sep 2026: Tradovate file in Jakarta wall-clock, account set to
+  // US Central, every trade stored 12h late. The file was imported minutes
+  // after the last trade closed, so the converted times sat hours in the future.
+  const jakartaWall = { ...baseTrade, entryDate: '2026-09-23T21:30:00', exitDate: '2026-09-23T21:53:00' };
+  const importedAt = Date.UTC(2026, 8, 23, 15, 16); // 22:16 Jakarta, 23 minutes after the close
+
+  it('blocks when the chosen zone pushes trades past the import time', () => {
+    const plan = planImport([jakartaWall], [], { ...opts, brokerTimezone: 'America/Chicago' }, importedAt);
+    expect(plan.futureTradeCount).toBe(1);
+    expect(plan.blockedReason).toContain('closes in the future');
+    expect(plan.blockedReason).toContain('US Central');
+    expect(plan.blockedReason).toContain('Same as this device');
+  });
+
+  it('passes when the zone matches the file', () => {
+    const plan = planImport([jakartaWall], [], { ...opts, brokerTimezone: 'Asia/Jakarta' }, importedAt);
+    expect(plan.futureTradeCount).toBe(0);
+    expect(plan.blockedReason).toBeNull();
+  });
+
+  it('tolerates a device clock that is a few minutes off', () => {
+    const exit = new Date(importedAt + 10 * 60 * 1000);
+    expect(countFutureTrades([{ exitTime: exit }], importedAt)).toBe(0);
+    expect(countFutureTrades([{ exitTime: new Date(importedAt + 60 * 60 * 1000) }], importedAt)).toBe(1);
+  });
+
+  it('gives a clock/date hint when no zone is set', () => {
+    expect(futureImportMessage(2)).toContain("your computer's clock");
+    expect(futureImportMessage(2)).toContain('2 trades');
   });
 });

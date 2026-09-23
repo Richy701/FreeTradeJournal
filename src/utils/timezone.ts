@@ -19,7 +19,7 @@ export const BROKER_TIMEZONES: { value: string; label: string }[] = [
   { value: '', label: 'Same as this device (Tradovate, NinjaTrader)' },
   { value: 'Europe/Athens', label: 'MT4/MT5 server time (UTC+2/+3)' },
   { value: 'UTC', label: 'UTC / GMT' },
-  { value: 'America/Chicago', label: 'US Central (CME exchange time)' },
+  { value: 'America/Chicago', label: 'US Central (only if your platform shows Chicago time)' },
   { value: 'America/New_York', label: 'US Eastern' },
   { value: 'Europe/London', label: 'UK (London)' },
 ];

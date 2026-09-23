@@ -26,6 +26,24 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.96.1',
+    date: '2026-09-23',
+    summary: 'Imports now stop before saving trades on the wrong day.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Imports are blocked when the time zone is wrong',
+        description: 'If your account\'s broker time zone would put trades in the future, the preview now says so and stops the import instead of filing trades a day late. Tradovate and NinjaTrader files use the time shown on your screen, so "Same as this device" is the right setting for them.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer time zone options for accounts',
+        description: 'The US Central choice now says it is only for platforms that display Chicago time.',
+      },
+    ],
+  },
+  {
     version: '2.96.0',
     date: '2026-09-18',
     summary: 'A clearer pricing page, easier-to-read text and a tidier dashboard header.',
@@ -3392,4 +3410,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.96.0'
+export const LATEST_CHANGELOG_VERSION = '2.96.1'
