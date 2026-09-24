@@ -69,6 +69,7 @@ const receiptTotalLabel: React.CSSProperties = {
   textTransform: 'uppercase',
   color: '#ffffff',
   margin: 0,
+  lineHeight: '1',
 }
 const receiptTotal: React.CSSProperties = {
   fontSize: '54px',
@@ -175,10 +176,10 @@ export function LifetimeDropEmail({ firstName, unsubscribeUrl }: LifetimeDropEma
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ padding: '18px 0 0', verticalAlign: 'bottom' }}>
+                      <td style={{ padding: '18px 0 0', verticalAlign: 'middle' }}>
                         <Text style={receiptTotalLabel}>You pay, once</Text>
                       </td>
-                      <td style={{ padding: '18px 0 0', verticalAlign: 'bottom' }} align="right">
+                      <td style={{ padding: '18px 0 0', verticalAlign: 'middle' }} align="right">
                         <Text style={receiptTotal}>{LIFETIME_DROP_PRICE}</Text>
                       </td>
                     </tr>
