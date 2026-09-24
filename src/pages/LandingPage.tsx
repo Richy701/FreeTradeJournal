@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
@@ -12,6 +13,9 @@ import { FAQSection } from '@/components/blocks/faq-section';
 import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
 import { SEOMeta } from '@/components/seo-meta';
+
+// Lazy so the post markdown stays out of the landing chunk.
+const BlogStrip = lazy(() => import('@/components/blog-strip').then((m) => ({ default: m.BlogStrip })));
 
 
 export default function LandingPage() {
@@ -217,6 +221,14 @@ export default function LandingPage() {
         imageLayout="stack"
         reverseLayout={false}
       />
+
+      {/* From the blog: body links so Google crawls the posts, not just the footer */}
+      <Suspense fallback={<div className="min-h-[32rem]" aria-hidden="true" />}>
+        <BlogStrip
+          title={<>Guides from the <span className="text-amber-600 dark:text-amber-500">blog</span></>}
+          subtitle="Prop firm evaluations, broker imports and journaling habits, written by the person who builds this."
+        />
+      </Suspense>
 
       {/* Testimonials */}
       <TestimonialsSection />

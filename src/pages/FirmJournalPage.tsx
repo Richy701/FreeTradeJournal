@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ClosingCta } from '@/components/closing-cta';
+import { lazy, Suspense } from 'react';
 import { SEOMeta } from '@/components/seo-meta';
 import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/blocks/footer-7';
@@ -35,7 +36,11 @@ export interface FirmPage {
   faqs: { question: string; answer: string }[];
   affiliate?: { label: string; url: string } | null;
   related: { label: string; to: string }[];
+  guides?: string[]; // blog slugs shown above the FAQ
 }
+
+// Lazy so the post markdown stays out of this page's chunk.
+const BlogStrip = lazy(() => import('@/components/blog-strip').then((m) => ({ default: m.BlogStrip })));
 
 export default function FirmJournalPage({ page }: { page: FirmPage }) {
   return (
@@ -157,6 +162,17 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
             />
           </div>
         </section>
+
+        {page.guides && page.guides.length > 0 && (
+          <Suspense fallback={<div className="min-h-[32rem]" aria-hidden="true" />}>
+            <BlogStrip
+              slugs={page.guides}
+              eyebrow="Guides"
+              title={<>Reading for <span className="text-amber-600 dark:text-amber-500">{page.name} traders</span></>}
+              subtitle="Import walkthroughs and evaluation habits from the blog, written by the person who builds the journal."
+            />
+          </Suspense>
+        )}
 
         <FAQSection
           faqs={page.faqs}

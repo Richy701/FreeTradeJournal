@@ -274,13 +274,15 @@ async function injectDerivedUrlsIntoSitemap() {
     return;
   }
 
-  const firmLastmod = existsSync(FIRM_PAGES_PATH)
-    ? statSync(FIRM_PAGES_PATH).mtime.toISOString().slice(0, 10)
-    : undefined;
+  // Per-page `updated` from the data file, not the file's mtime (which is the
+  // clone time on CI and would mark every firm page changed on every deploy).
+  const firmUpdated = existsSync(FIRM_PAGES_PATH)
+    ? Object.fromEntries(JSON.parse(readFileSync(FIRM_PAGES_PATH, "utf-8")).map((p) => [`/${p.slug}`, p.updated]))
+    : {};
   const entries = [
     { route: "/blog", lastmod: BLOG_POSTS[0]?.lastmod },
     ...BLOG_POSTS,
-    ...FIRM_ROUTES.map((route) => ({ route, lastmod: firmLastmod })),
+    ...FIRM_ROUTES.map((route) => ({ route, lastmod: firmUpdated[route] })),
   ]
     .filter(({ route }) => !xml.includes(`<loc>https://www.freetradejournal.com${route}</loc>`))
     .map(

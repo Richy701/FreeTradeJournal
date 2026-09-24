@@ -47,8 +47,8 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'sign up, register, free account, trading journal signup'
   },
   '/position-size-calculator': {
-    title: 'Free Position Size Calculator — Forex Lots & Futures Contracts | FreeTradeJournal',
-    description: 'Calculate exactly how many forex lots or futures contracts to trade from your account size, risk percentage, and stop loss. Live exchange rates, micro contract support, no sign-up.',
+    title: 'Free Position Size Calculator: Forex Lots & Futures',
+    description: 'Work out how many forex lots or futures contracts to trade from account size, risk percent and stop loss. Live rates, micro contracts, no sign-up.',
     keywords: 'position size calculator, forex lot size calculator, futures contract calculator, risk calculator trading, pip value calculator'
   },
   '/forgot-password': {
@@ -62,8 +62,8 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'reset password, new password'
   },
   '/documentation': {
-    title: 'How to Use FreeTradeJournal | Free Trading Journal Setup Guide & Tutorials',
-    description: 'Step-by-step guide to setting up your free trading journal. Learn how to log trades, import CSV data from MT5 or Tradovate, read your analytics dashboard, and set trading goals. Get started in under 2 minutes.',
+    title: 'FreeTradeJournal Docs: Setup Guide & Tutorials',
+    description: 'How to set up your free trading journal: log trades, import CSV from MT5 or Tradovate, read the analytics dashboard and set goals. Under 2 minutes.',
     keywords: 'trading journal guide, documentation, help, CSV import, trade tracking tutorial, how to use trading journal, trading journal setup'
   },
   '/privacy': {
@@ -87,41 +87,41 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'cookie policy, cookies, tracking, privacy'
   },
   '/changelog': {
-    title: 'Changelog | FreeTradeJournal - Latest Updates & New Features',
+    title: 'FreeTradeJournal Changelog: Latest Updates & Features',
     description: 'See what\'s new in FreeTradeJournal. Latest updates, new features, bug fixes, and improvements to your free trading journal.',
     keywords: 'changelog, updates, release notes, new features, trading journal updates'
   },
   '/pricing': {
-    title: 'Pricing | Free Forever + Pro Plans from $12.99/mo | FreeTradeJournal',
+    title: 'FreeTradeJournal Pricing: Free Forever, Pro from $12.99/mo',
     description: 'Free forever with unlimited trades, analytics, and CSV import. Upgrade to Pro for AI coaching, cloud sync, and advanced exports. Plans from $12.99/mo.',
     keywords: 'trading journal pricing, free trading journal, pro trading tools, AI trading coach, trading analytics subscription, trade analysis pricing'
   },
   '/lifetime-drop': {
-    title: 'Lifetime Pro is Back for One Week | $199 Once | FreeTradeJournal',
-    description: 'From Friday 25 September at 9:30 AM New York, Lifetime Pro is $199 instead of $249 for one week. Pay once, keep every Pro feature for good. Closes Friday 2 October.',
+    title: 'Lifetime Pro Is Back for One Week: $199 Once',
+    description: 'Lifetime Pro is $199 instead of $249 for one week from Friday 25 September, 9:30 AM New York. Pay once, keep every Pro feature. Closes Friday 2 October.',
     keywords: 'FreeTradeJournal lifetime, lifetime trading journal, trading journal lifetime deal, one-time payment trading journal',
     image: 'https://www.freetradejournal.com/og-lifetime-drop.png'
   },
   '/forex-trading-journal': {
     // Full value prop fits inside Google's ~60-char display cutoff — the page
     // was ranking pos 9 with 0.17% CTR on a generic title
-    title: 'Free Forex Trading Journal | MT4/MT5 Import & Auto Pip P&L | FreeTradeJournal',
-    description: 'Log every FX trade, auto-calculate pips and P&L by pair, and import from MT4 or MT5 in one click. See your win rate by currency pair and session. Free forever — no credit card, no sign-up wall.',
+    title: 'Free Forex Trading Journal: MT4/MT5 Import, Auto Pip P&L',
+    description: 'Log every FX trade, get pips and P&L per pair automatically, and import MT4 or MT5 history in one drop. Win rate by pair and session. Free, no credit card.',
     keywords: 'forex trading journal, free forex trading journal, free forex journal, FX trading tracker, currency trading log, forex performance tracker, pip counter, forex P&L tracker, MT4 journal, MT5 trading journal, forex risk management, currency pair analysis, forex win rate, FX trading diary, forex trade log, EURUSD tracker, GBPUSD journal, forex position sizing, pip calculator journal, forex drawdown tracker'
   },
   '/futures-trading-tracker': {
-    title: 'Free Futures Trading Journal | ES, NQ, CL & Tradovate Import | FreeTradeJournal',
-    description: 'The best free futures trading journal. Log ES, NQ, CL, and GC contracts, calculate tick-level P&L, and import directly from Tradovate or MT5. Built for day traders and scalpers who trade CME futures. No credit card required.',
+    title: 'Free Futures Trading Journal: ES, NQ, CL + Tradovate Import',
+    description: 'Log ES, NQ, CL and GC trades with tick-level P&L, import from Tradovate or NinjaTrader, and see your results by session. Free, no credit card.',
     keywords: 'futures trading journal, free futures trading journal, futures trading tracker, free day trading journal, ES trading journal, NQ trading tracker, crude oil futures log, gold futures tracker, futures P&L tracker, Tradovate journal, Tradovate import, CME futures journal, E-mini journal, micro futures tracker, futures trade log, commodity trading journal, index futures tracker, futures scalping journal, tick counter futures'
   },
   '/prop-firm-dashboard': {
-    title: 'Free Prop Firm Dashboard | Track FTMO, Apex & TopStep Accounts | FreeTradeJournal',
-    description: 'Track your prop firm challenge in real time. Monitor drawdown limits, daily loss caps, and eval progress for FTMO, Apex Trader, TopStep, and 20+ firms. Log trades, analyze risk, and never blow an account. Free to start, no credit card.',
+    title: 'Free Prop Firm Dashboard: Track FTMO, Apex & Topstep',
+    description: 'Track drawdown limits, daily loss caps and evaluation progress for FTMO, Apex, Topstep and 20+ firms in one free dashboard. No credit card.',
     keywords: 'prop firm dashboard, free prop firm dashboard, prop firm trading journal, prop trading dashboard, prop firm tracker, FTMO dashboard, FTMO journal, Apex trader journal, TopStep tracker, funded trader journal, evaluation account tracker, drawdown management, daily loss limit tracker, prop trading journal, funded account dashboard, challenge tracker, verification tracker, funded trader dashboard, prop firm drawdown tracker, prop firm eval tracker'
   },
   '/prop-tracker': {
-    title: 'PropTracker - Free Prop Firm Fee & Payout Tracker | FreeTradeJournal',
-    description: 'Track every prop firm fee, reset, payout and net P&L across all your accounts — free. PropTracker shows your true profit after every cost. Works with FTMO, Apex, TopStep, MyFundedFX and 10+ firms. No credit card required.',
+    title: 'PropTracker: Free Prop Firm Fee & Payout Tracker',
+    description: 'Log every prop firm fee, reset and payout and see your true net P&L per firm. Works with FTMO, Apex, Topstep and 10+ firms. Free, no credit card.',
     keywords: 'prop firm fee tracker, prop firm payout tracker, prop trading cost calculator, FTMO fee tracker, Apex trader payout tracker, TopStep fee calculator, funded trader expense tracker, prop firm net profit, prop firm account tracker, prop firm P&L tracker, prop trading ROI calculator, funded trader cost tracker, prop firm reset fee tracker, evaluation fee tracker, prop firm profit calculator, prop firm expense tracker',
     image: 'https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot.png'
   },
@@ -136,38 +136,38 @@ const pageMeta: Record<string, SEOMetaProps> = {
     keywords: 'online trading journal, free online trading journal, trading journal online, trading journal website, best free trading journal, online trade journal, web trading journal, browser trading journal, trading journal online free, free trading journal website, trading journal software free'
   },
   '/affiliate': {
-    title: 'Best Prop Firm Deals & Discounts (2026) | Exclusive Codes | FreeTradeJournal',
+    title: 'Prop Firm Discount Codes & Deals (2026) | FreeTradeJournal',
     description: 'Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges. Verified discount codes updated for 2026.',
     keywords: 'prop firm discount, prop firm coupon code, FTMO discount, The5ers discount, Apex trader funding deal, TopStep promo code, FundedNext coupon, prop firm affiliate, prop trading deals, best prop firm deals 2026, prop firm challenge discount, funded trader discount, prop firm promo codes'
   },
   '/tradezella-alternative': {
-    title: 'TradeZella Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal',
-    description: 'Looking for a TradeZella alternative? Honest side-by-side comparison: TradeZella starts at $35/month, FreeTradeJournal starts at free with AI coaching and prop-firm tracking included. Pro is $12.99/month.',
+    title: 'TradeZella Alternative (2026): Free Trading Journal',
+    description: 'TradeZella starts at $35/month. FreeTradeJournal starts free with AI coaching and prop firm tracking included, and Pro is $12.99/month. Compared side by side.',
     keywords: 'TradeZella alternative, TradeZella alternatives, free TradeZella alternative, TradeZella vs FreeTradeJournal, TradeZella pricing, TradeZella free version, trading journal like TradeZella, cheaper than TradeZella, TradeZella competitor, best trading journal 2026'
   },
   '/tradersync-alternative': {
-    title: 'TraderSync Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal',
-    description: 'Looking for a TraderSync alternative? Honest comparison: TraderSync starts at $29.95/month with AI on its $49.95 tier. FreeTradeJournal includes AI on its free plan, and Pro is $12.99/month.',
+    title: 'TraderSync Alternative (2026): Free Trading Journal',
+    description: 'TraderSync starts at $29.95/month with AI on its $49.95 tier. FreeTradeJournal includes AI on the free plan, and Pro is $12.99/month. Compared side by side.',
     keywords: 'TraderSync alternative, TraderSync alternatives, free TraderSync alternative, TraderSync vs FreeTradeJournal, TraderSync pricing, TraderSync free plan, trading journal like TraderSync, cheaper than TraderSync, TraderSync competitor, best trading journal 2026'
   },
   '/edgewonk-alternative': {
-    title: 'Edgewonk Alternative (2026) | Free Trading Journal Comparison | FreeTradeJournal',
-    description: 'Looking for an Edgewonk alternative? Honest comparison: Edgewonk is $197 upfront with no free version. FreeTradeJournal is free to start, with AI coaching and prop-firm tracking. Pro is $12.99/month.',
+    title: 'Edgewonk Alternative (2026): Free Trading Journal',
+    description: 'Edgewonk is $197 upfront with no free version. FreeTradeJournal is free to start with AI coaching and prop firm tracking, and Pro is $12.99/month.',
     keywords: 'Edgewonk alternative, Edgewonk alternatives, free Edgewonk alternative, Edgewonk vs FreeTradeJournal, Edgewonk pricing, Edgewonk free version, trading journal like Edgewonk, cheaper than Edgewonk, Edgewonk competitor, best trading journal 2026'
   },
   '/ftmo-review': {
-    title: 'FTMO Review (2026) | Honest Pros, Cons & Challenge Breakdown | FreeTradeJournal',
-    description: 'In-depth FTMO review for 2026. Two-step evaluation breakdown, profit splits up to 90%, payout process, pricing, and how to track your FTMO challenge with FreeTradeJournal.',
+    title: 'FTMO Review (2026): Pros, Cons & Challenge Breakdown',
+    description: 'FTMO review for 2026: the two-step evaluation, profit splits up to 90%, payouts, pricing, and how to track your challenge in a free journal.',
     keywords: 'FTMO review, FTMO review 2026, is FTMO legit, FTMO challenge review, FTMO pros and cons, FTMO profit split, FTMO payout, FTMO evaluation, FTMO cost, FTMO funded account, FTMO trading journal'
   },
   '/the5ers-review': {
-    title: 'The5%ers Review (2026) | Instant Funding & Scaling to $4M | FreeTradeJournal',
+    title: 'The5%ers Review (2026): Instant Funding & Scaling to $4M',
     description: 'Honest The5%ers review for 2026. Instant funding, one-step and two-step evaluations, scaling to $4M, profit splits, and exclusive 5% discount code ZBY34.',
     keywords: 'The5ers review, The5ers review 2026, is The5ers legit, The5ers instant funding, The5ers discount code, The5ers pros and cons, The5ers profit split, The5ers payout, The5ers evaluation, The5ers scaling plan'
   },
   '/top-one-futures-review': {
-    title: 'Top One Futures Review (2026) | Best Futures Prop Firm? | FreeTradeJournal',
-    description: 'Top One Futures review for 2026. One-step evaluation for ES, NQ, CL, GC futures traders. No scaling requirements, up to 90% profit split, and honest pros & cons.',
+    title: 'Top One Futures Review (2026): Best Futures Prop Firm?',
+    description: 'Top One Futures review for 2026: one-step evaluation for ES, NQ, CL and GC, no scaling rules, up to 90% profit split, and honest pros and cons.',
     keywords: 'Top One Futures review, Top One Futures review 2026, Top One Trader review, futures prop firm review, best futures prop firm, Top One Futures evaluation, Top One Futures payout, futures trading prop firm'
   }
 };
