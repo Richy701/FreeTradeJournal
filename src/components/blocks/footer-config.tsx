@@ -17,6 +17,7 @@ export const footerConfig = {
         { name: "Documentation", href: "/documentation" },
         { name: "Changelog", href: "/changelog" },
         { name: "Blog", href: "/blog" },
+        { name: "About", href: "/about" },
       ]
     },
     {

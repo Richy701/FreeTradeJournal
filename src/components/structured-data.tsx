@@ -64,8 +64,8 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
       return {
         "@context": "https://schema.org",
         "@type": "WebPage",
-        "name": "Futures Trading Tracker - Professional Futures Journal",
-        "description": "Track futures contracts, analyze tick performance, manage margin requirements for ES, NQ, CL, GC traders.",
+        "name": "Free Futures Trading Journal: ES, NQ, CL + Tradovate Import",
+        "description": "Log ES, NQ, CL and GC trades with tick-level P&L, import from Tradovate or NinjaTrader, and see your results by session. Free, no credit card.",
         "url": `${baseUrl}${currentPath}`,
         "breadcrumb": {
           "@type": "BreadcrumbList",
@@ -86,13 +86,13 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
             "priceCurrency": "USD"
           },
           "featureList": [
-            "Track E-mini S&P 500, Nasdaq, Crude Oil, Gold contracts",
-            "Automatic tick and point value calculation",
-            "Volume profile analysis",
-            "Margin and leverage tracking",
-            "Time-based analytics for scalping",
-            "Contract roll tracking",
-            "Commission and fee tracking"
+            "Log E-mini and micro S&P 500, Nasdaq-100, Dow, Russell, crude oil, gold and other CME contracts",
+            "Dollar P&L from official tick and point values, commission subtracted",
+            "Tradovate, NinjaTrader, TopstepX and Rithmic CSV import with fill pairing",
+            "P&L by hour of day and by trading session",
+            "Calendar heatmap and equity curve",
+            "Prop firm evaluation rules: daily loss, trailing drawdown, profit target",
+            "Custom multiplier per trade for unlisted contracts"
           ]
         }
       };

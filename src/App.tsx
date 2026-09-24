@@ -63,6 +63,7 @@ const DayTradingJournal = lazyWithRetry(() => import('@/pages/DayTradingJournal'
 const OnlineTradingJournal = lazyWithRetry(() => import('@/pages/OnlineTradingJournal'));
 const Changelog = lazyWithRetry(() => import('@/pages/Changelog'));
 const Blog = lazyWithRetry(() => import('@/pages/Blog'));
+const About = lazyWithRetry(() => import('@/pages/About'));
 const BlogPost = lazyWithRetry(() => import('@/pages/BlogPost'));
 const Pricing = lazyWithRetry(() => import('@/pages/Pricing'));
 const LifetimeDrop = lazyWithRetry(() => import('@/pages/LifetimeDrop'));
@@ -148,6 +149,7 @@ function App() {
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/documentation" element={<Documentation />} />
                 <Route path="/changelog" element={<Changelog />} />
+                <Route path="/about" element={<About />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/pricing" element={<Pricing />} />

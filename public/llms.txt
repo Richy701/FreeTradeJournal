@@ -36,6 +36,7 @@ Retail and prop-firm traders who want a journal that is free to start, works for
 - [Documentation](https://www.freetradejournal.com/documentation): how every feature works
 - [Changelog](https://www.freetradejournal.com/changelog): every release with screenshots
 - [Blog](https://www.freetradejournal.com/blog): guides on journaling, prop firms, imports and the AI coach
+- [About](https://www.freetradejournal.com/about): who builds it (Richy, a UK-based trader, building it solo since 2025) and how the free plan is funded
 - [Forex trading journal](https://www.freetradejournal.com/forex-trading-journal)
 - [Futures trading tracker](https://www.freetradejournal.com/futures-trading-tracker)
 - [Prop firm dashboard](https://www.freetradejournal.com/prop-firm-dashboard)

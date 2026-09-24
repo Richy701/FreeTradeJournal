@@ -136,6 +136,12 @@
 
   <!-- Legal Pages -->
   <url>
+    <loc>https://www.freetradejournal.com/about</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://www.freetradejournal.com/privacy</loc>
     <lastmod>2026-03-27</lastmod>
     <changefreq>quarterly</changefreq>

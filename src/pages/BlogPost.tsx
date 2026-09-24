@@ -158,7 +158,7 @@ export default function BlogPost() {
               image: post.coverImage ? [post.coverImage] : undefined,
               datePublished: post.date,
               dateModified: post.updated || post.date,
-              author: { '@type': 'Organization', name: 'FreeTradeJournal', url: 'https://www.freetradejournal.com' },
+              author: { '@type': 'Person', '@id': 'https://www.freetradejournal.com/about#richy', name: 'Richy', url: 'https://www.freetradejournal.com/about' },
               publisher: {
                 '@type': 'Organization',
                 name: 'FreeTradeJournal',
@@ -202,6 +202,8 @@ export default function BlogPost() {
                 {post.category}
               </span>
               <span className="text-xs font-medium text-muted-foreground">
+                By <Link to="/about" className="text-foreground hover:text-amber-500 transition-colors">Richy</Link>
+                <span aria-hidden="true"> · </span>
                 <time dateTime={post.date}>{formatDate(post.date)}</time>
                 {post.updated && post.updated !== post.date && (
                   <>

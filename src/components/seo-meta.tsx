@@ -7,6 +7,8 @@ interface SEOMetaProps {
   description?: string;
   keywords?: string;
   image?: string;
+  /** Force noindex, e.g. the not-found page rendered for an unknown URL. */
+  noindex?: boolean;
 }
 
 const pageMeta: Record<string, SEOMetaProps> = {
@@ -45,6 +47,11 @@ const pageMeta: Record<string, SEOMetaProps> = {
     title: 'Sign Up Free | FreeTradeJournal - Start Your Trading Journal',
     description: 'Create your free trading journal account. No credit card required. Start tracking trades and improving your performance today.',
     keywords: 'sign up, register, free account, trading journal signup'
+  },
+  '/about': {
+    title: 'About FreeTradeJournal: who builds it and why',
+    description: 'Built and run by Richy, a UK-based trader who paid for Topstep combines and did not want a second subscription to journal them. How the free plan stays free.',
+    keywords: 'about freetradejournal, who makes freetradejournal, trading journal founder'
   },
   '/position-size-calculator': {
     title: 'Free Position Size Calculator: Forex Lots & Futures',
@@ -178,7 +185,7 @@ for (const p of firmPages) {
   pageMeta[`/${p.slug}`] = { title: p.title, description: p.description, keywords: p.keywords };
 }
 
-export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
+export function SEOMeta({ title, description, keywords, image, noindex }: SEOMetaProps) {
   const location = useLocation();
   const currentPath = location.pathname;
   
@@ -191,7 +198,7 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     const canonicalUrl = `https://www.freetradejournal.com${currentPath === '/' ? '/' : currentPath}`;
 
     const noindexPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email'];
-    const isNoindex = noindexPaths.includes(currentPath);
+    const isNoindex = noindex || noindexPaths.includes(currentPath);
 
     // Update document title
     document.title = finalTitle;
@@ -228,7 +235,7 @@ export function SEOMeta({ title, description, keywords, image }: SEOMetaProps) {
     }
     canonical.setAttribute('href', canonicalUrl);
 
-  }, [currentPath, title, description, keywords, image]);
+  }, [currentPath, title, description, keywords, image, noindex]);
   
   return null;
 }

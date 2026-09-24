@@ -1,5 +1,4 @@
 import { SEOMeta } from '@/components/seo-meta';
-import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { FAQSection } from '@/components/blocks/faq-section';
@@ -47,7 +46,6 @@ export default function TradezellaAlternative() {
   return (
     <>
       <SEOMeta />
-      <StructuredData />
       <div className="min-h-screen bg-background flex flex-col">
 
         <MarketingHeader />

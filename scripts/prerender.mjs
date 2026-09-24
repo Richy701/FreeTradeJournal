@@ -103,6 +103,7 @@ const ROUTES = [
   "/tradersync-alternative",
   "/edgewonk-alternative",
   "/position-size-calculator",
+  "/about",
   ...FIRM_ROUTES,
 ];
 

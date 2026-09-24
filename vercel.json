@@ -9,6 +9,11 @@
       "source": "/day-trading-journal",
       "destination": "/",
       "statusCode": 301
+    },
+    {
+      "source": "/blog/free-trading-journals-2026",
+      "destination": "/blog/best-free-trading-journals-2026",
+      "statusCode": 301
     }
   ],
   "rewrites": [
@@ -25,7 +30,7 @@
       "destination": "https://eu.i.posthog.com/$1"
     },
     {
-      "source": "/((?!api/|sitemap\\.xml|robots\\.txt|.*\\.xml|.*\\.txt).*)",
+      "source": "/((?!api/|.*\\.[a-zA-Z0-9]{2,5}$).*)",
       "destination": "/index.html"
     }
   ],

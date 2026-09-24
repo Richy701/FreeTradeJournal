@@ -61,6 +61,7 @@ export default function Blog() {
               description:
                 'Guides on prop firm evaluations, importing trades from your broker, and getting something useful out of your own journal.',
               publisher: { '@type': 'Organization', name: 'FreeTradeJournal', url: 'https://www.freetradejournal.com' },
+              author: { '@type': 'Person', '@id': 'https://www.freetradejournal.com/about#richy', name: 'Richy', url: 'https://www.freetradejournal.com/about' },
               inLanguage: 'en',
               blogPost: posts.map((p) => ({
                 '@type': 'BlogPosting',

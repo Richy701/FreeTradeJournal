@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { SEOMeta } from '@/components/seo-meta';
-import { StructuredData } from '@/components/structured-data';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { MarketingHeader } from '@/components/marketing-header';
@@ -52,7 +51,6 @@ export default function PropTrackerLanding() {
   return (
     <>
       <SEOMeta image="https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot.png" />
-      <StructuredData />
       <div className="min-h-screen bg-background flex flex-col">
 
         {/* ── Header ── */}

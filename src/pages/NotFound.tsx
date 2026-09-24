@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { House } from '@phosphor-icons/react';
+import { SEOMeta } from '@/components/seo-meta';
 
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 px-4">
+      {/* Unknown URLs are served the app shell with a 200 by the Vercel SPA
+          rewrite, so this page marks itself noindex to stop Google filing
+          them as duplicates of the homepage. */}
+      <SEOMeta title="Page not found | FreeTradeJournal" description="That page does not exist or has moved." noindex />
       <div className="text-center max-w-md space-y-6">
         <h1 className="text-7xl font-bold text-amber-500">404</h1>
         <h2 className="text-2xl font-semibold text-foreground">Page Not Found</h2>
