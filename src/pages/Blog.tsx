@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from '@phosphor-icons/react';
 import { MarketingHeader } from '@/components/marketing-header';
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { SEOMeta } from '@/components/seo-meta';
@@ -34,7 +35,7 @@ export default function Blog() {
   const [featured, ...rest] = posts;
 
   return (
-    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+    <div className="min-h-screen bg-background">
       <SEOMeta
         title="Trading Blog | FreeTradeJournal — Prop Firm & Journaling Guides"
         description="Guides on prop firm trading, passing combines, and building a journaling habit that makes you consistent — from the team behind FreeTradeJournal."
@@ -42,17 +43,23 @@ export default function Blog() {
       />
       <MarketingHeader />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
-        {/* Masthead */}
-        <div className="mb-12 sm:mb-16 max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Blog</p>
-          <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight">
-            Trade <span className="text-amber-500">smarter</span>
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Guides on prop firms, journaling, and the habits that make traders consistent.
-          </p>
+      {/* Masthead: the landing page's backdrop, full bleed */}
+      <section className="relative overflow-hidden bg-background noise-overlay">
+        <GeometricBackdrop />
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-32 pb-12 sm:pt-40 sm:pb-16">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Blog</p>
+            <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight">
+              Trade <span className="text-amber-500">smarter</span>
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Guides on prop firms, journaling, and the habits that make traders consistent.
+            </p>
+          </div>
         </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
 
         {/* Featured post */}
         {featured && (

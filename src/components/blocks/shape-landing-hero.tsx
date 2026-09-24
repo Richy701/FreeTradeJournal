@@ -78,43 +78,15 @@ function ElegantShape({
     );
 }
 
-function HeroGeometric({
-    title1 = "Elevate Your Digital Vision",
-    title2 = "Crafting Exceptional Websites",
-    subtitle,
-    showCTA = true,
-    cta,
-    compact = false,
-    eyebrow,
-    homepage = false,
-}: {
-    title1?: string;
-    title2?: string;
-    subtitle?: string;
-    /** Optional pill rendered above the headline (e.g. a time-limited offer). */
-    eyebrow?: React.ReactNode;
-    homepage?: boolean;
-    showCTA?: boolean;
-    cta?: React.ReactNode;
-    compact?: boolean;
-}) {
-    const { enterDemoMode } = useAuth();
-    const navigate = useNavigate();
-    const fadeUpVariants = {
-        hidden: { opacity: 0, y: 30 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 1,
-                delay: 0.5,
-                staggerChildren: 0.2,
-            },
-        },
-    };
-
+/**
+ * The landing hero's background on its own: soft amber wash, the floating
+ * shapes, and the fade to the page background. Drop it inside any
+ * `relative overflow-hidden` section so an offer page reads as the same site.
+ * Content on top needs `relative z-10`.
+ */
+export function GeometricBackdrop() {
     return (
-        <div className={`relative ${homepage ? 'min-h-[720px] py-28 sm:min-h-[780px] sm:py-32' : compact ? 'min-h-[60vh]' : 'min-h-dvh'} w-full flex items-center justify-center overflow-hidden bg-background noise-overlay`}>
+        <>
             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.08] via-transparent to-yellow-600/[0.08] dark:from-amber-500/[0.05] dark:to-yellow-600/[0.05] blur-3xl" />
 
             <div className="absolute inset-0 overflow-hidden">
@@ -163,6 +135,51 @@ function HeroGeometric({
                     className="left-[20%] md:left-[25%] top-[5%] md:top-[10%]"
                 />
             </div>
+            <div className="absolute inset-0 pointer-events-none z-[2]">
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/80" />
+            </div>
+        </>
+    );
+}
+
+function HeroGeometric({
+    title1 = "Elevate Your Digital Vision",
+    title2 = "Crafting Exceptional Websites",
+    subtitle,
+    showCTA = true,
+    cta,
+    compact = false,
+    eyebrow,
+    homepage = false,
+}: {
+    title1?: string;
+    title2?: string;
+    subtitle?: string;
+    /** Optional pill rendered above the headline (e.g. a time-limited offer). */
+    eyebrow?: React.ReactNode;
+    homepage?: boolean;
+    showCTA?: boolean;
+    cta?: React.ReactNode;
+    compact?: boolean;
+}) {
+    const { enterDemoMode } = useAuth();
+    const navigate = useNavigate();
+    const fadeUpVariants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 1,
+                delay: 0.5,
+                staggerChildren: 0.2,
+            },
+        },
+    };
+
+    return (
+        <div className={`relative ${homepage ? 'min-h-[600px] pt-28 pb-12 sm:min-h-[640px] sm:pt-32 sm:pb-16' : compact ? 'min-h-[60vh]' : 'min-h-dvh'} w-full flex items-center justify-center overflow-hidden bg-background noise-overlay`}>
+            <GeometricBackdrop />
 
             <div className="relative z-10 container mx-auto px-4 md:px-6">
                 <div className="max-w-3xl mx-auto text-center">
@@ -293,9 +310,6 @@ function HeroGeometric({
                 </div>
             </div>
 
-            <div className="absolute inset-0 pointer-events-none z-[2]">
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/80" />
-            </div>
         </div>
     );
 }

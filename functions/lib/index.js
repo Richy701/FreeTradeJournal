@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendBirthdayLifetimeClosingEmails = exports.sendBirthdayLifetimeEmails = exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = exports.sendApprovedRoundups = exports.prepareMonthlyRoundup = exports.manageMonthlyRoundup = exports.completeOnboarding = void 0;
+exports.sendLifetimeDropClosing = exports.sendLifetimeDropOpen = exports.sendLifetimeDropTeaser = exports.sendBirthdayLifetimeClosingEmails = exports.sendBirthdayLifetimeEmails = exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = exports.sendApprovedRoundups = exports.prepareMonthlyRoundup = exports.manageMonthlyRoundup = exports.completeOnboarding = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -74,6 +74,7 @@ const CheckoutRecoveryEmail_1 = require("./emails/CheckoutRecoveryEmail");
 const trade_ideas_1 = require("./trade-ideas");
 const birthday_send_1 = require("./birthday-send");
 const birthday_closing_send_1 = require("./birthday-closing-send");
+const lifetime_drop_send_1 = require("./lifetime-drop-send");
 const monthly_roundup_1 = require("./monthly-roundup");
 const onboarding_1 = require("./onboarding");
 admin.initializeApp();
@@ -606,14 +607,15 @@ const SIGNUP_TRIAL_DAYS = 14;
 // the no-card signup trial: accounts created after it only get the 14-day
 // card trial at checkout (trial_period_days in createCheckoutSession).
 const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
-// First-birthday lifetime week — mirrors BIRTHDAY_LIFETIME_* in
-// src/constants/pricing.ts. Lifetime is purchasable ONLY inside this window
-// now; the signup-trial cutoff above is untouched.
-const BIRTHDAY_LIFETIME_STARTS_AT = Date.parse("2026-08-28T00:00:00Z");
-const BIRTHDAY_LIFETIME_ENDS_AT = Date.parse("2026-09-04T23:59:59Z");
-const BIRTHDAY_PROMO_CODE = "FTJBIRTHDAY";
+// Lifetime drop week — mirrors LIFETIME_DROP_* in src/constants/pricing.ts.
+// Fri 25 Sep 9:30 AM New York to Fri 2 Oct 11:59 PM New York 2026. Lifetime
+// is purchasable ONLY inside this window now; the signup-trial cutoff above
+// is untouched. (The first-birthday week, 28 Aug to 4 Sep, is over.)
+const LIFETIME_DROP_STARTS_AT = Date.parse("2026-09-25T13:30:00Z");
+const LIFETIME_DROP_ENDS_AT = Date.parse("2026-10-03T03:59:59Z");
+const LIFETIME_DROP_PROMO_CODE = "FTJDROP";
 const isLifetimeOnSale = (now = Date.now()) => now < LIFETIME_RETIRES_AT ||
-    (now >= BIRTHDAY_LIFETIME_STARTS_AT && now <= BIRTHDAY_LIFETIME_ENDS_AT);
+    (now >= LIFETIME_DROP_STARTS_AT && now <= LIFETIME_DROP_ENDS_AT);
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     const throttleReason = await checkSignupVelocity(user.email || undefined);
     // Delete-and-resignup must not mint a fresh trial: a tombstone written by
@@ -2250,7 +2252,7 @@ exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutS
     const ALLOWED_PRICES = [
         process.env.STRIPE_PRICE_MONTHLY,
         process.env.STRIPE_PRICE_YEARLY,
-        // Lifetime is only sellable inside the birthday window; the dated guard
+        // Lifetime is only sellable inside the drop window; the dated guard
         // below rejects it outside, so the allowlist can carry it permanently.
         process.env.STRIPE_PRICE_LIFETIME,
     ].filter(Boolean);
@@ -2296,13 +2298,13 @@ exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutS
     let autoPromoId = "";
     // The pricing page advertises the discounted lifetime price, so apply the
     // code for the buyer instead of trusting them to retype it at checkout.
-    // FOUNDER149 until Aug 7 2026, FTJBIRTHDAY for the birthday week. Each
-    // code's expiry also lives in Stripe — when it lapses, this quietly falls
-    // back to the manual promo-code field.
+    // FOUNDER149 until Aug 7 2026, FTJDROP for the drop week. Each code's
+    // expiry also lives in Stripe — when it lapses, this quietly falls back
+    // to the manual promo-code field.
     if (isLifetime) {
         try {
             const found = await getStripe().promotionCodes.list({
-                code: Date.now() < LIFETIME_RETIRES_AT ? "FOUNDER149" : BIRTHDAY_PROMO_CODE,
+                code: Date.now() < LIFETIME_RETIRES_AT ? "FOUNDER149" : LIFETIME_DROP_PROMO_CODE,
                 active: true,
                 limit: 1,
             });
@@ -5217,4 +5219,24 @@ exports.sendBirthdayLifetimeClosingEmails = functions
     .onRun(async () => {
     return (0, birthday_closing_send_1.runBirthdayClosingSend)({ db, getResend, getUnsubscribeUrl, reportError });
 });
+// Lifetime drop, 25 Sep to 2 Oct 2026: three one-off sends in New York time.
+// Each is date-guarded to its own day AND gated on config/lifetimeDrop
+// { armed: true } in Firestore, so deploying these arms nothing by itself.
+// See lifetime-drop-send.ts.
+const dropDeps = { db, getResend, getUnsubscribeUrl, reportError };
+exports.sendLifetimeDropTeaser = functions
+    .runWith({ timeoutSeconds: 540, memory: "1GB" })
+    .pubsub.schedule("0 15 24 9 *")
+    .timeZone("America/New_York")
+    .onRun(async () => (0, lifetime_drop_send_1.runLifetimeDropSend)("teaser", dropDeps));
+exports.sendLifetimeDropOpen = functions
+    .runWith({ timeoutSeconds: 540, memory: "1GB" })
+    .pubsub.schedule("30 9 25 9 *")
+    .timeZone("America/New_York")
+    .onRun(async () => (0, lifetime_drop_send_1.runLifetimeDropSend)("drop", dropDeps));
+exports.sendLifetimeDropClosing = functions
+    .runWith({ timeoutSeconds: 540, memory: "1GB" })
+    .pubsub.schedule("30 9 1 10 *")
+    .timeZone("America/New_York")
+    .onRun(async () => (0, lifetime_drop_send_1.runLifetimeDropSend)("closing", dropDeps));
 //# sourceMappingURL=index.js.map

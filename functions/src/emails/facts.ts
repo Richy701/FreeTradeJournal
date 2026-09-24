@@ -11,6 +11,12 @@ export const PRICE_LIFETIME = '$249 lifetime'
 // is auto-applied at checkout; the email quotes it for people who type it.
 export const BIRTHDAY_LIFETIME_PRICE = '$199'
 export const BIRTHDAY_PROMO_CODE = 'FTJBIRTHDAY'
+// Lifetime drop, Fri 25 Sep 9:30 AM New York to Fri 2 Oct 11:59 PM New York
+// 2026. Code FTJDROP is auto-applied at checkout; the emails quote it for
+// people who type it. Mirrors LIFETIME_DROP_* in src/constants/pricing.ts.
+export const LIFETIME_DROP_PRICE = '$199'
+export const LIFETIME_DROP_LIST_PRICE = '$249'
+export const LIFETIME_DROP_PROMO_CODE = 'FTJDROP'
 export const TRIAL_DAYS = 14
 // Since 18 Aug 2026 (v2.82.0): coaching runs the user asks for. Automatic
 // tips, journal prompts and risk alerts are free and not counted.
@@ -23,6 +29,8 @@ export const URLS = {
   trades: `${BASE_URL}/trades`,
   coach: `${BASE_URL}/coach`,
   pricing: `${BASE_URL}/pricing`,
+  lifetimeDrop: `${BASE_URL}/lifetime-drop`,
+  lifetimeDropBuy: `${BASE_URL}/lifetime-drop?buy=1`,
   settings: `${BASE_URL}/settings`,
   subscription: `${BASE_URL}/settings?tab=subscription`,
   feedbackFromDigest: `${BASE_URL}/dashboard?feedback=digest`,

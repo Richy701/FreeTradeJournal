@@ -77,6 +77,7 @@ const ROUTES = [
   "/prop-tracker",
   "/changelog",
   "/pricing",
+  "/lifetime-drop",
   // SEO landing pages — must stay in sync with sitemap.xml, otherwise the
   // Vercel SPA rewrite serves them the homepage shell (duplicate content →
   // "crawled, currently not indexed"). The sitemap-sync guard below enforces this.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from '@phosphor-icons/react';
 import { MarketingHeader } from '@/components/marketing-header';
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { SEOMeta } from '@/components/seo-meta';
@@ -72,7 +73,7 @@ export default function BlogPost() {
   const nextPost = posts[(posts.findIndex((p) => p.slug === post.slug) + 1) % posts.length];
 
   return (
-    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+    <div className="min-h-screen bg-background">
       <SEOMeta
         title={`${post.title} | FreeTradeJournal Blog`}
         description={post.subtitle || post.title}
@@ -82,8 +83,10 @@ export default function BlogPost() {
       <MarketingHeader />
       <ReadingProgress />
 
-      <div>
-        <div className="max-w-[39rem] mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16">
+      {/* Article header: the landing page's backdrop, full bleed */}
+      <section className="relative overflow-hidden bg-background noise-overlay">
+        <GeometricBackdrop />
+        <div className="relative z-10 max-w-[39rem] mx-auto px-4 sm:px-6 pt-32 pb-10 sm:pt-40 sm:pb-12">
           <Link
             to="/blog"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-8"
@@ -107,7 +110,7 @@ export default function BlogPost() {
             </p>
           )}
         </div>
-      </div>
+      </section>
 
       <article className="max-w-[39rem] mx-auto px-4 sm:px-6 pt-2 pb-16">
         <div

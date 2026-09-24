@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { trackEvent } from '@/lib/analytics';
 import { MarketingHeader } from '@/components/marketing-header';
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Item, ItemActions, ItemGroup, ItemSeparator, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
-import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, isBirthdayLifetimeWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
+import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, isLifetimeDropWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
@@ -236,7 +237,7 @@ const FAQS: { q: string; a: string; lifetime?: boolean }[] = [
   },
   {
     q: 'Is the lifetime deal really one payment?',
-    a: 'Yes. Pay once, own it forever. All future Pro features included at no extra cost. The lifetime plan retires on August 7, 2026 — existing owners keep it for good.',
+    a: 'Yes. Pay once, own it forever. All future Pro features included at no extra cost. Lifetime is only sold during a drop window; once it closes the plan comes off this page, and existing owners keep it for good.',
     lifetime: true,
   },
 ];
@@ -319,18 +320,17 @@ export default function Pricing() {
   // checkout Cloud Function rejects the price, so stale tabs can't buy it.
   // Existing lifetime owners keep their plan (their card renders as current).
   const lifetimeAvailable = isLifetimeOnSale() || currentPlan === 'lifetime';
-  const birthdayWeek = isBirthdayLifetimeWindow();
+  const dropWeek = isLifetimeDropWindow();
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pt-16 sm:pt-20">
+    <div className="min-h-screen flex flex-col bg-background">
       <SEOMeta />
       <MarketingHeader />
 
-      {/* Every section below shares one width so cards, tables and the FAQ
-          start and end on the same edges. */}
-      <main className={cn('mx-auto w-full px-4 sm:px-6', lifetimeAvailable ? 'max-w-5xl' : 'max-w-4xl')}>
-        {/* Hero + billing toggle */}
-        <section className="flex flex-col items-center gap-8 py-14 text-center sm:py-20">
+      {/* Hero + billing toggle: the landing page's backdrop, full bleed */}
+      <section className="relative overflow-hidden bg-background noise-overlay">
+        <GeometricBackdrop />
+        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center gap-8 px-4 pb-14 pt-32 text-center sm:px-6 sm:pb-16 sm:pt-40">
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
               3,000+ traders already journaling
@@ -357,10 +357,14 @@ export default function Pricing() {
               ))}
             </TabsList>
           </Tabs>
-        </section>
+        </div>
+      </section>
 
+      {/* Every section below shares one width so cards, tables and the FAQ
+          start and end on the same edges. */}
+      <main className={cn('mx-auto w-full px-4 sm:px-6', lifetimeAvailable ? 'max-w-5xl' : 'max-w-4xl')}>
         {/* Plans */}
-        <section className={cn('grid gap-6 pb-20', lifetimeAvailable ? 'lg:grid-cols-3' : 'md:grid-cols-2')}>
+        <section className={cn('grid gap-6 pb-20 pt-12 sm:pt-14', lifetimeAvailable ? 'lg:grid-cols-3' : 'md:grid-cols-2')}>
           {/* Free */}
           <PricingCard
             name="Free"
@@ -412,7 +416,7 @@ export default function Pricing() {
               name="Pro Lifetime"
               price={currentLifetimePrice()}
               originalPrice={currentLifetimePrice() < lifetimePlan.price ? lifetimePlan.price : undefined}
-              subtitle={birthdayWeek ? 'One-time birthday price · yours forever' : 'One-time founding price · yours forever'}
+              subtitle={dropWeek ? 'One-time drop price · yours forever' : 'One-time founding price · yours forever'}
               description="Never pay again"
               features={lifetimePlan.features}
               cta="Get Lifetime Access"

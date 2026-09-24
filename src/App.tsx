@@ -65,6 +65,7 @@ const Changelog = lazyWithRetry(() => import('@/pages/Changelog'));
 const Blog = lazyWithRetry(() => import('@/pages/Blog'));
 const BlogPost = lazyWithRetry(() => import('@/pages/BlogPost'));
 const Pricing = lazyWithRetry(() => import('@/pages/Pricing'));
+const LifetimeDrop = lazyWithRetry(() => import('@/pages/LifetimeDrop'));
 const ForgotPassword = lazyWithRetry(() => import('@/pages/ForgotPassword'));
 const ResetPassword = lazyWithRetry(() => import('@/pages/ResetPassword'));
 const VerifyEmail = lazyWithRetry(() => import('@/pages/VerifyEmail'));
@@ -150,6 +151,7 @@ function App() {
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/lifetime-drop" element={<LifetimeDrop />} />
                 
                 {/* SEO Landing Pages */}
                 <Route path="/forex-trading-journal" element={<ForexTradingJournal />} />

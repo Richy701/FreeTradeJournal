@@ -1,6 +1,7 @@
 import { FeatureScreenshot } from '@/components/feature-screenshot'
 import { useState } from 'react'
 import { MarketingHeader } from '@/components/marketing-header'
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero'
 import { Footer7 } from '@/components/blocks/footer-7'
 import { footerConfig } from '@/components/blocks/footer-config'
 import { Button } from '@/components/ui/button'
@@ -36,15 +37,20 @@ export default function Changelog() {
   const latestVersion = changelog[0]?.version
 
   return (
-    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+    <div className="min-h-screen bg-background">
       <MarketingHeader />
 
-      <div className="max-w-6xl mx-auto px-6 py-14">
-        <div className="mb-10">
+      {/* Title band: the landing page's backdrop, full bleed */}
+      <section className="relative overflow-hidden bg-background noise-overlay">
+        <GeometricBackdrop />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-12 sm:pt-40 sm:pb-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Changelog</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Release Notes</h1>
           <p className="mt-3 text-muted-foreground">Everything new, improved, and fixed in FreeTradeJournal.</p>
         </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-6 py-10 sm:py-12">
 
         <div className="flex items-center gap-2 mb-12">
           {filterOptions.map(option => (

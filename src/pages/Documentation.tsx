@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MarketingHeader } from '@/components/marketing-header';
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
 import { FeedbackLink } from '@/components/feedback-link';
@@ -58,15 +59,20 @@ export default function Documentation() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+    <div className="min-h-screen bg-background">
       <MarketingHeader />
 
-      <div className="max-w-6xl mx-auto px-6 py-14">
-        <div className="mb-12">
+      {/* Title band: the landing page's backdrop, full bleed */}
+      <section className="relative overflow-hidden bg-background noise-overlay">
+        <GeometricBackdrop />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-12 sm:pt-40 sm:pb-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Docs</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Documentation</h1>
           <p className="mt-3 text-muted-foreground max-w-lg">Everything you need to get the most out of FreeTradeJournal.</p>
         </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-6 py-10 sm:py-12">
 
         <div className="flex gap-16">
           {/* Sidebar */}

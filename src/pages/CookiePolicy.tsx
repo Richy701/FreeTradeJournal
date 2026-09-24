@@ -8,7 +8,7 @@ import { FeedbackLink } from '@/components/feedback-link';
 
 export default function CookiePolicy() {
   return (
-    <div className="min-h-screen bg-background pt-16 sm:pt-20">
+    <div className="min-h-screen bg-background">
       <MarketingHeader />
 
       <ReadingPage

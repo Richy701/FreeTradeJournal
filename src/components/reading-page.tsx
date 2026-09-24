@@ -1,3 +1,4 @@
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero'
 import { useEffect, useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -18,19 +19,31 @@ function slugify(title: string) {
 
 export function ReadingPage({ header, children }: { header: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-14">
+    <>
+      {/* Title band: the landing page's backdrop, full bleed, with the title
+          sitting on the same column as the text below it. */}
+      <section className="relative overflow-hidden bg-background noise-overlay">
+        <GeometricBackdrop />
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-32 pb-12 sm:pt-40 sm:pb-14">
+          <div className="lg:grid lg:grid-cols-[12rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
+            <div className="hidden lg:block" />
+            <div className="min-w-0">{header}</div>
+          </div>
+        </div>
+      </section>
+    <div className="mx-auto max-w-6xl px-6 py-10 sm:py-12">
       {/* Section list directly beside the text, the pair centred: the same
           arrangement as the Documentation page. */}
       <div className="lg:grid lg:grid-cols-[12rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
         <OnThisPage />
         <div className="min-w-0">
-          <div className="mb-10">{header}</div>
           <div data-reading-body className="divide-y divide-border text-[17px] leading-relaxed text-muted-foreground">
             {children}
           </div>
         </div>
       </div>
     </div>
+    </>
   )
 }
 

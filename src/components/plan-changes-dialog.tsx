@@ -1,4 +1,4 @@
-import { isBirthdayLifetimeWindow } from '@/constants/pricing';
+import { isLifetimeDropWindow } from '@/constants/pricing';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Info, ArrowRight } from '@phosphor-icons/react';
@@ -156,9 +156,9 @@ export function PlanChangesDialog() {
               Lifetime went off sale on the 7th of August 2026. It was a founding member price from when
               the app was new. One payment does not cover something that costs money to run
               every month for years.
-              {isBirthdayLifetimeWindow() && (
-                <> One exception: for FreeTradeJournal&apos;s first birthday it is back on the
-                pricing page until 4 September at $199, then it goes again.</>
+              {isLifetimeDropWindow() && (
+                <> One exception: it is back on the pricing page for one week, until 2 October
+                at $199, then it goes again.</>
               )}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

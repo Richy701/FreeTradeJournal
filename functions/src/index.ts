@@ -34,6 +34,7 @@ import { CheckoutRecoveryEmail } from "./emails/CheckoutRecoveryEmail";
 import { createTradeIdeaFunctions } from "./trade-ideas";
 import { runBirthdaySend } from "./birthday-send";
 import { runBirthdayClosingSend } from "./birthday-closing-send";
+import { runLifetimeDropSend } from "./lifetime-drop-send";
 import { createMonthlyRoundupFunctions } from "./monthly-roundup";
 import { createCompleteOnboardingHandler } from "./onboarding";
 
@@ -631,15 +632,16 @@ const SIGNUP_TRIAL_DAYS = 14;
 // card trial at checkout (trial_period_days in createCheckoutSession).
 const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
 
-// First-birthday lifetime week — mirrors BIRTHDAY_LIFETIME_* in
-// src/constants/pricing.ts. Lifetime is purchasable ONLY inside this window
-// now; the signup-trial cutoff above is untouched.
-const BIRTHDAY_LIFETIME_STARTS_AT = Date.parse("2026-08-28T00:00:00Z");
-const BIRTHDAY_LIFETIME_ENDS_AT = Date.parse("2026-09-04T23:59:59Z");
-const BIRTHDAY_PROMO_CODE = "FTJBIRTHDAY";
+// Lifetime drop week — mirrors LIFETIME_DROP_* in src/constants/pricing.ts.
+// Fri 25 Sep 9:30 AM New York to Fri 2 Oct 11:59 PM New York 2026. Lifetime
+// is purchasable ONLY inside this window now; the signup-trial cutoff above
+// is untouched. (The first-birthday week, 28 Aug to 4 Sep, is over.)
+const LIFETIME_DROP_STARTS_AT = Date.parse("2026-09-25T13:30:00Z");
+const LIFETIME_DROP_ENDS_AT = Date.parse("2026-10-03T03:59:59Z");
+const LIFETIME_DROP_PROMO_CODE = "FTJDROP";
 const isLifetimeOnSale = (now = Date.now()) =>
   now < LIFETIME_RETIRES_AT ||
-  (now >= BIRTHDAY_LIFETIME_STARTS_AT && now <= BIRTHDAY_LIFETIME_ENDS_AT);
+  (now >= LIFETIME_DROP_STARTS_AT && now <= LIFETIME_DROP_ENDS_AT);
 
 export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   const throttleReason = await checkSignupVelocity(user.email || undefined);
@@ -2462,7 +2464,7 @@ export const createCheckoutSession = functions.https.onCall(
     const ALLOWED_PRICES = [
       process.env.STRIPE_PRICE_MONTHLY,
       process.env.STRIPE_PRICE_YEARLY,
-      // Lifetime is only sellable inside the birthday window; the dated guard
+      // Lifetime is only sellable inside the drop window; the dated guard
       // below rejects it outside, so the allowlist can carry it permanently.
       process.env.STRIPE_PRICE_LIFETIME,
     ].filter(Boolean);
@@ -2529,13 +2531,13 @@ export const createCheckoutSession = functions.https.onCall(
 
     // The pricing page advertises the discounted lifetime price, so apply the
     // code for the buyer instead of trusting them to retype it at checkout.
-    // FOUNDER149 until Aug 7 2026, FTJBIRTHDAY for the birthday week. Each
-    // code's expiry also lives in Stripe — when it lapses, this quietly falls
-    // back to the manual promo-code field.
+    // FOUNDER149 until Aug 7 2026, FTJDROP for the drop week. Each code's
+    // expiry also lives in Stripe — when it lapses, this quietly falls back
+    // to the manual promo-code field.
     if (isLifetime) {
       try {
         const found = await getStripe().promotionCodes.list({
-          code: Date.now() < LIFETIME_RETIRES_AT ? "FOUNDER149" : BIRTHDAY_PROMO_CODE,
+          code: Date.now() < LIFETIME_RETIRES_AT ? "FOUNDER149" : LIFETIME_DROP_PROMO_CODE,
           active: true,
           limit: 1,
         });
@@ -5863,3 +5865,27 @@ export const sendBirthdayLifetimeClosingEmails = functions
   .onRun(async () => {
     return runBirthdayClosingSend({ db, getResend, getUnsubscribeUrl, reportError });
   });
+
+// Lifetime drop, 25 Sep to 2 Oct 2026: three one-off sends in New York time.
+// Each is date-guarded to its own day AND gated on config/lifetimeDrop
+// { armed: true } in Firestore, so deploying these arms nothing by itself.
+// See lifetime-drop-send.ts.
+const dropDeps = { db, getResend, getUnsubscribeUrl, reportError };
+
+export const sendLifetimeDropTeaser = functions
+  .runWith({ timeoutSeconds: 540, memory: "1GB" })
+  .pubsub.schedule("0 15 24 9 *")
+  .timeZone("America/New_York")
+  .onRun(async () => runLifetimeDropSend("teaser", dropDeps));
+
+export const sendLifetimeDropOpen = functions
+  .runWith({ timeoutSeconds: 540, memory: "1GB" })
+  .pubsub.schedule("30 9 25 9 *")
+  .timeZone("America/New_York")
+  .onRun(async () => runLifetimeDropSend("drop", dropDeps));
+
+export const sendLifetimeDropClosing = functions
+  .runWith({ timeoutSeconds: 540, memory: "1GB" })
+  .pubsub.schedule("30 9 1 10 *")
+  .timeZone("America/New_York")
+  .onRun(async () => runLifetimeDropSend("closing", dropDeps));

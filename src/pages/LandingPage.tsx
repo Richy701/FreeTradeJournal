@@ -1,8 +1,8 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
-import { BirthdayLandingPill } from '@/components/birthday-landing-pill';
-import { isBirthdayLifetimeWindow } from '@/constants/pricing';
+import { LifetimeDropLandingPill } from '@/components/lifetime-drop-landing-pill';
+import { lifetimeDropPhase } from '@/constants/pricing';
 import FeatureShowcase from '@/components/blocks/feature-showcase';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
@@ -57,7 +57,7 @@ export default function LandingPage() {
         homepage
         title1="The Free Trading Journal"
         title2="That Improves Your Results"
-        eyebrow={isBirthdayLifetimeWindow() ? <BirthdayLandingPill /> : undefined}
+        eyebrow={lifetimeDropPhase() !== 'closed' ? <LifetimeDropLandingPill /> : undefined}
       />
 
       {/* Logo Cloud - Prop Firms */}
