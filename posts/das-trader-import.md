@@ -1,42 +1,45 @@
 ---
-title: How to Import DAS Trader Exports Into a Trading Journal (Free)
-subtitle: DAS gives you one row per execution. Here's how to turn that into real round-trip trades without a spreadsheet.
+title: How to import DAS Trader exports into a trading journal
+seoTitle: Import DAS Trader Exports into a Free Trading Journal
+subtitle: DAS gives you one row per fill. Here is how to turn that into complete trades without a spreadsheet.
+category: Imports
 tags: das trader, das trader pro, trading journal, day trading, import trades, stock trading
 date: 2026-07-27
-coverImage: https://www.freetradejournal.com/images/screenshots/trading-log-screenshot.png
+updated: 2026-09-24
+coverImage: https://www.freetradejournal.com/images/blog/das-trader-import.jpg
 ---
 
-If you trade through DAS Trader Pro (or the simulator), you've probably hit this wall: the Trades window exports one row per execution, not one row per trade. Buy 300 shares in three fills, sell in two, and your "one trade" is five rows of raw executions with no entry price, no exit price, and no P&L per position.
+If you trade through DAS Trader Pro or the DAS simulator you have probably hit this wall. The Trades window exports one row per execution, not one row per trade. Buy 300 shares in three fills and sell in two, and your one trade is five rows with no entry price, no exit price and no P&L per position.
 
-Most journals choke on that. You either hand-build a spreadsheet that pairs your fills, or you give up on journaling the details and just track your daily total. Neither one helps you improve.
+Most journals choke on that. You either build a spreadsheet that pairs your fills by hand, or you give up on the detail and track the daily total. Neither helps you improve.
 
-FreeTradeJournal now imports DAS exports directly. Here's how it works and what it handles.
+FreeTradeJournal imports DAS exports directly. Here is how it works.
 
-## Exporting from DAS
+## Export from DAS
 
-In DAS Trader Pro, open your Trades window, right-click, and export to CSV. That's it — no plugins, no special settings. The simulator exports the same format, so you can journal your sim sessions exactly like live ones.
+Open the Trades window in DAS Trader Pro, right-click, and export to CSV. No plugins and no special settings. The simulator exports the same format, so sim sessions journal exactly like live ones.
 
-One quirk worth knowing: DAS daily exports sometimes carry only a clock time on each row, with the date nowhere in the file. If your file is named something like `July20.csv`, the importer reads the trading date from the file name. Keep the default file names DAS gives you and it just works.
+One quirk. DAS daily exports sometimes carry only a clock time on each row, with the date nowhere in the file. If the file is named something like `July20.csv`, the importer reads the trading date from the file name. Keep the default file names DAS gives you and it works.
 
-## What the importer actually does
+## What the importer does
 
-When you drop the file into FreeTradeJournal (Dashboard or Trade Log, both work), the importer:
+Drop the file onto the Dashboard or the Trade Log. The importer then:
 
-- **Pairs your executions into round trips.** Buys and sells are matched into complete positions, so five fills become one trade with a real entry price, exit price, and share count.
-- **Handles short selling.** Sell-to-open followed by buy-to-cover comes out as a short trade with the direction and P&L the right way around.
-- **Handles partial exits.** Scale out of a position in pieces and the importer closes the trade where your position actually flattens.
-- **Handles position flips.** If you go from long 200 to short 100 in one order, that's two trades — the importer splits them instead of producing garbage.
+- **Pairs your fills into complete trades.** Buys and sells are matched into positions, so five fills become one trade with a real entry price, exit price and share count.
+- **Handles shorts.** Sell to open followed by buy to cover comes out as a short trade with the direction and P&L the right way round.
+- **Handles partial exits.** Scale out in pieces and the trade closes where your position actually goes flat.
+- **Handles flips.** Go from long 200 to short 100 in one order and the importer splits it into two trades instead of producing nonsense.
 
-After a bigger import, the AI reads your trades and gives you a first-pass summary of what it sees — your win rate, where your losses cluster, what session you trade best. It's a fast way to sanity-check that everything landed correctly, and usually tells you something you didn't know about your own trading.
+![Trade log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot.png)
 
-## Why bother journaling executions properly
+After a larger import, the AI coach reads the file and gives you a first summary. Win rate, where the losses cluster, which session you trade best. It is a quick way to check everything landed correctly, and it usually tells you something you did not know.
 
-Daily P&L tells you whether you made money. Round-trip trades tell you *why*. Once your DAS fills are real trades in a journal, you can see your win rate by time of day, your average loser versus average winner, which tickers you should stop touching, and whether your scale-outs are saving you money or costing you.
+## Why bother
 
-That's the stuff that changes your next month. A number at the bottom of a spreadsheet doesn't.
+Daily P&L tells you whether you made money. Complete trades tell you why. Once your DAS fills are real trades you can see win rate by time of day, average loser against average winner, which tickers to stop touching, and whether your scale-outs save you money or cost you.
 
-## The cost
+## What it costs
 
-Importing is free. Not free for 14 days — the importer, the trade log, and the analytics are free, full stop. That's the whole point of the product.
+Importing is free. So are the trade log and the analytics for your last 30 days. There is no trial and no card.
 
-If you trade DAS, [try the import](https://www.freetradejournal.com/signup) and see your executions turned into actual trades. It takes about a minute.
+If you trade DAS, [try the import](/signup) with last week's file. It takes about a minute.

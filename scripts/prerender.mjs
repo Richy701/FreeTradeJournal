@@ -49,9 +49,19 @@ const BLOG_POSTS = existsSync(POSTS_DIR)
       .filter((f) => f.endsWith(".md"))
       .map((f) => ({
         route: `/blog/${f.replace(/\.md$/, "")}`,
-        lastmod: statSync(join(POSTS_DIR, f)).mtime.toISOString().slice(0, 10),
+        lastmod: postLastmod(join(POSTS_DIR, f)),
       }))
+      .sort((a, b) => (b.lastmod || "").localeCompare(a.lastmod || ""))
   : [];
+
+// A post's lastmod is its frontmatter `updated` date, else its `date`. File
+// mtime is useless for this: on a fresh CI clone every file is "modified" at
+// clone time, so every post would claim to change on every deploy.
+function postLastmod(file) {
+  const head = readFileSync(file, "utf-8").slice(0, 2000);
+  const pick = (key) => head.match(new RegExp(`^${key}:\\s*(\\d{4}-\\d{2}-\\d{2})`, "m"))?.[1];
+  return pick("updated") || pick("date");
+}
 const BLOG_ROUTES = ["/blog", ...BLOG_POSTS.map((p) => p.route)];
 
 // Per-firm journal pages are driven by src/data/firm-pages.json (same pattern

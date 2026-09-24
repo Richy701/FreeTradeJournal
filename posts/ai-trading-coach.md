@@ -1,41 +1,48 @@
 ---
-title: I Let an AI Coach Read My Trading Journal. Here's What It Caught.
-subtitle: Not magic, not a signal service — just patterns I couldn't see because I was inside them.
+title: I let an AI coach read my trading journal. Here is what it caught
+seoTitle: AI Trading Coach: What It Found in My Trading Journal
+subtitle: It does not predict anything. It reads your own trades and tells you what is in them.
+category: AI coach
 tags: ai trading coach, trading psychology, trading journal, day trading, trade analysis
 date: 2026-07-27
-coverImage: https://www.freetradejournal.com/images/screenshots/trade-insights-screenshot.png
+updated: 2026-09-24
+coverImage: https://www.freetradejournal.com/images/blog/ai-trading-coach.jpg
 ---
 
-I'm skeptical of AI trading anything. Most of it is either a chatbot wearing a trading costume or a "signal service" that would be illegal if it worked. So when I added an AI coach to FreeTradeJournal, I set one rule for it: it only talks about *your* trades. No predictions, no signals, no "NQ is looking bullish." It reads your journal and tells you what's in it.
+I am wary of anything that puts "AI" next to "trading". Most of it is a chatbot with a trading vocabulary, or a signal service. So when I added an AI coach to FreeTradeJournal I gave it one rule. It only talks about your trades. No predictions, no signals, no opinion on where NQ is going. It reads your journal and tells you what is in it.
 
-That turns out to be the useful version.
+That version turned out to be the useful one.
 
-## What it actually sees
+## What it reads
 
-The coach reads your trade history the way a patient human mentor would, if you had one and they had infinite time: every trade's result, the day of the week, the session, the emotions you tagged, what you wrote in your journal next to it.
+The coach sees what a patient mentor would see if they had your full history and unlimited time. Every trade result. The day of the week. The session. The emotion you tagged. The note you wrote next to it.
 
-Then you ask it things. The questions that get interesting are the ones you'd never sit down and compute yourself:
+Then you ask it questions. The good ones are the questions you would never sit down and work out by hand:
 
-- "What do my losing days have in common?"
-- "How do I trade on Mondays compared to the rest of the week?"
-- "When I tag a trade 'frustrated', what happens to the next three trades?"
+- What do my losing days have in common?
+- How do I trade on Mondays compared with the rest of the week?
+- When I tag a trade "frustrated", what happens to the next three trades?
 
-I know my own answers now. My Monday win rate was substantially worse than the rest of my week — enough that skipping Mondays would have been a raise. I'd have told you Mondays "felt slow." I would not have told you they were costing me money, because I genuinely didn't know.
+I know my own answers now. My Monday win rate was well below the rest of my week. Skipping Mondays would have been a pay rise. I would have told you Mondays "felt slow". I would not have told you they were costing me money, because I did not know.
 
-## The journal review is the humbling part
+![AI trade analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot.png)
 
-There's a second piece: the AI reads your written journal entries next to your actual results and compares the two. What you *said* against what you *did*.
+## The journal review
 
-Mine caught a pattern I'd have denied if a person accused me of it: on green days I wrote two sentences, on red days I wrote paragraphs of rules for myself — and the rules didn't survive to the next red day. The words and the results didn't match. Seeing that in plain text, sourced from your own entries, lands differently than a trading book telling you "traders lack discipline."
+There is a second part. The coach reads your written journal entries next to your actual results and compares the two. What you said against what you did.
+
+Mine found something I would have argued with if a person had said it. On green days I wrote two sentences. On red days I wrote paragraphs of rules for myself, and the rules never survived to the next red day. Seeing that in plain text, pulled from my own entries, lands harder than a trading book telling you traders lack discipline.
+
+## Plain English only
+
+Everything the coach writes is in plain English. If it ever says "expectancy" instead of "what an average trade earns you", that is a bug and I want to hear about it.
 
 ## What it costs
 
-Every feature the coach has runs in plain English — if it ever says "expectancy" instead of "what an average trade earns you," that's a bug and I want to know.
+Free accounts get 20 AI questions a month. That is enough for a weekly review. Pro removes the ceiling. If you import a batch of trades, the coach reads the file on its own and gives you a first summary before you ask anything.
 
-Free accounts get 20 AI questions a month, which is plenty for a weekly review habit. Pro removes the ceiling. And if you import a batch of trades, the first AI read of your file is automatic — it's the fastest way to find out what your own data has been trying to tell you.
+## What it will not do
 
-## The honest pitch
+It will not make you profitable. Nothing you can buy will. What it does is shorten the feedback loop. Patterns that would take six months of manual review show up in the first conversation. Acting on them is still your job.
 
-An AI coach will not make you profitable. Nothing you can buy will. What it does is compress the feedback loop: patterns that would take you six months of manual review to notice, surfaced in the first conversation. Whether you act on them is still, unfortunately, on you.
-
-[Import your trades and ask it something](https://www.freetradejournal.com/signup). Start with the Monday question. I'm still annoyed about mine.
+[Import your trades and ask it something](/signup). Start with the Monday question.

@@ -377,7 +377,8 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
 
   // The homepage's Organization/SoftwareApplication/WebSite graph lives in
   // index.html — emitting a second graph here confuses entity resolution.
-  if (currentPath === '/') {
+  // Blog pages emit their own Blog/BlogPosting graph with real breadcrumbs.
+  if (currentPath === '/' || currentPath === '/blog' || currentPath.startsWith('/blog/')) {
     return null;
   }
 

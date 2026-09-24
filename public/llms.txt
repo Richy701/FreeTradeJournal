@@ -1,6 +1,6 @@
 # FreeTradeJournal
 
-> FreeTradeJournal is a free web-based trading journal for forex, futures, stock and prop-firm traders. Log trades, import broker CSVs or screenshots, track P&L and analytics, journal your sessions, and get AI coaching based only on your own trades. The core journal is free with no credit card. Pro is $12.99/month or $99.99/year with a 14-day free trial.
+> FreeTradeJournal is a free web-based trading journal for forex, futures, stock and prop-firm traders. Log trades, import broker CSVs or screenshots, track P&L and analytics, journal your sessions, and get AI coaching based only on your own trades. The core journal is free with no credit card. Pro is $12.99/month or $99.99/year, no trial, cancel anytime.
 
 Website: https://www.freetradejournal.com
 Live demo: the "View Live Demo" button on the home page opens the full app with sample data, no account needed.
@@ -22,7 +22,7 @@ Support: support@freetradejournal.com
 ## Pricing (as of August 2026)
 
 - Free: unlimited trades, up to 2 trading accounts, 1 PropTracker account, dashboard analytics over the trailing 30 days, 20 journal entries, 20 AI queries per month, 3 screenshot imports total, CSV import and export. No credit card.
-- Pro: $12.99/month or $99.99/year. Removes the free limits (all-time analytics, unlimited journal entries, unlimited accounts, unlimited PropTracker accounts), adds cloud sync across devices, much higher AI limits, priority support. 14-day free trial, cancel anytime.
+- Pro: $12.99/month or $99.99/year. Removes the free limits (all-time analytics, unlimited journal entries, unlimited accounts, unlimited PropTracker accounts), adds cloud sync across devices, much higher AI limits, priority support. No free trial; the free plan has no time limit. Cancel anytime.
 - No lifetime plan is sold (retired 7 August 2026).
 
 ## Who it is for
@@ -47,6 +47,21 @@ Retail and prop-firm traders who want a journal that is free to start, works for
 - [Affiliate program](https://www.freetradejournal.com/affiliate)
 - [Privacy](https://www.freetradejournal.com/privacy)
 - [Terms](https://www.freetradejournal.com/terms)
+
+## Blog posts
+
+- [Best free trading journals in 2026, compared honestly](https://www.freetradejournal.com/blog/best-free-trading-journals-2026): seven journals with a real free plan, prices checked August 2026
+- [How to import Tradovate and NinjaTrader trades](https://www.freetradejournal.com/blog/tradovate-ninjatrader-import): which report to export, fill pairing, the time zone setting
+- [Why imported trades land on the wrong day](https://www.freetradejournal.com/blog/broker-time-zone-imports): the per-account broker time zone setting explained
+- [Import trades from a screenshot](https://www.freetradejournal.com/blog/import-trades-from-a-screenshot): for platforms with no CSV export
+- [Tag your setups, then find out which ones pay](https://www.freetradejournal.com/blog/tag-your-setups): tag tables and mistake costs in Trade Insights
+- [How to keep a trading journal you actually open](https://www.freetradejournal.com/blog/journal-you-actually-open): the daily and weekly routine
+- [How to journal MT4 and MT5 trades for free](https://www.freetradejournal.com/blog/mt4-mt5-trading-journal): export from MetaTrader, no plugins
+- [How to import DAS Trader exports](https://www.freetradejournal.com/blog/das-trader-import): executions paired into round trips
+- [AI trading coach: what it found in my journal](https://www.freetradejournal.com/blog/ai-trading-coach): what the coach reads and what it will not do
+- [How to pass a Topstep combine](https://www.freetradejournal.com/blog/how-to-pass-topstep-combine): learning from blown evaluations
+- [Free trading journal for prop firm traders](https://www.freetradejournal.com/blog/best-free-trading-journal-prop-firm): why FreeTradeJournal exists
+- [Track several prop firm accounts in one place](https://www.freetradejournal.com/blog/prop-firm-tracker): PropTracker overview
 
 ## Optional
 

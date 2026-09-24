@@ -1,63 +1,58 @@
 ---
-title: The Best Free Trading Journal for Prop Firm Traders (2026)
-subtitle: I built FreeTradeJournal because I was tired of paying for tools that didn't serve me
+title: A free trading journal built for prop firm traders
+seoTitle: Free Trading Journal for Prop Firm Traders (2026)
+subtitle: Why I built FreeTradeJournal after paying for a combine and then paying again to journal it.
+category: Prop firms
 tags: trading journal, prop firm, topstep, funded trader, free trading journal
 date: 2026-04-03
-coverImage: https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot.png
+updated: 2026-09-24
+coverImage: https://www.freetradejournal.com/images/blog/best-free-trading-journal-prop-firm.jpg
 ---
 
-If you're grinding through a Topstep combine, you already know the pressure. Every trade matters. Every drawdown hurts. And the last thing you need is your trading journal making your life harder.
+If you are in a Topstep combine you already know the pressure. Every trade counts. Every drawdown hurts. The last thing you need is a journal that adds a monthly bill or gets in the way.
 
-That's exactly why I built FreeTradeJournal.
+That is why I built FreeTradeJournal.
 
-## The Problem With Existing Journals
+## The problem I had
 
-I was a Topstep trader. I wanted to track my trades properly, not just PnL, but patterns, habits, the stuff that actually makes you consistent. So I tried TradeZella.
+I was a Topstep trader. I wanted to track more than P&L. Patterns, habits, the things that make you consistent. So I tried TradeZella.
 
-It wasn't bad. But it wasn't free. Some of the features I actually needed were locked behind a paywall. I'm already paying for a prop firm evaluation, why am I paying again just to journal?
+It was fine. It was not free. Several things I needed were behind a paywall, and I was already paying for an evaluation. Paying a second subscription just to write down what happened felt wrong.
 
 So I built my own.
 
-## What FreeTradeJournal Does Differently
+## What is different
 
-**It's actually free.** Not free-with-a-catch. Not free for 14 days. Free.
+**The free plan is a real plan.** Unlimited trades, CSV import from your broker, a written journal, goals and risk rules, a calendar heatmap, and one prop firm account in the tracker. There is no trial clock and no card. The free plan shows analytics for the last 30 days and holds 20 journal entries. Pro removes those two limits for $12.99 a month or $99.99 a year. Most journals in this space charge $30 to $50 a month for their entry tier.
 
-Most trading journals charge $30-$50/month. That adds up fast, especially when you're in evaluation mode and not yet drawing a funded salary. FreeTradeJournal gives you everything you need to track, review, and improve your trading without the subscription.
+![Trading dashboard](https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot.png)
 
-![Trading Dashboard](https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot.png)
+**It is built around evaluation rules.** Daily loss limit, max drawdown, profit target. The numbers that matter in a combine sit on the front page instead of buried in a layout designed for stock investors.
 
-**It's built for prop firm traders.** The metrics that matter on a Topstep combine, consistency, max drawdown, daily loss limits, are front and centre. Not buried in a dashboard designed for stock investors.
+![Trading journal](https://www.freetradejournal.com/images/screenshots/trading-journal-screenshot.png)
 
-![Trading Journal](https://www.freetradejournal.com/images/screenshots/trading-journal-screenshot.png)
+**It stays out of the way.** No upsell every time you log in. Your trades, your stats, your notes.
 
-**It's clean.** No bloat. No upsells every time you log in. Just your trades, your stats, and your journal.
+![Trade log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot.png)
 
-![Trade Log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot.png)
+## Spot the pattern before it costs you
 
-## Track Every Trade, Spot Every Pattern
+The calendar shows your best and worst days at a glance. Two red Fridays in a row is easy to miss in a spreadsheet and impossible to miss here.
 
-The calendar heatmap shows your best and worst days at a glance, great for spotting emotional trading patterns.
+![Calendar heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot.png)
 
-![Calendar Heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot.png)
+Goals and risk rules warn you when a day is getting close to a limit you set for yourself.
 
-Set goals and manage your risk so you never blow a combine again.
+![Goals and risk management](https://www.freetradejournal.com/images/screenshots/goals-risk-management-screenshot.png)
 
-![Goals and Risk Management](https://www.freetradejournal.com/images/screenshots/goals-risk-management-screenshot.png)
+## Who it is for
 
-## Who It's For
+Traders with Topstep, FTMO, MyFundedFutures, Apex or any other firm who want to take their performance seriously without another subscription.
 
-If you're trading with Topstep, FTMO, MyFundedFutures, or any other prop firm and you want to take your performance seriously without spending more money, this is for you.
+It is also for anyone who tried TradeZella, Edgewonk or Tradervue and thought it was too expensive or too complicated for what they actually need.
 
-It's also for traders who tried TradeZella, Edgewonk, or Tradervue and thought: *this is too expensive or too complicated for what I actually need.*
+If your firm is a forex shop like FTMO, the [forex trading journal](/forex-trading-journal) works out pips per pair and takes MT4 and MT5 exports as they come.
 
-If your firm is an FX shop like FTMO, the [forex trading journal](/forex-trading-journal) does the pip maths per pair and takes MT4/MT5 exports as they come.
+## Getting started
 
-## Getting Started
-
-Head to [freetradejournal.com](https://freetradejournal.com), create a free account, and start logging your trades today.
-
-No credit card. No trial period. Just your journal.
-
----
-
-*Built by a prop firm trader, for prop firm traders.*
+[Create a free account](/signup), import your last month of trades, and look at your win rate by session. No card, no trial.

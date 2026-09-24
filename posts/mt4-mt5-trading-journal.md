@@ -1,46 +1,51 @@
 ---
-title: How to Journal MT4 and MT5 Trades for Free (No Plugins Needed)
-subtitle: Export your position history, drop it in, done. Works with IC Markets, Pepperstone, and most MT brokers.
+title: How to journal MT4 and MT5 trades for free, no plugins
+seoTitle: MT4 & MT5 Trading Journal: Import Trades Free, No Plugins
+subtitle: Export your position history, drop it in, done. Works with IC Markets, Pepperstone and most MetaTrader brokers.
+category: Imports
 tags: mt4, mt5, metatrader, forex trading journal, forex, import trades, trading journal
 date: 2026-07-27
-coverImage: https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png
+updated: 2026-09-24
+coverImage: https://www.freetradejournal.com/images/blog/mt4-mt5-trading-journal.jpg
 ---
 
-Every forex trader I talk to journals the same way: they don't. The trades are "in MetaTrader somewhere," the account history tab technically counts as a record, and the actual review — the part that makes you better — never happens.
+Most forex traders I talk to journal the same way. They do not. The trades are "in MetaTrader somewhere", the account history tab counts as a record, and the actual review never happens.
 
-The usual excuse is friction. MetaTrader doesn't make your history easy to work with, and most journals that import MT4/MT5 data want you to install an EA, run a plugin, or pay for the privilege.
+The usual reason is friction. MetaTrader does not make your history easy to work with, and most journals that import MT4 or MT5 data want you to install an EA, run a plugin, or pay for the privilege.
 
-You don't need any of that to start. Here's the no-plugin way.
+You do not need any of that. Here is the no-plugin way.
 
 ## Export your history from MetaTrader
 
-**MT5:** open the Toolbox, go to the History tab, right-click, choose Positions, then right-click again and export. You get a position-history file — one row per closed position, which is exactly what a journal wants.
+**MT5.** Open the Toolbox, go to the History tab, right-click and choose Positions, then right-click again and export. You get a position history file with one row per closed position, which is exactly what a journal wants.
 
-**MT4:** Account History tab, right-click, Save as Report or export the history. 
+**MT4.** Go to the Account History tab, right-click, and choose Save as Report or export the history.
 
-Broker portals work too — IC Markets, Pepperstone, and most MT brokers let you download your trade history as CSV from their client area.
+Broker portals work too. IC Markets, Pepperstone and most MetaTrader brokers let you download trade history as a CSV from the client area.
 
 ## Drop it into FreeTradeJournal
 
-The importer was built for the mess that MT exports actually are:
+The importer was built for the mess that MetaTrader exports actually are:
 
 - **The preamble is handled.** MT5 files bury the real header under rows of account info. The importer finds it.
-- **European formats are handled.** Dates like `2025.08.28` or `28.08.2025`, semicolon-separated files, comma decimals — all recognized automatically. A loss written as `−123,45` imports as a loss, not a gain.
-- **Commissions and swap are captured separately** and subtracted, so the P&L you journal is the money that actually hit your account — net, not gross. Most traders who journal gross numbers are lying to themselves by exactly the amount of their costs.
-- **Forex precision is kept.** Your EURUSD entry shows as 1.08523, not rounded to two decimals. JPY pairs keep their three.
+- **European formats are handled.** Dates like `2025.08.28` or `28.08.2025`, semicolon-separated files and comma decimals are all recognised. A loss written as `−123,45` imports as a loss, not a gain.
+- **Commission and swap are captured separately** and subtracted, so the P&L you journal is the money that actually hit your account. Most traders who journal gross numbers are flattering themselves by exactly the amount of their costs.
+- **Forex precision is kept.** Your EURUSD entry shows as 1.08523, not rounded to two decimals. JPY pairs keep three.
 
-If a file has a column layout the importer doesn't recognize on sight, a mapping dialog lets you match columns manually once, and you're through.
+If a file has a layout the importer does not recognise, a mapping dialog lets you match the columns once and you are through. There is also a screenshot import if you would rather not export at all.
+
+![Equity curve](https://www.freetradejournal.com/images/screenshots/equity-curve-screenshot.png)
 
 ## What you get on the other side
 
-Once your positions are in, the free analytics do the work MetaTrader never will: win rate by pair, by session, by day of week. Average winner against average loser. A calendar heatmap of your P&L. Risk rules that warn you when today's losses cross the line you set for yourself.
+Once your positions are in, the analytics do the work MetaTrader never will. Win rate by pair, by session, by day of the week. Average winner against average loser. A calendar heatmap of your P&L. Risk rules that warn you when today's losses cross the line you set.
 
-All of it lives in the free [forex trading journal](/forex-trading-journal) — pips worked out per pair, sessions broken out, and nothing to install.
+All of it lives in the free [forex trading journal](/forex-trading-journal), with pips worked out per pair and sessions broken out.
 
-Journal a note and how you felt on each trade, and over time you can see whether your "I knew better" trades are a rounding error or half your losses. For most people it's not a rounding error.
+Add a note and how you felt on each trade, and after a month you can see whether your "I knew better" trades are a rounding error or half your losses. For most people it is not a rounding error.
 
 ## What about automatic sync?
 
-It's coming — direct MetaTrader sync is being built right now, and manual CSV import will stay free either way. But don't wait for automation to start reviewing your trades. The export-and-drop routine takes two minutes a week, and two minutes a week is infinitely more journaling than most forex traders do.
+There is no live MetaTrader sync, and I am not going to promise one. CSV import is free and it takes two minutes a week. Two minutes a week is far more journaling than most forex traders do.
 
-[Start with your last month of trades](https://www.freetradejournal.com/signup) — export, drop, and look at your win rate by session. That first look is usually uncomfortable, and usually worth it.
+[Start with your last month of trades](/signup). Export, drop, and look at your win rate by session.

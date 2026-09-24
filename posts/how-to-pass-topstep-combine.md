@@ -1,75 +1,74 @@
 ---
-title: How to Pass a Topstep Combine (The Mindset Nobody Talks About)
-subtitle: Failing combines isn't the problem. Not learning from them is.
+title: How to pass a Topstep combine, the part nobody talks about
+seoTitle: How to Pass a Topstep Combine: Learn From the Blown Ones
+subtitle: Failing a combine is not the problem. Not learning from it is.
+category: Prop firms
 tags: topstep, prop firm, funded trader, trading combine, pass combine
 date: 2026-04-03
-coverImage: https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png
+updated: 2026-09-24
+coverImage: https://www.freetradejournal.com/images/blog/how-to-pass-topstep-combine.jpg
 ---
 
-Most traders treat a blown combine like a personal failure. They tilt. They take a break. They second-guess their whole strategy. Then they buy another combine and do the exact same thing.
+Most traders treat a blown combine as a personal failure. They tilt. They take a break. They second-guess the whole strategy. Then they buy another combine and do the same thing again.
 
-That's the real problem. Not the blown combine.
+That is the real problem. Not the blown combine.
 
-## The Math Nobody Does
+## The maths most people skip
 
-A Topstep combine runs on a monthly subscription. The 50K account is $49/month, the 100K is $99/month, and the 150K is $149/month. You also get to keep 100% of your first $10,000 in profits once funded, then a 90/10 split after that.
+A combine is a monthly subscription. A funded payout is worth many multiples of that fee. You can fail two or three months of evaluations and one decent funded month wipes the cost out completely.
 
-Think about that for a second. You could blow two or three months of a 100K combine ($300 total) and still wipe that out completely with one solid funded month. The subscription cost is not the risk. Giving up too early is.
+The subscription is not the risk. Giving up too early is.
 
-## Fail Fast, Learn Faster
+## Fail fast, learn faster
 
-The traders who pass combines are not necessarily better traders. They are better at extracting information from failure.
+The traders who pass are not always the better traders. They are better at pulling information out of a failure.
 
 Every blown combine tells you something:
 
 - Breached the daily loss limit? You are overtrading or revenge trading.
-- Hit max drawdown slowly over two weeks? Your strategy has a flaw you have not spotted yet.
+- Hit max drawdown slowly over two weeks? Your strategy has a flaw you have not found yet.
 - Blown it in the first few days? You are not respecting the rules.
 
-Each failed month is a cheap data point compared to the funded payout waiting on the other side. Use it.
+Each failed month is a cheap data point next to the payout waiting on the other side. Use it.
 
-![Dashboard Performance](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png)
+![Dashboard performance](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png)
 
-## What to Do After a Blown Combine
+## What to do after a blown combine
 
-Before you restart, sit down and journal what happened. Not emotionally, analytically.
+Before you restart, sit down and write up what happened. Not emotionally. Analytically.
 
-- What day did it go wrong?
-- What trades caused the damage?
-- Was it one bad session or death by a thousand cuts?
+- Which day did it go wrong?
+- Which trades did the damage?
+- Was it one bad session or a slow bleed?
 
-This is exactly why I built FreeTradeJournal. When you are logging every trade and reviewing your stats, patterns become obvious fast. You stop repeating the same mistakes because the data is right in front of you.
+This is why I built FreeTradeJournal. When every trade is logged and you review the stats, patterns become obvious quickly. You stop repeating the same mistake because it is in front of you in numbers.
 
-![Trade Insights](https://www.freetradejournal.com/images/screenshots/trade-insights-screenshot.png)
+![Trade insights](https://www.freetradejournal.com/images/screenshots/trade-insights-screenshot.png)
 
-## The Combine Is Cheap. The Payout Is Not.
+## The combine is cheap. The payout is not.
 
-Stop treating combines like exams you have to pass first time. Treat them like affordable access to real market conditions with real stakes.
+Stop treating combines as exams you have to pass first time. Treat them as cheap access to real market conditions with real stakes.
 
-You cannot simulate the pressure of a funded evaluation. You have to live it. And sometimes you have to fail it two or three times before the right habits click into place.
+You cannot simulate the pressure of a funded evaluation. You have to live it. Sometimes you have to fail it two or three times before the right habits stick.
 
 The traders who quit after one or two blown combines never find out how close they were.
 
-![AI Trade Analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot.png)
+![AI trade analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot.png)
 
-## One Rule to Pass More Combines
+## One rule
 
 Protect the downside. Every single day.
 
-Know your daily loss limit before you open a trade. Know your max drawdown. Build your position sizes around those numbers, not around how confident you feel that morning.
+Know your daily loss limit before you open a trade. Know your max drawdown. Size positions around those numbers, not around how confident you feel that morning.
 
-Consistency beats brilliance every time in a prop firm evaluation. You do not need to make a killing. You just need to not blow up.
+Consistency beats brilliance in an evaluation. You do not need a huge month. You need to not blow up.
 
-![Calendar Heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot.png)
+![Calendar heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot.png)
 
-## Track Everything
+## Track everything
 
-The fastest way to pass a combine is to know exactly what is working and what is not, in real time.
+The fastest way to pass is knowing what is working and what is not while it is happening.
 
-Log every trade. Review your calendar. Check your win rate by session, by instrument, by time of day. The answer to why you keep failing is already in your data. You just need to look at it.
+Log every trade. Review the calendar. Check win rate by session, by instrument, by time of day. The answer to why you keep failing is already in your data.
 
-[FreeTradeJournal](https://freetradejournal.com) is free. There is no excuse not to be tracking.
-
----
-
-*Failed a few combines myself before it clicked. Now I build tools to make sure the next trader learns faster than I did.*
+[FreeTradeJournal](/signup) is free, and the prop firm tracker holds your combine rules so you can see drawdown and target live. I failed a few combines before it clicked. I built this so the next trader gets there faster.

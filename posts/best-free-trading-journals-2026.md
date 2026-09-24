@@ -1,9 +1,12 @@
 ---
-title: The Best Free Trading Journals in 2026, Compared Honestly (Including Mine)
+title: The best free trading journals in 2026, compared honestly (including mine)
+seoTitle: Best Free Trading Journals in 2026, Compared Honestly
 subtitle: Seven journals with a real free plan, what each one caps, and where the paid ones are still better. Prices checked August 2026.
+category: Comparisons
 tags: free trading journal, best trading journal, tradezella alternative, tradervue, tradesviz, trading journal comparison, prop firm
 date: 2026-08-17
-coverImage: https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png
+updated: 2026-09-24
+coverImage: https://www.freetradejournal.com/images/blog/best-free-trading-journals-2026.jpg
 ---
 
 I build FreeTradeJournal, so you should read this knowing that. I have tried to keep it fair anyway: every price and free-tier limit below was checked against the vendor's own pricing page in August 2026, the tools that beat mine at something get credit for it, and there are two on this list I would tell certain traders to pick over my own.
@@ -31,13 +34,13 @@ If you only want the short version: most "free" trading journals are either a fr
 
 What the free plan gives you: unlimited trades, CSV import from any broker with automatic column mapping (MetaTrader 4/5, Tradovate, NinjaTrader, DAS Trader and TopstepX exports are recognised), screenshot import for when you can't be bothered exporting a CSV, a written journal with emotion tagging, goals and risk rules, and a prop-firm tracker for one account. The AI coach, trade review and journal review are on the free plan too, capped at 20 AI queries a month.
 
-What it caps: dashboard analytics only cover the trailing 30 days on the free plan, the journal stops at 20 entries, and you get 2 trading accounts. Pro removes those and adds cloud sync across devices for $12.99/month or $99.99/year, with a 14-day trial.
+What it caps: dashboard analytics only cover the trailing 30 days on the free plan, the journal stops at 20 entries, and you get 2 trading accounts. Pro removes those and adds cloud sync across devices for $12.99/month or $99.99/year. There is no trial and no card is needed for the free plan.
 
 Where it loses: there is no live broker sync yet. You import by CSV or screenshot. It is also younger than everything else on this list, so the community and the integrations list are smaller. If you trade multi-leg options, look at Stonk Journal or TradesViz instead.
 
 Where it wins: it is the only one here that gives you an AI coach on the free plan, it treats forex and futures as first-class (pip maths per pair, MetaTrader and Tradovate exports handled without manual mapping, weekday and symbol breakdowns), and it has prop-firm evaluation rules built in rather than bolted on. [See the pricing page](/pricing) for the full free-vs-Pro list.
 
-![FreeTradeJournal dashboard](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png)
+![FreeTradeJournal dashboard](https://www.freetradejournal.com/images/screenshots/dashboard-analytics-screenshot.png)
 
 ### Tradervue
 
