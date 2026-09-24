@@ -152,10 +152,11 @@ export function SectionCards() {
     [trades]
   )
 
-  // Mini cumulative P&L sparkline (last 10 trades)
+  // Mini cumulative P&L sparkline (last 20 trades). Wide and short with a
+  // thin stroke: ten points in a 64px square read as a worm, not a trend.
   const pnlSparkline = useMemo(() => {
     const sorted = [...trades].sort((a: Trade, b: Trade) => a.exitTime.getTime() - b.exitTime.getTime())
-    const recent = sorted.slice(-10)
+    const recent = sorted.slice(-20)
     let cum = 0
     return recent.map((t: Trade) => {
       cum += t.pnl
@@ -202,13 +203,13 @@ export function SectionCards() {
                   <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatPnl(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
-              <div className="w-16 h-16 relative shrink-0">
+              <div className="w-32 h-10 relative shrink-0">
                 <ChartContainer
                   config={{ pnl: { label: "P&L", color: pnlPositive ? themeColors.profit : themeColors.loss } }}
-                  className="w-full h-full"
+                  className="w-full h-full aspect-auto"
                 >
-                  <LineChart data={pnlSparkline} margin={{ top: 4, right: 2, bottom: 4, left: 2 }}>
-                    <Line dataKey="pnl" type="monotone" stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={2.5} dot={false} />
+                  <LineChart data={pnlSparkline} margin={{ top: 3, right: 2, bottom: 3, left: 2 }}>
+                    <Line dataKey="pnl" type="monotone" stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
                   </LineChart>
                 </ChartContainer>
               </div>
