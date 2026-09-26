@@ -37,7 +37,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendLifetimeDropClosing = exports.sendLifetimeDropOpen = exports.sendLifetimeDropTeaser = exports.sendBirthdayLifetimeClosingEmails = exports.sendBirthdayLifetimeEmails = exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.aiStream = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = exports.sendApprovedRoundups = exports.prepareMonthlyRoundup = exports.manageMonthlyRoundup = exports.completeOnboarding = void 0;
+exports.sendLifetimeDropOpen = exports.sendLifetimeDropTeaser = exports.sendBirthdayLifetimeClosingEmails = exports.sendBirthdayLifetimeEmails = exports.onTradeIdeaDeleted = exports.tradeIdeas = exports.aiStream = exports.retentionSweep = exports.deleteUserAccount = exports.clearSyncData = exports.getSyncData = exports.syncData = exports.parseScreenshot = exports.aiAssist = exports.suggestCsvMapping = exports.analyzeTradesAI = exports.getFreeAIQuota = exports.stripeWebhook = exports.createPortalSession = exports.createCheckoutSession = exports.resendWebhook = exports.unsubscribe = exports.sendStreakReminders = exports.removePushSubscription = exports.savePushSubscription = exports.backfillTrialPro = exports.cleanupReferralIsPro = exports.processDeferredReferrals = exports.trackActivity = exports.trackTradeLogged = exports.markFirstTrade = exports.getReferralStats = exports.recordReferral = exports.submitTestimonial = exports.sendFeedback = exports.sendTrialOfferBatch = exports.sendActivationReport = exports.sendWeeklyDigestEmails = exports.sendDay21BackupEmails = exports.sendDay14UpgradeEmails = exports.sendDay7NudgeEmails = exports.sendTrialEndingEmails = exports.sendDay3NudgeEmails = exports.onUserCreated = exports.sendEmailVerificationLink = exports.sendPasswordResetLink = exports.sendApprovedRoundups = exports.prepareMonthlyRoundup = exports.manageMonthlyRoundup = exports.completeOnboarding = void 0;
+exports.sendLifetimeDropClosing = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const openai_1 = __importDefault(require("openai"));
@@ -58,6 +59,8 @@ const WelcomeEmail_1 = require("./emails/WelcomeEmail");
 const sync_chunks_1 = require("./sync-chunks");
 const free_allowance_1 = require("./free-allowance");
 const ProUpgradeEmail_1 = require("./emails/ProUpgradeEmail");
+const InactiveAccountWarningEmail_1 = require("./emails/InactiveAccountWarningEmail");
+const retention_1 = require("./retention");
 const CancellationEmail_1 = require("./emails/CancellationEmail");
 const Day3NudgeEmail_1 = require("./emails/Day3NudgeEmail");
 const TrialStartedEmail_1 = require("./emails/TrialStartedEmail");
@@ -4759,13 +4762,12 @@ exports.clearSyncData = functions.https.onCall(async (_data, context) => {
     }
 });
 // ─── Delete User Account ──────────────────────────────────
-exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
-    }
-    const uid = context.auth.uid;
-    const email = context.auth.token.email || "unknown";
-    console.log(`[deleteUserAccount] Starting deletion for ${uid} (${email})`);
+// Everything that removes an account, in order. Shared by the user-initiated
+// deleteUserAccount callable below and the scheduled retentionSweep, so the
+// two paths can never drift (both must write the trial tombstone, both must
+// clear Storage, and so on).
+async function purgeUserAccount(uid, email, reason) {
+    console.log(`[deleteUserAccount] Starting deletion for ${uid} (${email}) reason=${reason}`);
     // 1. Cancel Stripe subscription if exists
     try {
         const userDoc = await db.collection("users").doc(uid).get();
@@ -4912,7 +4914,7 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
         await getPostHog().captureImmediate({
             distinctId: uid,
             event: "account deleted",
-            properties: { email },
+            properties: { email, reason },
         });
     }
     catch (err) {
@@ -4921,7 +4923,191 @@ exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
     // 8. Delete Firebase Auth account (do this last)
     await admin.auth().deleteUser(uid);
     console.log(`[deleteUserAccount] Deleted Firebase Auth user ${uid}`);
+}
+exports.deleteUserAccount = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    await purgeUserAccount(context.auth.uid, context.auth.token.email || "unknown", "user");
     return { ok: true };
+});
+// ─── Inactive-account retention sweep ───────────────────────────
+//
+// Policy and all decisions live in retention.ts (protected / trader 24 months /
+// empty 12 months, first warning 30 days out, final warning 7 days out, any
+// sign-in cancels). scripts/retention-report.ts runs the same code read-only
+// so the counts it prints are exactly what this function would do.
+//
+// Switched OFF by default. Two env vars in the functions runtime config:
+//   RETENTION_SWEEP_ENABLED=true   send warnings and keep the bookkeeping
+//   RETENTION_DELETE_ENABLED=true  also delete accounts whose warnings aged
+// Warning email is a service notice about the account itself, so it goes out
+// regardless of marketing opt-out and carries no unsubscribe link.
+const RETENTION_MAX_WARNINGS_PER_RUN = 200;
+const RETENTION_MAX_DELETES_PER_RUN = 25;
+async function retentionHasCloudData(uid) {
+    const snap = await db.collection("users").doc(uid).collection("sync").limit(1).get();
+    return !snap.empty;
+}
+async function retentionHasStorageFiles(uid) {
+    const [files] = await admin.storage().bucket().getFiles({ prefix: `users/${uid}/`, maxResults: 1 });
+    return files.length > 0;
+}
+async function sendRetentionWarning(uid, email, data, kind, tier, deleteAtMs, 
+// Idempotency is keyed on last-seen, not the deadline: the deadline moves
+// when an account is first warned after the policy date has passed, and a
+// stable key lets the emailDeliveries receipt stop a repeat send if the
+// bookkeeping write fails after the email went out.
+lastSeenMs) {
+    const firstName = (data?.displayName || "").trim().split(" ")[0];
+    const deleteDate = (0, retention_1.formatDeleteDate)(deleteAtMs);
+    const html = await (0, components_1.render)(React.createElement(InactiveAccountWarningEmail_1.InactiveAccountWarningEmail, {
+        firstName,
+        deleteDate,
+        final: kind === "final",
+        hasTrades: tier === "trader",
+    }));
+    (0, email_delivery_1.requireProviderSuccess)(await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: kind === "final"
+            ? `Last reminder: your FreeTradeJournal account is removed on ${deleteDate}`
+            : `Your FreeTradeJournal account will be removed on ${deleteDate}`,
+        html,
+    }, { idempotencyKey: `retention/${kind}/${uid}/${lastSeenMs}` }));
+}
+exports.retentionSweep = functions
+    // Every Auth user is scanned and up to 200 emails rendered and sent in one
+    // run, so the 60s default is nowhere near enough.
+    .runWith({ timeoutSeconds: 540, memory: "512MB" })
+    .pubsub.schedule("every monday 06:00")
+    .timeZone("UTC")
+    .onRun(async () => {
+    const warningsEnabled = process.env.RETENTION_SWEEP_ENABLED === "true";
+    const deletesEnabled = warningsEnabled && process.env.RETENTION_DELETE_ENABLED === "true";
+    if (!warningsEnabled) {
+        console.log("retentionSweep: switched off (RETENTION_SWEEP_ENABLED is not \"true\")");
+        return null;
+    }
+    const nowMs = Date.now();
+    const counts = {
+        scanned: 0, protected: 0, cleared: 0, warnedFirst: 0, warnedFinal: 0,
+        deleted: 0, deleteHeld: 0, warnDeferred: 0, noEmail: 0, errors: 0,
+    };
+    let pageToken;
+    do {
+        const page = await admin.auth().listUsers(1000, pageToken);
+        pageToken = page.pageToken;
+        const refs = page.users.map((u) => db.collection("users").doc(u.uid));
+        const snaps = [];
+        for (let i = 0; i < refs.length; i += 300) {
+            snaps.push(...(await db.getAll(...refs.slice(i, i + 300))));
+        }
+        const dataByUid = new Map(snaps.map((snap) => [snap.id, snap.exists ? snap.data() : undefined]));
+        for (const user of page.users) {
+            counts.scanned++;
+            const userRef = db.collection("users").doc(user.uid);
+            try {
+                const data = dataByUid.get(user.uid);
+                const warning = (0, retention_1.parseWarning)(data?.retention);
+                const base = { userData: data, ...(0, retention_1.authActivity)(user.metadata) };
+                // Cheap pass first (user doc only). The expensive cloud/storage
+                // checks can only move an account INTO the protected tier, so
+                // anything that is "none" here is "none" for real.
+                const cheap = (0, retention_1.classifyAccount)({ ...base, hasCloudData: false, hasStorageFiles: false });
+                const prelim = (0, retention_1.decideAction)(cheap, warning, nowMs);
+                if (cheap.tier === "protected")
+                    counts.protected++;
+                if (prelim.kind === "none")
+                    continue;
+                if (prelim.kind === "clear") {
+                    await userRef.set({ retention: admin.firestore.FieldValue.delete() }, { merge: true });
+                    counts.cleared++;
+                    continue;
+                }
+                const [hasCloudData, hasStorageFiles] = await Promise.all([
+                    retentionHasCloudData(user.uid),
+                    retentionHasStorageFiles(user.uid),
+                ]);
+                const state = (0, retention_1.classifyAccount)({ ...base, hasCloudData, hasStorageFiles });
+                const action = (0, retention_1.decideAction)(state, warning, nowMs);
+                if (state.tier === "protected")
+                    counts.protected++;
+                if (action.kind === "none")
+                    continue;
+                if (action.kind === "clear") {
+                    await userRef.set({ retention: admin.firestore.FieldValue.delete() }, { merge: true });
+                    counts.cleared++;
+                    continue;
+                }
+                const email = user.email || data?.email;
+                if (!email) {
+                    // Never delete without notice, and we have nowhere to send one.
+                    counts.noEmail++;
+                    continue;
+                }
+                if (action.kind === "warn_first") {
+                    if (counts.warnedFirst + counts.warnedFinal >= RETENTION_MAX_WARNINGS_PER_RUN) {
+                        counts.warnDeferred++;
+                        continue;
+                    }
+                    await sendRetentionWarning(user.uid, email, data, "first", state.tier, action.deleteAtMs, state.lastSeenMs);
+                    await userRef.set({
+                        retention: {
+                            tier: state.tier,
+                            lastSeenAt: admin.firestore.Timestamp.fromMillis(state.lastSeenMs),
+                            deleteAt: admin.firestore.Timestamp.fromMillis(action.deleteAtMs),
+                            firstWarnedAt: admin.firestore.FieldValue.serverTimestamp(),
+                            // A malformed leftover map must not carry an old final-warning stamp.
+                            finalWarnedAt: admin.firestore.FieldValue.delete(),
+                        },
+                    }, { merge: true });
+                    counts.warnedFirst++;
+                    continue;
+                }
+                if (action.kind === "warn_final") {
+                    if (counts.warnedFirst + counts.warnedFinal >= RETENTION_MAX_WARNINGS_PER_RUN) {
+                        counts.warnDeferred++;
+                        continue;
+                    }
+                    await sendRetentionWarning(user.uid, email, data, "final", state.tier, action.deleteAtMs, state.lastSeenMs);
+                    await userRef.set({
+                        retention: {
+                            // decideAction moves the date out when the 7-day window was missed.
+                            deleteAt: admin.firestore.Timestamp.fromMillis(action.deleteAtMs),
+                            finalWarnedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        },
+                    }, { merge: true });
+                    counts.warnedFinal++;
+                    continue;
+                }
+                // action.kind === "delete"
+                if (!deletesEnabled || counts.deleted >= RETENTION_MAX_DELETES_PER_RUN) {
+                    counts.deleteHeld++;
+                    continue;
+                }
+                await purgeUserAccount(user.uid, email, "retention");
+                counts.deleted++;
+            }
+            catch (err) {
+                counts.errors++;
+                console.error(`retentionSweep: failed for ${user.uid}:`, err);
+                reportError(err, { fn: "retentionSweep", uid: user.uid });
+            }
+        }
+    } while (pageToken);
+    console.log(`retentionSweep: ${JSON.stringify({ ...counts, deletesEnabled })}`);
+    try {
+        await getPostHog().captureImmediate({
+            distinctId: "server",
+            event: "retention sweep",
+            properties: { ...counts, deletesEnabled },
+        });
+    }
+    catch (err) {
+        console.error("retentionSweep: PostHog error:", err);
+    }
+    return null;
 });
 // ─── AI Streaming Endpoint (SSE) ─────────────────────────────
 const ALLOWED_ORIGINS = [

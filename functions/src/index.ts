@@ -18,6 +18,8 @@ import { WelcomeEmail } from "./emails/WelcomeEmail";
 import { splitSyncValue, joinSyncChunks, syncChunkDocId, SYNC_MAX_CHUNKS } from "./sync-chunks";
 import { mergeFreeAiUsage } from "./free-allowance";
 import { ProUpgradeEmail } from "./emails/ProUpgradeEmail";
+import { InactiveAccountWarningEmail } from "./emails/InactiveAccountWarningEmail";
+import { classifyAccount, decideAction, parseWarning, formatDeleteDate, authActivity, RetentionTier } from "./retention";
 import { CancellationEmail } from "./emails/CancellationEmail";
 import { Day3NudgeEmail } from "./emails/Day3NudgeEmail";
 import { TrialStartedEmail } from "./emails/TrialStartedEmail";
@@ -5378,15 +5380,12 @@ export const clearSyncData = functions.https.onCall(async (_data, context) => {
 
 // ─── Delete User Account ──────────────────────────────────
 
-export const deleteUserAccount = functions.https.onCall(async (_data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
-  }
-
-  const uid = context.auth.uid;
-  const email = context.auth.token.email || "unknown";
-
-  console.log(`[deleteUserAccount] Starting deletion for ${uid} (${email})`);
+// Everything that removes an account, in order. Shared by the user-initiated
+// deleteUserAccount callable below and the scheduled retentionSweep, so the
+// two paths can never drift (both must write the trial tombstone, both must
+// clear Storage, and so on).
+async function purgeUserAccount(uid: string, email: string, reason: "user" | "retention"): Promise<void> {
+  console.log(`[deleteUserAccount] Starting deletion for ${uid} (${email}) reason=${reason}`);
 
   // 1. Cancel Stripe subscription if exists
   try {
@@ -5534,7 +5533,7 @@ export const deleteUserAccount = functions.https.onCall(async (_data, context) =
     await getPostHog().captureImmediate({
       distinctId: uid,
       event: "account deleted",
-      properties: { email },
+      properties: { email, reason },
     });
   } catch (err) {
     console.error("[deleteUserAccount] PostHog error:", err);
@@ -5543,9 +5542,206 @@ export const deleteUserAccount = functions.https.onCall(async (_data, context) =
   // 8. Delete Firebase Auth account (do this last)
   await admin.auth().deleteUser(uid);
   console.log(`[deleteUserAccount] Deleted Firebase Auth user ${uid}`);
+}
 
+export const deleteUserAccount = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  }
+  await purgeUserAccount(context.auth.uid, context.auth.token.email || "unknown", "user");
   return { ok: true };
 });
+
+// ─── Inactive-account retention sweep ───────────────────────────
+//
+// Policy and all decisions live in retention.ts (protected / trader 24 months /
+// empty 12 months, first warning 30 days out, final warning 7 days out, any
+// sign-in cancels). scripts/retention-report.ts runs the same code read-only
+// so the counts it prints are exactly what this function would do.
+//
+// Switched OFF by default. Two env vars in the functions runtime config:
+//   RETENTION_SWEEP_ENABLED=true   send warnings and keep the bookkeeping
+//   RETENTION_DELETE_ENABLED=true  also delete accounts whose warnings aged
+// Warning email is a service notice about the account itself, so it goes out
+// regardless of marketing opt-out and carries no unsubscribe link.
+
+const RETENTION_MAX_WARNINGS_PER_RUN = 200;
+const RETENTION_MAX_DELETES_PER_RUN = 25;
+
+async function retentionHasCloudData(uid: string): Promise<boolean> {
+  const snap = await db.collection("users").doc(uid).collection("sync").limit(1).get();
+  return !snap.empty;
+}
+
+async function retentionHasStorageFiles(uid: string): Promise<boolean> {
+  const [files] = await admin.storage().bucket().getFiles({ prefix: `users/${uid}/`, maxResults: 1 });
+  return files.length > 0;
+}
+
+async function sendRetentionWarning(
+  uid: string,
+  email: string,
+  data: FirebaseFirestore.DocumentData | undefined,
+  kind: "first" | "final",
+  tier: RetentionTier,
+  deleteAtMs: number,
+  // Idempotency is keyed on last-seen, not the deadline: the deadline moves
+  // when an account is first warned after the policy date has passed, and a
+  // stable key lets the emailDeliveries receipt stop a repeat send if the
+  // bookkeeping write fails after the email went out.
+  lastSeenMs: number,
+): Promise<void> {
+  const firstName = (data?.displayName || "").trim().split(" ")[0];
+  const deleteDate = formatDeleteDate(deleteAtMs);
+  const html = await render(React.createElement(InactiveAccountWarningEmail, {
+    firstName,
+    deleteDate,
+    final: kind === "final",
+    hasTrades: tier === "trader",
+  }));
+  requireProviderSuccess(await getResend().emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: kind === "final"
+      ? `Last reminder: your FreeTradeJournal account is removed on ${deleteDate}`
+      : `Your FreeTradeJournal account will be removed on ${deleteDate}`,
+    html,
+  }, { idempotencyKey: `retention/${kind}/${uid}/${lastSeenMs}` }));
+}
+
+export const retentionSweep = functions
+  // Every Auth user is scanned and up to 200 emails rendered and sent in one
+  // run, so the 60s default is nowhere near enough.
+  .runWith({ timeoutSeconds: 540, memory: "512MB" })
+  .pubsub.schedule("every monday 06:00")
+  .timeZone("UTC")
+  .onRun(async () => {
+    const warningsEnabled = process.env.RETENTION_SWEEP_ENABLED === "true";
+    const deletesEnabled = warningsEnabled && process.env.RETENTION_DELETE_ENABLED === "true";
+    if (!warningsEnabled) {
+      console.log("retentionSweep: switched off (RETENTION_SWEEP_ENABLED is not \"true\")");
+      return null;
+    }
+
+    const nowMs = Date.now();
+    const counts = {
+      scanned: 0, protected: 0, cleared: 0, warnedFirst: 0, warnedFinal: 0,
+      deleted: 0, deleteHeld: 0, warnDeferred: 0, noEmail: 0, errors: 0,
+    };
+    let pageToken: string | undefined;
+
+    do {
+      const page = await admin.auth().listUsers(1000, pageToken);
+      pageToken = page.pageToken;
+
+      const refs = page.users.map((u) => db.collection("users").doc(u.uid));
+      const snaps: FirebaseFirestore.DocumentSnapshot[] = [];
+      for (let i = 0; i < refs.length; i += 300) {
+        snaps.push(...(await db.getAll(...refs.slice(i, i + 300))));
+      }
+      const dataByUid = new Map(snaps.map((snap) => [snap.id, snap.exists ? snap.data() : undefined]));
+
+      for (const user of page.users) {
+        counts.scanned++;
+        const userRef = db.collection("users").doc(user.uid);
+        try {
+          const data = dataByUid.get(user.uid);
+          const warning = parseWarning(data?.retention);
+          const base = { userData: data, ...authActivity(user.metadata) };
+
+          // Cheap pass first (user doc only). The expensive cloud/storage
+          // checks can only move an account INTO the protected tier, so
+          // anything that is "none" here is "none" for real.
+          const cheap = classifyAccount({ ...base, hasCloudData: false, hasStorageFiles: false });
+          const prelim = decideAction(cheap, warning, nowMs);
+          if (cheap.tier === "protected") counts.protected++;
+          if (prelim.kind === "none") continue;
+          if (prelim.kind === "clear") {
+            await userRef.set({ retention: admin.firestore.FieldValue.delete() }, { merge: true });
+            counts.cleared++;
+            continue;
+          }
+
+          const [hasCloudData, hasStorageFiles] = await Promise.all([
+            retentionHasCloudData(user.uid),
+            retentionHasStorageFiles(user.uid),
+          ]);
+          const state = classifyAccount({ ...base, hasCloudData, hasStorageFiles });
+          const action = decideAction(state, warning, nowMs);
+          if (state.tier === "protected") counts.protected++;
+
+          if (action.kind === "none") continue;
+          if (action.kind === "clear") {
+            await userRef.set({ retention: admin.firestore.FieldValue.delete() }, { merge: true });
+            counts.cleared++;
+            continue;
+          }
+
+          const email = user.email || data?.email;
+          if (!email) {
+            // Never delete without notice, and we have nowhere to send one.
+            counts.noEmail++;
+            continue;
+          }
+
+          if (action.kind === "warn_first") {
+            if (counts.warnedFirst + counts.warnedFinal >= RETENTION_MAX_WARNINGS_PER_RUN) { counts.warnDeferred++; continue; }
+            await sendRetentionWarning(user.uid, email, data, "first", state.tier, action.deleteAtMs, state.lastSeenMs);
+            await userRef.set({
+              retention: {
+                tier: state.tier,
+                lastSeenAt: admin.firestore.Timestamp.fromMillis(state.lastSeenMs),
+                deleteAt: admin.firestore.Timestamp.fromMillis(action.deleteAtMs),
+                firstWarnedAt: admin.firestore.FieldValue.serverTimestamp(),
+                // A malformed leftover map must not carry an old final-warning stamp.
+                finalWarnedAt: admin.firestore.FieldValue.delete(),
+              },
+            }, { merge: true });
+            counts.warnedFirst++;
+            continue;
+          }
+
+          if (action.kind === "warn_final") {
+            if (counts.warnedFirst + counts.warnedFinal >= RETENTION_MAX_WARNINGS_PER_RUN) { counts.warnDeferred++; continue; }
+            await sendRetentionWarning(user.uid, email, data, "final", state.tier, action.deleteAtMs, state.lastSeenMs);
+            await userRef.set({
+              retention: {
+                // decideAction moves the date out when the 7-day window was missed.
+                deleteAt: admin.firestore.Timestamp.fromMillis(action.deleteAtMs),
+                finalWarnedAt: admin.firestore.FieldValue.serverTimestamp(),
+              },
+            }, { merge: true });
+            counts.warnedFinal++;
+            continue;
+          }
+
+          // action.kind === "delete"
+          if (!deletesEnabled || counts.deleted >= RETENTION_MAX_DELETES_PER_RUN) {
+            counts.deleteHeld++;
+            continue;
+          }
+          await purgeUserAccount(user.uid, email, "retention");
+          counts.deleted++;
+        } catch (err) {
+          counts.errors++;
+          console.error(`retentionSweep: failed for ${user.uid}:`, err);
+          reportError(err, { fn: "retentionSweep", uid: user.uid });
+        }
+      }
+    } while (pageToken);
+
+    console.log(`retentionSweep: ${JSON.stringify({ ...counts, deletesEnabled })}`);
+    try {
+      await getPostHog().captureImmediate({
+        distinctId: "server",
+        event: "retention sweep",
+        properties: { ...counts, deletesEnabled },
+      });
+    } catch (err) {
+      console.error("retentionSweep: PostHog error:", err);
+    }
+    return null;
+  });
 
 // ─── AI Streaming Endpoint (SSE) ─────────────────────────────
 

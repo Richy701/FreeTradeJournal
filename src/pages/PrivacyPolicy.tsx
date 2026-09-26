@@ -15,7 +15,7 @@ export default function PrivacyPolicy() {
           <>
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Legal</p>
             <h1 className="font-display text-4xl font-bold tracking-tight">Privacy Policy</h1>
-            <p className="mt-3 text-muted-foreground">Last updated: July 15, 2026</p>
+            <p className="mt-3 text-muted-foreground">Last updated: September 26, 2026</p>
           </>
         }
       >
@@ -135,6 +135,7 @@ export default function PrivacyPolicy() {
 
           <ReadingSection title="Data Retention">
             <p>Local data remains on your device until you clear it. Cloud data is retained while your account is active. If you delete your account, all associated cloud data is permanently removed within 30 days, and your email address is removed from our mailing list.</p>
+            <p className="mt-3">We also remove accounts that have gone unused. If you have never logged a trade and have not signed in for 12 months, or you have logged trades but have not signed in for 24 months, we email you 30 days before and again 7 days before the account is removed. Signing in once cancels the removal. Accounts with an active or past Pro subscription, a lifetime plan, or data stored in cloud sync are never removed automatically.</p>
           </ReadingSection>
 
           <ReadingSection title="Children's Privacy">
