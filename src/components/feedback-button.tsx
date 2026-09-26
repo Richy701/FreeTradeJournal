@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Chat, Bug, Lightbulb, Star, CheckCircle, CaretRight, ArrowLeft, Envelope, Image as ImageIcon, Info, X } from '@phosphor-icons/react';
+import { Chat, Bug, Lightbulb, Star, CheckCircle, CaretRight, ArrowLeft, Image as ImageIcon, Info, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
@@ -85,25 +88,10 @@ export function FeedbackButton({
 }
 
 const FEEDBACK_TYPES = [
-  {
-    value: 'bug',
-    label: 'Bug report',
-    description: "Something isn't working",
-    icon: Bug,
-  },
-  {
-    value: 'feature',
-    label: 'Feature request',
-    description: 'Suggest an improvement',
-    icon: Lightbulb,
-  },
-  {
-    value: 'general',
-    label: 'General feedback',
-    description: 'Share your thoughts',
-    icon: Chat,
-  },
-] as const;
+  { value: 'bug', label: 'Bug', description: "Something isn't working.", icon: Bug },
+  { value: 'feature', label: 'Feature', description: 'Suggest an improvement.', icon: Lightbulb },
+  { value: 'general', label: 'General', description: 'Share your thoughts.', icon: Chat },
+] as const satisfies readonly { value: FeedbackType; label: string; description: string; icon: typeof Bug }[];
 
 type Step = 'feedback' | 'testimonial' | 'done';
 
@@ -304,72 +292,39 @@ function FeedbackDialog({
 
         {step === 'feedback' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-primary/[0.03] to-transparent">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Chat className="h-[18px] w-[18px]" weight="fill" />
-                </div>
-                <DialogHeader className="space-y-1">
-                  <DialogTitle className="text-lg font-semibold leading-tight">Share your feedback</DialogTitle>
-                  <DialogDescription className="text-sm text-muted-foreground">
-                    Help us make FreeTradeJournal better for you.
-                    {context && (
-                      <span className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground/80 align-middle">
-                        {context}
-                      </span>
-                    )}
-                  </DialogDescription>
-                </DialogHeader>
-              </div>
+            <div className="px-6 pt-6 pb-4 border-b border-border/70">
+              <DialogHeader className="space-y-1 text-left">
+                <DialogTitle className="text-lg font-semibold leading-tight">Share your feedback</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">
+                  Help us make FreeTradeJournal better for you.
+                  {context && (
+                    <span className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-md bg-muted text-[10px] font-medium text-muted-foreground/80 align-middle">
+                      {context}
+                    </span>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
             </div>
 
             <form onSubmit={handleFeedbackSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
-              {/* Type selector — first, so the form can adapt to it */}
+              {/* Type selector — one row, so the form stays short */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">What kind of feedback is this?</span>
-                <div className="flex flex-col gap-2">
-                  {FEEDBACK_TYPES.map((t) => {
-                    const Icon = t.icon;
-                    const isActive = type === t.value;
-                    return (
-                      <button
-                        key={t.value}
-                        type="button"
-                        aria-pressed={isActive}
-                        onClick={() => {
-                          setType(t.value);
-                          // Bugs have no star UI — clear any stale rating so it can't
-                          // silently trigger the testimonial upsell on submit.
-                          if (t.value === 'bug') setRating(0);
-                        }}
-                        className={cn(
-                          "flex items-center gap-3 px-3.5 py-3 rounded-xl border text-left transition-all duration-150",
-                          isActive
-                            ? "bg-primary/10 border-primary/40"
-                            : "border-border/80 hover:border-border bg-muted/40 hover:bg-muted/70"
-                        )}
-                      >
-                        <div className={cn(
-                          "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-colors",
-                          isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                        )}>
-                          <Icon className="h-[18px] w-[18px]" />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className={cn("text-sm font-medium leading-tight", isActive ? "text-primary" : "text-foreground")}>
-                            {t.label}
-                          </span>
-                          <span className="mt-0.5 text-xs text-muted-foreground leading-tight">
-                            {t.description}
-                          </span>
-                        </div>
-                        {isActive && (
-                          <CheckCircle weight="fill" className="ml-auto h-5 w-5 flex-shrink-0 text-primary" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SegmentedControl
+                  aria-label="Feedback type"
+                  value={type}
+                  onChange={(value) => {
+                    setType(value);
+                    // Bugs have no star UI — clear any stale rating so it can't
+                    // silently trigger the testimonial upsell on submit.
+                    if (value === 'bug') setRating(0);
+                  }}
+                  options={FEEDBACK_TYPES}
+                  variant="outline"
+                  fullWidth
+                  itemClassName="py-2 text-sm"
+                />
+                <span className="text-xs text-muted-foreground">{FEEDBACK_TYPES.find((t) => t.value === type)?.description}</span>
               </div>
 
               {/* Star rating — only for feedback where a sentiment makes sense (not bugs) */}
@@ -464,24 +419,10 @@ function FeedbackDialog({
               </div>
 
               {/* Follow-up toggle */}
-              <label className="flex items-center gap-2.5 cursor-pointer group">
-                <input type="checkbox" className="sr-only peer" checked={wantFollowUp} onChange={(e) => setWantFollowUp(e.target.checked)} />
-                <div className={cn(
-                  "h-4 w-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors",
-                  "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
-                  wantFollowUp ? "bg-primary border-primary" : "border-border group-hover:border-primary/50"
-                )}>
-                  {wantFollowUp && (
-                    <svg className="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Envelope className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">I'd like a follow-up reply</span>
-                </div>
-              </label>
+              <div className="flex items-center gap-2.5">
+                <Checkbox id="fb-follow-up" className="rounded-[4px]" checked={wantFollowUp} onCheckedChange={(v) => setWantFollowUp(v === true)} />
+                <Label htmlFor="fb-follow-up" className="text-sm font-normal text-muted-foreground cursor-pointer">I'd like a reply by email</Label>
+              </div>
 
               <div className="flex items-center gap-3 pt-1">
                 <Button type="button" variant="ghost" size="sm" onClick={() => handleClose(false)} disabled={loading} className="text-muted-foreground">

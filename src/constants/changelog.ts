@@ -26,6 +26,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.96.2',
+    date: '2026-09-26',
+    summary: 'A shorter, simpler feedback form.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Feedback form redesigned',
+        description: 'Pick bug, feature or general from one row instead of three big cards, so the whole form fits on screen. Same stars, message box and reply option as before.',
+      },
+    ],
+  },
+  {
     version: '2.96.1',
     date: '2026-09-23',
     summary: 'Imports now stop before saving trades on the wrong day.',
@@ -3410,4 +3423,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.96.1'
+export const LATEST_CHANGELOG_VERSION = '2.96.2'
