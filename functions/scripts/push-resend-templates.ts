@@ -3,12 +3,16 @@
  * These are the templates used by the Resend automations ("Onboarding:
  * Activation Sequence" + "Onboarding: Conversion Drip"), not sent from index.ts.
  *
- * Personalisation: Resend templates only render {{{TRIPLE_BRACE}}} variables
- * that are DECLARED on the template. Anything else (Liquid-style
- * `{{contact.firstName | default: x}}`) publishes fine and then fails every
- * send with "Template rendering failed". So the name is a declared variable
- * with a fallback, and each automation send step maps it:
- *   "variables": { "NAME": { "var": "contact.first_name" } }
+ * Personalisation: none. The templates used to open with "{{{NAME}}}, ..."
+ * mapped from contact.first_name, but Resend passes an empty first name
+ * through as "" (the "Trader" fallback only fires when the variable is
+ * absent), so every email/password signup got ", review your next trade."
+ * Since Sep 26 2026 the templates render with firstName '' so the headline is
+ * the plain form. The NAME variable stays declared (unused) so the existing
+ * automation step mappings ("NAME" -> contact.first_name) remain valid.
+ * Resend templates only render {{{TRIPLE_BRACE}}} variables that are DECLARED
+ * on the template; anything else fails every send with "Template rendering
+ * failed", so the output is checked for stray tags before pushing.
  *
  * Usage (run from functions/ directory):
  *   npx ts-node --compiler-options '{"module":"commonjs","esModuleInterop":true,"jsx":"react-jsx"}' scripts/push-resend-templates.ts [--dry]
@@ -39,10 +43,8 @@ if (fs.existsSync(envPath)) {
 
 export const NAME_VARIABLE = 'NAME'
 export const NAME_FALLBACK = 'Trader'
-const NAME_PLACEHOLDER = '__FIRSTNAME__'
-const NAME_TAG = `{{{${NAME_VARIABLE}}}}`
 const UNSUBSCRIBE_TAG = '{{{RESEND_UNSUBSCRIBE_URL}}}'
-const ALLOWED_TAGS = new Set([NAME_TAG, UNSUBSCRIBE_TAG])
+const ALLOWED_TAGS = new Set([UNSUBSCRIBE_TAG])
 
 type Props = { firstName: string; unsubscribeUrl?: string }
 const TEMPLATES: { alias: string; component: (props: Props) => React.ReactElement }[] = [
@@ -61,16 +63,15 @@ function assertOnlyAllowedTags(alias: string, kind: string, content: string) {
   const found = content.match(/\{\{+[^{}]*\}+\}/g) || []
   const bad = found.filter((tag) => !ALLOWED_TAGS.has(tag))
   if (bad.length) throw new Error(`${alias} ${kind}: unsupported template tag(s): ${[...new Set(bad)].join(', ')}`)
-  if (!content.includes(NAME_TAG)) throw new Error(`${alias} ${kind}: name tag missing`)
   if (!content.includes(UNSUBSCRIBE_TAG)) throw new Error(`${alias} ${kind}: unsubscribe tag missing`)
-  if (content.includes(NAME_PLACEHOLDER)) throw new Error(`${alias} ${kind}: placeholder left in output`)
+  if (/^\s*,/m.test(content.replace(/<[^>]+>/g, '\n'))) throw new Error(`${alias} ${kind}: text starts with a comma (empty greeting)`)
 }
 
 async function renderTemplate(t: (typeof TEMPLATES)[number]) {
-  const element = React.createElement(t.component, { firstName: NAME_PLACEHOLDER, unsubscribeUrl: UNSUBSCRIBE_TAG })
-  const swap = (s: string) => s.split(NAME_PLACEHOLDER).join(NAME_TAG)
-  const html = swap(await render(element))
-  const text = swap(await render(element, { plainText: true }))
+  // firstName '' → every component renders its plain headline (no greeting).
+  const element = React.createElement(t.component, { firstName: '', unsubscribeUrl: UNSUBSCRIBE_TAG })
+  const html = await render(element)
+  const text = await render(element, { plainText: true })
   assertOnlyAllowedTags(t.alias, 'html', html)
   assertOnlyAllowedTags(t.alias, 'text', text)
   return { html, text }
