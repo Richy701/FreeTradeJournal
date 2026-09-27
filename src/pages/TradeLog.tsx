@@ -54,7 +54,7 @@ import {
 import { Pie, PieChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker, DatePicker } from '@/components/date-picker';
-import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser';
+import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, isEmptyExport, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useDemoData } from '@/hooks/use-demo-data';
@@ -892,6 +892,25 @@ export default function TradeLog() {
       let result = parseCSV(content, { fileName: file.name });
 
       setIsDialogOpen(false);
+
+      // Header row only: the format was recognised, there is just nothing in it.
+      // Say so instead of opening the column mapper (or asking the AI mapper).
+      if (!result.success && result.trades.length === 0 && isEmptyExport(content)) {
+        const headers = parseCSVHeaders(content);
+        trackEvent('csv_import_failed', {
+          source: 'tradelog',
+          signature: headerSignature(headers),
+          column_count: headers.length,
+          headers: headers.slice(0, 40),
+          error: result.errors[0],
+          empty_export: true,
+        });
+        toast.warning('This export has no trades in it', {
+          description: 'The file only has a header row. Check the account or date range you exported, then try again.',
+          duration: 8000,
+        });
+        return;
+      }
 
       // If auto-detect failed, try to rescue the import silently before bothering
       // the user: replay a mapping they previously confirmed for this file shape,
@@ -2384,7 +2403,7 @@ export default function TradeLog() {
                         onClick={() => document.getElementById('csv-import')?.click()}
                         onDragOver={(e) => { e.preventDefault(); setIsDialogDropActive(true); }}
                         onDragLeave={(e) => { e.preventDefault(); setIsDialogDropActive(false); }}
-                        onDrop={(e) => { setIsDialogDropActive(false); void handleCsvDrop(e); }}
+                        onDrop={(e) => { e.stopPropagation(); setIsDialogDropActive(false); void handleCsvDrop(e); }}
                       >
                         <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
                           <UploadSimple className="h-6 w-6" style={{ color: themeColors.primary }} />

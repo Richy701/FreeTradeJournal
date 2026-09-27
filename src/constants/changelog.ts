@@ -26,6 +26,30 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.96.3',
+    date: '2026-09-27',
+    summary: 'No more duplicate starter account, and clearer import messages.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Your first account no longer comes with a spare',
+        description: 'Setting up your first account used to leave a second "Main Account" placeholder next to it. Now the account you create during setup is the only one, which also frees up your second account slot on the free plan.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Empty exports get a plain answer',
+        description: 'Importing a file that has a header row but no trades now tells you exactly that, instead of opening the column mapper. Check the account or date range you exported and try again.',
+      },
+      {
+        type: 'fixed',
+        text: 'Dropping a file on the import dialog no longer imports it twice',
+        description: 'In the Trade Log, a file dragged onto the import box was read twice, which could show two previews or two warnings. It now runs once.',
+      },
+    ],
+  },
+  {
     version: '2.96.2',
     date: '2026-09-26',
     summary: 'A shorter, simpler feedback form.',
@@ -3423,4 +3447,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.96.2'
+export const LATEST_CHANGELOG_VERSION = '2.96.3'

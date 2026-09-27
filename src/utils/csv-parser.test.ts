@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { parseCSV, parseCSVWithMappings, findColumnIndex, parseCSVHeaders, dateFromFileName, detectNonTradeExport, isNetPnlHeader } from './csv-parser';
+import { parseCSV, parseCSVWithMappings, findColumnIndex, parseCSVHeaders, dateFromFileName, detectNonTradeExport, isNetPnlHeader, isEmptyExport } from './csv-parser';
 import { buildImportedTrades } from './import-trades';
 
 describe('findColumnIndex', () => {
@@ -726,5 +726,20 @@ describe('parseCSV — ambiguous date order resolved by future-date check', () =
     // "Tomorrow" can be legitimate when the broker's timezone runs ahead.
     const r = parseCSV(mk(['08/13/2026 01:00:00']));
     expect(r.warnings).toBeUndefined();
+  });
+});
+
+describe('isEmptyExport — header row with no trade rows', () => {
+  const header = '﻿Id,ContractName,EnteredAt,ExitedAt,EntryPrice,ExitPrice,Fees,PnL,Size,Type,TradeDay,TradeDuration,Commissions';
+
+  it('flags a recognisable export that has no trades in it', () => {
+    expect(isEmptyExport(header)).toBe(true);
+    expect(isEmptyExport(header + '\r\n')).toBe(true);
+    expect(parseCSV(header).errors[0]).toMatch(/at least a header row and one data row/);
+  });
+
+  it('does not flag a file with trade rows or a single-column file', () => {
+    expect(isEmptyExport(header + '\n1,MGCZ6,09/09/2026 04:06:59 -05:00,09/09/2026 04:09:47 -05:00,4415.7,4415.9,7.1,-10,5,Short,09/09/2026,02:48.0,2.5')).toBe(false);
+    expect(isEmptyExport('just some text')).toBe(false);
   });
 });

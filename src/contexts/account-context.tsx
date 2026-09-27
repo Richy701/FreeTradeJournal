@@ -9,6 +9,7 @@ import { useSync } from '@/contexts/sync-context';
 import { getChangeVersion, onSyncChange, notifyDataChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
 import { belongsToAccount, isLegacyRecord } from '@/lib/account-scope';
+import { hasStoredRecords, isSeedAccount } from '@/utils/onboarding';
 
 // Free-plan cap on trading accounts. Enforced here (the only write path) —
 // UI gates in Settings are messaging, not enforcement.
@@ -237,11 +238,21 @@ export function AccountProvider({ children }: AccountProviderProps) {
       createdAt: new Date().toISOString()
     };
 
+    // A brand-new user's list is just the seeded placeholder. Their first real
+    // account (onboarding, or Settings if onboarding was skipped) replaces it —
+    // appending left a ghost "Main Account · Demo Broker" beside the real one
+    // and burned one of the two free-plan slots. Kept if anything was logged:
+    // legacy records resolve to the default-id account, so it must stay
+    // reachable until deleteAccount re-stamps them.
+    const replaceSeed = accounts.length === 1
+      && isSeedAccount(accounts[0] as unknown as Record<string, unknown>)
+      && !hasStoredRecords(userId);
+
     if (accounts.length === 0 || accountData.isDefault) {
       setAccounts(prev => prev.map(acc => ({ ...acc, isDefault: false })));
     }
 
-    setAccounts(prev => [...prev, newAccount]);
+    setAccounts(prev => replaceSeed ? [newAccount] : [...prev, newAccount]);
 
     if (accounts.length === 0 || accountData.isDefault) {
       setActiveAccount(newAccount);

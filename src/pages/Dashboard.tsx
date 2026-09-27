@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, Image as ImageIcon, CaretRight, ArrowRight } from '@phosphor-icons/react'
 import { useState, useEffect, useMemo, lazy, Suspense } from "react"
 import { toast } from 'sonner'
-import { parseCSV, parseCSVWithMappings, parseCSVHeaders, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
+import { parseCSV, parseCSVWithMappings, parseCSVHeaders, isEmptyExport, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useUserStorage } from '@/utils/user-storage'
@@ -427,6 +427,25 @@ export default function Dashboard() {
       let result = parseCSV(content, { fileName: file.name });
 
       setIsTradeModalOpen(false);
+
+      // Header row only: the format was recognised, there is just nothing in it.
+      // Say so instead of opening the column mapper (or asking the AI mapper).
+      if (!result.success && result.trades.length === 0 && isEmptyExport(content)) {
+        const headers = parseCSVHeaders(content);
+        trackEvent('csv_import_failed', {
+          source: 'dashboard',
+          signature: headerSignature(headers),
+          column_count: headers.length,
+          headers: headers.slice(0, 40),
+          error: result.errors[0],
+          empty_export: true,
+        });
+        toast.warning('This export has no trades in it', {
+          description: 'The file only has a header row. Check the account or date range you exported, then try again.',
+          duration: 8000,
+        });
+        return;
+      }
 
       // If auto-detect failed, try to rescue the import silently: replay a mapping
       // the user previously confirmed for this file shape, or (Pro only) ask the

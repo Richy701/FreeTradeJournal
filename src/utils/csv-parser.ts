@@ -2164,6 +2164,13 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
   return result;
 }
 
+// A recognisable export with a header row and no trade rows — e.g. a Topstep
+// "Trades" export for an account or date range that has no trades yet. The
+// format is fine, so the column mapper is the wrong answer; tell the user.
+export function isEmptyExport(csvContent: string): boolean {
+  return parseCSVHeaders(csvContent).length > 1 && parseCSVSample(csvContent, 1).length === 0;
+}
+
 export function parseCSVHeaders(csvContent: string): string[] {
   const cleaned = csvContent.replace(/^\uFEFF/, '');
   const lines = cleaned.trim().split('\n');
