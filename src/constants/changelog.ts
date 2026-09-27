@@ -37,6 +37,11 @@ export const changelog: ChangelogEntry[] = [
         description: 'Setting up your first account used to leave a second "Main Account" placeholder next to it. Now the account you create during setup is the only one, which also frees up your second account slot on the free plan.',
       },
       {
+        type: 'fixed',
+        text: 'Leftover placeholder accounts are removed',
+        description: 'If you already had that empty "Main Account" placeholder sitting next to your real account, it goes away on your next visit. Anything with trades or journal entries attached is left alone.',
+      },
+      {
         type: 'improved',
         highlight: true,
         text: 'Empty exports get a plain answer',

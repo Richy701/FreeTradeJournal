@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { hasExistingOnboardingData } from './onboarding';
+import { hasExistingOnboardingData, pruneSeedAccount } from './onboarding';
 
 const put = (key: string, value: unknown) => localStorage.setItem(`user_trader_${key}`, JSON.stringify(value));
 const seed = { id: 'default-123', name: 'Main Account', type: 'demo', broker: 'Demo Broker', currency: 'USD' };
@@ -29,5 +29,30 @@ describe('returning-user evidence', () => {
     expect(hasExistingOnboardingData('trader')).toBe(false);
     put('trades', [{ id: 'record-1' }]);
     expect(hasExistingOnboardingData('other')).toBe(false);
+  });
+});
+
+describe('pruneSeedAccount — leftover placeholder beside a real account', () => {
+  const ghost = { ...seed, isDefault: false };
+  const real = { id: 'account-1', name: 'Topstep', type: 'prop-firm', broker: 'TopstepTrader', currency: 'USD', isDefault: true };
+
+  it('drops an unused placeholder and keeps the array identity when nothing changes', () => {
+    expect(pruneSeedAccount([ghost, real], [{ accountId: real.id }])).toEqual([real]);
+    const only = [ghost];
+    expect(pruneSeedAccount(only, [])).toBe(only);
+  });
+  it('keeps the placeholder when a record resolves to it, including legacy records', () => {
+    const list = [ghost, real];
+    expect(pruneSeedAccount(list, [{ accountId: ghost.id }])).toBe(list);
+    expect(pruneSeedAccount(list, [{ accountId: null }])).toBe(list);
+    expect(pruneSeedAccount(list, [{}])).toBe(list);
+  });
+  it('keeps a customized placeholder', () => {
+    const list = [{ ...ghost, balance: 100 }, real];
+    expect(pruneSeedAccount(list, [])).toBe(list);
+  });
+  it('promotes a survivor when the placeholder was the default', () => {
+    const out = pruneSeedAccount([{ ...ghost, isDefault: true }, { ...real, isDefault: false }], []);
+    expect(out).toEqual([{ ...real, isDefault: true }]);
   });
 });

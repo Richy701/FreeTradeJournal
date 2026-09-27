@@ -9,7 +9,7 @@ import { useSync } from '@/contexts/sync-context';
 import { getChangeVersion, onSyncChange, notifyDataChange } from '@/contexts/sync-context';
 import { UserStorage } from '@/utils/user-storage';
 import { belongsToAccount, isLegacyRecord } from '@/lib/account-scope';
-import { hasStoredRecords, isSeedAccount } from '@/utils/onboarding';
+import { hasStoredRecords, isSeedAccount, pruneSeedAccount, storedOwnedRecords } from '@/utils/onboarding';
 
 // Free-plan cap on trading accounts. Enforced here (the only write path) —
 // UI gates in Settings are messaging, not enforcement.
@@ -126,6 +126,21 @@ export function AccountProvider({ children }: AccountProviderProps) {
         console.error('[AccountProvider] Corrupted accounts data in storage, resetting.');
         UserStorage.removeItem(userId, 'accounts');
         return;
+      }
+      // Users who onboarded before the seed was replaced still carry the
+      // placeholder beside their real account. Prune it only once the list is
+      // the merged one (initialSyncDone): pruning a stale pre-pull copy would
+      // mark it as a local edit and let it win over the cloud list.
+      if (initialSyncDone) {
+        const pruned = pruneSeedAccount(parsedAccounts, storedOwnedRecords(userId));
+        if (pruned !== parsedAccounts) {
+          const seedId = parsedAccounts.find(acc => !pruned.some(p => p.id === acc.id))?.id;
+          parsedAccounts = pruned;
+          UserStorage.setItem(userId, 'accounts', JSON.stringify(pruned));
+          if (seedId && savedActiveAccountId === seedId) {
+            UserStorage.setItem(userId, 'active-account-id', (pruned.find(acc => acc.isDefault) || pruned[0]).id);
+          }
+        }
       }
       setAccounts(parsedAccounts);
 

@@ -112,3 +112,30 @@ describe('first real account replaces the seeded placeholder', () => {
     expect(ctx.accounts.map(a => a.id)).toEqual([seed.id, added.id]);
   });
 });
+
+describe('load-time cleanup of a leftover placeholder', () => {
+  const ghost = { id: 'default-7', name: 'Main Account', type: 'demo', broker: 'Demo Broker', currency: 'USD', isDefault: false, createdAt: '2026-01-01' };
+
+  async function remount(accounts: unknown[], trades: unknown[], activeId: string) {
+    act(() => root.unmount());
+    localStorage.clear();
+    await UserStorage.setItem(uid, 'accounts', JSON.stringify(accounts), true);
+    await UserStorage.setItem(uid, 'active-account-id', activeId, true);
+    await UserStorage.setItem(uid, 'trades', JSON.stringify(trades), true);
+    root = createRoot(container);
+    act(() => root.render(<AccountProvider><Harness /></AccountProvider>));
+  }
+
+  it('removes the ghost, persists the list, and moves the active account off it', async () => {
+    await remount([ghost, prop], [{ id: 't1', accountId: prop.id }], ghost.id);
+    expect(ctx.accounts.map(a => a.id)).toEqual([prop.id]);
+    expect(ctx.activeAccount?.id).toBe(prop.id);
+    expect(JSON.parse(UserStorage.getItem(uid, 'accounts')!).map((a: { id: string }) => a.id)).toEqual([prop.id]);
+    expect(UserStorage.getItem(uid, 'active-account-id')).toBe(prop.id);
+  });
+
+  it('leaves a ghost alone when a legacy record still resolves to it', async () => {
+    await remount([ghost, prop], [{ id: 't1' }], prop.id);
+    expect(ctx.accounts.map(a => a.id)).toEqual([ghost.id, prop.id]);
+  });
+});
