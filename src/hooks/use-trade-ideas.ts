@@ -1,15 +1,9 @@
 import { useMemo } from 'react'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { useSettings } from '@/contexts/settings-context'
-import { computeTradeAggregates } from '@/utils/trade-aggregates'
+import { computeTradeAggregates, computeHoldTimeStats, computeCostStats } from '@/utils/trade-aggregates'
+import { buildActionableIdeas } from '@/utils/actionable-ideas'
 
-export interface TradeIdea {
-  id: string
-  title: string
-  insight: string
-  nextStep: string
-  sentiment: 'positive' | 'neutral' | 'opportunity'
-}
 
 export interface SymbolChartData {
   symbol: string
@@ -95,7 +89,7 @@ export interface SummaryStats {
   traderProfile: TraderProfilePoint[]
 }
 
-interface ParsedTrade {
+export interface ParsedTrade {
   id: string
   symbol: string
   side: string
@@ -104,7 +98,13 @@ interface ParsedTrade {
   exitTime: Date
   strategy?: string
   tags?: string[]
+  commission?: number
+  fees?: number
+  swap?: number
 }
+
+// Smallest group (symbol, day, hour, side) an idea or "best X" may be built on.
+export const MIN_GROUP_TRADES = 3
 
 // Read the stored P&L the same way the Dashboard does (t.pnl first), with
 // legacy fallbacks for old imports. Checked field-by-field so a legitimate
@@ -118,7 +118,7 @@ function readStoredPnl(t: any): number {
   return 0
 }
 
-function parseTrades(rawTrades: any[]): ParsedTrade[] {
+export function parseTrades(rawTrades: any[]): ParsedTrade[] {
   return rawTrades
     .map((t: any) => ({
       id: t.id,
@@ -129,11 +129,14 @@ function parseTrades(rawTrades: any[]): ParsedTrade[] {
       exitTime: t.exitTime ? new Date(t.exitTime) : new Date(t.exitDate || t.date || t.createdAt),
       strategy: t.strategy || undefined,
       tags: Array.isArray(t.tags) ? t.tags.filter((x: unknown) => typeof x === 'string') : undefined,
+      commission: Number(t.commission) || 0,
+      fees: Number(t.fees) || 0,
+      swap: Number(t.swap) || 0,
     }))
     .filter((t) => t.symbol && !isNaN(t.entryTime.getTime()))
 }
 
-function buildChartData(trades: ParsedTrade[]): ChartDataSet {
+export function buildChartData(trades: ParsedTrade[]): ChartDataSet {
   // Symbol P&L
   const bySymbol = new Map<string, { wins: number; losses: number; totalPnl: number }>()
   for (const t of trades) {
@@ -277,7 +280,7 @@ function buildChartData(trades: ParsedTrade[]): ChartDataSet {
   return { symbolPnl, hourlyPnl, dayOfWeek, direction, strategyPnl, weeklyPnl, dailyActivity }
 }
 
-function buildSummaryStats(charts: ChartDataSet, trades: ParsedTrade[]): SummaryStats {
+export function buildSummaryStats(charts: ChartDataSet, trades: ParsedTrade[]): SummaryStats {
   // Single pass for winners, losers, totalPnl
   let winCount = 0, winSum = 0, loseCount = 0, loseSum = 0, totalPnl = 0
   for (const t of trades) {
@@ -287,18 +290,24 @@ function buildSummaryStats(charts: ChartDataSet, trades: ParsedTrade[]): Summary
   }
   const winRate = trades.length > 0 ? Math.round((winCount / trades.length) * 100) : 0
 
-  const bestSym = charts.symbolPnl[0]
+  // "Best" anything needs a few trades behind it: a single lucky Monday is
+  // not a pattern. Prefer groups at the minimum; fall back only when nothing
+  // qualifies so the summary still renders on a young account.
+  const bestSym = charts.symbolPnl.find(sy => sy.wins + sy.losses >= MIN_GROUP_TRADES) || charts.symbolPnl[0]
 
-  // Loop for max day by pnl instead of sort
-  let bestDay = charts.dayOfWeek[0] || null
-  for (let i = 1; i < charts.dayOfWeek.length; i++) {
-    if (charts.dayOfWeek[i].pnl > bestDay!.pnl) bestDay = charts.dayOfWeek[i]
+  const dayPool = charts.dayOfWeek.filter(d => d.count >= MIN_GROUP_TRADES)
+  const days = dayPool.length > 0 ? dayPool : charts.dayOfWeek
+  let bestDay = days[0] || null
+  for (let i = 1; i < days.length; i++) {
+    if (days[i].pnl > bestDay!.pnl) bestDay = days[i]
   }
 
-  const winDir = charts.direction.length > 0
-    ? charts.direction.reduce((a, b) => (a.winRate > b.winRate ? a : b))
+  const dirPool = charts.direction.filter(d => d.count >= MIN_GROUP_TRADES)
+  const dirs = dirPool.length > 0 ? dirPool : charts.direction
+  const winDir = dirs.length > 0
+    ? dirs.reduce((a, b) => (a.winRate > b.winRate ? a : b))
     : null
-  const topStrat = charts.strategyPnl[0]
+  const topStrat = charts.strategyPnl.find(st => st.count >= MIN_GROUP_TRADES) || charts.strategyPnl[0]
 
   const avgWin = winCount > 0 ? winSum / winCount : 0
   const avgLoss = loseCount > 0 ? Math.abs(loseSum / loseCount) : 0
@@ -308,16 +317,24 @@ function buildSummaryStats(charts: ChartDataSet, trades: ParsedTrade[]): Summary
   // Risk/Reward: cap at 3:1 = 100
   const rrScore = Math.min(Math.round((rr / 3) * 100), 100)
 
-  // Consistency: lower std deviation of daily P&L = higher score
+  // Consistency: lower std deviation of daily P&L = higher score. Only a
+  // positive average day earns the full scale — a trader who loses the same
+  // amount every day is consistent at losing, and used to score "Strong".
+  // With fewer than two days there is nothing to measure: sit at the middle.
   const dailyPnls = charts.dailyActivity.map(d => d.pnl)
-  let consistency = 80
+  let consistency = 50
   if (dailyPnls.length > 1) {
     const mean = dailyPnls.reduce((a, b) => a + b, 0) / dailyPnls.length
-    const variance = dailyPnls.reduce((a, b) => a + (b - mean) ** 2, 0) / dailyPnls.length
-    const stdDev = Math.sqrt(variance)
-    const cv = mean !== 0 ? stdDev / Math.abs(mean) : 5
-    // CV of 0 = 100, CV of 3+ = 10
-    consistency = Math.max(10, Math.min(100, Math.round(100 - (cv / 3) * 90)))
+    if (mean > 0) {
+      const variance = dailyPnls.reduce((a, b) => a + (b - mean) ** 2, 0) / dailyPnls.length
+      const cv = Math.sqrt(variance) / mean
+      // CV of 0 = 100, CV of 3+ = 10
+      consistency = Math.max(10, Math.min(100, Math.round(100 - (cv / 3) * 90)))
+    } else {
+      // Share of green days, capped so a losing account never reads as strong.
+      const greenDays = dailyPnls.filter(v => v > 0).length
+      consistency = Math.max(10, Math.round((greenDays / dailyPnls.length) * 40))
+    }
   }
 
   // Volume: normalize active days per week (cap at 5 = 100)
@@ -352,143 +369,6 @@ function buildSummaryStats(charts: ChartDataSet, trades: ParsedTrade[]): Summary
   }
 }
 
-function generateIdeas(
-  trades: ParsedTrade[],
-  charts: ChartDataSet,
-  summary: SummaryStats,
-  fmt: (n: number, s?: boolean) => string
-): TradeIdea[] {
-  const ideas: TradeIdea[] = []
-
-  // Best symbol idea
-  if (charts.symbolPnl.length > 0 && charts.symbolPnl[0].pnl > 0) {
-    const best = charts.symbolPnl[0]
-    ideas.push({
-      id: 'focus-best-symbol',
-      title: `Focus on ${best.symbol}`,
-      insight: `You win ${best.winRate}% of trades with ${fmt(best.pnl, true)} total P&L. This is your strongest instrument.`,
-      nextStep: `In your next session, only take ${best.symbol} setups until you have a clean read on why it works for you.`,
-      sentiment: 'positive',
-    })
-  }
-
-  // Worst symbol idea
-  const worstSym = charts.symbolPnl.filter((s) => s.pnl < 0 && s.wins + s.losses >= 3)
-  if (worstSym.length > 0) {
-    const worst = worstSym[worstSym.length - 1]
-    ideas.push({
-      id: 'reduce-worst-symbol',
-      title: `Reduce ${worst.symbol} exposure`,
-      insight: `${worst.symbol} is costing you ${fmt(Math.abs(worst.pnl), false)} with only a ${worst.winRate}% win rate.`,
-      nextStep: `Cut your lot size on ${worst.symbol} by half, or remove it from your watchlist for 2 weeks and see if your P&L improves.`,
-      sentiment: 'opportunity',
-    })
-  }
-
-  // Best time + symbol combo
-  const bestHour = charts.hourlyPnl.reduce((best, h) => (h.pnl > best.pnl ? h : best), charts.hourlyPnl[0])
-  if (bestHour && charts.symbolPnl[0]) {
-    ideas.push({
-      id: 'time-symbol-combo',
-      title: `Trade ${charts.symbolPnl[0].symbol} around ${bestHour.hour}`,
-      insight: `Your best instrument meets your peak hour — ${bestHour.hour} has a ${bestHour.winRate}% win rate.`,
-      nextStep: `Set a calendar reminder for ${bestHour.hour} on your best trading days and prioritise ${charts.symbolPnl[0].symbol} setups in that window.`,
-      sentiment: 'positive',
-    })
-  }
-
-  // Direction bias
-  if (charts.direction.length === 2) {
-    const [d1, d2] = charts.direction
-    const wrDiff = Math.abs(d1.winRate - d2.winRate)
-    if (wrDiff >= 10) {
-      const better = d1.winRate > d2.winRate ? d1 : d2
-      const worse = better === d1 ? d2 : d1
-      ideas.push({
-        id: 'direction-edge',
-        title: `Lean into ${better.name.toLowerCase()} trades`,
-        insight: `Your ${better.name.toLowerCase()} trades win ${better.winRate}% vs ${worse.winRate}% on the other side — a ${wrDiff}pt gap.`,
-        nextStep: `For the next 20 trades, only take ${better.name.toLowerCase()} setups. Journal whether your conviction feels stronger on those entries.`,
-        sentiment: 'positive',
-      })
-    }
-  }
-
-  // Strategy advice
-  if (charts.strategyPnl.length >= 2) {
-    const profitable = charts.strategyPnl.filter((s) => s.pnl > 0)
-    const unprofitable = charts.strategyPnl.filter((s) => s.pnl < 0)
-    if (profitable.length > 0 && unprofitable.length > 0) {
-      ideas.push({
-        id: 'stick-to-strategies',
-        title: `Double down on "${profitable[0].strategy}"`,
-        insight: `"${profitable[0].strategy}" is your edge (${profitable[0].winRate}% WR, ${fmt(profitable[0].pnl, true)}). "${unprofitable[unprofitable.length - 1].strategy}" is losing you money.`,
-        nextStep: `Stop tagging new trades as "${unprofitable[unprofitable.length - 1].strategy}" for 30 days and reallocate that focus to "${profitable[0].strategy}" setups.`,
-        sentiment: 'opportunity',
-      })
-    }
-  }
-
-  // Risk/reward
-  if (summary.avgWin > 0 && summary.avgLoss > 0) {
-    const rr = summary.avgWin / summary.avgLoss
-    if (rr < 1) {
-      ideas.push({
-        id: 'let-winners-run',
-        title: 'Let your winners run',
-        insight: `Average winner ${fmt(summary.avgWin, false)} is smaller than average loser ${fmt(summary.avgLoss, false)}. Current R:R is ${rr.toFixed(1)}:1.`,
-        nextStep: `On your next 10 trades, move your take-profit 20% further than usual and use a trailing stop instead of a fixed exit.`,
-        sentiment: 'opportunity',
-      })
-    } else if (rr >= 2) {
-      ideas.push({
-        id: 'great-rr',
-        title: 'Your risk management is solid',
-        insight: `${rr.toFixed(1)}:1 reward-to-risk means you can be profitable even with a sub-50% win rate.`,
-        nextStep: `Keep your current stop/target discipline. Review any trades where you moved your stop — those are your biggest risk to this edge.`,
-        sentiment: 'positive',
-      })
-    }
-  }
-
-  // Best day suggestion — loop for max/min instead of sort
-  let bestDayData = charts.dayOfWeek[0] || null
-  let worstDayData = charts.dayOfWeek[0] || null
-  for (let i = 1; i < charts.dayOfWeek.length; i++) {
-    if (charts.dayOfWeek[i].pnl > bestDayData!.pnl) bestDayData = charts.dayOfWeek[i]
-    if (charts.dayOfWeek[i].pnl < worstDayData!.pnl) worstDayData = charts.dayOfWeek[i]
-  }
-  if (bestDayData && worstDayData && worstDayData.pnl < 0) {
-    ideas.push({
-      id: 'day-schedule',
-      title: `Trade more on ${bestDayData.dayLong}s`,
-      insight: `${bestDayData.dayLong}s: ${bestDayData.winRate}% WR, ${fmt(bestDayData.pnl, true)}. ${worstDayData.dayLong}s: down ${fmt(Math.abs(worstDayData.pnl), false)}.`,
-      nextStep: `Block ${worstDayData.dayLong}s as a no-trade or review-only day for one month. Log what you do instead and whether your weekly P&L improves.`,
-      sentiment: 'neutral',
-    })
-  }
-
-  // Underexplored
-  const now = new Date()
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  const recentSymbols = new Set(trades.filter((t) => t.exitTime >= sevenDaysAgo).map((t) => t.symbol))
-  for (const sym of charts.symbolPnl) {
-    if (recentSymbols.has(sym.symbol)) continue
-    if (sym.pnl > 0 && sym.wins + sym.losses >= 2) {
-      ideas.push({
-        id: `revisit-${sym.symbol}`,
-        title: `Revisit ${sym.symbol}`,
-        insight: `You haven't traded ${sym.symbol} recently, but historically it's profitable (${sym.winRate}% WR, ${fmt(sym.pnl, true)}).`,
-        nextStep: `Add ${sym.symbol} back to your watchlist this week. Paper trade one setup before going live to re-familiarise yourself.`,
-        sentiment: 'opportunity',
-      })
-      break
-    }
-  }
-
-  return ideas
-}
-
 export function useTradeIdeas() {
   const { getAnalyticsTrades } = useDemoData()
   const { formatCurrency } = useSettings()
@@ -508,10 +388,8 @@ export function useTradeIdeas() {
     return buildSummaryStats(charts, trades)
   }, [charts, trades])
 
-  const ideas = useMemo(() => {
-    if (!charts || !summary) return []
-    return generateIdeas(trades, charts, summary, formatCurrency)
-  }, [trades, charts, summary, formatCurrency])
+  // Ranked by money at stake; the page handles dismissals.
+  const ideas = useMemo(() => buildActionableIdeas(trades, (n) => formatCurrency(n, false)), [trades, formatCurrency])
 
   // Tag tables come from the shared, significance-aware aggregator (the same
   // one the AI coach reads) rather than a fourth stats path.
@@ -526,11 +404,19 @@ export function useTradeIdeas() {
     }
   }, [trades])
 
+  // Both always computed once the page has data; the cards explain
+  // themselves when the trades lack durations or recorded costs, rather
+  // than silently disappearing.
+  const holdTime = useMemo(() => (trades.length < 5 ? null : computeHoldTimeStats(trades)), [trades])
+  const costs = useMemo(() => (trades.length < 5 ? null : computeCostStats(trades)), [trades])
+
   return {
     ideas,
     charts,
     summary,
     tagStats,
+    holdTime,
+    costs,
     totalTrades: trades.length,
     hasEnoughData: trades.length >= 5,
     hiddenCount: analyticsData.hiddenCount,

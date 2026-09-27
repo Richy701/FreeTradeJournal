@@ -7,16 +7,26 @@ import { Clock } from '@phosphor-icons/react'
 interface SessionDef {
   name: string
   tz: string
-  /** Local minutes-since-midnight when the session opens/closes. */
+  /** Local minutes-since-midnight when the session opens/closes. Negative
+   *  minutes mean the previous calendar day (CME opens the evening before). */
   start: number
   end: number
+  /** Close is measured in a different zone (Asia: Sydney open → Tokyo close). */
+  endTz?: string
+  /** Verb for the open-state countdown: "closes in" (default) or "halts in". */
+  closeVerb?: string
 }
 
+// Same four buckets as the Time of Day & Sessions chart: Asia is Sydney's open
+// through Tokyo's close, so both widgets describe the day the same way.
 const SESSIONS: SessionDef[] = [
-  { name: 'Sydney', tz: 'Australia/Sydney', start: 8 * 60, end: 17 * 60 },
-  { name: 'Tokyo', tz: 'Asia/Tokyo', start: 9 * 60, end: 18 * 60 },
+  { name: 'Asia', tz: 'Australia/Sydney', start: 8 * 60, end: 18 * 60, endTz: 'Asia/Tokyo' },
   { name: 'London', tz: 'Europe/London', start: 8 * 60, end: 17 * 60 },
   { name: 'New York', tz: 'America/New_York', start: 8 * 60, end: 17 * 60 },
+  // CME Globex for the index/energy/metal contracts our users trade: Sunday
+  // 17:00 to Friday 16:00 America/Chicago with a daily 16:00-17:00 halt, so
+  // each trading day runs from 17:00 the evening before to 16:00.
+  { name: 'CME futures', tz: 'America/Chicago', start: -7 * 60, end: 16 * 60, closeVerb: 'halts' },
 ]
 
 // Remaining 2026 dates that close or shorten the markets our users trade.
@@ -99,16 +109,19 @@ function sessionIntervals(now: Date, s: SessionDef): { open: Date; close: Date }
     const open = instantForTzTime(s.tz, p.year, p.month, p.day, s.start)
     if (seen.has(open.getTime())) continue
     seen.add(open.getTime())
-    out.push({ open, close: instantForTzTime(s.tz, p.year, p.month, p.day, s.end) })
+    out.push({ open, close: instantForTzTime(s.endTz || s.tz, p.year, p.month, p.day, s.end) })
   }
   return out
 }
 
-function sessionStatus(now: Date, intervals: { open: Date; close: Date }[]): { open: boolean; detail: string; nextOpen?: Date } {
+function sessionStatus(now: Date, s: SessionDef, intervals: { open: Date; close: Date }[]): { open: boolean; detail: string; nextOpen?: Date } {
   const t = now.getTime()
   for (const iv of intervals) {
     if (t >= iv.open.getTime() && t < iv.close.getTime()) {
-      return { open: true, detail: `closes in ${fmtDuration((iv.close.getTime() - t) / 60000)}` }
+      const left = fmtDuration((iv.close.getTime() - t) / 60000)
+      // Friday's CME close is the weekly close, not a halt.
+      const weekEnd = s.closeVerb === 'halts' && tzParts(iv.close, s.tz).weekday === 5
+      return { open: true, detail: weekEnd ? `week ends in ${left}` : `${s.closeVerb || 'closes'} in ${left}` }
     }
   }
   const next = intervals.map(iv => iv.open.getTime()).filter(o => o > t).sort((a, b) => a - b)[0]
@@ -119,28 +132,6 @@ function sessionStatus(now: Date, intervals: { open: Date; close: Date }[]): { o
     return { open: false, detail: mins < 1440 ? `opens in ${fmtDuration(mins)}` : `opens ${fmtWhen(nextOpen)}`, nextOpen }
   }
   return { open: false, detail: 'opens Monday' }
-}
-
-// CME Globex for the index/energy/metal contracts our users trade:
-// Sunday 17:00 to Friday 16:00 America/Chicago, with a daily 16:00-17:00 halt.
-function cmeStatus(now: Date): { open: boolean; detail: string } {
-  const { weekday, minutes } = tzParts(now, 'America/Chicago')
-  const OPEN = 17 * 60
-  const CLOSE = 16 * 60
-  if (weekday === 6) return { open: false, detail: `opens in ${fmtDuration((1440 - minutes) + OPEN)}` }
-  if (weekday === 0) {
-    return minutes >= OPEN
-      ? { open: true, detail: `daily halt in ${fmtDuration(CLOSE + 1440 - minutes)}` }
-      : { open: false, detail: `opens in ${fmtDuration(OPEN - minutes)}` }
-  }
-  if (weekday === 5) {
-    return minutes < CLOSE
-      ? { open: true, detail: `week ends in ${fmtDuration(CLOSE - minutes)}` }
-      : { open: false, detail: `opens in ${fmtDuration((1440 - minutes) + 1440 + OPEN)}` }
-  }
-  if (minutes < CLOSE) return { open: true, detail: `daily halt in ${fmtDuration(CLOSE - minutes)}` }
-  if (minutes < OPEN) return { open: false, detail: `reopens in ${fmtDuration(OPEN - minutes)}` }
-  return { open: true, detail: `daily halt in ${fmtDuration(CLOSE + 1440 - minutes)}` }
 }
 
 function upcomingHoliday(now: Date): { label: string; note: string; when: 'today' | 'tomorrow' } | null {
@@ -168,31 +159,25 @@ export function MarketSessions() {
   dayStart.setHours(0, 0, 0, 0)
   const dayStartMs = dayStart.getTime()
 
-  const sessionData = SESSIONS.map(s => ({
-    def: s,
-    intervals: sessionIntervals(now, s),
-    status: sessionStatus(now, sessionIntervals(now, s)),
-    clock: tzParts(now, s.tz).clock,
-  }))
+  const sessionData = SESSIONS.map(s => {
+    const intervals = sessionIntervals(now, s)
+    return { def: s, intervals, status: sessionStatus(now, s, intervals), clock: tzParts(now, s.tz).clock }
+  })
 
-  // On a day with no sessions at all (the weekend), an all-empty timeline
-  // reads as broken — preview the next trading day instead.
   const segmentsFor = (windowStartMs: number, intervals: { open: Date; close: Date }[]) => {
     const p = (ms: number) => Math.max(0, Math.min(100, ((ms - windowStartMs) / DAY_MS) * 100))
     return intervals
       .map(iv => ({ left: p(iv.open.getTime()), right: p(iv.close.getTime()) }))
       .filter(seg => seg.right - seg.left > 0.1)
   }
-  // Advance until a day where the timeline is actually populated (2+ sessions)
-  // — Sunday evening technically has Sydney's opening sliver, but a wall of
-  // near-empty bars is what we're trying to avoid.
-  const sessionsVisibleOn = (startMs: number) =>
-    sessionData.filter(r => segmentsFor(startMs, r.intervals).length > 0).length
+  // On the weekend the local day holds at most a sliver (Asia's Sunday-evening
+  // open, CME's Sunday reopen) and an all-empty timeline reads as broken —
+  // preview the next day that actually has trading hours on it instead. A row
+  // counts as populated only when it covers a real stretch of the day.
+  const populatedRowsOn = (startMs: number) =>
+    sessionData.filter(r => segmentsFor(startMs, r.intervals).some(seg => seg.right - seg.left >= 100 / 6)).length
   let windowOffset = 0
-  while (windowOffset < 3 && sessionsVisibleOn(dayStartMs + windowOffset * DAY_MS) < 2) {
-    if (windowOffset === 0 && sessionsVisibleOn(dayStartMs) > 0) break // normal trading day
-    windowOffset++
-  }
+  while (windowOffset < 3 && populatedRowsOn(dayStartMs + windowOffset * DAY_MS) < 2) windowOffset++
   const windowStartMs = dayStartMs + windowOffset * DAY_MS
   const isPreview = windowOffset > 0
   const previewDayLabel = new Date(windowStartMs).toLocaleDateString([], { weekday: 'long' })
@@ -202,13 +187,31 @@ export function MarketSessions() {
 
   const overlap = rows.find(r => r.def.name === 'London')?.status.open
     && rows.find(r => r.def.name === 'New York')?.status.open
-  const cme = cmeStatus(now)
   const holiday = upcomingHoliday(now)
 
   // First session to reopen — the headline fact while everything is closed.
   const nextUp = rows
     .filter(r => !r.status.open && r.status.nextOpen)
     .sort((a, b) => a.status.nextOpen!.getTime() - b.status.nextOpen!.getTime())[0]
+
+  const headline = (() => {
+    const open = rows.filter(r => r.status.open).map(r => r.def.name)
+    if (open.length === 0) {
+      if (nextUp) {
+        const mins = (nextUp.status.nextOpen!.getTime() - now.getTime()) / 60000
+        const when = mins < 1440 ? `in ${fmtDuration(mins)}` : fmtWhen(nextUp.status.nextOpen!)
+        // A gap this long only happens on the weekend; short gaps are just the
+        // daily hand-off between sessions.
+        const prefix = mins > 12 * 60 ? 'Closed for the weekend' : 'All markets closed'
+        return `${prefix} · ${nextUp.def.name} opens ${when}`
+      }
+      return 'All markets closed'
+    }
+    if (open.length === 1) return `${open[0]} is open`
+    return `${open.slice(0, -1).join(', ')} and ${open[open.length - 1]} are open`
+  })()
+
+  const showFooter = overlap || holiday
 
   return (
     <div className="rounded-xl border bg-card/50">
@@ -218,25 +221,7 @@ export function MarketSessions() {
             <Clock className="h-4 w-4" style={{ color: themeColors.primary }} />
             <span className="text-sm font-semibold text-foreground">Market Sessions</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1 truncate">
-            {(() => {
-              const open = rows.filter(r => r.status.open).map(r => r.def.name)
-              if (open.length === 0) {
-                if (cme.open) return 'Forex sessions closed · CME futures trading'
-                if (nextUp) {
-                  const mins = (nextUp.status.nextOpen!.getTime() - now.getTime()) / 60000
-                  const when = mins < 1440 ? `in ${fmtDuration(mins)}` : fmtWhen(nextUp.status.nextOpen!)
-                  // A gap this long only happens on the weekend; short gaps are
-                  // just the daily hand-off between sessions.
-                  const prefix = mins > 12 * 60 ? 'Closed for the weekend' : 'All sessions closed'
-                  return `${prefix} · ${nextUp.def.name} opens ${when}`
-                }
-                return 'All sessions closed'
-              }
-              if (open.length === 1) return `${open[0]} is open`
-              return `${open.slice(0, -1).join(', ')} and ${open[open.length - 1]} are open`
-            })()}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{headline}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-lg font-semibold font-mono tabular-nums leading-none text-foreground">
@@ -251,26 +236,34 @@ export function MarketSessions() {
       <div className="border-t border-border/50 px-4 py-3">
         {isPreview && (
           <p className="text-[11px] text-muted-foreground mb-2">
-            Showing {previewDayLabel}'s sessions in your time — nothing trades today.
+            Nothing trades today. Showing {previewDayLabel}'s hours in your time.
           </p>
         )}
-        <div className="flex gap-3">
-          {/* Session labels */}
-          <div className="shrink-0 w-20 sm:w-24">
-            <div className="h-4 mb-2" />
+        <div className="flex gap-3 sm:gap-4">
+          {/* Name, market clock and status — status stays visible on every width */}
+          <div className="shrink-0 w-32 sm:w-44">
+            <div className="h-4 mb-1.5" />
             {rows.map(r => (
-              <div key={r.def.name} className="h-9 flex flex-col justify-center">
-                <span className={`text-sm leading-none ${r.status.open ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                  {r.def.name}
+              <div key={r.def.name} className="h-10 flex flex-col justify-center min-w-0">
+                <div className="flex items-baseline gap-1.5 min-w-0">
+                  <span className={`text-sm leading-none truncate ${r.status.open ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                    {r.def.name}
+                  </span>
+                  <span className="text-[11px] leading-none text-muted-foreground font-mono tabular-nums shrink-0">{r.clock}</span>
+                </div>
+                <span
+                  className="text-[11px] leading-none mt-1.5 truncate"
+                  style={{ color: r.status.open ? themeColors.profit : 'hsl(var(--muted-foreground))' }}
+                >
+                  {r.status.detail}
                 </span>
-                <span className="text-[11px] leading-none mt-1 text-muted-foreground font-mono tabular-nums">{r.clock}</span>
               </div>
             ))}
           </div>
 
           {/* Tracks share one container so a single now-line crosses them all */}
           <div className="relative flex-1 min-w-0">
-            <div className="h-4 mb-2 relative text-[11px] font-medium text-muted-foreground">
+            <div className="h-4 mb-1.5 relative text-[11px] font-medium text-muted-foreground">
               {[0, 6, 12, 18, 24].map(h => (
                 <span
                   key={h}
@@ -283,16 +276,16 @@ export function MarketSessions() {
             </div>
 
             {rows.map(r => (
-              <div key={r.def.name} className="h-9 flex items-center">
-                <div className="relative h-5 w-full rounded-md bg-muted/40 overflow-hidden">
+              <div key={r.def.name} className="h-10 flex items-center">
+                <div className="relative h-3 w-full rounded-full bg-muted/50 overflow-hidden">
                   {r.segments.map((seg, i) => (
                     <div
                       key={i}
-                      className="absolute inset-y-0 rounded-md"
+                      className="absolute inset-y-0 rounded-full"
                       style={{
                         left: `${seg.left}%`,
                         width: `${seg.right - seg.left}%`,
-                        backgroundColor: r.status.open ? alpha(themeColors.profit, '65') : alpha(themeColors.primary, '30'),
+                        backgroundColor: r.status.open ? themeColors.profit : alpha(themeColors.primary, '45'),
                       }}
                     />
                   ))}
@@ -309,47 +302,23 @@ export function MarketSessions() {
               />
             )}
           </div>
-
-          {/* Status column */}
-          <div className="shrink-0 w-24 sm:w-32 text-right hidden sm:block">
-            <div className="h-4 mb-2" />
-            {rows.map(r => (
-              <div key={r.def.name} className="h-9 flex items-center justify-end">
-                <span
-                  className="text-xs font-medium whitespace-nowrap"
-                  style={{ color: r.status.open ? themeColors.profit : 'hsl(var(--muted-foreground))' }}
-                >
-                  {r.status.detail}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
-      <div className="border-t border-border/50 px-4 py-2.5 space-y-1">
-        <div className="flex items-baseline justify-between gap-3">
-          <span className="text-xs text-muted-foreground">
-            <span className={cme.open ? 'font-semibold text-foreground' : ''}>CME futures</span> (ES, NQ, CL, GC + micros)
-          </span>
-          <span
-            className="text-[11px] font-medium whitespace-nowrap"
-            style={{ color: cme.open ? themeColors.profit : 'hsl(var(--muted-foreground))' }}
-          >
-            {cme.open ? 'Open' : 'Closed'} · {cme.detail}
-          </span>
+      {showFooter && (
+        <div className="border-t border-border/50 px-4 py-2.5 space-y-1">
+          {overlap && (
+            <p className="text-xs text-muted-foreground">
+              London and New York are both open. Usually the most liquid hours of the day.
+            </p>
+          )}
+          {holiday && (
+            <p className="text-xs font-medium" style={{ color: themeColors.primary }}>
+              {holiday.when === 'today' ? 'Today' : 'Tomorrow'}: {holiday.label} — {holiday.note}.
+            </p>
+          )}
         </div>
-        {overlap && (
-          <p className="text-xs text-muted-foreground">
-            London and New York are both open — typically the most liquid hours of the day.
-          </p>
-        )}
-        {holiday && (
-          <p className="text-xs font-medium" style={{ color: themeColors.primary }}>
-            {holiday.when === 'today' ? 'Today' : 'Tomorrow'}: {holiday.label} — {holiday.note}.
-          </p>
-        )}
-      </div>
+      )}
     </div>
   )
 }

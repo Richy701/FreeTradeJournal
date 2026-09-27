@@ -29,6 +29,158 @@ export interface AggregatableTrade {
   emotions?: string | null
   /** Custom tags. A leading "!" marks a mistake tag (see src/lib/tags.ts). */
   tags?: string[] | null
+  /** Per-trade costs. Stored `pnl` is already net of all three. */
+  commission?: number
+  fees?: number
+  swap?: number
+}
+
+// ─── Hold time ───────────────────────────────────────────────
+
+/** Duration buckets in minutes; the last one is open-ended. */
+export const HOLD_TIME_BUCKETS: { key: string; label: string; maxMinutes: number }[] = [
+  { key: 'under-5m', label: 'Under 5m', maxMinutes: 5 },
+  { key: '5-15m', label: '5 to 15m', maxMinutes: 15 },
+  { key: '15-60m', label: '15m to 1h', maxMinutes: 60 },
+  { key: '1-4h', label: '1 to 4h', maxMinutes: 240 },
+  { key: '4h-1d', label: '4h to 1 day', maxMinutes: 1440 },
+  { key: 'over-1d', label: 'Over 1 day', maxMinutes: Infinity },
+]
+
+// Trades held longer than this are treated as bad timestamps, not positions.
+const MAX_HOLD_MINUTES = 60 * 24 * 90
+
+export interface HoldTimeStats {
+  /** Trades with a usable entry and exit time. */
+  sampleCount: number
+  winCount: number
+  lossCount: number
+  medianWinMinutes: number | null
+  medianLossMinutes: number | null
+  avgWinMinutes: number | null
+  avgLossMinutes: number | null
+  /** Non-empty buckets in duration order. */
+  buckets: GroupStat[]
+}
+
+function median(values: number[]): number | null {
+  if (values.length === 0) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
+function holdMinutes(t: AggregatableTrade): number | null {
+  if (!t.entryTime || !t.exitTime) return null
+  const a = t.entryTime.getTime(), b = t.exitTime.getTime()
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null
+  const mins = (b - a) / 60000
+  // Zero means the export carried a date but no clock; nothing to learn from it.
+  if (mins <= 0 || mins > MAX_HOLD_MINUTES) return null
+  return mins
+}
+
+/**
+ * How long winners are held versus losers, and results by hold-time bucket.
+ * Medians lead: one swing trade among scalps would drag an average past any
+ * useful reading. Trades without a real duration are left out and counted
+ * against `sampleCount`.
+ */
+export function computeHoldTimeStats(trades: AggregatableTrade[]): HoldTimeStats {
+  const winMins: number[] = [], lossMins: number[] = []
+  const accs = HOLD_TIME_BUCKETS.map(b => makeAcc(b.key))
+  let sampleCount = 0
+  for (const t of trades) {
+    const mins = holdMinutes(t)
+    if (mins === null) continue
+    sampleCount++
+    const pnl = safeNum(t.pnl)
+    if (pnl > 0) winMins.push(mins)
+    else if (pnl < 0) lossMins.push(mins)
+    const idx = HOLD_TIME_BUCKETS.findIndex(b => mins < b.maxMinutes)
+    pushTradeIntoAcc(accs[idx === -1 ? accs.length - 1 : idx], pnl, safeNum(t.riskReward))
+  }
+  const avg = (v: number[]) => v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
+  return {
+    sampleCount,
+    winCount: winMins.length,
+    lossCount: lossMins.length,
+    medianWinMinutes: median(winMins),
+    medianLossMinutes: median(lossMins),
+    avgWinMinutes: avg(winMins),
+    avgLossMinutes: avg(lossMins),
+    buckets: accs.filter(a => a.count > 0).map(finalizeAcc),
+  }
+}
+
+// ─── Cost of trading ─────────────────────────────────────────
+
+export interface CostStats {
+  tradeCount: number
+  /** Trades that recorded any commission, fee or swap. */
+  tradesWithCosts: number
+  /** Net + costs: what the trades made before the broker's cut. */
+  grossPnl: number
+  /** Commission + fees + swap, as a positive magnitude. */
+  costs: number
+  netPnl: number
+  costPerTrade: number
+  /** costs / gross P&L when gross is positive; null otherwise. */
+  shareOfGrossProfit: number | null
+  /** costs / |net P&L| when net is negative; null otherwise. */
+  shareOfNetLoss: number | null
+  /** Trades that were positive before costs and zero or negative after. */
+  flippedByCosts: number
+  /** Symbols ranked by total cost taken, most expensive first. */
+  perSymbol: SymbolCost[]
+}
+
+export interface SymbolCost {
+  symbol: string
+  count: number
+  costs: number
+  costPerTrade: number
+  netPnl: number
+}
+
+/**
+ * What commissions, fees and swap did to the result. Stored `pnl` is net, so
+ * gross is rebuilt as net + costs per trade. Swap can be a credit; costs are
+ * summed signed and reported as the magnitude actually taken.
+ */
+export function computeCostStats(trades: AggregatableTrade[]): CostStats {
+  let gross = 0, net = 0, costs = 0, withCosts = 0, flipped = 0
+  const bySymbol = new Map<string, SymbolCost>()
+  for (const t of trades) {
+    const pnl = safeNum(t.pnl)
+    const c = safeNum(t.commission) + safeNum(t.fees) + safeNum(t.swap)
+    if (c !== 0) withCosts++
+    const g = pnl + c
+    gross += g
+    net += pnl
+    costs += c
+    if (g > 0 && pnl <= 0) flipped++
+    const key = t.symbol || 'Unknown'
+    const sc = bySymbol.get(key) || { symbol: key, count: 0, costs: 0, costPerTrade: 0, netPnl: 0 }
+    sc.count++; sc.costs += c; sc.netPnl += pnl
+    bySymbol.set(key, sc)
+  }
+  const perSymbol = [...bySymbol.values()]
+    .filter(sc => sc.costs > 0)
+    .map(sc => ({ ...sc, costPerTrade: sc.costs / sc.count }))
+    .sort((a, b) => b.costs - a.costs)
+  return {
+    tradeCount: trades.length,
+    tradesWithCosts: withCosts,
+    grossPnl: gross,
+    costs,
+    netPnl: net,
+    costPerTrade: trades.length ? costs / trades.length : 0,
+    shareOfGrossProfit: gross > 0 && costs > 0 ? costs / gross : null,
+    shareOfNetLoss: net < 0 && costs > 0 ? costs / Math.abs(net) : null,
+    flippedByCosts: flipped,
+    perSymbol,
+  }
 }
 
 /**

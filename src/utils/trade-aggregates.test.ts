@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTradeAggregates, SIGNIFICANCE_THRESHOLD, MAX_BUCKETS } from './trade-aggregates';
+import { computeTradeAggregates, computeHoldTimeStats, computeCostStats, SIGNIFICANCE_THRESHOLD, MAX_BUCKETS } from './trade-aggregates';
 import type { AggregatableTrade } from './trade-aggregates';
 
 const mk = (over: Partial<AggregatableTrade>): AggregatableTrade => ({
@@ -157,5 +157,74 @@ describe('computeTradeAggregates — custom tags', () => {
       ...Array.from({ length: 9 }, () => mk({})),
     ]);
     expect(thin.tagsTagged).toBe(false);
+  });
+});
+
+describe('computeHoldTimeStats', () => {
+  const at = (h: number, m = 0) => new Date(2026, 8, 15, h, m);
+  const held = (minutes: number, pnl: number) => mk({ pnl, entryTime: at(9), exitTime: new Date(at(9).getTime() + minutes * 60000) });
+
+  it('reports median hold for winners and losers separately, robust to one outlier', () => {
+    const s = computeHoldTimeStats([
+      held(10, 50), held(12, 40), held(600, 20),      // winners: 10, 12, 600 → median 12
+      held(45, -30), held(60, -20), held(90, -10),     // losers: median 60
+    ]);
+    expect(s.sampleCount).toBe(6);
+    expect(s.medianWinMinutes).toBe(12);
+    expect(s.medianLossMinutes).toBe(60);
+    expect(s.avgWinMinutes).toBeCloseTo((10 + 12 + 600) / 3, 5);
+  });
+
+  it('buckets by duration in order and skips trades without a real duration', () => {
+    const s = computeHoldTimeStats([
+      held(3, 5), held(4, -5),            // under 5m
+      held(30, 10),                       // 15m to 1h
+      held(60 * 30, 10),                  // over 1 day
+      mk({ pnl: 10 }),                    // no times
+      mk({ pnl: 10, entryTime: at(9), exitTime: at(9) }), // zero duration (date-only export)
+      mk({ pnl: 10, entryTime: at(9), exitTime: new Date(2027, 0, 1) }), // bad timestamp
+    ]);
+    expect(s.sampleCount).toBe(4);
+    expect(s.buckets.map(b => b.key)).toEqual(['under-5m', '15-60m', 'over-1d']);
+    expect(s.buckets[0]).toMatchObject({ count: 2, winRate: 50, netPnl: 0 });
+  });
+});
+
+describe('computeCostStats', () => {
+  it('rebuilds gross from net plus costs and counts winners that costs turned into losers', () => {
+    const s = computeCostStats([
+      mk({ pnl: -19.6, commission: 2.5, fees: 7.1 }),   // gross -10
+      mk({ pnl: -4, commission: 2.5, fees: 7.1 }),      // gross +5.6, flipped
+      mk({ pnl: 30, commission: 2.5, fees: 7.1 }),      // gross 39.6
+      mk({ pnl: 12 }),                                  // no costs recorded
+    ]);
+    expect(s.tradeCount).toBe(4);
+    expect(s.tradesWithCosts).toBe(3);
+    expect(s.costs).toBeCloseTo(28.8, 5);
+    expect(s.netPnl).toBeCloseTo(18.4, 5);
+    expect(s.grossPnl).toBeCloseTo(47.2, 5);
+    expect(s.flippedByCosts).toBe(1);
+    expect(s.shareOfGrossProfit).toBeCloseTo(28.8 / 47.2, 5);
+    expect(s.shareOfNetLoss).toBeNull();
+  });
+
+  it('ranks symbols by total cost and drops symbols that recorded none', () => {
+    const s = computeCostStats([
+      mk({ symbol: 'MES', pnl: 5, commission: 2 }), mk({ symbol: 'MES', pnl: 5, commission: 2 }),
+      mk({ symbol: 'MGC', pnl: 5, commission: 9 }),
+      mk({ symbol: 'EURUSD', pnl: 5 }),
+    ]);
+    expect(s.perSymbol.map(x => x.symbol)).toEqual(['MGC', 'MES']);
+    expect(s.perSymbol[1]).toMatchObject({ count: 2, costs: 4, costPerTrade: 2, netPnl: 10 });
+  });
+
+  it('reports costs against the net loss when the account is down, and nulls without costs', () => {
+    const down = computeCostStats([mk({ pnl: -50, commission: 10 }), mk({ pnl: -30, fees: 5 })]);
+    expect(down.shareOfGrossProfit).toBeNull();
+    expect(down.shareOfNetLoss).toBeCloseTo(15 / 80, 5);
+    const free = computeCostStats([mk({ pnl: 10 }), mk({ pnl: -5 })]);
+    expect(free.costs).toBe(0);
+    expect(free.shareOfGrossProfit).toBeNull();
+    expect(free.shareOfNetLoss).toBeNull();
   });
 });

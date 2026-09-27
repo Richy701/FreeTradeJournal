@@ -46,12 +46,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Pie, PieChart, Sector } from "recharts";
+import { ChartContainer } from "@/components/ui/chart";
+import { Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, RadialBar, RadialBarChart, Sector } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker, DatePicker } from '@/components/date-picker';
 import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, isEmptyExport, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser';
@@ -352,6 +348,14 @@ export default function TradeLog() {
       })
       .reduce((sum, t) => sum + t.pnl, 0);
   }, [trades]);
+
+  // Mini cumulative P&L sparkline over the last 20 trades in the current
+  // filter. Same shape as the dashboard card: wide, short, thin stroke.
+  const pnlSparkline = useMemo(() => {
+    const sorted = [...displayedTrades].sort((a, b) => new Date(a.exitTime).getTime() - new Date(b.exitTime).getTime());
+    let cum = 0;
+    return sorted.slice(-20).map((t) => { cum += t.pnl; return { pnl: cum }; });
+  }, [displayedTrades]);
 
   // Filter option lists derived from the loaded trades
   const symbolOptions = useMemo(
@@ -2510,22 +2514,36 @@ export default function TradeLog() {
                 </Tooltip>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold tracking-tight tabular-nums"
-                   style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                  {pnlMode === 'percent'
-                    ? `${quickStats.totalPnL >= 0 ? '+' : '-'}${quickStats.pnlPct.toFixed(2)}%`
-                    : `${quickStats.totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
-                </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                    Avg {quickStats.totalTrades > 0 ? formatPnl(quickStats.totalPnL / quickStats.totalTrades) : formatPnl(0)} per trade
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    This month{' '}
-                    <span className="font-medium" style={{ color: monthPnL >= 0 ? themeColors.profit : themeColors.loss }}>
-                      {formatPnl(monthPnL)}
-                    </span>
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-3xl font-bold tracking-tight tabular-nums"
+                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                      {pnlMode === 'percent'
+                        ? `${quickStats.totalPnL >= 0 ? '+' : '-'}${quickStats.pnlPct.toFixed(2)}%`
+                        : `${quickStats.totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+                    </div>
+                    <div className="mt-3 space-y-0.5">
+                      <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                        Avg {quickStats.totalTrades > 0 ? formatPnl(quickStats.totalPnL / quickStats.totalTrades) : formatPnl(0)} per trade
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        This month{' '}
+                        <span className="font-medium" style={{ color: monthPnL >= 0 ? themeColors.profit : themeColors.loss }}>
+                          {formatPnl(monthPnL)}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-32 h-10 relative shrink-0">
+                    <ChartContainer
+                      config={{ pnl: { label: "P&L", color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss } }}
+                      className="w-full h-full aspect-auto"
+                    >
+                      <LineChart data={pnlSparkline} margin={{ top: 3, right: 2, bottom: 3, left: 2 }}>
+                        <Line dataKey="pnl" type="monotone" stroke={quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ChartContainer>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -2570,7 +2588,6 @@ export default function TradeLog() {
                       className="w-full h-full"
                     >
                       <PieChart>
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                         <Pie
                           data={[
                             { type: "wins", count: quickStats.winCount, fill: themeColors.profit },
@@ -2606,16 +2623,43 @@ export default function TradeLog() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: themeColors.profit }}>
-                  {formatPnl(quickStats.bestTrade)}
-                </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium" style={{ color: themeColors.loss }}>
-                    Worst: {formatPnl(quickStats.worstTrade)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {quickStats.totalTrades} total trades
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: themeColors.profit }}>
+                      {formatPnl(quickStats.bestTrade)}
+                    </div>
+                    <div className="mt-3 space-y-0.5">
+                      <p className="text-sm font-medium" style={{ color: themeColors.loss }}>
+                        Worst: {formatPnl(quickStats.worstTrade)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {quickStats.totalTrades} total trades
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-16 h-16 relative shrink-0">
+                    <ChartContainer
+                      config={{
+                        best: { label: "Best", color: themeColors.profit },
+                        worst: { label: "Worst", color: themeColors.loss }
+                      }}
+                      className="w-full h-full aspect-auto"
+                    >
+                      <BarChart
+                        data={[
+                          { type: "best", pnl: quickStats.bestTrade, fill: themeColors.profit },
+                          { type: "worst", pnl: quickStats.worstTrade, fill: themeColors.loss }
+                        ]}
+                        margin={{ top: 2, right: 4, bottom: 2, left: 4 }}
+                        barCategoryGap="20%"
+                      >
+                        <Bar dataKey="pnl" radius={3} barSize={16} isAnimationActive>
+                          <Cell fill={themeColors.profit} />
+                          <Cell fill={themeColors.loss} />
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -2643,19 +2687,45 @@ export default function TradeLog() {
                 </Tooltip>
               </CardHeader>
               <CardContent>
-                <div className={cn('text-3xl font-bold tracking-tight tabular-nums', quickStats.validRRCount === 0 && 'text-muted-foreground')}
-                     style={quickStats.validRRCount > 0 ? { color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss } : undefined}>
-                  {quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '--'}
-                </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                    PF: {quickStats.profitFactor >= 999 ? '∞' : quickStats.profitFactor.toFixed(2)}x
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {quickStats.validRRCount === 0
-                      ? 'Add a stop loss and take profit to your trades to see this'
-                      : `${quickStats.validRRCount} trades with R:R data`}
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className={cn('text-3xl font-bold tracking-tight tabular-nums', quickStats.validRRCount === 0 && 'text-muted-foreground')}
+                         style={quickStats.validRRCount > 0 ? { color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss } : undefined}>
+                      {quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '--'}
+                    </div>
+                    <div className="mt-3 space-y-0.5">
+                      <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                        PF: {quickStats.profitFactor >= 999 ? '∞' : quickStats.profitFactor.toFixed(2)}x
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {quickStats.validRRCount === 0
+                          ? 'Add a stop loss and take profit to your trades to see this'
+                          : `${quickStats.validRRCount} trades with R:R data`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-16 h-16 relative shrink-0">
+                    <ChartContainer
+                      config={{
+                        rr: { label: "Avg R:R", color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss },
+                        rest: { label: "To 3:1", color: "hsl(var(--border))" }
+                      }}
+                      className="w-full h-full"
+                    >
+                      {/* Gauge fills to the average R:R on a 0 to 3:1 scale; an empty muted ring when there is no R:R data */}
+                      <RadialBarChart
+                        data={[{ rr: Math.min(quickStats.avgRR, 3), rest: 3 - Math.min(quickStats.avgRR, 3) }]}
+                        startAngle={180}
+                        endAngle={0}
+                        innerRadius={20}
+                        outerRadius={32}
+                        cy="68%"
+                      >
+                        <RadialBar dataKey="rr" stackId="a" cornerRadius={2} fill={quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss} className="stroke-transparent" />
+                        <RadialBar dataKey="rest" stackId="a" cornerRadius={2} fill="hsl(var(--border))" className="stroke-transparent" />
+                      </RadialBarChart>
+                    </ChartContainer>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -2869,7 +2939,7 @@ export default function TradeLog() {
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">P&L</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">R:R</TableHead>
                       <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Strategy</TableHead>
-                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground">Actions</TableHead>
+                      <TableHead className="font-semibold text-[11px] uppercase tracking-wider text-muted-foreground w-[1%] whitespace-nowrap text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -2956,8 +3026,8 @@ export default function TradeLog() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end">
                             <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Quick review" onClick={() => setQuickReviewTrade(trade)}><Note className="h-4 w-4" /></Button>
                             <Button
                               variant="ghost"

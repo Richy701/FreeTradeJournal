@@ -26,6 +26,56 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.97.0',
+    date: '2026-09-27',
+    summary: 'Insights show hold time, trading costs and ranked ideas; the sessions widget and Trade Log stat cards get a refresh.',
+    items: [
+      {
+        type: 'new',
+        highlight: true,
+        roundup: true,
+        text: 'Hold time: winners versus losers',
+        description: 'See how long you typically stay in a winning trade against a losing one, and your P&L by hold time from under five minutes to over a day. If you sit in losers longer than winners, it says so.',
+        image: { src: '/screenshots/insights-hold-time-costs.png', alt: 'Trade Insights showing typical hold time for winners and losers with P&L by hold-time bucket, next to a cost of trading breakdown.' },
+        link: { to: '/ideas', label: 'See your hold time' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        roundup: true,
+        text: 'Cost of trading',
+        description: 'Your results before and after commissions, fees and swap, the cost per trade, what share of your profit the broker took, and how many trades made money before costs and lost after them.',
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        roundup: true,
+        text: 'Actionable Ideas rebuilt around what is costing you',
+        description: 'Ideas now start from the money you are losing, ranked biggest first with the figure at stake on each one: losers held longer than winners, trades that only paid fees, the trade straight after a loss, busy days, a losing weekday, symbol, strategy, hour or side. Each is one fact and one change. Mark any as not relevant and it stays out of the way.',
+        image: { src: '/screenshots/insights-actionable-ideas.png', alt: 'Actionable Ideas listing three ranked findings with the money at stake shown beside each.' },
+      },
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Market Sessions widget redesigned',
+        description: 'Four rows now: Asia, London, New York and CME futures, the same four the Time of Day chart uses. Each row shows that market\'s own clock and a countdown to its open or close, on phones too. Open sessions fill solid green. On weekends it shows Monday\'s hours instead of empty bars.',
+        image: { src: '/screenshots/market-sessions.png', alt: 'Market Sessions widget with Asia, London, New York and CME futures rows, London and New York shown open with countdowns.' },
+      },
+      {
+        type: 'improved',
+        text: 'Trade Log stat cards show a picture of the number',
+        description: 'The four cards above the Trade Log now carry a small chart each: a P&L line over your last 20 trades, the win-rate ring, best against worst trade as two bars, and a gauge for average risk to reward.',
+        image: { src: '/screenshots/trade-log-stat-cards.png', alt: 'Trade Log stat cards with a P&L sparkline, win-rate ring, best and worst bars, and a risk-to-reward gauge.' },
+        link: { to: '/trades', label: 'Open the Trade Log' },
+      },
+      {
+        type: 'improved',
+        text: 'Insights wait for enough trades before they speak',
+        description: 'Every idea and every "best" figure now needs at least three trades behind it. A losing week no longer scores as "consistent".',
+      },
+    ],
+  },
+  {
     version: '2.96.3',
     date: '2026-09-27',
     summary: 'No more duplicate starter account, and clearer import messages.',
@@ -3452,4 +3502,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.96.3'
+export const LATEST_CHANGELOG_VERSION = '2.97.0'

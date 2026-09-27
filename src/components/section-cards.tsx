@@ -14,11 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
+import { ChartContainer } from "@/components/ui/chart"
 import { Pie, PieChart, Sector, RadialBar, RadialBarChart, Line, LineChart } from "recharts"
 import { useMemo } from "react"
 
@@ -252,10 +248,6 @@ export function SectionCards() {
                   className="w-full h-full"
                 >
                   <PieChart>
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
                     <Pie
                       data={[
                         { type: "wins", count: winCount, fill: themeColors.profit },

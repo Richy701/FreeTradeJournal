@@ -1,6 +1,6 @@
-import { useId, useMemo, useEffect } from 'react'
+import { useId, useMemo, useEffect, useState } from 'react'
 import { trackGateHit } from '@/lib/track-activity'
-import { Lightbulb, ArrowRight, ChartBar, UserCircle, ArrowsSplit, Crosshair, TrendUp, CalendarDots } from '@phosphor-icons/react'
+import { Lightbulb, ArrowRight, ChartBar, UserCircle, ArrowsSplit, Crosshair, TrendUp, CalendarDots, Timer, Receipt } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
@@ -9,11 +9,13 @@ import { NoticeBanner } from '@/components/notice-banner'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
+import { useUserStorage } from '@/utils/user-storage'
 import { AIAnalysis } from '@/components/ai-analysis'
 import { TagPerformance } from '@/components/tag-performance'
 import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
 import { trackEvent } from '@/lib/analytics'
 import { niceAxis, niceAxisBoth } from '@/lib/chart-axis'
+import { HOLD_TIME_BUCKETS } from '@/utils/trade-aggregates'
 import {
   Bar,
   BarChart,
@@ -41,8 +43,28 @@ import type { ChartConfig } from '@/components/ui/chart'
 import { Progress } from '@/components/ui/progress'
 
 export default function TradeIdeas() {
-  const { ideas, charts, summary, tagStats, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
+  const { ideas, charts, summary, tagStats, holdTime, costs, totalTrades, hasEnoughData, hiddenCount, rawTrades } = useTradeIdeas()
   const { themeColors, alpha, chartStyle } = useThemePresets()
+  const userStorage = useUserStorage()
+  const DISMISSED_KEY = 'dismissedIdeas'
+  const [dismissed, setDismissed] = useState<string[]>(() => {
+    try { const v = JSON.parse(userStorage.getItem(DISMISSED_KEY) || '[]'); return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [] } catch { return [] }
+  })
+  const [showAllIdeas, setShowAllIdeas] = useState(false)
+  const IDEAS_VISIBLE = 3
+  const visibleIdeas = ideas.filter((i) => !dismissed.includes(i.id))
+  const shownIdeas = showAllIdeas ? visibleIdeas : visibleIdeas.slice(0, IDEAS_VISIBLE)
+  const dismissedHere = ideas.filter((i) => dismissed.includes(i.id)).length
+  const dismissIdea = (id: string) => {
+    const next = [...dismissed, id]
+    setDismissed(next)
+    void userStorage.setItem(DISMISSED_KEY, JSON.stringify(next))
+    trackEvent('idea_dismissed', { rule: id.split(':')[0] })
+  }
+  const restoreIdeas = () => {
+    setDismissed([])
+    void userStorage.setItem(DISMISSED_KEY, '[]')
+  }
   const { formatCurrency, getCurrencySymbol } = useSettings()
   // Axis ticks get a compact format (no decimals) so long values like $8,000.00
   // don't overflow recharts' fixed 60px axis width. Tooltips keep full precision.
@@ -89,6 +111,35 @@ export default function TradeIdeas() {
   const strategyConfig = useMemo<ChartConfig>(() => ({
     pnl: { label: 'P&L', color: themeColors.primary },
   }), [themeColors.primary])
+
+  const holdConfig = useMemo<ChartConfig>(() => ({
+    netPnl: { label: 'P&L', color: themeColors.primary },
+  }), [themeColors.primary])
+  const holdRows = useMemo(() => (holdTime?.buckets ?? []).map(b => ({
+    ...b,
+    label: HOLD_TIME_BUCKETS.find(h => h.key === b.key)?.label ?? b.key,
+    winRateRounded: Math.round(b.winRate),
+  })), [holdTime])
+  const holdAxis = useMemo(() => {
+    let lo = 0, hi = 0
+    for (const b of holdRows) { lo = Math.min(lo, b.netPnl); hi = Math.max(hi, b.netPnl) }
+    return niceAxisBoth(lo, hi)
+  }, [holdRows])
+  // Best bucket only when it has a few trades behind it; the footer says so.
+  const bestHold = useMemo(() => {
+    const pool = holdRows.filter(b => b.count >= 5 && b.netPnl > 0)
+    return pool.length ? pool.reduce((a, b) => (b.avgPnl > a.avgPnl ? b : a)) : null
+  }, [holdRows])
+
+  // "12m", "1h 05m", "2d 3h" — same reading a trader would give out loud.
+  const fmtMinutes = (mins: number | null) => {
+    if (mins === null) return '—'
+    if (mins < 60) return `${Math.round(mins)}m`
+    if (mins < 1440) { const h = Math.floor(mins / 60); const m = Math.round(mins % 60); return m ? `${h}h ${String(m).padStart(2, '0')}m` : `${h}h` }
+    const d = Math.floor(mins / 1440); const h = Math.round((mins % 1440) / 60)
+    return h ? `${d}d ${h}h` : `${d}d`
+  }
+  const pct = (v: number) => `${Math.round(v * 100)}%`
 
   useEffect(() => {
     if (hiddenCount > 0) trackGateHit('analytics_window', { hidden: hiddenCount, source: 'insights' })
@@ -275,6 +326,151 @@ export default function TradeIdeas() {
             )}
             .
           </p>
+          </div>
+        )}
+
+        {/* Hold time + cost of trading: the two facts the P&L breakdowns below cannot show */}
+        {(holdTime || costs) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {holdTime && (
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+                <div className="flex items-center gap-2">
+                  <Timer className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Hold Time</span>
+                </div>
+                <p className="text-sm text-muted-foreground">How long you stay in winners versus losers</p>
+                {holdTime.sampleCount < 5 ? (
+                  <div className="flex-1 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Needs entry and exit times</p>
+                    <p className="mt-1">
+                      {holdTime.sampleCount} of {totalTrades} trades have both. Five are needed. Trades saved with the same time for entry and exit, or imported from a date-only file, do not count.
+                    </p>
+                  </div>
+                ) : (
+                <>
+                <div className="divide-y divide-border/50 text-sm">
+                  <div className="flex items-baseline justify-between py-2">
+                    <span className="text-muted-foreground">Typical winner</span>
+                    <span className="font-medium" style={{ color: themeColors.profit, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtMinutes(holdTime.medianWinMinutes)}
+                      <span className="text-xs text-muted-foreground font-normal"> · {holdTime.winCount} trades</span>
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between py-2">
+                    <span className="text-muted-foreground">Typical loser</span>
+                    <span className="font-medium" style={{ color: themeColors.loss, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtMinutes(holdTime.medianLossMinutes)}
+                      <span className="text-xs text-muted-foreground font-normal"> · {holdTime.lossCount} trades</span>
+                    </span>
+                  </div>
+                </div>
+                <ChartContainer config={holdConfig} className="h-[180px] w-full mt-auto">
+                  <BarChart data={holdRows} maxBarSize={28} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                    {chartStyle.grid && <CartesianGrid vertical={false} strokeOpacity={0.1} />}
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} />
+                    <YAxis tick={{ fontSize: 11 }} domain={holdAxis.domain} ticks={holdAxis.ticks} tickFormatter={(v) => formatAxisCurrency(v)} />
+                    <ChartTooltip
+                      cursor={false}
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value, _name, item) => {
+                            const d = item.payload
+                            return (
+                              <span>
+                                {formatCurrency(Number(value), true)} · {d.winRateRounded}% WR · {d.count} trades
+                              </span>
+                            )
+                          }}
+                        />
+                      }
+                    />
+                    <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} />
+                    <Bar dataKey="netPnl" radius={[4, 4, 0, 0]}>
+                      {holdRows.map((entry) => (
+                        <Cell key={entry.key} fill={entry.netPnl >= 0 ? themeColors.profit : themeColors.loss} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+                <p className="text-xs text-muted-foreground">
+                  {holdTime.medianWinMinutes !== null && holdTime.medianLossMinutes !== null && holdTime.medianLossMinutes > holdTime.medianWinMinutes * 1.5
+                    ? 'You hold losers longer than winners. Cutting the losers at the winners\' pace is usually the cheapest fix there is.'
+                    : bestHold
+                      ? `Your best results come from trades held ${bestHold.label.toLowerCase()}: ${formatCurrency(bestHold.avgPnl, true)} per trade over ${bestHold.count} trades.`
+                      : `Based on ${holdTime.sampleCount} trades with entry and exit times.`}
+                </p>
+                </>
+                )}
+              </div>
+            )}
+
+            {costs && (
+              <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Cost of Trading</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Commissions, fees and swap against your results</p>
+                {costs.tradesWithCosts === 0 ? (
+                  <div className="flex-1 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">No costs recorded yet</p>
+                    <p className="mt-1">
+                      None of your {totalTrades} trades carry a commission, fee or swap. Add them in the trade form, or import a broker file that has a fees column, and this fills in.
+                    </p>
+                  </div>
+                ) : (
+                <>
+                <div className="divide-y divide-border/50 text-sm">
+                  <div className="flex items-baseline justify-between py-2">
+                    <span className="text-muted-foreground">Before costs</span>
+                    <span className="font-medium" style={{ color: costs.grossPnl >= 0 ? themeColors.profit : themeColors.loss, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(costs.grossPnl, true)}</span>
+                  </div>
+                  <div className="flex items-baseline justify-between py-2">
+                    <span className="text-muted-foreground">Costs</span>
+                    <span className="font-medium" style={{ color: themeColors.loss, fontVariantNumeric: 'tabular-nums' }}>
+                      {formatCurrency(-costs.costs, true)}
+                      <span className="text-xs text-muted-foreground font-normal"> · {formatCurrency(costs.costPerTrade, false)} per trade</span>
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between py-2">
+                    <span className="text-foreground font-medium">Net result</span>
+                    <span className="font-semibold" style={{ color: costs.netPnl >= 0 ? themeColors.profit : themeColors.loss, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(costs.netPnl, true)}</span>
+                  </div>
+                </div>
+                {costs.perSymbol.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground pt-1">Where the costs go</p>
+                    <div className="divide-y divide-border/50 text-sm">
+                      {costs.perSymbol.slice(0, 5).map(sc => (
+                        <div key={sc.symbol} className="flex items-baseline justify-between py-1.5">
+                          <span className="text-muted-foreground">{sc.symbol}<span className="text-xs"> · {sc.count} {sc.count === 1 ? 'trade' : 'trades'}</span></span>
+                          <span className="font-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {formatCurrency(sc.costs, false)}
+                            <span className="text-xs text-muted-foreground font-normal"> · {formatCurrency(sc.costPerTrade, false)} each</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-auto space-y-1.5 text-xs text-muted-foreground">
+                  {costs.shareOfGrossProfit !== null && (
+                    <p>Costs took <span className="font-medium text-foreground">{pct(costs.shareOfGrossProfit)}</span> of what your trades made before the broker's cut.</p>
+                  )}
+                  {costs.shareOfNetLoss !== null && (
+                    <p>Costs are <span className="font-medium text-foreground">{pct(costs.shareOfNetLoss)}</span> of your net loss. Without them the result would be {formatCurrency(costs.grossPnl, true)}.</p>
+                  )}
+                  {costs.flippedByCosts > 0 && (
+                    <p><span className="font-medium text-foreground">{costs.flippedByCosts}</span> {costs.flippedByCosts === 1 ? 'trade' : 'trades'} made money before costs and lost after them.</p>
+                  )}
+                  {costs.tradesWithCosts < costs.tradeCount && (
+                    <p>{costs.tradeCount - costs.tradesWithCosts} of {costs.tradeCount} trades recorded no costs, so the real figure is higher.</p>
+                  )}
+                </div>
+                </>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -630,31 +826,52 @@ export default function TradeIdeas() {
               <Lightbulb className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
               <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Actionable Ideas</span>
             </div>
-            <p className="text-sm text-muted-foreground">Suggestions based on your trading data</p>
-            <div className="space-y-3">
-              {ideas.map((idea) => {
-                const accentColor = idea.sentiment === 'positive'
-                  ? themeColors.profit
-                  : themeColors.primary
-                return (
-                  <div
-                    key={idea.id}
-                    className="p-3 rounded-lg"
-                    style={{ backgroundColor: `${accentColor}0a` }}
-                  >
-                    <p className="font-medium text-sm" style={{ color: accentColor }}>{idea.title}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
-                      {idea.insight}
-                    </p>
-                    {idea.nextStep && (
-                      <p className="text-xs mt-1.5 font-medium" style={{ color: accentColor, opacity: 0.85 }}>
-                        Next step: {idea.nextStep}
-                      </p>
-                    )}
+            <p className="text-sm text-muted-foreground">
+              What is costing you, biggest first, with one change each. Figures cover {hiddenCount > 0 ? `your last ${FREE_ANALYTICS_WINDOW_DAYS} days` : 'all your trades'}.
+            </p>
+            {visibleIdeas.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                Nothing left to show.{' '}
+                <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={restoreIdeas}>Bring back the {dismissedHere} you set aside</button>.
+              </p>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {shownIdeas.map((idea) => (
+                  <div key={idea.id} className="py-3 flex items-start gap-4">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="text-sm font-semibold text-foreground">{idea.title}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{idea.evidence}</p>
+                      <p className="text-sm text-foreground leading-relaxed">{idea.action}</p>
+                    </div>
+                    <div className="shrink-0 text-right space-y-1.5">
+                      <p className="text-sm font-semibold" style={{ color: themeColors.loss, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(idea.impact, false)}</p>
+                      <p className="text-[11px] text-muted-foreground">at stake</p>
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline-offset-4 hover:underline hover:text-foreground"
+                        onClick={() => dismissIdea(idea.id)}
+                      >
+                        Not relevant
+                      </button>
+                    </div>
                   </div>
-                )
-              })}
-            </div>
+                ))}
+              </div>
+            )}
+            {(visibleIdeas.length > IDEAS_VISIBLE || dismissedHere > 0) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
+                {visibleIdeas.length > IDEAS_VISIBLE && (
+                  <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={() => setShowAllIdeas((v) => !v)}>
+                    {showAllIdeas ? 'Show fewer' : `Show ${visibleIdeas.length - IDEAS_VISIBLE} more`}
+                  </button>
+                )}
+                {dismissedHere > 0 && visibleIdeas.length > 0 && (
+                  <button type="button" className="underline underline-offset-4 hover:text-foreground" onClick={restoreIdeas}>
+                    Bring back {dismissedHere} set aside
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
