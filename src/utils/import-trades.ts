@@ -81,7 +81,19 @@ const FUTURES_PREFIXES = [
   'USOIL', 'UKOIL', 'NATGAS',               // Energy
 ];
 
-const INDEX_SYMBOLS = new Set(['SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK']);
+const INDEX_SYMBOLS = new Set([
+  'SPY', 'QQQ', 'DIA', 'IWM', 'XLF', 'XLK', 'XLE', 'XLV', 'EFA', 'EEM', 'VGK',
+  // Cash indices as TradingView/CFD platforms name them (DJI, SPX, NDX...).
+  'DJI', 'SPX', 'NDX', 'RUT', 'VIX', 'DXY', 'DAX', 'FTSE', 'NKY', 'HSI', 'CAC', 'STOXX',
+]);
+
+// TradingView and some brokers prefix the ticker with the data source
+// ("TVC:DJI", "OANDA:EURUSD", "CME_MINI:MESZ6"). The prefix says where the
+// quote came from, not what was traded, so it is dropped before detection and
+// before the symbol is stored.
+export function stripExchangePrefix(symbol: string): string {
+  return (symbol || '').trim().replace(/^[A-Za-z0-9_]+:(?=\S)/, '');
+}
 
 const FOREX_PAIRS = new Set([
   'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
@@ -101,7 +113,7 @@ const CURRENCY_CODES = new Set([
 ]);
 
 export function detectMarketFromSymbol(symbol: string): ImportMarket {
-  const upper = (symbol || '').toUpperCase();
+  const upper = stripExchangePrefix(symbol).toUpperCase();
   // Handle month/year codes like MNQU5, ESU24 via prefix match.
   if (FUTURES_PREFIXES.some(fut => upper.startsWith(fut))) return 'futures';
   if (INDEX_SYMBOLS.has(upper)) return 'indices';

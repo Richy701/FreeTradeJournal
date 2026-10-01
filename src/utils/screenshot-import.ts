@@ -1,4 +1,5 @@
 import type { ParsedTrade } from './csv-parser';
+import { stripExchangePrefix } from './import-trades';
 import type { ScreenshotTrade } from '@/services/ai-analysis';
 
 // Bridge from the vision model's rows to the CSV import pipeline. Everything
@@ -53,7 +54,7 @@ export function screenshotTradesToReview(trades: ScreenshotTrade[]): ReviewTrade
     const missingTime = !entryDate;
     return {
       id: `shot-${i}`,
-      symbol: t.symbol.toUpperCase(),
+      symbol: stripExchangePrefix(t.symbol).toUpperCase(),
       side: t.side,
       entryPrice: String(t.entryPrice),
       exitPrice: String(t.exitPrice),

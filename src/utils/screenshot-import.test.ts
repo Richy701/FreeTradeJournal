@@ -49,6 +49,11 @@ describe('screenshotTradesToReview', () => {
     expect(r.keep).toBe(true);
     expect(r.lowConfidence).toBe(false);
   });
+  it('drops a TradingView exchange prefix from the stored symbol', () => {
+    const [mapped] = screenshotTradesToReview([row({ symbol: 'TVC:DJI' })]);
+    expect(mapped.symbol).toBe('DJI');
+  });
+
   it('flips a positive swap credit into a negative cost', () => {
     const [r] = screenshotTradesToReview([row({ swap: 1.2 })]);
     expect(r.swap).toBe('-1.2');

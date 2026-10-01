@@ -4945,7 +4945,7 @@ Return only valid JSON with no extra text.`;
 }
 
 Each item in "trades" must have:
-- symbol: string, exactly as shown (keep suffixes like "EURUSD.m" or "NQZ5"; do not translate)
+- symbol: string, exactly as shown (keep suffixes like "EURUSD.m" or "NQZ5"; do not translate). If the platform prints an exchange prefix such as "TVC:DJI" or "OANDA:EURUSD", return the whole thing ("TVC:DJI"), never the prefix alone
 - side: "long" or "short" (buy = long, sell = short; use the OPENING direction of the position)
 - entryPrice: number (open price)
 - exitPrice: number (close price)

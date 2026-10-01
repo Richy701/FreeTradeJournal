@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildImportedTrades, countFutureTrades, dedupeImportedTrades, detectMarketFromSymbol, futureImportMessage, planImport } from './import-trades';
+import { buildImportedTrades, countFutureTrades, dedupeImportedTrades, detectMarketFromSymbol, futureImportMessage, planImport, stripExchangePrefix } from './import-trades';
 import type { ParsedTrade } from './csv-parser';
 
 const baseTrade: ParsedTrade = {
@@ -64,6 +64,17 @@ describe('detectMarketFromSymbol', () => {
     expect(detectMarketFromSymbol('EURUSD.a')).toBe('forex'); // broker suffix
     expect(detectMarketFromSymbol('USDHUF')).toBe('forex');   // exotic, not in explicit list
     expect(detectMarketFromSymbol('XAUUSD')).toBe('forex');   // spot gold stays on forex lot math
+  });
+
+  it('ignores an exchange prefix and classifies the bare ticker', () => {
+    // Rui's TradingView screenshots: "TVC:DJI" landed as forex
+    expect(detectMarketFromSymbol('TVC:DJI')).toBe('indices');
+    expect(detectMarketFromSymbol('OANDA:EURUSD')).toBe('forex');
+    expect(detectMarketFromSymbol('CME_MINI:MESZ6')).toBe('futures');
+    expect(detectMarketFromSymbol('NASDAQ:TSLA')).toBe('indices');
+    expect(stripExchangePrefix('TVC:DJI')).toBe('DJI');
+    expect(stripExchangePrefix('EURUSD')).toBe('EURUSD');
+    expect(stripExchangePrefix('TVC:')).toBe('TVC:'); // nothing after the colon: leave it alone
   });
 
   it('keeps futures and index ETFs unchanged', () => {
