@@ -1213,6 +1213,8 @@ export default function TradeLog() {
     bestTradeSymbol: '--',
     worstTrade: 0,
     profitFactor: 0,
+    grossProfit: 0,
+    grossLoss: 0,
     pnlPct: 0,
     validRRCount: 0,
   });
@@ -1247,7 +1249,7 @@ export default function TradeLog() {
       totalPnL, winRate, totalTrades, avgRR,
       winCount, lossCount, avgWin, avgLoss,
       bestTrade: bestTradeVal, bestTradeSymbol,
-      worstTrade, profitFactor, pnlPct,
+      worstTrade, profitFactor, grossProfit, grossLoss, pnlPct,
       validRRCount: validRRTrades.length,
     });
   };
@@ -2477,8 +2479,10 @@ export default function TradeLog() {
               { label: 'Win rate', value: `${quickStats.winRate.toFixed(1)}%`, detail: `${quickStats.winCount} wins · ${quickStats.lossCount} losses`, color: quickStats.winRate >= 50 ? themeColors.profit : themeColors.loss },
               { label: 'Best trade', value: formatPnl(quickStats.bestTrade), detail: quickStats.bestTradeSymbol || 'No trades yet', color: themeColors.profit },
               { label: 'Average R:R', value: quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '—', detail: quickStats.validRRCount ? `${quickStats.validRRCount} trades with R:R` : 'Add stop loss & take profit', color: undefined },
+              { label: 'Profit factor', value: quickStats.totalTrades === 0 ? '—' : quickStats.profitFactor >= 999 ? '∞' : `${quickStats.profitFactor.toFixed(2)}x`, detail: quickStats.totalTrades === 0 ? 'No trades yet' : `Won ${formatPnl(quickStats.grossProfit)} · Lost ${formatPnl(-quickStats.grossLoss)}`, color: quickStats.totalTrades === 0 ? undefined : quickStats.profitFactor >= 1 ? themeColors.profit : themeColors.loss, wide: true },
             ].map((stat, index) => (
-              <div key={stat.label} className={cn('min-w-0 p-3.5', index < 2 && 'border-b', index % 2 === 0 && 'border-r')}>
+              // The fifth tile spans the row so the strip ends on a straight edge.
+              <div key={stat.label} className={cn('min-w-0 p-3.5', index < 4 && 'border-b', index % 2 === 0 && !('wide' in stat && stat.wide) && 'border-r', 'wide' in stat && stat.wide && 'col-span-2')}>
                 <dt className="text-xs text-muted-foreground">{stat.label}</dt>
                 <dd className="mt-1 break-words text-xl font-semibold tracking-tight tabular-nums" style={{ color: stat.color }}>{stat.value}</dd>
                 <dd className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{stat.detail}</dd>
@@ -2491,9 +2495,10 @@ export default function TradeLog() {
           </Button>
         </div>
         <TooltipProvider>
-        <div id="trade-log-statistics" className={cn('gap-4 sm:gap-6 sm:grid sm:grid-cols-2 2xl:grid-cols-4', showDetailedStats ? 'grid' : 'hidden')}>
+        {/* Five cards: three across then two wider ones at 2xl, two across with a full-width last card below that, so every row ends flush */}
+        <div id="trade-log-statistics" className={cn('gap-4 sm:gap-6 sm:grid sm:grid-cols-2 2xl:grid-cols-6', showDetailedStats ? 'grid' : 'hidden')}>
             {/* Total P&L */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
                 <Tooltip>
@@ -2549,7 +2554,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Win Rate */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
                 <div
@@ -2611,7 +2616,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Best Trade */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Best Trade</CardTitle>
                 <div
@@ -2665,7 +2670,7 @@ export default function TradeLog() {
             </Card>
 
             {/* Avg R:R */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors">
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-3">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Avg R:R</CardTitle>
                 <Tooltip>
@@ -2695,7 +2700,7 @@ export default function TradeLog() {
                     </div>
                     <div className="mt-3 space-y-0.5">
                       <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
-                        PF: {quickStats.profitFactor >= 999 ? '∞' : quickStats.profitFactor.toFixed(2)}x
+                        Planned from stop and target
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {quickStats.validRRCount === 0
@@ -2724,6 +2729,73 @@ export default function TradeLog() {
                         <RadialBar dataKey="rr" stackId="a" cornerRadius={2} fill={quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss} className="stroke-transparent" />
                         <RadialBar dataKey="rest" stackId="a" cornerRadius={2} fill="hsl(var(--border))" className="stroke-transparent" />
                       </RadialBarChart>
+                    </ChartContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Profit Factor: gross profit over gross loss for the trades currently shown */}
+            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors sm:col-span-2 2xl:col-span-3">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+                        quickStats.totalTrades === 0 && 'text-muted-foreground',
+                      )}
+                      style={quickStats.totalTrades > 0 ? { color: quickStats.profitFactor >= 1.5 ? themeColors.profit : quickStats.profitFactor >= 1 ? themeColors.primary : themeColors.loss } : undefined}
+                    >
+                      {quickStats.totalTrades > 0 && (quickStats.profitFactor >= 1 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />)}
+                      {quickStats.totalTrades === 0 ? 'No data' : quickStats.profitFactor >= 2 ? 'Excellent' : quickStats.profitFactor >= 1.5 ? 'Good' : quickStats.profitFactor >= 1 ? 'Okay' : 'Losing'}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="p-2 border bg-popover">
+                    <p className="text-xs">Money won divided by money lost. Above 1 means the trades shown made money overall.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className={cn('text-3xl font-bold tracking-tight tabular-nums', quickStats.totalTrades === 0 && 'text-muted-foreground')}
+                         style={quickStats.totalTrades > 0 ? { color: quickStats.profitFactor >= 1 ? themeColors.profit : themeColors.loss } : undefined}>
+                      {quickStats.totalTrades === 0 ? '--' : quickStats.profitFactor >= 999 ? '∞' : `${quickStats.profitFactor.toFixed(2)}x`}
+                    </div>
+                    <div className="mt-3 space-y-0.5">
+                      <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                        Won {formatPnl(quickStats.grossProfit)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {quickStats.totalTrades === 0
+                          ? 'Log or import trades to see this'
+                          : `Lost ${formatPnl(-quickStats.grossLoss)}${activeFilterCount ? ' in the trades shown' : ''}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-16 h-16 relative shrink-0">
+                    <ChartContainer
+                      config={{
+                        won: { label: "Won", color: themeColors.profit },
+                        lost: { label: "Lost", color: themeColors.loss }
+                      }}
+                      className="w-full h-full aspect-auto"
+                    >
+                      <BarChart
+                        data={[
+                          { type: "won", pnl: quickStats.grossProfit, fill: themeColors.profit },
+                          { type: "lost", pnl: quickStats.grossLoss, fill: themeColors.loss }
+                        ]}
+                        margin={{ top: 2, right: 4, bottom: 2, left: 4 }}
+                        barCategoryGap="20%"
+                      >
+                        <Bar dataKey="pnl" radius={3} barSize={16} isAnimationActive>
+                          <Cell fill={themeColors.profit} />
+                          <Cell fill={themeColors.loss} />
+                        </Bar>
+                      </BarChart>
                     </ChartContainer>
                   </div>
                 </div>

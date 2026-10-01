@@ -26,6 +26,22 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.98.0',
+    date: '2026-10-01',
+    summary: 'Profit Factor gets its own card in the Trade Log, and follows your filters.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        roundup: true,
+        text: 'Profit Factor has its own card',
+        description: 'Profit Factor used to sit in small print under Avg R:R. It is now a card of its own, with the money won and lost for the trades shown, and it is in the summary on phones too. Filter to a month or a setup and the figure follows.',
+        image: { src: '/screenshots/trade-log-profit-factor.png', alt: 'Trade Log statistics with the Profit Factor card showing the ratio, the money won and the money lost for the trades shown.' },
+        link: { to: '/trades', label: 'See your Profit Factor' },
+      },
+    ],
+  },
+  {
     version: '2.97.0',
     date: '2026-09-27',
     summary: 'Insights show hold time, trading costs and ranked ideas; the sessions widget and Trade Log stat cards get a refresh.',
@@ -3502,4 +3518,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.97.0'
+export const LATEST_CHANGELOG_VERSION = '2.98.0'
