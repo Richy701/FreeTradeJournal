@@ -164,17 +164,20 @@ function HeroGeometric({
 }) {
     const { enterDemoMode } = useAuth();
     const navigate = useNavigate();
+    const shouldReduceMotion = useReducedMotion();
+    // Each block passes its `custom` index so they land one after another
+    // (eyebrow, headline, subtitle, avatars, buttons, small print).
     const fadeUpVariants = {
-        hidden: { opacity: 0, y: 30 },
-        visible: {
+        hidden: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 },
+        visible: (i: number) => ({
             opacity: 1,
             y: 0,
-            transition: {
-                duration: 1,
-                delay: 0.5,
-                staggerChildren: 0.2,
+            transition: shouldReduceMotion ? { duration: 0 } : {
+                duration: 0.8,
+                delay: 0.3 + i * 0.12,
+                ease: [0.22, 1, 0.36, 1] as const,
             },
-        },
+        }),
     };
 
     return (

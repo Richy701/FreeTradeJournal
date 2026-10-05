@@ -1,28 +1,7 @@
-import { lazy, Suspense, useState, useEffect, useRef } from 'react'
 import { Pulse, Brain, CalendarDots, Globe } from '@phosphor-icons/react'
-
-const ShowcasePlayer = lazy(() => import('@/components/remotion/ShowcasePlayer'))
+import { ProductTour } from '@/components/blocks/product-tour'
 
 export function FreeTradeJournalFeatures() {
-    const [showPlayer, setShowPlayer] = useState(false)
-    const playerRef = useRef<HTMLDivElement>(null)
-
-    // Only load the (heavy) remotion player once the section is near the
-    // viewport — visitors who never scroll here never download it.
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setShowPlayer(true)
-                    observer.disconnect()
-                }
-            },
-            { rootMargin: '200px' }
-        )
-        if (playerRef.current) observer.observe(playerRef.current)
-        return () => observer.disconnect()
-    }, [])
-
     return (
         <section className="py-14 sm:py-16">
             <div className="mx-auto max-w-[1600px] space-y-16 px-6">
@@ -30,34 +9,7 @@ export function FreeTradeJournalFeatures() {
                     <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">Professional trading journal & <span className="text-amber-600 dark:text-amber-500">analytics</span></h2>
                     <p className="text-lg text-muted-foreground leading-relaxed max-w-lg sm:ml-auto">Track every trade, spot what's working, and build consistency — with professional analytics, journaling, and performance tools. <span className="text-amber-600 dark:text-amber-500 font-semibold">Free forever</span>, no credit card required.</p>
                 </div>
-                <div ref={playerRef} className="relative rounded-3xl p-0 md:p-3 md:-mx-6 lg:col-span-3">
-                    <div className="aspect-video rounded-2xl overflow-hidden">
-                        {showPlayer ? (
-                            <Suspense fallback={
-                                <img
-                                  src="/images/screenshots/trading-dashboard-screenshot-1280w.webp"
-                                  alt="FreeTradeJournal Dashboard"
-                                  className="w-full h-full object-cover"
-                                  width={1280}
-                                  height={720}
-                                />
-                            }>
-                                <ShowcasePlayer />
-                            </Suspense>
-                        ) : (
-                            <img
-                              src="/images/screenshots/trading-dashboard-screenshot-1280w.webp"
-                              srcSet="/images/screenshots/trading-dashboard-screenshot-640w.webp 640w, /images/screenshots/trading-dashboard-screenshot-1280w.webp 1280w"
-                              sizes="(max-width: 640px) 640px, 1280px"
-                              alt="FreeTradeJournal Dashboard"
-                              className="w-full aspect-video rounded-2xl object-cover"
-                              decoding="async"
-                              width={1280}
-                              height={720}
-                            />
-                        )}
-                    </div>
-                </div>
+                <ProductTour />
                 {/* Asymmetric bento grid — hero card + offset smaller cards */}
                 <div className="relative mx-auto grid grid-cols-2 gap-4 lg:gap-5 lg:grid-cols-12 lg:grid-rows-2">
                     {/* Hero feature — spans 2 cols + 2 rows on lg */}

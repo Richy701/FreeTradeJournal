@@ -328,6 +328,22 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     100% { background-position: 200% 0; }
   }
 
+  /* Freshly imported Trade Log rows: a gold wash that fades out */
+  @keyframes import-glow {
+    0%, 30% { background-color: hsl(var(--primary) / 0.16); }
+    100% { background-color: transparent; }
+  }
+
+  .animate-import-glow {
+    animation: import-glow 2.4s ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-import-glow {
+      animation: none;
+    }
+  }
+
   .animation-delay-2000 {
     animation-delay: 2s;
   }

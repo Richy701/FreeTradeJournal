@@ -20,10 +20,9 @@ import { SiteHeader } from "@/components/site-header"
 import { AppFooter } from "@/components/app-footer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, CaretDown, UploadSimple, FileText, Calendar, CheckCircle, WarningCircle, TrendUp, UserPlus, Tag, Buildings, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, Image as ImageIcon, CaretRight, ArrowRight } from '@phosphor-icons/react'
-import { useState, useEffect, useMemo, lazy, Suspense } from "react"
+import { Plus, CaretDown, UploadSimple, FileText, Calendar, WarningCircle, UserPlus, Tag, Buildings, ChartLineUp, Lightbulb, Heart, ArrowsLeftRight, Image as ImageIcon, CaretRight, ArrowRight } from '@phosphor-icons/react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react"
 import { toast } from 'sonner'
 import { parseCSV, parseCSVWithMappings, parseCSVHeaders, isEmptyExport, validateCSVFile, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser'
 import { useDemoData } from '@/hooks/use-demo-data'
@@ -45,6 +44,8 @@ import { trackTradeLogged } from '@/lib/track-trade'
 import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
 import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
 import { ImportInsightDialog } from '@/components/import-insight-dialog'
+import { ImportProgressOverlay, type ImportSummary } from '@/components/import-progress-overlay'
+import { ImportPreviewDialog } from '@/components/import-preview-dialog'
 import { SatisfactionPulse } from '@/components/satisfaction-pulse'
 import { triggerFeedbackDialog } from '@/lib/feedback-trigger'
 import { ShareStatsCard } from '@/components/share-stats-card'
@@ -78,7 +79,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardPeriodProvider, useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { DashboardPeriodPills } from '@/components/dashboard/period-pills'
 import { PnlDisplayToggle } from '@/components/pnl-display-toggle'
-import { Progress } from '@/components/ui/progress'
 
 function FreeAIBanner() {
   const { user, isDemo } = useAuth()
@@ -119,7 +119,7 @@ export default function Dashboard() {
   const demoGuard = useDemoGuard()
   const { isPro, hasUtilityAIAccess } = useProStatus()
   const { activeAccount, isAllAccounts, scopeStartingBalance } = useAccounts()
-  const { formatCurrency: formatCurrencyFromSettings, settings, getCurrencySymbol } = useSettings()
+  const { settings, getCurrencySymbol } = useSettings()
   const { getTrades, getAnalyticsTrades } = useDemoData()
   const userStorage = useUserStorage()
   const [dataVersion, setDataVersion] = useState(0)
@@ -221,14 +221,11 @@ export default function Dashboard() {
       brokerTimezone: activeAccount?.brokerTimezone,
     })
   }, [csvPreview.parseResult, csvPreview.file, userStorage, activeAccount?.id, activeAccount?.brokerTimezone, dataVersion])
-  // Per-row P&L as it will be saved (index-aligned with the parsed rows).
-  const previewRowPnl = (index: number, raw: string) => importPlan?.built[index]?.pnl ?? parseFloat(raw)
   const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null)
-  const [importProgress, setImportProgress] = useState<{
-    active: boolean;
-    phase: string;
-    percent: number;
-  }>({ active: false, phase: '', percent: 0 })
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
+  // Follow-ups (warnings, AI first read, feedback ask) wait for the import
+  // overlay to close so only one thing is on screen at a time.
+  const afterImportRef = useRef<(() => void) | null>(null)
   const [showWhatsNew, setShowWhatsNew] = useState(false)
   // The version the user last dismissed — lets the dialog list releases they
   // missed in between as compressed one-liners.
@@ -590,7 +587,6 @@ export default function Dashboard() {
     const { parseResult: result, file } = csvPreview;
 
     setCsvPreview({ show: false, file: null, parseResult: null });
-    setImportProgress({ active: true, phase: 'Reading existing trades...', percent: 20 });
 
     try {
       if (result.success) {
@@ -605,8 +601,6 @@ export default function Dashboard() {
           }
         }
 
-        setImportProgress({ active: true, phase: 'Processing trades...', percent: 50 });
-
         // Shared converter — identical to the Trade Log import so the same file
         // produces the same trades (correct dates, net P&L, market) either way.
         const importedTrades = buildImportedTrades(result.trades, {
@@ -616,14 +610,10 @@ export default function Dashboard() {
           brokerTimezone: activeAccount?.brokerTimezone,
         });
 
-        setImportProgress({ active: true, phase: 'Checking for duplicates...', percent: 70 });
-
         // Deduplicate only against trades already in the target account — the
         // same file imported into a different account is new data, not a dupe.
         const accountTrades = existingTrades.filter((t: any) => belongsToAccount(t, activeAccount?.id || ''));
         const { newTrades, skippedCount } = dedupeImportedTrades(accountTrades, importedTrades);
-
-        setImportProgress({ active: true, phase: 'Saving trades...', percent: 90 });
 
         const updatedTrades = [...existingTrades, ...newTrades];
         userStorage.setItem('trades', JSON.stringify(updatedTrades));
@@ -639,62 +629,50 @@ export default function Dashboard() {
         // instead of requiring a page refresh to pick up the import.
         notifyDataChange();
 
-        // Brief pause so user sees 100%
-        setImportProgress({ active: true, phase: 'Done!', percent: 100 });
-        await new Promise(r => setTimeout(r, 500));
-        setImportProgress({ active: false, phase: '', percent: 0 });
-
         // Bump version to re-render dashboard with new data
         setDataVersion(v => v + 1);
 
-        toast.success(
-          newTrades.length > 0
-            ? `Imported ${newTrades.length} new trade${newTrades.length > 1 ? 's' : ''} from ${file.name}`
-            : `No new trades to import from ${file.name}`,
-          {
-            description: skippedCount > 0
-              ? `${skippedCount} duplicate trade${skippedCount > 1 ? 's' : ''} skipped`
-              : result.errors.length > 0
-                ? `${result.summary.failed} rows had errors and were skipped`
-                : undefined,
-            duration: 5000
+        setImportSummary({
+          imported: newTrades.length,
+          duplicates: skippedCount,
+          failedRows: result.errors.length > 0 ? result.summary.failed : 0,
+          netPnl: newTrades.reduce((sum, t) => sum + (Number(t.pnl) || 0), 0),
+        });
+
+        afterImportRef.current = () => {
+          for (const warning of result.warnings || []) {
+            toast.warning(warning, { duration: 10000 });
           }
-        );
 
-        for (const warning of result.warnings || []) {
-          toast.warning(warning, { duration: 10000 });
-        }
+          // The activation moment: stream an AI first-read of a meaningful import.
+          // When it shows, hold the feedback toast — one ask at a time.
+          const showInsight = newTrades.length >= 10 && hasUtilityAIAccess && !isDemo;
+          if (showInsight) setImportInsightTrades(newTrades);
 
-        // The activation moment: stream an AI first-read of a meaningful import.
-        // When it shows, hold the feedback toast — one ask at a time.
-        const showInsight = newTrades.length >= 10 && hasUtilityAIAccess && !isDemo;
-        if (showInsight) setImportInsightTrades(newTrades);
-
-        // Prompt for feedback after importing 5+ trades
-        if (newTrades.length >= 5 && !showInsight) {
-          setTimeout(() => {
-            toast('How was the import experience?', {
-              description: 'Help us improve CSV imports for your broker.',
-              duration: 8000,
-              action: {
-                label: 'Give feedback',
-                onClick: () => triggerFeedbackDialog('CSV Import'),
-              },
-            });
-          }, 2000);
-        }
+          // Prompt for feedback after importing 5+ trades
+          if (newTrades.length >= 5 && !showInsight) {
+            setTimeout(() => {
+              toast('How was the import experience?', {
+                description: 'Help us improve CSV imports for your broker.',
+                duration: 8000,
+                action: {
+                  label: 'Give feedback',
+                  onClick: () => triggerFeedbackDialog('CSV Import'),
+                },
+              });
+            }, 2000);
+          }
+        };
 
       } else {
         toast.error('Failed to import file', {
           description: result.errors.join(', ')
         });
-        setImportProgress({ active: false, phase: '', percent: 0 });
       }
 
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Failed to import file');
-      setImportProgress({ active: false, phase: '', percent: 0 });
     }
   };
 
@@ -1327,364 +1305,26 @@ export default function Dashboard() {
       <ColumnMappingDialog value={columnMapping} onChange={setColumnMapping} onConfirm={handleMappingConfirm} />
 
       {/* CSV Preview Dialog */}
-      <Dialog open={csvPreview.show} onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl lg:max-w-6xl max-h-[90svh] overflow-hidden flex flex-col">
-          <DialogHeader className="pb-4 flex-shrink-0">
-            <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground">
-              Import Preview
-            </DialogTitle>
-            <DialogDescription className="text-sm sm:text-base text-muted-foreground">
-              Review your trading data before importing to Dashboard
-            </DialogDescription>
-          </DialogHeader>
+      <ImportPreviewDialog
+        open={csvPreview.show}
+        onOpenChange={(open) => setCsvPreview(prev => ({ ...prev, show: open }))}
+        fileName={csvPreview.file?.name}
+        parseResult={csvPreview.parseResult}
+        plan={importPlan}
+        importing={csvUploadState.isUploading}
+        onCancel={() => setCsvPreview({ show: false, file: null, parseResult: null })}
+        onConfirm={handleConfirmImport}
+      />
 
-          {csvPreview.parseResult && (
-            <div className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0">
-              {/* Compact Status Banner */}
-              <div
-                className="flex flex-wrap items-center gap-2 sm:gap-3 rounded-lg px-3 sm:px-4 py-2.5 border"
-                style={{
-                  backgroundColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '08')}` : `${alpha(themeColors.profit, '08')}`,
-                  borderColor: csvPreview.parseResult.summary.failed > 0 ? `${alpha(themeColors.loss, '20')}` : `${alpha(themeColors.profit, '20')}`
-                }}
-              >
-                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-sm font-medium truncate" title={csvPreview.file?.name}>{csvPreview.file?.name}</span>
-                <span className="text-muted-foreground text-sm">—</span>
-                <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
-                  {csvPreview.parseResult.summary.successfulParsed} trades
-                </span>
-                {importPlan && importPlan.skippedCount > 0 && (
-                  <>
-                    <span className="text-muted-foreground text-sm">·</span>
-                    <span className="text-sm text-muted-foreground">
-                      {importPlan.skippedCount} already imported
-                    </span>
-                  </>
-                )}
-                {csvPreview.parseResult.summary.failed > 0 && (
-                  <>
-                    <span className="text-muted-foreground text-sm">·</span>
-                    <span className="text-sm font-semibold" style={{ color: themeColors.loss }}>
-                      {csvPreview.parseResult.summary.failed} errors
-                    </span>
-                  </>
-                )}
-                {csvPreview.parseResult.summary.dateRange && (
-                  <span className="hidden sm:flex items-center gap-2 ml-auto">
-                    <span className="text-muted-foreground text-sm">·</span>
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {csvPreview.parseResult.summary.dateRange.earliest} — {csvPreview.parseResult.summary.dateRange.latest}
-                    </span>
-                  </span>
-                )}
-              </div>
-
-              {/* Trade Summary Stats */}
-              {importPlan && importPlan.newTrades.length > 0 && (() => {
-                const trades = importPlan.newTrades;
-                const pnls = trades.map(t => t.pnl);
-                const totalPnl = pnls.reduce((sum, p) => sum + p, 0);
-                const winCount = pnls.filter(p => p > 0).length;
-                const winRate = trades.length > 0 ? (winCount / trades.length) * 100 : 0;
-                const bestTrade = Math.max(...pnls);
-                const worstTrade = Math.min(...pnls);
-
-                return (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
-                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: totalPnl >= 0 ? themeColors.profit : themeColors.loss }}>
-                        {formatCurrencyFromSettings(totalPnl, true)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
-                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: winRate >= 50 ? themeColors.profit : themeColors.loss }}>
-                        {winRate.toFixed(1)}%
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Best Trade</p>
-                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: themeColors.profit }}>
-                        {formatCurrencyFromSettings(bestTrade, true)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-card px-4 py-3 text-center">
-                      <p className="text-xs text-muted-foreground mb-1">Worst Trade</p>
-                      <p className="text-base sm:text-lg font-bold break-words" style={{ color: themeColors.loss }}>
-                        {formatCurrencyFromSettings(worstTrade, true)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Sample Preview - Theme Aware Table */}
-              {csvPreview.parseResult.trades.length > 0 && (
-                <div className="bg-card rounded-xl border overflow-hidden">
-                  <div
-                    className="px-6 py-3 border-b"
-                    style={{ backgroundColor: `${alpha(themeColors.primary, '10')}` }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <TrendUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      <h3 className="font-semibold text-foreground text-sm">
-                        Trade Preview <span className="font-normal text-muted-foreground">(First 5 rows)</span>
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Mobile card view */}
-                  <div className="sm:hidden divide-y">
-                    {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                      <div key={index} className="px-4 py-3 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground">{trade.symbol}</span>
-                            <Badge
-                              className="text-[10px] px-1.5 py-0.5 border"
-                              style={{
-                                backgroundColor: trade.side === 'long'
-                                  ? `${alpha(themeColors.profit, '15')}`
-                                  : `${alpha(themeColors.loss, '15')}`,
-                                color: trade.side === 'long'
-                                  ? themeColors.profit
-                                  : themeColors.loss,
-                                borderColor: trade.side === 'long'
-                                  ? `${alpha(themeColors.profit, '30')}`
-                                  : `${alpha(themeColors.loss, '30')}`
-                              }}
-                            >
-                              {trade.side.toUpperCase()}
-                            </Badge>
-                          </div>
-                          <span
-                            className="font-bold text-sm"
-                            style={{
-                              color: previewRowPnl(index, trade.pnl) >= 0
-                                ? themeColors.profit
-                                : themeColors.loss
-                            }}
-                          >
-                            {formatCurrencyFromSettings(previewRowPnl(index, trade.pnl), true)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{parseFloat(trade.entryPrice).toFixed(4)} → {parseFloat(trade.exitPrice).toFixed(4)}</span>
-                          <span>·</span>
-                          <span>{trade.quantity} lots</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Desktop table view */}
-                  <div className="hidden sm:block overflow-x-auto scrollbar-hide">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent border-border">
-                          <TableHead className="font-semibold">Symbol</TableHead>
-                          <TableHead className="font-semibold">Side</TableHead>
-                          <TableHead className="font-semibold">Entry</TableHead>
-                          <TableHead className="font-semibold">Exit</TableHead>
-                          <TableHead className="font-semibold">Size</TableHead>
-                          <TableHead className="font-semibold">P&L</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {csvPreview.parseResult.trades.slice(0, 5).map((trade, index) => (
-                          <TableRow key={index} className="hover:bg-black/[0.05] dark:hover:bg-white/[0.06] border-border">
-                            <TableCell className="font-semibold text-foreground">
-                              {trade.symbol}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                className="text-xs px-2.5 py-1 border"
-                                style={{
-                                  backgroundColor: trade.side === 'long'
-                                    ? `${alpha(themeColors.profit, '15')}`
-                                    : `${alpha(themeColors.loss, '15')}`,
-                                  color: trade.side === 'long'
-                                    ? themeColors.profit
-                                    : themeColors.loss,
-                                  borderColor: trade.side === 'long'
-                                    ? `${alpha(themeColors.profit, '30')}`
-                                    : `${alpha(themeColors.loss, '30')}`
-                                }}
-                              >
-                                {trade.side.toUpperCase()}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground font-mono text-sm">
-                              {parseFloat(trade.entryPrice).toFixed(4)}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground font-mono text-sm">
-                              {parseFloat(trade.exitPrice).toFixed(4)}
-                            </TableCell>
-                            <TableCell className="font-medium text-foreground">
-                              {trade.quantity}
-                            </TableCell>
-                            <TableCell
-                              className="font-bold"
-                              style={{
-                                color: previewRowPnl(index, trade.pnl) >= 0
-                                  ? themeColors.profit
-                                  : themeColors.loss
-                              }}
-                            >
-                              {formatCurrencyFromSettings(previewRowPnl(index, trade.pnl), true)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {csvPreview.parseResult.trades.length > 5 && (
-                    <div
-                      className="px-6 py-2.5 border-t text-center"
-                      style={{ backgroundColor: `${alpha(themeColors.primary, '05')}` }}
-                    >
-                      <p className="text-xs text-muted-foreground">
-                        + {csvPreview.parseResult.trades.length - 5} more trades will be imported
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Errors */}
-              {csvPreview.parseResult.errors.length > 0 && (
-                <div
-                  className="rounded-xl border overflow-hidden"
-                  style={{
-                    backgroundColor: `${alpha(themeColors.loss, '08')}`,
-                    borderColor: `${alpha(themeColors.loss, '30')}`
-                  }}
-                >
-                  <div
-                    className="px-6 py-3 border-b"
-                    style={{
-                      backgroundColor: `${alpha(themeColors.loss, '15')}`,
-                      borderColor: `${alpha(themeColors.loss, '30')}`
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <WarningCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
-                      <h3 className="font-semibold text-sm" style={{ color: themeColors.loss }}>
-                        Import Warnings ({csvPreview.parseResult.errors.length})
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {csvPreview.parseResult.errors.slice(0, 5).map((error, index) => (
-                        <div key={index} className="flex items-start gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: themeColors.loss }}></div>
-                          <p style={{ color: themeColors.loss }}>{error}</p>
-                        </div>
-                      ))}
-                      {csvPreview.parseResult.errors.length > 5 && (
-                        <p className="text-xs pl-4" style={{ color: themeColors.loss }}>
-                          + {csvPreview.parseResult.errors.length - 5} more errors...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {importPlan?.blockedReason && (
-                <div
-                  className="flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm flex-shrink-0"
-                  style={{ backgroundColor: alpha(themeColors.loss, '08'), borderColor: alpha(themeColors.loss, '20') }}
-                >
-                  <WarningCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: themeColors.loss }} />
-                  <span>{importPlan.blockedReason}</span>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex flex-col items-center gap-3 pt-4 border-t border-border flex-shrink-0">
-                <div className="text-sm text-muted-foreground">
-                  {importPlan?.blockedReason ? (
-                    <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
-                      <WarningCircle className="h-4 w-4" />
-                      Import blocked until the dates are right
-                    </span>
-                  ) : importPlan && importPlan.newTrades.length > 0 ? (
-                    <span className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
-                      Ready to import {importPlan.newTrades.length} trades
-                    </span>
-                  ) : csvPreview.parseResult.trades.length > 0 ? (
-                    <span className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" style={{ color: themeColors.profit }} />
-                      Every trade in this file is already imported
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2" style={{ color: themeColors.loss }}>
-                      <WarningCircle className="h-4 w-4" />
-                      No valid trades to import
-                    </span>
-                  )}
-                </div>
-
-                {!importPlan?.blockedReason && (
-                  <p className="hidden sm:block text-xs text-muted-foreground text-center">
-                    Already imported this file before? No worries — duplicate trades are automatically detected and skipped.
-                  </p>
-                )}
-
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCsvPreview({ show: false, file: null, parseResult: null })}
-                    className="hover:bg-muted"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleConfirmImport}
-                    disabled={csvUploadState.isUploading || !importPlan || importPlan.newTrades.length === 0 || !!importPlan.blockedReason}
-                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                    className="hover:opacity-90 shadow-lg px-6 font-medium"
-                  >
-                    {csvUploadState.isUploading ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Importing...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Import {importPlan?.newTrades.length ?? 0} Trades
-                      </span>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Progress Overlay */}
-      {importProgress.active && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="w-[90vw] max-w-sm rounded-xl border bg-card p-6 shadow-lg space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: themeColors.primary, borderTopColor: 'transparent' }} />
-              <p className="text-sm font-medium">{importProgress.phase}</p>
-            </div>
-            <Progress value={importProgress.percent} indicatorColor={themeColors.primary} />
-            <p className="text-xs text-muted-foreground text-right">{importProgress.percent}%</p>
-          </div>
-        </div>
-      )}
+      <ImportProgressOverlay
+        summary={importSummary}
+        onClose={() => {
+          setImportSummary(null)
+          const next = afterImportRef.current
+          afterImportRef.current = null
+          next?.()
+        }}
+      />
 
       </div>
       <AppFooter />
