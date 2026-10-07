@@ -78,7 +78,7 @@ const FIRMS: PropFirm[] = [
     market: 'Forex + Futures',
     blurb: 'Industry-leading prop firm with a two-step evaluation. Trade forex, indices, commodities, stocks, and crypto with up to $200K funding.',
     discount: '',
-    url: 'https://trader.ftmo.com/?affiliates=PYpnfPHLxoLexQHIwIhm',
+    url: 'https://join.ftmo.com/PYpnfPHLxoLexQHIwIhm',
     reviewUrl: '/ftmo-review',
   },
   {

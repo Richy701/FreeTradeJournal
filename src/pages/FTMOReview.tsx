@@ -125,7 +125,7 @@ export default function FTMOReview() {
               title="Track your FTMO challenge free"
               subtitle="Log your trades against the daily loss limit and profit target. No credit card."
               primary={{ label: 'Start free', to: '/signup' }}
-              secondary={{ label: 'Visit FTMO', href: 'https://trader.ftmo.com/?affiliates=PYpnfPHLxoLexQHIwIhm' }}
+              secondary={{ label: 'Visit FTMO', href: 'https://join.ftmo.com/PYpnfPHLxoLexQHIwIhm' }}
               related={[
                 { label: 'FTMO trading journal', to: '/ftmo-trading-journal' },
                 { label: 'View all prop firms', to: '/affiliate' },
