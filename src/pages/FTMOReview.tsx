@@ -9,26 +9,26 @@ import { ClosingCta } from '@/components/closing-cta';
 const PROS = [
   { title: 'Industry reputation', desc: 'Operating since 2010 with a proven track record and thousands of funded traders worldwide.' },
   { title: 'Up to $2M funding', desc: '$200K initial funding with a scaling plan up to $2M for consistent performers.' },
-  { title: 'Multi-asset trading', desc: 'Trade forex, indices, commodities, metals, and crypto on MT4, MT5, cTrader, or DXtrade.' },
+  { title: 'Multi-asset trading', desc: 'Trade forex, indices, commodities, metals, and crypto on MT4, MT5, cTrader, or DXtrade, plus CME futures through FTMO Futures.' },
   { title: '80--90% profit split', desc: '80% on two-step, 90% on one-step or via the scaling plan.' },
   { title: 'Free verification retake', desc: 'If you pass the challenge but fail verification, you get a free retake.' },
-  { title: 'Reliable payouts', desc: 'Bi-weekly payouts via bank transfer, Skrill, or crypto with a strong track record of on-time payments.' },
+  { title: 'Reliable payouts', desc: 'Payouts every 14 days or on demand via bank transfer, Skrill, or crypto, with a strong track record of on-time payments.' },
 ];
 
 const CONS = [
   { title: 'Two-step can be slow', desc: 'The standard two-step evaluation requires passing two phases, which takes longer than one-step alternatives.' },
   { title: 'Strict risk limits', desc: '5% max daily loss and 10% max overall loss with no exceptions.' },
   { title: 'Higher challenge fees', desc: 'Pricing is higher than some newer competitors, especially at the $100K+ account sizes.' },
-  { title: 'No futures contracts', desc: 'Despite supporting many asset classes, FTMO does not offer CME futures trading.' },
+  { title: 'Futures is a monthly subscription', desc: 'FTMO Futures evaluations are billed monthly for as long as you are in the evaluation, and the fee is not refunded when you pass.' },
 ];
 
 const FAQS = [
   { question: 'How does the FTMO challenge work?', answer: 'FTMO uses a two-step evaluation. Step 1 (Challenge) requires you to hit a 10% profit target within 30 days. Step 2 (Verification) requires 5% profit within 60 days. Both steps have a 5% daily loss limit and 10% max loss limit. Pass both and you get a funded account.' },
-  { question: 'How much does an FTMO challenge cost?', answer: 'Prices vary by account size. A $10K account starts around $155, $25K is $250, $50K is $345, $100K is $540, and $200K is $1,080. If you pass, the fee is refunded with your first profit split.' },
+  { question: 'How much does an FTMO challenge cost?', answer: 'FTMO prices in euros. The two-step Challenge runs from about €89 for $10K to €250 for $25K, €345 for $50K, around €499 for $100K and €1,080 for $200K. The one-step version is a little cheaper at most sizes. If you pass the two-step, the fee is refunded with your first payout.' },
   { question: 'What is the FTMO profit split?', answer: 'FTMO offers up to 90% profit split. New funded traders start at 80% and can scale to 90% based on consistent performance over time.' },
-  { question: 'Can I trade futures on FTMO?', answer: 'Yes. FTMO supports forex, indices, commodities, stocks, and crypto. However, most traders use FTMO for forex and indices. For dedicated futures trading, firms like Apex or Top One Futures may be a better fit.' },
+  { question: 'Can I trade futures on FTMO?', answer: 'Yes, since September 2026. FTMO Futures is a separate product with single-step Growth and Pro evaluations at $50K, $100K and $150K, billed as a monthly subscription, with an end-of-day trailing drawdown and a 90% profit split. The original FTMO Challenge covers forex, indices, commodities, stocks and crypto CFDs.' },
   { question: 'Does FTMO allow Expert Advisors (EAs)?', answer: 'Yes. FTMO allows automated trading with Expert Advisors and algorithmic strategies, as long as they comply with the trading rules (no HFT or latency arbitrage).' },
-  { question: 'How do FTMO payouts work?', answer: 'Payouts are processed bi-weekly (every 14 days). You can request a payout via bank transfer, Skrill, or crypto. The minimum payout is typically the equivalent of $20.' },
+  { question: 'How do FTMO payouts work?', answer: 'The default payout cycle is every 14 days, and you can also request a payout on demand once you are eligible. Payment methods are bank transfer, Skrill, or crypto.' },
   { question: 'Can I track my FTMO challenge with FreeTradeJournal?', answer: 'Yes. FreeTradeJournal has a dedicated Prop Firm Dashboard that tracks your evaluation progress, daily loss limits, max drawdown, and P&L. Import your trades via CSV from MT4/MT5 and the dashboard updates automatically.' },
 ];
 
@@ -67,7 +67,7 @@ export default function FTMOReview() {
 
             <div className="prose prose-sm dark:prose-invert max-w-none space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                FTMO is one of the most established proprietary trading firms in the industry, operating since 2010 out of Prague, Czech Republic. They offer funded accounts up to $200K across forex, indices, commodities, stocks, and crypto through a two-step evaluation process.
+                FTMO is one of the most established proprietary trading firms in the industry, operating since 2010 out of Prague, Czech Republic. They offer funded accounts up to $200K across forex, indices, commodities, stocks, and crypto through a one-step or two-step evaluation, and since September 2026 a separate FTMO Futures product for CME futures.
               </p>
               <p>
                 The FTMO Challenge requires traders to hit a 10% profit target within 30 days while staying within a 5% daily loss limit and 10% maximum loss. After passing, the Verification step requires 5% profit in 60 days with the same risk rules. Pass both and you trade a funded account with up to 90% profit split.

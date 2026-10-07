@@ -138,8 +138,8 @@ const pageMeta: Record<string, SEOMetaProps> = {
   },
   '/affiliate': {
     title: 'Prop Firm Discount Codes & Deals (2026) | FreeTradeJournal',
-    description: 'Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges. Verified discount codes updated for 2026.',
-    keywords: 'prop firm discount, prop firm coupon code, FTMO discount, The5ers discount, Apex trader funding deal, TopStep promo code, FundedNext coupon, prop firm affiliate, prop trading deals, best prop firm deals 2026, prop firm challenge discount, funded trader discount, prop firm promo codes'
+    description: 'Prop firm partner deals for traders. Save 5% on The5%ers with code ZBY34, plus partner links for FTMO and Top One Futures and a side-by-side comparison of evaluation rules and profit splits.',
+    keywords: 'prop firm discount, prop firm coupon code, FTMO discount, The5ers discount, prop firm affiliate, prop trading deals, best prop firm deals 2026, prop firm challenge discount, funded trader discount, prop firm promo codes'
   },
   '/tradezella-alternative': {
     title: 'TradeZella Alternative (2026): Free Trading Journal',

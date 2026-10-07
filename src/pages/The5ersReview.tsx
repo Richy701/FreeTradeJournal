@@ -19,15 +19,15 @@ const CONS = [
   { title: 'Lower starting split', desc: 'Instant funding starts at 50% profit split, lower than the 80% most competitors offer.' },
   { title: 'Tighter instant drawdown', desc: 'Instant funding accounts have stricter drawdown rules than evaluation-based accounts.' },
   { title: 'Slow scaling timeline', desc: 'Reaching $4M requires consistent monthly profits over many months.' },
-  { title: 'No CME futures', desc: 'Despite offering many asset classes, The5%ers does not support CME futures contracts.' },
+  { title: 'Futures is a separate program', desc: 'CME futures run through The5%ers Futures with its own accounts, platform, and rules, so you cannot mix futures and forex in one account.' },
 ];
 
 const FAQS = [
   { question: 'What is The5%ers instant funding?', answer: 'The5%ers instant funding lets you skip the evaluation entirely. You pay a one-time fee and get a live funded account immediately. The tradeoff is tighter risk limits and a lower starting balance, but you can scale up to $4M with consistent performance.' },
-  { question: 'How much does a The5%ers challenge cost?', answer: 'Pricing depends on the program. Instant funding starts around $39 for a small account. The Hyper Growth program (one-step evaluation) starts around $95 for a $25K account. Two-step evaluations are also available at various price points.' },
+  { question: 'How much does a The5%ers challenge cost?', answer: 'Pricing depends on the program. Bootcamp, the low-cost three-step route, starts at $39. Hyper Growth, the instant funding program, starts at $260 for a $5K account, $450 for $10K and $850 for $20K. High Stakes two-step evaluations run from about $22 for $5K up to $491 for $100K.' },
   { question: 'What is The5%ers profit split?', answer: 'Profit splits start at 50% for instant funding and scale up to 100% as you hit milestones. The evaluation-based programs start at 80% and can reach 100% at higher scaling levels.' },
-  { question: 'What can I trade on The5%ers?', answer: 'The5%ers supports forex pairs, metals (gold, silver), and major indices. They do not currently support futures, individual stocks, or crypto.' },
-  { question: 'How do The5%ers payouts work?', answer: 'Payouts are processed on a bi-weekly or monthly basis depending on your program. Payment methods include bank wire, PayPal, and crypto. There is no minimum payout amount for most programs.' },
+  { question: 'What can I trade on The5%ers?', answer: 'The5%ers supports forex pairs, metals, major indices, oil, and crypto CFDs on MT5 or cTrader. CME futures such as ES, NQ, YM and their micros are available through the separate The5%ers Futures program. Individual stocks are not offered.' },
+  { question: 'How do The5%ers payouts work?', answer: 'Payouts are processed on a bi-weekly or monthly basis depending on your program. Payment methods are bank wire, Rise, and crypto, with PayPal available in some regions.' },
   { question: 'Is The5%ers discount code ZBY34 legit?', answer: 'Yes. Code ZBY34 gives you 5% off your first challenge through the official FreeTradeJournal affiliate partnership. It works on all The5%ers programs.' },
   { question: 'Can I track my The5%ers account with FreeTradeJournal?', answer: 'Yes. Use the Prop Firm Dashboard to monitor your drawdown limits, daily P&L, and evaluation progress. Import trades via CSV and the dashboard tracks everything automatically.' },
 ];
@@ -70,7 +70,7 @@ export default function The5ersReview() {
                 The5%ers is a forex-focused prop firm founded in 2016 in Israel. They are known for their instant funding option, which lets traders skip the evaluation entirely and start trading a live funded account from day one. They also offer one-step and two-step evaluation programs.
               </p>
               <p>
-                What sets The5%ers apart is their scaling plan -- traders can grow their account up to $4M in funded capital with consistent performance. Profit splits start at 50% for instant funding and scale to 100% at the highest levels. They support forex pairs, metals, and indices.
+                What sets The5%ers apart is their scaling plan -- traders can grow their account up to $4M in funded capital with consistent performance. Profit splits start at 50% for instant funding and scale to 100% at the highest levels. They support forex pairs, metals, indices, oil, and crypto, with CME futures available through a separate futures program.
               </p>
               <p>
                 The5%ers has built a strong community and reputation for transparency. Their programs are designed for traders who want flexibility in how they get funded, whether that means proving themselves through an evaluation or jumping straight into live trading.

@@ -8,11 +8,11 @@ import { ClosingCta } from '@/components/closing-cta';
 
 const PROS = [
   { title: 'Futures-focused', desc: 'Built specifically for CME, CBOT, NYMEX, and COMEX traders -- not an afterthought.' },
-  { title: 'Multiple eval options', desc: '1-step, 2-step, 3-step, and instant sim funded programs to match your style.' },
-  { title: 'Up to $500K funding', desc: 'Larger maximum funding than most futures-only prop firms.' },
+  { title: 'Multiple account types', desc: 'Elite Daily and Elite Access evaluations, or skip the evaluation with Instant Sim Funded, S2F Sim Pro, and Ignite.' },
+  { title: 'Accounts up to $150K', desc: '$25K, $50K, $100K, and $150K sizes on every account type, and you can run several accounts at once.' },
   { title: 'No scaling requirements', desc: 'Keep your funded account without hitting monthly profit targets.' },
   { title: 'All major contracts', desc: 'Trade ES, NQ, YM, RTY, CL, GC, and more via ProjectX/Tradovate or NinjaTrader.' },
-  { title: '90% profit split', desc: 'Competitive split on all funded account types.' },
+  { title: '90% profit split', desc: 'Payouts every 14 days with a $250 minimum, usually processed within hours.' },
 ];
 
 const CONS = [
@@ -23,11 +23,11 @@ const CONS = [
 ];
 
 const FAQS = [
-  { question: 'What is Top One Futures?', answer: 'Top One Futures is a prop firm focused exclusively on futures trading. They offer multiple evaluation types -- 1-step, 2-step, 3-step, and instant sim funded -- for CME, CBOT, NYMEX, and COMEX products including ES, NQ, YM, CL, GC, and more. Accounts go up to $500K with a 90% profit split.' },
-  { question: 'How does the Top One Futures evaluation work?', answer: 'Top One Futures offers 1-step, 2-step, and 3-step evaluations, plus an instant sim funded option. Hit your profit target while staying within the daily loss limit and max trailing drawdown. Most accounts have no time limit, so you can trade at your own pace. Pass and you get a funded account.' },
+  { question: 'What is Top One Futures?', answer: 'Top One Futures is a prop firm focused exclusively on futures trading. They offer evaluation accounts (Elite Daily and Elite Access) and instant funding accounts (Instant Sim Funded, S2F Sim Pro, and Ignite) for CME, CBOT, NYMEX, and COMEX products including ES, NQ, YM, CL, GC, and more. Accounts come in $25K to $150K sizes with a 90% profit split.' },
+  { question: 'How does the Top One Futures evaluation work?', answer: 'The evaluation accounts are one phase. Elite Daily is a monthly subscription with no activation fee once you pass. Elite Access is a one-time fee with up to 30 days to pass and an activation fee before funding. Hit the profit target while staying inside the trailing drawdown and consistency rule and you move to a funded account. The instant accounts skip the evaluation entirely.' },
   { question: 'What futures contracts can I trade?', answer: 'You can trade all major CME Group products: E-mini S&P 500 (ES), E-mini Nasdaq (NQ), Dow (YM), Russell 2000 (RTY), Crude Oil (CL), Gold (GC), plus micro contracts, treasury bonds, and agricultural futures.' },
   { question: 'What is the profit split?', answer: 'Top One Futures offers up to 90% profit split on funded accounts across all program types.' },
-  { question: 'How do payouts work at Top One Futures?', answer: 'Payouts are processed after meeting minimum trading day requirements on your funded account. Payment methods include bank transfer and crypto. Payout frequency varies by account type.' },
+  { question: 'How do payouts work at Top One Futures?', answer: 'Payouts run every 14 calendar days with a $250 minimum and a 90% split, and are usually processed within a few hours. Each account type has a consistency rule that caps your best day as a share of total profit, from 15% on Ignite up to 40% on Elite Daily and Elite Access.' },
   { question: 'Can I use NinjaTrader or Tradovate?', answer: 'Yes. Top One Futures supports ProjectX/Tradovate and NinjaTrader for all account types.' },
   { question: 'Can I track my Top One Futures account with FreeTradeJournal?', answer: 'Yes. FreeTradeJournal supports CSV import from Tradovate and NinjaTrader. Use the Prop Firm Dashboard to track your evaluation progress, daily loss limits, and P&L in real time.' },
 ];
@@ -70,7 +70,7 @@ export default function TopOneFuturesReview() {
                 Top One Futures is a prop firm built specifically for futures traders. Unlike multi-asset firms that offer futures as an afterthought, Top One Futures focuses entirely on CME Group products -- ES, NQ, YM, RTY, CL, GC, and more.
               </p>
               <p>
-                They offer multiple evaluation options: 1-step, 2-step, 3-step, and instant sim funded programs. Hit your profit target while staying within the drawdown rules and you get funded with accounts up to $500K. There are no scaling requirements to maintain your account, which means less pressure on funded traders.
+                Since the Top One 2.0 relaunch in August 2026 there are two routes in: one-phase evaluations (Elite Daily, Elite Access) or instant funding (Instant Sim Funded, S2F Sim Pro, Ignite). Every account type comes in $25K, $50K, $100K, and $150K sizes. There are no scaling requirements to maintain your account, which means less pressure on funded traders.
               </p>
               <p>
                 Top One Futures supports trading via ProjectX/Tradovate and NinjaTrader. With a 90% profit split and flexible evaluation paths, they are a strong choice for futures day traders and scalpers who want a focused platform without the noise of forex or stocks.

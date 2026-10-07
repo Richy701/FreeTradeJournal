@@ -264,7 +264,7 @@ export function StructuredData({ type = 'WebPage', title, description }: Structu
         "@context": "https://schema.org",
         "@type": "WebPage",
         "name": "Best Prop Firm Deals & Discounts (2026)",
-        "description": "Exclusive prop firm discounts and affiliate deals. Save on FTMO, The5%ers, Apex, TopStep, and FundedNext challenges.",
+        "description": "Prop firm partner deals for traders. Save 5% on The5%ers with code ZBY34, plus partner links for FTMO and Top One Futures.",
         "url": `${baseUrl}${currentPath}`,
         "breadcrumb": {
           "@type": "BreadcrumbList",

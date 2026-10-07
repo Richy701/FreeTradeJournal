@@ -33,7 +33,7 @@ const AFFILIATE_FAQS = [
   },
   {
     question: 'What markets do these prop firms support?',
-    answer: 'It depends on the firm. FTMO and FundedNext support forex, indices, commodities, stocks, and crypto. Apex and Top One Futures focus exclusively on CME futures (ES, NQ, CL, GC). The5%ers covers forex, metals, and indices. Check each firm\'s page for the full instrument list.',
+    answer: 'It depends on the firm. FTMO and FundedNext support forex, indices, commodities, stocks, and crypto, and FTMO now has a separate futures product. Apex and Top One Futures focus exclusively on CME futures (ES, NQ, CL, GC). The5%ers covers forex, metals, indices, oil, and crypto, with CME futures through its own futures program. Check each firm\'s page for the full instrument list.',
   },
   {
     question: 'How do prop firm payouts work?',
@@ -41,7 +41,7 @@ const AFFILIATE_FAQS = [
   },
   {
     question: 'Will more prop firms be added?',
-    answer: 'Yes. We are actively negotiating partnerships with additional firms. If there is a specific prop firm you would like to see listed, let us know via the Telegram community.',
+    answer: 'Yes. We are actively negotiating partnerships with additional firms. If there is a specific prop firm you would like to see listed, email support@freetradejournal.com.',
   },
 ];
 
@@ -377,8 +377,8 @@ export default function Affiliate() {
                   <tr className="hover:bg-muted/20 transition-colors">
                     <td className="py-3 px-4"><span className="inline-flex items-center rounded-md bg-zinc-950 dark:bg-transparent px-2 py-1 dark:p-0"><img src="/images/partners/toponetrader.svg" alt="Top One Futures" className="h-8 max-w-[5rem] object-contain" /></span></td>
                     <td className="py-3 px-4 text-muted-foreground">CME Futures</td>
-                    <td className="py-3 px-4 text-muted-foreground">1-step / 2-step / 3-step / Instant</td>
-                    <td className="py-3 px-4 text-muted-foreground">$500K</td>
+                    <td className="py-3 px-4 text-muted-foreground">1-step / Instant</td>
+                    <td className="py-3 px-4 text-muted-foreground">$150K per account</td>
                     <td className="py-3 px-4 text-muted-foreground">90%</td>
                   </tr>
                   <tr className="hover:bg-muted/20 transition-colors">
