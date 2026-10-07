@@ -58,6 +58,10 @@ interface PropFirm {
   code?: string;
   url: string;
   reviewUrl?: string;
+  /** Journal guide page for the firm, shown when there is no review. */
+  guideUrl?: string;
+  /** False for firms we link to without a partnership: no sponsored rel, no commission. */
+  affiliate?: boolean;
 }
 
 const FIRMS: PropFirm[] = [
@@ -89,7 +93,9 @@ const FIRMS: PropFirm[] = [
     market: 'Forex',
     blurb: 'Get funded up to $4M with profit sharing from day one of your challenge. Multiple evaluation models and 90% profit split on funded accounts.',
     discount: '',
-    url: '',
+    url: 'https://fundednext.com/',
+    guideUrl: '/fundednext-trading-journal',
+    affiliate: false,
   },
   {
     id: 'top-one-futures',
@@ -108,7 +114,9 @@ const FIRMS: PropFirm[] = [
     market: 'Futures',
     blurb: 'One-step evaluation for futures traders. No daily drawdown, trade full-sized contracts, and keep 100% of your first $25K in profits.',
     discount: '',
-    url: '',
+    url: 'https://apextraderfunding.com/',
+    guideUrl: '/apex-trading-journal',
+    affiliate: false,
   },
 ];
 
@@ -208,6 +216,11 @@ function FirmRow({ firm }: { firm: PropFirm }) {
                 Read full review →
               </Link>
             )}
+            {!firm.reviewUrl && firm.guideUrl && (
+              <Link to={firm.guideUrl} className="text-xs text-amber-500 hover:underline font-medium mt-1.5 inline-block">
+                Journal guide →
+              </Link>
+            )}
           </div>
 
           {/* Deal + CTA */}
@@ -230,9 +243,9 @@ function FirmRow({ firm }: { firm: PropFirm }) {
               <a
                 href={firm.url}
                 target="_blank"
-                rel="noopener noreferrer sponsored"
+                rel={firm.affiliate === false ? 'noopener noreferrer' : 'noopener noreferrer sponsored'}
                 className="w-full"
-                onClick={() => trackEvent('affiliate_link_clicked', { source: 'affiliate_page', partner: firm.id })}
+                onClick={() => trackEvent('affiliate_link_clicked', { source: 'affiliate_page', partner: firm.id, affiliate: firm.affiliate !== false })}
               >
                 <Button className="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
                   Visit {firm.name}
