@@ -9,6 +9,7 @@ import { MarketingHeader } from '@/components/marketing-header';
 import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { ArrowSquareOut, Copy, Check } from '@phosphor-icons/react';
+import { trackEvent } from '@/lib/analytics';
 
 const AFFILIATE_FAQS = [
   {
@@ -142,11 +143,12 @@ const APPS: PropFirm[] = [
   },
 ];
 
-function CopyButton({ code }: { code: string }) {
+function CopyButton({ code, partner }: { code: string; partner: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
+    trackEvent('affiliate_code_copied', { source: 'affiliate_page', partner, code });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -218,7 +220,7 @@ function FirmRow({ firm }: { firm: PropFirm }) {
                 {firm.code && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Code:</span>
-                    <CopyButton code={firm.code} />
+                    <CopyButton code={firm.code} partner={firm.id} />
                   </div>
                 )}
               </div>
@@ -230,6 +232,7 @@ function FirmRow({ firm }: { firm: PropFirm }) {
                 target="_blank"
                 rel="noopener noreferrer sponsored"
                 className="w-full"
+                onClick={() => trackEvent('affiliate_link_clicked', { source: 'affiliate_page', partner: firm.id })}
               >
                 <Button className="w-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
                   Visit {firm.name}

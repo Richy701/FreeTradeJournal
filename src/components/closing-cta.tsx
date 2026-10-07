@@ -3,6 +3,23 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowSquareOut } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { trackEvent } from '@/lib/analytics';
+
+// Outbound partner links fire the same event as the in-app deal banners, so
+// one PostHog insight shows every route to a partner site.
+function trackOutbound(href: string) {
+  let partner = href;
+  try {
+    partner = new URL(href).hostname.replace(/^www\./, '');
+  } catch {
+    // leave the raw href as the partner label
+  }
+  trackEvent('affiliate_link_clicked', {
+    source: 'closing_cta',
+    partner,
+    page: typeof window !== 'undefined' ? window.location.pathname : undefined,
+  });
+}
 
 // The block that closes every marketing page before its FAQ: one plain
 // heading, one line, a standard primary button and an optional outline button,
@@ -26,7 +43,7 @@ export function ClosingCta({ title, subtitle, primary, secondary, related = [] }
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg">
             {primary.href ? (
-              <a href={primary.href} target="_blank" rel="noopener noreferrer sponsored">
+              <a href={primary.href} target="_blank" rel="noopener noreferrer sponsored" onClick={() => trackOutbound(primary.href!)}>
                 {primary.label}
                 <ArrowSquareOut className="ml-2 h-4 w-4" />
               </a>
@@ -39,7 +56,7 @@ export function ClosingCta({ title, subtitle, primary, secondary, related = [] }
           </Button>
           {secondary && (
             <Button asChild variant="outline" size="lg">
-              <a href={secondary.href} target="_blank" rel="noopener noreferrer sponsored">
+              <a href={secondary.href} target="_blank" rel="noopener noreferrer sponsored" onClick={() => trackOutbound(secondary.href)}>
                 {secondary.label}
                 <ArrowSquareOut className="ml-2 h-4 w-4" />
               </a>
