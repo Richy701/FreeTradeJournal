@@ -22,38 +22,19 @@ export const LIFETIME_RETIRES_AT = Date.parse('2026-08-07T23:59:59Z');
 // through. The list price in PRICING_PLANS stays canonical.
 export const FOUNDER_LIFETIME_PRICE = 149;
 
-// Lifetime drop, 25 Sep to 2 Oct 2026. Lifetime comes back for exactly one
-// week at a drop price, then goes again. Announced a day early with the price
-// withheld; the drop page (/lifetime-drop) counts down to the open and flips
-// itself to the offer at 9:30 AM New York. Checkout auto-applies FTJDROP
-// server-side during the window; the Stripe code expires at the same instant
-// so a stale tab cannot buy it late.
-// Deliberately NOT tied to LIFETIME_RETIRES_AT, which also gates the no-card
-// signup trial and the plan-changes notice: those must not reopen.
-export const LIFETIME_DROP_STARTS_AT = Date.parse('2026-09-25T13:30:00Z'); // Fri 9:30 AM New York
-export const LIFETIME_DROP_ENDS_AT = Date.parse('2026-10-03T03:59:59Z'); // Fri 11:59 PM New York
-export const LIFETIME_DROP_PRICE = 199;
-export const LIFETIME_DROP_PROMO_CODE = 'FTJDROP';
-
-export type LifetimeDropPhase = 'before' | 'open' | 'closed';
-
-export const lifetimeDropPhase = (now = Date.now()): LifetimeDropPhase =>
-  now < LIFETIME_DROP_STARTS_AT ? 'before' : now <= LIFETIME_DROP_ENDS_AT ? 'open' : 'closed';
-
-export const isLifetimeDropWindow = (now = Date.now()) => lifetimeDropPhase(now) === 'open';
-
 // True whenever a new lifetime purchase is allowed. Mirror of the guard in
-// functions/src/index.ts createCheckoutSession.
-export const isLifetimeOnSale = (now = Date.now()) =>
-  now < LIFETIME_RETIRES_AT || isLifetimeDropWindow(now);
+// functions/src/index.ts createCheckoutSession. The two one-week returns
+// (birthday week 28 Aug to 4 Sep, drop week 25 Sep to 2 Oct 2026) are over
+// and their code is gone; a future return is a new window here, in index.ts
+// and in the Stripe promotion code.
+export const isLifetimeOnSale = (now = Date.now()) => now < LIFETIME_RETIRES_AT;
 
 // When the current lifetime sale closes; feeds the pricing-page countdown.
-export const lifetimeSaleEndsAt = (now = Date.now()) =>
-  now < LIFETIME_RETIRES_AT ? LIFETIME_RETIRES_AT : LIFETIME_DROP_ENDS_AT;
+export const lifetimeSaleEndsAt = () => LIFETIME_RETIRES_AT;
 
 // What the lifetime card charges right now (list price when no offer is on).
 export const currentLifetimePrice = (now = Date.now()) =>
-  now < LIFETIME_RETIRES_AT ? FOUNDER_LIFETIME_PRICE : isLifetimeDropWindow(now) ? LIFETIME_DROP_PRICE : 249;
+  now < LIFETIME_RETIRES_AT ? FOUNDER_LIFETIME_PRICE : 249;
 
 // The values stored in Vercel have been observed with trailing newlines, which
 // Stripe rejects as invalid price IDs — always trim.

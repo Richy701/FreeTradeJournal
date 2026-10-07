@@ -103,12 +103,6 @@ const pageMeta: Record<string, SEOMetaProps> = {
     description: 'Free forever with unlimited trades, analytics, and CSV import. Upgrade to Pro for AI coaching, cloud sync, and advanced exports. Plans from $12.99/mo.',
     keywords: 'trading journal pricing, free trading journal, pro trading tools, AI trading coach, trading analytics subscription, trade analysis pricing'
   },
-  '/lifetime-drop': {
-    title: 'Lifetime Pro Is Back for One Week: $199 Once',
-    description: 'Lifetime Pro is $199 instead of $249 for one week from Friday 25 September, 9:30 AM New York. Pay once, keep every Pro feature. Closes Friday 2 October.',
-    keywords: 'FreeTradeJournal lifetime, lifetime trading journal, trading journal lifetime deal, one-time payment trading journal',
-    image: 'https://www.freetradejournal.com/og-lifetime-drop.png'
-  },
   '/forex-trading-journal': {
     // Full value prop fits inside Google's ~60-char display cutoff — the page
     // was ranking pos 9 with 0.17% CTR on a generic title

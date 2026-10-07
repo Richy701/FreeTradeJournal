@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Item, ItemActions, ItemGroup, ItemSeparator, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
-import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, isLifetimeDropWindow, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
+import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
@@ -42,7 +42,7 @@ function LifetimeCountdown() {
     return () => clearInterval(id);
   }, []);
 
-  const remaining = lifetimeSaleEndsAt(now) - now;
+  const remaining = lifetimeSaleEndsAt() - now;
   if (remaining <= 0 || !isLifetimeOnSale(now)) return null;
 
   const segments = [
@@ -320,7 +320,6 @@ export default function Pricing() {
   // checkout Cloud Function rejects the price, so stale tabs can't buy it.
   // Existing lifetime owners keep their plan (their card renders as current).
   const lifetimeAvailable = isLifetimeOnSale() || currentPlan === 'lifetime';
-  const dropWeek = isLifetimeDropWindow();
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -416,7 +415,7 @@ export default function Pricing() {
               name="Pro Lifetime"
               price={currentLifetimePrice()}
               originalPrice={currentLifetimePrice() < lifetimePlan.price ? lifetimePlan.price : undefined}
-              subtitle={dropWeek ? 'One-time drop price · yours forever' : 'One-time founding price · yours forever'}
+              subtitle="One-time founding price · yours forever"
               description="Never pay again"
               features={lifetimePlan.features}
               cta="Get Lifetime Access"

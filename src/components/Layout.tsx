@@ -6,7 +6,6 @@ import { MobileHeader } from '@/components/mobile-header';
 import { DemoBanner } from '@/components/demo-banner';
 import { FounderOfferAnnouncement } from '@/components/founder-offer-announcement';
 import { LifetimeFarewellDialog } from '@/components/lifetime-farewell-dialog';
-import { LifetimeDropStrip } from '@/components/lifetime-drop-strip';
 import { PlanChangesDialog } from '@/components/plan-changes-dialog';
 import { ThemeSettingsSync } from '@/components/theme-settings-sync';
 import { RiskBreachMonitor } from '@/components/risk-breach-monitor';
@@ -50,7 +49,6 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
       >
         <DemoBanner />
         <FounderOfferAnnouncement />
-        <LifetimeDropStrip />
         <MobileHeader />
         <motion.main
           id="main-content"

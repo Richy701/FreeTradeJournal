@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/lifetime-drop",
+      "destination": "/pricing",
+      "statusCode": 301
+    },
+    {
       "source": "/online-trading-journal",
       "destination": "/",
       "statusCode": 301
