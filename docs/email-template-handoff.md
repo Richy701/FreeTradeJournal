@@ -1,16 +1,16 @@
 # Resend email template handoff
 
-The current local email design and copy have been approved by the user. Update matching Resend templates with this version, preserving live personalization and automation wiring. This handoff does not authorize sending emails or deploying application code.
+The user approved keeping the callout bars, approved the updated seven-email inbox test pack, and authorized the coordinated rollout on 13 October 2026. Follow [the current rollout procedure](email-rollout.md). This approval does not authorize separate campaigns or extra test sends.
 
 ## Source and preview
 
 - Source: `functions/src/emails/` (TypeScript React Email components).
 - Shared layout and spacing: `components.tsx`.
 - Prices, feature limits and public URLs: `facts.ts`.
-- Local visual gallery: `/tmp/ftj-email-designs/index.html`.
+- Local visual gallery: `/tmp/ftj-email-review/index.html`.
 - Render fresh HTML from source. The gallery HTML contains preview values and embedded images and must not be uploaded.
 - Preserve the white/charcoal design, sans-serif headings, amber buttons and official product images. The weekly recap has a 16px empty-state heading-to-body gap and consistent content/stat gutters.
-- Latest subject copy is in `functions/src/index.ts`; subjects are not part of rendered template HTML.
+- Entry/support/review subjects are shared in `functions/src/onboarding-emails.ts`; other application subjects are in `functions/src/index.ts`. Subjects are not part of rendered template HTML.
 
 ## Hosted mappings documented in source
 
@@ -26,15 +26,15 @@ Verified 14 September 2026 against the live Resend account: all seven templates 
 
 ## Subjects
 
-Each subject lives in up to three places and must be kept identical: the automation step (which overrides the template), the hosted template, and the Cloud Function fallback in `functions/src/index.ts` for the day 3/7/14/21 emails. The activation emails have no Cloud Function fallback. Aligned 14 September 2026:
+The automation step overrides the hosted template subject. The October rollout updates both entry/support subjects from the shared constants used by the Cloud Function fallbacks. The table below is the proposed copy; it is not a claim that the live account has been updated. The September verification above is historical.
 
 | Alias | Subject |
 | --- | --- |
 | `activation-ai-grade` | Review your next trade with Coach FTJ |
-| `day-3-nudge` | How to add your first trade |
+| `day-3-nudge` | Add one trade or import your history |
 | `activation-import` | Import your trading history from a CSV |
 | `activation-proof` | See your win rate and results by setup |
-| `day-7-nudge` | Have you logged your first trade yet? |
+| `day-7-nudge` | Need a hand with your trading journal? |
 | `day-14-upgrade` | What’s included in FreeTradeJournal Pro |
 | `day-21-backup` | How to back up your trading journal |
 

@@ -11,7 +11,7 @@ interface TrialStartedEmailProps {
 const steps = [
   'Log a trade or import your broker CSV — your data powers everything else.',
   'Open Coach FTJ and get your first AI trade review.',
-  'Turn on cloud sync in Settings so nothing lives only in one browser.',
+  'Cloud sync is automatic. Check its status in Settings.',
 ]
 
 export function TrialStartedEmail({ firstName, trialEndDate, unsubscribeUrl }: TrialStartedEmailProps) {
@@ -23,11 +23,12 @@ export function TrialStartedEmail({ firstName, trialEndDate, unsubscribeUrl }: T
       <Section className="email-content" style={styles.content}>
         <Eyebrow>{TRIAL_DAYS}-day free trial</Eyebrow>
         <Heading style={styles.h1}>
-          {firstName ? `Your trial has started, ${firstName}.` : 'Your trial has started.'}
+          Your Pro trial starts now!
         </Heading>
         <Text style={styles.paragraph}>
-          Every Pro feature is unlocked until <strong style={styles.strong}>{trialEndDate}</strong>. No charge until then — and you can cancel anytime from Settings.
+          {firstName ? `${firstName}, every` : 'Every'} Pro feature is unlocked until <strong style={styles.strong}>{trialEndDate}</strong>. Try a trade review and check your goals with Coach FTJ. Cloud sync keeps your journal available across devices automatically.
         </Text>
+        <Text style={styles.paragraph}><strong style={styles.strong}>No charge until your trial ends.</strong> To avoid a charge, cancel before {trialEndDate} in Settings → Subscription.</Text>
         <EmailButton href={URLS.dashboard}>Go to your dashboard</EmailButton>
       </Section>
 

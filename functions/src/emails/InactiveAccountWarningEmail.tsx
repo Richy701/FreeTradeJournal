@@ -2,7 +2,7 @@
 // inactive account is removed. Sent to everyone in scope regardless of
 // marketing opt-out: it is about their account, not a promotion.
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, NumberedSteps, styles } from './components'
+import { EmailShell, EmailButton, NumberedSteps, ActionNote, styles } from './components'
 import { BASE_URL, URLS } from './facts'
 
 interface InactiveAccountWarningEmailProps {
@@ -16,9 +16,7 @@ interface InactiveAccountWarningEmailProps {
 }
 
 export function InactiveAccountWarningEmail({ firstName, deleteDate, final, hasTrades }: InactiveAccountWarningEmailProps) {
-  const heading = final
-    ? (firstName ? `${firstName}, your account is removed on ${deleteDate}.` : `Your account is removed on ${deleteDate}.`)
-    : (firstName ? `${firstName}, your account has been quiet for a while.` : 'Your account has been quiet for a while.')
+  const heading = final ? 'Final reminder: keep your account.' : 'Want to keep your account?'
 
   const steps = hasTrades
     ? [
@@ -36,13 +34,12 @@ export function InactiveAccountWarningEmail({ firstName, deleteDate, final, hasT
       <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>{heading}</Heading>
         <Text style={styles.paragraph}>
-          {final
-            ? `This is the last reminder. If you do not sign in by ${deleteDate}, your FreeTradeJournal account and everything stored with it will be deleted.`
-            : `You have not signed in to FreeTradeJournal for a long time. If that does not change by ${deleteDate}, the account and everything stored with it will be deleted.`}
+          {firstName ? `${firstName}, you` : 'You'} haven’t signed in for a long time. <strong style={styles.strong}>Signing in once is all it takes to keep your account.</strong>
         </Text>
+        <ActionNote title={`Sign in before ${deleteDate}.`} urgent>{final && <strong style={styles.strong}>This is your last reminder. </strong>}If you do not sign in by that date, <strong style={styles.strong}>your account and everything stored with it will be deleted.</strong></ActionNote>
         {hasTrades ? (
           <Text style={styles.paragraph}>
-            Your journal is stored on the device you used, locked to this account. Once the account is gone it cannot be opened again, so save a backup first if you want to keep it.
+            Your journal is stored on the device you used, locked to this account. <strong style={styles.strong}>Once the account is gone, that journal cannot be opened again.</strong> Save a backup first if you want to keep it.
           </Text>
         ) : null}
         <EmailButton href={`${BASE_URL}/login`}>Sign in to keep my account</EmailButton>

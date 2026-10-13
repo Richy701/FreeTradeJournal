@@ -22,6 +22,7 @@ export const URLS = {
   dashboard: `${BASE_URL}/dashboard`,
   trades: `${BASE_URL}/trades`,
   coach: `${BASE_URL}/coach`,
+  insights: `${BASE_URL}/ideas`,
   pricing: `${BASE_URL}/pricing`,
   settings: `${BASE_URL}/settings`,
   subscription: `${BASE_URL}/settings?tab=subscription`,

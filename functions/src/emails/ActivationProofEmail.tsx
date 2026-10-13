@@ -3,8 +3,8 @@
 // scripts/push-resend-templates.ts, which renders it with firstName '' so the
 // headline is the plain form (Resend passes blank contact names through as "").
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, FeatureList, styles } from './components'
-import { URLS } from './facts'
+import { EmailShell, EmailButton, FeatureList, ProductPreview, styles } from './components'
+import { BASE_URL, URLS } from './facts'
 
 interface ActivationProofEmailProps {
   firstName: string
@@ -20,16 +20,20 @@ const reveals = [
 export function ActivationProofEmail({ firstName, unsubscribeUrl }: ActivationProofEmailProps) {
   return (
     <EmailShell
-      preview="Keep a record of your trades and see the patterns for yourself."
+      preview="Look past a single win or loss. Compare the setups you’ve recorded."
       unsubscribeUrl={unsubscribeUrl}
     >
       <Section className="email-content" style={styles.content}>
-        <Heading style={styles.h1}>{firstName ? `${firstName}, review your trading results.` : 'Review your trading results.'}</Heading>
+        <Heading style={styles.h1}>Which setups deserve another look?</Heading>
         <Text style={styles.paragraph}>
-          Add your trades to compare results by setup and check your win rate. Include your notes so you can revisit why you took each trade.
+          {firstName ? `${firstName}, a` : 'A'} memorable winner can feel more important than it really is. Your journal lets you look at <strong style={styles.strong}>the trades around it, too.</strong>
         </Text>
-        <EmailButton href={URLS.trades}>Start my journal</EmailButton>
+        <Text style={styles.paragraph}>Compare results by setup, check your win rate and read the notes behind the trades. Ask: <strong style={styles.strong}>“Am I repeating a sound decision, or just remembering a good result?”</strong></Text>
+        <Text style={styles.fine}>Still building your history? Keep logging. A small number of trades is a starting point, not proof that a setup works.</Text>
+        <EmailButton href={URLS.insights}>Review my setups</EmailButton>
       </Section>
+
+      <ProductPreview src={`${BASE_URL}/screenshots/tag-performance.png`} alt="Trade Insights tables comparing tagged setups and the cost of recorded mistakes" caption="Compare tagged setups and mistakes in Trade Insights. Demo shown." />
 
       <Hr style={styles.divider} />
 

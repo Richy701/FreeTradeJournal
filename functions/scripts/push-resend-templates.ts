@@ -47,7 +47,7 @@ const UNSUBSCRIBE_TAG = '{{{RESEND_UNSUBSCRIBE_URL}}}'
 const ALLOWED_TAGS = new Set([UNSUBSCRIBE_TAG])
 
 type Props = { firstName: string; unsubscribeUrl?: string }
-const TEMPLATES: { alias: string; component: (props: Props) => React.ReactElement }[] = [
+export const TEMPLATES: { alias: string; component: (props: Props) => React.ReactElement }[] = [
   { alias: 'activation-ai-grade', component: ActivationAiGradeEmail },
   { alias: 'day-3-nudge', component: Day3NudgeEmail },
   { alias: 'activation-import', component: ActivationImportEmail },
@@ -67,7 +67,7 @@ function assertOnlyAllowedTags(alias: string, kind: string, content: string) {
   if (/^\s*,/m.test(content.replace(/<[^>]+>/g, '\n'))) throw new Error(`${alias} ${kind}: text starts with a comma (empty greeting)`)
 }
 
-async function renderTemplate(t: (typeof TEMPLATES)[number]) {
+export async function renderTemplate(t: (typeof TEMPLATES)[number]) {
   // firstName '' → every component renders its plain headline (no greeting).
   const element = React.createElement(t.component, { firstName: '', unsubscribeUrl: UNSUBSCRIBE_TAG })
   const html = await render(element)
@@ -113,7 +113,7 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+if (require.main === module) main().catch((err) => {
   console.error(err)
   process.exit(1)
 })

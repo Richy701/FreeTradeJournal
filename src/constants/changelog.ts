@@ -26,6 +26,24 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.99.0',
+    date: '2026-10-13',
+    summary: 'Clearer emails, fewer getting-started reminders and easier-to-read weekly results.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Emails that feel like your journal',
+        description: 'Welcome messages, account updates and weekly recaps now have clearer headings, useful product screenshots and layouts that fit your phone. Getting-started reminders focus on adding your trades and finding help, with a follow-up to review a trade once you have started.',
+      },
+      {
+        type: 'improved',
+        text: 'Weekly results keep currencies separate',
+        description: 'Your weekly recap shows profit and loss and best trades separately for each currency, with gains in green and losses in red. Weeks without trades have a clear, useful recap too.',
+      },
+    ],
+  },
+  {
     version: '2.98.0',
     date: '2026-10-01',
     summary: 'Profit Factor gets its own card in the Trade Log, and follows your filters.',
@@ -3518,4 +3536,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.98.0'
+export const LATEST_CHANGELOG_VERSION = '2.99.0'

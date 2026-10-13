@@ -8,8 +8,8 @@ export function MonthlyRoundupEmail({ content, unsubscribeUrl }: { content: Roun
   return <EmailShell preview={content.preview} unsubscribeUrl={unsubscribeUrl}>
     <Section className="email-content" style={styles.content}>
       <SectionLabel>{monthLabel(content.month)}</SectionLabel>
-      <Heading style={styles.h1}>What’s new in your journal</Heading>
-      <Text style={styles.paragraph}>Here are this month’s updates to FreeTradeJournal.</Text>
+      <Heading style={styles.h1}>What’s new in FreeTradeJournal</Heading>
+      <Text style={styles.paragraph}><strong style={styles.strong}>{content.features.length} {content.features.length === 1 ? 'update' : 'updates'} to explore this month.</strong> Find what’s useful for your trading below, with a link to try each feature where available.</Text>
       <EmailButton href={`${BASE_URL}/changelog`}>See all updates</EmailButton>
     </Section>
     {content.features.map(feature => <Section key={feature.id}>

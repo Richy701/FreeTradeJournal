@@ -1,5 +1,5 @@
 import { Section, Text, Heading, Link } from '@react-email/components'
-import { EmailShell, EmailButton, styles, tone } from './components'
+import { EmailShell, EmailButton, ActionNote, styles, tone } from './components'
 
 interface PasswordResetEmailProps {
   resetLink: string
@@ -11,8 +11,9 @@ export function PasswordResetEmail({ resetLink }: PasswordResetEmailProps) {
       <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>Reset your password</Heading>
         <Text style={styles.paragraph}>
-          We received a request to reset the password for your FreeTradeJournal account. Click the button below to choose a new one.
+          We received a password reset request for your FreeTradeJournal account. <strong style={styles.strong}>Choose a new password</strong> using the button below.
         </Text>
+        <ActionNote title="Use this link within 1 hour." urgent>After it expires, you’ll need to request another reset link.</ActionNote>
         <EmailButton href={resetLink}>Reset password</EmailButton>
         <Text style={styles.fine}>
           If the button doesn't work, copy this link into your browser:
@@ -22,7 +23,7 @@ export function PasswordResetEmail({ resetLink }: PasswordResetEmailProps) {
           </Link>
         </Text>
         <Text style={styles.fine}>
-          This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email — your password will not change.
+          <strong style={styles.strong}>Didn’t request this?</strong> You can safely ignore this email. Your password will not change unless you complete the reset.
         </Text>
       </Section>
     </EmailShell>

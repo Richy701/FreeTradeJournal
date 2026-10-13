@@ -9,34 +9,30 @@ interface Day14UpgradeEmailProps {
 }
 
 const proFeatures = [
-  { label: 'AI Trade Review', desc: 'Review what worked and what to improve in a trade.' },
-  { label: 'PropTracker AI Analysis', desc: 'Review performance across your prop firm accounts.' },
-  { label: 'AI Goal Coach', desc: 'Get coaching based on your goals and trading record.' },
-  { label: 'Cloud Sync', desc: 'Keep your journal backed up across devices.' },
+  { label: 'Review a decision', desc: 'Use AI Trade Review to examine a logged trade and identify points worth revisiting.' },
+  { label: 'Review your prop accounts', desc: 'Bring your recorded account performance into PropTracker AI Analysis.' },
+  { label: 'Connect results to goals', desc: 'Use AI Goal Coach to review your trading record against the goals you set.' },
+  { label: 'Keep your journal with you', desc: 'Cloud sync gives you access to your journal across devices.' },
 ]
 
 export function Day14UpgradeEmail({ firstName, tradeCount, unsubscribeUrl }: Day14UpgradeEmailProps) {
-  const tradeLabel = tradeCount && tradeCount > 1
-    ? `${tradeCount} trades`
-    : 'your trades'
-
   return (
     <EmailShell
-      preview="Pro includes additional AI coaching and cloud sync."
+      preview="More coaching when you want a review. Cloud sync when you switch devices."
       unsubscribeUrl={unsubscribeUrl}
     >
       <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          What’s included in Pro
+          Ready to get more from your journal?
         </Heading>
         <Text style={styles.paragraph}>
-          {firstName ? `${firstName}, you` : 'You'} have started recording {tradeLabel}. If you want to access your journal on other devices, Pro includes cloud sync.
+          {firstName ? `${firstName}, if` : 'If'} you want more help reviewing your trading, <strong style={styles.strong}>Pro adds coaching for trades, goals and prop firm accounts.</strong> It also keeps your journal in sync across devices.
         </Text>
         <Text style={styles.paragraph}>
-          It also includes more AI coaching for trade reviews, goals and prop firm accounts.
+          {tradeCount !== undefined && tradeCount > 0 ? <>You’ve recorded <strong style={styles.strong}>{tradeCount} {tradeCount === 1 ? 'trade' : 'trades'}</strong>. Use that history as the starting point for a review.</> : <>Start with the problem you want to solve: <strong style={styles.strong}>a trade you want to understand, a goal you want to review, or a journal you need on another device.</strong></>}
         </Text>
-        <EmailButton href={URLS.pricing}>See Pro features</EmailButton>
-        <Text style={styles.fine}>Pro is {PRICE_MONTHLY} or {PRICE_YEARLY}. Cancel anytime.</Text>
+        <EmailButton href={URLS.pricing}>Compare Pro plans</EmailButton>
+        <Text style={styles.fine}><strong style={styles.strong}>{PRICE_MONTHLY}</strong> or <strong style={styles.strong}>{PRICE_YEARLY}</strong>. Your subscription starts when you upgrade. Cancel anytime.</Text>
       </Section>
 
       <ProductPreview src={`${BASE_URL}/screenshots/proptracker-coach-tab.png`} alt="PropTracker account analysis" caption="PropTracker account analysis" />

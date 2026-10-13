@@ -1,5 +1,5 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, NumberedSteps, styles } from './components'
+import { EmailShell, EmailButton, NumberedSteps, ActionNote, styles } from './components'
 import { URLS, PRICE_MONTHLY } from './facts'
 
 interface Day21BackupEmailProps {
@@ -20,14 +20,12 @@ export function Day21BackupEmail({ firstName, unsubscribeUrl }: Day21BackupEmail
     >
       <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, keep your journal safe.` : 'Keep your journal safe.'}
+          Before you clear your browser: back up.
         </Heading>
         <Text style={styles.paragraph}>
-          On the free plan, your journal is stored in this browser. If you have not saved a backup recently, now is a good time.
+          {firstName ? `${firstName}, on` : 'On'} the free plan, <strong style={styles.strong}>your journal is stored in the browser you use.</strong> Keep a separate copy of the trades and notes you want to protect.
         </Text>
-        <Text style={styles.paragraph}>
-          Save a copy before clearing browser data or moving to another device.
-        </Text>
+        <ActionNote title="Clearing browser data? Switching devices?">Save a backup <strong style={styles.strong}>before you make the change.</strong> Open Settings → Data, export your journal and keep the file somewhere safe.</ActionNote>
         <EmailButton href={`${URLS.settings}?tab=data`}>Open backup settings</EmailButton>
       </Section>
 

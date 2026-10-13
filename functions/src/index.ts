@@ -22,6 +22,9 @@ import { InactiveAccountWarningEmail } from "./emails/InactiveAccountWarningEmai
 import { classifyAccount, decideAction, parseWarning, formatDeleteDate, authActivity, RetentionTier } from "./retention";
 import { CancellationEmail } from "./emails/CancellationEmail";
 import { Day3NudgeEmail } from "./emails/Day3NudgeEmail";
+import { FirstTradeReviewEmail } from "./emails/FirstTradeReviewEmail";
+import { firstTradeReviewEligible, ONBOARDING_SUBJECTS } from "./onboarding-emails";
+import { claimSignupEnrollment, releaseSignupEnrollment } from "./enrollment-gate";
 import { TrialStartedEmail } from "./emails/TrialStartedEmail";
 import { TrialEndingEmail } from "./emails/TrialEndingEmail";
 import { SignupTrialEndingEmail } from "./emails/SignupTrialEndingEmail";
@@ -30,6 +33,7 @@ import { EmailVerificationEmail } from "./emails/EmailVerificationEmail";
 import { Day7NudgeEmail } from "./emails/Day7NudgeEmail";
 import { Day14UpgradeEmail } from "./emails/Day14UpgradeEmail";
 import { Day21BackupEmail } from "./emails/Day21BackupEmail";
+import { weeklyDigestStats } from "./weekly-digest-data";
 import { WeeklyDigestEmail } from "./emails/WeeklyDigestEmail";
 import { ReferralEmail } from "./emails/ReferralEmail";
 import { CheckoutRecoveryEmail } from "./emails/CheckoutRecoveryEmail";
@@ -738,8 +742,13 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
   // No display name (email/password signups) → leave it blank so the hosted
   // templates fall back to "trader" instead of greeting people by their email.
   const firstName = (user.displayName || "").trim().split(" ")[0];
+  let enrollmentClaimed: string | null = null;
   try {
     await createResendContact(user.email, firstName, user.uid);
+    enrollmentClaimed = await claimSignupEnrollment(db, user.uid);
+    // No signup event means neither hosted sequence starts. The existing
+    // day 2/7/14/21 functions cover these users; never replay this event later.
+    if (!enrollmentClaimed) return;
     await fireResendEvent("user.signed_up", user.email, { firstName });
     await db.collection("users").doc(user.uid).set(
       { resendAutomationEnrolled: true, resendEnrollmentStatus: "accepted" },
@@ -753,24 +762,32 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
       { resendEnrollmentStatus: "failed" }, { merge: true }
     );
     reportError(err, { fn: "onUserCreated", uid: user.uid, stage: "automationEnrollment" });
+  } finally {
+    if (enrollmentClaimed) {
+      await releaseSignupEnrollment(db, enrollmentClaimed).catch(err => {
+        // Retaining a claim blocks a rollout safely; do not silently expire it.
+        reportError(err, { fn: "onUserCreated", uid: user.uid, stage: "enrollmentGateRelease" });
+      });
+    }
   }
 });
 
-// ─── Day-3 Nudge Email (Scheduled) ─────────────────────────
+// Day-2 entry/import help. Retain the deployed export name, sent marker and
+// idempotency key so this replaces the old day-3 job without duplicate sends.
 
 export const sendDay3NudgeEmails = functions.pubsub
   .schedule("every 24 hours")
   .onRun(async () => {
     const MAX_SENDS = 500;
     const now = admin.firestore.Timestamp.now();
+    const twoDaysAgo = new Date(now.toMillis() - 2 * 24 * 60 * 60 * 1000);
     const threeDaysAgo = new Date(now.toMillis() - 3 * 24 * 60 * 60 * 1000);
-    const fourDaysAgo = new Date(now.toMillis() - 4 * 24 * 60 * 60 * 1000);
 
     // Firestore can't query for missing fields — filter in the loop
     const allSnapshot = await db
       .collection("users")
-      .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(fourDaysAgo))
-      .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(threeDaysAgo))
+      .where("createdAt", ">", admin.firestore.Timestamp.fromDate(threeDaysAgo))
+      .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(twoDaysAgo))
       .get();
 
     let sent = 0;
@@ -788,7 +805,7 @@ export const sendDay3NudgeEmails = functions.pubsub
         await getResend().emails.send({
           from: FROM_EMAIL,
           to: email,
-          subject: "How to add your first trade",
+          subject: ONBOARDING_SUBJECTS.entry,
           html,
           headers: unsubHeaders(doc.id),
         }, { idempotencyKey: `day3/${doc.id}` });
@@ -939,7 +956,7 @@ export const sendDay7NudgeEmails = functions.pubsub
         await getResend().emails.send({
           from: FROM_EMAIL,
           to: email,
-          subject: "Have you logged your first trade yet?",
+          subject: ONBOARDING_SUBJECTS.support,
           html,
           headers: unsubHeaders(doc.id),
         }, { idempotencyKey: `day7/${doc.id}` });
@@ -953,6 +970,41 @@ export const sendDay7NudgeEmails = functions.pubsub
     }
 
     console.log(`Day-7 nudge: sent ${sent} emails`);
+    return null;
+  });
+
+// Runs hourly for retries within the 24–48 hour review window. No historical
+// catch-up: existing journals older than that window are not enrolled.
+export const sendFirstTradeReviewEmails = functions.pubsub
+  .schedule("every 60 minutes")
+  .onRun(async () => {
+    const now = Date.now();
+    const snapshot = await db.collection("users")
+      .where("firstTradeLoggedAt", ">", admin.firestore.Timestamp.fromMillis(now - 172800000))
+      .where("firstTradeLoggedAt", "<=", admin.firestore.Timestamp.fromMillis(now - 86400000))
+      .get();
+    let sent = 0;
+    for (const candidate of snapshot.docs) {
+      if (sent >= 500) break;
+      try {
+        // Recheck opt-out and delivery state immediately before sending.
+        const data = (await candidate.ref.get()).data();
+        if (!data || !firstTradeReviewEligible(data, Date.now())) continue;
+        const firstName = (data.displayName || "").trim().split(" ")[0];
+        const html = await render(React.createElement(FirstTradeReviewEmail, {
+          firstName, unsubscribeUrl: getUnsubscribeUrl(candidate.id),
+        }));
+        await getResend().emails.send({
+          from: FROM_EMAIL, to: data.email, subject: ONBOARDING_SUBJECTS.review,
+          html, headers: unsubHeaders(candidate.id),
+        }, { idempotencyKey: `first-trade-review/${candidate.id}` });
+        await candidate.ref.update({ firstTradeReviewSentAt: admin.firestore.FieldValue.serverTimestamp() });
+        sent++;
+      } catch (err) {
+        reportError(err, { fn: "sendFirstTradeReviewEmails", uid: candidate.id });
+      }
+    }
+    console.log(`First-trade review: sent ${sent} emails`);
     return null;
   });
 
@@ -1097,8 +1149,6 @@ export const sendWeeklyDigestEmails = functions
 
     const currentWeek = `${new Date(now).getFullYear()}-W${Math.ceil((now - new Date(new Date(now).getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000))}`;
 
-    const symbols: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CAD: "C$", AUD: "A$", CHF: "CHF", CNY: "¥" };
-
     // Resolve the whole audience first: eligibility is I/O-free, so the
     // expensive per-user reads only run for people who will actually be sent
     // to. Entitlement is checked here and nowhere else — the old second check
@@ -1112,10 +1162,8 @@ export const sendWeeklyDigestEmails = functions
     console.log(`Weekly digest: ${recipients.length} eligible of ${allSnapshot.size} activated`);
 
     // One round trip for all three synced docs instead of three sequential
-    // gets. Never throws — a user whose sync data is missing or corrupt still
-    // gets the zero-state recap rather than blocking the rest of the run.
+    // gets. Missing/corrupt data skips this recipient without marking it sent.
     const weeklyStats = async (uid: string) => {
-      const stats = { tradeCount: 0, winRate: 0, pnl: "$0.00", bestTrade: "$0.00" };
       try {
         const userSync = db.collection("users").doc(uid).collection("sync");
         const [tradesDoc, settingsDoc, accountsDoc] = await db.getAll(
@@ -1127,59 +1175,19 @@ export const sendWeeklyDigestEmails = functions
         const tradesValue = await resolveSyncDoc(uid, "trades", tradesDoc);
         const settingsValue = await resolveSyncDoc(uid, "settings", settingsDoc);
         const accountsValue = await resolveSyncDoc(uid, "accounts", accountsDoc);
-        // Use the user's currency from synced settings (falls back to $)
-        let curSym = "$";
-        try {
-          if (settingsValue) {
-            const s = JSON.parse(settingsValue);
-            curSym = symbols[s.currency] || "$";
-          }
-        } catch { /* default $ */ }
-        // Account-level currency overrides the global setting (same rule as
-        // the app). A multi-currency week renders per currency instead of
-        // summing euros and dollars into one meaningless number.
-        const accountCur: Record<string, string> = {};
-        try {
-          if (accountsValue) {
-            for (const a of JSON.parse(accountsValue)) {
-              if (a?.id && a?.currency) accountCur[a.id] = symbols[a.currency] || a.currency;
-            }
-          }
-        } catch { /* global fallback */ }
-        if (tradesValue) {
-          const allTrades = JSON.parse(tradesValue);
-          const weekTrades = allTrades.filter((t: any) => {
-            const exitDate = new Date(t.exitTime || t.date);
-            return exitDate >= weekAgo;
-          });
-          stats.tradeCount = weekTrades.length;
-          if (stats.tradeCount > 0) {
-            const wins = weekTrades.filter((t: any) => Number(t.pnl) > 0).length;
-            stats.winRate = Math.round((wins / stats.tradeCount) * 100);
-            const symOf = (t: any) => (t.accountId && accountCur[t.accountId]) || curSym;
-            const totals: Record<string, number> = {};
-            for (const t of weekTrades) {
-              const cs = symOf(t);
-              totals[cs] = (totals[cs] || 0) + (Number(t.pnl) || 0);
-            }
-            stats.pnl = Object.entries(totals)
-              .map(([cs, v]) => `${v >= 0 ? "+" : "-"}${cs}${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
-              .join(" · ");
-            const bestT = weekTrades.reduce((max: any, t: any) =>
-              (Number(t.pnl) || 0) > (max ? (Number(max.pnl) || 0) : -Infinity) ? t : max, null);
-            const best = Number(bestT?.pnl) || 0;
-            const bcs = bestT ? symOf(bestT) : curSym;
-            const bestFmt = best.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            stats.bestTrade = best > 0 ? `+${bcs}${bestFmt}` : `${bcs}${bestFmt}`;
-          }
+        if ((settingsDoc.exists && settingsValue === null) || (accountsDoc.exists && accountsValue === null)) {
+          throw new Error("Currency sync data unavailable");
         }
+        return weeklyDigestStats(tradesValue, settingsValue, accountsValue, weekAgo.getTime(), now);
       } catch (err) {
-        console.error(`Failed to compute weekly stats for ${uid}:`, err);
+        reportError(err, { fn: "sendWeeklyDigestEmails", uid, stage: "weeklyStats" });
+        return null;
       }
-      return stats;
     };
 
     let sent = 0;
+    let skippedData = 0;
+    let failed = 0;
     for (let i = 0; i < recipients.length && sent < MAX_SENDS; i += PREFETCH) {
       const batch = recipients.slice(i, i + PREFETCH);
       const batchStats = await Promise.all(batch.map((doc) => weeklyStats(doc.id)));
@@ -1188,12 +1196,17 @@ export const sendWeeklyDigestEmails = functions
         if (sent >= MAX_SENDS) break;
         const doc = batch[j];
         const data = doc.data();
-        const { tradeCount, winRate, pnl, bestTrade } = batchStats[j];
+        const stats = batchStats[j];
+        if (!stats) {
+          skippedData++;
+          continue;
+        }
+        const { tradeCount, winRate, pnl, bestTrade, multipleCurrencies } = stats;
         const firstName = (data.displayName || "").trim().split(" ")[0];
 
         try {
           const html = await render(React.createElement(WeeklyDigestEmail, {
-            firstName, tradeCount, winRate, pnl, bestTrade, weekLabel,
+            firstName, tradeCount, winRate, pnl, bestTrade, multipleCurrencies, weekLabel,
             unsubscribeUrl: getUnsubscribeUrl(doc.id),
           }));
           await getResend().emails.send({
@@ -1208,13 +1221,14 @@ export const sendWeeklyDigestEmails = functions
           await doc.ref.update({ weeklyDigestLastSentWeek: currentWeek });
           sent++;
         } catch (err) {
+          failed++;
           console.error(`Failed to send weekly digest:`, err);
           reportError(err, { fn: "sendWeeklyDigestEmails", uid: doc.id });
         }
       }
     }
 
-    console.log(`Weekly digest: sent ${sent} emails`);
+    console.log(`Weekly digest: sent ${sent}, skipped invalid data ${skippedData}, failed ${failed}, eligible ${recipients.length}`);
     return null;
   });
 

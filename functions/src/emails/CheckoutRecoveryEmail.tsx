@@ -27,10 +27,10 @@ export function CheckoutRecoveryEmail({ firstName, trialAvailable, unsubscribeUr
       <Section className="email-content" style={styles.content}>
         <Eyebrow>FreeTradeJournal Pro</Eyebrow>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, pick up where you left off.` : 'Pick up where you left off.'}
+          Something stopped your upgrade?
         </Heading>
         <Text style={styles.paragraph}>
-          Your Pro checkout was not completed. Nothing was charged, and your journal is still here.
+          {firstName ? `${firstName}, your` : 'Your'} Pro checkout wasn’t completed. <strong style={styles.strong}>Nothing was charged.</strong> Your journal is still here, and you can return to the plans whenever you’re ready.
         </Text>
         {trialAvailable ? (
           <Text style={styles.paragraph}>
@@ -54,7 +54,7 @@ export function CheckoutRecoveryEmail({ firstName, trialAvailable, unsubscribeUr
 
       <Section className="email-content" style={styles.content}>
         <Text style={styles.paragraph}>
-          Something stopped you? Reply with your question or what went wrong. I read every reply.
+          <strong style={styles.strong}>Was it a payment issue, a question about Pro, or something else?</strong> Reply and tell me what happened. I read every reply.
         </Text>
         <Text style={{ ...styles.paragraph, margin: 0, color: styles.strong.color, fontWeight: 600 }}>
           Richy, FreeTradeJournal

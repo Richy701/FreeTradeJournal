@@ -27,6 +27,7 @@ import * as crypto from 'crypto'
 import { render } from '@react-email/components'
 import { Day14UpgradeEmail } from '../src/emails/Day14UpgradeEmail'
 import { Day3NudgeEmail } from '../src/emails/Day3NudgeEmail'
+import { ONBOARDING_SUBJECTS } from '../src/onboarding-emails'
 import * as path from 'path'
 import * as fs from 'fs'
 
@@ -112,7 +113,7 @@ async function main() {
       const result = await resend.emails.send({
         from: FROM,
         to: t.email,
-        subject: isA ? 'What’s included in FreeTradeJournal Pro' : 'How to add your first trade',
+        subject: isA ? 'What’s included in FreeTradeJournal Pro' : ONBOARDING_SUBJECTS.entry,
         html,
         headers: { 'List-Unsubscribe': `<${url}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
       }, { idempotencyKey: `${isA ? 'day14' : 'day3'}/${t.uid}` })

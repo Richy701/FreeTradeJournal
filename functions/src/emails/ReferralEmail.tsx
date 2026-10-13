@@ -22,16 +22,16 @@ export function ReferralEmail({ rewardEarned, newUserName, remaining, rewardDays
         <Eyebrow>{rewardEarned ? 'Reward unlocked' : 'Referral confirmed'}</Eyebrow>
         {rewardEarned ? (
           <>
-            <Heading style={styles.h1}>You just earned {rewardDays} days of Pro.</Heading>
+            <Heading style={styles.h1}>{rewardDays} days of Pro. You’ve earned them!</Heading>
             <Text style={styles.paragraph}>
-              <strong style={styles.strong}>{newUserName}</strong> was the referral that did it. Your Pro access is now active — AI coaching, cloud sync, and everything else is unlocked for the next {rewardDays} days.
+              <strong style={styles.strong}>{newUserName}</strong> was the referral that unlocked your reward. <strong style={styles.strong}>Your Pro access is active for the next {rewardDays} days</strong>, including Pro coaching and cloud sync. Thanks for helping another trader get started!
             </Text>
           </>
         ) : (
           <>
-            <Heading style={styles.h1}>{newUserName} is trading with your link.</Heading>
+            <Heading style={styles.h1}>Your referral counts!</Heading>
             <Text style={styles.paragraph}>
-              They signed up and logged their first trade. <strong style={styles.strong}>{remaining} more referral{remaining !== 1 ? 's' : ''}</strong> and you unlock {rewardDays} days of Pro, free.
+              <strong style={styles.strong}>{newUserName}</strong> signed up through your link and logged their first trade. You’re <strong style={styles.strong}>{remaining} confirmed referral{remaining !== 1 ? 's' : ''} away</strong> from {rewardDays} days of Pro, free.
             </Text>
           </>
         )}

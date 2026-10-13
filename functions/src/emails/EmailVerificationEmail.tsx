@@ -1,5 +1,5 @@
 import { Section, Text, Heading, Link } from '@react-email/components'
-import { EmailShell, EmailButton, styles, tone } from './components'
+import { EmailShell, EmailButton, ActionNote, styles, tone } from './components'
 
 interface EmailVerificationEmailProps {
   verificationLink: string
@@ -11,11 +11,12 @@ export function EmailVerificationEmail({ verificationLink, firstName }: EmailVer
     <EmailShell preview="Verify your email to access FreeTradeJournal">
       <Section className="email-content" style={styles.content}>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, verify your email` : 'Verify your email'}
+          One step left: verify your email.
         </Heading>
         <Text style={styles.paragraph}>
-          Click the button below to confirm your email address and access your trading journal.
+          {firstName ? `${firstName}, confirm` : 'Confirm'} that <strong style={styles.strong}>this email address belongs to you</strong> so you can access your trading journal.
         </Text>
+        <ActionNote title="Verify your email to finish this step.">If this link has expired, request a new verification email.</ActionNote>
         <EmailButton href={verificationLink}>Verify email address</EmailButton>
         <Text style={styles.fine}>
           If the button doesn't work, copy this link into your browser:
@@ -25,7 +26,7 @@ export function EmailVerificationEmail({ verificationLink, firstName }: EmailVer
           </Link>
         </Text>
         <Text style={styles.fine}>
-          This link expires in 24 hours. If you did not create a FreeTradeJournal account, you can safely ignore this email.
+          <strong style={styles.strong}>Didn’t create an account?</strong> You can safely ignore this email.
         </Text>
       </Section>
     </EmailShell>

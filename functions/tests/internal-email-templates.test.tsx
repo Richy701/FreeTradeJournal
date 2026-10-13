@@ -5,6 +5,15 @@ import { InternalNotificationEmail } from '../src/emails/InternalNotificationEma
 import { ActivationReportEmail } from '../src/emails/ActivationReportEmail'
 
 describe('internal report rendering', () => {
+  it('highlights reported delivery failures without inventing an unchecked count', async () => {
+    const html = await render(<ActivationReportEmail asOf="2026-10-13" excluded={0} cohorts={[]} failedEmails={{ failed: 1, subjects: ['Welcome'] }} />)
+    expect(html).toContain('Action needed: check email delivery.')
+    const visibleText = new DOMParser().parseFromString(html, 'text/html').body.textContent
+    expect(visibleText).toContain('1 email rejected after sending.')
+    expect(visibleText).not.toContain('0 failed automation runs')
+    const healthy = await render(<ActivationReportEmail asOf="2026-10-13" excluded={0} cohorts={[]} failedEmails={{ failed: 0, subjects: [] }} />)
+    expect(healthy).not.toContain('Action needed: check email delivery.')
+  })
   it('keeps an empty pulse honest about missing activity and measurement', async () => {
     const html = await render(<FounderPulseEmail weekLabel="" peakOnline={0} peakOnlineWhen="" peakOnlineCountries={0} activeUsers={0} activeUsersDeltaPct={null} signups={0} signupsDeltaPct={null} totalAccounts={0} countriesCount={0} countriesPrev={0} topCountries={[]} busiestDay={null} busiestHour={null} topPages={[]} />)
     expect(html).toContain('No activity recorded')

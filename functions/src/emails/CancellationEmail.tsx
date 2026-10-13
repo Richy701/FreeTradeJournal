@@ -20,7 +20,7 @@ export function CancellationEmail({ firstName, endDate, accessEnded = false }: C
           {accessEnded ? 'Your subscription has ended and no longer provides Pro access. You can keep using your free journal.' : <>You will not be charged for another renewal. Your Pro access continues until <strong style={styles.strong}>{endDate}</strong>.</>}
         </Text>
         <Text style={styles.paragraph}>
-          Your trades, journal, and goals are all still there. Nothing gets deleted.
+          <strong style={styles.strong}>Your trades, journal and goals are still there.</strong> Cancelling Pro does not delete what you’ve recorded.
         </Text>
         <EmailButton href={accessEnded ? URLS.pricing : URLS.subscription}>{accessEnded ? 'See Pro plans' : 'Manage subscription'}</EmailButton>
       </Section>

@@ -23,23 +23,23 @@ export function SignupTrialEndingEmail({ firstName, trialEndDate, unsubscribeUrl
       <Section className="email-content" style={styles.content}>
         <Eyebrow>Your trial is ending</Eyebrow>
         <Heading style={styles.h1}>
-          {firstName ? `${firstName}, your free Pro trial ends soon.` : 'Your free Pro trial ends soon.'}
+          Pro ends soon. Your free journal stays.
         </Heading>
         <Text style={styles.paragraph}>
-          Your trial runs until <strong style={styles.strong}>{trialEndDate}</strong>. There is no card on file and nothing will be charged — your account simply switches to the free plan. Everything you have logged stays yours.
+          {firstName ? `${firstName}, your` : 'Your'} trial ends on <strong style={styles.strong}>{trialEndDate}</strong>. There is no card on file: <strong style={styles.strong}>nothing will be charged.</strong> Your account switches to the free plan, and everything you’ve logged stays yours.
         </Text>
         <EmailButton href={URLS.pricing}>Keep Pro</EmailButton>
       </Section>
 
       <Hr style={styles.divider} />
 
-      <FeatureList heading="What switches off with the free plan" items={losing} />
+      <FeatureList heading="What changes when your trial ends" items={losing} />
 
       <Hr style={styles.divider} />
 
       <Section className="email-content" style={styles.content}>
         <Text style={styles.paragraph}>
-          Keeping it is {PRICE_MONTHLY} or {PRICE_YEARLY} — cancel anytime from Settings.
+          Want to keep Pro? Choose <strong style={styles.strong}>{PRICE_MONTHLY}</strong> or <strong style={styles.strong}>{PRICE_YEARLY}</strong>. Cancel anytime from Settings.
         </Text>
       </Section>
     </EmailShell>

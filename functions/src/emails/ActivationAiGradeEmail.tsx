@@ -20,18 +20,20 @@ const gives = [
 export function ActivationAiGradeEmail({ firstName, unsubscribeUrl }: ActivationAiGradeEmailProps) {
   return (
     <EmailShell
-      preview="Use Coach FTJ to review the trades in your journal."
+      preview="Bring a question to Coach FTJ. Use your logged trades to make the review specific."
       unsubscribeUrl={unsubscribeUrl}
     >
       <Section className="email-content" style={styles.content}>
-        <Heading style={styles.h1}>{firstName ? `${firstName}, review your next trade.` : 'Review your next trade.'}</Heading>
+        <Heading style={styles.h1}>Your last trade. What can you learn?</Heading>
         <Text style={styles.paragraph}>
-          Log a trade, then open Coach FTJ to review it. The coach uses your journal data to suggest points to look at during your review.
+          {firstName ? `${firstName}, the` : 'The'} result tells you what happened. A review helps you examine <strong style={styles.strong}>how you got there.</strong>
         </Text>
-        <EmailButton href={URLS.trades}>Log a trade to review</EmailButton>
+        <Text style={styles.paragraph}>Log your trades, then open Coach FTJ. Start with a question: <strong style={styles.strong}>“What should I look at more closely in my recent trading?”</strong> The coach uses your journal data to suggest points to review.</Text>
+        <Text style={styles.paragraph}>Use those suggestions alongside <strong style={styles.strong}>your own trading plan and judgment.</strong></Text>
+        <EmailButton href={URLS.coach}>Open Coach FTJ</EmailButton>
       </Section>
 
-      <ProductPreview src={`${BASE_URL}/screenshots/coach-ftj-briefing.png`} alt="Coach FTJ insights alongside trading statistics" caption="Coach FTJ on your dashboard" />
+      <ProductPreview src={`${BASE_URL}/screenshots/coach-today-session.png`} alt="Coach FTJ showing session feedback, trading patterns and the Ask Coach FTJ field" caption="Session feedback and questions in Coach FTJ. Demo shown." />
 
       <Hr style={styles.divider} />
 

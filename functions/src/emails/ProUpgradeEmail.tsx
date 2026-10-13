@@ -1,5 +1,5 @@
 import { Section, Text, Heading, Hr } from '@react-email/components'
-import { EmailShell, EmailButton, Eyebrow, ReceiptBlock, ReceiptRow, styles } from './components'
+import { EmailShell, EmailButton, Eyebrow, ReceiptBlock, ReceiptRow, ActionNote, styles } from './components'
 import { URLS } from './facts'
 
 export interface ReceiptDetails {
@@ -15,15 +15,16 @@ interface ProUpgradeEmailProps {
 
 export function ProUpgradeEmail({ firstName, planLabel, receipt }: ProUpgradeEmailProps) {
   return (
-    <EmailShell preview="Your Pro subscription is active.">
+    <EmailShell preview="Your Pro access is active.">
       <Section className="email-content" style={styles.content}>
         <Eyebrow>{planLabel}</Eyebrow>
         <Heading style={styles.h1}>
-          Your Pro subscription is active
+          You’re on Pro!
         </Heading>
         <Text style={styles.paragraph}>
-          {firstName ? `Thanks, ${firstName}. Your` : 'Your'} account now has Pro access, including additional AI coaching and cloud sync.
+          {firstName ? `Thanks, ${firstName}! Your` : 'Your'} <strong style={styles.strong}>{planLabel}</strong> plan is active. You can now use Pro coaching to review your trades, goals and prop firm accounts.
         </Text>
+        <ActionNote title="Cloud sync is automatic.">Your Pro journal syncs across devices. You can check its status in <strong style={styles.strong}>Settings</strong>. Bring a trade or a question to Coach FTJ when you’re ready.</ActionNote>
         <EmailButton href={URLS.dashboard}>Go to your dashboard</EmailButton>
       </Section>
 

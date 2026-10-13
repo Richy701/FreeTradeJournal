@@ -26,31 +26,37 @@ export const tone = {
   red: '#a63330',
 }
 
-const fontStack = "Inter, -apple-system, 'Segoe UI', Arial, sans-serif"
+const fontStack = "'Helvetica Neue', Helvetica, Arial, sans-serif"
+const headingFont = "Arial, 'Helvetica Neue', Helvetica, sans-serif"
+export const numberFont = "'Geist', system-ui, -apple-system, Arial, sans-serif"
 
 // ─── Text styles ────────────────────────────────────────────
 
 export const styles = {
   h1: {
-    fontSize: '34px',
-    fontFamily: fontStack,
+    fontSize: '32px',
+    fontFamily: headingFont,
     fontWeight: 700,
     color: tone.heading,
-    margin: '0 0 16px',
-    lineHeight: '1.15',
-    letterSpacing: '-0.01em',
+    margin: '0 0 24px',
+    lineHeight: '1.2',
+    letterSpacing: '-0.025em',
   } as React.CSSProperties,
   paragraph: {
     fontSize: '16px',
+    fontFamily: fontStack,
+    fontWeight: 400,
     color: tone.body,
     lineHeight: '1.6',
     margin: '0 0 16px',
   } as React.CSSProperties,
   strong: {
     color: tone.heading,
+    fontWeight: 700,
   } as React.CSSProperties,
   fine: {
     fontSize: '14px',
+    fontFamily: fontStack,
     color: tone.muted,
     lineHeight: '1.6',
     margin: '16px 0 0',
@@ -79,6 +85,7 @@ export function EmailShell({ preview, children, unsubscribeUrl, footerNote }: Em
   return (
     <Html lang="en">
       <Head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@700&display=swap" />
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -88,6 +95,8 @@ export function EmailShell({ preview, children, unsubscribeUrl, footerNote }: Em
             .email-page-content { padding: 16px 8px !important; }
             .email-content h1 { font-size: 28px !important; }
             .email-feature-cell { display: block !important; width: auto !important; padding: 20px 0 !important; }
+            .email-money-cell { display: block !important; width: auto !important; margin-bottom: 8px !important; }
+            .email-money-value { font-size: 18px !important; }
           }
           @media only screen and (min-width: 480px) {
             .email-content, .email-header { padding-left: 32px !important; padding-right: 32px !important; }
@@ -147,7 +156,7 @@ export function EmailShell({ preview, children, unsubscribeUrl, footerNote }: Em
 }
 
 const pageStyle: React.CSSProperties = {
-  backgroundColor: tone.page,
+  backgroundColor: '#fafafa',
   fontFamily: fontStack,
   margin: 0,
   padding: 0,
@@ -158,8 +167,8 @@ const containerStyle: React.CSSProperties = {
 }
 const cardStyle: React.CSSProperties = {
   backgroundColor: tone.card,
-  border: 'none',
-  borderRadius: 0,
+  border: `1px solid ${tone.cardBorder}`,
+  borderRadius: '6px',
 }
 const headerStyle: React.CSSProperties = {
   padding: '24px',
@@ -170,8 +179,8 @@ const logoStyle: React.CSSProperties = {
 }
 const brandStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: '14px',
-  fontWeight: 600,
+  fontSize: '16px',
+  fontWeight: 700,
   color: tone.heading,
   lineHeight: '26px',
 }
@@ -207,9 +216,8 @@ export function Eyebrow({ children, quiet }: { children: React.ReactNode; quiet?
       <tbody>
         <tr>
           <td style={{
-            backgroundColor: quiet ? tone.inset : '#f7e3ad',
-            borderRadius: '999px',
-            padding: '4px 12px',
+            borderLeft: `3px solid ${quiet ? tone.divider : tone.amber}`,
+            padding: '2px 0 2px 10px',
           }}>
             <Text style={{
               margin: 0,
@@ -217,7 +225,7 @@ export function Eyebrow({ children, quiet }: { children: React.ReactNode; quiet?
               fontWeight: 700,
               letterSpacing: '0.08em',
               textTransform: 'uppercase' as const,
-              color: quiet ? tone.muted : '#77510a',
+              color: quiet ? tone.muted : tone.heading,
               lineHeight: '16px',
             }}>
               {children}
@@ -227,6 +235,14 @@ export function Eyebrow({ children, quiet }: { children: React.ReactNode; quiet?
       </tbody>
     </table>
   )
+}
+
+/** A meaningful action or deadline, never a decorative coloured panel. */
+export function ActionNote({ title, children, urgent = false }: { title: string; children: React.ReactNode; urgent?: boolean }) {
+  return <Section style={{ borderLeft: `3px solid ${urgent ? tone.red : tone.heading}`, padding: '2px 0 2px 16px', margin: '24px 0' }}>
+    <Text style={{ ...styles.paragraph, fontSize: '17px', fontWeight: 700, color: urgent ? tone.red : tone.heading, margin: '0 0 6px' }}>{title}</Text>
+    <Text style={{ ...styles.paragraph, margin: 0 }}>{children}</Text>
+  </Section>
 }
 
 // ─── Bulletproof button ─────────────────────────────────────
@@ -299,8 +315,8 @@ export interface Feature {
 export function ProductPreview({ src, alt, caption }: { src: string; alt: string; caption: string }) {
   return (
     <Section className="email-content" style={{ ...styles.content, paddingTop: 0 }}>
-      <Img src={src} alt={alt} width="536" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }} />
-      <Text style={{ ...styles.fine, fontSize: '12px', margin: '12px 0 0', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{caption}</Text>
+      <Link href={src} style={{ display: 'block' }}><Img src={src} alt={alt} width="536" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }} /></Link>
+      <Text style={{ ...styles.fine, fontSize: '13px', margin: '10px 0 0' }}>{caption} <Link href={src} style={{ color: tone.muted, textDecoration: 'underline' }}>View full size</Link></Text>
     </Section>
   )
 }
@@ -315,7 +331,6 @@ export function FeatureList({ heading, items }: { heading: string; items: Featur
             <tr key={row}>
               {items.slice(row * 2, row * 2 + 2).map((feature, col) => (
                 <td className="email-feature-cell" key={feature.label} width="50%" style={{ verticalAlign: 'top', padding: col === 0 ? '20px 20px 20px 0' : '20px 0 20px 20px', borderTop: `1px solid ${tone.divider}` }}>
-                  <Text style={{ ...styles.fine, margin: '0 0 10px', fontFamily: 'monospace', color: '#77510a' }}>{String(row * 2 + col + 1).padStart(2, '0')}</Text>
                   <Text style={featureTitleStyle}>{feature.label}</Text>
                   <Text style={featureDescStyle}>{feature.desc}</Text>
                 </td>
@@ -329,27 +344,27 @@ export function FeatureList({ heading, items }: { heading: string; items: Featur
 }
 
 const featureTitleStyle: React.CSSProperties = {
-  fontSize: '15px',
-  fontWeight: 600,
+  fontSize: '17px',
+  fontWeight: 700,
   color: tone.heading,
   margin: '0 0 4px',
 }
 const featureDescStyle: React.CSSProperties = {
-  fontSize: '14px',
+  fontSize: '15px',
   color: tone.muted,
   lineHeight: '1.6',
   margin: 0,
 }
 // ─── Numbered steps ─────────────────────────────────────────
 
-export function NumberedSteps({ heading, steps }: { heading: string; steps: string[] }) {
+export function NumberedSteps({ heading, steps }: { heading: string; steps: React.ReactNode[] }) {
   return (
-    <Section className="email-content" style={{ ...styles.content, backgroundColor: tone.inset }}>
+    <Section className="email-content" style={styles.content}>
       <SectionLabel>{heading}</SectionLabel>
       <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%">
         <tbody>
           {steps.map((step, i) => (
-            <tr key={step}>
+            <tr key={i}>
               <td style={{ verticalAlign: 'top', width: '32px', paddingBottom: i < steps.length - 1 ? '14px' : 0 }}>
                 <Text style={stepNumStyle}>{String(i + 1).padStart(2, '0')}</Text>
               </td>
@@ -367,7 +382,8 @@ export function NumberedSteps({ heading, steps }: { heading: string; steps: stri
 const stepNumStyle: React.CSSProperties = {
   fontSize: '12px',
   fontWeight: 700,
-  color: '#77510a',
+  color: tone.heading,
+  fontFamily: "'Courier New', Courier, monospace",
   margin: 0,
   lineHeight: '21px',
 }
@@ -447,6 +463,7 @@ const receiptValueStyle: React.CSSProperties = {
 export interface Stat {
   value: string
   label: string
+  money?: boolean
   /** 'up' renders green, 'down' renders red, default is heading color */
   toneHint?: 'up' | 'down'
 }
@@ -454,9 +471,10 @@ export interface Stat {
 // Long values (six-figure P&L, multi-currency weeks) step down in size so the
 // tile never overflows — email clients have no CSS auto-fit to lean on.
 function statValueFontSize(value: string): string {
-  if (value.length > 16) return '15px'
-  if (value.length > 12) return '18px'
-  if (value.length > 9) return '21px'
+  const longestLine = Math.max(...value.split(' · ').map(line => line.length))
+  if (longestLine > 16) return '15px'
+  if (longestLine > 12) return '18px'
+  if (longestLine > 9) return '21px'
   return '26px'
 }
 
@@ -464,26 +482,33 @@ export function StatGrid({ stats }: { stats: Stat[] }) {
   const rows: Stat[][] = []
   for (let i = 0; i < stats.length; i += 2) rows.push(stats.slice(i, i + 2))
   return (
-    <table role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%" style={{ tableLayout: 'fixed', borderCollapse: 'separate' as const, borderSpacing: '8px' }}>
-      <tbody>
-        {rows.map((row, r) => (
-          <tr key={r}>
+    <>
+      {rows.map((row, r) => (
+        <table key={r} role="presentation" cellPadding={0} cellSpacing={0} border={0} width="100%" style={{ tableLayout: 'fixed', borderCollapse: 'separate' as const, borderSpacing: '8px', marginTop: r > 0 ? '-8px' : 0 }}>
+          <tbody><tr>
             {row.map((s) => (
-              <td key={s.label} width="50%" style={statCellStyle}>
-                <Text style={{
+              <td key={s.label} className={s.money ? 'email-money-cell' : undefined} width="50%" style={statCellStyle}>
+                <Text className={s.money ? 'email-money-value' : undefined} style={{
                   ...statValueStyle,
                   fontSize: statValueFontSize(s.value),
                   color: s.toneHint === 'up' ? tone.green : s.toneHint === 'down' ? tone.red : tone.heading,
                 }}>
-                  {s.value}
+                  {s.money ? s.value.split(' · ').map((amount, index) => (
+                    <span key={index} className="email-currency" style={{
+                      display: 'block',
+                      marginTop: index > 0 ? '6px' : 0,
+                      color: /^(?:[A-Z]{3} )?[-−]/.test(amount) ? tone.red
+                        : /^(?:[A-Z]{3} )?\+/.test(amount) ? tone.green : tone.heading,
+                    }}>{amount}</span>
+                  )) : s.value}
                 </Text>
                 <Text style={statLabelStyle}>{s.label}</Text>
               </td>
             ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+          </tr></tbody>
+        </table>
+      ))}
+    </>
   )
 }
 
@@ -495,6 +520,7 @@ const statCellStyle: React.CSSProperties = {
   textAlign: 'center' as const,
 }
 const statValueStyle: React.CSSProperties = {
+  fontFamily: numberFont,
   fontWeight: 700,
   margin: '0 0 2px',
   lineHeight: '1.2',
