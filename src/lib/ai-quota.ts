@@ -25,6 +25,14 @@ export function isFreeAiQuotaError(err: unknown): boolean {
   return /free AI (queries|coaching runs) this month/i.test(message);
 }
 
+// The free daily cap on automatic AI (coach tips, journal prompts, risk
+// alerts) is spent. Not a failure: the caller shows the fallback plus an
+// upgrade path.
+export function isAutoAiPausedError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  return /paused until tomorrow/i.test(String((err as { message?: unknown }).message || ''));
+}
+
 export function notifyFreeAiQuotaExhausted(): void {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(FREE_AI_QUOTA_EXHAUSTED_EVENT));

@@ -13,6 +13,7 @@ import { useProStatus } from '@/contexts/pro-context'
 import { Link } from 'react-router-dom'
 import { Sparkle } from '@phosphor-icons/react'
 import { trackEvent } from '@/lib/analytics'
+import { isAutoAiPausedError } from '@/lib/ai-quota'
 import { useStreamingAI } from '@/hooks/use-streaming-ai'
 import { useUserStorage } from '@/utils/user-storage'
 import { buildSessionReview } from '@/lib/session-review'
@@ -393,6 +394,9 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
   const userStorage = useUserStorage()
   const [aiTips, setAiTips] = useState<any[] | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  // Free daily cap on automatic AI hit: the client tips below are the
+  // fallback, and the card says so instead of swapping silently.
+  const [autoAiPaused, setAutoAiPaused] = useState(false)
   // User-scoped (raw localStorage survived logout, leaking one user's coach
   // state to the next login on a shared browser). Legacy raw keys are read as
   // a fallback once and migrated on the next write.
@@ -1034,8 +1038,10 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
           setAiTips(tipsWithKeys)
           setAICache(AI_COACH_CACHE_KEY, { fp: tradeFingerprint, tips: tipsWithKeys })
         }
-      } catch {
-        // Silently fall back to client-side tips
+        setAutoAiPaused(false)
+      } catch (err) {
+        // Fall back to client-side tips; only the daily cap gets a notice
+        if (isAutoAiPausedError(err)) setAutoAiPaused(true)
       } finally {
         setAiLoading(false)
       }
@@ -1564,6 +1570,19 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
                   <button type="button" onClick={restoreTips} className="font-medium text-foreground underline underline-offset-2 hover:opacity-80">
                     Show it again
                   </button>
+                </p>
+              )}
+
+              {autoAiPaused && !isPro && !aiTips && (
+                <p className="border-t pt-3 text-xs text-muted-foreground">
+                  Today's AI read is used up, so these are the standard tips. Pro reads every trade, all day.{' '}
+                  <Link
+                    to="/pricing"
+                    onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Coach FTJ', source: 'auto_ai_paused' })}
+                    className="font-medium text-foreground underline underline-offset-2 hover:opacity-80"
+                  >
+                    Get Pro
+                  </Link>
                 </p>
               )}
             </>

@@ -26,6 +26,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.99.1',
+    date: '2026-10-21',
+    summary: 'The coach tells you when today\'s free AI tips are used up.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'Know when your free AI tips run out',
+        description: 'On the free plan, the Coach card now says when today\'s AI read is used up and you are seeing the standard tips instead. Journal prompts show the same message with a link to Pro. The pricing page now opens on the monthly plan.',
+      },
+    ],
+  },
+  {
     version: '2.99.0',
     date: '2026-10-13',
     summary: 'Clearer emails, fewer getting-started reminders and easier-to-read weekly results.',
@@ -3536,4 +3549,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.99.0'
+export const LATEST_CHANGELOG_VERSION = '2.99.1'

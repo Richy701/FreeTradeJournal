@@ -249,9 +249,11 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const offerSource = searchParams.get('source') === ANALYSIS_UPGRADE_SOURCE ? ANALYSIS_UPGRADE_SOURCE : undefined;
-  const [frequency, setFrequency] = useState<Frequency>(() => searchParams.get('plan') === 'monthly' ? 'monthly' : 'yearly');
+  // Monthly first: yearly checkouts completed 2 of 18 vs monthly 10 of 20
+  // (Stripe, 90 days to Oct 2026). ?plan=yearly still opens on yearly.
+  const [frequency, setFrequency] = useState<Frequency>(() => searchParams.get('plan') === 'yearly' ? 'yearly' : 'monthly');
   useEffect(() => {
-    if (offerSource) setFrequency(searchParams.get('plan') === 'monthly' ? 'monthly' : 'yearly');
+    if (offerSource) setFrequency(searchParams.get('plan') === 'yearly' ? 'yearly' : 'monthly');
   }, [searchParams, offerSource]);
   // priceId currently being sent to Stripe — the checkout Cloud Function can
   // cold-start for several seconds, so CTAs must show progress and block

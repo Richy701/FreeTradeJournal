@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { tradeInstant, zoneWindows } from './chart-hours-sessions'
 
 // Local-time constructor so the midnight rule is tested against the same
@@ -31,10 +31,27 @@ describe('tradeInstant', () => {
 })
 
 describe('zoneWindows', () => {
-  it('describes every zone as a local clock range', () => {
+  const RANGE = /^\d{1,2}(:\d{2})?(am|pm)–\d{1,2}(:\d{2})?(am|pm)(, .*)?$/
+  afterEach(() => { vi.useRealTimers() })
+
+  // zoneWindows samples "today", so the result depends on the date. The
+  // NY-close to Sydney-open gap only exists while Sydney is on standard time.
+  it('describes every zone as a local clock range in the southern winter', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 5, 15, 12))
     const w = zoneWindows()
     for (const key of ['Asia', 'London', 'New York', 'Off-session']) {
-      expect(w[key]).toMatch(/^\d{1,2}(:\d{2})?(am|pm)–\d{1,2}(:\d{2})?(am|pm)(, .*)?$/)
+      expect(w[key]).toMatch(RANGE)
     }
+  })
+
+  it('has no off-hours window while Sydney is on summer time', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 11, 15, 12))
+    const w = zoneWindows()
+    for (const key of ['Asia', 'London', 'New York']) {
+      expect(w[key]).toMatch(RANGE)
+    }
+    expect(w['Off-session']).toBeUndefined()
   })
 })

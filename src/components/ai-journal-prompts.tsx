@@ -10,6 +10,7 @@ import { useSettings } from '@/contexts/settings-context';
 import { useProStatus } from '@/contexts/pro-context';
 import { getAICache, setAICache } from '@/utils/ai-cache';
 import { trackEvent } from '@/lib/analytics';
+import { isAutoAiPausedError } from '@/lib/ai-quota';
 
 interface Trade {
   id: string;
@@ -85,8 +86,18 @@ export function AIJournalPrompts({ trade, onClose }: AIJournalPromptsProps) {
       setError(errorMsg);
       trackEvent('ai_journal_prompts_error', { message: errorMsg });
       // The daily cap on automatic suggestions is a limit gate, not a failure.
-      if (/paused until tomorrow/i.test(errorMsg)) toast.warning(errorMsg);
-      else toast.error(errorMsg);
+      if (isAutoAiPausedError(err)) {
+        toast.warning(errorMsg, {
+          action: {
+            label: 'Get Pro',
+            onClick: () => {
+              trackEvent('pro_gate_cta_clicked', { feature: 'AI Journal Prompts', source: 'auto_ai_paused' });
+              navigate('/pricing');
+            },
+          },
+          duration: 8000,
+        });
+      } else toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
