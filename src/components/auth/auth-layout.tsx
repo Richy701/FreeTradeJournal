@@ -68,7 +68,7 @@ export function AuthLayout({ panelTitle, panelSubtitle, mobileTitle, mobileSubti
 
           <div className="relative pt-6 border-t border-white/10">
             <p className="text-white/80 text-sm font-medium">Free forever. No credit card required.</p>
-            <p className="text-white/40 text-xs mt-1">Over 2,000 traders keep their journal here.</p>
+            <p className="text-white/40 text-xs mt-1">Over 4,000 traders keep their journal here.</p>
           </div>
         </div>
 

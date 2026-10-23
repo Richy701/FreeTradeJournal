@@ -26,6 +26,19 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.99.2',
+    date: '2026-10-23',
+    summary: 'More broker exports import on their own, including cTrader history.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'More broker exports import automatically',
+        description: 'cTrader trade history, in English or French, now imports without matching columns by hand. Files that use older line endings no longer show up as having no trades. Exports without a Buy/Sell column now work too: each trade is marked as a buy or a sell from its prices and profit or loss.',
+      },
+    ],
+  },
+  {
     version: '2.99.1',
     date: '2026-10-21',
     summary: 'The coach tells you when today\'s free AI tips are used up.',
@@ -3549,4 +3562,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.99.1'
+export const LATEST_CHANGELOG_VERSION = '2.99.2'

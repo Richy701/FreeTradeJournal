@@ -45,13 +45,14 @@ const COLUMN_MAPPINGS = {
   // Your current format (MT5-like) + Topstep + other prop firms
   standard: {
     symbol: ['Symbol', 'Instrument', 'Pair', 'ContractName', 'Contract', 'Market'],
-    side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell', 'Market pos.', 'Market position'],
-    openPrice: ['Open Price', 'Entry Price', 'Open', 'Entry', 'EntryPrice', 'Avg Entry Price'],
-    closePrice: ['Close Price', 'Exit Price', 'Close', 'Exit', 'ExitPrice', 'Avg Exit Price'],
-    quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units', 'Qty', 'Filled Qty', 'Shares', 'Amount'],
-    pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L', 'Realized P/L', 'Realized P&L', 'Net Profit'],
-    openTime: ['Open Time', 'Entry Time', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay'],
-    closeTime: ['Close Time', 'Exit Time', 'Close Date', 'ExitedAt'],
+    side: ['Side', 'Type', 'Direction', 'Action', 'B/S', 'Buy/Sell', 'Market pos.', 'Market position', 'Opening direction', "Sens d'ouverture"],
+    // cTrader writes "Entry price" / "Closing price" ("Cours d'entrée" / "Price de clôture" in French).
+    openPrice: ['Open Price', 'Entry Price', 'Opening Price', "Cours d'entrée", 'Open', 'Entry', 'EntryPrice', 'Avg Entry Price'],
+    closePrice: ['Close Price', 'Exit Price', 'Closing Price', 'Price de clôture', 'Cours de clôture', 'Close', 'Exit', 'ExitPrice', 'Avg Exit Price'],
+    quantity: ['Lots', 'Volume', 'Size', 'Quantity', 'Units', 'Qty', 'Filled Qty', 'Shares', 'Amount', 'Quantité'],
+    pnl: ['PnL', 'Profit', 'P&L', 'Gain', 'Net P/L', 'Realized P/L', 'Realized P&L', 'Net Profit', 'ProfitLoss', 'Net $', '$ nets'],
+    openTime: ['Open Time', 'Entry Time', 'Opening Time', 'Entry DT', 'Date', 'Time', 'Open Date', 'EnteredAt', 'TradeDay', 'Heure'],
+    closeTime: ['Close Time', 'Exit Time', 'Closing Time', 'Exit DT', 'Close Date', 'ExitedAt', 'Heure de clôture'],
     commission: ['Commission', 'Commissions'],
     fees: ['Fees', 'Fee', 'Total Fees', 'Net Fees', 'Exchange Fees'],
   }
@@ -121,15 +122,24 @@ function detectDecimalComma(lines: string[], delimiter: string): boolean {
   return commaScore > dotScore;
 }
 
+// Compare headers loosely: case-insensitive, snake_case read as spaces
+// ("opening_price"), and the leading "=" some exports (IG) put on every header
+// to stop spreadsheets re-typing the cell.
+function normalizeHeaderName(h: string): string {
+  return h.trim().replace(/^=/, '').replace(/^"(.*)"$/, '$1').toLowerCase().replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+const TIME_HEADER = /\b(time|date|dt|timestamp)\b/;
+
 export function findColumnIndex(headers: string[], possibleNames: string[]): number {
-  const normalized = headers.map(h => h.trim().toLowerCase());
+  const normalized = headers.map(normalizeHeaderName);
 
   // Pass 1: exact (case-insensitive) match. This is the most reliable and avoids
   // substring collisions — e.g. a "Close Price" candidate of "Exit" must not match
   // the "ExitedAt" timestamp column that some brokers (Topstep) place before the
   // real "ExitPrice" column.
   for (const name of possibleNames) {
-    const target = name.trim().toLowerCase();
+    const target = normalizeHeaderName(name);
     const exact = normalized.indexOf(target);
     if (exact !== -1) return exact;
   }
@@ -137,10 +147,16 @@ export function findColumnIndex(headers: string[], possibleNames: string[]): num
   // Pass 2: substring match as a fallback for headers that aren't exact (e.g. a
   // "P/L" header matching a "Net P/L" candidate). Skip empty cells: an empty
   // header would match every candidate (target.includes('') is always true),
-  // which lets a data row's blank cells masquerade as a header row.
+  // which lets a data row's blank cells masquerade as a header row. A candidate
+  // that isn't itself a time name never lands on a time column: "Open" must not
+  // read prices out of an "opening_time_utc" column that sits before
+  // "opening_price".
   for (const name of possibleNames) {
-    const target = name.trim().toLowerCase();
-    const index = normalized.findIndex(h => h !== '' && (h.includes(target) || target.includes(h)));
+    const target = normalizeHeaderName(name);
+    const targetIsTime = TIME_HEADER.test(target);
+    const index = normalized.findIndex(h =>
+      h !== '' && (targetIsTime || !TIME_HEADER.test(h)) && (h.includes(target) || target.includes(h))
+    );
     if (index !== -1) return index;
   }
 
@@ -275,11 +291,28 @@ function parseDateString(dateStr: string, dayFirst?: boolean): string {
   }
 }
 
+// For exports with no Buy/Sell column: a long profits when price rises, a short
+// when it falls, so the P&L sign against the price move gives the side. A flat
+// price or a zero P&L can't tell them apart and falls back to long.
+function inferSide(openPrice: string, closePrice: string, pnl: string, decimalComma: boolean): string {
+  const move = parseFloat(cleanNumeric(closePrice, decimalComma)) - parseFloat(cleanNumeric(openPrice, decimalComma));
+  const result = parseCurrency(pnl, decimalComma);
+  if (!isFinite(move) || !isFinite(result) || move === 0 || result === 0) return 'long';
+  return Math.sign(move) === Math.sign(result) ? 'long' : 'short';
+}
+
+// Split an export into lines whatever its line endings: Windows (\r\n), Unix
+// (\n) or a bare \r, which some exports use and which otherwise reads the whole
+// file as one header line.
+function splitLines(content: string): string[] {
+  return content.replace(/\r\n?/g, '\n').trim().split('\n');
+}
+
 function normalizeSide(side: string): 'long' | 'short' {
   const normalized = side.toLowerCase().trim();
   // Include single-letter "B" (Buy) and bare "bought" — some brokers/cTrader use
   // B/S, which previously fell through to 'short' and inverted every long.
-  if (['buy', 'long', 'l', 'bid', 'b', 'bought'].includes(normalized)) {
+  if (['buy', 'long', 'l', 'bid', 'b', 'bought', 'achat'].includes(normalized)) {
     return 'long';
   }
   return 'short';
@@ -1788,7 +1821,7 @@ function isNinjaTraderGrid(headers: string[]): boolean {
 // Commission column a second time, so imported totals came in below the file's.
 export function isNetPnlHeader(header: string | undefined): boolean {
   const h = (header || '').trim().toLowerCase();
-  return /\bnet\b/.test(h) && !/\bgross\b/.test(h);
+  return /\bnets?\b/.test(h) && !/\bgross\b/.test(h);
 }
 
 // Wrong-file detection: people upload open-position snapshots, account
@@ -1968,7 +2001,7 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
   };
 
   try {
-    const rawLines = csvContent.trim().split('\n');
+    const rawLines = splitLines(csvContent);
     if (rawLines.length < 2) {
       result.errors.push('CSV file must contain at least a header row and one data row');
       return result;
@@ -2033,8 +2066,10 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
     // commissions — flag them so the importer doesn't double-subtract costs.
     const pnlIsNet = isNinjaTraderGrid(headers) || isNetPnlHeader(headers[columnIndices.pnl]);
 
-    // Validate required columns
-    const requiredColumns = ['symbol', 'side', 'openPrice', 'closePrice', 'quantity', 'pnl'];
+    // Validate required columns. Without a Buy/Sell column the side still follows
+    // from the prices and the P&L, so only demand it when one of those is missing.
+    const canInferSide = columnIndices.openPrice !== -1 && columnIndices.closePrice !== -1 && columnIndices.pnl !== -1;
+    const requiredColumns = ['symbol', ...(canInferSide ? [] : ['side']), 'openPrice', 'closePrice', 'quantity', 'pnl'];
     const missingColumns = requiredColumns.filter(col => columnIndices[col as keyof typeof columnIndices] === -1);
 
     if (missingColumns.length > 0) {
@@ -2083,11 +2118,13 @@ function parseCSVCore(csvContent: string, options?: { dayFirst?: boolean; fileNa
 
         // Extract data
         const symbol = fields[columnIndices.symbol] || '';
-        const side = fields[columnIndices.side] || '';
         const openPrice = fields[columnIndices.openPrice] || '';
         const closePrice = fields[columnIndices.closePrice] || '';
         const quantity = fields[columnIndices.quantity] || '';
         const pnl = fields[columnIndices.pnl] || '';
+        const side = columnIndices.side !== -1
+          ? fields[columnIndices.side] || ''
+          : inferSide(openPrice, closePrice, pnl, decimalComma);
 
         // Use open time if available, otherwise close time, otherwise current date
         const openTimeField = columnIndices.openTime !== -1 ? fields[columnIndices.openTime] : '';
@@ -2173,7 +2210,7 @@ export function isEmptyExport(csvContent: string): boolean {
 
 export function parseCSVHeaders(csvContent: string): string[] {
   const cleaned = csvContent.replace(/^\uFEFF/, '');
-  const lines = cleaned.trim().split('\n');
+  const lines = splitLines(cleaned);
   if (!lines.length) return [];
   const delimiter = detectDelimiter(lines);
   const headerRow = findStandardHeaderRow(lines, delimiter);
@@ -2185,7 +2222,7 @@ export function parseCSVHeaders(csvContent: string): string[] {
 // give the AI column-mapper a few concrete example rows for format inference.
 export function parseCSVSample(csvContent: string, maxRows: number = 5): string[][] {
   const cleaned = csvContent.replace(/^﻿/, '');
-  const lines = cleaned.trim().split('\n');
+  const lines = splitLines(cleaned);
   if (lines.length < 2) return [];
   const delimiter = detectDelimiter(lines);
   const headerRow = findStandardHeaderRow(lines, delimiter);
@@ -2219,7 +2256,7 @@ function parseCSVWithMappingsCore(csvContent: string, mappings: Record<string, n
   };
 
   try {
-    const rawLines = csvContent.trim().split('\n');
+    const rawLines = splitLines(csvContent);
     if (rawLines.length < 2) {
       result.errors.push('CSV file must contain at least a header row and one data row');
       return result;

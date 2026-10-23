@@ -85,7 +85,7 @@ export default function About() {
               I tried TradeZella. It was fine. It was not free, and the parts I needed were behind a paywall while I was already paying an evaluation fee. Paying a second subscription just to record what happened felt wrong, so I built my own and put it online.
             </p>
             <p className="mt-5">
-              More than 5,000 traders have signed up since. Most of them are on the free plan, which is the point. The people who leave reviews are real users and their words are their own. You can read them on the <Link to="/" className="text-amber-500 underline underline-offset-2 hover:text-amber-600">homepage</Link>.
+              More than 4,000 traders have signed up since. Most of them are on the free plan, which is the point. The people who leave reviews are real users and their words are their own. You can read them on the <Link to="/" className="text-amber-500 underline underline-offset-2 hover:text-amber-600">homepage</Link>.
             </p>
           </section>
 

@@ -334,7 +334,7 @@ export default function Pricing() {
         <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center gap-8 px-4 pb-14 pt-32 text-center sm:px-6 sm:pb-16 sm:pt-40">
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              3,000+ traders already journaling
+              4,000+ traders already journaling
             </p>
             <h1 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl md:text-5xl">
               Free Trading Journal, <span className="text-amber-500">Pro When You Need It</span>

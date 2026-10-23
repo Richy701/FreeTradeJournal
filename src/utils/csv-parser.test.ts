@@ -743,3 +743,89 @@ describe('isEmptyExport — header row with no trade rows', () => {
     expect(isEmptyExport('just some text')).toBe(false);
   });
 });
+
+describe('parseCSV — line endings', () => {
+  // Some exports end lines with a bare carriage return. Splitting on "\n" alone
+  // read the whole file as one header line and reported "no trades in it".
+  const header = 'Id,ContractName,EnteredAt,ExitedAt,EntryPrice,ExitPrice,Fees,PnL,Size,Type,TradeDay,TradeDuration,Commissions';
+  const row = '1,MNQZ6,10/20/2026 14:30:00 +00:00,10/20/2026 14:35:00 +00:00,20000,20010,0.74,20,1,Long,10/20/2026 00:00:00 -05:00,00:05:00,0';
+
+  it('imports a file whose lines end with a bare carriage return', () => {
+    const csv = header + '\r' + row + '\r';
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades).toHaveLength(1);
+    expect(isEmptyExport(csv)).toBe(false);
+    expect(parseCSVHeaders(csv)).toHaveLength(13);
+  });
+
+  it('applies the same handling when columns are mapped by hand', () => {
+    const csv = header + '\r' + row + '\r';
+    const r = parseCSVWithMappings(csv, {
+      symbol: 1, side: 9, openPrice: 4, closePrice: 5, quantity: 8, pnl: 7, openTime: 2, closeTime: 3,
+    });
+    expect(r.trades).toHaveLength(1);
+  });
+});
+
+describe('parseCSV — broker headers seen in failed imports', () => {
+  it('cTrader history: "Opening direction", "Entry price", "Closing price", "Net $"', () => {
+    const csv = [
+      'Symbol,Opening direction,Closing time (UTC+0),Entry price,Closing price,Closing quantity,Net $,Balance $',
+      'EURUSD,Buy,14/10/2026 09:12:44.120,1.08500,1.08620,10000,11.20,1011.20',
+      'XAUUSD,Sell,14/10/2026 13:40:02.500,2650.10,2655.30,1,-5.20,1006.00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades.map(t => [t.symbol, t.side, t.entryPrice, t.exitPrice, t.pnl])).toEqual([
+      ['EURUSD', 'long', '1.08500', '1.08620', '11.2'],
+      ['XAUUSD', 'short', '2650.10', '2655.30', '-5.2'],
+    ]);
+    expect(r.trades[0].pnlIsNet).toBe(true);
+  });
+
+  it('cTrader history in French', () => {
+    const csv = [
+      "Symbole,Sens d'ouverture,Heure de clôture,Cours d'entrée,Price de clôture,Quantité de clôture,$ nets,Solde $",
+      'EURUSD,Achat,14/10/2026 09:12:44.120,1.08500,1.08620,10000,11.20,1011.20',
+      'EURUSD,Vente,14/10/2026 10:02:10.000,1.08700,1.08600,10000,10.00,1021.20',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades.map(t => [t.side, t.entryPrice, t.exitPrice, t.pnl])).toEqual([
+      ['long', '1.08500', '1.08620', '11.2'],
+      ['short', '1.08700', '1.08600', '10'],
+    ]);
+  });
+
+  it('snake_case headers: entry price is not read from the opening time column', () => {
+    const csv = [
+      'ticket,opening_time_utc,closing_time_utc,type,lots,original_position_size,symbol,opening_price,closing_price,commission,swap,profit',
+      '9001,2026-10-07T12:00:05.000Z,2026-10-07T13:15:40.000Z,buy,0.5,0.5,XAUUSD,2640.50,2648.20,-3.50,0,385.00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades[0]).toMatchObject({ symbol: 'XAUUSD', side: 'long', entryPrice: '2640.50', exitPrice: '2648.20', quantity: '0.5', pnl: '385' });
+    expect(r.trades[0].entryDate).toContain('2026-10-07');
+    expect(r.trades[0].exitDate).toContain('2026-10-07');
+  });
+
+  it('no Buy/Sell column: side is worked out from the prices and the P&L', () => {
+    const csv = [
+      'Symbol,Quantity,Entry DT,Entry Price,Exit DT,Exit Price,ProfitLoss',
+      'ES,1,10/14/2026 09:31:00,5800.00,10/14/2026 09:45:00,5810.00,500.00',
+      'ES,1,10/14/2026 10:05:00,5812.00,10/14/2026 10:20:00,5808.00,200.00',
+      'NQ,1,10/15/2026 09:40:00,20100.00,10/15/2026 09:55:00,20090.00,-200.00',
+    ].join('\n');
+    const r = parseCSV(csv);
+    expect(r.success).toBe(true);
+    expect(r.trades.map(t => t.side)).toEqual(['long', 'short', 'long']);
+    expect(r.trades[0].entryDate).toContain('2026-10-14');
+  });
+
+  it('still reports a missing Buy/Sell column when there is no P&L to infer it from', () => {
+    const r = parseCSV('Symbol,Quantity,Entry Price,Exit Price\nES,1,5800,5810');
+    expect(r.success).toBe(false);
+    expect(r.errors.join(' ')).toMatch(/Missing required columns: .*side/);
+  });
+});
