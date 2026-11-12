@@ -5,7 +5,7 @@ subtitle: Seven journals with a real free plan, what each one caps, and where th
 category: Comparisons
 tags: free trading journal, best trading journal, tradezella alternative, tradervue, tradesviz, trading journal comparison, prop firm
 date: 2026-08-17
-updated: 2026-09-24
+updated: 2026-11-12
 coverImage: https://www.freetradejournal.com/images/blog/best-free-trading-journals-2026.jpg
 ---
 
@@ -19,7 +19,7 @@ If you only want the short version: most "free" trading journals are either a fr
 |---|---|---|---|
 | FreeTradeJournal | Yes. Unlimited trades, 30-day analytics window, 20 journal entries, 20 AI queries/month | Forex, futures and prop-firm traders who want AI coaching without a $30/month bill | $12.99/mo or $99.99/yr |
 | Tradervue | Yes. Capped at 30 imported trades per calendar month | US stock and options traders with a low trade count | $29.95/mo (Silver) |
-| TradesViz | Yes. Up to 3,000 trades/month, unlimited accounts | Data-heavy traders who want hundreds of statistics | $29.99/mo |
+| TradesViz | Yes. 3,000 executions/month, one account, stocks only | Data-heavy stock traders who want hundreds of statistics | $19.99/mo (Pro) |
 | Stonk Journal | Yes. No trade cap per its own site | Options traders, multi-leg positions | Free |
 | Trademetria | Yes. 30 orders/month, one account | Occasional traders | Paid tiers available |
 | Myfxbook | Yes. Free, auto-syncs MT4/MT5 | Forex traders who want stats with zero manual entry | Free |
@@ -36,7 +36,7 @@ What the free plan gives you: unlimited trades, CSV import from any broker with 
 
 What it caps: dashboard analytics only cover the trailing 30 days on the free plan, the journal stops at 20 entries, and you get 2 trading accounts. Pro removes those and adds cloud sync across devices for $12.99/month or $99.99/year. There is no trial and no card is needed for the free plan.
 
-Where it loses: there is no live broker sync yet. You import by CSV or screenshot. It is also younger than everything else on this list, so the community and the integrations list are smaller. If you trade multi-leg options, look at Stonk Journal or TradesViz instead.
+Where it loses: there is no live broker sync yet. You import by CSV or screenshot. It is also younger than everything else on this list, so the community and the integrations list are smaller. If you trade multi-leg options, look at Stonk Journal instead.
 
 Where it wins: it is the only one here that gives you an AI coach on the free plan, it treats forex and futures as first-class (pip maths per pair, MetaTrader and Tradovate exports handled without manual mapping, weekday and symbol breakdowns), and it has prop-firm evaluation rules built in rather than bolted on. [See the pricing page](/pricing) for the full free-vs-Pro list.
 
@@ -50,9 +50,9 @@ Pick it if you trade US stocks or options at a low frequency and want a mature p
 
 ### TradesViz
 
-The most generous free tier on this list by trade count: 3,000 trades a month, unlimited broker accounts and CSV import, all free. It has more statistics than anyone will ever look at (the site claims 600+), options flow data and backtesting on the paid tier ($29.99/month).
+A generous free tier for stock traders: 3,000 executions a month on one account, free forever. The catch is that the free plan only takes stock trades. Options, futures, forex and crypto need a paid plan, which starts at $19.99/month for Pro (more accounts, all asset types) and $29.99/month for Platinum (adds simulation and the advanced tools). It has more statistics than anyone will ever look at (the site claims 600+). Prices checked November 2026.
 
-Pick it if you want raw depth and don't mind a dense interface. The learning curve is the main complaint I hear about it. Skip it if you want something clean you will actually open every day.
+Pick it if you trade stocks and want raw depth, and don't mind a dense interface. The learning curve is the main complaint I hear about it. Skip it if you want something clean you will actually open every day.
 
 ### Stonk Journal
 
@@ -81,7 +81,7 @@ Free, infinitely flexible, and most traders who start here stop updating it with
 ## How to choose
 
 - Active forex or futures trader, especially in a prop-firm evaluation, who wants coaching without a subscription: FreeTradeJournal.
-- Options trader: Stonk Journal, or TradesViz if you want deep stats.
+- Options trader: Stonk Journal, or TradesViz Pro if you want deep stats and don't mind paying.
 - Low-frequency US stock trader who wants something mature: Tradervue's free plan.
 - MetaTrader trader who only wants numbers, no writing: Myfxbook.
 - Money is no object and you want the most broker syncs: TradeZella.
@@ -92,10 +92,10 @@ Whichever you pick, the useful part is opening it after every session and writin
 ## Frequently asked questions
 
 **Is there a trading journal that is completely free with no limits?**
-Stonk Journal and Myfxbook say so. FreeTradeJournal has no limit on trades but caps analytics history and journal entries on the free plan. TradesViz caps at 3,000 trades a month. Everyone else caps hard or is a trial.
+Stonk Journal and Myfxbook say so. FreeTradeJournal has no limit on trades but caps analytics history and journal entries on the free plan. TradesViz caps at 3,000 executions a month, one account and stocks only. Everyone else caps hard or is a trial.
 
 **Which free trading journal works with MT4 and MT5?**
-Myfxbook auto-syncs. FreeTradeJournal imports MT4/MT5 history exports (CSV or screenshot). TradesViz imports MetaTrader CSVs too.
+Myfxbook auto-syncs. FreeTradeJournal imports MT4/MT5 history exports (CSV or screenshot). TradesViz imports MetaTrader files on its paid plans, since forex is not on its free plan.
 
 **Which free journal is best for prop firm traders?**
 FreeTradeJournal, because it tracks evaluation rules (daily loss, max drawdown, profit target) for firms like Topstep, FTMO, Apex and The5ers on the free plan. See [best free trading journal for prop firms](/blog/best-free-trading-journal-prop-firm).
