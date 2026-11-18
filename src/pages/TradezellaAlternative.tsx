@@ -33,12 +33,37 @@ const OTHER_WINS = [
   { title: 'Larger community', desc: 'TradeZella has been the best-known name in paid trading journals since 2022, with a large user base and content library around it.' },
 ];
 
+const WHO_FTJ = [
+  { title: 'You trade prop firm evaluations', desc: 'PropTracker is built specifically for FTMO, Apex, Topstep, and other firms. It tracks your drawdown, daily loss limit, and evaluation progress in real time alongside your journal. TradeZella has no equivalent dedicated tool.' },
+  { title: 'You want to start without paying', desc: 'The free plan has no expiry. Log trades, run analytics, get AI coaching — all without a card. If you decide journaling is worth paying for, Pro is there. If you stop trading for a month, you lose nothing.' },
+  { title: 'You want AI coaching without a tier wall', desc: 'FreeTradeJournal includes AI trade reviews and coaching on every plan — including 20 free analyses a month on the free one. The AI reads your journal entries and flags patterns like revenge trading or sizing inconsistencies in plain English.' },
+  { title: 'You trade across multiple brokers or switch brokers often', desc: 'CSV import works with every broker that can export a spreadsheet. You are never dependent on a supported-broker list, and switching brokers does not break your import setup.' },
+];
+
+const WHO_TRADEZELLA = [
+  { title: 'Automatic sync is a dealbreaker for you', desc: 'TradeZella connects directly to supported brokers and pulls trades in automatically. FreeTradeJournal uses CSV import — a manual step after every session. If you trade very high frequency or find that friction you will not tolerate long-term, TradeZella is genuinely better for this.' },
+  { title: 'You want backtesting and replay alongside your journal', desc: 'TradeZella includes market replay so you can revisit setups and backtest ideas without leaving the app. FreeTradeJournal focuses on journaling, analytics, and coaching — it does not offer backtesting or replay.' },
+  { title: 'You are already embedded in TradeZella\'s ecosystem', desc: 'TradeZella has a large user base built up since 2022, with tutorials and community content built around its specific interface. If you have learned their workflow and have years of data there, switching has a real cost worth weighing.' },
+];
+
+const SWITCH_STEPS = [
+  { step: '01', title: 'Sign up — no card needed', desc: 'Create a free account at FreeTradeJournal. The signup takes about 30 seconds and nothing is gated behind a payment.' },
+  { step: '02', title: 'Create a trading account', desc: 'Inside the app, add an account for each broker you trade. Name it after the broker so your analytics stay separated by account.' },
+  { step: '03', title: 'Export from TradeZella or your broker', desc: 'In TradeZella, go to Settings and use their export option to download a CSV of your trade history. Alternatively, export directly from your broker — this works just as well and skips TradeZella entirely.' },
+  { step: '04', title: 'Import the CSV', desc: 'Go to Import Trades and upload the file. The column-mapping step lets you match TradeZella\'s column names to FreeTradeJournal\'s fields — entry price, exit price, size, date, symbol, direction. No reformatting required.' },
+  { step: '05', title: 'Your dashboard fills immediately', desc: 'As soon as the import finishes, your analytics, stats, and charts are live. Journal entries from TradeZella cannot be imported automatically, but the trade data and all statistics come across in full.' },
+];
+
 const FAQS = [
-  { question: 'Is FreeTradeJournal really free?', answer: 'Yes. The free plan includes unlimited trade logging, dashboard analytics over your last 30 days, up to 20 journal entries, two trading accounts, CSV/Excel import and export, and 5 AI coaching runs per month (automatic tips and prompts are free). No credit card required. Pro ($12.99/month or $99.99/year) removes the limits and adds cloud sync.' },
+  { question: 'Is FreeTradeJournal really free?', answer: 'Yes. The free plan includes unlimited trade logging, dashboard analytics over your last 30 days, up to 20 journal entries, two trading accounts, CSV/Excel import and export, and 20 AI coaching analyses per month. No credit card required. Pro ($12.99/month or $99.99/year) removes the limits and adds cloud sync.' },
   { question: 'How much cheaper is FreeTradeJournal than TradeZella?', answer: 'TradeZella starts at $35/month (or $315/year) and goes up to $99/month for Ultra. FreeTradeJournal Pro is $12.99/month or $99.99/year — roughly a third of TradeZella\'s cheapest plan, and there is a free plan TradeZella does not offer.' },
-  { question: 'How do I switch from TradeZella to FreeTradeJournal?', answer: 'Export your trades to CSV — from TradeZella or directly from your broker — then use FreeTradeJournal\'s CSV import. The column-mapping step handles different export formats, so you do not need to reformat anything by hand.' },
+  { question: 'Did TradeZella raise its prices?', answer: 'Yes. In July 2026 TradeZella restructured to three paid tiers — Essential ($35/month), Pro ($59/month), and Ultra ($99/month) — and removed the lower-priced plans that were previously available. The cheapest way into TradeZella is now $35/month.' },
+  { question: 'Is there a TradeZella free trial in 2026?', answer: 'TradeZella does not currently offer a free plan or a standard time-limited free trial — check tradezella.com for the latest. FreeTradeJournal has a free plan with no expiry instead of a trial, so you can use it for as long as you need before deciding.' },
+  { question: 'How do I switch from TradeZella to FreeTradeJournal?', answer: 'Sign up at FreeTradeJournal (no card required), then create a trading account for each broker you use. Export your trades from TradeZella via their settings, or export directly from your broker as a CSV. Upload the file in FreeTradeJournal\'s Import Trades section — the column-mapping step matches your column names to the right fields automatically. Your dashboard populates as soon as the import finishes. Journal entries cannot be imported automatically but can be re-entered manually.' },
+  { question: 'Can I keep my trade history when I switch?', answer: 'Yes. Any broker or platform that can export a CSV will work with FreeTradeJournal\'s import. Export from TradeZella or go directly to your broker — either way, the full trade history comes across and your analytics calculate immediately from the imported data.' },
   { question: 'Does FreeTradeJournal sync with my broker automatically?', answer: 'Not yet. Trades come in via CSV or Excel import from any broker, or manual entry. Automatic sync is in development.' },
   { question: 'Does FreeTradeJournal work for prop firm traders?', answer: 'Yes — this is where it is strongest. PropTracker tracks evaluation progress, drawdown, and daily loss limits across FTMO, Apex, Topstep, and other firms, alongside your journal and analytics.' },
+  { question: 'Does TradeZella support prop firm evaluation tracking?', answer: 'TradeZella has general analytics you can use to monitor your performance, but it does not have a dedicated prop firm evaluation tracker. FreeTradeJournal\'s PropTracker is built specifically for this: it tracks your evaluation rules, drawdown ceiling, and daily loss limit per firm.' },
   { question: 'Can I try Pro before paying?', answer: 'The free plan is the try: use the core journal for as long as you like before deciding. When you want the full feature set, upgrade to Pro and cancel anytime.' },
 ];
 
@@ -119,6 +144,50 @@ export default function TradezellaAlternative() {
         <section className="py-20 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
+              <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Who should choose what</p>
+              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                The right tool<br />
+                <span className="text-amber-500">depends on how you trade.</span>
+              </h2>
+            </div>
+
+            <div className="space-y-10">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-4">FreeTradeJournal is the better fit if</p>
+                <div className="divide-y divide-border/40">
+                  {WHO_FTJ.map((item, i) => (
+                    <div key={i} className="flex items-start gap-6 py-5">
+                      <span className="text-[11px] font-mono text-emerald-500/50 pt-0.5 w-6 shrink-0 select-none">{String(i + 1).padStart(2, '0')}</span>
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">TradeZella is the better fit if</p>
+                <div className="divide-y divide-border/40">
+                  {WHO_TRADEZELLA.map((item, i) => (
+                    <div key={i} className="flex items-start gap-6 py-5">
+                      <span className="text-[11px] font-mono text-muted-foreground/40 pt-0.5 w-6 shrink-0 select-none">{String(i + 1).padStart(2, '0')}</span>
+                      <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 sm:px-6 bg-background">
+          <div className="container mx-auto max-w-4xl">
+            <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">The honest breakdown</p>
               <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
                 Where each one<br />
@@ -156,6 +225,36 @@ export default function TradezellaAlternative() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 sm:px-6 bg-background">
+          <div className="container mx-auto max-w-4xl">
+            <div className="mb-10 border-b border-border/50 pb-8">
+              <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">How to switch</p>
+              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                Moving from TradeZella<br />
+                <span className="text-amber-500">takes about five minutes.</span>
+              </h2>
+            </div>
+
+            <div className="prose prose-sm dark:prose-invert max-w-none space-y-4 text-muted-foreground leading-relaxed mb-10">
+              <p>
+                Your trade data comes with you. Export from TradeZella or directly from your broker — the import handles both. Journal entries cannot be imported automatically but can be re-added manually if you want them.
+              </p>
+            </div>
+
+            <div className="divide-y divide-border/40">
+              {SWITCH_STEPS.map((item) => (
+                <div key={item.step} className="flex items-start gap-6 py-5">
+                  <span className="text-[11px] font-mono text-amber-500/50 pt-0.5 w-6 shrink-0 select-none">{item.step}</span>
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <ClosingCta
