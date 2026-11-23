@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -59,11 +60,12 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        sideOffset={4}
-        className="w-[--radix-dropdown-menu-trigger-width] min-w-[240px] rounded-lg p-1"
+        sideOffset={6}
+        className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[280px] max-w-[calc(100vw-1rem)] rounded-xl p-1.5"
       >
         {combinableCurrencies.length > 0 && (
           <>
+            <DropdownMenuLabel className="px-2.5 pb-1 pt-2 text-xs font-medium text-muted-foreground">Combined view</DropdownMenuLabel>
             {combinableCurrencies.map((currency) => {
               const isActive = isAllAccounts && allAccountsCurrency === currency
               const count = accounts.filter(a => a.currency === currency).length
@@ -72,8 +74,8 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
                   key={`all-${currency}`}
                   onClick={() => setAllAccounts(currency)}
                   className={cn(
-                    "flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer",
-                    isActive && "bg-muted"
+                    "flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg cursor-pointer",
+                    isActive && "bg-primary/10 focus:bg-primary/10"
                   )}
                 >
                   <Stack className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -82,7 +84,7 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
                       {singleCurrency ? 'All accounts' : `All ${currency} accounts`}
                     </span>
                     <span className="text-xs text-muted-foreground truncate">
-                      {count} accounts · view only
+                      {count} accounts · Read only
                     </span>
                   </div>
                   {isActive && (
@@ -94,6 +96,8 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
             <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuLabel className="px-2.5 pb-1 pt-2 text-xs font-medium text-muted-foreground">Trading accounts</DropdownMenuLabel>
+        <div className="max-h-[min(360px,50svh)] overflow-y-auto">
         {accounts.map((account) => {
           const isActive = !isAllAccounts && account.id === activeAccount.id
           return (
@@ -101,12 +105,12 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
               key={account.id}
               onClick={() => setActiveAccount(account)}
               className={cn(
-                "flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer",
-                isActive && "bg-muted"
+                "flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg cursor-pointer",
+                isActive && "bg-primary/10 focus:bg-primary/10"
               )}
             >
               <div className="flex flex-col flex-1 min-w-0">
-                <span className={cn("text-sm truncate", isActive && "font-medium")}>
+                <span className="text-sm font-medium truncate">
                   {account.name}
                 </span>
                 <span className="text-xs text-muted-foreground truncate">
@@ -114,12 +118,14 @@ export function AccountSwitcher({ onManageAccounts }: AccountSwitcherProps) {
                   {account.broker ? ` · ${account.broker}` : ''}
                 </span>
               </div>
-              {isActive && (
-                <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              )}
+              <span className="shrink-0 text-[11px] font-medium tabular-nums text-muted-foreground">{account.currency}</span>
+              <span className="flex w-4 shrink-0 items-center justify-center">
+                {isActive && <Check weight="bold" className="h-4 w-4 text-primary" />}
+              </span>
             </DropdownMenuItem>
           )
         })}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   )

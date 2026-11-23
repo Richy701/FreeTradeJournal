@@ -1,3 +1,5 @@
+import { DEMO_ACCOUNTS } from '@/data/demo-data'
+import { isScreenshotPreview } from '@/lib/screenshot-preview'
 import * as React from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useThemePresets } from '@/contexts/theme-presets'
@@ -87,7 +89,7 @@ function isItemActive(url: string, pathname: string): boolean {
 // Avatar + name row pinned to the bottom of the sidebar. Reads the same
 // userStorage avatar keys as the header menu in site-header.tsx.
 function SidebarUser() {
-  const { user, logout } = useAuth()
+  const { user, logout, isDemo } = useAuth()
   const { themeColors } = useThemePresets()
   const { isMobile, setOpenMobile } = useSidebar()
   const userStorage = useUserStorage()
@@ -125,7 +127,7 @@ function SidebarUser() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" className="h-12" aria-label="Account menu">
+            <SidebarMenuButton size="lg" className="h-14 rounded-lg border border-sidebar-border/60 bg-background/50 px-2.5" aria-label="Account menu">
               <Avatar className="h-7 w-7 rounded-full ring-1 ring-border shrink-0">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
                 <AvatarFallback
@@ -141,7 +143,7 @@ function SidebarUser() {
               <div className="grid flex-1 text-left leading-tight min-w-0">
                 <span className="truncate text-sm font-medium">{name}</span>
                 <span className="truncate text-[11px] leading-tight text-muted-foreground">
-                  {user.email}
+                  {isScreenshotPreview(isDemo) ? 'Personal trading journal' : user.email}
                 </span>
               </div>
               <CaretUpDown className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -199,10 +201,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader className="pb-1">
+      <SidebarHeader className="gap-3 px-3 pb-4 pt-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" className="px-2" asChild>
               <Link to="/dashboard">
                 <div className="size-8 rounded-md shrink-0 overflow-hidden"><img src="/favicon.svg" alt="FTJ" className="w-full h-full object-cover" /></div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -216,19 +218,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
         {isDemo ? (
-          <div className="px-3">
+          <div className="px-1">
             <div className="flex items-center gap-2 h-9 px-2.5 text-sm font-medium rounded-md border bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400">
               <Eye className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">Demo Account</span>
+              <span className="truncate" title={DEMO_ACCOUNTS[0].name}>{DEMO_ACCOUNTS[0].name}</span>
             </div>
           </div>
         ) : (
-          <div className="px-3">
+          <div className="px-1">
             <AccountSwitcher />
           </div>
         )}
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-2 border-t border-sidebar-border/60 pt-2">
         <NavMain groups={groups} />
       </SidebarContent>
       {!isDemo && streak > 0 && (
@@ -273,7 +275,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       )}
       <SidebarFooter
-        className={`gap-0 ${
+        className={`gap-2 px-3 pb-3 ${
           // 44px rows make an expanded "More" tall enough to push the whole nav
           // off a phone screen, so cap the footer and let it scroll instead.
           // 45vh hid the account row behind the fold once More was open.
@@ -281,18 +283,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }`}
       >
         <SidebarMenu
-          className={`gap-1 px-1 ${
+          className={`gap-1 px-0 [&_[data-sidebar=menu-button]]:rounded-lg ${
             // 28px rows are below the 44px minimum touch target on phones.
             isMobile ? '[&_[data-sidebar=menu-button]]:h-11' : ''
           }`}
         >
-          {isDemo ? (
+          {isDemo && !isScreenshotPreview(isDemo) ? (
             <>
               <SidebarMenuItem>
                 <SidebarMenuButton size="sm" asChild>
                   <Link
                     to="/signup"
-                    onClick={() => { exitDemoMode(); isMobile && setOpenMobile(false); }}
+                    onClick={() => { isMobile && setOpenMobile(false); }}
                     className="!bg-gradient-to-r from-amber-500/20 to-yellow-500/20 font-medium"
                   >
                     <UserPlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -433,7 +435,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </>
           )}
         </SidebarMenu>
-        {!isDemo && (
+        {(!isDemo || isScreenshotPreview(isDemo)) && (
           <>
             <SidebarSeparator className="mx-1 my-1" />
             <SidebarUser />

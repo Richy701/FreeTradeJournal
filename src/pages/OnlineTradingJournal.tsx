@@ -1,3 +1,4 @@
+import { useScreenshotMode } from '@/hooks/use-screenshot-mode';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ const FAQS = [
 ];
 
 export default function OnlineTradingJournal() {
+  const screenshotMode = useScreenshotMode();
   const { enterDemoMode } = useAuth();
   const navigate = useNavigate();
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -104,11 +106,11 @@ export default function OnlineTradingJournal() {
             <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">What it looks like</p>
             <button
               onClick={() => setLightboxOpen(true)}
-              className="w-full block rounded-2xl overflow-hidden border border-amber-500/20 shadow-2xl shadow-amber-500/5 ring-1 ring-white/5 cursor-zoom-in group relative"
+              className="w-full block rounded-xl overflow-hidden border border-border shadow-sm cursor-zoom-in group relative"
               aria-label="View full screenshot"
             >
               <img
-                src="/images/screenshots/trading-dashboard-screenshot.png"
+                src={`/images/screenshots/trading-dashboard-screenshot-${screenshotMode}.webp`}
                 alt="FreeTradeJournal online trading dashboard with P&L analytics, calendar heatmap, and equity curve"
                 className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
               />
@@ -124,16 +126,16 @@ export default function OnlineTradingJournal() {
         <ImageLightbox
           open={lightboxOpen}
           onOpenChange={setLightboxOpen}
-          src="/images/screenshots/trading-dashboard-screenshot.png"
+          src={`/images/screenshots/trading-dashboard-screenshot-${screenshotMode}.webp`}
           alt="FreeTradeJournal online trading dashboard"
         />
 
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">What you get</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-bold leading-[1.1]">
                   No install needed.<br />
                   <span className="text-amber-500">Full journal in your browser.</span>
                 </h2>
@@ -172,11 +174,11 @@ export default function OnlineTradingJournal() {
           </div>
         </section>
 
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-8 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">FAQ</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-bold leading-[1.1]">
                 Common questions.<br />
                 <span className="text-amber-500">Straight answers.</span>
               </h2>

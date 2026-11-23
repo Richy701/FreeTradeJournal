@@ -140,7 +140,8 @@ export function CalculatorDisclaimer() {
   )
 }
 
-export function PositionSizeCalculator() {
+export function PositionSizeCalculator({ inApp = false }: { inApp?: boolean }) {
+  const panel = inApp ? 'rounded-xl border bg-card shadow-none' : 'rounded-xl border bg-card/50'
   const { themeColors, alpha } = useThemePresets()
   const [state, setState] = useState<SavedState>(loadSaved)
   const [liveRate, setLiveRate] = useState<number | null>(null)
@@ -280,12 +281,73 @@ export function PositionSizeCalculator() {
     return groups
   }, [])
 
+  const comparisons = results && !results.tooSmall && (
+          <div className={inApp ? "lg:col-span-12 grid sm:grid-cols-2 gap-4" : "grid sm:grid-cols-2 gap-4 sm:gap-6"}>
+            {/* What the size would be at other risk levels */}
+            {results.riskPercent !== null && (
+              <div className={`${panel} ${inApp ? "p-5" : "p-4"} flex flex-col`}>
+                <p className="text-sm font-semibold text-foreground mb-2">Size at other risk levels</p>
+                <div className="flex-1 flex flex-col justify-evenly">
+                {[0.25, 0.5, 1, 1.5, 2, 3].map(pct => {
+                  const balance = num(state.balance)
+                  const risk = balance * pct / 100
+                  const size = results.kind === 'forex'
+                    ? `${fmt(Math.floor((risk / (num(state.stopPips) * results.pipValuePerLot)) * 100) / 100)} lots`
+                    : `${Math.floor(risk / results.riskPerContract)} ${Math.floor(risk / results.riskPerContract) === 1 ? 'contract' : 'contracts'}`
+                  const isCurrent = results.riskPercent !== null && Math.abs(results.riskPercent - pct) < 0.05
+                  return (
+                    <div
+                      key={pct}
+                      className="flex items-baseline justify-between gap-2 rounded-md px-2 py-1"
+                      style={isCurrent ? { backgroundColor: alpha(themeColors.primary, '10') } : undefined}
+                    >
+                      <span className={`text-xs ${isCurrent ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        {pct}% · {ccy}{fmt(risk, 0)}
+                      </span>
+                      <span className={`text-xs font-mono tabular-nums ${isCurrent ? 'font-semibold' : ''}`} style={isCurrent ? { color: themeColors.primary } : undefined}>
+                        {size}
+                      </span>
+                    </div>
+                  )
+                })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2 pt-2">Same stop, different risk per trade.</p>
+              </div>
+            )}
+
+            {/* Dollar outcomes at 1R/2R/3R with the current size */}
+            <div className={`${panel} ${inApp ? "p-5" : "p-4"} flex flex-col`}>
+              <p className="text-sm font-semibold text-foreground mb-2">Profit targets</p>
+              <div className="flex-1 flex flex-col justify-evenly">
+              {[1, 2, 3].map(r => {
+                const stopDist = results.kind === 'forex' ? num(state.stopPips) : num(state.stopValue)
+                const unit = results.kind === 'forex' ? 'pips' : state.stopUnit
+                const reward = results.actualRisk * r
+                return (
+                  <div key={r} className="flex items-baseline justify-between gap-2 px-2 py-1">
+                    <span className="text-xs text-muted-foreground">
+                      {r}R · {fmt(stopDist * r, stopDist * r % 1 === 0 ? 0 : 1)} {unit} away
+                    </span>
+                    <span className="text-xs font-mono tabular-nums" style={{ color: themeColors.profit }}>
+                      +{ccy}{fmt(reward)}
+                    </span>
+                  </div>
+                )
+              })}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2 pt-2">
+                What this position makes if the trade runs 1, 2, or 3 times your risk before stopping out.
+              </p>
+            </div>
+          </div>
+        )
+
   return (
-    <div className="grid gap-4 sm:gap-6 xl:grid-cols-12">
+    <div data-position-calculator className={inApp ? "grid gap-4 lg:grid-cols-12" : "grid gap-4 sm:gap-6 xl:grid-cols-12"}>
 
       {/* Inputs */}
-      <div className="xl:col-span-4 rounded-xl border bg-card/50">
-        <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-border/50">
+      <div className={`${inApp ? "lg:col-span-5" : "xl:col-span-4"} ${panel}`}>
+        <div className={inApp ? "flex flex-wrap items-center justify-between gap-3 p-5 border-b" : "flex items-center justify-between gap-3 px-4 pt-4 pb-3 border-b border-border/50"}>
           <div className="flex items-center gap-2 min-w-0">
             <SlidersHorizontal className="h-4 w-4 shrink-0" style={{ color: themeColors.primary }} />
             <span className="text-sm font-semibold text-foreground truncate">Trade inputs</span>
@@ -299,7 +361,7 @@ export function PositionSizeCalculator() {
           </div>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className={inApp ? "p-5 space-y-4" : "p-4 space-y-4"}>
           <div className="grid grid-cols-2 gap-3">
             {state.mode === 'forex' ? (
               <Field label="Account currency">
@@ -444,8 +506,8 @@ export function PositionSizeCalculator() {
 
       {/* Results — the last card stretches so the column bottom lines up with
           the inputs card next to it. */}
-      <div className="xl:col-span-5 flex flex-col gap-4 sm:gap-6 [&>*:last-child]:flex-1">
-        <div className={`rounded-xl border bg-card/50 p-5 sm:p-6 ${!results ? 'flex items-center justify-center' : ''}`}>
+      <div className={inApp ? "lg:col-span-7 min-w-0 flex flex-col gap-4" : "xl:col-span-5 flex flex-col gap-4 sm:gap-6 [&>*:last-child]:flex-1"}>
+        <div className={`${panel} p-5 sm:p-6 ${!results ? 'flex items-center justify-center' : ''}`}>
           {!results ? (
             <div className="flex flex-col items-center gap-2 text-center max-w-sm">
               <Gauge className="h-6 w-6" style={{ color: themeColors.primary }} />
@@ -460,7 +522,7 @@ export function PositionSizeCalculator() {
               </p>
               {results.kind === 'forex' ? (
                 <>
-                  <p className="text-4xl sm:text-5xl font-bold tabular-nums font-mono" style={{ color: themeColors.primary }}>
+                  <p className={inApp ? "text-3xl sm:text-4xl font-semibold tracking-tight tabular-nums" : "text-4xl sm:text-5xl font-bold tabular-nums font-mono"} style={{ color: themeColors.primary }}>
                     {fmt(results.lots)} <span className="text-xl font-semibold text-foreground">lots</span>
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
@@ -468,7 +530,7 @@ export function PositionSizeCalculator() {
                   </p>
                 </>
               ) : (
-                <p className="text-4xl sm:text-5xl font-bold tabular-nums font-mono" style={{ color: themeColors.primary }}>
+                <p className={inApp ? "text-3xl sm:text-4xl font-semibold tracking-tight tabular-nums" : "text-4xl sm:text-5xl font-bold tabular-nums font-mono"} style={{ color: themeColors.primary }}>
                   {results.contracts} <span className="text-xl font-semibold text-foreground">{results.contracts === 1 ? 'contract' : 'contracts'}</span>
                 </p>
               )}
@@ -492,7 +554,7 @@ export function PositionSizeCalculator() {
         </div>
 
         {results && (
-          <div className="rounded-xl border border-border/60 bg-card/50 grid grid-cols-2 [&>div]:border-border/60 [&>div:nth-child(odd)]:border-r [&>div:nth-child(-n+2)]:border-b">
+          <div className={`${panel} ${inApp ? 'flex-1' : ''} grid grid-cols-2 [&>div]:border-border/60 [&>div:nth-child(odd)]:border-r [&>div:nth-child(-n+2)]:border-b`}>
             <ResultTile
               label="Target risk"
               value={`${ccy}${fmt(results.riskAmount)}`}
@@ -528,73 +590,16 @@ export function PositionSizeCalculator() {
           </div>
         )}
 
-        {results && !results.tooSmall && (
-          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-            {/* What the size would be at other risk levels */}
-            {results.riskPercent !== null && (
-              <div className="rounded-xl border bg-card/50 p-4 flex flex-col">
-                <p className="text-sm font-semibold text-foreground mb-2">Size at other risk levels</p>
-                <div className="flex-1 flex flex-col justify-evenly">
-                {[0.25, 0.5, 1, 1.5, 2, 3].map(pct => {
-                  const balance = num(state.balance)
-                  const risk = balance * pct / 100
-                  const size = results.kind === 'forex'
-                    ? `${fmt(Math.floor((risk / (num(state.stopPips) * results.pipValuePerLot)) * 100) / 100)} lots`
-                    : `${Math.floor(risk / results.riskPerContract)} ${Math.floor(risk / results.riskPerContract) === 1 ? 'contract' : 'contracts'}`
-                  const isCurrent = results.riskPercent !== null && Math.abs(results.riskPercent - pct) < 0.05
-                  return (
-                    <div
-                      key={pct}
-                      className="flex items-baseline justify-between gap-2 rounded-md px-2 py-1"
-                      style={isCurrent ? { backgroundColor: alpha(themeColors.primary, '10') } : undefined}
-                    >
-                      <span className={`text-xs ${isCurrent ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                        {pct}% · {ccy}{fmt(risk, 0)}
-                      </span>
-                      <span className={`text-xs font-mono tabular-nums ${isCurrent ? 'font-semibold' : ''}`} style={isCurrent ? { color: themeColors.primary } : undefined}>
-                        {size}
-                      </span>
-                    </div>
-                  )
-                })}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-2 pt-2">Same stop, different risk per trade.</p>
-              </div>
-            )}
-
-            {/* Dollar outcomes at 1R/2R/3R with the current size */}
-            <div className="rounded-xl border bg-card/50 p-4 flex flex-col">
-              <p className="text-sm font-semibold text-foreground mb-2">Profit targets</p>
-              <div className="flex-1 flex flex-col justify-evenly">
-              {[1, 2, 3].map(r => {
-                const stopDist = results.kind === 'forex' ? num(state.stopPips) : num(state.stopValue)
-                const unit = results.kind === 'forex' ? 'pips' : state.stopUnit
-                const reward = results.actualRisk * r
-                return (
-                  <div key={r} className="flex items-baseline justify-between gap-2 px-2 py-1">
-                    <span className="text-xs text-muted-foreground">
-                      {r}R · {fmt(stopDist * r, stopDist * r % 1 === 0 ? 0 : 1)} {unit} away
-                    </span>
-                    <span className="text-xs font-mono tabular-nums" style={{ color: themeColors.profit }}>
-                      +{ccy}{fmt(reward)}
-                    </span>
-                  </div>
-                )
-              })}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-2 pt-2">
-                What this position makes if the trade runs 1, 2, or 3 times your risk before stopping out.
-              </p>
-            </div>
-          </div>
-        )}
+        {!inApp && comparisons}
       </div>
 
+      {inApp && comparisons}
+
       {/* AI check + contract specs — specs card stretches to the shared bottom edge */}
-      <div className="xl:col-span-3 flex flex-col gap-4 sm:gap-6 [&>*:last-child]:flex-1">
+      <div className={inApp ? "lg:col-span-12 grid gap-4 md:grid-cols-2" : "xl:col-span-3 flex flex-col gap-4 sm:gap-6 [&>*:last-child]:flex-1"}>
         <PositionCheckAi payload={aiPayload} instrument={instrument} />
 
-        <div className="rounded-xl border bg-card/50 p-4 flex flex-col">
+        <div className={`${panel} ${inApp ? "p-5" : "p-4"} flex flex-col`}>
           <div className="flex items-center gap-2 mb-2">
             <ListChecks className="h-4 w-4" style={{ color: themeColors.primary }} />
             <span className="text-sm font-semibold text-foreground">

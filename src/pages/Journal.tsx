@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/empty-state'
 import { PLAN_ANSWERS, type PlanAnswer } from '@/lib/post-trade-review';
 import { PostTradeReview } from '@/components/post-trade-review';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -1404,93 +1405,29 @@ export default function Journal() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
-      {/* Header Section */}
-      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
-        <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                  <BookOpen className="h-5 w-5" style={{ color: themeColors.primary }} />
-                </div>
-                <div className="space-y-0.5 min-w-0 text-left">
-                  <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>
-                    Trading Journal
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    {entries.length > 0
-                      ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} · ${entries.filter(e => e.mood === 'bullish').length} bullish · ${entries.filter(e => e.mood === 'bearish').length} bearish`
-                      : 'Document your trading thoughts and observations'}
-                  </p>
-                </div>
-              </div>
-              <div className="hidden sm:flex gap-3 shrink-0">
-                {entries.length > 0 && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setAiReviewOpen(true)}
-                    className="gap-2 border-2"
-                  >
-                    <Brain className="h-4 w-4" />
-                    AI Review
-                  </Button>
-                )}
-                {trades.length > 0 && (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => quickStartEntry('pre-trade')}
-                      className="gap-2 border-2"
-                    >
-                      <Clock className="h-4 w-4" />
-                      Pre-Trade
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => quickStartEntry('post-trade')}
-                      className="gap-2 border-2"
-                    >
-                      <ChartBar className="h-4 w-4" />
-                      Post-Trade
-                    </Button>
-                  </div>
-                )}
-                <Button
-                  onClick={openNewEntry}
-                  className="gap-2 shadow-lg"
-                  style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                >
-                  <Plus className="h-4 w-4" />
-                  New Entry
-                </Button>
-              </div>
+      <div data-journal-header className="border-b bg-background">
+        <div className="w-full space-y-4 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 space-y-1">
+              <h1 className="font-display text-2xl font-semibold tracking-tight">Trading Journal</h1>
+              <p className="text-sm text-muted-foreground">Reflect on your trades. Keep the lessons that matter.</p>
             </div>
-            {/* Mobile: the same actions as the desktop button group, one row; New Entry is the floating button */}
-            {(entries.length > 0 || trades.length > 0) && (
-              <div className="flex gap-2 sm:hidden">
-                {entries.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={() => setAiReviewOpen(true)} className="gap-1.5 flex-1">
-                    <Brain className="h-4 w-4" />
-                    AI Review
-                  </Button>
-                )}
-                {trades.length > 0 && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => quickStartEntry('pre-trade')} className="gap-1.5 flex-1">
-                      <Clock className="h-4 w-4" />
-                      Pre-Trade
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => quickStartEntry('post-trade')} className="gap-1.5 flex-1">
-                      <ChartBar className="h-4 w-4" />
-                      Post-Trade
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
+            <Button onClick={openNewEntry} className="hidden shrink-0 gap-2 sm:inline-flex" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}><Plus className="h-4 w-4" />New Entry</Button>
           </div>
+          {(entries.length > 0 || trades.length > 0) && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+              <div className="flex flex-wrap gap-2">
+                {entries.length > 0 && <Button variant="outline" size="sm" onClick={() => setAiReviewOpen(true)} className="gap-1.5"><Brain className="h-4 w-4" />AI Review</Button>}
+                {trades.length > 0 && <>
+                  <Button variant="outline" size="sm" onClick={() => quickStartEntry('pre-trade')} className="gap-1.5"><Clock className="h-4 w-4" />Pre-Trade</Button>
+                  <Button variant="outline" size="sm" onClick={() => quickStartEntry('post-trade')} className="gap-1.5"><ChartBar className="h-4 w-4" />Post-Trade</Button>
+                </>}
+              </div>
+
+            </div>
+          )}
         </div>
       </div>
 
@@ -1498,21 +1435,22 @@ export default function Journal() {
       <div className="flex flex-col flex-1 w-full px-4 pt-6 pb-24 sm:px-6 sm:pb-6 lg:px-8 gap-6">
 
         {!isAllAccounts && !showNewEntry && reviewTrades.length > 0 && (
-          <Card>
-            <CardContent className="p-4 sm:p-5 space-y-4">
+          <Card data-journal-review className="shadow-none rounded-lg">
+            <CardContent className="p-4 sm:p-5 sm:pt-5 grid gap-4 lg:grid-cols-[minmax(180px,1fr)_minmax(0,2fr)] lg:items-center">
               <div>
-                <h2 className="font-semibold">A quick review. One lesson for next time.</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Choose a trade, reflect on your plan, and take one useful lesson into your next session.</p>
+                <h2 className="font-semibold">Review your last trade</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Capture what worked and one thing to change next time.</p>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <label htmlFor="journal-review-trade" className="text-xs text-muted-foreground">Trade to review</label>
-                  <select id="journal-review-trade" value={chosenReviewTrade?.id ?? ''} onChange={event => setReviewTradeId(event.target.value)} className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm">
-                    {reviewTrades.map(trade => <option key={trade.id} value={trade.id}>{trade.symbol} · {format(new Date(trade.exitTime), 'd MMM yyyy HH:mm')} · {formatCurrency(trade.pnl, true)}</option>)}
-                  </select>
+                  <Select value={chosenReviewTrade?.id ?? ''} onValueChange={setReviewTradeId}>
+                    <SelectTrigger id="journal-review-trade" className="h-10 w-full min-w-0 [&>span]:truncate"><SelectValue placeholder="Choose a trade" /></SelectTrigger>
+                    <SelectContent>{reviewTrades.map(trade => <SelectItem key={trade.id} value={trade.id}>{trade.symbol} · {format(new Date(trade.exitTime), 'd MMM HH:mm')} · {formatCurrency(trade.pnl, true)}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
-                <Button className="min-h-11 shrink-0" disabled={!entriesLoaded || isLoadingTrades} onClick={() => { if (chosenReviewTrade) setQuickReviewTrade(chosenReviewTrade); }}>Quick review</Button>
-                <Button variant="outline" className="min-h-11 shrink-0" onClick={openNewEntry}>Write a full entry</Button>
+                <Button className="h-10 shrink-0" disabled={!entriesLoaded || isLoadingTrades} onClick={() => { if (chosenReviewTrade) setQuickReviewTrade(chosenReviewTrade); }}>Quick review</Button>
+                <Button variant="outline" className="h-10 shrink-0" onClick={openNewEntry}>Full entry</Button>
               </div>
             </CardContent>
           </Card>
@@ -1551,7 +1489,7 @@ export default function Journal() {
         <div id="journal-statistics" className={showStatistics ? 'space-y-6' : 'hidden space-y-6 sm:block'}>
         {/* Quick Stats */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-y-4 sm:grid-cols-4 border-y py-4">
             {[
               {
                 Icon: BookOpen,
@@ -1582,30 +1520,25 @@ export default function Journal() {
                 subtitle: 'With a trade attached'
               }
             ].map((stat, index) => (
-              <Card key={index}>
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <stat.Icon className="h-3.5 w-3.5 shrink-0" style={{ color: stat.color, opacity: 0.7 }} aria-hidden="true" />
-                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider truncate">{stat.label}</p>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-bold tabular-nums leading-none" style={{ color: stat.color }}>
-                    {stat.value}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-1.5">{stat.subtitle}</p>
-                </CardContent>
-              </Card>
+              <div key={stat.label} className="px-4 border-l first:border-l-0 even:border-l sm:border-l sm:first:border-l-0">
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+                  <span className="text-xl font-semibold tabular-nums">{stat.value}</span>
+                  <span className="text-xs text-muted-foreground">{stat.subtitle}</span>
+                </div>
+              </div>
             ))}
           </div>
         )}
 
         {/* Mood vs P&L correlation */}
         {moodPnlStats.hasData && (
-          <Card>
-            <CardHeader className="pb-3 pt-5 px-5">
+          <Card className="shadow-none border-0 rounded-none bg-transparent">
+            <CardHeader className="pb-3 pt-0 px-0 sm:p-0 sm:pb-3">
               <CardTitle className="text-sm font-semibold">Sentiment vs. P&L</CardTitle>
               <p className="text-xs text-muted-foreground">Average trade P&L grouped by your market sentiment when you journaled</p>
             </CardHeader>
-            <CardContent className="px-5 pb-5">
+            <CardContent className="p-0 sm:p-0">
               <div className="grid grid-cols-3 divide-x divide-border/60">
                 {([
                   { key: 'bullish', label: 'Bullish' },
@@ -2157,7 +2090,11 @@ export default function Journal() {
           </div>
         )}
 
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4" data-journal-library>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Your entries</h2>
+            <span className="text-xs text-muted-foreground tabular-nums">{filteredAndSortedEntries.length} of {entries.length}</span>
+          </div>
           {/* Search and Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -2245,7 +2182,7 @@ export default function Journal() {
           
           {/* Filter Panel */}
           {showFilters && (
-            <Card id="journal-filters">
+            <Card id="journal-filters" className="shadow-none">
               <CardContent className="pt-6 sm:pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Date Range Filter */}
@@ -2412,34 +2349,22 @@ export default function Journal() {
           )}
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-6" data-journal-entries>
           {filteredAndSortedEntries.length === 0 ? (
             searchTerm || activeFilterCount > 0 ? (
-              <div className="flex flex-col items-center py-16 text-center">
-                <div className="p-3 rounded-xl mb-4 bg-muted/40">
-                  <MagnifyingGlass className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">No entries found</h3>
-                <p className="text-sm text-muted-foreground mb-4">Try adjusting your search or filters.</p>
-                <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2">
-                  <X className="h-3 w-3" />
-                  Clear filters
-                </Button>
-              </div>
+              <EmptyState compact icon={MagnifyingGlass} title="No entries match these filters" description="Clear your search and filters to return to your journal.">
+                <Button variant="outline" size="sm" onClick={resetFilters}>Clear filters</Button>
+              </EmptyState>
             ) : (
-              <div className="flex flex-col items-center py-12 sm:py-16 text-center">
-                <div
-                  className="p-4 rounded-2xl mb-6"
-                  style={{ backgroundColor: alpha(themeColors.primary, '12') }}
-                >
-                  <BookOpen className="h-8 w-8" style={{ color: themeColors.primary }} />
+              <div className="rounded-xl border bg-card p-6 sm:p-8">
+                <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-semibold tracking-tight">Make your next session worth reviewing</h3>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">Start with a plan, review a trade, or reflect on your day. Your notes and linked trades will stay together here.</p>
+                  </div>
+                  <Button onClick={openNewEntry} variant="outline" className="gap-2"><Plus className="h-3.5 w-3.5" />Blank entry</Button>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Start your trading journal</h3>
-                <p className="text-sm text-muted-foreground mb-10 max-w-md leading-relaxed">
-                  Document your setups, track your psychology, and review your decisions. Traders who journal consistently improve faster.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
                   {([
                     {
                       Icon: PenNib,
@@ -2482,13 +2407,13 @@ export default function Journal() {
                       key={t.label}
                       type="button"
                       onClick={t.onClick}
-                      className="rounded-xl border border-border/50 bg-card/50 p-4 text-left space-y-3 hover:border-border hover:bg-card transition-colors group"
+                      className="rounded-lg border border-border bg-background p-5 text-left space-y-3 hover:border-primary/40 hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <div
-                        className="p-2 rounded-lg w-fit"
-                        style={{ backgroundColor: alpha(t.color, '12') }}
+                        className="w-fit"
+
                       >
-                        <t.Icon className="h-4 w-4" style={{ color: t.color }} />
+                        <t.Icon className="h-5 w-5" style={{ color: themeColors.primary }} />
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm font-semibold">{t.label}</p>
@@ -2498,15 +2423,6 @@ export default function Journal() {
                   ))}
                 </div>
 
-                <p className="text-xs text-muted-foreground mb-3">or start from scratch</p>
-                <Button
-                  onClick={openNewEntry}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Blank entry
-                </Button>
               </div>
             )
           ) : (
@@ -2517,24 +2433,20 @@ export default function Journal() {
               const groupTone = groupPnl > 0 ? themeColors.profit : themeColors.loss;
 
               return (
-                <Card
-                  key={entry.id}
-                  className="overflow-hidden"
-                >
-                  <CardHeader className="pb-2 pt-5 px-5">
+                <article key={entry.id} className="grid gap-3 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-5">
+                  <time dateTime={format(entry.date, 'yyyy-MM-dd')} className="flex items-baseline gap-2 sm:block sm:pt-5 text-muted-foreground">
+                    <span className="text-sm sm:text-2xl font-medium tabular-nums text-foreground">{format(entry.date, 'dd')}</span>
+                    <span className="text-xs sm:block sm:mt-1">{format(entry.date, 'MMM yyyy')}</span>
+                  </time>
+                <Card className="min-w-0 overflow-hidden shadow-none rounded-lg">
+                  <CardHeader className="pb-2 pt-5 px-5 sm:p-5 sm:pb-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <div className="p-2 rounded-lg shrink-0 mt-0.5 bg-muted">
-                          <PenNib className="h-4 w-4" style={{ color: getMoodColor(entry.mood) }} />
-                        </div>
                         <div className="min-w-0">
                           <CardTitle className="text-base sm:text-lg font-semibold leading-tight text-foreground break-words">
                             {entry.title}
                           </CardTitle>
                           <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                            <span className="text-xs text-muted-foreground">
-                              {format(entry.date, 'MMM dd, yyyy')}
-                            </span>
                             <Badge
                               variant="outline"
                               className="flex items-center gap-1 font-medium border text-[10px] px-2 py-0 capitalize"
@@ -2601,7 +2513,7 @@ export default function Journal() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="px-5 pb-5 pt-2 space-y-3">
+                  <CardContent className="px-5 pb-5 pt-2 sm:px-5 sm:pb-5 sm:pt-2 space-y-4 [&>div:first-child]:max-w-prose">
                     <ExpandableContent content={entry.content} color={themeColors.primary} />
 
                     {linkedTrade && (
@@ -2709,6 +2621,7 @@ export default function Journal() {
                     )}
                   </CardContent>
                 </Card>
+                </article>
               );
             })
           )}

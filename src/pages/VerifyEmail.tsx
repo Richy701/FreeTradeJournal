@@ -5,6 +5,7 @@ import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Envelope, SpinnerGap, Check, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { AuthLayout } from '@/components/auth/auth-layout';
 
 export default function VerifyEmail() {
   const { user, logout, refreshUser } = useAuth();
@@ -93,8 +94,8 @@ export default function VerifyEmail() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md text-center space-y-6 p-8 rounded-2xl border border-border bg-card shadow-2xl">
+    <AuthLayout panelTitle="Your journal is nearly ready." panelSubtitle="Verify your email to access your trading workspace." mobileTitle="One more step" mobileSubtitle="Confirm the email address for your account.">
+      <div className="w-full text-center space-y-6">
 
         {verified ? (
           <>
@@ -159,6 +160,6 @@ export default function VerifyEmail() {
         )}
 
       </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -320,7 +320,7 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!posting && !claiming) onOpenChange(v) }}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
+      <DialogContent className="sm:max-w-2xl p-0 sm:p-0 overflow-hidden gap-0">
         <div className="px-6 pt-5 pb-4 border-b flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
             <UsersThree className="h-5 w-5" style={{ color: themeColors.primary }} aria-hidden="true" />
@@ -458,7 +458,7 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
                     {postError}
                   </p>
                 )}
-                <div className="flex items-center justify-between gap-3 pt-1">
+                <div className="sticky bottom-0 -mx-6 -mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-t border-border/60 bg-card">
                   <p className="text-xs text-muted-foreground min-w-0" aria-live="polite">{updateMissing ?? ''}</p>
                   <div className="flex gap-2 shrink-0">
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={posting}>Cancel</Button>
@@ -621,7 +621,7 @@ export function PostIdeaDialog({ open, onOpenChange, profile, onHandleClaimed, o
               </p>
             )}
 
-            <div className="flex items-center justify-between gap-3 pt-1">
+            <div className="sticky bottom-0 -mx-6 -mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-t border-border/60 bg-card">
               <p className="text-xs text-muted-foreground min-w-0" aria-live="polite">
                 {missing.length > 0 && `To post: ${missing.join(', ')}.`}
               </p>

@@ -1,239 +1,93 @@
 import { lazy, Suspense } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { ArrowRight, Play, ArrowDown } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
-import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
-import FeatureShowcase from '@/components/blocks/feature-showcase';
+import { GeometricBackdrop } from '@/components/blocks/shape-landing-hero';
+import { BlackFridayLandingPill } from '@/components/black-friday-landing-pill';
+import { isBlackFriday } from '@/constants/pricing';
 import { Footer7 } from '@/components/blocks/footer-7';
 import { footerConfig } from '@/components/blocks/footer-config';
-import { FreeTradeJournalFeatures as Features6 } from '@/components/blocks/features-6';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ProductTour } from '@/components/blocks/product-tour';
+import { LandingProductExplorer } from '@/components/blocks/landing-product-explorer';
+import { MarketingHeader } from '@/components/marketing-header';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { LogoCloud } from '@/components/blocks/logo-cloud';
 import { SEOMeta } from '@/components/seo-meta';
+import { Button } from '@/components/ui/button';
 
-// Lazy so the post markdown stays out of the landing chunk.
-const BlogStrip = lazy(() => import('@/components/blog-strip').then((m) => ({ default: m.BlogStrip })));
-
+const BlogStrip = lazy(() => import('@/components/blog-strip').then(m => ({ default: m.BlogStrip })));
 
 export default function LandingPage() {
-  const { user, loading, hadSession } = useAuth();
+  const { user, loading, hadSession, enterDemoMode } = useAuth();
+  const navigate = useNavigate();
+  if (user) return <Navigate to="/dashboard" replace />;
+  if (loading && hadSession) return <div className="min-h-screen bg-background" aria-busy="true" />;
+  const openDemo = () => { enterDemoMode(); navigate('/dashboard'); };
 
-  // If user is signed in, redirect to dashboard
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  return <div className="w-full">
+    <SEOMeta />
+    <MarketingHeader overlay />
 
-  // Auth resolves after first paint. A stranger should see the landing page
-  // immediately (LCP), but a returning user should NOT get the marketing page
-  // for a beat and then a redirect — hold back on the session hint only.
-  if (loading && hadSession) {
-    return <div className="min-h-screen bg-background" aria-busy="true" />;
-  }
-
-  return (
-    <div className="w-full">
-      <SEOMeta />
-      {/* Navigation overlay */}
-      <header className="absolute top-0 left-0 right-0 z-50" style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}>
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
-            {/* Wordmark hides on the narrowest phones (<380px) so the header never exceeds the viewport; below sm it also drops a size. */}
-            <span className="hidden min-[380px]:inline text-base sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <Link to="/pricing" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-2 sm:px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
-              Pricing
-            </Link>
-            <Link to="/login" className="text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-2 sm:px-3 py-2 rounded-md text-sm sm:text-base focus-visible:ring-2 focus-visible:ring-ring/50">
-              Sign In
-            </Link>
-            <ThemeToggle />
+    <main>
+      <section className="relative flex w-full items-center overflow-hidden bg-background noise-overlay pb-12 pt-28 sm:pb-16 sm:pt-32">
+        <GeometricBackdrop />
+        <div className="relative z-10 mx-auto w-full max-w-[1600px] px-5 sm:px-8">
+          {isBlackFriday() && <div className="mb-8"><BlackFridayLandingPill /></div>}
+          <div className="grid min-w-0 grid-cols-1 items-end gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] lg:gap-16">
+            <div className="min-w-0 [overflow-wrap:anywhere]">
+              <h1 className="max-w-4xl font-display text-[clamp(2.25rem,4.5vw,4rem)] font-semibold leading-[1.08] tracking-[-0.035em]">Every trade tells<br />you something.<br /><span className="text-amber-600 dark:text-amber-400">Keep the lesson.</span></h1>
+            </div>
+            <div className="min-w-0 max-w-lg pb-1 lg:pb-3">
+              <p className="text-base leading-relaxed text-muted-foreground">Your trades, your decisions, your progress. A free trading journal that brings the numbers and the notes together.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button asChild className="h-auto min-h-11 max-w-full whitespace-normal bg-amber-400 px-5 text-sm font-semibold text-black hover:bg-amber-300"><Link to="/signup">Start your journal<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+                <Button variant="outline" onClick={openDemo} className="h-auto min-h-11 max-w-full whitespace-normal gap-2 px-5"><Play className="h-4 w-4" />View Live Demo</Button>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">Free plan available. No card needed to get started.</p>
+              <a href="#product-preview" className="mt-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">Take a look inside<ArrowDown className="h-4 w-4" /></a>
+            </div>
           </div>
         </div>
-      </header>
+      </section>
 
-      {/* Hero Section with A/B Testing */}
-      <HeroGeometric
-        homepage
-        title1="The Free Trading Journal"
-        title2="That Improves Your Results"
-      />
-
-      {/* Logo Cloud - Prop Firms */}
+      <section id="product-preview" aria-label="Product preview" className="scroll-mt-6 px-5 pb-8 sm:px-8">
+        <div className="mx-auto max-w-[1600px]">
+          <ProductTour />
+        </div>
+      </section>
       <LogoCloud />
 
-      {/* Features Section with Dashboard Preview */}
-      <div id="features">
-        <Features6 />
-      </div>
-        
-      {/* Dashboard Performance Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Real-Time
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">Performance Dashboard</span>
-          </span>
-        }
-        description="See your recent trades, pairs performance radar, and trade distribution at a glance. Live P&L tracking, win rate calculations, and profit factor analytics update instantly as you log trades."
-        images={[
-          { src: "/images/screenshots/dashboard-trades-performance-screenshot.webp", alt: "Dashboard Performance" },
-          { src: "/images/screenshots/equity-curve-screenshot.webp", alt: "Equity curve with market feed" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={true}
-      />
+      <section className="mx-auto max-w-[1600px] px-5 py-12 sm:px-8 sm:py-16">
+        <div className="mb-8 grid gap-5 lg:grid-cols-2">
+          <h2 className="max-w-xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">A useful habit.<br /><span className="text-muted-foreground">Not another spreadsheet.</span></h2>
+          <p className="max-w-lg text-base leading-relaxed text-muted-foreground lg:justify-self-end lg:pt-2">You don’t need a perfect trading history to start. Record what happened, understand the decision, and take one useful lesson into the next session.</p>
+        </div>
+        <ol className="grid gap-8 border-y py-8 md:grid-cols-3 md:gap-10">
+          {[
+            ['Record', 'Bring the details together.', 'Add a trade manually or import your broker history. Include costs so you can review the net result.'],
+            ['Review', 'Put the outcome in context.', 'Compare your results with your notes, screenshots, and the rules you meant to follow.'],
+            ['Refine', 'Choose what to work on next.', 'Use your history to set a goal, revisit a pattern, or ask a more specific question.'],
+          ].map(([label, title, copy], i) => <li key={label}>
+            <div className="mb-5 flex items-center gap-3"><span className="font-mono text-xs text-amber-600 dark:text-amber-400">0{i + 1}</span><span className="text-sm font-medium">{label}</span></div>
+            <h3 className="mb-2 text-xl font-semibold tracking-tight">{title}</h3><p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{copy}</p>
+          </li>)}
+        </ol>
+      </section>
 
-      {/* Trade Log Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Comprehensive Trade
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">Logging & Management</span>
-          </span>
-        }
-        description={
-          <>
-            Log every trade with detailed information including entry/exit prices, lot sizes, spreads, commissions, and swap costs. Track trades across{' '}
-            <Link
-              to="/forex-trading-journal"
-              className="text-foreground underline underline-offset-4 decoration-amber-500/40 hover:decoration-amber-500 transition-colors"
-            >
-              forex pairs
-            </Link>
-            , futures contracts, and indices with powerful filtering and export capabilities.
-          </>
-        }
-        images={[
-          { src: "/images/screenshots/trading-log-screenshot.webp", alt: "Trade Log View" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={false}
-      />
-
-      {/* Calendar Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Visual Performance
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">Calendar Heatmap</span>
-          </span>
-        }
-        description="Track your daily performance with an intuitive calendar heatmap. Quickly identify profitable and losing days, spot trading patterns, and track your consistency over time with beautiful visualizations."
-        images={[
-          { src: "/images/screenshots/calendar-heatmap-screenshot.webp", alt: "Calendar Heatmap" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={true}
-      />
-
-      {/* Trading Journal Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Trading Journal
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">& Analysis</span>
-          </span>
-        }
-        description="Document your trading thoughts, strategies, and market observations. Maintain a detailed journal with mood tracking, screenshots, and comprehensive analysis to improve your trading psychology and performance."
-        images={[
-          { src: "/images/screenshots/trading-journal-screenshot.webp", alt: "Trading Journal" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={false}
-      />
-
-      {/* Goals & Risk Management Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Smart Goals &
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">Risk Management</span>
-          </span>
-        }
-        description="Set clear trading goals and implement robust risk management rules. Track your progress, monitor rule violations, and maintain discipline with automated alerts and comprehensive analytics."
-        images={[
-          { src: "/images/screenshots/goals-risk-management-screenshot.webp", alt: "Goals & Risk Management" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={true}
-      />
-
-      {/* AI Trade Analysis Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            AI-Powered
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">Trade Analysis</span>
-          </span>
-        }
-        description="Get AI-generated analysis of your trading patterns, strengths, and areas to improve. Identify what's working, spot weaknesses like overtrading or tight stops, and receive an actionable summary — all personalised to your trade history."
-        images={[
-          { src: "/images/screenshots/ai-trade-analysis-screenshot.webp", alt: "AI Trade Analysis" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={false}
-      />
-
-      {/* Trade Insights Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Advanced Trade
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">Insights & Analytics</span>
-          </span>
-        }
-        description="Dive deep into your performance with symbol breakdowns, a multi-dimensional trader profile radar, and long vs short direction analysis. See exactly where your edge is and which instruments drive your profits."
-        images={[
-          { src: "/images/screenshots/trade-insights-screenshot.webp", alt: "Trade Insights" },
-          { src: "/images/screenshots/trade-insights-ideas-screenshot.webp", alt: "Weekly P&L trend and actionable ideas" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={true}
-      />
-
-      {/* PropTracker Section */}
-      <FeatureShowcase
-        title={
-          <span>
-            Prop Firm
-            <br />
-            <span className="text-amber-600 dark:text-amber-500">ROI Tracker</span>
-          </span>
-        }
-        description="Finally know if your prop firm journey is actually profitable. Log every evaluation fee, reset cost, and payout across all your accounts. See invested vs earned, net P&L per firm, and get an AI-powered verdict on which firms are worth your money."
-        images={[
-          { src: "/images/screenshots/prop-tracker-screenshot.webp", alt: "PropTracker" },
-          { src: "/images/screenshots/prop-tracker-performance-screenshot.webp", alt: "PropTracker performance analytics" }
-        ]}
-        imageLayout="stack"
-        reverseLayout={false}
-      />
-
-      {/* From the blog: body links so Google crawls the posts, not just the footer */}
+      <LandingProductExplorer />
+      <TestimonialsSection compact />
+      <FAQSection compact />
       <Suspense fallback={<div className="min-h-[32rem]" aria-hidden="true" />}>
-        <BlogStrip
-          title={<>Guides from the <span className="text-amber-600 dark:text-amber-500">blog</span></>}
-          subtitle="Prop firm evaluations, broker imports and journaling habits, written by the person who builds this."
-        />
+        <BlogStrip compact editorial title={<>Build a better review habit.</>} subtitle="Practical guides to broker imports, prop accounts, and keeping a journal you actually use." />
       </Suspense>
-
-      {/* Testimonials */}
-      <TestimonialsSection />
-
-      {/* FAQ Section */}
-      <FAQSection />
-
-      <Footer7 {...footerConfig} />
-    </div>
-  );
+      <section className="mx-auto max-w-[1600px] px-5 py-12 sm:px-8 sm:py-16">
+        <div className="flex flex-col justify-between gap-7 border-t pt-10 lg:flex-row lg:items-center">
+          <div><h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Start with your next trade.</h2><p className="mt-3 text-base text-muted-foreground">You bring the experience. Give it somewhere to grow.</p></div>
+          <div className="flex min-w-0 flex-wrap gap-3"><Button asChild className="h-auto min-h-11 max-w-full whitespace-normal bg-amber-400 px-5 text-black hover:bg-amber-300"><Link to="/signup">Create a free account<ArrowRight className="ml-2 h-4 w-4" /></Link></Button><Button variant="outline" onClick={openDemo} className="h-auto min-h-11 max-w-full whitespace-normal px-5">Explore the demo</Button></div>
+        </div>
+      </section>
+    </main>
+    <Footer7 {...footerConfig} />
+  </div>;
 }

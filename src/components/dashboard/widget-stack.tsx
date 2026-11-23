@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { DotsSixVertical } from '@phosphor-icons/react'
+import { WeeklyFocus } from '@/components/weekly-focus'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { useSettings } from '@/contexts/settings-context'
 import { useThemePresets } from '@/contexts/theme-presets'
@@ -132,6 +133,9 @@ export function WidgetStack({ widgets, ctx }: WidgetStackProps) {
   }
 
   const handleHoverBg = alpha(themeColors.primary, '12')
+  // Keep the reminder available when coaching is hidden, without a blank row
+  // when the account has no active focus. The stack owns its outer spacing.
+  const weeklyFocus = <div className="empty:hidden [&>div]:m-0"><WeeklyFocus compact /></div>
 
   return (
     <DndContext
@@ -149,15 +153,19 @@ export function WidgetStack({ widgets, ctx }: WidgetStackProps) {
           {sortable.map(w => {
             const node = renderWidget(w)
             return node ? (
-              <SortableWidget key={w.id} id={w.id} label={w.label} handleHoverBg={handleHoverBg}>
-                {node}
-              </SortableWidget>
+              <Fragment key={w.id}>
+                <SortableWidget id={w.id} label={w.label} handleHoverBg={handleHoverBg}>
+                  {node}
+                </SortableWidget>
+                {w.id === 'coach' && weeklyFocus}
+              </Fragment>
             ) : null
           })}
         </SortableContext>
+        {!sortableIds.includes('coach') && weeklyFocus}
         {pinned.map(w => {
           const node = renderWidget(w)
-          return node ? <div key={w.id}>{node}</div> : null
+          return node ? <div key={w.id} className="empty:hidden">{node}</div> : null
         })}
       </div>
       {/* Dragging a live 450px chart around measures badly and stutters, so the

@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { markCoachCompleted } from '@/lib/coach-completion'
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { AIFeedback } from '@/components/ai-feedback'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -207,7 +208,7 @@ function computeTiltScore(trades: Trade[], themeColors: { profit: string; loss: 
   return { score, label, color, factors }
 }
 
-function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, opacity: string) => string }) {
+function TiltMeter({ tilt, alpha, compact = false }: { tilt: TiltScore; alpha: (color: string, opacity: string) => string; compact?: boolean }) {
   const [showFactors, setShowFactors] = useState(false)
   const pct = Math.max(2, tilt.score)
   const hasData = tilt.label !== 'Insufficient data'
@@ -223,8 +224,8 @@ function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, op
           : 'High tilt — step away for 30 minutes before trading again.'
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
+    <div className={"space-y-3"}>
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Heartbeat className="h-4 w-4" style={{ color: tilt.color }} />
           <span className="text-sm font-semibold">Tilt Meter</span>
@@ -244,10 +245,10 @@ function TiltMeter({ tilt, alpha }: { tilt: TiltScore; alpha: (color: string, op
         </div>
       </div>
 
-      <Progress className="bg-muted/50" value={pct} indicatorColor={tilt.color} />
+      <Progress className={compact ? "h-1.5 bg-muted/50" : "bg-muted/50"} value={pct} indicatorColor={tilt.color} />
 
       {recommendation && (
-        <div className="flex items-start gap-2 text-xs">
+        <div className={"flex items-start gap-2 text-xs leading-relaxed"}>
           <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-px" style={{ color: tilt.color }} />
           <span className="text-muted-foreground">
             <span className="font-medium text-foreground">What to do:</span> {recommendation}
@@ -385,7 +386,8 @@ const TIP_SEVERITY_ORDER: Record<string, number> = {
 const AI_COACH_CACHE_KEY = 'ftj-ai-coaching-tips'
 const AI_COACH_TTL = 24 * 60 * 60 * 1000 // 24h
 
-export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: string) => void } = {}) {
+export function TradingCoach({ onChooseFocus, dashboard = false, workspace = false }: { onChooseFocus?: (message: string) => void; dashboard?: boolean; workspace?: boolean } = {}) {
+  const briefing = dashboard || workspace
   const { user } = useAuth()
   const { themeColors, alpha } = useThemePresets()
   const { getCurrencySymbol, formatCurrency } = useSettings()
@@ -1389,13 +1391,158 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
     ...visibleTips.filter(t => t !== leadTip && t.type !== 'success'),
     ...visibleTips.filter(t => t !== leadTip && t.type === 'success'),
   ]
-  const shownTips = showAllTips ? focusTips : focusTips.slice(0, 3)
+  const shownTips = briefing
+    ? focusTips.filter((tip, index) => index === 0 || tip.type === 'critical')
+    : showAllTips ? focusTips : focusTips.slice(0, 3)
+  const additionalTips = briefing ? focusTips.filter(tip => !shownTips.includes(tip)) : []
   const hiddenTipCount = focusTips.length - shownTips.length
   const tipQuestions = focusTips.slice(0, 3).map(t => cleanDashes(t.title))
   const hasTilt = trades.length >= 3 && tiltScore.label !== 'Insufficient data'
   const chatBusy = chatStreaming || !!finishingText
 
-  return (
+  const renderTips = (tips: typeof focusTips) => (
+    <ul className={briefing ? 'divide-y' : leadTip ? 'border-t divide-y' : 'divide-y'}>
+    {tips.map((tip) => (
+      <li key={tip.key} className="group flex items-start gap-3 py-3 last:pb-0">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-snug">{cleanDashes(tip.title)}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed mt-1"><Emphasize text={cleanDashes(tip.message)} /></p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {workspace && hasAIAccess && <Button size="sm" className="min-h-11" onClick={() => {
+              setChatInput(`Help me work on "${cleanDashes(tip.title)}". What should I do in my next trading session?`)
+              chatInputRef.current?.scrollIntoView({ block: 'center' })
+              chatInputRef.current?.focus({ preventScroll: true })
+            }}>Discuss with Coach</Button>}
+            {onChooseFocus && <Button variant="outline" size="sm" className="min-h-11 whitespace-normal text-left" onClick={() => onChooseFocus(cleanDashes(tip.message))}>{workspace ? 'Make this my focus' : 'Use this tip for my weekly focus'}</Button>}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => dismissTip(tip.key)}
+          className="shrink-0 text-muted-foreground hover:text-foreground transition-opacity p-1 -m-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+          aria-label="Not useful, hide this"
+          title="Not useful"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </li>
+    ))}
+  </ul>
+  )
+  const chatContent = (
+    <>
+
+      {(chatMessages.length > 0 || chatBusy) && (
+        <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-[28rem] min-h-[8rem] overflow-y-auto space-y-3 scroll-smooth pr-1">
+          {chatMessages.map((msg, i) =>
+            msg.role === 'user' ? (
+              <div key={i} className="text-right">
+                <span
+                  className="inline-block px-3 py-1.5 rounded-lg text-sm text-left"
+                  style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}
+                >
+                  {msg.content}
+                </span>
+              </div>
+            ) : (
+              <div key={i} className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                    <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                  </div>
+                  <span className="text-xs font-semibold" style={{ color: themeColors.primary }}>Coach FTJ</span>
+                </div>
+                <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }} />
+              </div>
+            )
+          )}
+          {(chatStreaming || finishingText) && typedStream && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                  <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+                </div>
+                <span className="text-xs font-semibold" style={{ color: themeColors.primary }}>Coach FTJ</span>
+              </div>
+              <div>
+                <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(typedStream) }} />
+                <span className="inline-block h-3 w-0.5 mt-1 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
+              </div>
+            </div>
+          )}
+          {chatStreaming && !typedStream && (
+            <div className="flex items-center gap-2 py-2">
+              <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
+                <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
+              </div>
+              <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '08') }} aria-label="Coach FTJ is typing">
+                {[0, 1, 2].map(i => (
+                  <span key={i} className="h-1.5 w-1.5 rounded-full animate-bounce" style={{ backgroundColor: themeColors.primary, animationDelay: `${i * 160}ms`, animationDuration: '900ms' }} />
+                ))}
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+      )}
+
+      {chatMessages.length === 0 && !chatBusy && (
+        <div className="flex flex-wrap gap-2">
+          {(tipQuestions.length > 0 ? tipQuestions : CHAT_SUGGESTIONS).map((label) => {
+            const fromTip = tipQuestions.includes(label)
+            const message = fromTip ? `Tell me more about "${label}". What exactly should I do about it?` : label
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => sendChatMessage(message)}
+                className={briefing ? 'rounded-md border bg-background px-3 py-2 text-left text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring' : 'text-xs px-3 py-1.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors'}
+              >
+                {fromTip ? `More on: ${label}` : label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); sendChatMessage(chatInput) }}
+        className={briefing ? 'flex items-center gap-2 rounded-lg border bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring' : 'flex items-center gap-2'}
+      >
+        <Input
+          ref={chatInputRef}
+          type="text"
+          value={chatInput}
+          onChange={(e) => setChatInput(e.target.value)}
+          placeholder="Ask anything about your trading"
+          aria-label="Ask Coach FTJ"
+          disabled={chatBusy}
+          className={briefing ? 'h-10 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0' : 'flex-1 h-10'}
+        />
+        <Button
+          type="submit"
+          size="sm"
+          disabled={!chatInput.trim() || chatBusy}
+          className="h-10 w-10 p-0 shrink-0"
+          style={{ backgroundColor: themeColors.primary }}
+          aria-label="Send message"
+        >
+          <PaperPlaneTilt className="h-4 w-4" />
+        </Button>
+      </form>
+      {/* freeAiQuota is null for Pro/demo, so this only renders for
+          free users — no more hitting the wall with zero warning. */}
+      {freeAiQuota && (
+        <p className="text-xs text-muted-foreground">
+          {freeAiQuota.remaining} of {freeAiQuota.limit} free AI coaching runs left this month
+        </p>
+      )}
+
+    </>
+  )
+
+
+  const coachingContent = (
     <>
       {/* Today: day-scoped facts against the trader's own limits. First
           because it is the thing that just happened. */}
@@ -1475,12 +1622,13 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
         </Card>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
+      <div className={workspace ? `grid items-stretch gap-4 ${hasAIAccess ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}` : briefing ? 'overflow-hidden rounded-xl border bg-card' : 'contents'}>
+      <Card className={workspace ? 'min-w-0 shadow-none' : briefing ? 'rounded-none border-0 shadow-none' : undefined}>
+        <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div className="min-w-0">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <span>Coach FTJ</span>
+                <span>{workspace ? 'Your coaching priority' : 'Coach FTJ'}</span>
                 {hasCritical && (
                   <span
                     className="px-2 py-0.5 text-xs font-semibold rounded-full"
@@ -1503,11 +1651,12 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
         </CardHeader>
         <CardContent className="space-y-4">
           {hasTilt && (
-            <div className="pb-4 border-b border-border">
-              <TiltMeter tilt={tiltScore} alpha={alpha} />
+            <div className={briefing ? 'rounded-lg border bg-muted/30 p-3 sm:p-4' : 'pb-4 border-b border-border'}>
+              <TiltMeter tilt={tiltScore} alpha={alpha} compact={dashboard} />
             </div>
           )}
 
+          <div className={briefing ? 'min-w-0 space-y-4 [&_p]:max-w-[75ch]' : 'space-y-4'}>
           {aiLoading ? (
             <div className="space-y-3 py-1" aria-busy="true" aria-label="Loading coaching">
               <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
@@ -1516,9 +1665,24 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
             </div>
           ) : (
             <>
-              {leadTip && (
-                <div className="group flex items-start gap-3">
-                  <div className="min-w-0 flex-1"><p className="text-sm leading-relaxed"><Emphasize text={cleanDashes(leadTip.message)} /></p>{onChooseFocus && <Button variant="outline" size="sm" className="mt-3 min-h-11" onClick={() => onChooseFocus(cleanDashes(leadTip.message))}>Use this tip for my weekly focus</Button>}</div>
+              {briefing && shownTips.length > 0 && renderTips(shownTips)}
+
+              {leadTip && (workspace ? (
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="summary" className="border-b-0 border-t">
+                    <AccordionTrigger className="text-sm hover:no-underline">Performance summary</AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-sm leading-relaxed text-muted-foreground"><Emphasize text={cleanDashes(leadTip.message)} /></p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {onChooseFocus && <Button variant="outline" size="sm" onClick={() => onChooseFocus(cleanDashes(leadTip.message))}>Make this my focus</Button>}
+                        <Button variant="ghost" size="sm" onClick={() => dismissTip(leadTip.key)}>Hide this summary</Button>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : (
+                <div className={briefing ? "group flex items-start gap-3 border-t pt-4" : "group flex items-start gap-3"}>
+                  <div className="min-w-0 flex-1">{briefing && <p className="mb-2 text-xs font-medium text-muted-foreground">Performance summary</p>}<p className="text-sm leading-relaxed"><Emphasize text={cleanDashes(leadTip.message)} /></p>{onChooseFocus && <Button variant="outline" size="sm" className="mt-3 min-h-11" onClick={() => onChooseFocus(cleanDashes(leadTip.message))}>Use this tip for my weekly focus</Button>}</div>
                   <button
                     type="button"
                     onClick={() => dismissTip(leadTip.key)}
@@ -1529,32 +1693,22 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 </div>
+              ))}
+
+              {!briefing && shownTips.length > 0 && renderTips(shownTips)}
+
+              {briefing && additionalTips.length > 0 && (
+                <Accordion type="single" collapsible>
+                  <AccordionItem value="advice" className="border-b-0 border-t">
+                    <AccordionTrigger className="gap-3 text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      More coaching advice ({additionalTips.length})
+                    </AccordionTrigger>
+                    <AccordionContent>{renderTips(additionalTips)}</AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               )}
 
-              {shownTips.length > 0 && (
-                <ul className={leadTip ? 'border-t divide-y' : 'divide-y'}>
-                  {shownTips.map((tip) => (
-                    <li key={tip.key} className="group flex items-start gap-3 py-3 last:pb-0">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold leading-snug">{cleanDashes(tip.title)}</p>
-                        <p className="text-sm text-muted-foreground leading-relaxed mt-1"><Emphasize text={cleanDashes(tip.message)} /></p>
-                        {onChooseFocus && <Button variant="outline" size="sm" className="mt-3 min-h-11 whitespace-normal text-left" onClick={() => onChooseFocus(cleanDashes(tip.message))}>Use this tip for my weekly focus</Button>}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => dismissTip(tip.key)}
-                        className="shrink-0 text-muted-foreground hover:text-foreground transition-opacity p-1 -m-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                        aria-label="Not useful, hide this"
-                        title="Not useful"
-                      >
-                        <X className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {(hiddenTipCount > 0 || (showAllTips && focusTips.length > 3)) && (
+              {!briefing && (hiddenTipCount > 0 || (showAllTips && focusTips.length > 3)) && (
                 <button
                   type="button"
                   onClick={() => setShowAllTips(v => !v)}
@@ -1587,11 +1741,52 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
               )}
             </>
           )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Ask Coach FTJ: always open, seeded with the tips above */}
-      {hasAIAccess && (
+      {/* Dashboard chat expands in place; the dedicated Coach page stays open. */}
+      {hasAIAccess && (workspace ? (
+        <Card className="flex min-w-0 flex-col overflow-hidden shadow-none">
+          <CardHeader className="border-b pb-4">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-lg">Ask Coach FTJ</CardTitle>
+              {chatMessages.length > 0 && <Button variant="ghost" size="sm" onClick={clearChat}>Clear conversation</Button>}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">Turn your trading insights into a plan for your next session.</p>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col gap-4 pt-4 sm:pt-4 [&>form]:mt-auto">
+            {chatMessages.length === 0 && !chatBusy && (
+              <div className="space-y-2 rounded-lg bg-muted/40 p-4">
+                <p className="text-sm font-medium">What would you like to work on?</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">Discuss your priority, explore a pattern, or ask about your recent trades. Choose a topic below to start.</p>
+              </div>
+            )}
+            {chatContent}
+          </CardContent>
+        </Card>
+      ) : briefing ? (
+        <Card className="rounded-none border-0 border-t bg-muted/20 shadow-none">
+          <Accordion type="single" collapsible defaultValue={workspace || chatMessages.length > 0 ? 'chat' : undefined}>
+            <AccordionItem value="chat" className="border-b-0">
+              <AccordionTrigger className="gap-3 px-4 sm:px-6 text-left hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
+                <span className="space-y-1">
+                  <span className="block text-base font-semibold">Ask Coach FTJ</span>
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    {freeAiQuota
+                      ? `${freeAiQuota.remaining} of ${freeAiQuota.limit} free AI coaching runs left this month`
+                      : 'Ask a question about your trading'}
+                  </span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-5 sm:px-6 space-y-3">
+                {chatMessages.length > 0 && <Button variant="ghost" size="sm" onClick={clearChat}>Clear conversation</Button>}
+                {chatContent}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </Card>
+      ) : (
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -1607,115 +1802,10 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {(chatMessages.length > 0 || chatBusy) && (
-              <div ref={chatScrollRef} aria-live="polite" aria-busy={chatStreaming} className="max-h-[28rem] min-h-[8rem] overflow-y-auto space-y-3 scroll-smooth pr-1">
-                {chatMessages.map((msg, i) =>
-                  msg.role === 'user' ? (
-                    <div key={i} className="text-right">
-                      <span
-                        className="inline-block px-3 py-1.5 rounded-lg text-sm text-left"
-                        style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}
-                      >
-                        {msg.content}
-                      </span>
-                    </div>
-                  ) : (
-                    <div key={i} className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                          <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                        </div>
-                        <span className="text-xs font-semibold" style={{ color: themeColors.primary }}>Coach FTJ</span>
-                      </div>
-                      <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(msg.content) }} />
-                    </div>
-                  )
-                )}
-                {(chatStreaming || finishingText) && typedStream && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                        <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                      </div>
-                      <span className="text-xs font-semibold" style={{ color: themeColors.primary }}>Coach FTJ</span>
-                    </div>
-                    <div>
-                      <div className={CHAT_PROSE} dangerouslySetInnerHTML={{ __html: renderChatMarkdown(typedStream) }} />
-                      <span className="inline-block h-3 w-0.5 mt-1 animate-pulse" style={{ backgroundColor: themeColors.primary }} />
-                    </div>
-                  </div>
-                )}
-                {chatStreaming && !typedStream && (
-                  <div className="flex items-center gap-2 py-2">
-                    <div className="shrink-0 h-6 w-6 rounded-full flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                      <Brain className="h-3.5 w-3.5" style={{ color: themeColors.primary }} />
-                    </div>
-                    <div className="flex items-center gap-1 px-3 py-2.5 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '08') }} aria-label="Coach FTJ is typing">
-                      {[0, 1, 2].map(i => (
-                        <span key={i} className="h-1.5 w-1.5 rounded-full animate-bounce" style={{ backgroundColor: themeColors.primary, animationDelay: `${i * 160}ms`, animationDuration: '900ms' }} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-            )}
-
-            {chatMessages.length === 0 && !chatBusy && (
-              <div className="flex flex-wrap gap-2">
-                {(tipQuestions.length > 0 ? tipQuestions : CHAT_SUGGESTIONS).map((label) => {
-                  const fromTip = tipQuestions.includes(label)
-                  const message = fromTip ? `Tell me more about "${label}". What exactly should I do about it?` : label
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => sendChatMessage(message)}
-                      className="text-xs px-3 py-1.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    >
-                      {fromTip ? `More on: ${label}` : label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-
-            <form
-              onSubmit={(e) => { e.preventDefault(); sendChatMessage(chatInput) }}
-              className="flex items-center gap-2"
-            >
-              <Input
-                ref={chatInputRef}
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask anything about your trading"
-                aria-label="Ask Coach FTJ"
-                disabled={chatBusy}
-                className="flex-1 h-10"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!chatInput.trim() || chatBusy}
-                className="h-10 w-10 p-0 shrink-0"
-                style={{ backgroundColor: themeColors.primary }}
-                aria-label="Send message"
-              >
-                <PaperPlaneTilt className="h-4 w-4" />
-              </Button>
-            </form>
-            {/* freeAiQuota is null for Pro/demo, so this only renders for
-                free users — no more hitting the wall with zero warning. */}
-            {freeAiQuota && (
-              <p className="text-xs text-muted-foreground">
-                {freeAiQuota.remaining} of {freeAiQuota.limit} free AI coaching runs left this month
-              </p>
-            )}
-          </CardContent>
+          <CardContent className="space-y-3">{chatContent}</CardContent>
         </Card>
-      )}
+      ))}
+      </div>
 
       {/* Free quota exhausted: keep an upgrade path where the chat was,
           instead of the section silently disappearing */}
@@ -1743,4 +1833,6 @@ export function TradingCoach({ onChooseFocus }: { onChooseFocus?: (message: stri
       )}
     </>
   )
+
+  return briefing ? <div className="space-y-3">{coachingContent}</div> : coachingContent
 }

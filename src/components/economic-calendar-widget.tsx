@@ -1,12 +1,13 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEffect, useRef, useState } from 'react'
-import { useThemePresets } from '@/contexts/theme-presets'
 import { useIsDarkTheme } from '@/hooks/use-is-dark-theme'
-import { CalendarBlank } from '@phosphor-icons/react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { CalendarBlank, ArrowUpRight } from '@phosphor-icons/react'
 
 // Economic calendar via TradingView's free embed widget. No API key required —
 // Finnhub's /calendar/economic endpoint is premium-only and 403s on the free tier.
 export function EconomicCalendarWidget() {
-  const { themeColors } = useThemePresets()
   const containerRef = useRef<HTMLDivElement>(null)
   const isDark = useIsDarkTheme()
   const theme = isDark ? 'dark' : 'light'
@@ -51,15 +52,26 @@ export function EconomicCalendarWidget() {
   }, [theme])
 
   return (
-    <div className="rounded-xl border bg-card/50 overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2">
-          <CalendarBlank className="h-4 w-4" style={{ color: themeColors.primary }} />
-          <span className="text-sm font-semibold text-foreground">Economic Calendar</span>
+    <Card className="overflow-hidden shadow-none">
+      <CardHeader className="gap-3 space-y-0 p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <CalendarBlank className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            Economic Calendar
+          </CardTitle>
+          <Button asChild variant="ghost" size="sm" className="h-8 shrink-0 gap-1 px-2 text-xs">
+            <a href="https://www.tradingview.com/economic-calendar/" target="_blank" rel="noopener noreferrer" aria-label="Open full economic calendar on TradingView">
+              <span className="hidden sm:inline">Full calendar</span><ArrowUpRight className="h-4 w-4" />
+            </a>
+          </Button>
         </div>
-        <span className="text-[11px] text-muted-foreground">Medium &amp; high impact</span>
-      </div>
-      <div className="border-t border-border/50">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Showing</span>
+          <Badge variant="secondary" className="rounded-md font-normal">Medium impact</Badge>
+          <Badge variant="secondary" className="rounded-md font-normal">High impact</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="border-t p-0 sm:p-0">
         <div className="relative" style={{ height: 440 }}>
           <div
             ref={containerRef}
@@ -81,7 +93,7 @@ export function EconomicCalendarWidget() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

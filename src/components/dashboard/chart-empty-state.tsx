@@ -1,6 +1,5 @@
 import type { Icon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { useThemePresets } from '@/contexts/theme-presets'
 import { useDashboardPeriod } from '@/contexts/dashboard-period'
 
 interface ChartEmptyStateProps {
@@ -14,22 +13,21 @@ interface ChartEmptyStateProps {
 }
 
 export function ChartEmptyState({ icon: IconComponent, title, description, hasDataOutsidePeriod }: ChartEmptyStateProps) {
-  const { themeColors, alpha } = useThemePresets()
   const { period, setPeriod, allowedPeriods } = useDashboardPeriod()
 
   const widest = allowedPeriods.includes('all') ? 'all' : '30d'
   const filtered = Boolean(hasDataOutsidePeriod) && period !== widest
 
   return (
-    <div className="flex h-full flex-col items-center justify-center text-center px-6 gap-3">
-      <div className="p-3 rounded-xl" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
-        <IconComponent className="h-6 w-6" style={{ color: themeColors.primary }} aria-hidden="true" />
+    <div className="flex min-h-44 h-full w-full flex-col items-center justify-center text-center px-6 py-6 gap-3">
+      <div className="text-muted-foreground">
+        <IconComponent className="h-6 w-6"  aria-hidden="true" />
       </div>
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">
           {filtered ? 'No trades in this period' : title}
         </p>
-        <p className="text-xs text-muted-foreground max-w-[260px]">
+        <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
           {filtered ? 'Nothing closed in the selected range.' : description}
         </p>
       </div>

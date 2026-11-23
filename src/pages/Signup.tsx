@@ -28,7 +28,14 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const { user, isDemo, signUp, signInWithGoogle } = useAuth();
+  const { user, isDemo, exitDemoMode, signUp, signInWithGoogle } = useAuth();
+
+  // Leave the demo only after this public route commits. Clearing it in a
+  // dashboard click handler lets ProtectedRoute redirect to login while the
+  // lazy signup route is still loading.
+  useEffect(() => {
+    if (isDemo) exitDemoMode();
+  }, [isDemo, exitDemoMode]);
 
   // Warm the Firebase Auth chunks on mount. signInWithPopup must open its
   // popup within the click's user-activation window (~1s in Chrome, stricter

@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/empty-state'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { trackGateHit } from '@/lib/track-activity'
 import DOMPurify from 'dompurify'
@@ -9,8 +10,14 @@ import {
   YAxis,
   ResponsiveContainer,
   ReferenceLine,
+  CartesianGrid,
   BarChart,
   Bar,
+  Cell,
+  PieChart,
+  Pie,
+  LineChart,
+  Line,
 } from "recharts"
 import {
   Plus,
@@ -26,6 +33,7 @@ import {
   X,
   Info,
   Brain,
+  SpinnerGap,
   Lock,
   Warning,
   CheckCircle,
@@ -42,6 +50,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { NoticeBanner } from '@/components/notice-banner'
 import { Card, CardContent } from '@/components/ui/card'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -1007,7 +1017,7 @@ export default function PropTracker() {
   // The bar chart shows at most the last 24 months; the summary below it uses every month
   // Fees are drawn below zero so each month is one column: money out
   // hangs down, money in stands up. `fees` stays positive for the tooltip.
-  const monthlyBars = useMemo(() => monthlyFlow.slice(-24).map(m => ({ ...m, feesDown: -m.fees })), [monthlyFlow])
+  const monthlyBars = useMemo(() => monthlyFlow.slice(-24), [monthlyFlow])
 
   const monthlySummary = useMemo(() => {
     const active = monthlyFlow.filter(m => m.fees > 0 || m.payouts > 0)
@@ -1114,9 +1124,26 @@ export default function PropTracker() {
     accounts.length >= 4 && accountFilter !== 'all' && (statusCounts[accountFilter] ?? 0) > 0 ? accountFilter : 'all'
   const visibleAccounts = effectiveFilter === 'all' ? accounts : accounts.filter(a => a.status === effectiveFilter)
 
+  const summaryCharts = useMemo(() => {
+    const fees = TX_TYPE_OPTIONS.filter(type => type.isExpense).map(type => ({
+      name: type.label,
+      amount: transactions.filter(tx => tx.type === type.value).reduce((sum, tx) => sum + tx.amount, 0),
+    })).filter(fee => fee.amount > 0)
+    let earned = 0
+    const payouts = [...transactions].sort((a, b) => a.date.localeCompare(b.date)).map(tx => {
+      if (!isExpenseTx(tx.type)) earned += tx.amount
+      return { date: tx.date, amount: earned }
+    })
+    return { fees, payouts }
+  }, [transactions])
+  const feeColors = ['hsl(var(--primary))', themeColors.loss, 'hsl(var(--foreground) / 0.45)', 'hsl(var(--muted-foreground))']
+
+
+
   const statCards = [
     {
       label: 'Total invested',
+      series: 'invested',
       value: hasData ? fmt(stats.totalInvested, aggregateCurrency) : '—',
       // Neutral, not loss-red: fees paid are an investment, not a losing trade.
       valueColor: hasData ? 'hsl(var(--foreground))' : 'var(--muted-foreground)',
@@ -1124,12 +1151,14 @@ export default function PropTracker() {
     },
     {
       label: 'Total earned',
+      series: 'earned',
       value: hasData ? fmt(stats.totalEarned, aggregateCurrency) : '—',
       valueColor: hasData ? themeColors.profit : 'var(--muted-foreground)',
       subtitle: 'All payouts received',
     },
     {
       label: 'Net P&L',
+      series: 'net',
       value: hasData ? (stats.netPnL >= 0 ? '+' : '-') + fmt(stats.netPnL, aggregateCurrency) : '—',
       valueColor: hasData ? (stats.netPnL >= 0 ? themeColors.profit : themeColors.loss) : 'var(--muted-foreground)',
       subtitle: hasData
@@ -1138,6 +1167,7 @@ export default function PropTracker() {
     },
     {
       label: 'Active accounts',
+      series: null,
       value: String(stats.activeCount),
       valueColor: themeColors.primary,
       subtitle: `of ${accounts.length} total`,
@@ -1363,16 +1393,17 @@ export default function PropTracker() {
       )}
 
       {/* Page header: title, actions, headline numbers */}
-      <div className="border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div data-proptracker-header className="px-4 pt-6 sm:px-6 lg:px-8">
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-5">
             <div className="min-w-0">
-              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>PropTracker</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {subtitleParts ? subtitleParts.base : 'Track fees, resets, and payouts across your prop firms'}
-              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-semibold tracking-tight">PropTracker</h1>
+                {subtitleParts && <Badge variant="outline" className="font-normal">{subtitleParts.base}</Badge>}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Track your challenges, costs, and payouts in one place.</p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               {activeRulesAccounts.length >= 1 && (
                 <Button variant="outline" onClick={openCheckinDialog} className="h-10 touch-manipulation">
                   <ClipboardText className="h-4 w-4 mr-1.5" aria-hidden="true" />
@@ -1397,15 +1428,50 @@ export default function PropTracker() {
           </div>
 
           {accounts.length > 0 && (
-            <dl className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-y-5 gap-x-4 sm:gap-x-0">
-              {statCards.map((card, i) => (
-                <div key={card.label} className={`min-w-0 ${i > 0 ? 'sm:border-l sm:border-border sm:pl-6' : ''} ${i > 0 && i < 3 ? 'sm:pr-6' : ''}`}>
-                  <dt className="text-xs text-muted-foreground">{card.label}</dt>
-                  <dd className="mt-1 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight truncate" style={{ color: card.valueColor }}>
-                    {card.value}
-                  </dd>
-                  <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">{card.subtitle}</p>
-                </div>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {statCards.map((card) => (
+                <Card key={card.label} className="min-w-0 p-4 shadow-none flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">{card.label}</dt>
+                    <dd className="mt-1 text-xl font-semibold tabular-nums tracking-tight" style={{ color: card.valueColor }}>{card.value}</dd>
+                    <p className="text-xs text-muted-foreground mt-1 tabular-nums">{card.subtitle}</p>
+                  </div>
+                  <div className="h-14 w-16 shrink-0 flex items-center justify-end" data-summary-visual={card.series ?? 'accounts'}>
+                    {card.series === 'invested' && summaryCharts.fees.length > 0 && (
+                      <ChartContainer config={{ amount: { label: 'Fees' } }} className="h-14 w-16 opacity-80" aria-label="Fees by type">
+                        <PieChart>
+                          <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel formatter={(value, name) => <span>{name}: {fmt(Number(value), aggregateCurrency)}</span>} />} />
+                          <Pie data={summaryCharts.fees} dataKey="amount" nameKey="name" innerRadius={16} outerRadius={26} strokeWidth={0} isAnimationActive={false}>
+                            {summaryCharts.fees.map((fee, index) => <Cell key={fee.name} fill={feeColors[index % feeColors.length]} />)}
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
+                    )}
+                    {card.series === 'earned' && stats.totalEarned > 0 && (
+                      <ChartContainer config={{ amount: { label: 'Total earned' } }} className="h-14 w-16 opacity-80" aria-label="Cumulative payouts">
+                        <LineChart data={summaryCharts.payouts} margin={{ left: 2, right: 2, top: 6, bottom: 6 }}>
+                          <ChartTooltip content={<ChartTooltipContent formatter={value => <span>{fmt(Number(value), aggregateCurrency)}</span>} />} />
+                          <Line type={isDemo ? "linear" : "monotone"} dataKey="amount" stroke={themeColors.profit} strokeWidth={2} dot={false} isAnimationActive={false} />
+                        </LineChart>
+                      </ChartContainer>
+                    )}
+                    {card.series === 'net' && hasData && (
+                      <ChartContainer config={{ earned: { label: 'Payouts' }, fees: { label: 'Fees' } }} className="h-14 w-16" aria-label="Payouts compared with fees">
+                        <BarChart data={[{ earned: stats.totalEarned, fees: stats.totalInvested }]} layout="vertical" margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+                          <XAxis type="number" hide /><YAxis type="category" hide />
+                          <ChartTooltip content={<ChartTooltipContent hideLabel formatter={(value, name) => <span>{name === 'earned' ? 'Payouts' : 'Fees'}: {fmt(Number(value), aggregateCurrency)}</span>} />} />
+                          <Bar dataKey="earned" stackId="comparison" fill={themeColors.profit} radius={[6, 0, 0, 6]} barSize={10} isAnimationActive={false} />
+                          <Bar dataKey="fees" stackId="comparison" fill={themeColors.loss} radius={[0, 6, 6, 0]} barSize={10} isAnimationActive={false} />
+                        </BarChart>
+                      </ChartContainer>
+                    )}
+                    {!card.series && <div className="flex -space-x-3">
+                      {[...new Set(accounts.filter(account => account.status === 'active').map(account => account.firmName))].slice(0, 3).map(firm => FIRM_LOGOS[firm]
+                        ? <img key={firm} src={FIRM_LOGOS[firm]} alt={firm} title={firm} className="h-8 w-8 rounded-lg border bg-white object-cover" />
+                        : <span key={firm} title={firm} className="text-xs font-medium">{firmInitials(firm)}</span>)}
+                    </div>}
+                  </div>
+                </Card>
               ))}
             </dl>
           )}
@@ -1479,105 +1545,13 @@ export default function PropTracker() {
         )}
 
         {accounts.length === 0 ? (
-          /* ── Empty state ── */
-          <div className="rounded-lg border overflow-hidden">
-            <div className="flex flex-col items-center text-center gap-5 px-6 pt-12 pb-10">
-              <div className="space-y-2 max-w-md">
-                <h2 className="text-2xl font-bold tracking-tight">Do you actually know your prop ROI?</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Log every fee and every payout. PropTracker calculates the number most prop traders never work out.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                {[
-                  { icon: Receipt, label: 'Fees and payouts' },
-                  { icon: TrendUp, label: 'True ROI' },
-                  { icon: ClipboardText, label: 'Challenge rules' },
-                  { icon: Brain, label: 'AI analysis' },
-                ].map(f => (
-                  <div key={f.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted border text-muted-foreground">
-                    <f.icon className="h-3 w-3" aria-hidden="true" />
-                    {f.label}
-                  </div>
-                ))}
-              </div>
-
-              <Button onClick={openAddAccount} size="lg" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
-                <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                Add your first account
-              </Button>
-
-              {!isPro && <p className="text-xs text-muted-foreground -mt-1">Free to start · {FREE_ACCOUNT_LIMIT} {FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'} on free plan</p>}
-
-              <p className="text-xs text-muted-foreground">
-                Starting a new challenge?{' '}
-                <Link
-                  to="/affiliate"
-                  className="font-medium hover:underline"
-                  style={{ color: themeColors.primary }}
-                  onClick={() => trackEvent('affiliate_link_clicked', { source: 'proptracker_empty_state' })}
-                >
-                  Get partner discounts at top prop firms
-                </Link>
-              </p>
-            </div>
-
-            {/* Preview of a filled-in tracker, faded */}
-            <div className="relative border-t">
-              <p className="absolute top-3 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-card px-2">Preview</p>
-              <div className="pointer-events-none select-none opacity-50 p-4 sm:p-6 pt-8 sm:pt-8 space-y-5">
-                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-4">
-                  {[
-                    { label: 'Total invested', value: '$1,915', sub: 'All fees paid', color: 'hsl(var(--foreground))' },
-                    { label: 'Total earned', value: '$7,700', sub: 'All payouts received', color: themeColors.profit },
-                    { label: 'Net P&L', value: '+$5,785', sub: '+302% ROI', color: themeColors.profit },
-                    { label: 'Active accounts', value: '2', sub: 'of 4 total', color: themeColors.primary },
-                  ].map((c, i) => (
-                    <div key={c.label} className={i > 0 ? 'sm:border-l sm:border-border sm:pl-6' : ''}>
-                      <dt className="text-xs text-muted-foreground">{c.label}</dt>
-                      <dd className="mt-1 text-xl sm:text-2xl font-semibold tabular-nums tracking-tight" style={{ color: c.color }}>{c.value}</dd>
-                      <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
-                    </div>
-                  ))}
-                </dl>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {[
-                    { initials: 'TS', color: '#FFCC06', firm: 'TopStep', size: '$50,000', type: 'Evaluation', status: 'Active', statusClass: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20', invested: '$347', earned: '$2,300', pnl: '+$1,953' },
-                    { initials: 'AT', color: '#007BFF', firm: 'Apex Trader Funding', size: '$100,000', type: 'Funded', status: 'Passed', statusClass: 'bg-blue-500/15 text-blue-600 border-blue-500/20', invested: '$137', earned: '$3,900', pnl: '+$3,763' },
-                  ].map(g => (
-                    <Card key={g.firm}>
-                      <CardContent className="p-4 sm:p-5">
-                        <div className="flex items-start gap-3 mb-4">
-                          {FIRM_LOGOS[g.firm] ? (
-                            <div className="h-9 w-9 rounded-lg shrink-0 overflow-hidden bg-white border"><img src={FIRM_LOGOS[g.firm]} alt={g.firm} className="w-full h-full object-cover" /></div>
-                          ) : (
-                            <div className="h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: g.color }}>{g.initials}</div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-semibold text-sm">{g.firm}</p>
-                              <span className={`text-xs h-5 px-1.5 rounded border font-medium ${g.statusClass}`}>{g.status}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{g.size} · {g.type}</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 divide-x divide-border">
-                          {[{ l: 'Invested', v: g.invested }, { l: 'Earned', v: g.earned }, { l: 'P&L', v: g.pnl }].map((s, i) => (
-                            <div key={s.l} className={i > 0 ? 'pl-3' : ''}>
-                              <p className="text-xs text-muted-foreground">{s.l}</p>
-                              <p className="text-sm font-semibold tabular-nums mt-0.5">{s.v}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, transparent 100%)' }} />
-            </div>
-          </div>
+          <EmptyState icon={Receipt} title="See what your prop accounts actually return" description="Add an account, then record its fees and payouts. Your net return, account history, and challenge limits will live here.">
+            <Button onClick={openAddAccount} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
+              <Plus className="h-4 w-4 mr-2" />Add your first account
+            </Button>
+            {!isPro && <p className="text-xs text-muted-foreground">{FREE_ACCOUNT_LIMIT} {FREE_ACCOUNT_LIMIT === 1 ? 'account' : 'accounts'} included on the free plan.</p>}
+            <Link to="/affiliate" className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground" onClick={() => trackEvent('affiliate_link_clicked', { source: 'proptracker_empty_state' })}>Explore partner discounts</Link>
+          </EmptyState>
         ) : (
           <Tabs value={activeTab} onValueChange={v => setActiveTab(v as PropTab)}>
             <TabsList className="w-full grid grid-cols-3 sm:w-auto sm:inline-flex">
@@ -1595,8 +1569,8 @@ export default function PropTracker() {
                 <div className="flex items-start gap-3 rounded-lg border px-4 py-3 text-sm">
                   <Info className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                   <p className="flex-1 text-muted-foreground">
-                    <span className="font-medium text-foreground">Quick start.</span>{' '}
-                    One card per prop account. Log every fee and payout, set challenge rules to see drawdown and profit target live, and the header shows your true net P&L across all firms.
+                    <span className="font-medium text-foreground">Track what you keep.</span>{' '}
+                    Log fees and payouts to see your true return. Add challenge rules to monitor your profit target and drawdown limits.
                   </p>
                   <button onClick={dismissTip} aria-label="Dismiss tip" className="shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5">
                     <X className="h-4 w-4" aria-hidden="true" />
@@ -1606,7 +1580,7 @@ export default function PropTracker() {
 
               {/* Risk calculator */}
               {activeRulesAccounts.length > 0 && (
-                <div className="rounded-lg border overflow-hidden">
+                <div data-prop-risk className="rounded-xl border bg-card overflow-hidden">
                   <button
                     onClick={() => setRiskCalcOpen(p => !p)}
                     aria-expanded={riskCalcOpen}
@@ -1627,10 +1601,11 @@ export default function PropTracker() {
                     </div>
                   </button>
                   {riskCalcOpen && (
-                    <div className="px-4 pb-4 space-y-4 border-t pt-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <label className="text-sm text-muted-foreground whitespace-nowrap">If I lose</label>
-                        <div className="relative max-w-[120px] sm:max-w-[160px]">
+                    <div className="p-4 sm:p-5 space-y-5 border-t">
+                      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.6fr)]">
+                      <div className="space-y-3">
+                        <label htmlFor="prop-loss-amount" className="block text-sm font-medium">Potential loss today</label>
+                        <div className="relative max-w-sm">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{currencySymbol(aggregateCurrency)}</span>
                           <Input
                             type="number"
@@ -1641,11 +1616,10 @@ export default function PropTracker() {
                             className="pl-7"
                             value={riskCalcAmount}
                             onChange={e => setRiskCalcAmount(e.target.value)}
+                            id="prop-loss-amount"
                             aria-label="Hypothetical loss amount"
                           />
                         </div>
-                        <label className="text-sm text-muted-foreground whitespace-nowrap">today</label>
-                      </div>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {[100, 250, 500, 1000].map(v => {
                           const active = Number(riskCalcAmount) === v
@@ -1675,6 +1649,13 @@ export default function PropTracker() {
                             Max safe · {fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}
                           </button>
                         )}
+                      </div>
+                      </div>
+                      <div className="border-t pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-5 flex flex-col justify-center">
+                        <p className="text-xs text-muted-foreground">Tightest available buffer</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums">{fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}</p>
+                        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Across {activeRulesAccounts.length} active {activeRulesAccounts.length === 1 ? 'account' : 'accounts'} with risk limits. Enter a loss to compare the projected drawdown below.</p>
+                      </div>
                       </div>
                       {riskCalcResults && riskCalcResults.length > 0 && (
                         <div className="space-y-2">
@@ -1751,16 +1732,7 @@ export default function PropTracker() {
                           })}
                         </div>
                       )}
-                      {(!riskCalcResults || riskCalcResults.length === 0) && (
-                        <div className="rounded-lg border border-dashed px-4 py-5 text-center space-y-1">
-                          <p className="text-xs text-muted-foreground">Enter an amount or tap a preset to see how a loss would affect your active challenges.</p>
-                          {maxSafeLoss > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              Your tightest buffer today is <span className="font-semibold text-foreground tabular-nums">{fmt(Math.floor(maxSafeLoss), activeRulesAccounts[0]?.currency)}</span>
-                            </p>
-                          )}
-                        </div>
-                      )}
+
                     </div>
                   )}
                 </div>
@@ -1794,9 +1766,10 @@ export default function PropTracker() {
               )}
 
               {/* Account cards */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={visibleAccounts.length === 1 ? 'grid gap-4 grid-cols-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]' : 'columns-1 lg:columns-2 gap-4'}>
                 {visibleAccounts.map(account => {
                   const { invested, earned, net, txs } = getAccountStats(account.id)
+                  const accountFees = TX_TYPE_OPTIONS.filter(type => type.isExpense).map((type, index) => ({ name: type.label, amount: txs.filter(tx => tx.type === type.value).reduce((sum, tx) => sum + tx.amount, 0), color: feeColors[index] })).filter(fee => fee.amount > 0)
                   const expanded = expandedIds.has(account.id)
                   const meta = statusMeta(account.status)
                   const typeMeta = ACCOUNT_TYPE_OPTIONS.find(t => t.value === account.accountType)
@@ -1806,7 +1779,9 @@ export default function PropTracker() {
                   const isEvalPhase = account.accountType === 'evaluation' || account.accountType === 'express'
                   const isClosed = account.status === 'failed' || account.status === 'withdrawn'
                   return (
-                    <Card key={account.id} className="h-full flex flex-col">
+                    <React.Fragment key={account.id}>
+                    <div className={visibleAccounts.length === 1 ? `min-w-0 flex flex-col gap-4 ${expanded ? 'lg:col-span-2' : ''}` : 'contents'}>
+                    <Card data-prop-account className={`min-w-0 flex flex-col shadow-none ${visibleAccounts.length === 1 ? 'w-full' : 'break-inside-avoid mb-4'} ${visibleAccounts.length === 1 && expanded ? 'lg:col-span-2' : ''}`}>
                       <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
                         {/* Account header */}
                         <div className="flex items-start gap-3 mb-4">
@@ -1824,7 +1799,7 @@ export default function PropTracker() {
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <p className="font-semibold text-sm leading-tight truncate">{account.firmName}</p>
+                              <p className="font-semibold text-base leading-tight truncate">{account.firmName}</p>
                               <Badge variant="outline" className={`text-xs h-5 px-1.5 shrink-0 font-medium ${meta.badgeClass}`}>
                                 {meta.label}
                               </Badge>
@@ -1837,7 +1812,7 @@ export default function PropTracker() {
                         </div>
 
                         {/* Money in / out / net */}
-                        <div className="grid grid-cols-3 divide-x divide-border mb-3">
+                        <div className="grid grid-cols-3 divide-x divide-border rounded-lg bg-muted/40 px-3 py-3 mb-4">
                           {[
                             { label: 'Invested', value: invested > 0 ? fmt(invested, account.currency) : '—', color: undefined },
                             { label: 'Earned', value: earned > 0 ? fmt(earned, account.currency) : '—', color: earned > 0 ? themeColors.profit : undefined },
@@ -1869,7 +1844,7 @@ export default function PropTracker() {
 
                         {/* Challenge progress */}
                         {challengeStatus && account.challengeRules && (
-                          <div className="border-t pt-3 mb-3 space-y-2.5">
+                          <div className="border-t pt-4 mb-4 space-y-3">
                             <div className="flex items-center justify-between">
                               <p className="text-xs font-medium">{isEvalPhase ? 'Challenge progress' : 'Risk limits'}</p>
                               {account.challengeProgress?.lastUpdated && (
@@ -1953,7 +1928,7 @@ export default function PropTracker() {
                         )}
 
                         {/* Actions */}
-                        <div className="flex flex-wrap items-center gap-1.5 gap-y-2 pt-3 mt-auto border-t">
+                        <div className="flex flex-wrap items-center gap-1.5 gap-y-2 p-4 sm:px-5 mt-auto border-t bg-muted/20 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 rounded-b-xl">
                           {/* Phones lay the buttons out as a flush 2-up grid: three of them in
                               one flex row overflowed the card under 400px, and letting them wrap
                               stranded a single button on its own line. Update balance takes the
@@ -2103,6 +2078,49 @@ export default function PropTracker() {
                         })()}
                       </CardContent>
                     </Card>
+                    {visibleAccounts.length === 1 && !expanded && <Card data-account-costs className="shadow-none flex flex-col flex-1">
+                      <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
+                        <h2 className="text-base font-semibold">Account costs</h2>
+                        <p className="mt-1 text-xs text-muted-foreground">All recorded fees for {account.firmName}</p>
+                        {accountFees.length > 0 ? <div className="mt-4 mb-5 flex items-center gap-5">
+                          <ChartContainer config={{ amount: { label: 'Fees' } }} className="h-24 w-24 shrink-0" aria-label="Account fees by type">
+                            <PieChart><ChartTooltip content={<ChartTooltipContent hideLabel nameKey="name" formatter={(value, name) => <span>{name}: {fmt(Number(value), account.currency)}</span>} />} /><Pie data={accountFees} dataKey="amount" nameKey="name" innerRadius={28} outerRadius={43} strokeWidth={0} isAnimationActive={false}>{accountFees.map(fee => <Cell key={fee.name} fill={fee.color} />)}</Pie></PieChart>
+                          </ChartContainer>
+                          <dl className="min-w-0 flex-1 space-y-2.5">{accountFees.map(fee => <div key={fee.name} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs"><dt className="flex items-center gap-1.5 text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: fee.color }} />{fee.name}</dt><dd className="font-medium tabular-nums">{fmt(fee.amount, account.currency)}</dd></div>)}</dl>
+                        </div> : <p className="mt-4 text-sm text-muted-foreground">No fees recorded yet.</p>}
+                        <dl className="mt-auto border-t pt-4 grid grid-cols-3 gap-3">
+                          <div><dt className="text-xs text-muted-foreground">Fees paid</dt><dd className="mt-1 text-sm font-semibold tabular-nums">{fmt(invested, account.currency)}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Payouts</dt><dd className="mt-1 text-sm font-semibold tabular-nums" style={{ color: themeColors.profit }}>{fmt(earned, account.currency)}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">ROI</dt><dd className="mt-1 text-sm font-semibold tabular-nums" style={{ color: invested > 0 ? (net >= 0 ? themeColors.profit : themeColors.loss) : undefined }}>{invested > 0 ? `${net >= 0 ? '+' : ''}${(net / invested * 100).toFixed(1)}%` : '—'}</dd></div>
+                        </dl>
+                      </CardContent>
+                    </Card>}
+                    </div>
+                    {visibleAccounts.length === 1 && !expanded && (
+                      <Card data-prop-recent className="min-w-0 shadow-none flex flex-col">
+                        <div className="flex items-center justify-between gap-3 border-b p-5">
+                          <div><h2 className="text-base font-semibold">Recent transactions</h2><p className="mt-1 text-xs text-muted-foreground">Latest fees and payouts for {account.firmName}</p></div>
+                          <Badge variant="secondary">{txs.length}</Badge>
+                        </div>
+                        <div className="divide-y px-5">
+                          {[...txs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).map(tx => {
+                            const expense = isExpenseTx(tx.type)
+                            return (
+                              <div key={tx.id} className="flex items-start gap-3 py-4">
+                                <div className="rounded-md bg-muted p-2" style={{ color: expense ? themeColors.loss : themeColors.profit }}>
+                                  {expense ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                                </div>
+                                <div className="min-w-0 flex-1"><p className="text-sm font-medium">{TX_TYPE_OPTIONS.find(type => type.value === tx.type)?.label ?? tx.type}</p><p className="mt-1 text-xs text-muted-foreground">{parseStoredDate(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>{tx.description && <p className="mt-1 truncate text-xs text-muted-foreground">{tx.description}</p>}</div>
+                                <p className="text-sm font-semibold tabular-nums" style={{ color: expense ? themeColors.loss : themeColors.profit }}>{expense ? '-' : '+'}{fmt(tx.amount, account.currency)}</p>
+                              </div>
+                            )
+                          })}
+                          {txs.length === 0 && <p className="py-5 text-sm text-muted-foreground">Add your first fee or payout to start tracking this account.</p>}
+                        </div>
+                        {txs.length > 0 && <div className="border-t p-4 mt-auto"><Button variant="outline" size="sm" className="w-full" onClick={() => toggleExpand(account.id)}>View all {txs.length} transactions<ArrowRight className="ml-2 h-4 w-4" /></Button></div>}
+                      </Card>
+                    )}
+                    </React.Fragment>
                   )
                 })}
               </div>
@@ -2111,8 +2129,8 @@ export default function PropTracker() {
             {/* ── Performance tab ── */}
             <TabsContent value="performance" className="mt-5 space-y-5">
               {/* Period */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
+                <p className="text-xs text-muted-foreground">
                   Money figures use the selected period. Pass and fail counts are all time.
                 </p>
                 <div className="flex items-center gap-1.5" role="group" aria-label="Period">
@@ -2141,9 +2159,9 @@ export default function PropTracker() {
               {/* Track record: lifetime */}
               {successStats ? (
                 <ProGate featureName="Success Rate Dashboard">
-                  <div className="rounded-lg border">
+                  <div className="rounded-xl border bg-card">
                     <div className="px-4 sm:px-5 py-3 border-b flex items-center justify-between">
-                      <p className="text-sm font-medium">Track record</p>
+                      <p className="text-base font-semibold">Track record</p>
                       <p className="text-xs text-muted-foreground">All time</p>
                     </div>
                     <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-5 gap-x-4 sm:gap-x-0 p-4 sm:p-5">
@@ -2185,8 +2203,9 @@ export default function PropTracker() {
                   </div>
                 </ProGate>
               ) : (
-                <div className="rounded-lg border border-dashed px-4 py-4 text-sm text-muted-foreground">
-                  Pass rate, average cost to fund and best-firm ROI appear once you have 3 or more accounts. You have {accounts.length}.
+                <div className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
+                  <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <p>Track record unlocks at 3 accounts. You have {accounts.length}; cash flow and payout analytics are shown below.</p>
                 </div>
               )}
 
@@ -2202,11 +2221,11 @@ export default function PropTracker() {
                     {/* Cash flow row */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                       {/* Monthly cash flow */}
-                      <Card className="flex flex-col lg:col-span-3">
+                      <Card className="shadow-none min-w-0 flex flex-col lg:col-span-3">
                         <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
-                          <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                             <div>
-                              <p className="text-sm font-medium">Monthly cash flow</p>
+                              <p className="text-base font-semibold">Monthly cash flow</p>
                               <p className="text-xs text-muted-foreground">Fees out, payouts in, by calendar month{monthlyBars.length < monthlyFlow.length ? `. Chart shows the last ${monthlyBars.length} months` : ''}</p>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
@@ -2216,9 +2235,10 @@ export default function PropTracker() {
                           </div>
                           <div className="flex-1">
                             <ResponsiveContainer width="100%" height={220}>
-                              <BarChart data={monthlyBars} margin={{ top: 4, right: 4, bottom: 0, left: 4 }} barCategoryGap="28%" stackOffset="sign">
+                              <BarChart data={monthlyBars} margin={{ top: 4, right: 4, bottom: 0, left: 4 }} barCategoryGap="20%" barGap={4} barSize={18}>
                                 <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} interval="preserveStartEnd" />
-                                <YAxis hide />
+                                <YAxis width={56} tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={value => `${currencySymbol(aggregateCurrency)}${Math.abs(Number(value)) >= 1000 ? `${(Number(value) / 1000).toFixed(1)}k` : Math.round(Number(value))}`} />
+                                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.5} />
                                 <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
                                 <Tooltip
                                   cursor={{ fill: 'hsl(var(--muted))', fillOpacity: 0.4 }}
@@ -2235,8 +2255,8 @@ export default function PropTracker() {
                                     )
                                   }}
                                 />
-                                <Bar dataKey="feesDown" stackId="flow" fill={themeColors.loss} fillOpacity={0.85} radius={[0, 0, 3, 3]} maxBarSize={28} />
-                                <Bar dataKey="payouts" stackId="flow" fill={themeColors.profit} fillOpacity={0.9} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                                <Bar dataKey="fees" fill={themeColors.loss} fillOpacity={0.85} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="payouts" fill={themeColors.profit} fillOpacity={0.9} radius={[4, 4, 0, 0]} />
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
@@ -2269,11 +2289,11 @@ export default function PropTracker() {
                       </Card>
 
                       {/* Cumulative P&L */}
-                      <Card className="flex flex-col lg:col-span-2">
+                      <Card className="shadow-none min-w-0 flex flex-col lg:col-span-2">
                         <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
-                          <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                             <div>
-                              <p className="text-sm font-medium">Cumulative P&L</p>
+                              <p className="text-base font-semibold">Cumulative P&L</p>
                               <p className="text-xs text-muted-foreground">{rangeStart ? 'Carries the balance from before the period' : 'Since your first transaction'}</p>
                             </div>
                             {pnlOverTime.length > 0 && (() => {
@@ -2285,7 +2305,7 @@ export default function PropTracker() {
                               )
                             })()}
                           </div>
-                          <div className="flex-1 flex flex-col justify-end">
+                          <div className="flex flex-col">
                             {(() => {
                               const final = pnlOverTime.length > 0 ? pnlOverTime[pnlOverTime.length - 1].value : 0
                               const lineColor = final >= 0 ? themeColors.profit : themeColors.loss
@@ -2298,7 +2318,7 @@ export default function PropTracker() {
                                         <stop offset="100%" stopColor={lineColor} stopOpacity={0.02} />
                                       </linearGradient>
                                     </defs>
-                                    <XAxis dataKey="date" hide />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={48} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={value => String(value)} />
                                     <YAxis hide domain={['auto', 'auto']} />
                                     <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} strokeDasharray="3 3" />
                                     <Tooltip
@@ -2331,6 +2351,10 @@ export default function PropTracker() {
                               )
                             })()}
                           </div>
+                          <dl className="mt-auto border-t pt-4 grid grid-cols-2 gap-4">
+                            <div><dt className="text-xs text-muted-foreground">Net movement in period</dt><dd className="mt-1 text-sm font-semibold tabular-nums">{(() => { const net = rangeTxs.reduce((sum, tx) => sum + (isExpenseTx(tx.type) ? -tx.amount : tx.amount), 0); return `${net >= 0 ? '+' : '-'}${fmt(net, aggregateCurrency)}` })()}</dd></div>
+                            <div><dt className="text-xs text-muted-foreground">Transactions</dt><dd className="mt-1 text-sm font-semibold tabular-nums">{rangeTxs.length}</dd><p className="text-xs text-muted-foreground">In the selected period</p></div>
+                          </dl>
                         </CardContent>
                       </Card>
                     </div>
@@ -2338,9 +2362,9 @@ export default function PropTracker() {
                     {/* Spend + payouts row */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {/* Where the money goes */}
-                      <Card className="flex flex-col">
+                      <Card data-prop-fees className="shadow-none min-w-0 flex flex-col">
                         <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
-                          <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                             <div>
                               <p className="text-sm font-medium">Where the money goes</p>
                               <p className="text-xs text-muted-foreground">Fees by type</p>
@@ -2351,25 +2375,17 @@ export default function PropTracker() {
                             <p className="text-sm text-muted-foreground">No fees in this period.</p>
                           ) : (
                             <div className="space-y-3">
-                              {spendByType.rows.map(r => {
-                                const pct = spendByType.total > 0 ? (r.amount / spendByType.total) * 100 : 0
-                                const isReset = r.value === 'reset-fee'
-                                return (
-                                  <div key={r.value} className="space-y-1">
-                                    <div className="flex items-center justify-between gap-3 text-sm">
-                                      <span className="min-w-0 truncate">
-                                        {r.label}
-                                        <span className="text-muted-foreground"> · {r.count} {r.count === 1 ? 'charge' : 'charges'}</span>
-                                      </span>
-                                      <span className="tabular-nums font-semibold shrink-0">
-                                        {fmt(r.amount, aggregateCurrency)}
-                                        <span className="text-muted-foreground font-normal ml-1.5">{pct.toFixed(0)}%</span>
-                                      </span>
-                                    </div>
-                                    <Progress value={pct} indicatorColor={isReset ? themeColors.loss : themeColors.primary} />
-                                  </div>
-                                )
-                              })}
+                              <ChartContainer config={{ amount: { label: 'Fees', color: themeColors.primary } }} className="w-full" style={{ height: Math.max(160, spendByType.rows.length * 44) }}>
+                                <BarChart data={spendByType.rows} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
+                                  <YAxis dataKey="label" type="category" width={95} tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
+                                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} tickFormatter={value => `${currencySymbol(aggregateCurrency)}${Number(value) >= 1000 ? `${Number(value) / 1000}k` : value}`} />
+                                  <CartesianGrid horizontal={false} strokeOpacity={0.3} />
+                                  <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value, _name, item) => <span>{fmt(Number(value), aggregateCurrency)} · {item.payload.count} charges · {Math.round(Number(value) / spendByType.total * 100)}%</span>} />} />
+                                  <Bar dataKey="amount" radius={[0, 4, 4, 0]} maxBarSize={18}>
+                                    {spendByType.rows.map(row => <Cell key={row.value} fill={row.value === 'reset-fee' ? themeColors.loss : themeColors.primary} />)}
+                                  </Bar>
+                                </BarChart>
+                              </ChartContainer>
                               {(() => {
                                 const resets = spendByType.rows.find(r => r.value === 'reset-fee')
                                 const evals = spendByType.rows.find(r => r.value === 'evaluation-fee')
@@ -2387,9 +2403,9 @@ export default function PropTracker() {
                       </Card>
 
                       {/* Payouts */}
-                      <Card className="flex flex-col">
+                      <Card className="shadow-none min-w-0 flex flex-col">
                         <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
-                          <div className="flex items-start justify-between gap-3 mb-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                             <div>
                               <p className="text-sm font-medium">Payouts</p>
                               <p className="text-xs text-muted-foreground">{payoutStats ? `${payoutStats.count} payout${payoutStats.count !== 1 ? 's' : ''} from ${payoutStats.accountsPaid} account${payoutStats.accountsPaid !== 1 ? 's' : ''}` : 'Withdrawals you have logged'}</p>
@@ -2399,7 +2415,24 @@ export default function PropTracker() {
                           {!payoutStats ? (
                             <p className="text-sm text-muted-foreground">No payouts in this period.</p>
                           ) : (
-                            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+                            <>
+                            <ChartContainer config={{ amount: { label: 'Payout', color: themeColors.profit } }} className="min-h-40 flex-1 aspect-auto w-full">
+                              <BarChart data={rangeTxs.filter(tx => !isExpenseTx(tx.type)).sort((a, b) => a.date.localeCompare(b.date))} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                                <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={32} tick={{ fontSize: 10 }} tickFormatter={value => parseStoredDate(String(value)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} />
+                                <YAxis width={45} tickLine={false} axisLine={false} tick={{ fontSize: 10 }} tickFormatter={value => `${currencySymbol(aggregateCurrency)}${Number(value) >= 1000 ? `${Number(value) / 1000}k` : value}`} />
+                                <CartesianGrid vertical={false} strokeOpacity={0.3} />
+                                <ChartTooltip content={<ChartTooltipContent formatter={value => <span>{fmt(Number(value), aggregateCurrency)}</span>} />} />
+                                <Bar dataKey="amount" fill={themeColors.profit} radius={[4, 4, 0, 0]} maxBarSize={22} />
+                              </BarChart>
+                            </ChartContainer>
+
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                      {payoutStats && <Card data-prop-payout-stats className="shadow-none lg:col-span-2">
+                        <CardContent className="p-4 sm:p-5">
+                            <dl className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-5 gap-4">
                               {[
                                 { label: 'Average payout', value: fmt(payoutStats.avg, aggregateCurrency), sub: 'per withdrawal' },
                                 { label: 'Largest payout', value: fmt(payoutStats.largest.amount, aggregateCurrency), sub: parseStoredDate(payoutStats.largest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
@@ -2414,21 +2447,20 @@ export default function PropTracker() {
                                 </div>
                               ))}
                             </dl>
-                          )}
                         </CardContent>
-                      </Card>
+                      </Card>}
                     </div>
 
                     {/* By firm */}
-                    <div className="rounded-lg border overflow-hidden">
+                    <div className="rounded-xl border bg-card overflow-hidden">
                       <div className="px-4 sm:px-5 py-3 border-b flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-medium">By firm</p>
+                          <p className="text-base font-semibold">By firm</p>
                           <p className="text-xs text-muted-foreground">Sorted by net. Record is all time, money is the selected period.</p>
                         </div>
                       </div>
                       <table className="w-full text-sm">
-                        <thead>
+                        <thead className="bg-muted/40">
                           <tr className="text-xs text-muted-foreground border-b">
                             <th scope="col" className="text-left font-medium px-4 sm:px-5 py-2">Firm</th>
                             <th scope="col" className="text-right font-medium px-3 py-2">Record</th>
@@ -2513,13 +2545,13 @@ export default function PropTracker() {
                         className={`h-9 text-sm gap-1.5 ${extraClass}`}
                         style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
                       >
-                        <Brain className="h-4 w-4" aria-hidden="true" />
+                        {aiLoading ? <SpinnerGap className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Brain className="h-4 w-4" aria-hidden="true" />}
                         {aiLoading ? 'Reviewing…' : aiAnalysis ? 'Review again' : 'Review my accounts'}
                       </Button>
                     )
 
                     return (
-                      <div className="rounded-lg border overflow-hidden">
+                      <div className="rounded-xl border bg-card overflow-hidden">
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b">
                           <div className="min-w-0">
@@ -2558,9 +2590,26 @@ export default function PropTracker() {
 
                         {/* Loading */}
                         {aiLoading && (
-                          <div className="px-5 py-12 flex flex-col items-center gap-3 text-center">
-                            <Brain className="h-6 w-6 animate-pulse" style={{ color: themeColors.primary }} aria-hidden="true" />
-                            <p className="text-sm text-muted-foreground">Reading {accounts.length} account{accounts.length !== 1 ? 's' : ''} and {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}. Usually 10 to 20 seconds.</p>
+                          <div role="status" aria-live="polite" data-prop-review-loading className="p-5 space-y-5">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                                <SpinnerGap className="h-5 w-5 animate-spin motion-reduce:animate-none" style={{ color: themeColors.primary }} aria-hidden="true" />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-semibold">Reviewing your prop trading</p>
+                                <p className="text-xs text-muted-foreground">Reading {accounts.length} account{accounts.length !== 1 ? 's' : ''} and {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}. Your review will appear here when ready.</p>
+                              </div>
+                            </div>
+                            <div aria-hidden="true" className="grid gap-4 sm:grid-cols-2">
+                              {[0, 1].map(index => (
+                                <div key={index} className="space-y-3 rounded-lg border p-4">
+                                  <Skeleton className="h-3 w-28 bg-muted motion-reduce:animate-none" />
+                                  <Skeleton className="h-2 w-full bg-muted motion-reduce:animate-none [animation-delay:150ms]" />
+                                  <Skeleton className="h-2 w-4/5 bg-muted motion-reduce:animate-none [animation-delay:300ms]" />
+                                  <Skeleton className="h-2 w-3/5 bg-muted motion-reduce:animate-none [animation-delay:450ms]" />
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
 
@@ -2610,10 +2659,20 @@ export default function PropTracker() {
                             )
                           }
 
-                          const inline = (text: string) => DOMPurify.sanitize(
-                            text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-medium">$1</strong>'),
-                            { ALLOWED_TAGS: ['strong', 'em', 'br'], ALLOWED_ATTR: ['class'] },
-                          )
+                          const firmPattern = [...new Set(accounts.map(account => account.firmName))]
+                            .filter(Boolean)
+                            .sort((a, b) => b.length - a.length)
+                            .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                            .join('|')
+                          const inline = (text: string) => {
+                            const highlighted = firmPattern
+                              ? text.replace(new RegExp(`(^|[^\\p{L}\\p{N}])(${firmPattern})(?=$|[^\\p{L}\\p{N}])`, 'giu'), '$1<mark class="rounded bg-primary/10 px-1 py-0.5 font-semibold text-foreground">$2</mark>')
+                              : text
+                            return DOMPurify.sanitize(
+                              highlighted.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground font-semibold">$1</strong>'),
+                              { ALLOWED_TAGS: ['strong', 'em', 'br', 'mark'], ALLOWED_ATTR: ['class'] },
+                            )
+                          }
                           const cleanLine = (line: string) => {
                             const isBullet = line.startsWith('-') || /^\d+\./.test(line)
                             return isBullet ? line.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '') : line
@@ -2622,7 +2681,7 @@ export default function PropTracker() {
                           const bigPicture = parsed.verdict
                           const rest = sections.filter(s => s.key !== 'verdict' && parsed[s.key])
                           const plan = sections.find(s => s.key === 'next')!
-                          const grid = rest.filter(s => s.key !== 'next')
+                          const grid = rest.filter(s => s.key !== 'next' && s.key !== 'warnings')
 
                           return (
                             <div>
@@ -2651,7 +2710,7 @@ export default function PropTracker() {
                                       </p>
                                     )}
                                     {bigPicture ? (
-                                      <div className="text-sm text-muted-foreground leading-relaxed space-y-2 mt-1">
+                                      <div className="max-w-4xl text-sm text-muted-foreground leading-relaxed space-y-2 mt-1">
                                         {bigPicture.split('\n').filter(Boolean).map((line, i) => (
                                           <p key={i} dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
                                         ))}
@@ -2665,32 +2724,57 @@ export default function PropTracker() {
                                 </div>
                               )}
 
+                              {parsed.warnings && (
+                                <section className="m-4 sm:m-5 rounded-lg border border-destructive/20 bg-destructive/5 p-4 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Warning className="h-4 w-4 text-destructive" aria-hidden="true" />
+                                    <h3 className="text-sm font-semibold">{COACH_HEADINGS.warnings}</h3>
+                                    <Badge variant="outline" className="ml-auto border-destructive/20 text-destructive text-[10px]">Pay attention</Badge>
+                                  </div>
+                                  <ul className="grid gap-4 lg:grid-cols-2">
+                                    {parsed.warnings.split('\n').filter(Boolean).map((line, i) => (
+                                      <li key={i} className="border-l-2 border-destructive/40 pl-3 text-sm leading-relaxed text-muted-foreground">
+                                        <span dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </section>
+                              )}
+
+                              {/* Game plan as numbered steps */}
+                              {parsed.next && (
+                                <div className="px-4 sm:px-5 py-5 border-b">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <ListChecks className="h-4 w-4 shrink-0" style={{ color: plan.color }} aria-hidden="true" />
+                                    <p className="text-sm font-semibold">{plan.heading}</p>
+                                  </div>
+                                  <ol className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {parsed.next.split('\n').filter(Boolean).map((line, i) => {
+                                      const cleaned = cleanLine(line)
+                                      const parts = cleaned.match(/^(\*\*.+?\*\*|.*?[.!?](?=\s|$))\s*(.*)$/s)
+                                      const title = parts?.[1] ?? cleaned
+                                      const detail = parts?.[2] ?? ''
+                                      return <li key={i} className="rounded-lg border p-4 grid gap-3 md:row-span-2 md:grid-rows-subgrid">
+                                        <div className="flex items-start gap-3"><span className="h-6 w-6 rounded-md bg-muted flex items-center justify-center text-xs font-semibold shrink-0 tabular-nums">{i + 1}</span><p className="text-sm font-semibold leading-snug" dangerouslySetInnerHTML={{ __html: inline(title) }} /></div>
+                                        {detail && <p className="text-sm leading-relaxed text-muted-foreground" dangerouslySetInnerHTML={{ __html: inline(detail) }} />}
+                                      </li>
+                                    })}
+
+                                  </ol>
+                                </div>
+                              )}
+
                               {/* Detail sections */}
                               {grid.length > 0 && (
-                                <div className={`grid grid-cols-1 -mb-px ${grid.length > 1 ? 'lg:grid-cols-2' : ''}`}>
-                                  {grid.map((s, idx) => {
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 sm:p-5">
+                                  {grid.map((s) => {
                                     const Icon = s.icon
                                     const lines = parsed[s.key].split('\n').filter(Boolean)
-                                    // Odd count: the last section takes the full row instead of leaving an empty cell
-                                    const spansRow = grid.length > 1 && grid.length % 2 === 1 && idx === grid.length - 1
-                                    const leftColumn = grid.length > 1 && idx % 2 === 0 && !spansRow
                                     return (
-                                      <div key={s.key} className={`px-4 sm:px-5 py-5 border-b ${spansRow ? 'lg:col-span-2' : ''} ${leftColumn ? 'lg:border-r' : ''}`}>
-                                        <div className="flex items-center gap-2 mb-3">
-                                          <Icon className="h-4 w-4 shrink-0" style={{ color: s.color }} aria-hidden="true" />
-                                          <p className="text-sm font-semibold">{s.heading}</p>
-                                        </div>
-                                        {s.style === 'warnings' ? (
-                                          <ul className="space-y-2.5">
-                                            {lines.map((line, i) => (
-                                              <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground leading-relaxed">
-                                                <Warning className="h-3.5 w-3.5 mt-1 shrink-0" style={{ color: themeColors.loss }} aria-hidden="true" />
-                                                <span dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        ) : (
-                                          <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                                      <section key={s.key} className="min-w-0">
+                                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold"><Icon className="h-4 w-4 shrink-0" style={{ color: s.color }} aria-hidden="true" />{s.heading}</h3>
+                                        {(
+                                          <div className="max-w-prose space-y-3 text-sm text-muted-foreground leading-relaxed">
                                             {lines.map((line, i) => {
                                               const cleaned = cleanLine(line)
                                               const headingMatch = cleaned.match(/^\*\*(.+?)\*\*[:.]\s*(.*)/)
@@ -2706,29 +2790,13 @@ export default function PropTracker() {
                                             })}
                                           </div>
                                         )}
-                                      </div>
+                                      </section>
                                     )
                                   })}
                                 </div>
                               )}
 
-                              {/* Game plan as numbered steps */}
-                              {parsed.next && (
-                                <div className="px-4 sm:px-5 py-5 border-t">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <ListChecks className="h-4 w-4 shrink-0" style={{ color: plan.color }} aria-hidden="true" />
-                                    <p className="text-sm font-semibold">{plan.heading}</p>
-                                  </div>
-                                  <ol className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                    {parsed.next.split('\n').filter(Boolean).map((line, i) => (
-                                      <li key={i} className="flex items-start gap-3 rounded-lg border p-3 text-sm text-muted-foreground leading-relaxed">
-                                        <span className="h-6 w-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0 tabular-nums text-foreground">{i + 1}</span>
-                                        <span dangerouslySetInnerHTML={{ __html: inline(cleanLine(line)) }} />
-                                      </li>
-                                    ))}
-                                  </ol>
-                                </div>
-                              )}
+
                             </div>
                           )
                         })()}
@@ -2746,7 +2814,7 @@ export default function PropTracker() {
 
       {/* ── Add / Edit Account Dialog ── */}
       <Dialog open={accountDialog.open} onOpenChange={open => setAccountDialog(p => ({ ...p, open }))}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
+        <DialogContent className="sm:max-w-4xl p-0 sm:p-0 overflow-hidden gap-0">
           {(() => {
             const selectedFirm = accountForm.firmName && accountForm.firmName !== 'Custom...' ? accountForm.firmName : null
             const logo = selectedFirm ? FIRM_LOGOS[selectedFirm] : null
@@ -2779,7 +2847,9 @@ export default function PropTracker() {
                   </DialogHeader>
                 </div>
 
-                <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                <div className="max-h-[70vh] overflow-y-auto grid md:grid-cols-2 md:divide-x divide-border/60">
+                <div className="p-5 sm:p-6 space-y-5">
+                  <h3 className="text-sm font-semibold">Account details</h3>
                   {/* Firm */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground" id="label-firm">Prop firm</label>
@@ -2898,8 +2968,11 @@ export default function PropTracker() {
                     </div>
                   </div>
 
+                  </div>
+                  <div className="p-5 sm:p-6 space-y-5 bg-muted/20 border-t md:border-t-0 border-border/60">
+                  <h3 className="text-sm font-semibold">Schedule & rules</h3>
                   {/* Dates */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">Start date</label>
                       <DatePicker
@@ -2927,6 +3000,8 @@ export default function PropTracker() {
                     <Textarea id="account-notes" placeholder="Phase 1 passed, waiting on funded account" value={accountForm.notes} onChange={e => setAccountForm(p => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none text-sm" />
                   </div>
 
+                  </div>
+                  <div className="md:col-span-2 p-5 sm:px-6 border-t border-border/60 md:!border-l-0">
                   {/* Challenge rules */}
                   <div className="rounded-lg border">
                     <button
@@ -3012,7 +3087,8 @@ export default function PropTracker() {
                   </div>
                 </div>
 
-                <div className="px-6 py-4 border-t flex justify-end gap-2">
+                </div>
+                <div className="px-6 py-4 border-t flex justify-end gap-2 bg-card">
                   <Button variant="outline" onClick={() => setAccountDialog({ open: false, editing: null })}>Cancel</Button>
                   <Button onClick={handleSaveAccount} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
                     {accountDialog.editing ? 'Save changes' : 'Add account'}
@@ -3033,7 +3109,7 @@ export default function PropTracker() {
         const txMeta = TX_TYPE_OPTIONS.find(t => t.value === txForm.type)
         return (
           <Dialog open={txDialog.open} onOpenChange={open => setTxDialog(p => ({ ...p, open }))}>
-            <DialogContent className="max-w-sm p-0 overflow-hidden gap-0">
+            <DialogContent className="sm:max-w-xl p-0 sm:p-0 overflow-hidden gap-0">
               <div className="px-5 pt-5 pb-4 border-b flex items-center gap-3">
                 {txLogo ? (
                   <div className="h-9 w-9 rounded-lg overflow-hidden bg-white border shrink-0"><img src={txLogo} alt="" className="w-full h-full object-cover" /></div>
@@ -3051,7 +3127,7 @@ export default function PropTracker() {
               <div className="px-5 py-5 space-y-4">
                 <div className="space-y-1.5">
                   <p className="text-xs font-medium text-muted-foreground" id="label-txtype">Type</p>
-                  <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="label-txtype">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-labelledby="label-txtype">
                     {TX_TYPE_OPTIONS.map(t => {
                       const active = txForm.type === t.value
                       const accent = t.isExpense ? themeColors.primary : themeColors.profit
@@ -3061,7 +3137,7 @@ export default function PropTracker() {
                           type="button"
                           onClick={() => setTxForm(p => ({ ...p, type: t.value }))}
                           aria-pressed={active}
-                          className="h-8 px-3 rounded-md text-xs font-medium border transition-colors hover:bg-muted/40"
+                          className="min-h-10 px-3 py-2 rounded-md text-xs font-medium border transition-colors hover:bg-muted/40"
                           style={{
                             borderColor: active ? accent : 'hsl(var(--border))',
                             backgroundColor: active ? `${accent}15` : 'transparent',
@@ -3080,13 +3156,13 @@ export default function PropTracker() {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground" htmlFor="tx-amount">Amount</label>
+                  <label className="text-xs font-medium text-muted-foreground" htmlFor="tx-amount">Transaction amount</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm" aria-hidden="true">{txCurrSym}</span>
-                    <Input id="tx-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" autoFocus className="h-11 pl-7 text-base tabular-nums" value={txForm.amount} onChange={e => setTxForm(p => ({ ...p, amount: e.target.value }))} />
+                    <Input id="tx-amount" type="number" inputMode="decimal" min="0" step="0.01" placeholder="0.00" autoFocus className="h-16 pl-8 text-2xl md:text-2xl font-semibold tabular-nums bg-muted/30" value={txForm.amount} onChange={e => setTxForm(p => ({ ...p, amount: e.target.value }))} />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground">Date</label>
                     <DatePicker
@@ -3139,7 +3215,7 @@ export default function PropTracker() {
 
       {/* Screenshot import dialog */}
       <Dialog open={importDialog.open} onOpenChange={open => !open && setImportDialog(p => ({ ...p, open: false }))}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Import from Screenshot</DialogTitle>
             <DialogDescription>
@@ -3246,7 +3322,7 @@ export default function PropTracker() {
       </Dialog>
       {/* ── End of Day Check-In Dialog ── */}
       <Dialog open={checkinDialog.open} onOpenChange={open => !open && setCheckinDialog(p => ({ ...p, open: false }))}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
+        <DialogContent className="sm:max-w-2xl p-0 sm:p-0 overflow-hidden gap-0">
           <div className="px-5 pt-5 pb-4 border-b">
             <DialogHeader className="p-0 space-y-0.5 text-left">
               <DialogTitle className="text-base">End of day check-in</DialogTitle>

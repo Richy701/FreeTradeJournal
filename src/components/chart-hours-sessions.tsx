@@ -381,11 +381,11 @@ export function ChartHoursSessions() {
   const sessionWindowsByLabel = Object.fromEntries(sessionChartData.map(s => [s.label, s.window]))
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* Hour of day */}
-      <Card className="h-[450px] flex flex-col">
+      <Card className="h-[450px] flex flex-col overflow-hidden shadow-none">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
             <div className="min-w-0">
               <CardTitle className="text-lg font-semibold tracking-tight">Time of Day</CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-1.5">
@@ -476,7 +476,7 @@ export function ChartHoursSessions() {
           )}
         </CardContent>
         {hasData && (
-          <CardFooter className="pt-0 pb-4 px-6">
+          <CardFooter className="border-t border-border/70 bg-muted/20 py-3 px-6">
             <p className="text-xs text-muted-foreground">
               {hourView === 'winRate' && bestWinHour ? (
                 <>Best hour by win rate {bestWinHour.label} at {bestWinHour.winRate}% from {bestWinHour.count} trades.</>
@@ -498,9 +498,9 @@ export function ChartHoursSessions() {
       </Card>
 
       {/* Sessions */}
-      <Card className="h-[450px] flex flex-col">
+      <Card className="h-[450px] flex flex-col overflow-hidden shadow-none">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
             <div className="min-w-0">
               <CardTitle className="text-lg font-semibold tracking-tight">Trading Sessions</CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-1.5">
@@ -644,7 +644,7 @@ export function ChartHoursSessions() {
           )}
         </CardContent>
         {hasData && (
-          <CardFooter className="pt-0 pb-4 px-6">
+          <CardFooter className="border-t border-border/70 bg-muted/20 py-3 px-6">
             <p className="text-xs text-muted-foreground">
               {sessionView === 'count' && busiestSession && busiestSession.count > 0
                 ? <>Most trades in {busiestSession.label}: {busiestSession.count} of {totalTrades}. Each trade counts once.</>

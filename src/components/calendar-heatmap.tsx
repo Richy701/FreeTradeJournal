@@ -664,19 +664,10 @@ export function CalendarHeatmap() {
   // Round to nearest cent to avoid floating point breakeven artifacts
   const roundedPnl = (pnl: number) => Math.round(pnl * 100) / 100
 
-  const getPnLColor = (pnl: number, trades: number) => {
-    if (trades === 0) return 'bg-muted/25 border-muted/50 hover:bg-black/[0.05] dark:hover:bg-white/[0.04] cursor-default'
+  const getPnLColor = (trades: number) => trades === 0
+    ? 'border border-border/40 bg-muted/15 hover:bg-muted/40 transition-colors'
+    : 'border hover:brightness-95 dark:hover:brightness-110 transition-[filter] cursor-pointer'
 
-    const rounded = roundedPnl(pnl)
-    if (rounded > 0) {
-      return 'border-2 shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer'
-    } else if (rounded < 0) {
-      return 'border-2 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer'
-    }
-
-    return 'border-2 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer' // Breakeven
-  }
-  
   // Determine if a color is light (needs dark text) or dark (needs white text)
   const isLightColor = (hex: string) => {
     const r = parseInt(hex.slice(1, 3), 16)
@@ -695,52 +686,16 @@ export function CalendarHeatmap() {
 
   const getPnLStyle = (pnl: number, trades: number, maxAbs: number) => {
     if (trades === 0) return {}
-
-    const rounded = roundedPnl(pnl)
-    if (rounded > 0) {
-      const intensity = Math.min(Math.abs(rounded) / maxAbs, 1)
-      const minOpacity = 30
-      const maxOpacity = 100
-      const opacity = Math.round(minOpacity + intensity * (maxOpacity - minOpacity))
-      const borderOpacity = Math.min(opacity + 15, 100)
-      return {
-        backgroundColor: alpha(themeColors.profit, pctToHex(opacity)),
-        borderColor: alpha(themeColors.profit, pctToHex(borderOpacity))
-      }
-    } else if (rounded < 0) {
-      const intensity = Math.min(Math.abs(rounded) / maxAbs, 1)
-      const minOpacity = 30
-      const maxOpacity = 100
-      const opacity = Math.round(minOpacity + intensity * (maxOpacity - minOpacity))
-      const borderOpacity = Math.min(opacity + 15, 100)
-      return {
-        backgroundColor: alpha(themeColors.loss, pctToHex(opacity)),
-        borderColor: alpha(themeColors.loss, pctToHex(borderOpacity))
-      }
-    }
-
-    return { backgroundColor: breakevenColor, borderColor: breakevenColor } // Breakeven
-  }
-
-  // Get text color class based on the cell's background color
-  const getCellTextColor = (pnl: number, trades: number, maxAbs: number) => {
-    if (trades === 0) return 'text-foreground'
-
     const rounded = roundedPnl(pnl)
     if (rounded === 0) {
-      return isLightColor(breakevenColor) ? 'text-black' : 'text-white'
+      return { backgroundColor: 'hsl(var(--muted))', borderColor: 'hsl(var(--border))' }
     }
-
-    const intensity = Math.min(Math.abs(rounded) / maxAbs, 1)
-    const minOpacity = 30
-    const maxOpacity = 100
-    const opacity = Math.round(minOpacity + intensity * (maxOpacity - minOpacity))
-
-    // Low opacity backgrounds are mostly transparent, so use foreground color
-    if (opacity < 70) return 'text-foreground'
-
-    const bgColor = rounded > 0 ? themeColors.profit : themeColors.loss
-    return isLightColor(bgColor) ? 'text-black' : 'text-white'
+    const intensity = maxAbs > 0 ? Math.min(Math.abs(rounded) / maxAbs, 1) : 0
+    const color = rounded > 0 ? themeColors.profit : themeColors.loss
+    return {
+      backgroundColor: alpha(color, pctToHex(8 + intensity * 16)),
+      borderColor: alpha(color, pctToHex(18 + intensity * 12)),
+    }
   }
 
   // Calculate monthly statistics
@@ -852,59 +807,59 @@ export function CalendarHeatmap() {
   })
 
   return (
-    <Card>
+    <Card className="overflow-hidden shadow-none">
       <CardHeader className="pb-4">
-        <div className="space-y-4">
-          {/* Title - Mobile friendly v2 */}
-          <CardTitle className="text-lg sm:text-xl font-semibold">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Title and month controls */}
+          <CardTitle className="text-lg font-semibold">
             Trading Calendar
           </CardTitle>
 
           {/* Navigation */}
-          <div className="flex items-center justify-between sm:justify-start gap-3">
-            <div className="flex items-center gap-1 rounded-full bg-muted/50 p-1">
-              <button
+          <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3">
+            <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
+              <Button variant="ghost" size="sm"
                 onClick={goToPreviousMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
+                className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Previous month (←)"
                 aria-label="Previous month"
               >
                 <CaretLeft className="h-3 w-3 text-muted-foreground" />
-              </button>
+              </Button>
 
               <Popover open={isMonthPickerOpen} onOpenChange={(open) => {
                 setIsMonthPickerOpen(open)
                 if (open) setPickerYear(currentDate.getFullYear())
               }}>
                 <PopoverTrigger asChild>
-                  <button className="h-8 px-3 rounded-md text-sm font-semibold hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation">
+                  <Button variant="ghost" size="sm" className="h-8 px-3 rounded-md text-sm font-semibold hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation">
                     {MONTHS[selectedMonth]} {selectedYear}
-                  </button>
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-3" align="start" sideOffset={8}>
                   <div className="flex items-center justify-between mb-3">
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={() => setPickerYear(y => y - 1)}
                       aria-label="Previous year"
                       className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <CaretLeft className="h-3 w-3 text-muted-foreground" />
-                    </button>
+                    </Button>
                     <span className="text-sm font-semibold">{pickerYear}</span>
-                    <button
+                    <Button variant="ghost" size="sm"
                       onClick={() => setPickerYear(y => y + 1)}
                       aria-label="Next year"
                       className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
                     >
                       <CaretRight className="h-3 w-3 text-muted-foreground" />
-                    </button>
+                    </Button>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
                     {MONTHS.map((month, index) => {
                       const isActive = index === selectedMonth && pickerYear === selectedYear
                       const isCurrent = index === new Date().getMonth() && pickerYear === new Date().getFullYear()
                       return (
-                        <button
+                        <Button variant="ghost" size="sm"
                           key={index}
                           onClick={() => {
                             jumpToMonth(index, pickerYear)
@@ -921,45 +876,45 @@ export function CalendarHeatmap() {
                           } : undefined}
                         >
                           {month}
-                        </button>
+                        </Button>
                       )
                     })}
                   </div>
                 </PopoverContent>
               </Popover>
 
-              <button
+              <Button variant="ghost" size="sm"
                 onClick={goToNextMonth}
-                className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
+                className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
                 title="Next month (→)"
                 aria-label="Next month"
               >
                 <CaretRight className="h-3 w-3 text-muted-foreground" />
-              </button>
+              </Button>
             </div>
 
-            <button
+            <Button variant="ghost" size="sm"
               onClick={goToToday}
-              className="h-8 px-4 rounded-full text-xs font-semibold transition-opacity hover:opacity-90 touch-manipulation"
+              className="h-8 px-4 rounded-md text-xs font-semibold transition-opacity hover:opacity-90 touch-manipulation"
               style={{
                 backgroundColor: themeColors.primary,
                 color: isLightColor(themeColors.primary) ? '#000' : '#fff'
               }}
             >
               Today
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Stats panel */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 p-3 sm:p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 border-t pt-4 !mt-5">
           <div className="px-3 sm:px-4 border-r border-border/40 last:border-r-0">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Monthly P&L</div>
-            <div className="text-lg sm:text-2xl font-bold tabular-nums" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
+            <div className="text-lg sm:text-2xl font-semibold tabular-nums" style={{color: monthlyStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss}}>
               {formatPnl(monthlyStats.totalPnL)}
             </div>
             {monthlyStats.bestDay && (
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground mt-1">
                 <span>Best <span className="font-semibold tabular-nums" style={{color: themeColors.profit}}>{formatPnl(monthlyStats.bestDay.pnl)}</span></span>
                 {monthlyStats.worstDay && monthlyStats.worstDay.pnl < 0 && (
                   <span>Worst <span className="font-semibold tabular-nums" style={{color: themeColors.loss}}>{formatPnl(monthlyStats.worstDay.pnl)}</span></span>
@@ -970,7 +925,7 @@ export function CalendarHeatmap() {
 
           <div className="px-3 sm:px-4 border-r border-border/40 max-sm:border-r-0">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Win Rate</div>
-            <div className="text-lg sm:text-2xl font-bold tabular-nums" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
+            <div className="text-lg sm:text-2xl font-semibold tabular-nums" style={{color: monthlyStats.winRate >= 50 ? themeColors.profit : themeColors.loss}}>
               {monthlyStats.winRate.toFixed(1)}%
             </div>
             <div className="text-[10px] text-muted-foreground mt-1">
@@ -982,7 +937,7 @@ export function CalendarHeatmap() {
 
           <div className="px-3 sm:px-4 border-r border-border/40 max-sm:mt-3 max-sm:pt-3 max-sm:border-t max-sm:border-border/30">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Trades</div>
-            <div className="text-lg sm:text-2xl font-bold tabular-nums" style={{color: themeColors.primary}}>
+            <div className="text-lg sm:text-2xl font-semibold tabular-nums" style={{color: themeColors.primary}}>
               {monthlyStats.totalTrades}
             </div>
             <div className="text-[10px] text-muted-foreground mt-1">
@@ -992,7 +947,7 @@ export function CalendarHeatmap() {
 
           <div className="px-3 sm:px-4 max-sm:mt-3 max-sm:pt-3 max-sm:border-t max-sm:border-border/30">
             <div className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Days</div>
-            <div className="text-lg sm:text-2xl font-bold">
+            <div className="text-lg sm:text-2xl font-semibold">
               <span style={{color: themeColors.profit}}>{monthlyStats.profitDays}</span>
               <span className="text-muted-foreground mx-0.5">/</span>
               <span style={{color: themeColors.loss}}>{monthlyStats.lossDays}</span>
@@ -1001,7 +956,7 @@ export function CalendarHeatmap() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4 sm:pt-4 px-2 sm:px-6">
+      <CardContent className="min-w-0 pt-4 sm:pt-4 px-2 sm:px-5">
         <div className="space-y-3">
           {/* Day headers */}
           <div className="flex gap-1 sm:gap-3 mb-2">
@@ -1046,10 +1001,10 @@ export function CalendarHeatmap() {
                           role="button"
                           tabIndex={day.isCurrentMonth ? 0 : -1}
                           className={cn(
-                            "h-[72px] sm:h-24 rounded-lg sm:rounded-xl relative overflow-hidden",
+                            "h-[72px] sm:h-24 rounded-md relative overflow-hidden",
                             // overflow-hidden clips the UA outline, so paint an inset ring instead
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-                            getPnLColor(day.pnl, day.trades),
+                            getPnLColor(day.trades),
                             day.isCurrentMonth ? "opacity-100" : "opacity-40",
                             hasData && "hover:z-10",
                             day.isCurrentMonth && "cursor-pointer"
@@ -1080,16 +1035,11 @@ export function CalendarHeatmap() {
                             }
                           }}
                         >
-                          {/* Shine overlay on profit days */}
-                          {hasData && roundedPnl(day.pnl) > 0 && (
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none" />
-                          )}
-
                           <div className="relative h-full z-10">
                             {/* Date number — absolute top left */}
                             <div className={cn(
                               "absolute top-1.5 left-1.5 sm:top-2 sm:left-2 text-[10px] sm:text-[11px] font-medium leading-none tabular-nums",
-                              hasData ? `${getCellTextColor(day.pnl, day.trades, maxAbsPnl)} opacity-60` :
+                              hasData ? "text-muted-foreground" :
                               day.isCurrentMonth ? "text-foreground/60" : "text-muted-foreground"
                             )}>
                               {day.date.getDate()}
@@ -1099,7 +1049,7 @@ export function CalendarHeatmap() {
                             {hasData && (
                               <div className="flex items-center justify-center h-full">
                                 {/* Mobile */}
-                                <div className={cn("sm:hidden text-[10px] font-black tracking-tighter tabular-nums leading-none drop-shadow-sm px-0.5", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
+                                <div className={cn("sm:hidden text-[10px] font-semibold tracking-tight tabular-nums leading-none px-0.5", 'text-foreground')}>
                                   {pnlMode === 'percent'
                                     ? fmtCompactPct(day.pnl)
                                     : Math.abs(day.pnl) >= 1000
@@ -1110,7 +1060,7 @@ export function CalendarHeatmap() {
                                   }
                                 </div>
                                 {/* Desktop */}
-                                <div className={cn("hidden sm:block text-xl font-black tracking-tighter tabular-nums leading-none drop-shadow-sm", getCellTextColor(day.pnl, day.trades, maxAbsPnl))}>
+                                <div className={cn("hidden sm:block text-lg font-semibold tracking-tight tabular-nums leading-none", 'text-foreground')}>
                                   {fmtCompact(day.pnl)}
                                 </div>
                               </div>
@@ -1120,7 +1070,7 @@ export function CalendarHeatmap() {
                             {hasData && (
                               <div className={cn(
                                 "absolute bottom-1 sm:bottom-1.5 left-0 right-0 flex items-center justify-center",
-                                getCellTextColor(day.pnl, day.trades, maxAbsPnl)
+                                'text-foreground'
                               )}>
                                 <span className="text-[8px] sm:text-[10px] font-medium opacity-50 tabular-nums">
                                   <span className="sm:hidden">{day.trades}t</span>
@@ -1147,9 +1097,9 @@ export function CalendarHeatmap() {
                           {/* Journal indicator with count */}
                           {hasJournal && (
                             <div className="absolute bottom-0.5 right-0.5 sm:bottom-1 sm:left-1 sm:right-auto flex items-center gap-0.5">
-                              <BookOpen className="h-2 w-2 sm:h-3 sm:w-3 text-slate-800 dark:text-white drop-shadow-lg" />
+                              <BookOpen className="h-2 w-2 sm:h-3 sm:w-3 text-muted-foreground" />
                               {journalEntries[dateKey].length > 1 && (
-                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[7px] sm:text-[10px] font-bold rounded-full w-2.5 h-2.5 sm:w-4 sm:h-4 flex items-center justify-center drop-shadow-lg">
+                                <div className="bg-slate-800 dark:bg-white text-white dark:text-slate-800 text-[7px] sm:text-[10px] font-bold rounded-full w-2.5 h-2.5 sm:w-4 sm:h-4 flex items-center justify-center">
                                   {journalEntries[dateKey].length}
                                 </div>
                               )}
@@ -1160,7 +1110,7 @@ export function CalendarHeatmap() {
                 })}
                 </div>
                 {/* Weekly P&L total */}
-                <div className="w-12 sm:w-20 shrink-0 flex flex-col items-center justify-center rounded-lg sm:rounded-xl h-[72px] sm:h-24 border border-border/40 bg-muted/20">
+                <div className="w-12 sm:w-20 shrink-0 flex flex-col items-center justify-center rounded-md h-[72px] sm:h-24 border border-border/40 bg-muted/20">
                   {wt.hasTrades ? (
                     <>
                       <span
@@ -1199,7 +1149,7 @@ export function CalendarHeatmap() {
 
             <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-border/50">
               <span className="text-[10px] text-muted-foreground">Less</span>
-              {[30, 50, 70, 85, 100].map(pct => (
+              {[8, 12, 16, 20, 24].map(pct => (
                 <div
                   key={pct}
                   className="w-2.5 h-2.5 rounded-sm"

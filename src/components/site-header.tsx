@@ -1,4 +1,5 @@
 import * as React from "react"
+import { isScreenshotPreview } from '@/lib/screenshot-preview'
 import { Separator } from "@/components/ui/separator"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useAuth } from '@/contexts/auth-context'
@@ -52,7 +53,7 @@ function UserAvatar() {
     }
   }
 
-  if (isDemo) {
+  if (isDemo && !isScreenshotPreview(isDemo)) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -65,7 +66,7 @@ function UserAvatar() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 rounded-lg">
-          <DropdownMenuItem onClick={() => { exitDemoMode(); navigate('/signup'); }}>
+          <DropdownMenuItem onClick={() => navigate('/signup')}>
             <UserPlus className="h-4 w-4 mr-2" />
             Sign Up Free
           </DropdownMenuItem>

@@ -8,23 +8,72 @@ export type ChangelogItem = {
    *  "+N more". Aim for 3-4 per release. Without any flags, the dialog falls
    *  back to the first three items. */
   highlight?: boolean
+  icon?: 'dashboard' | 'journal' | 'appearance'
   /** Include/exclude this item in the monthly email shortlist. Fixes default to excluded. */
   roundup?: boolean
   /** Screenshot rendered under the item in the What's New dialog and on
    *  /changelog. Use a site-relative path under public/. */
-  image?: { src: string; alt: string }
+  image?: { src: string; darkSrc?: string; alt: string }
   /** In-app route the What's New dialog offers as a "try it" jump. */
   link?: { to: string; label: string }
 }
 
 export type ChangelogEntry = {
   version: string
+  title?: string
   date: string
   summary: string
   items: ChangelogItem[]
 }
 
 export const changelog: ChangelogEntry[] = [
+  {
+    version: '2.100.0',
+    title: 'Your trading workspace, refreshed.',
+    date: '2026-11-23',
+    summary: 'A refreshed trading workspace, with clearer reviews, more theme controls, and forms that give you room to work.',
+    items: [
+      {
+        type: 'improved', highlight: true,
+        text: 'A clearer view of your trading day',
+        icon: 'dashboard',
+        image: { src: '/images/screenshots/trading-dashboard-screenshot-light.webp', darkSrc: '/images/screenshots/trading-dashboard-screenshot-dark.webp', alt: 'Refreshed dashboard showing trading results, charts, and the trade log with example data.' },
+        description: 'Dashboard charts and statistics make better use of space, with more balanced text and clearer layouts. Empty pages now explain what to do next.',
+        link: { to: '/dashboard', label: 'Open your dashboard' },
+      },
+      {
+        type: 'improved', highlight: true,
+        text: 'A journal that feels easier to use',
+        icon: 'journal',
+        image: { src: '/images/screenshots/trading-journal-screenshot-light.webp', darkSrc: '/images/screenshots/trading-journal-screenshot-dark.webp', alt: 'Redesigned journal with example trade reflections and review controls.' },
+        description: 'The journal, trade forms, account switcher, and review dialogs have cleaner layouts. AI trade analysis now uses the same report layout in Coach and Trade Insights.',
+        link: { to: '/journal', label: 'Open your journal' },
+      },
+      {
+        type: 'improved', highlight: true,
+        text: 'Make the workspace yours',
+        icon: 'appearance',
+        description: 'Settings stay together on one page, with clearer theme previews and more appearance controls. Account, risk, and subscription settings are easier to scan.',
+        link: { to: '/settings', label: 'Explore settings' },
+      },
+      {
+        type: 'improved',
+        text: 'Clearer prop account costs and risk tools',
+        description: 'PropTracker account cards, transaction controls, and the risk calculator have more compact layouts so the important numbers are easier to find.',
+        link: { to: '/prop-tracker', label: 'Open PropTracker' },
+      },
+      {
+        type: 'improved',
+        text: 'An easier way to get started',
+        description: 'Onboarding, the getting-started checklist, and the practice demo have been refreshed. The demo includes a fictional trading history with wins, losses, costs, and journal reflections to explore.',
+      },
+      {
+        type: 'fixed',
+        text: 'Go from the demo straight to signup',
+        description: 'Starting your own journal from the demo now opens signup without bouncing to login. Sign-in and password pages also have clearer heading structure on phones.',
+      },
+    ],
+  },
   {
     version: '2.99.2',
     date: '2026-10-23',
@@ -3562,4 +3611,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.99.2'
+export const LATEST_CHANGELOG_VERSION = '2.100.0'

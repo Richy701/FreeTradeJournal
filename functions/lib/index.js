@@ -610,10 +610,17 @@ const SIGNUP_TRIAL_DAYS = 14;
 // the no-card signup trial: accounts created after it only get the 14-day
 // card trial at checkout (trial_period_days in createCheckoutSession).
 const LIFETIME_RETIRES_AT = Date.parse("2026-08-07T23:59:59Z");
-// Mirror of isLifetimeOnSale in src/constants/pricing.ts. The two one-week
-// returns (birthday week 28 Aug to 4 Sep, drop week 25 Sep to 2 Oct 2026)
-// are over and their windows are gone from both files.
-const isLifetimeOnSale = (now = Date.now()) => now < LIFETIME_RETIRES_AT;
+// Black Friday 2026: Mon 23 Nov to Mon 30 Nov 11:59 PM New York (EST, UTC-5).
+// Mirror of BLACK_FRIDAY_* in src/constants/pricing.ts. Lifetime is back at
+// $179 (BFLIFETIME, $70 off, min $249) and Yearly is $79.99 for the first year
+// (BFYEARLY, $20 off once, min $99.99). Both Stripe codes expire at the same
+// instant as BLACK_FRIDAY_ENDS_AT.
+const BLACK_FRIDAY_STARTS_AT = Date.parse("2026-11-23T05:00:00Z");
+const BLACK_FRIDAY_ENDS_AT = Date.parse("2026-12-01T04:59:59Z");
+const isBlackFriday = (now = Date.now()) => now >= BLACK_FRIDAY_STARTS_AT && now <= BLACK_FRIDAY_ENDS_AT;
+// Mirror of isLifetimeOnSale in src/constants/pricing.ts. The earlier one-week
+// returns (birthday week, Sep drop) are over and gone from both files.
+const isLifetimeOnSale = (now = Date.now()) => now < LIFETIME_RETIRES_AT || isBlackFriday(now);
 exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
     const throttleReason = await checkSignupVelocity(user.email || undefined);
     // Delete-and-resignup must not mint a fresh trial: a tombstone written by
@@ -2301,28 +2308,51 @@ exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutS
     // with there), as does resubscribing after cancel/expiry.
     const existingSub = userDoc.data()?.subscription;
     const LIVE_SUB_STATUSES = ["active", "on_trial", "past_due", "paused"];
+    // Lifetime owners never buy again. A completed monthly/yearly checkout
+    // would overwrite their lifetime entitlement in the webhook, and a second
+    // lifetime payment buys nothing. The pricing page disables these buttons,
+    // but the logged-out pending-checkout resume path skips the page.
+    if (existingSub?.planType === "lifetime" && existingSub?.status === "active") {
+        throw new functions.https.HttpsError("failed-precondition", "You already have Lifetime Pro, so there is nothing to buy.");
+    }
     if (!isLifetime &&
         existingSub?.planType !== "lifetime" &&
         LIVE_SUB_STATUSES.includes(existingSub?.status)) {
         throw new functions.https.HttpsError("failed-precondition", "You already have an active subscription. Switch plans from Settings → Subscription.");
     }
     let autoPromoId = "";
-    // The pricing page advertises the discounted lifetime price, so apply the
-    // code for the buyer instead of trusting them to retype it at checkout.
-    // FOUNDER149 until Aug 7 2026. The code's expiry also lives in Stripe —
-    // when it lapses, this quietly falls back to the manual promo-code field.
-    if (isLifetime) {
+    // The pricing page advertises the discounted price, so apply the code for
+    // the buyer instead of trusting them to retype it at checkout. Black
+    // Friday week: BFLIFETIME on lifetime, BFYEARLY on yearly. The codes'
+    // expiry also lives in Stripe; when they lapse, this quietly falls back
+    // to the manual promo-code field.
+    const isYearly = priceId === process.env.STRIPE_PRICE_YEARLY;
+    const autoCode = isBlackFriday()
+        ? isLifetime ? "BFLIFETIME" : isYearly ? "BFYEARLY" : ""
+        : isLifetime ? "FOUNDER149" : "";
+    if (autoCode) {
         try {
             const found = await getStripe().promotionCodes.list({
-                code: "FOUNDER149",
+                code: autoCode,
                 active: true,
                 limit: 1,
             });
             autoPromoId = found.data[0]?.id ?? "";
         }
-        catch {
-            // Lookup failed — fall back to the manual promo-code field
+        catch (err) {
+            // Lookup failed — fall back to the manual promo-code field (but see
+            // the Black Friday guard below)
+            reportError(err, { fn: "createCheckoutSession", uid, step: "promo_lookup", code: autoCode });
         }
+    }
+    // Black Friday week the page, strip and email all quote $79.99 / $179.
+    // Never quietly open a full-price checkout for those plans: if the
+    // discount can't be found or applied, fail and let the buyer retry.
+    const mustDiscount = isBlackFriday() && (isLifetime || isYearly);
+    const discountUnavailable = () => new functions.https.HttpsError("unavailable", "We couldn't apply the Black Friday price just now. Please try again in a minute.");
+    if (mustDiscount && !autoPromoId) {
+        reportError(new Error(`Black Friday promo ${autoCode} not found`), { fn: "createCheckoutSession", uid, code: autoCode });
+        throw discountUnavailable();
     }
     // Stripe Tax stays off until tax registrations exist in the dashboard —
     // flipping STRIPE_AUTOMATIC_TAX=true without them makes Stripe collect
@@ -2340,6 +2370,14 @@ exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutS
             ...(promoId
                 ? { discounts: [{ promotion_code: promoId }] }
                 : { allow_promotion_codes: true }),
+            // A Black Friday checkout must not stay payable for the default 24h
+            // past the deadline. Stripe needs 30 min to 24h from now, so a
+            // session opened in the last half hour can run up to ~31 min over.
+            ...(promoId && isBlackFriday()
+                ? {
+                    expires_at: Math.floor(Math.max(Date.now() + 31 * 60 * 1000, Math.min(Date.now() + 23.5 * 60 * 60 * 1000, BLACK_FRIDAY_ENDS_AT)) / 1000),
+                }
+                : {}),
             metadata: ref ? { firebase_uid: uid, ref } : { firebase_uid: uid },
         };
         if (automaticTax) {
@@ -2373,6 +2411,10 @@ exports.createCheckoutSession = functions.https.onCall(reported("createCheckoutS
                 // Stale customer is handled by the outer retry, not by dropping the code
                 if (err?.code === "resource_missing" && err?.param === "customer")
                     throw err;
+                if (mustDiscount) {
+                    reportError(err, { fn: "createCheckoutSession", uid, step: "discounted_session", code: autoCode });
+                    throw discountUnavailable();
+                }
             }
         }
         return await getStripe().checkout.sessions.create(buildSessionParams(customerId));
@@ -2497,28 +2539,6 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                     };
-                    // A monthly/yearly subscriber who buys lifetime must stop being
-                    // billed for the subscription. Nothing else cancels it: the
-                    // subscription.updated handler only ignores renewals for lifetime
-                    // owners, it does not end them. Cancel now, after the payment has
-                    // succeeded, so the user is never left with neither.
-                    try {
-                        const leftovers = await getStripe().subscriptions.list({
-                            customer: customerId,
-                            status: "all",
-                            limit: 10,
-                        });
-                        for (const leftover of leftovers.data) {
-                            if (["active", "trialing", "past_due", "paused"].includes(leftover.status)) {
-                                await getStripe().subscriptions.cancel(leftover.id);
-                                console.log(`Lifetime purchase: cancelled leftover subscription ${leftover.id} for ${firebaseUid}`);
-                            }
-                        }
-                    }
-                    catch (cancelErr) {
-                        console.error("Lifetime purchase: failed to cancel leftover subscription:", cancelErr);
-                        reportError(cancelErr, { fn: "stripeWebhook", uid: firebaseUid, stage: "lifetimeCancelLeftoverSub" });
-                    }
                 }
                 const isProStatus = subscriptionData.status === "active" || subscriptionData.status === "on_trial";
                 const startsCardTrial = subscriptionData.status === "on_trial";
@@ -2542,6 +2562,33 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 }, { merge: true });
                 console.log(`checkout.session.completed for ${firebaseUid}`, subscriptionData.planType);
+                // A monthly/yearly subscriber who buys lifetime must stop being
+                // billed for the subscription. Nothing else cancels it: the
+                // subscription.updated handler only ignores renewals for lifetime
+                // owners, it does not end them. Runs AFTER the lifetime entitlement
+                // is written so the user is never left with neither. A failure is
+                // rethrown: the outer handler releases the event claim and answers
+                // 500, so Stripe retries the event (the entitlement write above is
+                // idempotent) until the old subscription is actually cancelled.
+                if (subscriptionData.planType === "lifetime") {
+                    try {
+                        for await (const leftover of getStripe().subscriptions.list({
+                            customer: customerId,
+                            status: "all",
+                            limit: 100,
+                        })) {
+                            if (["active", "trialing", "past_due", "paused", "incomplete"].includes(leftover.status)) {
+                                await getStripe().subscriptions.cancel(leftover.id);
+                                console.log(`Lifetime purchase: cancelled leftover subscription ${leftover.id} for ${firebaseUid}`);
+                            }
+                        }
+                    }
+                    catch (cancelErr) {
+                        console.error("Lifetime purchase: failed to cancel leftover subscription, Stripe will retry:", cancelErr);
+                        reportError(cancelErr, { fn: "stripeWebhook", uid: firebaseUid, stage: "lifetimeCancelLeftoverSub" });
+                        throw cancelErr;
+                    }
+                }
                 if (startsCardTrial) {
                     await captureServerEvent(firebaseUid, "trial started", {
                         trial_type: "card",

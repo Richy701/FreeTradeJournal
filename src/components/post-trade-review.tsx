@@ -47,7 +47,7 @@ function ReviewEditor({ trade, onClose, captureLesson }: { trade: ReviewTrade; o
   const busy = useRef(false);
   const [error, setError] = useState(initial.error);
   return <Dialog open onOpenChange={open => { if (!open && !busy.current) onClose(); }}>
-    <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+    <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
       <DialogHeader>
         <DialogTitle>Post-trade review</DialogTitle>
         <DialogDescription>A quick reflection now. A useful lesson for your next trade.</DialogDescription>
@@ -104,7 +104,7 @@ function ReviewEditor({ trade, onClose, captureLesson }: { trade: ReviewTrade; o
           </div>}
         </fieldset>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <div className="flex flex-wrap items-center gap-2"><Button type="submit" className="min-h-11" disabled={saving || !!initial.error || !plan || !content.trim()}>{saving ? 'Saving…' : savedId ? 'Update review' : 'Save to journal'}</Button><Button type="button" variant="ghost" className="min-h-11" disabled={saving} onClick={onClose}>Cancel</Button>{savedId && <Button asChild variant="link" disabled={saving}><Link to={`/journal?entry=${encodeURIComponent(savedId)}`} onClick={onClose}>Open in journal</Link></Button>}</div>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-4"><Button type="submit" className="min-h-11" disabled={saving || !!initial.error || !plan || !content.trim()}>{saving ? 'Saving…' : savedId ? 'Update review' : 'Save to journal'}</Button><Button type="button" variant="ghost" className="min-h-11" disabled={saving} onClick={onClose}>Cancel</Button>{savedId && <Button asChild variant="link" disabled={saving}><Link to={`/journal?entry=${encodeURIComponent(savedId)}`} onClick={onClose}>Open in journal</Link></Button>}</div>
       </form>
     </DialogContent>
   </Dialog>;

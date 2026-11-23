@@ -11,6 +11,16 @@ export const PRICE_LIFETIME = '$249 lifetime'
 // is auto-applied at checkout; the email quotes it for people who type it.
 export const BIRTHDAY_LIFETIME_PRICE = '$199'
 export const BIRTHDAY_PROMO_CODE = 'FTJBIRTHDAY'
+// Black Friday 2026, Mon 23 Nov to Mon 30 Nov 11:59 PM New York. Both prices
+// are applied at checkout automatically (BFYEARLY, BFLIFETIME). Mirror of
+// BLACK_FRIDAY_* in src/constants/pricing.ts.
+export const BF_YEARLY_PRICE = '$79.99'
+export const BF_YEARLY_LIST_PRICE = '$99.99'
+export const BF_LIFETIME_PRICE = '$179'
+export const BF_LIFETIME_LIST_PRICE = '$249'
+export const BF_YEARLY_CODE = 'BFYEARLY'
+export const BF_LIFETIME_CODE = 'BFLIFETIME'
+export const BF_ENDS_LINE = 'Monday 30 November, 11:59 PM New York'
 export const TRIAL_DAYS = 14
 // Since 18 Aug 2026 (v2.82.0): coaching runs the user asks for. Automatic
 // tips, journal prompts and risk alerts are free and not counted.
@@ -24,6 +34,7 @@ export const URLS = {
   coach: `${BASE_URL}/coach`,
   insights: `${BASE_URL}/ideas`,
   pricing: `${BASE_URL}/pricing`,
+  pricingYearly: `${BASE_URL}/pricing?plan=yearly`,
   settings: `${BASE_URL}/settings`,
   subscription: `${BASE_URL}/settings?tab=subscription`,
   feedbackFromDigest: `${BASE_URL}/dashboard?feedback=digest`,

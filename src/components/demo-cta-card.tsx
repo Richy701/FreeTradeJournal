@@ -1,63 +1,17 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/auth-context';
-import { User, TrendUp, Lock, Sparkle } from '@phosphor-icons/react';
+import { Link } from 'react-router-dom'
+import { ArrowRight } from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/auth-context'
+import { isScreenshotPreview } from '@/lib/screenshot-preview'
 
 export function DemoCtaCard() {
-  const { isDemo, exitDemoMode } = useAuth();
-
-  if (!isDemo) return null;
-
-  return (
-    <Card className="border-amber-500/30 !bg-gradient-to-br from-amber-500/10 via-transparent to-yellow-500/10">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <User className="h-5 w-5 text-amber-500" />
-          Ready to Track Your Real Trades?
-        </CardTitle>
-        <CardDescription>
-          You're viewing a live demo with sample data. Sign up free to start tracking your real trades — it only takes a minute.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <TrendUp className="h-5 w-5 text-amber-500 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">Save Your Trading History</p>
-              <p className="text-sm text-muted-foreground">Track all your trades permanently in the cloud</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Lock className="h-5 w-5 text-amber-500 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">Private & Secure</p>
-              <p className="text-sm text-muted-foreground">Your data is encrypted and only accessible by you</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Sparkle className="h-5 w-5 text-amber-500 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">AI-Powered Insights</p>
-              <p className="text-sm text-muted-foreground">Get intelligent analysis of your trading patterns and performance</p>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6">
-          <Link to="/signup" className="block">
-            <Button
-              variant="ghost"
-              className="w-full !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black hover:shadow-lg hover:scale-[1.01] transition-[transform,box-shadow] duration-300 text-sm sm:text-base"
-              size="lg"
-              onClick={() => exitDemoMode()}
-            >
-              <span className="sm:hidden">Sign Up Free</span>
-              <span className="hidden sm:inline">Sign Up Free - No Credit Card Required</span>
-            </Button>
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const { isDemo } = useAuth()
+  if (!isDemo || isScreenshotPreview(isDemo)) return null
+  return <section className="flex flex-col gap-5 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <div>
+      <h2 className="text-lg font-semibold tracking-tight">Make this journal yours.</h2>
+      <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">Start with one trade and one lesson. Your account begins fresh, without the example data.</p>
+    </div>
+    <Button asChild className="shrink-0 self-start sm:self-center"><Link to="/signup">Create my journal<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+  </section>
 }

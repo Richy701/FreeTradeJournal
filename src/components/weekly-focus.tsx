@@ -65,12 +65,12 @@ function AccountFocus({ accountId, accountName, suggestion, compact }: { account
     const action = needsReview ? 'Review week' : todayRecorded ? 'Open focus' : 'Check in';
     return (
       <Card aria-label="Weekly focus reminder" className="mx-4 mb-4 shadow-none">
-        <CardContent className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:gap-6">
+        <CardContent className="flex flex-col gap-4 p-4 sm:p-6 lg:flex-row lg:items-center lg:gap-6">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><Target className="h-5 w-5" aria-hidden="true" /></div>
             <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-2"><p className="text-xs font-medium text-muted-foreground">Your weekly focus</p><Badge variant="secondary" className="font-normal">{needsReview ? 'Review ready' : `Day ${elapsedDays} of 7`}</Badge></div>
-              <p className="max-w-2xl break-words text-base font-semibold leading-snug">{latest.habit}</p>
+              <div className="flex flex-wrap items-center gap-2"><CardTitle className="text-lg font-semibold">Your weekly focus</CardTitle><Badge variant="secondary" className="font-normal">{needsReview ? 'Review ready' : `Day ${elapsedDays} of 7`}</Badge></div>
+              <p className="max-w-2xl break-words text-sm font-medium leading-relaxed">{latest.habit}</p>
               <p className="text-xs text-muted-foreground">{needsReview ? 'Reflect on your week and choose what comes next.' : todayRecorded ? "Today’s check-in is saved. Keep showing up." : 'A quick check-in keeps your practice on track.'}</p>
             </div>
           </div>
@@ -86,7 +86,7 @@ function AccountFocus({ accountId, accountName, suggestion, compact }: { account
   if (focus.error) return <Card id="weekly-focus"><CardContent className="pt-6"><p role="alert">{focus.error}</p></CardContent></Card>;
 
   return (
-    <Card id="weekly-focus" className="scroll-mt-24 overflow-hidden">
+    <Card id="weekly-focus" className="scroll-mt-24 overflow-hidden shadow-none">
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 border-b p-5 sm:px-6">
         <div className="space-y-1"><CardTitle className="flex items-center gap-2 text-base"><Target className="h-5 w-5 text-primary" />Your weekly focus</CardTitle><p className="text-xs text-muted-foreground">{accountName}</p></div><Badge variant="outline" className="shrink-0 font-normal">{needsReview ? 'Review ready' : hasOpenFocus ? 'In progress' : '7-day practice'}</Badge>
       </CardHeader>
@@ -97,32 +97,55 @@ function AccountFocus({ accountId, accountName, suggestion, compact }: { account
             <CurrentFocus key={latest.id} plan={latest} focus={focus} />
           </>
         ) : (
-          <form className="max-w-2xl space-y-4" onSubmit={async event => {
+          <form className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-8" onSubmit={async event => {
             event.preventDefault();
             if (demoGuard('save your weekly focus')) return;
             const saved = await focus.save({ kind: 'plan', id: crypto.randomUUID(), accountId, createdAt: new Date().toISOString(), startDate: focus.today, habit: habit.trim() });
             if (saved) setHabit('');
           }}>
-            <div className="space-y-2"><h3 className="text-xl font-semibold tracking-tight sm:text-2xl">Small habit. Better trading discipline.</h3><p className="text-sm leading-relaxed text-muted-foreground">Choose one action, check in after trading, then reflect on what worked.</p></div>
-            {summary?.review && <p className="text-sm font-medium">Review saved. Choose your focus for the next seven days.</p>}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold tracking-tight">One focus for the next seven days</h3>
+              <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">Choose a habit, check in after trading, and review what helped at the end of the week.</p>
+              {summary?.review && <Badge variant="secondary" className="whitespace-normal rounded-md font-normal">Last review saved</Badge>}
+            </div>
+            <div className="min-w-0 space-y-4">
             {newSuggestion && <Accordion type="single" collapsible><AccordionItem value="tip"><AccordionTrigger className="text-sm">The coaching tip you chose</AccordionTrigger><AccordionContent className="whitespace-pre-wrap text-muted-foreground">{newSuggestion.message}</AccordionContent></AccordionItem></Accordion>}
             <div className="space-y-2">
               <Label htmlFor="weekly-focus-habit">What is one thing you want to practise?</Label>
-              <Textarea ref={input} id="weekly-focus-habit" value={habit} onChange={event => setHabit(event.target.value)} maxLength={240} required aria-describedby="weekly-focus-help" />
-              <p id="weekly-focus-help" className="text-xs text-muted-foreground">Write one action you can check at the end of a trading day. You can use a coaching tip below as a starting point.</p>
+              <Textarea ref={input} id="weekly-focus-habit" value={habit} onChange={event => setHabit(event.target.value)} className="min-h-24 resize-y" maxLength={240} required aria-describedby="weekly-focus-help" />
+              <p id="weekly-focus-help" className="text-xs text-muted-foreground">Write one action you can check at the end of a trading day. Choose “Make this my focus” on a coaching tip to use it here.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button type="submit" disabled={focus.saving || !habit.trim()}>Start seven-day focus</Button>
               {latest && <Button variant="outline" type="button" onClick={() => { setHabit(latest.habit); input.current?.focus(); }}>Use the same habit</Button>}
             </div>
+            </div>
           </form>
         )}
         {plans.some(plan => summarizeFocus(focus.records, plan, focus.today).review) && (
-          <Accordion type="single" collapsible className="border-t"><AccordionItem value="history" className="border-0"><AccordionTrigger className="text-sm">Past weekly reviews</AccordionTrigger><AccordionContent>
+          <Accordion type="single" collapsible className="border-t"><AccordionItem value="history" className="border-0"><AccordionTrigger className="text-sm font-medium hover:no-underline">Past weekly reviews</AccordionTrigger><AccordionContent>
             <div className="space-y-4">
               {plans.filter(plan => summarizeFocus(focus.records, plan, focus.today).review).map(plan => {
                 const past = summarizeFocus(focus.records, plan, focus.today);
-                return <article key={plan.id} className="border-l-2 border-primary/30 pl-4"><p className="text-xs text-muted-foreground">{dayLabel(plan.startDate)} – {dayLabel(addDays(plan.startDate, 6))}{past.review?.endedEarly ? ' · Ended early' : ''}</p><h3 className="mt-1 break-words text-sm font-semibold">{plan.habit}</h3><p className="mt-1 text-xs text-muted-foreground">{past.followed} followed · {past.missed} missed · {past.noTrading} didn't trade · {past.unrecorded} unrecorded</p><p className="mt-2 whitespace-pre-wrap break-words text-sm">{past.review?.reflection}</p></article>;
+                return <article key={plan.id} className="space-y-3 rounded-lg border border-l-2 border-l-primary/50 bg-card p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">{dayLabel(plan.startDate)} – {dayLabel(addDays(plan.startDate, 6))}</p>
+                    <Badge variant="outline" className="rounded-md text-[10px] font-normal">{past.review?.endedEarly ? 'Ended early' : 'Completed'}</Badge>
+                  </div>
+                  <h3 className="max-w-4xl break-words text-sm font-semibold leading-relaxed">{plan.habit}</h3>
+                  <div className="flex gap-1.5" aria-label="Daily check-in history">
+                    {past.days.map(day => {
+                      const status = past.checks.get(day);
+                      return <span key={day} title={`${dayLabel(day)}: ${status ? statusLabels[status] : 'Unrecorded'}`} className={cn('flex h-7 w-7 items-center justify-center rounded-md border', status === 'followed' ? 'border-primary/20 bg-primary/10 text-primary' : status === 'missed' ? 'border-destructive/20 bg-destructive/10 text-destructive' : 'border-border bg-muted/40 text-muted-foreground')}>
+                        {status === 'followed' ? <Check className="h-3.5 w-3.5" /> : status === 'missed' ? <X className="h-3.5 w-3.5" /> : status === 'no_trading' ? <Minus className="h-3.5 w-3.5" /> : <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />}
+                      </span>;
+                    })}
+                  </div>
+                  <dl className="flex flex-wrap gap-x-5 gap-y-2">
+                    {[[past.followed, 'Followed'], [past.missed, 'Missed'], [past.noTrading, 'No trading'], [past.unrecorded, 'Unrecorded']].map(([count, label]) => <div key={label} className="flex items-baseline gap-1.5"><dt className="text-[11px] text-muted-foreground">{label}</dt><dd className="text-sm font-semibold tabular-nums">{count}</dd></div>)}
+                  </dl>
+                  <div className="border-t pt-3"><p className="mb-1 text-xs font-medium text-muted-foreground">Your reflection</p><p className="max-w-4xl whitespace-pre-wrap break-words text-sm leading-relaxed">{past.review?.reflection}</p></div>
+                </article>;
               })}
             </div>
           </AccordionContent></AccordionItem></Accordion>

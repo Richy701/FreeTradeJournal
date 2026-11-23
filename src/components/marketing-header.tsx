@@ -13,32 +13,33 @@ import { useProStatus } from '@/contexts/pro-context';
 // While a returning user's session is still resolving we show nothing on the
 // right except the theme toggle, so the header does not flip Sign In →
 // Dashboard a moment after paint (same session hint pro-context uses).
-export function MarketingHeader() {
+export function MarketingHeader({ overlay = false }: { overlay?: boolean }) {
   const { user, loading, hadSession, isDemo } = useAuth();
   const { isPro } = useProStatus();
   const resolving = loading && hadSession && !isDemo;
   const signedIn = !!user;
 
-  const linkClass = 'text-foreground/70 hover:text-foreground transition-colors duration-200 font-medium px-3 py-2 rounded-md text-sm sm:text-base';
+  const linkClass = 'text-muted-foreground hover:text-foreground transition-colors font-medium px-2 py-2 rounded-md text-sm';
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-50">
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          <img src="/favicon.svg" alt="FTJ" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex-shrink-0" />
-          <span className="text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 truncate">FreeTradeJournal</span>
+    <header className={overlay ? 'absolute inset-x-0 top-0 z-50' : 'relative z-50 border-b border-border/60 bg-background'} style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}>
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-8">
+        <Link to="/" className="flex min-w-0 items-center gap-2.5">
+          <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 shrink-0 rounded-[7px]" />
+          <span className="hidden min-[400px]:inline text-base font-bold tracking-tight sm:text-xl">FreeTradeJournal</span>
         </Link>
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <nav aria-label="Main navigation" className="flex max-w-full flex-wrap items-center gap-1 sm:gap-5">
+          <Link to="/#features" className={`${linkClass} hidden md:block`}>Explore</Link>
           {!resolving && !(signedIn && isPro) && (
-            <Link to="/pricing" className={`${linkClass} hidden sm:block`}>Pricing</Link>
+            <Link to="/pricing" className={linkClass}>Pricing</Link>
           )}
           {!resolving && (
             signedIn
               ? <Link to="/dashboard" className={linkClass}>Dashboard</Link>
-              : <Link to="/login" className={linkClass}>Sign In</Link>
+              : <Link to="/login" className={linkClass}>Sign in</Link>
           )}
           <ThemeToggle />
-        </div>
+        </nav>
       </div>
     </header>
   );

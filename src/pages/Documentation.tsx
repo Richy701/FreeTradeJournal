@@ -65,7 +65,7 @@ export default function Documentation() {
       {/* Title band: the landing page's backdrop, full bleed */}
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-12 sm:pt-40 sm:pb-14">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-12 pb-12 sm:pt-16 sm:pb-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Docs</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Documentation</h1>
           <p className="mt-3 text-muted-foreground max-w-lg">Everything you need to get the most out of FreeTradeJournal.</p>

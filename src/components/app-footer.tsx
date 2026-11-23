@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { FeedbackButton } from '@/components/feedback-button';
 
-export function AppFooter() {
+export function AppFooter({ className }: { className?: string } = {}) {
   return (
-    <footer className="border-t border-border/70 mt-8 py-6 px-4">
+    <footer className={cn("border-t border-border/70 mt-8 py-6 px-4", className)}>
       <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground transition-colors">
           &copy; {new Date().getFullYear()} FreeTradeJournal

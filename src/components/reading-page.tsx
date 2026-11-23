@@ -24,7 +24,7 @@ export function ReadingPage({ header, children }: { header: ReactNode; children:
           sitting on the same column as the text below it. */}
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-32 pb-12 sm:pt-40 sm:pb-14">
+        <div className="relative z-10 mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="lg:grid lg:grid-cols-[12rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
             <div className="hidden lg:block" />
             <div className="min-w-0">{header}</div>
@@ -37,7 +37,7 @@ export function ReadingPage({ header, children }: { header: ReactNode; children:
       <div className="lg:grid lg:grid-cols-[12rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
         <OnThisPage />
         <div className="min-w-0">
-          <div data-reading-body className="divide-y divide-border text-[17px] leading-relaxed text-muted-foreground">
+          <div data-reading-body className="divide-y divide-border text-base leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
             {children}
           </div>
         </div>

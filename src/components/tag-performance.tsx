@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tag, WarningCircle } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useThemePresets } from '@/contexts/theme-presets'
@@ -51,17 +52,17 @@ export function TagPerformance({ perTag, perMistake, mistakeImpact, significance
   const anyThin = [...perTag, ...perMistake].some(thin)
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
       {perTag.length > 0 && (
-        <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+        <Card className="min-w-0 p-5 shadow-none space-y-3 flex flex-col">
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4" style={{ color: themeColors.primary }} />
-            <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setups by tag</span>
+            <span className="text-base font-semibold text-foreground">Setups by tag</span>
           </div>
           <p className="text-sm text-muted-foreground">What each tagged setup makes per trade, on average</p>
           <div className="overflow-x-auto -mx-1 px-1 flex-1">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/40">
                 <TableRow>
                   <TableHead>Tag</TableHead>
                   <TableHead className="text-right">Trades</TableHead>
@@ -94,14 +95,14 @@ export function TagPerformance({ perTag, perMistake, mistakeImpact, significance
               Tags marked "few" have under {significanceThreshold} trades. Treat their numbers as a hint, not a verdict.
             </p>
           )}
-        </div>
+        </Card>
       )}
 
       {perMistake.length > 0 && mistakeImpact && (
-        <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+        <Card className="min-w-0 p-5 shadow-none space-y-3 flex flex-col">
           <div className="flex items-center gap-2">
             <WarningCircle className="h-4 w-4" style={{ color: themeColors.loss }} />
-            <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">What mistakes cost</span>
+            <span className="text-base font-semibold text-foreground">What mistakes cost</span>
           </div>
           <p className="text-sm text-muted-foreground">
             Trades tagged with a mistake average {formatCurrency(mistakeImpact.taggedAvgPnl, true)} each
@@ -111,7 +112,7 @@ export function TagPerformance({ perTag, perMistake, mistakeImpact, significance
           </p>
           <div className="overflow-x-auto -mx-1 px-1 flex-1">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/40">
                 <TableRow>
                   <TableHead>Mistake</TableHead>
                   <TableHead className="text-right">Trades</TableHead>
@@ -142,7 +143,7 @@ export function TagPerformance({ perTag, perMistake, mistakeImpact, significance
           <p className="text-xs text-muted-foreground">
             Start a tag with ! to mark a mistake, like !chased or !moved-stop.
           </p>
-        </div>
+        </Card>
       )}
     </div>
   )

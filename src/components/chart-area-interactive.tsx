@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -175,7 +174,11 @@ export function ChartAreaInteractive() {
   const equityAxis = useMemo(() => {
     let lo = 0, hi = 0
     for (const d of chartData) { lo = Math.min(lo, d.cumulative); hi = Math.max(hi, d.cumulative) }
-    return niceAxis(lo, hi)
+    const axis = niceAxis(lo, hi)
+    // Keep round tick labels without forcing the plot to the next full tick.
+    // A $10.6k peak should have a little headroom, not a $15k ceiling.
+    const top = hi > 0 ? hi + (hi - lo) * 0.08 : axis.domain[1]
+    return { ...axis, domain: [axis.domain[0], top] as [number, number], ticks: axis.ticks.filter(tick => tick <= top) }
   }, [chartData])
   const dailyAxis = useMemo(() => {
     let lo = 0, hi = 0
@@ -248,17 +251,22 @@ export function ChartAreaInteractive() {
   }, [dailyData])
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <Card className="flex flex-col overflow-hidden shadow-none">
+      <CardHeader className="p-4 sm:p-5 pb-3 sm:pb-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <CardTitle className="text-lg font-semibold">
               {view === 'equity' ? 'Equity Curve' : 'Daily P&L'}
             </CardTitle>
-            <CardDescription className="text-muted-foreground font-medium mt-1">
-              {view === 'equity'
-                ? 'Cumulative profit and loss, trade by trade'
-                : 'Profit and loss for each trading day'}
+            <CardDescription className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              {chartData.length > 0 ? (
+                <>
+                  <span>{chartData[0].dateShort} &ndash; {chartData[chartData.length - 1].dateShort}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{chartData.length} trades</span>
+                  {view === 'pnl' && <><span aria-hidden="true">·</span><span>{winDays} green / {lossDays} red days</span></>}
+                </>
+              ) : 'Your trading performance over time'}
             </CardDescription>
           </div>
           <SegmentedControl
@@ -273,21 +281,19 @@ export function ChartAreaInteractive() {
         </div>
 
         {view === 'equity' && chartData.length > 0 && (
-          <div className="flex items-center gap-4 sm:gap-5 mt-3">
+          <div className="grid grid-cols-[1.3fr_1fr_1fr] items-end gap-3 border-t pt-4 !mt-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-8 [&>div]:min-w-0 [&>div]:gap-1.5 [&>div:first-child>span:last-child]:text-2xl sm:[&>div:first-child>span:last-child]:text-3xl [&>div:first-child>span:last-child]:tracking-tight [&>div>span:last-child]:[overflow-wrap:anywhere]">
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Net</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Net P&L</span>
               <span className="text-sm font-semibold tabular-nums" style={{ color: isPositive ? themeColors.profit : themeColors.loss }}>
                 {fmtMoneyShort(totalPnL, symbol, true)}
               </span>
             </div>
-            <div className="h-7 w-px bg-border/70 shrink-0" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Peak</span>
               <span className="text-sm font-semibold tabular-nums" style={{ color: themeColors.profit }}>
                 {fmtMoneyShort(peak, symbol)}
               </span>
             </div>
-            <div className="h-7 w-px bg-border/70 shrink-0" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Deepest dip</span>
               {maxDrawdown < 0 ? (
@@ -302,21 +308,19 @@ export function ChartAreaInteractive() {
         )}
 
         {view === 'pnl' && dailyData.length > 0 && (
-          <div className="flex items-center gap-4 sm:gap-5 mt-3">
+          <div className="grid grid-cols-[1.3fr_1fr_1fr] items-end gap-3 border-t pt-4 !mt-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-8 [&>div]:min-w-0 [&>div]:gap-1.5 [&>div:first-child>span:last-child]:text-2xl sm:[&>div:first-child>span:last-child]:text-3xl [&>div:first-child>span:last-child]:tracking-tight [&>div>span:last-child]:[overflow-wrap:anywhere]">
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Best day</span>
               <span className="text-sm font-semibold tabular-nums" style={{ color: dailyStats.best >= 0 ? themeColors.profit : themeColors.loss }}>
                 {fmtMoneyShort(dailyStats.best, symbol, true)}
               </span>
             </div>
-            <div className="h-7 w-px bg-border/70 shrink-0" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Worst day</span>
               <span className="text-sm font-semibold tabular-nums" style={{ color: dailyStats.worst < 0 ? themeColors.loss : themeColors.profit }}>
                 {fmtMoneyShort(dailyStats.worst, symbol, true)}
               </span>
             </div>
-            <div className="h-7 w-px bg-border/70 shrink-0" />
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg / day</span>
               <span className="text-sm font-semibold tabular-nums" style={{ color: dailyStats.avg >= 0 ? themeColors.profit : themeColors.loss }}>
@@ -326,9 +330,9 @@ export function ChartAreaInteractive() {
           </div>
         )}
       </CardHeader>
-      <CardContent className="px-4 py-2">
+      <CardContent className="min-w-0 px-4 pt-0 pb-2 sm:pt-0 sm:pb-2">
         {chartData.length > 0 ? (
-          <div className="h-[260px]">
+          <div className="h-[220px]">
             {view === 'equity' ? (
               <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
                 <AreaChart
@@ -337,17 +341,17 @@ export function ChartAreaInteractive() {
                   margin={{
                     left: isMobile ? 0 : 20,
                     right: isMobile ? 8 : 20,
-                    top: 20,
-                    bottom: 20,
+                    top: 12,
+                    bottom: 4,
                   }}
                 >
                   <defs>
                     {/* Split both fill and stroke at the $0 waterline: green above, red below. */}
                     <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset={0} stopColor={themeColors.profit} stopOpacity={0.5} />
-                      <stop offset={gradientOffset} stopColor={themeColors.profit} stopOpacity={0.04} />
-                      <stop offset={gradientOffset} stopColor={themeColors.loss} stopOpacity={0.04} />
-                      <stop offset={1} stopColor={themeColors.loss} stopOpacity={0.5} />
+                      <stop offset={0} stopColor={themeColors.profit} stopOpacity={0.16} />
+                      <stop offset={gradientOffset} stopColor={themeColors.profit} stopOpacity={0.01} />
+                      <stop offset={gradientOffset} stopColor={themeColors.loss} stopOpacity={0.01} />
+                      <stop offset={1} stopColor={themeColors.loss} stopOpacity={0.16} />
                     </linearGradient>
                     <linearGradient id="equityStroke" x1="0" y1="0" x2="0" y2="1">
                       <stop offset={0} stopColor={themeColors.profit} />
@@ -356,7 +360,7 @@ export function ChartAreaInteractive() {
                       <stop offset={1} stopColor={themeColors.loss} />
                     </linearGradient>
                   </defs>
-                  {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.35} />}
+                  {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.25} />}
                   <XAxis
                     dataKey="trade"
                     type="number"
@@ -427,11 +431,11 @@ export function ChartAreaInteractive() {
                     left: isMobile ? 0 : 20,
                     right: isMobile ? 8 : 20,
                     top: 10,
-                    bottom: 20,
+                    bottom: 4,
                   }}
                   barCategoryGap="20%"
                 >
-                  {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.35} />}
+                  {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.25} />}
                   <XAxis
                     dataKey="dateShort"
                     tickLine={false}
@@ -470,7 +474,7 @@ export function ChartAreaInteractive() {
             )}
           </div>
         ) : (
-          <div className="h-[260px]">
+          <div className="h-[220px]">
             <ChartEmptyState
               icon={ChartLine}
               title="No trades to chart yet"
@@ -480,41 +484,7 @@ export function ChartAreaInteractive() {
           </div>
         )}
       </CardContent>
-      {chartData.length > 0 && (
-      <CardFooter className="border-t border-border/70 py-3 sm:py-3 px-4 sm:px-6">
-        <div className="flex w-full items-end justify-between gap-4">
-          {view === 'equity' ? (
-            <>
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Period</span>
-                <span className="text-sm font-semibold truncate">
-                  {chartData[0].dateShort} &ndash; {chartData[chartData.length - 1].dateShort}
-                </span>
-              </div>
-              <div className="flex flex-col gap-0.5 text-right">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Trades</span>
-                <span className="text-sm font-semibold tabular-nums">{chartData.length}</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Green days</span>
-                <span className="text-sm font-semibold tabular-nums" style={{ color: themeColors.profit }}>{winDays}</span>
-              </div>
-              <div className="flex flex-col gap-0.5 text-center">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Red days</span>
-                <span className="text-sm font-semibold tabular-nums" style={{ color: themeColors.loss }}>{lossDays}</span>
-              </div>
-              <div className="flex flex-col gap-0.5 text-right">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Trades</span>
-                <span className="text-sm font-semibold tabular-nums">{chartData.length}</span>
-              </div>
-            </>
-          )}
-        </div>
-      </CardFooter>
-      )}
+
     </Card>
   )
 }

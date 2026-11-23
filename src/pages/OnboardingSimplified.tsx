@@ -14,7 +14,7 @@ import { UnitInput } from '@/components/money-input';
 import { parseOnboardingBalance } from '@/lib/onboarding-balance';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, Check, Rocket, CaretLeft, Wallet, Monitor, Buildings, FileText, Plant, ChartBar, Lightning, Trophy, BookOpen, Target } from '@phosphor-icons/react';
+import { ArrowRight, Check, CaretLeft, Wallet, Monitor, Buildings, FileText, Plant, ChartBar, Lightning, Trophy, BookOpen, Target } from '@phosphor-icons/react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,20 +33,20 @@ const STEPS = [
   { id: 2, title: 'Experience' },
   { id: 3, title: 'Account' },
   { id: 4, title: 'Details' },
-  { id: 5, title: 'Ready' },
+  { id: 5, title: 'Review' },
 ];
 
 const EXPERIENCE_OPTIONS = [
   { value: 'beginner', icon: Plant, label: 'Just Starting Out', sub: 'Under 1 year' },
   { value: 'developing', icon: ChartBar, label: 'Building Skills', sub: '1-3 years' },
-  { value: 'experienced', icon: Lightning, label: 'Battle Tested', sub: '3-5 years' },
+  { value: 'experienced', icon: Lightning, label: 'Experienced', sub: '3-5 years' },
   { value: 'veteran', icon: Trophy, label: 'Veteran Trader', sub: '5+ years' },
 ];
 
 const ACCOUNT_TYPE_OPTIONS = [
   { value: 'live' as TradingAccount['type'], icon: Wallet, label: 'Live Account', sub: 'Real money' },
   { value: 'demo' as TradingAccount['type'], icon: Monitor, label: 'Demo Account', sub: 'Practice mode' },
-  { value: 'prop-firm' as TradingAccount['type'], icon: Buildings, label: 'Prop Firm', sub: 'Funded account' },
+  { value: 'prop-firm' as TradingAccount['type'], icon: Buildings, label: 'Prop Firm', sub: 'Evaluation or funded' },
   { value: 'paper' as TradingAccount['type'], icon: FileText, label: 'Paper Trading', sub: 'Simulation' },
 ];
 
@@ -318,15 +318,10 @@ export default function OnboardingSimplified() {
     visible: { opacity: 1, y: 0 },
   } : fadeUpItem;
 
-  // Progress bar shown from step 2 onward
-  const progressPercent = currentStep > 1
-    ? ((currentStep - 1) / (STEPS.length - 1)) * 100
-    : 0;
-
   const selectionCardClass = (selected: boolean) =>
-    `p-4 rounded-xl border text-left transition-all duration-150 cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
+    `relative p-5 rounded-lg border text-left transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
       selected
-        ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
+        ? 'border-primary bg-primary/5 ring-1 ring-primary'
         : 'border-border hover:border-primary/40 hover:bg-muted/40'
     }`;
 
@@ -342,63 +337,28 @@ export default function OnboardingSimplified() {
             animate="center"
             exit="exit"
           >
-            <motion.div
-              className="text-center space-y-8"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
-              <motion.div
-                variants={activeFadeUpItem}
-                className="relative mx-auto w-24 h-24"
-              >
-                <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-xl" />
-                <div className="relative w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center border border-primary/10">
-                  <img src="/favicon.svg" alt="FreeTradeJournal" className="h-12 w-12" />
+            <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
+              <div className="space-y-5">
+                <p className="text-xs font-medium text-muted-foreground">YOUR TRADING WORKSPACE</p>
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">A clearer view of every trade.</h1>
+                <p className="max-w-md text-base leading-relaxed text-muted-foreground">Set up your account, then log a trade or import your history. Your journal and performance will build from there.</p>
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <Button onClick={() => goToStep(2)} size="lg">Set up my journal<ArrowRight className="ml-2 h-4 w-4" /></Button>
+                  <Button variant="ghost" onClick={handleSkipOnboarding} disabled={loading}>{loading ? 'Setting up…' : 'Explore first'}</Button>
                 </div>
-              </motion.div>
-
-              <div className="space-y-3">
-                <motion.h1 variants={activeFadeUpItem} className="text-4xl font-bold tracking-tight">
-                  <span>Welcome to </span>
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/90 to-amber-500">
-                    FreeTradeJournal
-                  </span>
-                </motion.h1>
-                <motion.p variants={activeFadeUpItem} className="text-muted-foreground text-lg max-w-sm mx-auto leading-relaxed">
-                  Your trading journal, built to help you find your edge.
-                </motion.p>
+                <p className="text-xs text-muted-foreground">You can change your preferences later in Settings.</p>
               </div>
-
-              <motion.div variants={activeFadeUpItem} className="flex flex-col gap-2.5 max-w-xs mx-auto text-left">
+              <ol className="divide-y divide-border rounded-xl border bg-muted/20 px-5">
                 {[
-                  { icon: ChartBar, text: 'Log trades and track performance' },
-                  { icon: BookOpen, text: 'Journal your process and mindset' },
-                  { icon: Target, text: 'Set goals and manage risk' },
-                ].map((item) => (
-                  <div key={item.text} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40">
-                    <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <item.icon className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <span className="text-sm text-foreground/80">{item.text}</span>
-                  </div>
-                ))}
-              </motion.div>
-
-              <motion.div variants={activeFadeUpItem} className="space-y-3 max-w-xs mx-auto">
-                <Button onClick={() => goToStep(2)} size="lg" className="w-full">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <button
-                  onClick={handleSkipOnboarding}
-                  disabled={loading}
-                  className="block w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
-                >
-                  Skip setup for now
-                </button>
-              </motion.div>
-            </motion.div>
+                  ['Your experience', 'Choose the level of guidance that suits you.'],
+                  ['Your account', 'Keep trades grouped by account and currency.'],
+                  ['Your first trade', 'Add one manually or import a broker CSV.'],
+                ].map(([title, detail], index) => <li key={title} className="flex gap-4 py-5">
+                  <span className="pt-0.5 text-xs tabular-nums text-muted-foreground">0{index + 1}</span>
+                  <div><p className="text-sm font-semibold">{title}</p><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{detail}</p></div>
+                </li>)}
+              </ol>
+            </div>
           </motion.div>
         );
 
@@ -413,17 +373,17 @@ export default function OnboardingSimplified() {
             exit="exit"
           >
             <motion.div
-              className="space-y-8"
+              className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-x-12 [&>div:last-child]:lg:col-start-2"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">How long have you been trading?</h1>
-                <p className="text-muted-foreground">This helps us personalise your dashboard and tips</p>
+              <motion.div variants={activeFadeUpItem} className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">How long have you been trading?</h1>
+                <p className="text-muted-foreground">Choose the level of guidance that fits you. You can change this later.</p>
               </motion.div>
 
-              <motion.div variants={activeFadeUpItem} className="grid grid-cols-2 gap-3">
+              <motion.div variants={activeFadeUpItem} className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                 {EXPERIENCE_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
                   const selected = data.experienceLevel === opt.value;
@@ -434,6 +394,7 @@ export default function OnboardingSimplified() {
                       onClick={() => setData({ ...data, experienceLevel: opt.value })}
                       className={selectionCardClass(selected)}
                     >
+                      {selected && <Check className="absolute right-4 top-4 h-4 w-4 text-primary" weight="bold" aria-hidden="true" />}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-colors ${
                         selected ? 'bg-primary/15' : 'bg-muted'
                       }`}>
@@ -472,17 +433,17 @@ export default function OnboardingSimplified() {
             exit="exit"
           >
             <motion.div
-              className="space-y-8"
+              className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-x-12 [&>div:last-child]:lg:col-start-2"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">What type of account?</h1>
-                <p className="text-muted-foreground">Choose how you trade</p>
+              <motion.div variants={activeFadeUpItem} className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">What type of account?</h1>
+                <p className="text-muted-foreground">This keeps your trades organised. You can add more accounts later.</p>
               </motion.div>
 
-              <motion.div variants={activeFadeUpItem} className="grid grid-cols-2 gap-3">
+              <motion.div variants={activeFadeUpItem} className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                 {ACCOUNT_TYPE_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
                   const selected = data.accountType === opt.value;
@@ -493,6 +454,7 @@ export default function OnboardingSimplified() {
                       onClick={() => setData({ ...data, accountType: opt.value })}
                       className={selectionCardClass(selected)}
                     >
+                      {selected && <Check className="absolute right-4 top-4 h-4 w-4 text-primary" weight="bold" aria-hidden="true" />}
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-colors ${
                         selected ? 'bg-primary/15' : 'bg-muted'
                       }`}>
@@ -526,14 +488,14 @@ export default function OnboardingSimplified() {
             exit="exit"
           >
             <motion.div
-              className="space-y-6"
+              className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-x-12 [&>div:last-child]:lg:col-start-2"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={activeFadeUpItem} className="text-center space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Name your account</h1>
-                <p className="text-muted-foreground">A few quick details to get you set up</p>
+              <motion.div variants={activeFadeUpItem} className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Name your account</h1>
+                <p className="text-muted-foreground">Choose a name you’ll recognise and the currency this account uses.</p>
               </motion.div>
 
               <motion.div variants={activeFadeUpItem} className="space-y-4">
@@ -548,7 +510,7 @@ export default function OnboardingSimplified() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="onboarding-currency">Currency</Label>
                     <Select
@@ -627,31 +589,22 @@ export default function OnboardingSimplified() {
             exit="exit"
           >
             <motion.div
-              className="space-y-8 text-center"
+              className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-x-12 [&>div:last-child]:lg:col-start-2"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
             >
-              <motion.div
-                className="mx-auto w-20 h-20 bg-green-500/10 rounded-3xl flex items-center justify-center"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-              >
-                <Check className="h-10 w-10 text-green-500" />
-              </motion.div>
-
-              <div className="space-y-2">
-                <motion.h1 variants={activeFadeUpItem} className="text-3xl font-bold tracking-tight">
-                  You're all set!
+              <div className="space-y-2 lg:row-span-2">
+                <motion.h1 variants={activeFadeUpItem} className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                  Review your account
                 </motion.h1>
-                <motion.p variants={activeFadeUpItem} className="text-muted-foreground">
-                  Your account is ready. Start logging trades, and your AI Coach is in the sidebar whenever you want feedback.
+                <motion.p variants={activeFadeUpItem} className="max-w-lg text-muted-foreground leading-relaxed">
+                  Check these details before creating your account. Next, you can add your first trade or import your history.
                 </motion.p>
-                <motion.p variants={activeFadeUpItem} className="text-sm font-medium">
+                <motion.p variants={activeFadeUpItem} className="max-w-lg text-sm text-muted-foreground leading-relaxed">
                   {Date.now() < LIFETIME_RETIRES_AT
                     ? 'Your first 14 days include every Pro feature — unlimited AI coaching, cloud sync, and full analytics. No card needed.'
-                    : 'Want every Pro feature — unlimited AI coaching, cloud sync, and full analytics? Any Pro plan starts with 14 days free.'}
+                    : 'Want every Pro feature, including more AI coaching, cloud sync and full analytics? You can upgrade to Pro anytime from the sidebar.'}
                 </motion.p>
               </div>
 
@@ -659,7 +612,7 @@ export default function OnboardingSimplified() {
                 variants={activeFadeUpItem}
                 className="bg-muted/30 rounded-xl p-4 text-left border border-border/50 space-y-2"
               >
-                <h3 className="font-semibold text-sm">Quick summary</h3>
+                <div className="flex items-center justify-between gap-3"><h3 className="font-semibold text-sm">Account details</h3><Button variant="ghost" size="sm" onClick={() => goToStep(4)} disabled={loading}>Edit details</Button></div>
                 <div className="text-sm space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Account</span>
@@ -693,8 +646,8 @@ export default function OnboardingSimplified() {
                     <span>Setting up...</span>
                   ) : (
                     <>
-                      <Rocket className="mr-2 h-4 w-4" />
-                      <span>Enter FreeTradeJournal</span>
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                      <span>Create account &amp; add a trade</span>
                     </>
                   )}
                 </Button>
@@ -716,7 +669,7 @@ export default function OnboardingSimplified() {
       <div className="min-h-screen flex flex-col bg-background">
         <header className="flex items-center gap-4 px-6 py-4 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-lg" />
+            <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-[6px]" />
             <span className="hidden sm:inline font-bold text-sm">FreeTradeJournal</span>
           </div>
           <div className="flex-1 mx-8">
@@ -730,7 +683,7 @@ export default function OnboardingSimplified() {
               <Skeleton className="h-9 w-64 mx-auto" />
               <Skeleton className="h-4 w-48 mx-auto" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
               <Skeleton className="h-24 rounded-xl" />
               <Skeleton className="h-24 rounded-xl" />
               <Skeleton className="h-24 rounded-xl" />
@@ -745,49 +698,34 @@ export default function OnboardingSimplified() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/[0.03] blur-3xl" />
-      </div>
-
       {/* Header */}
       <header className="relative flex items-center gap-4 px-6 py-4 border-b border-border/50 shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2 shrink-0">
-          <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-lg" />
+          <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-[6px]" />
           <span className="hidden sm:inline font-bold text-sm">FreeTradeJournal</span>
         </div>
 
-        {/* Progress bar */}
-        <div className="flex-1 min-w-0 sm:mx-4">
-          {currentStep > 1 && (
-            <div role="progressbar" aria-label="Account setup progress" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={currentStep} className="h-1.5 bg-muted rounded-full overflow-hidden max-w-sm mx-auto">
-              <motion.div
-                className="h-full bg-primary rounded-full"
-                initial={false}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.4, ease: [0.23, 0.86, 0.39, 0.96] as const }}
-              />
-            </div>
-          )}
-        </div>
+        <div className="flex-1" />
 
         {/* Step counter + Back + Skip */}
         <div className="flex items-center gap-3 shrink-0">
-          {currentStep > 1 && currentStep < 5 && (
+          {currentStep > 1 && (
             <span className="text-xs text-muted-foreground tabular-nums">
               {currentStep} of {STEPS.length}
             </span>
           )}
-          {currentStep > 1 && currentStep < 5 && (
+          {currentStep > 1 && (
             <button
               onClick={() => goToStep(currentStep - 1)}
               className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={loading}
               aria-label="Go back"
             >
               <CaretLeft className="h-5 w-5" />
             </button>
           )}
-          {currentStep > 1 && currentStep < 5 && (
+          {currentStep > 1 && (
             <button
               onClick={handleSkipOnboarding}
               disabled={loading}
@@ -799,25 +737,24 @@ export default function OnboardingSimplified() {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="relative flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-lg">
-          <AnimatePresence custom={direction} mode="wait">
-            {renderStep()}
-          </AnimatePresence>
+      <main className={`relative flex-1 px-4 py-5 sm:px-8 sm:py-6 ${currentStep === 1 ? 'flex items-center' : ''}`}>
+        <div className="w-full">
+          {currentStep > 1 && <nav aria-label="Setup steps" className="mb-8">
+            <ol className="grid grid-cols-4 gap-2 sm:gap-4">
+              {STEPS.slice(1).map(step => <li key={step.id} aria-current={currentStep === step.id ? 'step' : undefined} className="space-y-2">
+                <div className={`h-1 rounded-full ${currentStep >= step.id ? 'bg-primary' : 'bg-muted'}`} />
+                <span className={`text-xs sm:text-sm ${currentStep === step.id ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{step.title}</span>
+              </li>)}
+            </ol>
+          </nav>}
+          <div className={currentStep === 1 ? 'px-2 py-8 sm:px-8 sm:py-12' : 'rounded-xl border bg-card p-6 sm:p-8'}>
+            <AnimatePresence custom={direction} mode="wait">
+              {renderStep()}
+            </AnimatePresence>
+          </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative py-4 border-t border-border/50 shrink-0">
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground flex-wrap px-4">
-          <span>Free to start</span>
-          <span className="w-1 h-1 bg-muted-foreground/40 rounded-full" />
-          <span>No credit card required</span>
-          <span className="w-1 h-1 bg-muted-foreground/40 rounded-full" />
-          <span>Your data stays yours</span>
-        </div>
-      </footer>
     </div>
   );
 }

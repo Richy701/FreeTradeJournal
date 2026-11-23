@@ -194,7 +194,7 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
             </span>
           </div>
           {/* Progress bar */}
-          <Progress className="h-1.5" value={progressPct} />
+          <Progress className="h-1 sm:max-w-48" value={progressPct} />
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
@@ -222,40 +222,41 @@ export function GettingStartedChecklist({ refreshKey = 0 }: { refreshKey?: numbe
 
       {/* Items */}
       {!collapsed && (
-        <div className="divide-y divide-border/60">
-          {items.map((item) => {
+        <div className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[...items].sort((a, b) => Number(b.id === nextItemId) - Number(a.id === nextItemId)).map((item) => {
             const Icon = item.icon;
             const isNext = item.id === nextItemId;
             return (
               <Link
                 key={item.id}
                 to={item.href}
-                className={`flex items-center gap-3 px-4 py-3 transition-colors group ${
-                  item.done ? '' : isNext ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted/60'
+                className={`flex items-start gap-3 rounded-lg px-3 py-3 transition-colors group ${
+                  isNext ? 'sm:col-span-2 lg:col-span-4 border border-border bg-muted/40 hover:bg-muted/70' : 'hover:bg-muted/60'
                 }`}
               >
                 {/* Status tile: check when done, feature icon when not */}
                 <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  item.done ? 'bg-muted' : 'bg-primary/10'
+                  item.done ? 'bg-emerald-500/10' : isNext ? 'bg-primary text-primary-foreground' : 'bg-muted'
                 }`}>
                   {item.done
-                    ? <Check className="h-4 w-4 text-muted-foreground" weight="bold" />
-                    : <Icon className="h-4 w-4 text-primary" />}
+                    ? <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" weight="bold" />
+                    : <Icon className={`h-4 w-4 ${isNext ? 'text-primary-foreground' : 'text-muted-foreground'}`} />}
                 </div>
 
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className={`text-sm font-medium leading-none ${item.done ? 'text-muted-foreground' : ''}`}>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <p className={`text-sm font-medium leading-snug ${item.done ? 'text-muted-foreground' : ''}`}>
                       {item.label}
                     </p>
+                    {item.done && <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">Done</span>}
                     {isNext && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-primary bg-primary/10 rounded px-1.5 py-0.5 leading-none">
+                      <span className="text-[10px] font-medium text-muted-foreground border border-border rounded px-1.5 py-0.5 leading-none">
                         Up next
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{item.description}</p>
                 </div>
 
                 {/* Caret for incomplete */}

@@ -45,11 +45,11 @@ export default function PositionSizeCalculatorPage() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">How it works</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 One formula,<br />
                 <span className="text-amber-500">no guessing.</span>
               </h2>
@@ -71,11 +71,11 @@ export default function PositionSizeCalculatorPage() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Reference</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Futures tick values<br />
                 <span className="text-amber-500">at a glance.</span>
               </h2>
@@ -110,9 +110,9 @@ export default function PositionSizeCalculatorPage() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Sized the trade? Now track it.</h2>
+            <h2 className="text-3xl sm:text-3xl font-bold mb-4">Sized the trade? Now track it.</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
               A calculator tells you the right size for one trade. A journal tells you whether your sizing, stops, and risk rules actually work across a hundred. FreeTradeJournal is free forever, with no card required.
             </p>
@@ -125,7 +125,7 @@ export default function PositionSizeCalculatorPage() {
           </div>
         </section>
 
-        <FAQSection
+        <FAQSection compact
           faqs={FAQS}
           title="Position sizing questions"
           subtitle="How the numbers are calculated and how to use them"

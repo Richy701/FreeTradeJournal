@@ -131,7 +131,7 @@ export function LinkTradeDialog({ idea, onOpenChange, onLinked }: LinkTradeDialo
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!saving) onOpenChange(v) }}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
+      <DialogContent className="sm:max-w-xl p-0 sm:p-0 overflow-hidden gap-0">
         <div className="px-6 pt-5 pb-4 border-b flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
             <LinkSimple className="h-5 w-5" style={{ color: themeColors.primary }} aria-hidden="true" />

@@ -46,8 +46,8 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
   return (
     <>
       {groups.map((group) => (
-        <SidebarGroup key={group.label} className="py-1">
-          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+        <SidebarGroup key={group.label} className="px-3 py-2">
+          <SidebarGroupLabel className="h-7 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">{group.label}</SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {group.items.map((item) => {
               const active = isItemActive(item.url, pathname)
@@ -58,13 +58,13 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                     asChild
                     tooltip={count ? `${item.title} (${count} new)` : item.badge ? `${item.title} (${item.badge})` : item.title}
                     isActive={active}
-                    className={isMobile ? "h-11" : "h-9"}
+                    className={`relative rounded-lg px-2.5 ${isMobile ? "h-11" : "h-10"}`}
                     // The active row is the only coloured thing in the list, so
                     // it reads as "you are here" without a left rail.
                     style={
                       active
                         ? {
-                            backgroundColor: alpha(themeColors.primary, '15'),
+                            backgroundColor: alpha(themeColors.primary, '08'),
                             color: themeColors.primary,
                           }
                         : undefined
@@ -78,7 +78,8 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                         isMobile && setOpenMobile(false)
                       }}
                     >
-                      <div className="flex items-center justify-center size-6 rounded-md">
+                      {active && <span aria-hidden="true" className="absolute left-0 h-4 w-0.5 rounded-full" style={{ backgroundColor: themeColors.primary }} />}
+                      <div className="flex items-center justify-center size-5 shrink-0">
                         <item.icon className="size-4" weight={active ? 'fill' : 'regular'} />
                       </div>
                       <span>{item.title}</span>
@@ -93,7 +94,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                       ) : item.badge && (
                         <span
                           className="ml-auto rounded-full px-1.5 py-px text-[11px] font-semibold uppercase tracking-wide group-data-[collapsible=icon]:hidden"
-                          style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}
+                          style={{ backgroundColor: alpha(themeColors.primary, '08'), color: themeColors.primary }}
                         >
                           {item.badge}
                         </span>

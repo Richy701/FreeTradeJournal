@@ -129,7 +129,7 @@ export function ImportPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`w-[95vw] max-w-md max-h-[90svh] overflow-hidden flex flex-col ${compact ? '' : 'sm:max-w-2xl'}`}
+        className={`w-[95vw] max-w-md max-h-[90svh] overflow-hidden flex flex-col ${compact ? '' : 'sm:max-w-4xl'}`}
       >
         <DialogHeader className="flex-shrink-0 pr-8">
           <DialogTitle>{title}</DialogTitle>

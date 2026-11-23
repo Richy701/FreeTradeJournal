@@ -1,3 +1,4 @@
+import { FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PRICING_PLANS } from '@/constants/pricing';
 import {
   Accordion,
   AccordionContent,
@@ -14,6 +15,7 @@ interface FAQ {
 }
 
 interface FAQSectionProps {
+  compact?: boolean;
   faqs?: FAQ[];
   title?: string;
   subtitle?: string;
@@ -39,7 +41,7 @@ const DEFAULT_FAQS: FAQ[] = [
     },
     {
       question: "How much does it cost?",
-      answer: "The core journal is completely free — trade logging, analytics, journaling, goal tracking, and CSV import/export with no credit card required. Pro adds AI-powered coaching, automated trade reviews, strategy tagging, risk alerts, cloud sync, and unlimited exports starting at $12.99/mo."
+      answer: `The free plan includes unlimited trade logging, CSV/Excel import and export, goals and risk management, up to ${FREE_JOURNAL_ENTRY_LIMIT} journal entries, and the last ${FREE_ANALYTICS_WINDOW_DAYS} days of analytics. Your full trade log remains available. No credit card is required. Pro adds full analytics history, unlimited journal entries, advanced analytics, expanded AI tools, cloud sync, and PDF trade reports.`
     },
     {
       question: "Does it work with prop firms like FTMO?",
@@ -47,7 +49,7 @@ const DEFAULT_FAQS: FAQ[] = [
     },
     {
       question: "What's included in the Pro plan?",
-      answer: "Coach FTJ, AI Trade Review, AI Strategy Tagger, AI Risk Alerts, cloud sync across devices, PDF trade reports, priority email support, and early access to new features. Choose Monthly ($12.99/mo) or Yearly ($99.99/yr — save 36%)."
+      answer: `Pro includes full analytics history, unlimited journal entries and accounts, advanced charts, expanded AI tools, cloud sync, and PDF trade reports. Standard prices are $${PRICING_PLANS.find(plan => plan.interval === 'monthly')!.price}/month or $${PRICING_PLANS.find(plan => plan.interval === 'yearly')!.price}/year, in USD. Visit Pricing for current offers and Lifetime availability. CSV/Excel data export remains free.`
     },
     {
       question: "Can I see what the app looks like before signing up?",
@@ -55,11 +57,11 @@ const DEFAULT_FAQS: FAQ[] = [
     },
     {
       question: "Can I cancel or change my Pro plan anytime?",
-      answer: "Yes. Switch between Monthly and Yearly or cancel anytime from the Subscription tab in your settings. There's no lock-in — your Pro access stays active until the end of your current billing period."
+      answer: "Yes. Switch between Monthly and Yearly or cancel anytime from the Subscription section in Settings. There's no lock-in — your Pro access stays active until the end of your current billing period."
     }
 ];
 
-export function FAQSection({ faqs = DEFAULT_FAQS, title = 'Frequently Asked', subtitle = 'Everything you need to know about FreeTradeJournal and how it can transform your trading journey', id = 'faq-structured-data' }: FAQSectionProps) {
+export function FAQSection({ faqs = DEFAULT_FAQS, title = 'Frequently Asked', subtitle = 'Everything you need to know about FreeTradeJournal and how it can transform your trading journey', id = 'faq-structured-data', compact = false }: FAQSectionProps) {
   useEffect(() => {
     const faqStructuredData = {
       "@context": "https://schema.org",
@@ -89,16 +91,16 @@ export function FAQSection({ faqs = DEFAULT_FAQS, title = 'Frequently Asked', su
     <section className="py-14 sm:py-16 px-6">
       <div className="max-w-5xl mx-auto">
         <motion.div
-          className="text-center mb-16"
+          className={cn('text-center', compact ? 'mb-10' : 'mb-16')}
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           viewport={{ once: true }}
         >
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
+          <h2 className={cn('font-display text-3xl sm:text-4xl font-bold mb-4 tracking-tight', !compact && 'lg:text-5xl')}>
             {title} <span className="text-amber-600 dark:text-amber-500">Questions</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className={cn('text-muted-foreground max-w-2xl mx-auto', compact ? 'text-base' : 'text-lg')}>
             {subtitle}
           </p>
         </motion.div>
@@ -119,7 +121,7 @@ export function FAQSection({ faqs = DEFAULT_FAQS, title = 'Frequently Asked', su
                   className="border-b border-border py-2"
                 >
                   <AccordionTrigger className="text-left hover:no-underline hover:text-amber-600 dark:hover:text-amber-500 transition-colors duration-200 py-4">
-                    <span className="text-base md:text-lg font-medium pr-4">{faq.question}</span>
+                    <span className={cn('text-base font-medium pr-4', !compact && 'md:text-lg')}>{faq.question}</span>
                   </AccordionTrigger>
                   <AccordionContent className="text-sm md:text-base leading-relaxed text-muted-foreground pb-4 pr-4">
                     {faq.answer}

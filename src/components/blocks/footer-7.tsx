@@ -107,15 +107,9 @@ export const Footer7 = ({
   };
 
   return (
-    <section className="relative py-16 mt-16 overflow-hidden">
-      {/* Glass background layer */}
-      <div className="absolute inset-0 bg-muted/50 backdrop-blur-sm" />
-      {/* Fade gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/50" />
-      {/* Gradient top border line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+    <footer className="relative mt-12 border-t bg-muted/20 py-12 sm:py-16">
 
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="relative z-10 mx-auto max-w-[1600px] px-5 sm:px-8">
         <div className="flex w-full flex-col justify-between gap-8 lg:flex-row lg:items-start lg:text-left">
           <motion.div
             className="flex w-full flex-col justify-between gap-6 lg:items-start lg:max-w-md"
@@ -126,23 +120,23 @@ export const Footer7 = ({
           >
             {/* Logo */}
             <div className="flex items-center gap-3 lg:justify-start">
-              <Link to={logo.url} className="flex items-center gap-3">
+              <Link to={logo.url} className="flex min-w-0 items-center gap-2.5">
                 {logo.src ? (
                   <img
                     src={logo.src}
                     alt={logo.alt}
                     title={logo.title}
-                    className="h-10"
+                    className="h-9 w-9 shrink-0 rounded-[7px]"
                     width={40}
                     height={40}
                   />
                 ) : (
-                  <img src="/favicon.svg" alt="FTJ" className="h-10 w-10 rounded-xl flex-shrink-0" />
+                  <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 shrink-0 rounded-[7px]" />
                 )}
-                <h2 className="font-display text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{logo.title}</h2>
+                <h2 className="min-w-0 text-lg font-bold tracking-tight [overflow-wrap:anywhere] sm:text-xl">{logo.title}</h2>
               </Link>
             </div>
-            <p className="text-base text-muted-foreground leading-relaxed font-medium">
+            <p className="max-w-md text-sm text-muted-foreground leading-relaxed">
               {description}
             </p>
             <ul className="flex items-center space-x-4 text-muted-foreground">
@@ -249,6 +243,6 @@ export const Footer7 = ({
           </ul>
         </motion.div>
       </div>
-    </section>
+    </footer>
   );
 };

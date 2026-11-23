@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { MobileHeader } from '@/components/mobile-header';
 import { DemoBanner } from '@/components/demo-banner';
 import { FounderOfferAnnouncement } from '@/components/founder-offer-announcement';
+import { BlackFridayStrip } from '@/components/black-friday-strip';
 import { LifetimeFarewellDialog } from '@/components/lifetime-farewell-dialog';
 import { PlanChangesDialog } from '@/components/plan-changes-dialog';
 import { ThemeSettingsSync } from '@/components/theme-settings-sync';
@@ -50,6 +51,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         <DemoBanner />
         <FounderOfferAnnouncement />
         <MobileHeader />
+        <BlackFridayStrip />
         <motion.main
           id="main-content"
           tabIndex={-1}

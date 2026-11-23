@@ -1,9 +1,11 @@
+import { EmptyState } from '@/components/empty-state'
 import { useId, useMemo, useEffect, useState } from 'react'
 import { trackGateHit } from '@/lib/track-activity'
 import { Lightbulb, ArrowRight, ChartBar, UserCircle, ArrowsSplit, Crosshair, TrendUp, CalendarDots, Timer, Receipt } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { SiteHeader } from '@/components/site-header'
 import { AppFooter } from '@/components/app-footer'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { NoticeBanner } from '@/components/notice-banner'
 import { useTradeIdeas } from '@/hooks/use-trade-ideas'
@@ -168,14 +170,11 @@ export default function TradeIdeas() {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <SiteHeader />
-        <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+        <div data-insights-header className="px-4 pt-6 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 border-b pb-5 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
-              </div>
               <div className="space-y-0.5">
-                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">Trade Insights</h1>
                 <p className="text-sm text-muted-foreground">Data-driven patterns and analytics from your trading data.</p>
               </div>
             </div>
@@ -183,25 +182,10 @@ export default function TradeIdeas() {
         </div>
         <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6 space-y-4">
           {windowNotice}
-          <div className="rounded-xl border border-dashed bg-card/50 flex flex-col items-center justify-center py-16 text-center space-y-4">
-            <div className="p-4 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-              <Lightbulb className="h-8 w-8" style={{ color: themeColors.primary }} aria-hidden="true" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold">Not Enough Data Yet</h2>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Log at least 5 trades to unlock data-driven trade insights.
-              </p>
-            </div>
-            <Button asChild className="mt-2" style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
-              <Link to="/trades">
-                Log Trades <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-            <Link to="/coach" className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">
-              Or meet your AI Coach
-            </Link>
-          </div>
+          <EmptyState icon={Lightbulb} title="Build a history worth learning from" description="Trade Insights needs at least five trades in the selected range to compare your results and highlight patterns.">
+            <Button asChild style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}><Link to="/trades">Go to Trade Log<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+            <Link to="/coach" className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">Meet your AI Coach</Link>
+          </EmptyState>
         </div>
         <AppFooter />
       </div>
@@ -212,14 +196,11 @@ export default function TradeIdeas() {
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
-      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+      <div data-insights-header className="px-4 pt-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 border-b pb-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-              <Lightbulb className="h-5 w-5" style={{ color: themeColors.primary }} />
-            </div>
             <div className="space-y-0.5">
-              <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Insights</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Trade Insights</h1>
               <p className="text-sm text-muted-foreground">
                 {ideas.length} insights from{' '}
                 <span className="font-medium text-foreground">{totalTrades} trades</span>
@@ -239,6 +220,11 @@ export default function TradeIdeas() {
               </p>
             </div>
           </div>
+          <nav aria-label="Trade insights sections" className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild><a href="#insights-analysis">AI analysis</a></Button>
+            <Button variant="outline" size="sm" asChild><a href="#insights-performance">Performance</a></Button>
+            {ideas.length > 0 && <Button variant="outline" size="sm" asChild><a href="#insights-actions">Actionable ideas</a></Button>}
+          </nav>
         </div>
       </div>
 
@@ -246,61 +232,37 @@ export default function TradeIdeas() {
         {windowNotice}
 
         {/* AI Trade Analysis */}
-        {rawTrades.length >= 3 && <AIAnalysis trades={rawTrades} />}
+        {rawTrades.length >= 3 && (
+          <Card id="insights-analysis" className="scroll-mt-20 p-5 shadow-none space-y-4">
+            <AIAnalysis trades={rawTrades} embedded reportDesign setupLayout="stacked" />
+          </Card>
+        )}
 
         {/* Summary Stats */}
         {summary && (
-          <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div
-              className="flex items-center gap-2.5 rounded-full py-2 px-4"
-              style={{ backgroundColor: `${themeColors.profit}12` }}
-            >
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColors.profit }} />
-              <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
-                {summary.bestSymbol}
-              </span>
-              <span className="text-xs text-muted-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {formatCurrency(summary.bestSymbolPnl, true)}
-              </span>
-            </div>
-            <div
-              className="flex items-center gap-2.5 rounded-full py-2 px-4"
-              style={{ backgroundColor: `${themeColors.primary}12` }}
-            >
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
-              <span className="text-sm font-semibold" style={{ color: themeColors.primary }}>
-                {summary.bestDay}s
-              </span>
-              <span className="text-xs text-muted-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {summary.bestDayWinRate}% WR
-              </span>
-            </div>
-            <div
-              className="flex items-center gap-2.5 rounded-full py-2 px-4"
-              style={{ backgroundColor: `${themeColors.primary}12` }}
-            >
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColors.primary }} />
-              <span className="text-sm font-semibold" style={{ color: themeColors.primary }}>
-                {summary.winDirection}
-              </span>
-              <span className="text-xs text-muted-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {summary.winDirectionWr}% WR
-              </span>
-            </div>
+          <section id="insights-performance" className="scroll-mt-20 space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="p-5 shadow-none space-y-2">
+              <p className="text-xs text-muted-foreground">Best symbol</p>
+              <p className="text-xl font-semibold tracking-tight">{summary.bestSymbol}</p>
+              <p className="text-sm tabular-nums" style={{ color: summary.bestSymbolPnl >= 0 ? themeColors.profit : themeColors.loss }}>{formatCurrency(summary.bestSymbolPnl, true)}</p>
+            </Card>
+            <Card className="p-5 shadow-none space-y-2">
+              <p className="text-xs text-muted-foreground">Strongest day</p>
+              <p className="text-xl font-semibold tracking-tight">{summary.bestDay}</p>
+              <p className="text-sm text-muted-foreground tabular-nums">{summary.bestDayWinRate}% win rate</p>
+            </Card>
+            <Card className="p-5 shadow-none space-y-2">
+              <p className="text-xs text-muted-foreground">Leading direction</p>
+              <p className="text-xl font-semibold tracking-tight">{summary.winDirection}</p>
+              <p className="text-sm text-muted-foreground tabular-nums">{summary.winDirectionWr}% win rate</p>
+            </Card>
             {summary.topStrategy && summary.topStrategy !== '—' && (
-              <div
-                className="flex items-center gap-2.5 rounded-full py-2 px-4"
-                style={{ backgroundColor: `${themeColors.profit}12` }}
-              >
-                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColors.profit }} />
-                <span className="text-sm font-semibold" style={{ color: themeColors.profit }}>
-                  {summary.topStrategy}
-                </span>
-                <span className="text-xs text-muted-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {summary.topStrategyWr}% WR
-                </span>
-              </div>
+              <Card className="p-5 shadow-none space-y-2">
+                <p className="text-xs text-muted-foreground">Top strategy</p>
+                <p className="text-xl font-semibold tracking-tight break-words">{summary.topStrategy}</p>
+                <p className="text-sm text-muted-foreground tabular-nums">{summary.topStrategyWr}% win rate</p>
+              </Card>
             )}
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -326,17 +288,17 @@ export default function TradeIdeas() {
             )}
             .
           </p>
-          </div>
+          </section>
         )}
 
         {/* Hold time + cost of trading: the two facts the P&L breakdowns below cannot show */}
         {(holdTime || costs) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {holdTime && (
-              <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+              <Card data-hold-time className="min-w-0 bg-card p-5 shadow-none space-y-3 flex flex-col">
                 <div className="flex items-center gap-2">
                   <Timer className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Hold Time</span>
+                  <span className="text-base font-semibold text-foreground">Hold Time</span>
                 </div>
                 <p className="text-sm text-muted-foreground">How long you stay in winners versus losers</p>
                 {holdTime.sampleCount < 5 ? (
@@ -364,7 +326,7 @@ export default function TradeIdeas() {
                     </span>
                   </div>
                 </div>
-                <ChartContainer config={holdConfig} className="h-[180px] w-full mt-auto">
+                <ChartContainer config={holdConfig} className="min-h-[220px] flex-1 aspect-auto w-full">
                   <BarChart data={holdRows} maxBarSize={28} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                     {chartStyle.grid && <CartesianGrid vertical={false} strokeOpacity={0.1} />}
                     <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} />
@@ -401,14 +363,14 @@ export default function TradeIdeas() {
                 </p>
                 </>
                 )}
-              </div>
+              </Card>
             )}
 
             {costs && (
-              <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+              <Card className="min-w-0 bg-card p-5 shadow-none space-y-3 flex flex-col">
                 <div className="flex items-center gap-2">
                   <Receipt className="h-4 w-4" style={{ color: themeColors.primary }} />
-                  <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Cost of Trading</span>
+                  <span className="text-base font-semibold text-foreground">Cost of Trading</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Commissions, fees and swap against your results</p>
                 {costs.tradesWithCosts === 0 ? (
@@ -439,7 +401,7 @@ export default function TradeIdeas() {
                 </div>
                 {costs.perSymbol.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-wider font-medium text-muted-foreground pt-1">Where the costs go</p>
+                    <p className="text-base font-semibold text-foreground pt-1">Where the costs go</p>
                     <div className="divide-y divide-border/50 text-sm">
                       {costs.perSymbol.slice(0, 5).map(sc => (
                         <div key={sc.symbol} className="flex items-baseline justify-between py-1.5">
@@ -469,17 +431,17 @@ export default function TradeIdeas() {
                 </div>
                 </>
                 )}
-              </div>
+              </Card>
             )}
           </div>
         )}
 
         {/* Symbol Performance Chart */}
         {charts != null && charts.symbolPnl.length > 0 && (
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+          <Card className="min-w-0 bg-card p-5 shadow-none space-y-3">
             <div className="flex items-center gap-2">
               <ChartBar className="h-4 w-4" style={{ color: themeColors.primary }} />
-              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Symbol Performance</span>
+              <span className="text-base font-semibold text-foreground">Symbol Performance</span>
             </div>
             <p className="text-sm text-muted-foreground">P&L breakdown by instrument</p>
             {/* One row per symbol: a fixed height thins the labels once the
@@ -524,16 +486,16 @@ export default function TradeIdeas() {
                   </Bar>
                 </BarChart>
               </ChartContainer>
-          </div>
+          </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Trader Profile — Radar */}
           {summary != null && summary.traderProfile.length > 0 && (
-            <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+            <Card className="min-w-0 bg-card p-5 shadow-none space-y-3 flex flex-col">
               <div className="flex items-center gap-2">
                 <UserCircle className="h-4 w-4" style={{ color: themeColors.primary }} />
-                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Trader Profile</span>
+                <span className="text-base font-semibold text-foreground">Trader Profile</span>
               </div>
               <p className="text-sm text-muted-foreground">Your trading style at a glance</p>
               <div className="flex flex-1 flex-col items-center gap-6">
@@ -567,7 +529,7 @@ export default function TradeIdeas() {
                     const color = p.value >= 70 ? themeColors.profit : p.value >= 40 ? themeColors.primary : themeColors.loss
                     return (
                       <div key={p.metric} className="rounded-lg border p-2.5 space-y-1.5" style={{ borderColor: `${color}20` }}>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                           <span className="text-xs text-muted-foreground">{p.metric}</span>
                           <span className="text-xs font-semibold" style={{ color, fontVariantNumeric: 'tabular-nums' }}>{label}</span>
                         </div>
@@ -578,15 +540,15 @@ export default function TradeIdeas() {
                   })}
                 </div>
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Direction Split - Donut */}
           {charts != null && charts.direction.length > 0 && (
-            <div className="rounded-xl border bg-card/50 p-4 space-y-3 flex flex-col">
+            <Card className="min-w-0 bg-card p-5 shadow-none space-y-3 flex flex-col">
               <div className="flex items-center gap-2">
                 <ArrowsSplit className="h-4 w-4" style={{ color: themeColors.primary }} />
-                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Direction Split</span>
+                <span className="text-base font-semibold text-foreground">Direction Split</span>
               </div>
               <p className="text-sm text-muted-foreground">Long vs Short performance</p>
               <div className="flex flex-1 flex-col items-center gap-6">
@@ -678,15 +640,15 @@ export default function TradeIdeas() {
                   })}
                 </div>
               </div>
-            </div>
+            </Card>
           )}
         </div>
 
         {charts != null && charts.strategyPnl.length > 0 && (
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+          <Card className="min-w-0 bg-card p-5 shadow-none space-y-3">
             <div className="flex items-center gap-2">
               <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
-              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Strategy Breakdown</span>
+              <span className="text-base font-semibold text-foreground">Strategy Breakdown</span>
             </div>
             <p className="text-sm text-muted-foreground">Which strategies are working</p>
               <ChartContainer config={strategyConfig} className="h-[250px] w-full">
@@ -717,7 +679,7 @@ export default function TradeIdeas() {
                   </Bar>
                 </BarChart>
               </ChartContainer>
-          </div>
+          </Card>
         )}
 
         {tagStats != null && (
@@ -729,12 +691,12 @@ export default function TradeIdeas() {
           />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {charts != null && charts.weeklyPnl.length > 1 && (
-            <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <Card className="min-w-0 bg-card p-5 shadow-none space-y-3">
               <div className="flex items-center gap-2">
                 <TrendUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Weekly P&L Trend</span>
+                <span className="text-base font-semibold text-foreground">Weekly P&L Trend</span>
               </div>
               <p className="text-sm text-muted-foreground">Your performance over time</p>
                 <ChartContainer config={weeklyConfig} className="h-[200px] w-full">
@@ -778,14 +740,14 @@ export default function TradeIdeas() {
                     />
                   </AreaChart>
                 </ChartContainer>
-            </div>
+            </Card>
           )}
 
           {charts != null && charts.dayOfWeek.length > 0 && (
-            <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+            <Card className="min-w-0 bg-card p-5 shadow-none space-y-3">
               <div className="flex items-center gap-2">
                 <CalendarDots className="h-4 w-4" style={{ color: themeColors.primary }} />
-                <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Day of Week</span>
+                <span className="text-base font-semibold text-foreground">Day of Week</span>
               </div>
               <p className="text-sm text-muted-foreground">P&L by trading day</p>
                 <ChartContainer config={hourlyConfig} className="h-[200px] w-full">
@@ -816,15 +778,15 @@ export default function TradeIdeas() {
                     </Bar>
                   </BarChart>
                 </ChartContainer>
-            </div>
+            </Card>
           )}
         </div>
 
         {ideas.length > 0 && (
-          <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+          <Card id="insights-actions" className="scroll-mt-20 min-w-0 bg-card p-5 shadow-none space-y-3">
             <div className="flex items-center gap-2">
               <Lightbulb className="h-4 w-4" style={{ color: themeColors.primary }} aria-hidden="true" />
-              <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Actionable Ideas</span>
+              <span className="text-base font-semibold text-foreground">Actionable Ideas</span>
             </div>
             <p className="text-sm text-muted-foreground">
               What is costing you, biggest first, with one change each. Figures cover {hiddenCount > 0 ? `your last ${FREE_ANALYTICS_WINDOW_DAYS} days` : 'all your trades'}.
@@ -837,7 +799,7 @@ export default function TradeIdeas() {
             ) : (
               <div className="divide-y divide-border/50">
                 {shownIdeas.map((idea) => (
-                  <div key={idea.id} className="py-3 flex items-start gap-4">
+                  <div key={idea.id} className="py-4 flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                     <div className="min-w-0 flex-1 space-y-1">
                       <p className="text-sm font-semibold text-foreground">{idea.title}</p>
                       <p className="text-sm text-muted-foreground leading-relaxed">{idea.evidence}</p>
@@ -872,7 +834,7 @@ export default function TradeIdeas() {
                 )}
               </div>
             )}
-          </div>
+          </Card>
         )}
       </div>
 

@@ -1,94 +1,73 @@
-// Canned AI responses for demo mode.
-//
-// In demo mode there is no signed-in backend user, so the real AI endpoints
-// (aiStream / aiAssist Cloud Functions) cannot be called. These pre-written
-// responses let every AI feature work and look real in the demo without any
-// network call or cost. They use the same `## section` / `- bullet` / **bold**
-// markdown conventions the live model produces, so the existing renderers format
-// them correctly.
+import { DEMO_STATS, DEMO_TRADES } from '@/data/demo-data'
 
+// Prewritten examples, explicitly labelled; no remote AI request in demo mode.
+const money = (value: number) => `${value < 0 ? '-' : '+'}$${Math.abs(value).toFixed(2)}`
 function tradeAnalysis(): string {
   return [
     '## Performance Snapshot',
-    '**Win rate: 65%** across 34 trades · Avg R:R **2.4:1** · Net P&L **+$3,031**',
+    `**Win rate: ${DEMO_STATS.winRate}%** across ${DEMO_STATS.totalTrades} trades · Net P&L **${money(DEMO_STATS.netProfit)}** after costs`,
     '',
-    'Best pair: **GBPJPY** (72% win rate). Strongest window: **London open (8-10am)**. Most of your edge comes from trend continuation, not reversals.',
+    'Example analysis of the original practice history. This is prewritten, not a live AI review; changes you make in the demo are not included.',
     '',
     '## Key Patterns Detected',
-    '- **Best on trending days** - your win rate jumps to 71% when the daily range is above average',
-    '- **Index scalps drag results** - NAS100 intraday trades are -$210 on average versus +$140 on FX swings',
-    '- **Sizing creeps up after wins** - position size grows ~35% following two green trades in a row',
+    '- **Costs count** - every example trade includes $0.70 commission, including the trade closed at its entry price.',
+    '- **The losses are part of the story** - the journal includes losing trades and reflections on rushed entries.',
+    '- **Size stays steady** - each trade uses 0.10 lots, making the results easier to compare.',
     '',
     '## Strengths to Double Down On',
-    '- You cut losers fast - average losing trade held well under your winners',
-    '- Clear discipline around major levels (round numbers, prior day high/low)',
-    '- Morning sessions clearly outperform - you trade better fresh',
+    '- Keep writing down the reason for an entry, even when the result is disappointing.',
+    '- Review decisions alongside results; a winning trade can still reveal a habit to change.',
     '',
     '## Critical Improvements',
-    '- Tighten the index scalping or drop it until the data improves - it is your only negative bucket',
-    '- Lock position size to a fixed risk % so good streaks do not inflate your exposure',
+    '- Add a short reflection to the trades that do not have one yet.',
+    '- This short, fictional history cannot establish a reliable trading edge.',
     '',
     '## Action Plan',
-    '1. Cap risk at a fixed **1% per trade** regardless of recent results',
-    '2. Track NAS100 trades separately for two weeks and compare to your FX edge',
-    '3. Front-load your trading into the London/NY-open windows where you perform best',
-  ].join('\n');
+    '1. Open a losing trade and read its note.',
+    '2. Compare it with a trade where the plan was followed.',
+    '3. Pick one process habit to track in your own journal.',
+  ].join('\n')
 }
-
 function goalCoach(): string {
   return [
     '## Where You Stand',
-    'You are **38% to your monthly profit goal** with two-thirds of the month left, which is comfortably on pace. Your win rate goal is already met; the gap is in consistency, not edge.',
+    'Example coaching for the practice journal. This prewritten response does not update when you edit demo goals.',
     '',
     '## What Is Working',
-    '- Steady risk per trade keeps your drawdowns shallow',
-    '- You are journaling most trades, which is why these patterns are even visible',
+    '- The example goals sit alongside loss limits so results and boundaries can be reviewed together.',
+    '- Short journal notes make the next review easier.',
     '',
     '## Focus For The Rest Of The Period',
-    '- Protect the progress: one oversized loss is the main threat to the goal right now',
-    '- Keep doing the trend-continuation setups that drive most of your green days',
+    '- Treat a profit goal as a review marker, not a reason to force another trade.',
+    '- Choose one habit you can control, such as recording the entry reason.',
     '',
     '## Suggested Next Goal',
-    '1. Add a **max daily loss** limit so a single bad day cannot erase a week',
-    '2. Aim for **R:R of 2:1 or better** on new entries to hit target with fewer trades',
-  ].join('\n');
+    '1. Write a brief reflection after each session.',
+    '2. Review those notes at the end of the week.',
+  ].join('\n')
 }
-
 function tradeReview(): string {
   return [
     '## Trade Review',
-    'Solid execution overall. The entry lined up with the prevailing trend and your stop placement gave the trade room to work without risking too much.',
+    'Illustrative review prompts. This is a prewritten demo example, not an assessment of the selected trade.',
     '',
     '## What Went Well',
-    '- Entry in the direction of the higher-timeframe trend',
-    '- Risk kept to a sensible fraction of the account',
-    '- Exit captured the bulk of the move rather than top-ticking',
+    '- Was the entry reason written down before the trade?',
+    '- Did the position size and exit follow the plan?',
     '',
     '## What To Watch',
-    '- Consider scaling out partially at your first target to lock in gains',
-    '- Note the session and news backdrop so you can repeat the conditions that worked',
+    '- Separate the outcome from the quality of the decision.',
+    '- Include costs when reviewing the result.',
     '',
     '## Verdict',
-    'A repeatable, **process-driven trade**. Do more of these.',
-  ].join('\n');
+    'Take one specific lesson into the next session. A useful review can be just a few sentences.',
+  ].join('\n')
 }
-
 function coachChat(message: string): string {
-  const m = (message || '').toLowerCase();
-
-  if (m.includes('win rate') || m.includes('winrate')) {
-    return 'Your win rate is sitting around **65%**, which is healthy when paired with your ~2.4:1 average reward-to-risk. With that combination you have real room to be wrong and still grow the account, so do not chase an even higher win rate at the cost of cutting winners early. Focus on keeping your losers small and letting the trend setups run.';
-  }
-  if (m.includes('best') && (m.includes('pair') || m.includes('symbol') || m.includes('setup'))) {
-    return 'Your strongest results come from **GBPJPY and trend-continuation setups during the London open**. Those trades carry a noticeably higher win rate than your index scalps. If you want to grow, lean into what is already working rather than adding new instruments.';
-  }
-  if (m.includes('improve') || m.includes('better') || m.includes('weak')) {
-    return 'The single biggest lever right now is **position sizing discipline** - your size tends to creep up after a couple of wins, which turns an ordinary loss into an outsized one. Lock risk to a fixed percentage per trade. Second, your NAS100 intraday scalps are your only losing bucket, so consider pausing them until the data improves.';
-  }
-  if (m.includes('risk')) {
-    return 'Right now your risk per trade is reasonable, but it is not consistent - it drifts higher after winning streaks. Pick a fixed risk (for example **1% of account per trade**) and keep it there regardless of recent results. Add a max daily loss so one rough session cannot undo a good week.';
-  }
-  return 'Based on your recent trades, your edge is clearest in **trend-continuation setups during the morning session**, where your win rate and reward-to-risk are both strong. The main thing holding you back is letting position size creep up after wins. Keep risk fixed per trade, lean into the setups that already work, and be selective with index scalps - that is your only consistently negative bucket.';
+  const intro = 'This is a prewritten demo reply using the original example history, not live coaching. '
+  if (/win.?rate/i.test(message)) return intro + `The example has **${DEMO_STATS.winningTrades} winning trades out of ${DEMO_STATS.totalTrades}** (${DEMO_STATS.winRate}%). Read this alongside costs and the size of wins and losses; the percentage alone does not tell the whole story.`
+  if (/risk/i.test(message)) return intro + 'Open Goals to explore the example loss limits, then compare a losing trade with its journal note. The useful question is whether the decision followed the plan.'
+  return intro + 'Try opening a losing trade and reading its reflection. Then compare it with a trade where the plan was followed. Your own journal can start with one trade, a short entry reason, and one thing to review later.'
 }
 
 // NOTE: PropTracker parses this with a specific format - a `SCORE: n/10` line
@@ -100,7 +79,7 @@ export function getDemoPropAnalysis(): string {
     'SCORE: 7/10',
     '',
     '**The Big Picture**',
-    'You are net positive across your prop accounts after fees. Your funded accounts are carrying the results, and the one failed evaluation is the main drag rather than a pattern.',
+    'This is a prewritten example using the demo prop accounts. These fictional accounts are net positive after fees. Your funded accounts are carrying the results, and the one failed evaluation is the main drag rather than a pattern.',
     '',
     '**Your Money**',
     '- Fees and resets spent so far are modest relative to the payouts you have earned',
@@ -130,13 +109,13 @@ export function getDemoPropAnalysis(): string {
 // The demo dataset's headline trade count, kept in sync with DEMO_STATS in
 // demo-data.ts. Exposed here so demo AI surfaces can show a consistent count
 // without importing the (large) demo dataset module.
-export const DEMO_AI_TRADE_COUNT = 34;
+export const DEMO_AI_TRADE_COUNT = DEMO_TRADES.length;
 
 // The AI-quota figure shown on every demo AI surface. Kept in one place so the
 // demo never displays inconsistent "used 1 of N" counts across features.
 export const DEMO_AI_USAGE = { used: 1, limit: 10, remaining: 9 };
 
-export function getDemoAIResponse(endpoint: 'analysis' | 'assist', data: any): string {
+export function getDemoAIResponse(endpoint: 'analysis' | 'assist', data: { type?: string; payload?: { message?: string } } | null): string {
   if (endpoint === 'analysis') return tradeAnalysis();
   switch (data?.type) {
     case 'goal_coach': return goalCoach();

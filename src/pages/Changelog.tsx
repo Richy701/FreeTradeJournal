@@ -43,7 +43,7 @@ export default function Changelog() {
       {/* Title band: the landing page's backdrop, full bleed */}
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-12 sm:pt-40 sm:pb-14">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 pt-12 pb-12 sm:pt-16 sm:pb-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">Changelog</p>
           <h1 className="font-display text-4xl font-bold tracking-tight">Release Notes</h1>
           <p className="mt-3 text-muted-foreground">Everything new, improved, and fixed in FreeTradeJournal.</p>
@@ -125,7 +125,7 @@ export default function Changelog() {
                               )}
                               {item.highlight && item.image && (
                                 <FeatureScreenshot
-                                  src={item.image.src}
+                                  src={item.image.src} darkSrc={item.image.darkSrc}
                                   alt={item.image.alt}
                                   className="mt-3 rounded-lg border border-border/60"
                                 />

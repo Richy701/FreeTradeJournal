@@ -95,7 +95,7 @@ export default function Blog() {
       {/* Masthead: the landing page's backdrop, full bleed */}
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-32 pb-12 sm:pt-40 sm:pb-16">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-12 sm:pt-16 sm:pb-16">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Blog</p>
             <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight">

@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/auth-context';
@@ -280,7 +281,7 @@ function FeedbackDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden gap-0">
+      <DialogContent className="sm:max-w-[640px] p-0 sm:p-0 overflow-hidden flex flex-col gap-0">
         {/* Progress bar */}
         {loading && (
           <div className="absolute top-0 left-0 right-0 h-0.5 z-10 overflow-hidden bg-border/30">
@@ -292,7 +293,7 @@ function FeedbackDialog({
 
         {step === 'feedback' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/70">
+            <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-border/70 shrink-0">
               <DialogHeader className="space-y-1 text-left">
                 <DialogTitle className="text-lg font-semibold leading-tight">Share your feedback</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground">
@@ -306,31 +307,44 @@ function FeedbackDialog({
               </DialogHeader>
             </div>
 
-            <form onSubmit={handleFeedbackSubmit} className={cn("flex flex-col gap-5 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
+            <form onSubmit={handleFeedbackSubmit} className={cn("min-h-0 overflow-y-auto flex flex-col gap-5 px-5 sm:px-6 pt-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
               {/* Type selector — one row, so the form stays short */}
               <div className="flex flex-col gap-2">
                 <span className="text-sm font-medium">What kind of feedback is this?</span>
-                <SegmentedControl
-                  aria-label="Feedback type"
-                  value={type}
-                  onChange={(value) => {
-                    setType(value);
-                    // Bugs have no star UI — clear any stale rating so it can't
-                    // silently trigger the testimonial upsell on submit.
-                    if (value === 'bug') setRating(0);
-                  }}
-                  options={FEEDBACK_TYPES}
-                  variant="outline"
-                  fullWidth
-                  itemClassName="py-2 text-sm"
+                <div className="grid grid-cols-3 gap-2" role="group" aria-label="Feedback type">
+                  {FEEDBACK_TYPES.map(({value, label, description, icon: Icon}) => (
+                    <button key={value} type="button" aria-pressed={type === value}
+                      onClick={() => { setType(value); if (value === 'bug') setRating(0); }}
+                      className={cn('rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', type === value ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40')}>
+                      <span className="flex items-center gap-2 text-sm font-medium"><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{label}</span>
+                      <span className="hidden sm:block mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="fb-message" className="text-sm font-medium">Tell us more</label>
+                <Textarea
+                  id="fb-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={PLACEHOLDERS[type]}
+                  rows={5}
+                  maxLength={2000}
+                  required
+                  className="min-h-36 resize-y text-base sm:text-sm leading-relaxed"
                 />
-                <span className="text-xs text-muted-foreground">{FEEDBACK_TYPES.find((t) => t.value === type)?.description}</span>
+                <span className="text-xs text-muted-foreground text-right tabular-nums">
+                  {message.length > 0 ? `${message.length}/2000` : 'Max 2000 characters'}
+                </span>
               </div>
 
               {/* Star rating — only for feedback where a sentiment makes sense (not bugs) */}
               {type !== 'bug' && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium">How's your experience so far?</span>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
+                  <span className="text-sm font-medium">Your experience <span className="text-xs text-muted-foreground font-normal">(optional)</span></span>
                   <div className="flex items-center gap-1.5">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -339,16 +353,17 @@ function FeedbackDialog({
                         onClick={() => setRating(star)}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
-                        className="group p-0.5 transition-transform hover:scale-110 active:scale-95"
+                        className="group p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-pressed={rating === star}
                         aria-label={`Rate ${star} stars`}
                       >
                         <Star
                           weight={star <= activeRating ? 'fill' : 'regular'}
                           className={cn(
-                            "h-7 w-7 transition-colors duration-100",
+                            "h-5 w-5 transition-colors duration-100",
                             star <= activeRating
                               ? "fill-amber-400 text-amber-400"
-                              : "fill-muted text-muted-foreground/30 group-hover:text-amber-300"
+                              : "text-muted-foreground/60 group-hover:text-amber-400"
                           )}
                         />
                       </button>
@@ -400,32 +415,14 @@ function FeedbackDialog({
                 </>
               )}
 
-              {/* Message */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="fb-message" className="text-sm font-medium">Tell us more</label>
-                <textarea
-                  id="fb-message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={PLACEHOLDERS[type]}
-                  rows={4}
-                  maxLength={2000}
-                  required
-                  className="w-full rounded-xl border border-input bg-muted/50 px-3.5 py-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none transition-colors"
-                />
-                <span className="text-xs text-muted-foreground">
-                  {message.length > 0 ? `${message.length}/2000` : 'Max 2000 characters'}
-                </span>
-              </div>
-
               {/* Follow-up toggle */}
               <div className="flex items-center gap-2.5">
                 <Checkbox id="fb-follow-up" className="rounded-[4px]" checked={wantFollowUp} onCheckedChange={(v) => setWantFollowUp(v === true)} />
                 <Label htmlFor="fb-follow-up" className="text-sm font-normal text-muted-foreground cursor-pointer">I'd like a reply by email</Label>
               </div>
 
-              <div className="flex items-center gap-3 pt-1">
-                <Button type="button" variant="ghost" size="sm" onClick={() => handleClose(false)} disabled={loading} className="text-muted-foreground">
+              <div className="sticky bottom-0 -mx-5 sm:-mx-6 mt-1 flex items-center gap-3 border-t border-border/60 bg-card px-5 sm:px-6 py-4">
+                <Button type="button" variant="outline" size="sm" onClick={() => handleClose(false)} disabled={loading} className="text-muted-foreground">
                   Cancel
                 </Button>
                 <Button type="submit" size="sm" disabled={loading || !message.trim() || attaching} className="ml-auto gap-1.5">
@@ -442,7 +439,7 @@ function FeedbackDialog({
 
         {step === 'testimonial' && (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-amber-500/[0.04] to-transparent">
+            <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-border/70 shrink-0">
               <div className="flex items-center gap-1.5 mb-3">
                 {[1,2,3,4,5].map((s) => (
                   <Star key={s} weight={s <= rating ? 'fill' : 'regular'} className={cn("h-5 w-5 transition-transform", s <= rating ? "fill-amber-400 text-amber-400" : "fill-muted text-muted-foreground/20")} />
@@ -456,11 +453,11 @@ function FeedbackDialog({
               </DialogHeader>
             </div>
 
-            <form onSubmit={handleTestimonialSubmit} className={cn("flex flex-col gap-4 px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
+            <form onSubmit={handleTestimonialSubmit} className={cn("min-h-0 overflow-y-auto flex flex-col gap-4 px-5 sm:px-6 py-5 transition-opacity duration-200", loading && "opacity-50 pointer-events-none")}>
               {/* Name */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="testimonial-name" className="text-sm font-medium">Your name</label>
-                <input
+                <Input
                   id="testimonial-name"
                   type="text"
                   value={testimonialName}
@@ -497,7 +494,7 @@ function FeedbackDialog({
               {/* Quote */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="testimonial-quote" className="text-sm font-medium">What do you love about FreeTradeJournal?</label>
-                <textarea
+                <Textarea
                   id="testimonial-quote"
                   value={testimonialQuote}
                   onChange={(e) => setTestimonialQuote(e.target.value)}

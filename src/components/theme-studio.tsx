@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { useMemo } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Moon, Sun, Warning, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,8 @@ export const PREVIEW_DEFAULTS: Record<'light' | 'dark', Record<string, string>> 
     '--foreground': '30 10% 8%',
     '--muted-foreground': '35 8% 40%',
     '--border': '40 12% 87%',
+    '--sidebar-accent': '43 18% 93%',
+    '--sidebar-accent-foreground': '30 10% 12%',
     '--radius': '0.85rem',
   },
   dark: {
@@ -37,6 +39,8 @@ export const PREVIEW_DEFAULTS: Record<'light' | 'dark', Record<string, string>> 
     '--foreground': '210 40% 98%',
     '--muted-foreground': '35 8% 55%',
     '--border': '35 10% 16%',
+    '--sidebar-accent': '40 15% 13%',
+    '--sidebar-accent-foreground': '40 10% 95%',
     '--radius': '0.85rem',
   },
 };
@@ -46,25 +50,6 @@ const CURVE_OPTIONS: { label: string; value: ChartCurve }[] = [
   { label: 'Straight', value: 'straight' },
   { label: 'Stepped', value: 'step' },
 ];
-
-// Sparkline path for the mini preview card, in the shape the Charts
-// controls select. Straight and stepped are trivial; smooth uses cubic
-// segments with horizontal handles, close to Recharts' monotone curve.
-const SPARK_POINTS: [number, number][] = [[0, 16], [14, 12], [28, 14], [42, 7], [56, 9], [70, 4], [84, 6], [96, 2]];
-
-function sparklinePath(curve: ChartCurve): string {
-  const pts = SPARK_POINTS;
-  if (curve === 'straight') return pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
-  if (curve === 'step') return pts.map(([x, y], i) => (i ? `H${x} V${y}` : `M${x} ${y}`)).join(' ');
-  let d = `M${pts[0][0]} ${pts[0][1]}`;
-  for (let i = 1; i < pts.length; i++) {
-    const [x0, y0] = pts[i - 1];
-    const [x1, y1] = pts[i];
-    const cx = (x0 + x1) / 2;
-    d += ` C${cx} ${y0}, ${cx} ${y1}, ${x1} ${y1}`;
-  }
-  return d;
-}
 
 const RADIUS_OPTIONS = [
   { label: 'Sharp', value: 0.3 },
@@ -98,6 +83,7 @@ function ColorSwatchPicker({
           <PopoverTrigger asChild>
             <button
               type="button"
+              aria-label={`Choose ${label}`}
               className="flex items-center gap-2.5 flex-1 min-w-0 rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="h-5 w-5 rounded-md border shrink-0" style={{ backgroundColor: effective }} />
@@ -111,6 +97,7 @@ function ColorSwatchPicker({
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-md border shrink-0" style={{ backgroundColor: effective }} />
               <Input
+                aria-label={`${label} hex code`}
                 value={effective}
                 maxLength={7}
                 className="h-8 font-mono text-sm uppercase"
@@ -162,63 +149,24 @@ export function ThemeMiniPreview({
   const primary = hslStringToHex(v('--primary'));
   const profit = hslStringToHex(v('--profit'));
   const loss = hslStringToHex(v('--loss'));
-  const chartStyle = resolveChartStyle(charts);
-  const sparkPath = sparklinePath(chartStyle.curve);
-  const sparkFillId = useId();
-
   return (
-    <div
-      className="border overflow-hidden p-2.5 space-y-2 transition-shadow"
-      style={{ backgroundColor: hsl('--background'), borderColor: hsl('--border'), borderRadius: radius, ...style }}
-    >
-      <div
-        className="border p-2 space-y-1"
-        style={{ backgroundColor: hsl('--card'), borderColor: hsl('--border'), borderRadius: `calc(${radius} - 2px)` }}
-      >
-        <p className="text-[9px]" style={{ color: hsl('--muted-foreground') }}>Today's P&amp;L</p>
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-xs font-bold tabular-nums" style={{ color: profit }}>+$1,240.50</span>
-          <span className="text-[10px] font-medium tabular-nums" style={{ color: loss }}>-$318.20</span>
+    <div data-theme-preview className="border overflow-hidden text-left" style={{ backgroundColor: hsl('--background'), color: hsl('--foreground'), borderColor: hsl('--border'), borderRadius: radius, ...style }}>
+      <div className="flex min-h-[152px]">
+        <div className="w-[29%] shrink-0 border-r p-2 space-y-3" style={{backgroundColor:hsl('--sidebar-background',v('--card')),color:hsl('--sidebar-foreground',v('--foreground')),borderColor:hsl('--border')}}>
+          <span className="block text-[9px] font-semibold tracking-tight">FTJ</span>
+          <div className="text-[8px] py-1 px-1.5 font-medium" style={{backgroundColor:hsl('--sidebar-accent',v('--muted')),color:hsl('--sidebar-accent-foreground',v('--foreground')),borderRadius:`calc(${radius} / 2)`}}>Dashboard</div>
+          <span className="block text-[8px] px-1.5">Trade Log</span>
+          <span className="block text-[8px] px-1.5">Journal</span>
         </div>
-        <svg viewBox="0 0 96 20" preserveAspectRatio="none" className="w-full h-5" aria-hidden="true">
-          <defs>
-            <linearGradient id={sparkFillId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={primary} stopOpacity={0.35} />
-              <stop offset="1" stopColor={primary} stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          {chartStyle.grid && [5, 10, 15].map((y) => (
-            <line key={y} x1={0} x2={96} y1={y} y2={y} stroke={hsl('--border')} strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
-          ))}
-          {chartStyle.fill && <path d={`${sparkPath} V20 H0 Z`} fill={`url(#${sparkFillId})`} stroke="none" />}
-          <path
-            d={sparkPath}
-            fill="none"
-            stroke={primary}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span
-          className="px-2 py-1 text-[9px] font-semibold"
-          style={{
-            backgroundColor: primary,
-            color: hsl('--primary-foreground', '0 0% 100%'),
-            borderRadius: `calc(${radius} - 2px)`,
-          }}
-        >
-          Add Trade
-        </span>
-        <span
-          className="px-2 py-1 text-[9px] font-medium border"
-          style={{ color: hsl('--foreground'), borderColor: hsl('--border'), borderRadius: `calc(${radius} - 2px)` }}
-        >
-          Import
-        </span>
+        <div className="flex-1 min-w-0 p-2.5 space-y-3">
+          <div className="flex justify-between items-center gap-1"><span className="text-[10px] font-semibold">Overview</span><span className="text-[8px] px-1.5 py-1" style={{backgroundColor:primary,color:hsl('--primary-foreground'),borderRadius:`calc(${radius} / 2)`}}>+ Trade</span></div>
+          <div className="border p-2 space-y-2" style={{backgroundColor:hsl('--card'),color:hsl('--card-foreground',v('--foreground')),borderColor:hsl('--border'),borderRadius:`calc(${radius} / 2)`}}>
+            <p className="text-[9px] font-medium">Trading performance</p>
+            <div className="flex gap-3 text-[9px] font-semibold"><span style={{color:profit}}>Profit</span><span style={{color:loss}}>Loss</span></div>
+            <div className="border-t pt-2 flex gap-1" style={{borderColor:hsl('--border')}}>{deriveSeriesPalette(primary).slice(0,5).map((color,i)=><span key={i} className="h-1.5 flex-1 rounded-sm" style={{backgroundColor:charts?.palette?.[i] ?? (vars[`--chart-${i + 1}`] ? hsl(`--chart-${i + 1}`) : color)}} />)}</div>
+          </div>
+          <div className="text-[8px] flex justify-between" style={{color:hsl('--muted-foreground')}}><span>Recent trades</span><span>View all →</span></div>
+        </div>
       </div>
     </div>
   );
@@ -360,6 +308,16 @@ export function ThemeStudio() {
             onClear={() => patch({ surfaceDark: undefined })}
           />
         </div>
+      </div>
+
+      <div className="space-y-3 border-t pt-5">
+        <div><p className="text-sm font-semibold">Individual surfaces</p><p className="mt-1 text-xs text-muted-foreground">Override the page, cards, or sidebar independently. Reset any colour to follow the surface tint again.</p></div>
+        {(['light','dark'] as const).map(mode => <div key={mode} className="space-y-2">
+          <p className="text-xs font-medium capitalize">{mode} mode</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {(['background','card','sidebar'] as const).map(key => <ColorSwatchPicker key={key} label={`${mode === 'light' ? 'Light' : 'Dark'} ${key === 'background' ? 'page' : key === 'card' ? 'cards' : 'sidebar'}`} value={customColors.surfaces?.[mode]?.[key]} placeholder={hslStringToHex(previews[mode][key === 'sidebar' ? '--sidebar-background' : `--${key}`] ?? PREVIEW_DEFAULTS[mode][key === 'sidebar' ? '--card' : `--${key}`])} emptyLabel="From theme" onChange={hex => patch({surfaces:{...customColors.surfaces,[mode]:{...customColors.surfaces?.[mode],[key]:hex}}})} onClear={() => patch({surfaces:{...customColors.surfaces,[mode]:{...customColors.surfaces?.[mode],[key]:undefined}}})} />)}
+          </div>
+        </div>)}
       </div>
 
       {/* Corner style */}

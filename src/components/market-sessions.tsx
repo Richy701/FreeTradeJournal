@@ -1,3 +1,5 @@
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEffect, useState } from 'react'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { Clock } from '@phosphor-icons/react'
@@ -214,26 +216,34 @@ export function MarketSessions() {
   const showFooter = overlap || holiday
 
   return (
-    <div className="rounded-xl border bg-card/50">
-      <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
+    <Card className="overflow-hidden shadow-none">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 p-4 sm:p-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" style={{ color: themeColors.primary }} />
-            <span className="text-sm font-semibold text-foreground">Market Sessions</span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{headline}</p>
+          <CardTitle className="text-lg font-semibold">Market Sessions</CardTitle>
+          {rows.some(r => r.status.open) ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-xs text-muted-foreground">Open now</span>
+              {rows.filter(r => r.status.open).map(r => (
+                <Badge key={r.def.name} variant="secondary" className="gap-1.5 rounded-md font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: themeColors.profit }} aria-hidden="true" />
+                  {r.def.name}
+                </Badge>
+              ))}
+            </div>
+          ) : <p className="mt-2 text-xs text-muted-foreground">{headline}</p>}
         </div>
-        <div className="shrink-0 text-right">
-          <p className="text-lg font-semibold font-mono tabular-nums leading-none text-foreground">
+        <div className="flex shrink-0 items-center gap-2.5 border-l pl-3">
+          <Clock className="hidden h-4 w-4 text-muted-foreground sm:block" aria-hidden="true" />
+          <div className="space-y-1"><p className="text-base font-semibold tabular-nums leading-none text-foreground">
             {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            {now.toLocaleDateString([], { weekday: 'short' })} · your time
-          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {now.toLocaleDateString([], { weekday: 'short' })} · Local time
+          </p></div>
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="border-t border-border/50 px-4 py-3">
+      <CardContent className="border-t px-4 py-4 sm:px-5 sm:py-4">
         {isPreview && (
           <p className="text-[11px] text-muted-foreground mb-2">
             Nothing trades today. Showing {previewDayLabel}'s hours in your time.
@@ -241,15 +251,15 @@ export function MarketSessions() {
         )}
         <div className="flex gap-3 sm:gap-4">
           {/* Name, market clock and status — status stays visible on every width */}
-          <div className="shrink-0 w-32 sm:w-44">
-            <div className="h-4 mb-1.5" />
+          <div className="shrink-0 w-28 sm:w-44">
+            <div className="h-8 mb-1" />
             {rows.map(r => (
-              <div key={r.def.name} className="h-10 flex flex-col justify-center min-w-0">
-                <div className="flex items-baseline gap-1.5 min-w-0">
-                  <span className={`text-sm leading-none truncate ${r.status.open ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+              <div key={r.def.name} className="h-12 flex flex-col justify-center min-w-0 border-b border-border/40 last:border-b-0">
+                <div className="flex items-baseline justify-between gap-1.5 min-w-0">
+                  <span className={`text-xs sm:text-sm leading-none truncate ${r.status.open ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                     {r.def.name}
                   </span>
-                  <span className="text-[11px] leading-none text-muted-foreground font-mono tabular-nums shrink-0">{r.clock}</span>
+                  <span className="hidden sm:inline text-[11px] leading-none text-muted-foreground font-mono tabular-nums shrink-0">{r.clock}</span>
                 </div>
                 <span
                   className="text-[11px] leading-none mt-1.5 truncate"
@@ -257,13 +267,14 @@ export function MarketSessions() {
                 >
                   {r.status.detail}
                 </span>
+                <span className="mt-1 text-[10px] leading-none text-muted-foreground tabular-nums sm:hidden">{r.clock} local</span>
               </div>
             ))}
           </div>
 
           {/* Tracks share one container so a single now-line crosses them all */}
           <div className="relative flex-1 min-w-0">
-            <div className="h-4 mb-1.5 relative text-[11px] font-medium text-muted-foreground">
+            <div className="h-8 mb-1 relative text-[11px] font-medium text-muted-foreground">
               {[0, 6, 12, 18, 24].map(h => (
                 <span
                   key={h}
@@ -275,50 +286,77 @@ export function MarketSessions() {
               ))}
             </div>
 
-            {rows.map(r => (
-              <div key={r.def.name} className="h-10 flex items-center">
-                <div className="relative h-3 w-full rounded-full bg-muted/50 overflow-hidden">
-                  {r.segments.map((seg, i) => (
-                    <div
-                      key={i}
-                      className="absolute inset-y-0 rounded-full"
-                      style={{
-                        left: `${seg.left}%`,
-                        width: `${seg.right - seg.left}%`,
-                        backgroundColor: r.status.open ? themeColors.profit : alpha(themeColors.primary, '45'),
-                      }}
-                    />
-                  ))}
-                </div>
+            <div className="relative rounded-md bg-muted/20">
+              <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                {[0, 6, 12, 18, 24].map(h => (
+                  <div key={h} className="absolute inset-y-0 border-l border-dashed border-border/70" style={{ left: `${h / 24 * 100}%` }} />
+                ))}
               </div>
-            ))}
+              {rows.map(r => {
+                const longestSegment = r.segments.reduce((best, seg, index, segments) =>
+                  seg.right - seg.left > segments[best].right - segments[best].left ? index : best, 0)
+                return (
+                  <div key={r.def.name} className="relative h-12 flex items-center border-b border-border/40 last:border-b-0"
+                    role="img" aria-label={`${r.def.name}: ${r.status.open ? 'open' : 'closed'}, ${r.status.detail}. Market time ${r.clock}.`}
+                  >
+                    <div className="relative h-7 w-full">
+                      {r.segments.map((seg, i) => (
+                        <div key={i} className="absolute inset-y-0 flex items-center justify-center overflow-hidden rounded-md border text-[10px] font-medium"
+                          title={`${r.def.name} · ${r.clock} local · ${r.status.detail}`}
+                          style={{
+                            left: `${seg.left}%`,
+                            width: `${seg.right - seg.left}%`,
+                            backgroundColor: alpha(r.status.open ? themeColors.profit : themeColors.primary, r.status.open ? '20' : '0C'),
+                            borderColor: alpha(r.status.open ? themeColors.profit : themeColors.primary, '35'),
+                            color: r.status.open ? themeColors.profit : 'hsl(var(--muted-foreground))',
+                          }}
+                        >
+                          {i === longestSegment && seg.right - seg.left > 16 && (
+                            <span className="hidden sm:inline">{r.status.open ? 'Open' : 'Session hours'}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
 
             {/* Now marker — hidden while previewing a future day */}
             {!isPreview && (
               <div
-                className="absolute top-4 bottom-0 w-0.5 rounded-full"
+                className="pointer-events-none absolute top-6 bottom-0 z-10 w-px"
                 style={{ left: `${nowPct}%`, backgroundColor: themeColors.primary }}
                 aria-hidden
-              />
+              >
+                <span className="absolute top-0 h-1.5 w-1.5 -translate-x-[2.5px] rounded-full" style={{ backgroundColor: themeColors.primary }} />
+                <span className="absolute -top-4 rounded bg-card px-1 text-[9px] font-semibold leading-4"
+                  style={{ color: themeColors.primary, transform: nowPct < 8 ? 'none' : nowPct > 92 ? 'translateX(-100%)' : 'translateX(-50%)' }}
+                >Now</span>
+              </div>
             )}
           </div>
         </div>
-      </div>
+      </CardContent>
 
       {showFooter && (
-        <div className="border-t border-border/50 px-4 py-2.5 space-y-1">
+        <CardFooter className="flex-col items-start border-t bg-muted/20 px-4 py-3 sm:px-5 sm:py-3 space-y-2">
           {overlap && (
-            <p className="text-xs text-muted-foreground">
-              London and New York are both open. Usually the most liquid hours of the day.
-            </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <Badge variant="outline" className="gap-1.5 bg-background font-medium">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: themeColors.profit }} aria-hidden="true" />
+                London–New York overlap
+              </Badge>
+              <p className="text-xs text-muted-foreground">Both sessions are open. Usually the most liquid hours of the day.</p>
+            </div>
           )}
           {holiday && (
             <p className="text-xs font-medium" style={{ color: themeColors.primary }}>
               {holiday.when === 'today' ? 'Today' : 'Tomorrow'}: {holiday.label} — {holiday.note}.
             </p>
           )}
-        </div>
+        </CardFooter>
       )}
-    </div>
+    </Card>
   )
 }

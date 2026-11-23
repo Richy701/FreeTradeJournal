@@ -1,3 +1,4 @@
+import { useScreenshotMode } from '@/hooks/use-screenshot-mode';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,7 @@ function perPoint(tickSize: number, tickValue: number) {
 }
 
 export default function FuturesTradingTracker() {
+  const screenshotMode = useScreenshotMode();
   const { enterDemoMode } = useAuth();
   const navigate = useNavigate();
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -121,14 +123,14 @@ export default function FuturesTradingTracker() {
           cta={
             <>
               <Link to="/signup">
-                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]">
+                <Button className="min-h-11 h-auto max-w-full whitespace-normal rounded-lg bg-amber-400 px-5 py-3 text-sm font-semibold text-black shadow-none hover:bg-amber-300">
                   Start Tracking Free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Button
                 variant="outline"
-                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                className="min-h-11 h-auto max-w-full whitespace-normal rounded-lg px-5 py-3 text-sm font-medium text-foreground shadow-none"
                 onClick={() => { enterDemoMode(); navigate('/dashboard'); }}
               >
                 Try Live Demo
@@ -139,18 +141,17 @@ export default function FuturesTradingTracker() {
 
         <section className="pb-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
-            <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">What it looks like</p>
             <button
               onClick={() => setLightboxOpen(true)}
-              className="w-full block rounded-2xl overflow-hidden border border-amber-500/20 shadow-2xl shadow-amber-500/5 ring-1 ring-white/5 cursor-zoom-in group relative"
+              className="w-full block rounded-xl overflow-hidden border border-border shadow-sm cursor-zoom-in group relative"
               aria-label="View full screenshot"
             >
               <img
-                src="/images/screenshots/trading-log-screenshot.png"
-                alt="FreeTradeJournal trade log with futures and forex trades, entry and exit prices, size and P&L per trade"
+                src={`/images/screenshots/trading-log-screenshot-${screenshotMode}.webp`}
+                alt="FreeTradeJournal trade log showing entry and exit prices, position size, costs and net results"
                 className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
-                width={3388}
-                height={2262}
+                width={2880}
+                height={1840}
               />
               <div className="absolute inset-0 bg-transparent transition-colors duration-300 flex items-center justify-center">
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full tracking-wide">
@@ -164,17 +165,17 @@ export default function FuturesTradingTracker() {
         <ImageLightbox
           open={lightboxOpen}
           onOpenChange={setLightboxOpen}
-          src="/images/screenshots/trading-log-screenshot.png"
-          alt="FreeTradeJournal trade log with futures and forex trades, entry and exit prices, size and P&L per trade"
+          src={`/images/screenshots/trading-log-screenshot-${screenshotMode}.webp`}
+          alt="FreeTradeJournal trade log showing entry and exit prices, position size, costs and net results"
         />
 
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
 
             <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">What you get</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                   Every tick counted.<br />
                   <span className="text-amber-500">Every contract covered.</span>
                 </h2>
@@ -203,7 +204,7 @@ export default function FuturesTradingTracker() {
 
             <div className="mt-12 flex flex-col sm:flex-row gap-4">
               <Link to="/signup">
-                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-8 py-2.5 rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
+                <Button className="min-h-11 h-auto max-w-full whitespace-normal rounded-lg bg-amber-400 px-5 py-3 text-sm font-semibold text-black shadow-none hover:bg-amber-300">
                   Start Tracking Free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -220,12 +221,12 @@ export default function FuturesTradingTracker() {
         </section>
 
         {/* Contract table: the point values the journal actually uses for P&L */}
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Contract values</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                   The numbers behind<br />
                   <span className="text-amber-500">your P&L.</span>
                 </h2>
@@ -273,12 +274,12 @@ export default function FuturesTradingTracker() {
         </section>
 
         {/* Import walkthrough per platform */}
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Import</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                   From your platform<br />
                   <span className="text-amber-500">to your journal.</span>
                 </h2>
@@ -307,12 +308,12 @@ export default function FuturesTradingTracker() {
         </section>
 
         {/* Sessions: where the intraday analytics come from */}
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:items-center">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Sessions and hours</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1] mb-6">
+                <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight mb-6">
                   Find the hours<br />
                   <span className="text-amber-500">that pay you.</span>
                 </h2>
@@ -341,11 +342,11 @@ export default function FuturesTradingTracker() {
         </section>
 
         {/* Prop firm angle */}
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-8 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Prop firms</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Built with the<br />
                 <span className="text-amber-500">rule book in view.</span>
               </h2>
@@ -378,12 +379,12 @@ export default function FuturesTradingTracker() {
           />
         </Suspense>
 
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
 
             <div className="mb-8 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">FAQ</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Common questions.<br />
                 <span className="text-amber-500">Straight answers.</span>
               </h2>

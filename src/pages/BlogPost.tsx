@@ -188,7 +188,7 @@ export default function BlogPost() {
       {/* Article header: the landing page's backdrop, full bleed */}
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className={cn('relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-32 pb-10 sm:pt-40 sm:pb-12', COLUMNS)}>
+        <div className={cn('relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16 sm:pb-12', COLUMNS)}>
           <div>
             <Link
               to="/blog"
@@ -219,7 +219,7 @@ export default function BlogPost() {
               {post.title}
             </h1>
             {post.subtitle && (
-              <p className="mt-5 text-lg sm:text-xl text-muted-foreground leading-relaxed">
+              <p className="mt-5 text-base text-muted-foreground leading-relaxed">
                 {post.subtitle}
               </p>
             )}

@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/empty-state'
 import { weekKey } from '@/lib/week'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -8,6 +9,7 @@ import { useDemoGuard } from '@/hooks/use-demo-guard'
 import { useDemoData } from '@/hooks/use-demo-data'
 import { getChangeVersion, onSyncChange } from '@/contexts/sync-context'
 import { Target, Gauge, Warning, Fire, CurrencyDollar, Percent, Lightning, Scales, ChartLine, Calendar, CalendarDots, Pen, Check, Trash, ArrowSquareOut, type Icon } from '@phosphor-icons/react'
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -476,13 +478,13 @@ export function PerformanceGoals() {
     pct >= 90 ? themeColors.loss : pct >= 60 ? WARN_COLOR : themeColors.profit
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
 
       {/* ───────────────────────── Risk ───────────────────────── */}
-      <section className="space-y-3">
+      <section id="risk-limits" className="scroll-mt-20 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <h2 className="text-base font-semibold">Risk</h2>
+            <div><h2 className="text-base font-semibold">Risk limits</h2><p className="mt-1 text-xs text-muted-foreground">Keep each session within your boundaries.</p></div>
             {riskRules.length > 0 && (
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -499,27 +501,18 @@ export function PerformanceGoals() {
         </div>
 
         {riskRules.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-10 px-6 text-center">
-            <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
-              <Gauge className="h-6 w-6" style={{ color: themeColors.primary }} />
-            </div>
-            <h3 className="text-sm font-semibold mb-1">No risk limits yet</h3>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">
-              Cap your daily loss, per-trade loss, or drawdown. You get an alert the moment a trade crosses one, anywhere in the app.
-            </p>
-            <Button size="sm" variant="outline" onClick={openAddRule}>
-              Create your first limit
-            </Button>
-          </div>
+          <EmptyState icon={Gauge} title="Give your trading a boundary" description="Set a daily loss, per-trade loss, or drawdown limit. We’ll alert you when a recorded trade crosses it.">
+            <Button variant="outline" onClick={openAddRule}>Create a risk limit</Button>
+          </EmptyState>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {ruleStatuses.map(({ rule, current, pct, breached }: RuleStatus) => {
               const RuleIcon = getRuleIcon(rule.type)
               const barColor = breached ? themeColors.loss : barColorFor(pct)
               return (
-                <div
+                <Card
                   key={rule.id}
-                  className={`rounded-lg border border-border bg-card flex flex-col p-4 gap-3 ${rule.enabled ? '' : 'opacity-55'}`}
+                  className={`shadow-none flex flex-col p-5 gap-4 ${rule.enabled ? '' : 'opacity-55'}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -545,7 +538,7 @@ export function PerformanceGoals() {
                   </div>
 
                   <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-2xl font-bold tabular-nums" style={breached ? { color: themeColors.loss } : undefined}>
+                    <span className="text-2xl font-semibold tracking-tight tabular-nums" style={breached ? { color: themeColors.loss } : undefined}>
                       {currencySymbol}{Math.round(current).toLocaleString()}
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -566,7 +559,7 @@ export function PerformanceGoals() {
                   </div>
 
                   <Progress className="mt-auto h-1.5 bg-muted/60" value={rule.enabled ? Math.max(pct, 1) : 0} indicatorColor={barColor} />
-                </div>
+                </Card>
               )
             })}
           </div>
@@ -574,7 +567,7 @@ export function PerformanceGoals() {
 
         {/* What the limits are worth — the same rules replayed over past days */}
         {riskRules.some(r => r.enabled && r.value > 0) && adherence.days.length > 0 && (
-          <div className="rounded-lg border border-border bg-card/50 px-4 py-4">
+          <div className="rounded-xl border border-border bg-card px-5 py-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-3">
               <p className="text-sm font-semibold">What your limits are worth</p>
               <p className="text-[11px] text-muted-foreground">
@@ -595,7 +588,7 @@ export function PerformanceGoals() {
                     <div className="flex items-end justify-between gap-4 mt-1">
                       <div className="min-w-0">
                         <p
-                          className="text-2xl font-bold tabular-nums leading-tight"
+                          className="text-2xl font-semibold tracking-tight tabular-nums leading-tight"
                           style={{ color: bucket.avgPnl >= 0 ? themeColors.profit : themeColors.loss }}
                         >
                           {bucket.avgPnl < 0 ? '-' : '+'}{formatCurrency(Math.abs(bucket.avgPnl), false)}
@@ -625,7 +618,7 @@ export function PerformanceGoals() {
         )}
 
         {/* Per-trade risk facts (sourced from Settings — one place to change it) */}
-        <div className="rounded-lg border border-border bg-card/50 px-4 py-3">
+        <div className="rounded-xl border border-border bg-card px-5 py-4">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div>
@@ -671,7 +664,7 @@ export function PerformanceGoals() {
               </Link>
             </div>
             {activePropAccounts.map(acc => (
-              <div key={acc.id} className="rounded-lg border border-border bg-card/50 px-4 py-3 flex items-center justify-between gap-3">
+              <div key={acc.id} className="rounded-xl border border-border bg-card px-5 py-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{acc.firmName}</p>
                   <p className="text-[11px] text-muted-foreground capitalize">
@@ -697,10 +690,10 @@ export function PerformanceGoals() {
       </section>
 
       {/* ───────────────────────── Goals ───────────────────────── */}
-      <section className="space-y-3">
+      <section id="performance-goals" className="scroll-mt-20 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-baseline gap-2.5 min-w-0">
-            <h2 className="text-base font-semibold">Goals</h2>
+          <div className="flex flex-wrap items-baseline gap-2.5 min-w-0">
+            <div><h2 className="text-base font-semibold">Performance goals</h2><p className="mt-1 text-xs text-muted-foreground">Track your progress, one trading period at a time.</p></div>
             {goalProgress.length > 0 && (
               <span className="text-xs text-muted-foreground">
                 {achievedCount} of {goalProgress.length} hit this period
@@ -753,21 +746,12 @@ export function PerformanceGoals() {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border/60 bg-card/30 py-12 px-6 text-center">
-              <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '10') }}>
-                <Target className="h-6 w-6" style={{ color: themeColors.primary }} />
-              </div>
-              <h3 className="text-sm font-semibold mb-1">No goals set yet</h3>
-              <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-5">
-                Goals give your trading direction. Set a profit target, win rate, or trade count and track your progress over time.
-              </p>
-              <Button size="sm" onClick={openAddGoal} style={primaryButtonStyle}>
-                Set your first goal
-              </Button>
-            </div>
+            <EmptyState icon={Target} title="Choose what you want to work toward" description="Set a profit, win-rate, or trade-count goal. Your recorded trades will update your progress automatically.">
+              <Button onClick={openAddGoal} style={primaryButtonStyle}>Set a goal</Button>
+            </EmptyState>
           )
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {goalProgress.map(goal => {
               const progress = Math.min(100, Math.max(0, ((goal.current || 0) / goal.target) * 100))
               const accent = goal.achieved ? themeColors.profit : themeColors.primary
@@ -777,9 +761,9 @@ export function PerformanceGoals() {
               const PeriodIcon = getPeriodIcon(goal.period)
 
               return (
-                <div
+                <Card
                   key={goal.id}
-                  className="rounded-lg border border-border bg-card flex flex-col p-4 gap-3"
+                  className="shadow-none flex flex-col p-5 gap-4"
                   style={{
                     borderColor: goal.achieved ? alpha(themeColors.profit, '30') : undefined,
                     backgroundColor: goal.achieved ? alpha(themeColors.profit, '05') : undefined,
@@ -820,7 +804,7 @@ export function PerformanceGoals() {
                   </div>
 
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-bold tabular-nums" style={goal.achieved ? { color: themeColors.profit } : undefined}>
+                    <span className="text-2xl font-semibold tracking-tight tabular-nums" style={goal.achieved ? { color: themeColors.profit } : undefined}>
                       {formatGoalValue(goal.type, goal.current || 0, currencySymbol)}
                     </span>
                     <span className="text-sm text-muted-foreground">
@@ -838,7 +822,7 @@ export function PerformanceGoals() {
                   {/* History above, bar last. The bar is the only element every
                       card has, so keeping it last pins it to the bottom edge in
                       all of them and the row of bars lines up. */}
-                  <div className="mt-auto space-y-2.5">
+                  <div className="mt-auto space-y-2.5 border-t pt-3">
                     {finished.length >= 2 && (
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1">
@@ -861,7 +845,7 @@ export function PerformanceGoals() {
                     )}
                     <Progress className="h-1.5 bg-muted/60" value={Math.max(progress, 1)} indicatorColor={accent} />
                   </div>
-                </div>
+                </Card>
               )
             })}
           </div>
@@ -870,15 +854,15 @@ export function PerformanceGoals() {
 
       {/* Goal Add/Edit Dialog */}
       <Dialog open={showGoalDialog} onOpenChange={(open) => { setShowGoalDialog(open); if (!open) setEditingGoal(null) }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingGoal ? 'Edit Goal' : 'New Goal'}</DialogTitle>
             <DialogDescription>
               {editingGoal ? 'Update your target.' : 'Pick what to aim for, how often, and how much.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-5 py-2">
-            <div className="space-y-2">
+          <div className="grid sm:grid-cols-2 gap-5 py-2">
+            <div className="space-y-2 sm:col-span-2 border-b border-border/60 pb-5">
               <Label>What to aim for</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([
@@ -942,7 +926,7 @@ export function PerformanceGoals() {
                   type="number"
                   min={0}
                   step={newGoal.type === 'riskReward' ? 0.1 : 1}
-                  className={newGoal.type === 'profit' ? 'pl-7 pr-3' : 'pr-12'}
+                  className={`h-12 text-lg md:text-lg font-semibold ${newGoal.type === 'profit' ? 'pl-7 pr-3' : 'pr-12'}`}
                   value={Number.isFinite(newGoal.target) ? newGoal.target : ''}
                   onChange={(e) => setNewGoal({ ...newGoal, target: parseFloat(e.target.value) })}
                   onKeyDown={(e) => { if (e.key === 'Enter' && newGoal.target && newGoal.target > 0) saveGoal() }}

@@ -100,7 +100,7 @@ export function MobileHeader({ title }: { title?: string }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8} className="min-w-40 rounded-lg">
               <DropdownMenuItem asChild>
-                <Link to="/signup" onClick={() => exitDemoMode()} className="flex items-center">
+                <Link to="/signup" className="flex items-center">
                   <UserPlus className="h-4 w-4 mr-2" />
                   Sign Up Free
                 </Link>

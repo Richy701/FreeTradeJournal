@@ -33,6 +33,42 @@ export interface DashboardWidget {
 
 export const DASHBOARD_WIDGETS: DashboardWidget[] = [
   {
+    id: 'metrics',
+    label: 'Key metrics',
+    removable: false,
+    render: () => (
+      <Suspense fallback={<div className="[container-type:inline-size]"><div className="grid grid-cols-1 gap-3 sm:gap-4 [@container(min-width:340px)]:grid-cols-2 [@container(min-width:960px)]:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-60 w-full" />
+        ))}
+      </div></div>}>
+        <SectionCards />
+      </Suspense>
+    ),
+  },
+  {
+    id: 'equity',
+    label: 'Equity curve',
+    removable: true,
+    render: () => (
+      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+        <ChartAreaInteractive />
+      </Suspense>
+    ),
+  },
+  {
+    id: 'recent-trades',
+    label: 'Recent trades',
+    removable: true,
+    render: () => <DataTable />,
+  },
+  {
+    id: 'coach',
+    label: 'Coach FTJ',
+    removable: true,
+    render: () => <TradingCoach dashboard />,
+  },
+  {
     id: 'market-prices',
     label: 'Market prices',
     removable: true,
@@ -42,36 +78,6 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
     render: () => (
       <Suspense fallback={null}>
         <MarketTicker />
-      </Suspense>
-    ),
-  },
-  {
-    id: 'metrics',
-    label: 'Key metrics',
-    removable: false,
-    render: () => (
-      <Suspense fallback={<div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" />
-        ))}
-      </div>}>
-        <SectionCards />
-      </Suspense>
-    ),
-  },
-  {
-    id: 'coach',
-    label: 'Coach FTJ',
-    removable: true,
-    render: () => <TradingCoach />,
-  },
-  {
-    id: 'equity',
-    label: 'Equity curve',
-    removable: true,
-    render: () => (
-      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-        <ChartAreaInteractive />
       </Suspense>
     ),
   },
@@ -101,7 +107,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
           <EconomicCalendarWidget />
         </Suspense>
         <Suspense fallback={<Skeleton className="h-40 w-full" />}>
-          <MarketNewsFeed />
+          <MarketNewsFeed dashboard />
         </Suspense>
       </div>
     ),
@@ -115,12 +121,6 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
         <MarketSessions />
       </Suspense>
     ),
-  },
-  {
-    id: 'recent-trades',
-    label: 'Recent trades',
-    removable: true,
-    render: () => <DataTable />,
   },
   {
     id: 'radar',

@@ -104,7 +104,7 @@ function GoalCoachSamplePreview() {
   const sym = getCurrencySymbol();
   return (
     <div>
-      <CardHeader className="pb-3">
+      <CardHeader className="border-b px-5 py-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
             <Brain className="h-4.5 w-4.5" style={{ color: themeColors.primary }} />
@@ -115,7 +115,7 @@ function GoalCoachSamplePreview() {
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-5 sm:p-5">
         <div className="space-y-3">
           {GOAL_COACH_SAMPLE_SECTIONS.map((section, i) => {
             const Icon = getIcon(section.title);
@@ -275,7 +275,7 @@ export function AIGoalCoach() {
 
   if (!hasAIAccess) {
     return (
-      <Card>
+      <Card className="shadow-none">
         <ProGate featureName="AI Goal Coach">
           <GoalCoachSamplePreview />
         </ProGate>
@@ -284,10 +284,10 @@ export function AIGoalCoach() {
   }
 
   return (
-    <Card>
+    <Card className="shadow-none">
       <ProGate featureName="AI Goal Coach">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+        <CardHeader className="border-b px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <div
                 className="flex items-center justify-center w-8 h-8 rounded-lg"
@@ -315,9 +315,9 @@ export function AIGoalCoach() {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-5 sm:p-5">
           {!result && !isStreaming && !streamText ? (
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
               <p className="text-sm text-muted-foreground">
                 Get coaching on your trading goals: what is working, what to change, and how to stay on track.
               </p>
@@ -330,7 +330,7 @@ export function AIGoalCoach() {
                 Get Coaching
               </Button>
               {goalData.goals.length === 0 && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground sm:col-span-2">
                   Set some goals above first for the best coaching results.
                 </p>
               )}

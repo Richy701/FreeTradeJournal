@@ -17,12 +17,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Item, ItemActions, ItemGroup, ItemSeparator, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
-import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, lifetimeSaleEndsAt, currentLifetimePrice } from '@/constants/pricing';
+import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, currentLifetimePrice, isBlackFriday, BLACK_FRIDAY_YEARLY_PRICE } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
 import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { redirectToPortal } from '@/lib/stripe';
+import { SaleCountdown } from '@/components/sale-countdown';
+import { useSaleClock } from '@/hooks/use-sale-clock';
 import {
   Accordion,
   AccordionContent,
@@ -32,46 +34,6 @@ import {
 
 const FREQUENCIES = ['monthly', 'yearly'] as const;
 type Frequency = typeof FREQUENCIES[number];
-
-// ─── Lifetime Retirement Countdown ───────────────────────────
-function LifetimeCountdown() {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const remaining = lifetimeSaleEndsAt() - now;
-  if (remaining <= 0 || !isLifetimeOnSale(now)) return null;
-
-  const segments = [
-    { value: Math.floor(remaining / 86_400_000), unit: 'd', pad: false },
-    { value: Math.floor(remaining / 3_600_000) % 24, unit: 'h', pad: true },
-    { value: Math.floor(remaining / 60_000) % 60, unit: 'm', pad: true },
-    { value: Math.floor(remaining / 1_000) % 60, unit: 's', pad: true },
-  ];
-
-  return (
-    <div
-      role="timer"
-      aria-label="Time left before the lifetime plan goes off sale"
-      className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2"
-    >
-      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-        Ends in
-      </span>
-      <span className="flex items-baseline gap-1.5 text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-        {segments.map(({ value, unit, pad }) => (
-          <span key={unit} className="flex items-baseline">
-            <NumberFlow value={value} format={pad ? { minimumIntegerDigits: 2 } : undefined} />
-            <span className="ml-px text-[10px] font-medium opacity-70">{unit}</span>
-          </span>
-        ))}
-      </span>
-    </div>
-  );
-}
 
 // ─── Pricing Card ────────────────────────────────────────────
 interface CardProps {
@@ -112,8 +74,8 @@ function PricingCard({
   loading,
 }: CardProps) {
   return (
-    <Card className={cn('flex flex-col', (popular || highlighted) && 'border-amber-500/60')}>
-      <CardHeader className="space-y-4">
+    <Card className={cn('flex min-w-0 flex-col rounded-xl border-border bg-card shadow-none', popular && 'border-amber-500/70 bg-amber-500/[0.035]')}>
+      <CardHeader className="space-y-5 p-6 sm:p-7">
         <CardTitle className="flex min-h-8 items-center gap-3 text-xl font-medium">
           {name}
           {popular && (
@@ -124,21 +86,45 @@ function PricingCard({
         </CardTitle>
         <div>
           {/* Fixed height: NumberFlow renders taller than plain text, which pushed the Pro price below Free's. */}
-          <div className="flex h-12 items-center gap-2">
+          <div className="flex min-h-14 flex-wrap items-baseline gap-3">
             {typeof price === 'number' && originalPrice !== undefined && (
               <span className="text-xl font-medium text-muted-foreground line-through">${originalPrice}</span>
             )}
             {typeof price === 'number' ? (
-              <NumberFlow format={{ style: 'currency', currency: 'USD' }} value={price} className="text-4xl font-medium" />
+              <NumberFlow
+                // Whole-dollar prices drop the cents so $179 sits next to a struck $249, not "$179.00"
+                format={{ style: 'currency', currency: 'USD', ...(Number.isInteger(price) ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {}) }}
+                value={price}
+                className="text-5xl font-semibold tracking-tight"
+              />
             ) : (
-              <span className="text-4xl font-medium">{price}</span>
+              <span className="text-5xl font-semibold tracking-tight">{price}</span>
             )}
           </div>
-          <p className="mt-1 text-xs font-medium text-muted-foreground">{subtitle}</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-4">
+      <CardFooter className="px-6 pb-6 sm:px-7">
+        {isCurrentPlan ? (
+          <Button variant="outline" className="min-h-11 h-auto whitespace-normal py-3 w-full" disabled>
+            Current Plan
+          </Button>
+        ) : (
+          <Button
+            className={cn('min-h-11 h-auto whitespace-normal py-3 w-full font-semibold', popular && 'bg-amber-500 text-amber-950 hover:bg-amber-600')}
+            variant={popular ? 'default' : 'outline'}
+            onClick={onCtaClick}
+            disabled={disabled || loading}
+          >
+            {loading && <Spinner className="mr-2" />}
+            {cta}
+            {popular && <ArrowRight className="ml-2 h-4 w-4" />}
+          </Button>
+        )}
+      </CardFooter>
+
+      <CardContent className="flex-1 space-y-5 px-6 pb-7 sm:px-7">
         {banner}
         {limits && (
           <ItemGroup className="rounded-lg border border-border/60">
@@ -164,24 +150,7 @@ function PricingCard({
         </ul>
       </CardContent>
 
-      <CardFooter>
-        {isCurrentPlan ? (
-          <Button variant="outline" className="h-11 w-full" disabled>
-            Current Plan
-          </Button>
-        ) : (
-          <Button
-            className={cn('h-11 w-full font-semibold', popular && 'bg-amber-500 text-amber-950 hover:bg-amber-600')}
-            variant={popular ? 'default' : 'outline'}
-            onClick={onCtaClick}
-            disabled={disabled || loading}
-          >
-            {loading && <Spinner className="mr-2" />}
-            {cta}
-            {popular && <ArrowRight className="ml-2 h-4 w-4" />}
-          </Button>
-        )}
-      </CardFooter>
+
     </Card>
   );
 }
@@ -260,6 +229,9 @@ export default function Pricing() {
   // double-clicks (each click would create another checkout session).
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  // Drives every sale-dependent piece of the page (hero line, badge, prices,
+  // lifetime card) so an open tab flips at the start and end of a sale.
+  const now = useSaleClock();
 
   // Dedicated funnel step so pricing → cta → checkout_started → checkout_completed
   // can be built as one funnel in PostHog
@@ -321,7 +293,13 @@ export default function Pricing() {
   // Lifetime is retired after this date — the card disappears here and the
   // checkout Cloud Function rejects the price, so stale tabs can't buy it.
   // Existing lifetime owners keep their plan (their card renders as current).
-  const lifetimeAvailable = isLifetimeOnSale() || currentPlan === 'lifetime';
+  const lifetimeAvailable = isLifetimeOnSale(now) || currentPlan === 'lifetime';
+  // Black Friday week: Yearly shows $79.99 for the first year (BFYEARLY is
+  // applied at checkout) and Lifetime is back at $179. Existing monthly
+  // subscribers switch through the billing portal, which applies no code, so
+  // they see the regular yearly price.
+  const blackFriday = isBlackFriday(now);
+  const yearlyDeal = blackFriday && frequency === 'yearly' && !hasActiveSubscription;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -331,15 +309,17 @@ export default function Pricing() {
       {/* Hero + billing toggle: the landing page's backdrop, full bleed */}
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center gap-8 px-4 pb-14 pt-32 text-center sm:px-6 sm:pb-16 sm:pt-40">
+        <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col items-start gap-7 px-5 py-12 sm:px-8 sm:py-16">
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              4,000+ traders already journaling
+              {blackFriday
+                ? 'Black Friday · limited-time pricing'
+                : '4,000+ traders already journaling'}
             </p>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl md:text-5xl">
-              Free Trading Journal, <span className="text-amber-500">Pro When You Need It</span>
+            <h1 className="max-w-3xl text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.08] tracking-[-0.035em]">
+              Start with your trades.<br /><span className="text-amber-600 dark:text-amber-400">Grow into Pro.</span>
             </h1>
-            <p className="mx-auto max-w-lg text-muted-foreground">
+            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
               The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.
             </p>
           </div>
@@ -351,7 +331,7 @@ export default function Pricing() {
                   {freq}
                   {freq === 'yearly' && (
                     <Badge className="border-0 bg-amber-500/15 px-1.5 py-0 text-[11px] text-amber-700 shadow-none hover:bg-amber-500/15 dark:text-amber-400">
-                      Save 36%
+                      {blackFriday && !hasActiveSubscription ? 'Black Friday' : 'Save 36%'}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -363,9 +343,9 @@ export default function Pricing() {
 
       {/* Every section below shares one width so cards, tables and the FAQ
           start and end on the same edges. */}
-      <main className={cn('mx-auto w-full px-4 sm:px-6', lifetimeAvailable ? 'max-w-5xl' : 'max-w-4xl')}>
+      <main className={'mx-auto w-full max-w-[1440px] px-5 sm:px-8'}>
         {/* Plans */}
-        <section className={cn('grid gap-6 pb-20 pt-12 sm:pt-14', lifetimeAvailable ? 'lg:grid-cols-3' : 'md:grid-cols-2')}>
+        <section className={cn('grid items-stretch gap-5 pb-16 pt-8', lifetimeAvailable ? 'lg:grid-cols-3' : 'md:grid-cols-2')}>
           {/* Free */}
           <PricingCard
             name="Free"
@@ -388,8 +368,16 @@ export default function Pricing() {
           {/* Pro — toggles between monthly/yearly */}
           <PricingCard
             name={`Pro ${activePlan.name}`}
-            price={activePlan.price}
-            subtitle={frequency === 'monthly' ? 'Per month · Cancel anytime' : 'Per year · Save 36%'}
+            price={yearlyDeal ? BLACK_FRIDAY_YEARLY_PRICE : activePlan.price}
+            originalPrice={yearlyDeal ? activePlan.price : undefined}
+            subtitle={
+              frequency === 'monthly'
+                ? 'Per month · Cancel anytime'
+                : yearlyDeal
+                  ? `First year · then $${activePlan.price}/year · Cancel anytime`
+                  : 'Per year · Save 36%'
+            }
+            banner={yearlyDeal ? <SaleCountdown plan="yearly" /> : undefined}
             description="Everything in Free, plus"
             limits={PLAN_LIMIT_ROWS.map((row) => ({ label: row.feature, value: row.pro }))}
             features={PLAN_PRO_ONLY_ROWS}
@@ -415,13 +403,14 @@ export default function Pricing() {
           {lifetimeAvailable && (
             <PricingCard
               name="Pro Lifetime"
-              price={currentLifetimePrice()}
-              originalPrice={currentLifetimePrice() < lifetimePlan.price ? lifetimePlan.price : undefined}
-              subtitle="One-time founding price · yours forever"
+              price={currentLifetimePrice(now)}
+              originalPrice={currentLifetimePrice(now) < lifetimePlan.price ? lifetimePlan.price : undefined}
+              subtitle={blackFriday ? 'Black Friday price · pay once, yours forever' : 'One-time founding price · yours forever'}
               description="Never pay again"
-              features={lifetimePlan.features}
+              limits={PLAN_LIMIT_ROWS.map((row) => ({ label: row.feature, value: row.pro }))}
+              features={PLAN_PRO_ONLY_ROWS}
               cta="Get Lifetime Access"
-              banner={<LifetimeCountdown />}
+              banner={<SaleCountdown plan="lifetime" />}
               highlighted
               isCurrentPlan={isPro && currentPlan === 'lifetime'}
               onCtaClick={() => handleUpgrade(lifetimePlan.priceId, 'lifetime')}
@@ -431,13 +420,14 @@ export default function Pricing() {
         </section>
 
         {/* Competitor comparison */}
-        <section className="pb-20">
-          <h2 className="text-2xl font-bold">How we <span className="text-amber-500">compare</span></h2>
-          <p className="mt-2 text-muted-foreground">The cheapest paid plan from each journal, side by side</p>
+        <section className="border-t border-border py-12 sm:py-16">
+          <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground">Compare your options</p>
+          <h2 className="text-3xl font-semibold tracking-tight">A journal that fits your budget.</h2>
+          <p className="mt-2 text-muted-foreground">Free access, paid plans, and annual cost — all in one place.</p>
 
           {/* Four columns do not fit a phone: the table is desktop-only and phones get one card per journal. */}
-          <Card className="mt-8 hidden overflow-hidden md:block">
-          <Table className="[&_td:first-child]:pl-6 [&_th:first-child]:pl-6 [&_td:last-child]:pr-6 [&_th:last-child]:pr-6">
+          <Card className="mt-8 hidden overflow-hidden rounded-xl border-border shadow-none md:block">
+          <Table className="[&_td]:py-5 [&_th]:h-12 [&_th]:text-xs [&_th]:font-medium [&_td:first-child]:pl-6 [&_th:first-child]:pl-6 [&_td:last-child]:pr-6 [&_th:last-child]:pr-6">
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
                 <TableHead>Journal</TableHead>
@@ -448,16 +438,16 @@ export default function Pricing() {
             </TableHeader>
             <TableBody>
               {COMPETITORS.map((row) => (
-                <TableRow key={row.name}>
+                <TableRow key={row.name} className={row.own ? "bg-amber-500/[0.06] hover:bg-amber-500/[0.09]" : "hover:bg-muted/30"}>
                   <TableCell>
                     <span className={cn('flex items-center gap-3', row.own ? 'font-semibold' : 'text-foreground/80')}>
-                      <img src={row.logo} alt="" className={cn('h-7 w-7 shrink-0 rounded-md', !row.own && 'bg-muted/50 p-0.5')} />
+                      <img src={row.logo} alt="" className={cn('h-9 w-9 shrink-0 rounded-md object-contain', !row.own && 'bg-white p-1')} />
                       {row.name}
                     </span>
                   </TableCell>
                   <TableCell className={row.own ? 'font-medium text-foreground' : 'text-muted-foreground'}>{row.freePlan}</TableCell>
                   <TableCell className={row.own ? 'font-medium text-foreground' : 'text-muted-foreground'}>{row.cheapest}</TableCell>
-                  <TableCell className={cn('text-right tabular-nums', row.own ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-foreground/70')}>
+                  <TableCell className={cn('text-right tabular-nums', row.own ? 'text-xl font-semibold text-amber-600 dark:text-amber-400' : 'text-xl font-medium text-foreground')}>
                     {row.perYear}
                   </TableCell>
                 </TableRow>
@@ -471,9 +461,9 @@ export default function Pricing() {
 
           <div className="mt-8 grid gap-4 md:hidden">
             {COMPETITORS.map((journal) => (
-              <Card key={journal.name} className={cn(journal.own && 'border-amber-500/60')}>
+              <Card key={journal.name} className={cn('rounded-xl shadow-none', journal.own && 'border-amber-500/40 bg-amber-500/[0.04]')}>
                 <CardHeader className="flex-row items-center gap-3 space-y-0">
-                  <img src={journal.logo} alt="" className={cn('h-8 w-8 rounded-md', !journal.own && 'bg-muted/50 p-0.5')} />
+                  <img src={journal.logo} alt="" className={cn('h-9 w-9 shrink-0 rounded-md object-contain', !journal.own && 'bg-white p-1')} />
                   <CardTitle className={cn('text-base', journal.own && 'text-amber-600 dark:text-amber-400')}>{journal.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -483,7 +473,7 @@ export default function Pricing() {
                         {i > 0 && <ItemSeparator className="bg-border/60" />}
                         <Item size="sm" className="rounded-none">
                           <ItemTitle className="font-normal text-muted-foreground">{label}</ItemTitle>
-                          <ItemActions className="ml-auto shrink-0 text-right text-sm font-medium text-foreground">{value}</ItemActions>
+                          <ItemActions className="ml-auto min-w-0 text-right text-sm font-medium text-foreground">{value}</ItemActions>
                         </Item>
                       </React.Fragment>
                     ))}
@@ -499,10 +489,10 @@ export default function Pricing() {
       </main>
 
       {/* Real approved testimonials from Firestore — renders nothing until some exist */}
-      <TestimonialsSection />
+      <TestimonialsSection compact />
 
       {/* FAQ */}
-      <section className={cn('mx-auto w-full px-4 pb-16 sm:px-6 sm:pb-24', lifetimeAvailable ? 'max-w-5xl' : 'max-w-4xl')}>
+      <section className={'mx-auto w-full max-w-[1440px] px-5 pb-16 sm:px-8'}>
         <h2 className="text-2xl font-bold">Common <span className="text-amber-500">questions</span></h2>
         <p className="mt-2 text-muted-foreground">Billing, limits, your data and imports</p>
 

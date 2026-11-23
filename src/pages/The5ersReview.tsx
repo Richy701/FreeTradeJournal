@@ -48,11 +48,11 @@ export default function The5ersReview() {
           showCTA={false}
         />
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Overview</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 What is<br />
                 <span className="text-amber-500">The5%ers?</span>
               </h2>
@@ -79,11 +79,11 @@ export default function The5ersReview() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Pros & cons</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 The honest<br />
                 <span className="text-amber-500">breakdown.</span>
               </h2>
@@ -131,7 +131,7 @@ export default function The5ersReview() {
           </div>
         </section>
 
-        <FAQSection
+        <FAQSection compact
           faqs={FAQS}
           title="The5%ers"
           subtitle="Common questions about The5%ers programs, pricing, payouts, and how to get started"

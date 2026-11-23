@@ -44,6 +44,7 @@ export interface CustomThemeConfig {
   dark?: Partial<ModeColors>
   surfaceLight?: string
   surfaceDark?: string
+  surfaces?: Partial<Record<'light' | 'dark', { background?: string; card?: string; sidebar?: string }>>
   radius?: number
   charts?: ChartThemeConfig
 }
@@ -964,6 +965,17 @@ export function computeThemeVars(
       const tint = mode === 'dark' ? custom.surfaceDark : custom.surfaceLight
       if (tint) Object.assign(vars, deriveSurfaceVars(tint, mode))
       if (custom.radius != null) vars['--radius'] = `${custom.radius}rem`
+      const surfaces = custom.surfaces?.[mode]
+      for (const key of ['background', 'card', 'sidebar'] as const) {
+        const hex = surfaces?.[key]
+        if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) continue
+        const foreground = perceivedLuma(hex) > 0.55 ? '30 10% 8%' : '210 40% 98%'
+        vars[key === 'sidebar' ? '--sidebar-background' : `--${key}`] = hexToHslString(hex)
+        vars[key === 'background' ? '--foreground' : `--${key}-foreground`] = foreground
+        if (key === 'background') vars['--muted-foreground'] = perceivedLuma(hex) > 0.55 ? '35 8% 40%' : '35 8% 70%'
+        if (key === 'card') { vars['--popover'] = hexToHslString(hex); vars['--popover-foreground'] = foreground }
+      }
+
     }
     const primaryHsl = hexToHslString(colors.primary)
     vars['--primary'] = primaryHsl
@@ -1155,7 +1167,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
   }, [currentTheme, isDarkMode, customColors, isDemo])
 
-  const chartStyle = useMemo(() => resolveChartStyle(customColors.charts), [customColors.charts])
+  const chartStyle = useMemo(() => resolveChartStyle(isDemo ? { ...customColors.charts, curve: 'straight' } : customColors.charts), [customColors.charts, isDemo])
 
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;

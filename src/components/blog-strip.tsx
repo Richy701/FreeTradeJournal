@@ -10,11 +10,15 @@ export function BlogStrip({
   eyebrow = 'From the blog',
   title,
   subtitle,
+  compact = false,
+  editorial = false,
 }: {
   slugs?: string[];
   eyebrow?: string;
   title: React.ReactNode;
   subtitle?: string;
+  compact?: boolean;
+  editorial?: boolean;
 }) {
   const picked = slugs
     ? slugs.map((s) => posts.find((p) => p.slug === s)).filter((p): p is (typeof posts)[number] => Boolean(p))
@@ -23,12 +27,15 @@ export function BlogStrip({
   if (picked.length === 0) return null;
 
   return (
-    <section className="w-full py-16 sm:py-24 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-12">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-amber-600 dark:text-amber-500">{eyebrow}</p>
+    <section className={`w-full ${editorial ? "px-5 sm:px-8" : "px-4"} ${compact ? 'py-12 sm:py-16' : 'py-16 sm:py-24'}`}>
+      <div className={`mx-auto flex flex-col ${editorial ? "max-w-[1600px] gap-8" : "max-w-6xl gap-12"}`}>
+        <div className={editorial ? "flex flex-wrap items-end justify-between gap-6" : "flex flex-col items-center gap-3 text-center"}>
+          <div className={editorial ? "max-w-2xl space-y-3" : "contents"}>
+          {!editorial && <p className="text-sm font-medium uppercase tracking-widest text-amber-600 dark:text-amber-500">{eyebrow}</p>}
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
-          {subtitle && <p className="mx-auto max-w-xl text-muted-foreground">{subtitle}</p>}
+          {subtitle && <p className={editorial ? "max-w-xl text-base leading-relaxed text-muted-foreground" : "mx-auto max-w-xl text-muted-foreground"}>{subtitle}</p>}
+          </div>
+          {editorial && <Link to="/blog" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:underline underline-offset-4">All posts <ArrowRight className="h-4 w-4" /></Link>}
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -36,21 +43,21 @@ export function BlogStrip({
             <Link
               key={post.slug}
               to={`/blog/${post.slug}`}
-              className="group flex h-full flex-col overflow-hidden rounded-3xl border bg-card transition-all hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5"
+              className={editorial ? "group flex h-full min-w-0 flex-col border-t border-border pt-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500" : "group flex h-full flex-col overflow-hidden rounded-3xl border bg-card transition-all hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/5"}
             >
               {post.coverSrc && (
-                <div className="overflow-hidden border-b">
+                <div className={editorial ? "overflow-hidden rounded-lg border bg-muted" : "overflow-hidden border-b"}>
                   <img
                     src={post.coverSrc}
                     alt=""
-                    className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    className={editorial ? "aspect-[2/1] w-full object-cover object-top" : "aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"}
                     loading="lazy"
                     width={1600}
                     height={900}
                   />
                 </div>
               )}
-              <div className="flex flex-1 flex-col gap-3 p-6">
+              <div className={`flex flex-1 flex-col gap-3 ${editorial ? "pt-5" : "p-6"}`}>
                 <p className="text-xs font-medium text-muted-foreground">
                   {post.category}
                   <span aria-hidden="true"> · </span>
@@ -69,12 +76,12 @@ export function BlogStrip({
           ))}
         </div>
 
-        <div className="text-center">
+        {!editorial && <div className="text-center">
           <Link to="/blog" className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-500 hover:text-amber-600 transition-colors">
             All posts
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
-        </div>
+        </div>}
       </div>
     </section>
   );

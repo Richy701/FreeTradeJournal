@@ -54,13 +54,13 @@ export default function About() {
 
       <section className="relative overflow-hidden bg-background noise-overlay">
         <GeometricBackdrop />
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-32 pb-10 sm:pt-40 sm:pb-12">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16 sm:pb-12">
           <div className="max-w-[44rem] mx-auto">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">About</p>
             <h1 className="font-display text-3xl sm:text-[2.5rem] sm:leading-[1.15] font-bold tracking-tight">
               One trader, one journal, <span className="text-amber-500">no second subscription</span>
             </h1>
-            <p className="mt-5 text-lg sm:text-xl text-muted-foreground leading-relaxed">
+            <p className="mt-5 text-base text-muted-foreground leading-relaxed">
               FreeTradeJournal is built and run by one person. This page says who, why, and how the free plan stays free.
             </p>
           </div>
@@ -68,7 +68,7 @@ export default function About() {
       </section>
 
       <article className="max-w-6xl mx-auto px-4 sm:px-6 pt-2 pb-16">
-        <div className="max-w-[44rem] mx-auto space-y-10 text-lg leading-[1.8] text-foreground/85">
+        <div className="max-w-[44rem] mx-auto space-y-10 text-base leading-[1.8] text-foreground/85">
           <section>
             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground mb-4">Who builds this</h2>
             <p>

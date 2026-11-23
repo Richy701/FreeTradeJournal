@@ -1,4 +1,5 @@
 import { startOfWeek } from '@/lib/week'
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -41,7 +42,7 @@ export function SectionCards() {
   const { themeColors } = useThemePresets()
   const { formatCurrency: formatCurrencyFromSettings, getCurrencySymbol, settings } = useSettings()
   const { scopeStartingBalance } = useAccounts()
-  const { getTrades, getAnalyticsTrades } = useDemoData()
+  const { isDemo, getTrades, getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()
   const { mode: pnlMode, formatPnl } = usePnlDisplay()
 
@@ -162,50 +163,51 @@ export function SectionCards() {
 
   return (
     <TooltipProvider>
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2 2xl:grid-cols-4 overflow-visible">
+      <div className="[container-type:inline-size]">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 [@container(min-width:340px)]:grid-cols-2 [@container(min-width:960px)]:grid-cols-4">
 
         {/* Total P&L */}
-        <Link to="/trades" className="block h-full">
-        <Card className="h-full relative overflow-visible cursor-pointer hover:bg-primary/[0.06] dark:hover:bg-primary/[0.08]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Link to="/trades" className="block min-w-0 h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <Card className="h-full flex flex-col shadow-none transition-colors hover:bg-muted/30">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 p-3 pb-2 sm:p-4 sm:pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div
-                  className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                <Badge variant="secondary"
+                  className="gap-1 font-normal tabular-nums"
                   style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}
                 >
                   {pnlPositive ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                   {pnlMode === 'percent'
                     ? formatCurrency(metrics.totalPnL)
                     : `${pnlPositive ? '+' : '-'}${formatPercentage(pnlPct)}`}
-                </div>
+                </Badge>
               </TooltipTrigger>
               <TooltipContent className="p-2 border bg-popover">
                 <p className="text-xs">{pnlMode === 'percent' ? 'P&L in money' : 'Percentage of account balance'}</p>
               </TooltipContent>
             </Tooltip>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
+          <CardContent className="flex-1 p-3 pt-0 sm:p-4 sm:pt-0">
+            <div className="flex h-full flex-col gap-3">
+              <div className="min-w-0">
+                <div className="text-xl sm:text-2xl font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere]" style={{ color: pnlPositive ? themeColors.profit : themeColors.loss }}>
                   {formatPnl(metrics.totalPnL)}
                 </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words text-muted-foreground">
+                <div className="mt-2 space-y-1 text-xs leading-relaxed text-muted-foreground">
+                  <p className="text-xs break-words text-muted-foreground">
                     Balance: {formatCurrencyPlain(accountBalance)}
                   </p>
-                  <p className="text-xs break-words" style={{ color: avgPnlPerTrade >= 0 ? themeColors.profit : themeColors.loss }}>Avg {formatPnl(avgPnlPerTrade)} per trade</p>
+                  <p className="text-xs break-words text-muted-foreground">Avg {formatPnl(avgPnlPerTrade)} per trade</p>
                 </div>
               </div>
-              <div className="w-32 h-10 relative shrink-0">
+              <div className="mt-auto h-12 w-full relative opacity-75">
                 <ChartContainer
                   config={{ pnl: { label: "P&L", color: pnlPositive ? themeColors.profit : themeColors.loss } }}
                   className="w-full h-full aspect-auto"
                 >
                   <LineChart data={pnlSparkline} margin={{ top: 3, right: 2, bottom: 3, left: 2 }}>
-                    <Line dataKey="pnl" type="monotone" stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
+                    <Line dataKey="pnl" type={isDemo ? "linear" : "monotone"} stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
                   </LineChart>
                 </ChartContainer>
               </div>
@@ -215,31 +217,30 @@ export function SectionCards() {
         </Link>
 
         {/* Win Rate */}
-        <Link to="/trades" className="block h-full">
-        <Card className="h-full relative overflow-visible cursor-pointer hover:bg-primary/[0.06] dark:hover:bg-primary/[0.08]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Link to="/trades" className="block min-w-0 h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <Card className="h-full flex flex-col shadow-none transition-colors hover:bg-muted/30">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 p-3 pb-2 sm:p-4 sm:pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
-            <div
-              className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-              style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}
+            <Badge variant="secondary"
+              className="gap-1 font-normal tabular-nums text-muted-foreground"
             >
               {winCount}W / {lossCount}L
-            </div>
+            </Badge>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
+          <CardContent className="flex-1 p-3 pt-0 sm:p-4 sm:pt-0">
+            <div className="flex h-full flex-col gap-3">
+              <div className="min-w-0">
+                <div className="text-xl sm:text-2xl font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere] text-foreground">
                   {formatPercentage(metrics.winRate)}
                 </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words" style={{ color: winRateGood ? themeColors.profit : themeColors.loss }}>
+                <div className="mt-2 space-y-1 text-xs leading-relaxed text-muted-foreground">
+                  <p className="text-xs break-words text-muted-foreground">
                     {Math.abs(metrics.winRate - 50).toFixed(0)}pts {winRateGood ? 'above' : 'below'} 50%
                   </p>
                   <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatPnl(metrics.avgWin, { showSign: false })} avg win</span> / <span style={{ color: themeColors.loss }}>{formatPnl(metrics.avgLoss, { showSign: false })} avg loss</span></p>
                 </div>
               </div>
-              <div className="w-16 h-16 relative shrink-0">
+              <div className="mt-auto h-12 w-12 relative opacity-75">
                 <ChartContainer
                   config={{
                     wins: { label: "Wins", color: themeColors.profit },
@@ -255,8 +256,8 @@ export function SectionCards() {
                       ]}
                       dataKey="count"
                       nameKey="type"
-                      innerRadius={16}
-                      outerRadius={28}
+                      innerRadius={12}
+                      outerRadius={20}
                       strokeWidth={0}
                       activeIndex={0}
                       activeShape={({
@@ -275,26 +276,26 @@ export function SectionCards() {
         </Link>
 
         {/* Total Trades */}
-        <Link to="/trades" className="block h-full">
-        <Card className="h-full relative overflow-visible cursor-pointer hover:bg-primary/[0.06] dark:hover:bg-primary/[0.08]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Link to="/trades" className="block min-w-0 h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <Card className="h-full flex flex-col shadow-none transition-colors hover:bg-muted/30">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 p-3 pb-2 sm:p-4 sm:pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Trades</CardTitle>
-            <div className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <Badge variant="secondary" className="font-normal tabular-nums text-muted-foreground">
               {weekCount} this week
-            </div>
+            </Badge>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight tabular-nums text-foreground">
+          <CardContent className="flex-1 p-3 pt-0 sm:p-4 sm:pt-0">
+            <div className="flex h-full flex-col gap-3">
+              <div className="min-w-0">
+                <div className="text-xl sm:text-2xl font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere] text-foreground">
                   {metrics.totalTrades.toLocaleString()}
                 </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words">
+                <div className="mt-2 space-y-1 text-xs leading-relaxed text-muted-foreground">
+                  <p className="text-xs break-words">
                     <span style={{ color: themeColors.profit }}>{winCount} winners</span>, <span style={{ color: themeColors.loss }}>{lossCount} losers</span>
                   </p>
                   {streak.count > 0 ? (
-                    <p className="text-xs break-words" style={{ color: streak.dir === 'win' ? themeColors.profit : themeColors.loss }}>
+                    <p className="text-xs break-words text-muted-foreground">
                       {streak.count}-{streak.dir} streak
                     </p>
                   ) : (
@@ -302,7 +303,7 @@ export function SectionCards() {
                   )}
                 </div>
               </div>
-              <div className="w-16 h-16 flex items-center shrink-0">
+              <div className="mt-auto h-12 w-full flex items-center">
                 {winCount + lossCount > 0 ? (
                   <div className="flex h-2.5 w-full overflow-hidden rounded-full">
                     <div style={{ width: `${(winCount / (winCount + lossCount)) * 100}%`, backgroundColor: themeColors.profit }} />
@@ -318,39 +319,39 @@ export function SectionCards() {
         </Link>
 
         {/* Profit Factor */}
-        <Link to="/trades" className="block h-full">
-        <Card className="h-full relative overflow-visible cursor-pointer hover:bg-primary/[0.06] dark:hover:bg-primary/[0.08]">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Link to="/trades" className="block min-w-0 h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        <Card className="h-full flex flex-col shadow-none transition-colors hover:bg-muted/30">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 p-3 pb-2 sm:p-4 sm:pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div
-                  className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                <Badge variant="secondary"
+                  className="gap-1 font-normal tabular-nums"
                   style={{ color: pfGood ? themeColors.profit : themeColors.loss }}
                 >
                   {pfGood ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                   {pfLabel}
-                </div>
+                </Badge>
               </TooltipTrigger>
               <TooltipContent className="p-2 border bg-popover">
                 <p className="text-xs">Ratio of gross profits to losses (&gt;1 is profitable)</p>
               </TooltipContent>
             </Tooltip>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
+          <CardContent className="flex-1 p-3 pt-0 sm:p-4 sm:pt-0">
+            <div className="flex h-full flex-col gap-3">
+              <div className="min-w-0">
+                <div className="text-xl sm:text-2xl font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere]" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
                   {metrics.profitFactor >= 999 ? '∞' : metrics.profitFactor.toFixed(2)}x
                 </div>
-                <div className="mt-3 space-y-0.5">
-                  <p className="text-sm font-medium break-words" style={{ color: pfGood ? themeColors.profit : themeColors.loss }}>
+                <div className="mt-2 space-y-1 text-xs leading-relaxed text-muted-foreground">
+                  <p className="text-xs break-words text-muted-foreground">
                     {pfGood ? `${getCurrencySymbol()}${metrics.profitFactor.toFixed(2)} earned per ${getCurrencySymbol()}1 lost` : 'Losing more than winning'}
                   </p>
                   <p className="text-xs break-words"><span style={{ color: themeColors.profit }}>{formatPnl(grossProfit, { showSign: false })} won</span> / <span style={{ color: themeColors.loss }}>{formatPnl(grossLoss, { showSign: false })} lost</span></p>
                 </div>
               </div>
-              <div className="w-16 h-16 relative shrink-0">
+              <div className="mt-auto h-12 w-12 relative opacity-75">
                 <ChartContainer
                   config={{
                     won: { label: "Won", color: themeColors.profit },
@@ -362,8 +363,8 @@ export function SectionCards() {
                     data={[{ won: grossProfit, lost: grossLoss }]}
                     startAngle={180}
                     endAngle={0}
-                    innerRadius={20}
-                    outerRadius={32}
+                    innerRadius={14}
+                    outerRadius={23}
                     cy="68%"
                   >
                     <RadialBar
@@ -388,6 +389,7 @@ export function SectionCards() {
         </Card>
         </Link>
 
+      </div>
       </div>
     </TooltipProvider>
   )

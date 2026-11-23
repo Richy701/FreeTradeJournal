@@ -1,3 +1,5 @@
+import { EmptyState, EmptyStateAction } from '@/components/empty-state'
+import { TradeDialogContent, TradeDialogHeader, TradeDialogTabs, tradeDialogActions } from '@/components/trade-dialog-layout'
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -47,7 +49,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChartContainer } from "@/components/ui/chart";
-import { Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, RadialBar, RadialBarChart, Sector } from "recharts";
+import { Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, RadialBar, RadialBarChart } from "recharts";
 import { startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth } from 'date-fns';
 import { DateTimePicker, DatePicker } from '@/components/date-picker';
 import { parseCSV, validateCSVFile, parseCSVWithMappings, parseCSVHeaders, isEmptyExport, detectNonTradeExport, NON_TRADE_EXPORT_MESSAGES, type CSVParseResult } from '@/utils/csv-parser';
@@ -1468,15 +1470,12 @@ export default function TradeLog() {
       )}
       <SiteHeader />
       {/* Header */}
-      <div className="border-b bg-card/80 backdrop-blur-xl shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-5">
+      <div data-trade-log-header className="border-b bg-background">
+        <div className="w-full space-y-4 px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg shrink-0 mt-0.5" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                <ChartLineUp className="h-5 w-5" style={{ color: themeColors.primary }} />
-              </div>
               <div className="space-y-0.5">
-                <h1 className="font-display text-2xl font-bold" style={{ color: themeColors.primary }}>Trade Log</h1>
+                <h1 className="font-display text-2xl font-semibold tracking-tight">Trade Log</h1>
                 <p className="text-sm text-muted-foreground">Your trading history, ready to review.</p>
               </div>
             </div>
@@ -1494,7 +1493,10 @@ export default function TradeLog() {
                 <UploadSimple className="mr-2 h-4 w-4" aria-hidden="true" />
                 Import Trades
               </Button>
-              <div className="w-full sm:hidden" />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 id="csv-import"
                 type="file"
@@ -1505,7 +1507,7 @@ export default function TradeLog() {
 
               <Popover open={exportPopoverOpen} onOpenChange={setExportPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex-1 sm:flex-none" disabled={trades.length === 0}>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none" disabled={trades.length === 0}>
                     <DownloadSimple className="mr-2 h-4 w-4" />
                     Export
                   </Button>
@@ -1572,9 +1574,10 @@ export default function TradeLog() {
                   AI Auto-Tag
                 </Button>
               )}
-              <div className="flex items-center sm:ml-1">
-                <PnlDisplayToggle className="w-full sm:w-auto" itemClassName="flex-1 sm:flex-none" />
-              </div>
+            </div>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden text-xs text-muted-foreground sm:inline">Show P&amp;L in</span>
+              <PnlDisplayToggle className="w-auto" />
             </div>
           </div>
         </div>
@@ -1624,40 +1627,19 @@ export default function TradeLog() {
 
       {/* Add Trade Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) { setTradeDialogTab('manual'); setIsDialogDropActive(false); } }}>
-        <DialogContent className="w-[95vw] max-w-md sm:max-w-4xl max-h-[90svh] sm:max-h-[85vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-2.5">
-                      <div className="p-1.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                        <ChartLineUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      </div>
-                      {editingTrade ? 'Edit Trade' : 'Add New Trade'}
-                    </DialogTitle>
-                    <DialogDescription className="text-base">
-                      {!editingTrade && tradeDialogTab === 'import'
-                        ? 'Bring in trades from a broker export or a screenshot.'
-                        : 'Enter your trade details below. All fields marked with * are required.'}
-                    </DialogDescription>
-                  </DialogHeader>
+        <TradeDialogContent>
+                  <TradeDialogHeader editing={!!editingTrade} />
                   <Tabs value={editingTrade ? 'manual' : tradeDialogTab} onValueChange={(v) => setTradeDialogTab(v as 'manual' | 'import')} className="w-full">
                     {!editingTrade && (
-                      <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
-                        <TabsTrigger value="manual" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
-                          <Plus className="h-3.5 w-3.5" />
-                          Manual
-                        </TabsTrigger>
-                        <TabsTrigger value="import" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
-                          <UploadSimple className="h-3.5 w-3.5" />
-                          Import
-                        </TabsTrigger>
-                      </TabsList>
+                      <TradeDialogTabs />
                     )}
                     <TabsContent value="manual" className="mt-0">
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-5">
-                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="border-b border-border/60 pb-5 space-y-4">
                         <div className="flex items-center gap-2">
                           <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Setup</span>
+                          <span className="text-sm font-semibold text-foreground">Setup</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <FormField
@@ -1767,10 +1749,10 @@ export default function TradeLog() {
                         />
                       </div>
 
-                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="border-b border-border/60 pb-5 space-y-4">
                         <div className="flex items-center gap-2">
                           <ArrowsLeftRight className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Execution</span>
+                          <span className="text-sm font-semibold text-foreground">Execution</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <FormField
@@ -1880,11 +1862,11 @@ export default function TradeLog() {
                         </div>
                       </div>
 
-                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="border-b border-border/60 pb-5 space-y-4">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <Crosshair className="h-4 w-4" style={{ color: themeColors.primary }} />
-                            <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Risk Management</span>
+                            <span className="text-sm font-semibold text-foreground">Risk Management</span>
                           </div>
                           <FormField
                             control={form.control}
@@ -2037,10 +2019,10 @@ export default function TradeLog() {
                         })()}
                       </div>
 
-                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="border-b border-border/60 pb-5 space-y-4">
                         <div className="flex items-center gap-2">
                           <Coins className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Costs</span>
+                          <span className="text-sm font-semibold text-foreground">Costs</span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                           <FormField
@@ -2127,10 +2109,10 @@ export default function TradeLog() {
                         </div>
                       </div>
 
-                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="border-b border-border/60 pb-5 space-y-4">
                         <div className="flex items-center gap-2">
                           <Lightbulb className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Context</span>
+                          <span className="text-sm font-semibold text-foreground">Context</span>
                         </div>
                         <FormField
                           control={form.control}
@@ -2234,10 +2216,10 @@ export default function TradeLog() {
                         />
                       </div>
 
-                      <div className="rounded-xl border bg-card/50 p-4 space-y-3">
+                      <div className="border-b border-border/60 pb-5 space-y-4">
                         <div className="flex items-center gap-2">
                           <Sliders className="h-4 w-4" style={{ color: themeColors.primary }} />
-                          <span className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Advanced</span>
+                          <span className="text-sm font-semibold text-foreground">Advanced</span>
                         </div>
                         <FormField
                           control={form.control}
@@ -2354,7 +2336,7 @@ export default function TradeLog() {
                         </Suspense>
                       )}
 
-                      <div className="flex flex-wrap items-center justify-end gap-4 pt-2">
+                      <div className={tradeDialogActions}>
                         {/* Live P&L preview so the trader sees the result before saving */}
                         {(() => {
                           const v = form.watch();
@@ -2384,7 +2366,7 @@ export default function TradeLog() {
                             color: themeColors.primaryButtonText
                           }}
                         >
-                          {editingTrade ? 'Update Trade' : 'Add Trade'}
+                          {editingTrade ? 'Update trade' : 'Save trade'}
                           <ArrowRight className="ml-2 h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -2459,14 +2441,14 @@ export default function TradeLog() {
                       </div>
                     </TabsContent>
                   </Tabs>
-                </DialogContent>
+                </TradeDialogContent>
       </Dialog>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 gap-6 sm:gap-8">
-        {/* Stats */}
-        <div className="sm:hidden">
-          <dl className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card">
+      <div className="flex flex-1 flex-col w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6 gap-5 sm:gap-6">
+        {/* Compact overview keeps the trading history in view. */}
+        <div>
+          <dl className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card lg:grid-cols-5">
             {[
               { label: 'Total P&L', value: formatPnl(quickStats.totalPnL), detail: `${quickStats.totalTrades} trades${activeFilterCount ? ' matching filters' : ''}`, color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss },
               { label: 'Win rate', value: `${quickStats.winRate.toFixed(1)}%`, detail: `${quickStats.winCount} wins · ${quickStats.lossCount} losses`, color: quickStats.winRate >= 50 ? themeColors.profit : themeColors.loss },
@@ -2475,36 +2457,36 @@ export default function TradeLog() {
               { label: 'Profit factor', value: quickStats.totalTrades === 0 ? '—' : quickStats.profitFactor >= 999 ? '∞' : `${quickStats.profitFactor.toFixed(2)}x`, detail: quickStats.totalTrades === 0 ? 'No trades yet' : `Won ${formatPnl(quickStats.grossProfit)} · Lost ${formatPnl(-quickStats.grossLoss)}`, color: quickStats.totalTrades === 0 ? undefined : quickStats.profitFactor >= 1 ? themeColors.profit : themeColors.loss, wide: true },
             ].map((stat, index) => (
               // The fifth tile spans the row so the strip ends on a straight edge.
-              <div key={stat.label} className={cn('min-w-0 p-3.5', index < 4 && 'border-b', index % 2 === 0 && !('wide' in stat && stat.wide) && 'border-r', 'wide' in stat && stat.wide && 'col-span-2')}>
+              <div key={stat.label} className={cn('min-w-0 p-3.5 sm:p-4 lg:border-b-0 lg:border-r lg:last:border-r-0', index < 4 && 'border-b', index % 2 === 0 && !('wide' in stat && stat.wide) && 'border-r', 'wide' in stat && stat.wide && 'col-span-2 lg:col-span-1')}>
                 <dt className="text-xs text-muted-foreground">{stat.label}</dt>
                 <dd className="mt-1 break-words text-xl font-semibold tracking-tight tabular-nums" style={{ color: stat.color }}>{stat.value}</dd>
                 <dd className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{stat.detail}</dd>
               </div>
             ))}
           </dl>
-          <Button variant="ghost" size="sm" className="mt-1 w-full gap-2 text-xs text-muted-foreground" aria-expanded={showDetailedStats} aria-controls="trade-log-statistics" onClick={() => setShowDetailedStats(value => !value)}>
+          <Button variant="ghost" size="sm" className="mt-1 w-full gap-2 text-xs text-muted-foreground sm:ml-auto sm:flex sm:w-auto" aria-expanded={showDetailedStats} aria-controls="trade-log-statistics" onClick={() => setShowDetailedStats(value => !value)}>
             {showDetailedStats ? 'Hide detailed statistics' : 'Show detailed statistics'}
             <CaretDown className={cn('h-3.5 w-3.5 transition-transform', showDetailedStats && 'rotate-180')} aria-hidden="true" />
           </Button>
         </div>
         <TooltipProvider>
         {/* Five cards: three across then two wider ones at 2xl, two across with a full-width last card below that, so every row ends flush */}
-        <div id="trade-log-statistics" className={cn('gap-4 sm:gap-6 sm:grid sm:grid-cols-2 2xl:grid-cols-6', showDetailedStats ? 'grid' : 'hidden')}>
+        <div id="trade-log-statistics" className={cn('gap-4 sm:grid-cols-2 2xl:grid-cols-6', showDetailedStats ? 'grid' : 'hidden')}>
             {/* Total P&L */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card className="relative overflow-visible shadow-none transition-colors hover:bg-muted/30 2xl:col-span-2">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div
-                      className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                    <Badge variant="secondary"
+                      className="gap-1 font-normal tabular-nums"
                       style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}
                     >
                       {quickStats.totalPnL >= 0 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />}
                       {pnlMode === 'percent'
                         ? `${quickStats.totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
                         : `${quickStats.totalPnL >= 0 ? '+' : '-'}${quickStats.pnlPct.toFixed(1)}%`}
-                    </div>
+                    </Badge>
                   </TooltipTrigger>
                   <TooltipContent className="p-2 border bg-popover">
                     <p className="text-xs">{pnlMode === 'percent' ? 'P&L in money' : 'Percentage of account balance'}</p>
@@ -2514,14 +2496,14 @@ export default function TradeLog() {
               <CardContent>
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-3xl font-bold tracking-tight tabular-nums"
+                    <div className="text-3xl font-semibold tracking-tight tabular-nums"
                        style={{ color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss }}>
                       {pnlMode === 'percent'
                         ? `${quickStats.totalPnL >= 0 ? '+' : '-'}${quickStats.pnlPct.toFixed(2)}%`
                         : `${quickStats.totalPnL >= 0 ? '+' : '-'}${currencySymbol}${Math.abs(quickStats.totalPnL).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
                     </div>
                     <div className="mt-3 space-y-0.5">
-                      <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                      <p className="text-sm text-muted-foreground">
                         Avg {quickStats.totalTrades > 0 ? formatPnl(quickStats.totalPnL / quickStats.totalTrades) : formatPnl(0)} per trade
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -2532,13 +2514,13 @@ export default function TradeLog() {
                       </p>
                     </div>
                   </div>
-                  <div className="w-32 h-10 relative shrink-0">
+                  <div className="w-32 h-10 relative shrink-0 opacity-75">
                     <ChartContainer
                       config={{ pnl: { label: "P&L", color: quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss } }}
                       className="w-full h-full aspect-auto"
                     >
                       <LineChart data={pnlSparkline} margin={{ top: 3, right: 2, bottom: 3, left: 2 }}>
-                        <Line dataKey="pnl" type="monotone" stroke={quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
+                        <Line dataKey="pnl" type={isDemo ? "linear" : "monotone"} stroke={quickStats.totalPnL >= 0 ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
                       </LineChart>
                     </ChartContainer>
                   </div>
@@ -2547,20 +2529,20 @@ export default function TradeLog() {
             </Card>
 
             {/* Win Rate */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card className="relative overflow-visible shadow-none transition-colors hover:bg-muted/30 2xl:col-span-2">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Win Rate</CardTitle>
-                <div
-                  className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                <Badge variant="secondary"
+                  className="gap-1 font-normal tabular-nums"
                   style={{ color: quickStats.winRate >= 50 ? themeColors.profit : themeColors.loss }}
                 >
                   {quickStats.winCount}W / {quickStats.lossCount}L
-                </div>
+                </Badge>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <div className="text-3xl font-bold tracking-tight tabular-nums"
+                    <div className="text-3xl font-semibold tracking-tight tabular-nums"
                          style={{ color: quickStats.winRate >= 50 ? themeColors.profit : themeColors.loss }}>
                       {quickStats.winRate.toFixed(1)}%
                     </div>
@@ -2577,7 +2559,7 @@ export default function TradeLog() {
                       </p>
                     </div>
                   </div>
-                  <div className="w-16 h-16 relative">
+                  <div className="w-16 h-16 opacity-75 relative">
                     <ChartContainer
                       config={{
                         wins: { label: "Wins", color: themeColors.profit },
@@ -2596,10 +2578,6 @@ export default function TradeLog() {
                           innerRadius={16}
                           outerRadius={28}
                           strokeWidth={0}
-                          activeIndex={0}
-                          activeShape={({ outerRadius = 0, ...props }: any) => (
-                            <Sector {...props} outerRadius={outerRadius + 2} />
-                          )}
                         />
                       </PieChart>
                     </ChartContainer>
@@ -2609,21 +2587,21 @@ export default function TradeLog() {
             </Card>
 
             {/* Best Trade */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card className="relative overflow-visible shadow-none transition-colors hover:bg-muted/30 2xl:col-span-2">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Best Trade</CardTitle>
-                <div
-                  className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+                <Badge variant="secondary"
+                  className="gap-1 font-normal tabular-nums"
                   style={{ color: themeColors.profit }}
                 >
                   <Trophy className="h-3 w-3" />
                   {quickStats.bestTradeSymbol}
-                </div>
+                </Badge>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: themeColors.profit }}>
+                    <div className="text-3xl font-semibold tracking-tight tabular-nums" style={{ color: themeColors.profit }}>
                       {formatPnl(quickStats.bestTrade)}
                     </div>
                     <div className="mt-3 space-y-0.5">
@@ -2635,7 +2613,7 @@ export default function TradeLog() {
                       </p>
                     </div>
                   </div>
-                  <div className="w-16 h-16 relative shrink-0">
+                  <div className="w-16 h-16 opacity-75 relative shrink-0">
                     <ChartContainer
                       config={{
                         best: { label: "Best", color: themeColors.profit },
@@ -2663,21 +2641,21 @@ export default function TradeLog() {
             </Card>
 
             {/* Avg R:R */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors 2xl:col-span-3">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card className="relative overflow-visible shadow-none transition-colors hover:bg-muted/30 2xl:col-span-3">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Avg R:R</CardTitle>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div
+                    <Badge variant="secondary"
                       className={cn(
-                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+                        'gap-1 font-normal tabular-nums',
                         quickStats.validRRCount === 0 && 'text-muted-foreground',
                       )}
                       style={quickStats.validRRCount > 0 ? { color: quickStats.avgRR >= 1.5 ? themeColors.profit : quickStats.avgRR >= 1 ? themeColors.primary : themeColors.loss } : undefined}
                     >
                       {quickStats.validRRCount > 0 && (quickStats.avgRR >= 1 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />)}
                       {quickStats.validRRCount === 0 ? 'No data' : quickStats.avgRR >= 2 ? 'Excellent' : quickStats.avgRR >= 1.5 ? 'Good' : quickStats.avgRR >= 1 ? 'Okay' : 'Low'}
-                    </div>
+                    </Badge>
                   </TooltipTrigger>
                   <TooltipContent className="p-2 border bg-popover">
                     <p className="text-xs">Average reward-to-risk ratio (higher is better)</p>
@@ -2687,12 +2665,12 @@ export default function TradeLog() {
               <CardContent>
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className={cn('text-3xl font-bold tracking-tight tabular-nums', quickStats.validRRCount === 0 && 'text-muted-foreground')}
+                    <div className={cn('text-3xl font-semibold tracking-tight tabular-nums', quickStats.validRRCount === 0 && 'text-muted-foreground')}
                          style={quickStats.validRRCount > 0 ? { color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss } : undefined}>
                       {quickStats.avgRR > 0 ? `${quickStats.avgRR.toFixed(1)}:1` : '--'}
                     </div>
                     <div className="mt-3 space-y-0.5">
-                      <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                      <p className="text-sm text-muted-foreground">
                         Planned from stop and target
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -2702,7 +2680,7 @@ export default function TradeLog() {
                       </p>
                     </div>
                   </div>
-                  <div className="w-16 h-16 relative shrink-0">
+                  <div className="w-16 h-16 opacity-75 relative shrink-0">
                     <ChartContainer
                       config={{
                         rr: { label: "Avg R:R", color: quickStats.avgRR >= 1 ? themeColors.profit : themeColors.loss },
@@ -2729,21 +2707,21 @@ export default function TradeLog() {
             </Card>
 
             {/* Profit Factor: gross profit over gross loss for the trades currently shown */}
-            <Card className="relative overflow-visible hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors sm:col-span-2 2xl:col-span-3">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card className="relative overflow-visible shadow-none transition-colors hover:bg-muted/30 sm:col-span-2 2xl:col-span-3">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Profit Factor</CardTitle>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div
+                    <Badge variant="secondary"
                       className={cn(
-                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
+                        'gap-1 font-normal tabular-nums',
                         quickStats.totalTrades === 0 && 'text-muted-foreground',
                       )}
                       style={quickStats.totalTrades > 0 ? { color: quickStats.profitFactor >= 1.5 ? themeColors.profit : quickStats.profitFactor >= 1 ? themeColors.primary : themeColors.loss } : undefined}
                     >
                       {quickStats.totalTrades > 0 && (quickStats.profitFactor >= 1 ? <TrendUp className="h-3 w-3" /> : <TrendDown className="h-3 w-3" />)}
                       {quickStats.totalTrades === 0 ? 'No data' : quickStats.profitFactor >= 2 ? 'Excellent' : quickStats.profitFactor >= 1.5 ? 'Good' : quickStats.profitFactor >= 1 ? 'Okay' : 'Losing'}
-                    </div>
+                    </Badge>
                   </TooltipTrigger>
                   <TooltipContent className="p-2 border bg-popover">
                     <p className="text-xs">Money won divided by money lost. Above 1 means the trades shown made money overall.</p>
@@ -2753,12 +2731,12 @@ export default function TradeLog() {
               <CardContent>
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className={cn('text-3xl font-bold tracking-tight tabular-nums', quickStats.totalTrades === 0 && 'text-muted-foreground')}
+                    <div className={cn('text-3xl font-semibold tracking-tight tabular-nums', quickStats.totalTrades === 0 && 'text-muted-foreground')}
                          style={quickStats.totalTrades > 0 ? { color: quickStats.profitFactor >= 1 ? themeColors.profit : themeColors.loss } : undefined}>
                       {quickStats.totalTrades === 0 ? '--' : quickStats.profitFactor >= 999 ? '∞' : `${quickStats.profitFactor.toFixed(2)}x`}
                     </div>
                     <div className="mt-3 space-y-0.5">
-                      <p className="text-sm font-medium" style={{ color: themeColors.primary }}>
+                      <p className="text-sm text-muted-foreground">
                         Won {formatPnl(quickStats.grossProfit)}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -2768,7 +2746,7 @@ export default function TradeLog() {
                       </p>
                     </div>
                   </div>
-                  <div className="w-16 h-16 relative shrink-0">
+                  <div className="w-16 h-16 opacity-75 relative shrink-0">
                     <ChartContainer
                       config={{
                         won: { label: "Won", color: themeColors.profit },
@@ -2798,8 +2776,8 @@ export default function TradeLog() {
         </TooltipProvider>
 
         {/* Trades Table */}
-        <Card className="">
-          <CardHeader>
+        <Card className="overflow-hidden shadow-none">
+          <CardHeader className="space-y-4 border-b bg-muted/15 p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
@@ -2869,62 +2847,15 @@ export default function TradeLog() {
 
           <CardContent className="p-0">
             {trades.length === 0 ? (
-              <div className="px-6 py-14 flex flex-col items-center text-center gap-8">
-                {/* Icon */}
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                  <ChartBar className="h-8 w-8" style={{ color: themeColors.primary }} />
-                </div>
-
-                <div className="space-y-2 max-w-xs">
-                  <h3 className="text-xl font-bold tracking-tight">Your trade log is empty</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Add your first trade manually or import a CSV export from your broker. Your analytics, win rate, and P&L will appear automatically.
-                  </p>
-                </div>
-
-                {/* CTAs */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={() => openTradeDialog('manual')}
-                    style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Trade
-                  </Button>
-                  <Button variant="outline" onClick={() => openTradeDialog('import')}>
-                    <UploadSimple className="mr-2 h-4 w-4" />
-                    Import trades
-                  </Button>
-                </div>
-
-                {/* Tips */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left">
-                  {([
-                    { Icon: UploadSimple, title: 'Import from broker', body: 'Export a CSV from MT4/MT5, IBKR, or Tradovate and import it in one click.' },
-                    { Icon: PencilSimple, title: 'Log manually', body: 'Record entry/exit prices, lot size, spread, commission and let us calculate your P&L.' },
-                    { Icon: Brain, title: 'AI insights unlock', body: 'Your AI Coach is in the sidebar already; deeper trade analysis and strategy tagging unlock once you log trades.' },
-                  ] as const).map((tip) => (
-                    <div key={tip.title} className="rounded-xl border border-border/60 bg-muted/50 p-4 space-y-2">
-                      <tip.Icon className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-xs font-semibold text-foreground">{tip.title}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{tip.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <EmptyState className="rounded-none border-0" icon={ChartBar} title="Your next trade starts your journal" description="Add a completed trade to see your P&L, win rate, and performance by symbol. Build your history one trade at a time, or bring it over from your broker.">
+                <EmptyStateAction icon={Plus} title="Add a trade" description="Enter prices, position size, and costs. We’ll calculate the P&L." onClick={() => openTradeDialog('manual')} />
+                <EmptyStateAction icon={UploadSimple} title="Import trades" description="Upload a broker CSV to bring in your trading history." onClick={() => openTradeDialog('import')} />
+                <p className="text-xs leading-relaxed text-muted-foreground">Saved trades also become available for journal reviews and trade analysis.</p>
+              </EmptyState>
             ) : displayedTrades.length === 0 ? (
-              <div className="px-6 py-14 flex flex-col items-center text-center gap-4">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                  <ChartBar className="h-6 w-6" style={{ color: themeColors.primary }} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-base font-semibold">No matching trades</h3>
-                  <p className="text-sm text-muted-foreground">Try another search or remove a filter. Your saved trades are still here.</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setFilters({ ...EMPTY_FILTERS })}>
-                  Reset search & filters
-                </Button>
-              </div>
+              <EmptyState compact className="rounded-none border-0" icon={ChartBar} title="No trades match these filters" description="Your saved trades are still here. Clear the search and filters to see them again.">
+                <Button variant="outline" size="sm" onClick={() => setFilters({ ...EMPTY_FILTERS })}>Reset search &amp; filters</Button>
+              </EmptyState>
             ) : (
               <>
               {/* Bulk actions bar */}
@@ -2987,7 +2918,7 @@ export default function TradeLog() {
               <div className="hidden md:block w-full overflow-x-auto scrollbar-hide">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-b border-border/70 hover:bg-transparent">
+                    <TableRow className="border-b border-border/70 bg-muted/30 hover:bg-muted/30">
                       <TableHead className="w-10 py-3">
                         <Checkbox
                           checked={allPageSelected ? true : somePageSelected ? 'indeterminate' : false}

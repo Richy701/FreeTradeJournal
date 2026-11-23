@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { readFocusRecords } from '@/lib/weekly-focus';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { HexColorPicker } from 'react-colorful';
@@ -103,6 +103,7 @@ function BrokerSelect({ value, onChange }: { value: string; onChange: (v: string
 
 const NAV = [
   { id: 'general',       label: 'General',       Icon: Sliders },
+  { id: 'appearance',    label: 'Appearance',    Icon: Sun },
   { id: 'accounts',      label: 'Accounts',      Icon: Wallet },
   { id: 'risk',          label: 'Risk',          Icon: Gauge },
   { id: 'data',          label: 'Data',          Icon: Database },
@@ -135,14 +136,14 @@ function SettingsGroup({ title, description, children }: { title: string; descri
   );
 }
 
-function SettingRow({ label, description, children }: { label: ReactNode; description?: ReactNode; children?: ReactNode }) {
+function SettingRow({ label, description, children, stacked = false }: { label: ReactNode; description?: ReactNode; children?: ReactNode; stacked?: boolean }) {
   return (
-    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+    <div className={`px-5 py-4 flex flex-col gap-3 ${stacked ? "" : "sm:flex-row sm:items-center sm:justify-between sm:gap-6"}`}>
       <div className="min-w-0">
         <p className="text-sm font-medium">{label}</p>
         {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
-      {children && <div className="shrink-0 sm:max-w-[60%]">{children}</div>}
+      {children && <div className={stacked ? "w-full" : "shrink-0 sm:max-w-[60%]"}>{children}</div>}
     </div>
   );
 }
@@ -152,6 +153,7 @@ export default function Settings() {
   const { currentTheme, setTheme: setColorTheme, availableThemes, themeColors, alpha, setCustomColors, customColors } = useThemePresets();
   // Mode used to render the full-theme preview mocks
   const resolvedMode: 'light' | 'dark' = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  const [previewMode, setPreviewMode] = useState<'light' | 'dark'>(resolvedMode);
   const { user, isDemo } = useAuth();
   const demoGuard = useDemoGuard();
   const { accounts, activeAccount, addAccount, updateAccount, deleteAccount } = useAccounts();
@@ -173,32 +175,16 @@ export default function Settings() {
   // scroll position. ?tab= deep links (sidebar, checkout redirect) land on
   // the right section.
   const [activeSection, setActiveSection] = useState<string>('general');
-  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-
   const selectTab = (id: string) => {
-    const el = sectionRefs.current[id];
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setSearchParams({ tab: id }, { replace: true });
     trackEvent('settings_tab_viewed', { tab: id });
   };
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        }
-      },
-      { threshold: 0.15, rootMargin: '-80px 0px -55% 0px' }
-    );
-    Object.values(sectionRefs.current).forEach(el => { if (el) observer.observe(el); });
-    return () => observer.disconnect();
-  }, []);
-
   const urlTab = searchParams.get('tab');
   useEffect(() => {
-    if (urlTab && NAV.some(n => n.id === urlTab)) setTimeout(() => selectTab(urlTab), 300);
+    if (urlTab && NAV.some(n => n.id === urlTab)) setActiveSection(urlTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab]);
 
@@ -409,11 +395,16 @@ export default function Settings() {
       <div className="min-h-screen flex flex-col bg-background">
         <SiteHeader />
 
-        {/* Sticky section tabs; scroll-spy keeps the active one in step */}
+        <header className="px-4 sm:px-6 lg:px-8 py-6 border-b">
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Your workspace, accounts, and trading preferences.</p>
+        </header>
+        <div className="flex flex-col gap-5 px-4 sm:px-6 lg:px-8 py-6">
+        {/* Section navigation */}
         {/* top offset = SiteHeader height (h-12 / md:h-16), which is sticky above this */}
-        <div className="sticky top-12 md:top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60">
+        <div className="sticky top-12 md:top-16 z-30 bg-background border-b w-full">
           <nav aria-label="Settings sections" className="w-full overflow-x-auto scrollbar-hide">
-            <div className="flex gap-1 px-4 sm:px-6 lg:px-8 min-w-max">
+            <div className="flex gap-1 min-w-max pb-2">
               {NAV.map(({ id, label, Icon }) => {
                 const isActive = activeSection === id;
                 return (
@@ -422,8 +413,8 @@ export default function Settings() {
                     type="button"
                     onClick={() => selectTab(id)}
                     aria-current={isActive ? 'true' : undefined}
-                    className={`flex items-center gap-2 px-3 py-3 text-sm border-b-2 -mb-px transition-colors whitespace-nowrap ${
-                      isActive ? 'border-primary font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+                    className={`flex items-center gap-2 px-3 py-2.5 text-sm rounded-md border transition-colors whitespace-nowrap ${
+                      isActive ? 'border-border bg-muted font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -435,44 +426,22 @@ export default function Settings() {
           </nav>
         </div>
 
-        <div className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="min-w-0 w-full">
           <div>
-            <div className="space-y-16 pb-16">
+            <div className="space-y-12 pb-2">
 
               {/* ── GENERAL ─────────────────────────────────────────────── */}
               <section
                 id="general"
-                ref={(el) => { sectionRefs.current['general'] = el; }}
                 aria-labelledby="settings-general"
                 className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
                   <SectionHeading id="settings-general" title="General" />
 
-                  <SettingsGroup title="Appearance" description="Light or dark, and the currency P&L is shown in.">
-                    <SettingRow label="Theme mode" description="Light, dark, or follow the system">
-                      <div className="flex gap-2">
-                        {([
-                          { value: 'light', label: 'Light', icon: Sun },
-                          { value: 'dark', label: 'Dark', icon: Moon },
-                          { value: 'system', label: 'System', icon: Monitor },
-                        ] as const).map(({ value, label, icon: ThemeIcon }) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setTheme(value)}
-                            aria-pressed={theme === value}
-                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors ${
-                              theme === value ? 'font-semibold border-primary/40 bg-primary/10 text-foreground' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
-                            }`}
-                          >
-                            <ThemeIcon aria-hidden="true" className={`h-3.5 w-3.5 ${theme === value ? 'text-primary' : ''}`} />
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </SettingRow>
-                    <SettingRow label="Display currency" description="Used wherever P&L is shown">
-                      <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <div className={`grid gap-6 ${MARKET_DATA_ENABLED ? "lg:grid-cols-2 lg:[&>div]:flex lg:[&>div]:flex-col lg:[&>div>div:last-child]:flex-1" : ""}`}>
+                  <SettingsGroup title="Display preferences" description="Choose the currency used to show your results.">
+                    <SettingRow stacked label="Display currency" description="Used wherever P&L is shown">
+                      <div className="grid grid-cols-3 gap-2">
                         {CURRENCIES.map(({ value, symbol, label }) => {
                           const isActive = (activeAccount?.currency || settings.currency) === value;
                           return (
@@ -496,8 +465,54 @@ export default function Settings() {
                     </SettingRow>
                   </SettingsGroup>
 
-                  <SettingsGroup title="Color theme" description="Accent, profit, and loss colors across the app. Custom unlocks the Theme Studio.">
+                  {MARKET_DATA_ENABLED && (
+                    <SettingsGroup title="Dashboard" description="What appears in the strip at the top of your dashboard.">
+                      <SettingRow label="Live market prices" description="A ticker of the symbols you trade">
+                        <Switch checked={settings.showMarketPrices} onCheckedChange={(c) => updateSettings({ showMarketPrices: c })} aria-label="Live market prices" />
+                      </SettingRow>
+                      <SettingRow label="Macro snapshot" description="Fed funds rate, Treasury yields, CPI, and unemployment">
+                        <Switch checked={settings.showMacroSnapshot} onCheckedChange={(c) => updateSettings({ showMacroSnapshot: c })} aria-label="Macro snapshot" />
+                      </SettingRow>
+                    </SettingsGroup>
+                  )}
+                  </div>
+              </section>
+
+              <section id="appearance" aria-labelledby="settings-appearance" className="scroll-mt-40 md:scroll-mt-44 space-y-6">
+                <SectionHeading id="settings-appearance" title="Appearance" />
+                <SettingsGroup title="Display mode" description="Choose how the app looks on this device.">
+                    <SettingRow stacked label="Theme mode" description="Light, dark, or follow the system">
+                      <div className="flex gap-2">
+                        {([
+                          { value: 'light', label: 'Light', icon: Sun },
+                          { value: 'dark', label: 'Dark', icon: Moon },
+                          { value: 'system', label: 'System', icon: Monitor },
+                        ] as const).map(({ value, label, icon: ThemeIcon }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setTheme(value)}
+                            aria-pressed={theme === value}
+                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs transition-colors ${
+                              theme === value ? 'font-semibold border-primary/40 bg-primary/10 text-foreground' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                            }`}
+                          >
+                            <ThemeIcon aria-hidden="true" className={`h-3.5 w-3.5 ${theme === value ? 'text-primary' : ''}`} />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </SettingRow>
+                </SettingsGroup>
+                  <SettingsGroup title="Theme & customization" description="Choose a palette, compare surfaces, or build your own.">
                     <div className="px-5 py-5 space-y-7">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+                        <p className="text-xs text-muted-foreground">Preview a mode without changing your workspace.</p>
+                        <div className="flex gap-1" role="group" aria-label="Theme preview mode">
+                          {(['light','dark'] as const).map(mode => <Button key={mode} size="sm" variant={previewMode === mode ? 'secondary' : 'outline'} aria-pressed={previewMode === mode} onClick={() => setPreviewMode(mode)} className="capitalize">{mode}</Button>)}
+                        </div>
+                      </div>
+
 
                       {/* Accent themes: swap the data colors, keep the standard look */}
                       <div className="space-y-3">
@@ -518,12 +533,9 @@ export default function Settings() {
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
                                 className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                               >
-                                <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
-                                  <ThemeMiniPreview
-                                    vars={computeThemeVars(key, customColors, resolvedMode)}
-                                    fallback={PREVIEW_DEFAULTS[resolvedMode]}
-                                    style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
-                                  />
+                                <div className={`flex items-center gap-2 rounded-md border p-3 ${isSelected ? 'border-foreground' : 'border-border'}`} aria-hidden="true">
+                                  {[preset.colors.primary,preset.colors.profit,preset.colors.loss].map((color,i)=><span key={i} className="h-5 w-5 rounded-full border border-black/10" style={{backgroundColor:color}} />)}
+                                  {isSelected && <Check className="h-3.5 w-3.5 ml-auto" />}
                                 </div>
                                 <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
                               </div>
@@ -538,7 +550,7 @@ export default function Settings() {
                           <p className="text-sm font-medium">Full themes</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Restyle everything, backgrounds, cards, and sidebar included</p>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                           {Object.entries(availableThemes).filter(([, preset]) => !!preset.cssOverrides).map(([key, preset]) => {
                             const isSelected = currentTheme === key;
                             return (
@@ -551,11 +563,8 @@ export default function Settings() {
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setColorTheme(key); } }}
                                 className="group cursor-pointer outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                               >
-                                <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
-                                  <ThemeMiniPreview
-                                    vars={computeThemeVars(key, customColors, resolvedMode)}
-                                    style={isSelected ? { boxShadow: `0 0 0 2px ${preset.colors.primary}` } : undefined}
-                                  />
+                                <div className={`grid grid-cols-2 gap-2 rounded-lg p-2 border ${isSelected ? 'border-foreground' : 'border-border'}`} aria-hidden="true">
+                                  {(['light','dark'] as const).map(mode => <div key={mode} className="min-w-0 space-y-1.5"><ThemeMiniPreview vars={computeThemeVars(key,customColors,mode)} fallback={PREVIEW_DEFAULTS[mode]} /><span className="block text-[10px] text-muted-foreground capitalize">{mode}</span></div>)}
                                 </div>
                                 <span className={`mt-2 block text-xs truncate transition-colors ${isSelected ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground group-hover:text-foreground'}`}>{preset.name}</span>
                               </div>
@@ -583,8 +592,8 @@ export default function Settings() {
                             >
                               <div className="pointer-events-none transition-opacity group-hover:opacity-90" aria-hidden="true">
                                 <ThemeMiniPreview
-                                  vars={computeThemeVars('custom', customColors, resolvedMode)}
-                                  fallback={PREVIEW_DEFAULTS[resolvedMode]}
+                                  vars={computeThemeVars('custom', customColors, previewMode)}
+                                  fallback={PREVIEW_DEFAULTS[previewMode]}
                                   style={isSelected ? { boxShadow: `0 0 0 2px ${customColors.primary}` } : undefined}
                                 />
                               </div>
@@ -638,22 +647,11 @@ export default function Settings() {
                     </div>
                   </SettingsGroup>
 
-                  {MARKET_DATA_ENABLED && (
-                    <SettingsGroup title="Dashboard" description="What appears in the strip at the top of your dashboard.">
-                      <SettingRow label="Live market prices" description="A ticker of the symbols you trade">
-                        <Switch checked={settings.showMarketPrices} onCheckedChange={(c) => updateSettings({ showMarketPrices: c })} aria-label="Live market prices" />
-                      </SettingRow>
-                      <SettingRow label="Macro snapshot" description="Fed funds rate, Treasury yields, CPI, and unemployment">
-                        <Switch checked={settings.showMacroSnapshot} onCheckedChange={(c) => updateSettings({ showMacroSnapshot: c })} aria-label="Macro snapshot" />
-                      </SettingRow>
-                    </SettingsGroup>
-                  )}
               </section>
 
               {/* ── ACCOUNTS ────────────────────────────────────────────── */}
               <section
                 id="accounts"
-                ref={(el) => { sectionRefs.current['accounts'] = el; }}
                 aria-labelledby="settings-accounts"
                 className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
@@ -718,22 +716,23 @@ export default function Settings() {
                             </div>
                           </div>
                         ) : (
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-4">
-                            <div className="flex-1 min-w-0">
+                          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_17rem] items-center gap-4 px-5 py-5">
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-medium">{account.name}</span>
-                                {account.isDefault && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: alpha(themeColors.profit, '15'), color: themeColors.profit }}>Default</span>}
-                                {activeAccount?.id === account.id && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: alpha(themeColors.primary, '15'), color: themeColors.primary }}>Active</span>}
-                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground capitalize">{account.type.replace('-', ' ')}</span>
+                                <span className="text-sm font-semibold">{account.name}</span>
+                                {activeAccount?.id === account.id && <Badge variant="secondary" className="gap-1 text-[10px]"><span className="h-1.5 w-1.5 rounded-full bg-primary" />In use</Badge>}
+                                {account.isDefault && <Badge variant="outline" className="text-[10px]">Default</Badge>}
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">{account.broker} · {account.currency}{account.balance ? ` · ${formatCurrency(account.balance, false)}` : ''}</p>
+                              <p className="mt-1 text-xs text-muted-foreground capitalize">{account.type.replace('-', ' ')}</p>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {!account.isDefault && (
-                                <button onClick={() => updateAccount(account.id, { isDefault: true })} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors">Set default</button>
-                              )}
-                              <button onClick={() => setEditForm(account)} className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-muted transition-colors flex items-center gap-1"><PencilSimple className="h-3.5 w-3.5" /> Edit</button>
-                              <button onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1} className="text-xs text-destructive hover:text-destructive/80 px-3 py-2 rounded hover:bg-destructive/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">Delete</button>
+                            <dl className="grid grid-cols-2 gap-5 text-sm">
+                              <div><dt className="text-xs text-muted-foreground">Broker</dt><dd className="mt-1 break-words">{account.broker || 'Not specified'}</dd></div>
+                              <div><dt className="text-xs text-muted-foreground">Currency / balance</dt><dd className="mt-1 tabular-nums">{account.currency}{account.balance ? ` · ${formatCurrency(account.balance, false)}` : ''}</dd></div>
+                            </dl>
+                            <div className="flex items-center gap-2 flex-wrap xl:justify-end">
+                              {!account.isDefault && <Button variant="ghost" size="sm" onClick={() => updateAccount(account.id, { isDefault: true })}>Set default</Button>}
+                              <Button variant="outline" size="sm" onClick={() => setEditForm(account)}><PencilSimple className="h-3.5 w-3.5" /> Edit</Button>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteAccountId(account.id)} disabled={accounts.length <= 1}>Delete</Button>
                             </div>
                           </div>
                         )}
@@ -824,7 +823,6 @@ export default function Settings() {
               {/* ── RISK ────────────────────────────────────────────────── */}
               <section
                 id="risk"
-                ref={(el) => { sectionRefs.current['risk'] = el; }}
                 aria-labelledby="settings-risk"
                 className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
@@ -837,18 +835,18 @@ export default function Settings() {
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       {/* Inputs */}
-                      <div className="lg:col-span-2 rounded-xl border border-border/70 bg-card divide-y divide-border/50 overflow-hidden">
-                        <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                          <div className="sm:w-44 shrink-0">
+                      <div className="lg:col-span-2 grid sm:grid-cols-2 rounded-xl border border-border/70 bg-card overflow-hidden">
+                        <div className="p-5 flex flex-col gap-4">
+                          <div className="shrink-0">
                             <p className="text-sm font-medium">Risk per trade</p>
                             <p className="text-xs text-muted-foreground mt-0.5">% of the account per trade</p>
                           </div>
                           <div className="flex-1 space-y-2">
-                            <div className="relative max-w-[160px]">
+                            <div className="relative w-full">
                               <Input aria-label="Risk per trade (%)" type="number" name="riskPerTrade" inputMode="decimal" autoComplete="off" step="0.1" min="0.1" max="10" value={settings.riskPerTrade} onChange={(e) => updateSettings({ riskPerTrade: parseFloat(e.target.value) || 0 })} className="h-9 pr-7" />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                             </div>
-                            <div className="flex items-center gap-2 max-w-[160px]">
+                            <div className="flex items-center gap-2 w-full">
                               <Progress className="h-1 flex-1" value={(settings.riskPerTrade / 5) * 100} indicatorColor={settings.riskPerTrade <= 2 ? themeColors.profit : settings.riskPerTrade <= 4 ? themeColors.primary : themeColors.loss} />
                             </div>
                             <p className="text-xs text-muted-foreground">
@@ -856,13 +854,13 @@ export default function Settings() {
                             </p>
                           </div>
                         </div>
-                        <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-start gap-4">
-                          <div className="sm:w-44 shrink-0">
+                        <div className="p-5 flex flex-col gap-4">
+                          <div className="shrink-0">
                             <p className="text-sm font-medium">Account size</p>
                             <p className="text-xs text-muted-foreground mt-0.5">Total trading capital</p>
                           </div>
                           <div className="flex-1">
-                            <div className="relative max-w-[160px]">
+                            <div className="relative w-full">
                               <Input aria-label="Default account size" type="number" name="accountSize" inputMode="decimal" autoComplete="off" step="1000" value={settings.accountSize} onChange={(e) => updateSettings({ accountSize: parseFloat(e.target.value) || 0 })} placeholder="10000" className="h-9 pl-6" />
                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{getCurrencySymbol()}</span>
                             </div>
@@ -873,7 +871,7 @@ export default function Settings() {
                       {/* Calculator: plain figures, no tiles */}
                       <div className="rounded-xl border border-border/70 bg-card overflow-hidden flex flex-col">
                         <div className="px-5 pt-4 pb-3">
-                          <p className="text-sm font-medium">What that means</p>
+                          <p className="text-sm font-medium">Your risk amount</p>
                         </div>
                         <dl className="px-5 pb-4 divide-y divide-border/50 flex-1">
                           {[
@@ -883,7 +881,7 @@ export default function Settings() {
                           ].map(({ label, value, emphasis }) => (
                             <div key={label} className="flex items-baseline justify-between gap-4 py-2.5">
                               <dt className="text-xs text-muted-foreground">{label}</dt>
-                              <dd className={`tabular-nums ${emphasis ? 'text-base font-semibold' : 'text-sm font-medium'}`}>{value}</dd>
+                              <dd className={`tabular-nums ${emphasis ? 'text-2xl font-semibold tracking-tight' : 'text-sm font-medium'}`}>{value}</dd>
                             </div>
                           ))}
                         </dl>
@@ -929,13 +927,13 @@ export default function Settings() {
               {/* ── DATA ────────────────────────────────────────────────── */}
               <section
                 id="data"
-                ref={(el) => { sectionRefs.current['data'] = el; }}
                 aria-labelledby="settings-data"
                 className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
                   <SectionHeading id="settings-data" title="Data & privacy" />
 
                   <SettingsGroup title="Backup" description="Export a copy of everything, or restore from one.">
+                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/50 [&>div]:!flex-col [&>div]:!items-start [&>div]:!gap-4">
                     <SettingRow label="Export" description="Download everything as a JSON file, screenshots included">
                       <Button variant="outline" size="sm" onClick={exportData}>
                         <DownloadSimple className="mr-2 h-3.5 w-3.5" />
@@ -949,6 +947,7 @@ export default function Settings() {
                       </Button>
                       <input id="import-data" type="file" accept=".json" className="hidden" onChange={importData} />
                     </SettingRow>
+                    </div>
                     <SettingRow label="Storage used" description={`${storageUsed.mb} MB of about 10 MB on this device`}>
                       <div className="w-full sm:w-44">
                         <Progress className="h-1" value={storageUsed.pct} indicatorColor={storageUsed.pct > 80 ? themeColors.loss : themeColors.profit} />
@@ -966,6 +965,7 @@ export default function Settings() {
                     )}
                   </SettingsGroup>
 
+                  <div className="grid lg:grid-cols-2 gap-5 lg:[&>div]:flex lg:[&>div]:flex-col lg:[&>div>div:last-child]:flex-1 lg:[&>div>div:last-child]:flex lg:[&>div>div:last-child]:items-center lg:[&>div>div:last-child>div]:w-full [&_button]:whitespace-normal">
                   <SettingsGroup title="Privacy" description="What this site is allowed to remember about you.">
                     <SettingRow label="Cookie preferences" description="Choose whether optional analytics cookies are set">
                       <Button variant="outline" size="sm" onClick={openCookieSettings}>
@@ -986,30 +986,31 @@ export default function Settings() {
                       </SettingRow>
                     )}
                   </SettingsGroup>
+                  </div>
               </section>
 
               {/* ── NOTIFICATIONS ─────────────────────────────────────── */}
               <section
                 id="notifications"
-                ref={(el) => { sectionRefs.current['notifications'] = el; }}
                 aria-labelledby="settings-notifications"
                 className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
                   <SectionHeading id="settings-notifications" title="Notifications" />
-                  <SettingsGroup title="Push notifications" description="Reminders sent to this device so you keep your logging streak.">
-                    <PushNotificationPrompt />
-                  </SettingsGroup>
+                  <div className="grid lg:grid-cols-[1fr_2fr] gap-5 items-start">
+                    <div><h3 className="text-sm font-semibold">On this device</h3><p className="text-xs text-muted-foreground mt-1">Choose whether to receive reminders to log your trades.</p></div>
+                    <div className="rounded-xl border border-border/70 bg-card overflow-hidden"><PushNotificationPrompt /></div>
+                  </div>
               </section>
 
               {/* ── SUBSCRIPTION ────────────────────────────────────────── */}
               <section
                 id="subscription"
-                ref={(el) => { sectionRefs.current['subscription'] = el; }}
                 aria-labelledby="settings-subscription"
                 className="scroll-mt-40 md:scroll-mt-44 space-y-8"
               >
                   <SectionHeading id="settings-subscription" title="Subscription" />
 
+                  <div className="grid xl:grid-cols-2 gap-6 xl:[&>div]:flex xl:[&>div]:flex-col xl:[&>div>div:last-child]:flex-1">
                   <SettingsGroup title="Plan" description="Your current plan, billing, and sync status.">
                     {isPro ? (
                       <>
@@ -1095,12 +1096,14 @@ export default function Settings() {
                       </div>
                     </SettingsGroup>
                   )}
+                  </div>
               </section>
 
             </div>
           </div>
         </div>
 
+        </div>
         <AppFooter />
       </div>
 

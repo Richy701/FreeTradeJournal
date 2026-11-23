@@ -57,11 +57,11 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
           showCTA={false}
         />
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Why a journal</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Tracking a {page.name}<br />
                 <span className="text-amber-500">account.</span>
               </h2>
@@ -77,11 +77,11 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">The rules</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 What {page.name}<br />
                 <span className="text-amber-500">makes you track.</span>
               </h2>
@@ -103,11 +103,11 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">How FreeTradeJournal helps</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Every rule,<br />
                 <span className="text-amber-500">tracked for you.</span>
               </h2>
@@ -127,11 +127,11 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-6xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Getting your trades in</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Import from<br />
                 <span className="text-amber-500">{page.importPlatform}.</span>
               </h2>
@@ -163,7 +163,7 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
 
         {page.guides && page.guides.length > 0 && (
           <Suspense fallback={<div className="min-h-[32rem]" aria-hidden="true" />}>
-            <BlogStrip
+            <BlogStrip compact editorial
               slugs={page.guides}
               eyebrow="Guides"
               title={<>Reading for <span className="text-amber-600 dark:text-amber-500">{page.name} traders</span></>}
@@ -172,7 +172,7 @@ export default function FirmJournalPage({ page }: { page: FirmPage }) {
           </Suspense>
         )}
 
-        <FAQSection
+        <FAQSection compact
           faqs={page.faqs}
           title={`Tracking ${page.name} with FreeTradeJournal`}
           subtitle="Common questions about the rules, the import, and what the journal does"

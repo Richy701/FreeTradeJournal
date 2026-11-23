@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/empty-state'
 import { useMemo } from "react"
 import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
@@ -6,6 +7,7 @@ import { useDemoData } from '@/hooks/use-demo-data'
 import { List, Plus, UploadSimple, CaretRight } from '@phosphor-icons/react'
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { format, isToday, isYesterday } from "date-fns"
 
@@ -97,10 +99,10 @@ export function DataTable({ data }: DataTableProps) {
   const goToLog = () => navigate('/trades')
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="pb-2">
+    <Card className="flex flex-col overflow-hidden shadow-none">
+      <CardHeader className="border-b p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-baseline gap-2.5 min-w-0">
+          <div className="flex flex-col gap-1.5 min-w-0">
             <CardTitle className="text-lg font-semibold">Recent trades</CardTitle>
             {visibleTrades.length > 0 && (
               <span className="text-xs text-muted-foreground tabular-nums truncate">
@@ -110,26 +112,27 @@ export function DataTable({ data }: DataTableProps) {
             )}
           </div>
           {trades.length > 0 && (
-            <Link
-              to="/trades"
-              className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            >
+            <Button asChild variant="ghost" size="sm" className="shrink-0 text-xs">
+            <Link to="/trades">
               View all
               <CaretRight className="h-3 w-3" />
             </Link>
+            </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="p-0 sm:p-0">
         {trades.length > 0 ? (
           <div>
+            <div aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)_120px] gap-3 border-b px-5 py-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:grid"><span>Symbol</span><span>Side</span><span>Entry → Exit</span><span className="text-right">P&amp;L</span></div>
             {groupedTrades.map((group) => (
-              <div key={group.label}>
-                <div className="flex items-center gap-3 pt-3 pb-1">
+              <div key={group.label} className="border-b last:border-b-0">
+                <div className="flex items-center justify-between gap-3 border-b bg-muted/30 px-4 py-2 sm:px-5">
                   <span className="text-xs font-medium text-muted-foreground">{group.label}</span>
-                  <span className="flex-1 border-t border-border/60" aria-hidden="true" />
+                  <span className="text-[11px] text-muted-foreground">{group.trades.length} trade{group.trades.length === 1 ? '' : 's'}</span>
+
                 </div>
-                <ul>
+                <ul className="divide-y divide-border/50">
                   {group.trades.map((trade) => {
                     const isLong = trade.side === 'long'
                     const isProfit = trade.pnl >= 0
@@ -145,22 +148,27 @@ export function DataTable({ data }: DataTableProps) {
                         <button
                           type="button"
                           onClick={goToLog}
-                          className="group w-full flex items-center gap-3 h-11 -mx-2 px-2 rounded-md text-left hover:bg-muted/40 transition-colors"
+                          className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-h-12 px-4 py-2.5 sm:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)_120px] sm:px-5 rounded-none text-left hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
                         >
-                          <div className="flex-1 min-w-0 flex items-baseline gap-2">
+                          <div className="flex-1 min-w-0 flex flex-col items-start gap-1">
                             <span className="text-sm font-semibold shrink-0">{trade.symbol}</span>
                             <span className="text-xs truncate">
-                              <span className="font-medium" style={{ color: sideColor }}>{isLong ? 'Long' : 'Short'}</span>
-                              {trade.strategy && <span className="text-muted-foreground"> · {trade.strategy}</span>}
+                              <span className="font-medium sm:hidden" style={{ color: sideColor }}>{isLong ? 'Long' : 'Short'}</span>
+                              {trade.strategy && <span className="text-muted-foreground"><span className="sm:hidden"> · </span>{trade.strategy}</span>}
                               {time && <span className="text-muted-foreground hidden sm:inline"> · {time}</span>}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0 tabular-nums">
+                          <Badge variant="outline" className="hidden w-fit rounded-md font-normal sm:inline-flex" style={{ color: sideColor }}>{isLong ? 'Long' : 'Short'}</Badge>
+                          <span className="hidden text-xs tabular-nums text-muted-foreground sm:block">
+                            {Number.isFinite(trade.entryPrice) && Number.isFinite(trade.exitPrice) && trade.entryPrice > 0 && trade.exitPrice > 0
+                              ? `${trade.entryPrice.toLocaleString(undefined, { maximumFractionDigits: 5 })} → ${trade.exitPrice.toLocaleString(undefined, { maximumFractionDigits: 5 })}`
+                              : '—'}
+                          </span>
+                          <div className="flex flex-col items-end gap-1 shrink-0 tabular-nums">
                             <span className="text-sm font-semibold" style={{ color: pnlColor }}>{formatPnl(trade.pnl)}</span>
                             {secondary && (
-                              <span className="text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5 hidden sm:inline-block min-w-[3.75rem] text-center">{secondary}</span>
+                              <span className="text-xs text-muted-foreground hidden sm:inline-block">{secondary}</span>
                             )}
-                            <CaretRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" aria-hidden="true" />
                           </div>
                         </button>
                       </li>
@@ -171,11 +179,7 @@ export function DataTable({ data }: DataTableProps) {
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center text-muted-foreground py-10">
-            <div className="text-center space-y-3">
-              <List className="h-8 w-8 opacity-40 mx-auto" />
-              <p className="text-lg font-medium">No trades yet</p>
-              <p className="text-sm">Add your first trade or import a CSV to get started</p>
+          <EmptyState compact className="border-0" icon={List} title="Your recent trades will appear here" description="Log a trade or import a broker CSV to start your history.">
               <div className="flex items-center justify-center gap-2 pt-2">
                 <Link to="/trades">
                   <Button size="sm" className="gap-1.5">
@@ -193,8 +197,7 @@ export function DataTable({ data }: DataTableProps) {
                   Import CSV
                 </Button>
               </div>
-            </div>
-          </div>
+          </EmptyState>
         )}
       </CardContent>
     </Card>

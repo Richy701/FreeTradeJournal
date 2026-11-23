@@ -38,7 +38,7 @@ export function ColumnMappingDialog({ value, onChange, onConfirm }: ColumnMappin
 
   return (
     <Dialog open={!!value?.show} onOpenChange={(open) => { if (!open) onChange(null); }}>
-      <DialogContent className="max-w-2xl max-h-[90svh] overflow-hidden">
+      <DialogContent className="sm:max-w-4xl max-h-[90svh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Map Your CSV Columns</DialogTitle>
           <DialogDescription>

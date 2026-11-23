@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/empty-state'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -280,21 +281,9 @@ export default function CommunityIdeas() {
               <Button variant="outline" size="sm" onClick={() => feed.reload()}>Try again</Button>
             </div>
           ) : feed.ideas.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card/50 flex flex-col items-center justify-center py-16 text-center space-y-4">
-              <div className="p-4 rounded-2xl" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                <UsersThree className="h-8 w-8" style={{ color: themeColors.primary }} aria-hidden="true" />
-              </div>
-              <h2 className="text-lg font-semibold">{scope === 'mine' ? 'You have not posted an idea yet' : 'No ideas yet'}</h2>
-              <p className="text-sm text-muted-foreground max-w-md">
-                {scope === 'mine'
-                  ? 'Post a setup before you take it, then link the trade afterwards so the result shows next to it.'
-                  : 'Be the first. Post a setup with your entry, stop and target, and why you like it.'}
-              </p>
-              <Button onClick={openPost} disabled={blocked} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>
-                <Plus className="h-4 w-4 mr-2" weight="bold" aria-hidden="true" />
-                Post an idea
-              </Button>
-            </div>
+            <EmptyState icon={UsersThree} title={scope === 'mine' ? 'Keep your next setup here' : 'Start the conversation'} description={scope === 'mine' ? 'Write down your entry, stop, target, and reasoning. Link the trade later to compare the plan with the result.' : 'No ideas have been posted in this view. Share a setup and the reasoning behind it.'}>
+              <Button onClick={openPost} disabled={blocked} style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}>Post an idea</Button>
+            </EmptyState>
           ) : (
             <div className="space-y-4">
               {feed.ideas.map(idea => (

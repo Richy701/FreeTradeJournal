@@ -83,11 +83,11 @@ export default function TradezellaAlternative() {
           showCTA={false}
         />
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">The short version</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Same job.<br />
                 <span className="text-amber-500">Very different price.</span>
               </h2>
@@ -107,11 +107,11 @@ export default function TradezellaAlternative() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Side by side</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 FreeTradeJournal<br />
                 <span className="text-amber-500">vs TradeZella.</span>
               </h2>
@@ -141,11 +141,11 @@ export default function TradezellaAlternative() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Who should choose what</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 The right tool<br />
                 <span className="text-amber-500">depends on how you trade.</span>
               </h2>
@@ -185,11 +185,11 @@ export default function TradezellaAlternative() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">The honest breakdown</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Where each one<br />
                 <span className="text-amber-500">actually wins.</span>
               </h2>
@@ -229,11 +229,11 @@ export default function TradezellaAlternative() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 border-b border-border/50 pb-8">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">How to switch</p>
-              <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                 Moving from TradeZella<br />
                 <span className="text-amber-500">takes about five minutes.</span>
               </h2>
@@ -269,7 +269,7 @@ export default function TradezellaAlternative() {
           </div>
         </section>
 
-        <FAQSection
+        <FAQSection compact
           faqs={FAQS}
           title="Switching from TradeZella"
           subtitle="Common questions about moving your journal and what FreeTradeJournal does and does not do"

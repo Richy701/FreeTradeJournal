@@ -22,19 +22,30 @@ export const LIFETIME_RETIRES_AT = Date.parse('2026-08-07T23:59:59Z');
 // through. The list price in PRICING_PLANS stays canonical.
 export const FOUNDER_LIFETIME_PRICE = 149;
 
+// Black Friday 2026: Mon 23 Nov to Mon 30 Nov 11:59 PM New York (EST, UTC-5).
+// Mirror of the window in functions/src/index.ts createCheckoutSession, which
+// auto-applies BFLIFETIME ($70 off) and BFYEARLY ($20 off the first year).
+// Both Stripe codes expire at BLACK_FRIDAY_ENDS_AT.
+export const BLACK_FRIDAY_STARTS_AT = Date.parse('2026-11-23T05:00:00Z');
+export const BLACK_FRIDAY_ENDS_AT = Date.parse('2026-12-01T04:59:59Z');
+export const BLACK_FRIDAY_LIFETIME_PRICE = 179;
+export const BLACK_FRIDAY_YEARLY_PRICE = 79.99;
+export const isBlackFriday = (now = Date.now()) =>
+  now >= BLACK_FRIDAY_STARTS_AT && now <= BLACK_FRIDAY_ENDS_AT;
+
 // True whenever a new lifetime purchase is allowed. Mirror of the guard in
-// functions/src/index.ts createCheckoutSession. The two one-week returns
-// (birthday week 28 Aug to 4 Sep, drop week 25 Sep to 2 Oct 2026) are over
-// and their code is gone; a future return is a new window here, in index.ts
-// and in the Stripe promotion code.
-export const isLifetimeOnSale = (now = Date.now()) => now < LIFETIME_RETIRES_AT;
+// functions/src/index.ts createCheckoutSession. The earlier one-week returns
+// (birthday week, Sep drop) are over and their code is gone.
+export const isLifetimeOnSale = (now = Date.now()) =>
+  now < LIFETIME_RETIRES_AT || isBlackFriday(now);
 
 // When the current lifetime sale closes; feeds the pricing-page countdown.
-export const lifetimeSaleEndsAt = () => LIFETIME_RETIRES_AT;
+export const lifetimeSaleEndsAt = (now = Date.now()) =>
+  isBlackFriday(now) ? BLACK_FRIDAY_ENDS_AT : LIFETIME_RETIRES_AT;
 
 // What the lifetime card charges right now (list price when no offer is on).
 export const currentLifetimePrice = (now = Date.now()) =>
-  now < LIFETIME_RETIRES_AT ? FOUNDER_LIFETIME_PRICE : 249;
+  isBlackFriday(now) ? BLACK_FRIDAY_LIFETIME_PRICE : now < LIFETIME_RETIRES_AT ? FOUNDER_LIFETIME_PRICE : 249;
 
 // The values stored in Vercel have been observed with trailing newlines, which
 // Stripe rejects as invalid price IDs — always trim.

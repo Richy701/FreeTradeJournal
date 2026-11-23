@@ -1,3 +1,4 @@
+import { useScreenshotMode } from '@/hooks/use-screenshot-mode';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ const FEATURES = [
 ];
 
 export default function PropTrackerLanding() {
+  const screenshotMode = useScreenshotMode();
   const { enterDemoMode } = useAuth();
   const navigate = useNavigate();
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -65,14 +67,14 @@ export default function PropTrackerLanding() {
           cta={
             <>
               <Link to="/signup">
-                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]">
+                <Button className="min-h-11 h-auto max-w-full whitespace-normal rounded-lg bg-amber-400 px-5 py-3 text-sm font-semibold text-black shadow-none hover:bg-amber-300">
                   Start Tracking Free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Button
                 variant="outline"
-                className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10"
+                className="min-h-11 h-auto max-w-full whitespace-normal rounded-lg px-5 py-3 text-sm font-medium text-foreground shadow-none"
                 onClick={() => { enterDemoMode(); navigate('/prop-tracker'); }}
               >
                 Try Live Demo
@@ -84,14 +86,13 @@ export default function PropTrackerLanding() {
         {/* ── Screenshot ── */}
         <section className="pb-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
-            <p className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-6">What it looks like</p>
             <button
               onClick={() => setLightboxOpen(true)}
-              className="w-full block rounded-2xl overflow-hidden border border-amber-500/20 shadow-2xl shadow-amber-500/5 ring-1 ring-white/5 cursor-zoom-in group relative"
+              className="w-full block rounded-xl overflow-hidden border border-border shadow-sm cursor-zoom-in group relative"
               aria-label="View full screenshot"
             >
               <img
-                src="/images/screenshots/prop-tracker-screenshot.png"
+                src={`/images/screenshots/prop-tracker-screenshot-${screenshotMode}.webp`}
                 alt="PropTracker dashboard — fees, payouts and net P&L across all prop firms"
                 className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
               />
@@ -108,18 +109,18 @@ export default function PropTrackerLanding() {
         <ImageLightbox
           open={lightboxOpen}
           onOpenChange={setLightboxOpen}
-          src="/images/screenshots/prop-tracker-screenshot.png"
+          src={`/images/screenshots/prop-tracker-screenshot-${screenshotMode}.webp`}
           alt="PropTracker dashboard — fees, payouts and net P&L across all prop firms"
         />
 
         {/* ── Features ── */}
-        <section className="py-24 px-6 bg-background">
+        <section className="py-16 px-6 bg-background">
           <div className="container mx-auto max-w-5xl">
 
             <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">What you get</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-semibold leading-[1.15] tracking-tight">
                   Stop guessing.<br />
                   <span className="text-amber-500">Know your real numbers.</span>
                 </h2>
@@ -148,7 +149,7 @@ export default function PropTrackerLanding() {
 
             <div className="mt-12 flex flex-col sm:flex-row gap-4">
               <Link to="/signup">
-                <Button className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-8 py-2.5 rounded-lg text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300">
+                <Button className="min-h-11 h-auto max-w-full whitespace-normal rounded-lg bg-amber-400 px-5 py-3 text-sm font-semibold text-black shadow-none hover:bg-amber-300">
                   Start Tracking Free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

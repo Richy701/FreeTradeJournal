@@ -4,7 +4,7 @@ import { useThemePresets } from '@/contexts/theme-presets'
 import { useSettings } from '@/contexts/settings-context'
 import { useDashboardPeriod, filterTradesByPeriod } from '@/contexts/dashboard-period'
 import { useDemoData } from '@/hooks/use-demo-data'
-import { Bar, BarChart, Cell, LabelList, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, Sector, Label, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, Cell, LabelList, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, Label, XAxis, YAxis } from "recharts"
 import { ChartEmptyState } from '@/components/dashboard/chart-empty-state'
 import { ChartBarHorizontal, ChartDonut } from '@phosphor-icons/react'
 import { useMemo, useEffect, useState } from "react"
@@ -23,6 +23,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 
 
@@ -149,11 +150,11 @@ export function ChartRadarDefault() {
     : 0
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {/* Symbol P&L bars */}
-      <Card className="h-[450px] flex flex-col">
+      <Card className="flex flex-col overflow-hidden shadow-none [container-type:inline-size]">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
             <div className="min-w-0">
               <CardTitle className="text-lg font-semibold tracking-tight">Symbols Performance</CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-1.5">
@@ -173,9 +174,9 @@ export function ChartRadarDefault() {
             />
           </div>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 px-4 py-2">
+        <CardContent className="flex flex-1 items-center justify-center min-w-0 px-4 py-3 sm:px-5 sm:py-3">
           {hasData ? (
-            <div className="h-full px-1 sm:px-2">
+            <div className="w-full px-1" style={{ height: symbolView === 'radar' ? 260 : Math.max(190, chartData.length * 36 + 16) }}>
               {symbolView === 'radar' ? (
               <ChartContainer config={radarConfig} className="h-full w-full aspect-auto">
                 <RadarChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
@@ -198,7 +199,7 @@ export function ChartRadarDefault() {
                   <Radar
                     dataKey="winRate"
                     fill={themeColors.primary}
-                    fillOpacity={0.6}
+                    fillOpacity={0.18}
                     stroke={themeColors.primary}
                     strokeWidth={2}
                   />
@@ -211,7 +212,7 @@ export function ChartRadarDefault() {
               <ChartContainer
                 config={barConfig}
                 className="w-full aspect-auto"
-                style={{ height: `${Math.min(chartData.length * 56, 300)}px` }}
+                style={{ height: `${Math.max(190, chartData.length * 36 + 16)}px` }}
               >
                 <BarChart
                   data={chartData}
@@ -238,17 +239,20 @@ export function ChartRadarDefault() {
                       )}
                     />}
                   />
-                  <Bar dataKey="actualPnl" radius={4} maxBarSize={28}>
+                  <Bar dataKey="actualPnl" radius={4} maxBarSize={18}>
                     {chartData.map((entry: any) => (
                       <Cell key={entry.pair} fill={entry.actualPnl >= 0 ? themeColors.profit : themeColors.loss} />
                     ))}
                     <LabelList
                       dataKey="actualPnl"
-                      position="right"
-                      offset={8}
-                      formatter={(v: number) => fmtCompact(v)}
-                      className="fill-foreground"
-                      fontSize={11}
+                      content={({ value, viewBox }) => {
+                        if (!viewBox || !('x' in viewBox)) return null
+                        // Negative bars extend left of zero. Keep their values to
+                        // the right of zero, away from the symbol-name column.
+                        const x = Number(viewBox.x ?? 0) + Math.max(Number(viewBox.width ?? 0), 0) + 8
+                        const y = Number(viewBox.y ?? 0) + Number(viewBox.height ?? 0) / 2
+                        return <text x={x} y={y} dominantBaseline="middle" className="fill-foreground" fontSize={11}>{fmtCompact(Number(value))}</text>
+                      }}
                     />
                   </Bar>
                 </BarChart>
@@ -266,7 +270,7 @@ export function ChartRadarDefault() {
           )}
         </CardContent>
         {hasData && (
-        <CardFooter className="border-t border-border/70 py-3 sm:py-3">
+        <CardFooter className="border-t border-border/70 bg-muted/20 py-3 sm:py-3">
           <div className="flex w-full items-end justify-between gap-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Symbols</span>
@@ -297,17 +301,17 @@ export function ChartRadarDefault() {
       </Card>
 
       {/* Pie Chart */}
-      <Card className="h-[450px] flex flex-col">
+      <Card className="flex flex-col overflow-hidden shadow-none [container-type:inline-size]">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold tracking-tight">Trade Distribution</CardTitle>
           <CardDescription className="text-xs text-muted-foreground">
             Trade count distribution across symbols
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 min-h-0 px-4 py-2">
+        <CardContent className="flex flex-1 items-center justify-center min-w-0 px-4 py-3 sm:px-5 sm:py-3">
           {hasData ? (
-            <div className="h-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
-              <ChartContainer config={pieConfig} className="aspect-square w-full max-w-[200px] sm:w-auto sm:max-w-none sm:h-full">
+            <div className="grid w-full grid-cols-1 items-center justify-items-center gap-4 [@container(min-width:440px)]:grid-cols-[160px_minmax(0,1fr)]">
+              <ChartContainer config={pieConfig} className="aspect-square h-40 w-40 shrink-0">
                 <PieChart>
                   <ChartTooltip
                     cursor={false}
@@ -317,13 +321,10 @@ export function ChartRadarDefault() {
                     data={pieData}
                     dataKey="trades"
                     nameKey="pair"
-                    innerRadius={60}
+                    innerRadius={56}
+                    outerRadius={74}
                     strokeWidth={2}
                     stroke="hsl(var(--card))"
-                    activeIndex={0}
-                    activeShape={(props: any) => (
-                      <Sector {...props} outerRadius={(props.outerRadius || 0) + 8} />
-                    )}
                   >
                     <Label
                       content={({ viewBox }) => {
@@ -357,19 +358,32 @@ export function ChartRadarDefault() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              <div className="shrink-0 grid w-full grid-cols-2 gap-x-3 gap-y-1.5 sm:flex sm:w-auto sm:max-w-[45%] sm:flex-col sm:gap-2">
-                {pieData.map((entry: any) => (
-                  <div key={entry.pair} className="flex min-w-0 items-center gap-1.5 sm:gap-2 text-xs">
-                    <span className="h-2.5 w-2.5 rounded-[2px] shrink-0" style={{ backgroundColor: entry.fill }} />
-                    <span className="text-foreground font-medium truncate">{entry.pair}</span>
-                    <span className="text-foreground font-semibold tabular-nums">
-                      {totalTrades > 0 ? Math.round((entry.trades / totalTrades) * 100) : 0}%
-                    </span>
-                    <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
-                      · {entry.trades} {entry.trades === 1 ? 'trade' : 'trades'}
-                    </span>
-                  </div>
-                ))}
+              <div className="w-full min-w-0">
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="h-8 px-2 text-[10px]">Symbol</TableHead>
+                      <TableHead className="h-8 px-2 text-right text-[10px]">Trades</TableHead>
+                      <TableHead className="h-8 px-2 text-right text-[10px]">Share</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pieData.map(entry => (
+                      <TableRow key={entry.pair}>
+                        <TableCell className="px-2 py-2 font-medium">
+                          <span className="flex items-center gap-2">
+                            <span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: entry.fill }} aria-hidden="true" />
+                            {entry.pair}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-2 py-2 text-right tabular-nums text-muted-foreground">{entry.trades}</TableCell>
+                        <TableCell className="px-2 py-2 text-right font-medium tabular-nums">
+                          {totalTrades > 0 ? Math.round(entry.trades / totalTrades * 100) : 0}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           ) : (
@@ -382,7 +396,7 @@ export function ChartRadarDefault() {
           )}
         </CardContent>
         {hasData && (
-        <CardFooter className="border-t border-border/70 py-3 sm:py-3">
+        <CardFooter className="border-t border-border/70 bg-muted/20 py-3 sm:py-3">
           <div className="flex w-full items-end justify-between gap-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Most traded</span>

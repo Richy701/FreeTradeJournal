@@ -1,5 +1,8 @@
+import { DemoWelcome } from '@/components/demo-welcome'
+import { isScreenshotPreview } from '@/lib/screenshot-preview'
+import { EmptyState, EmptyStateAction } from '@/components/empty-state'
+import { TradeDialogContent, TradeDialogHeader, TradeDialogTabs, tradeDialogActions } from '@/components/trade-dialog-layout'
 import { startOfWeek } from '@/lib/week'
-import { WeeklyFocus } from '@/components/weekly-focus'
 import { useThemePresets } from '@/contexts/theme-presets'
 import { trackGateHit } from '@/lib/track-activity';
 import { trackEvent } from '@/lib/analytics'
@@ -115,7 +118,7 @@ function FreeAIBanner() {
 
 export default function Dashboard() {
   const { themeColors, alpha } = useThemePresets()
-  const { user, isDemo, exitDemoMode } = useAuth()
+  const { user, isDemo } = useAuth()
   const demoGuard = useDemoGuard()
   const { isPro, hasUtilityAIAccess } = useProStatus()
   const { activeAccount, isAllAccounts, scopeStartingBalance } = useAccounts()
@@ -788,7 +791,6 @@ export default function Dashboard() {
       <SiteHeader />
 
       <GettingStartedChecklist refreshKey={dataVersion} />
-      <WeeklyFocus compact />
 
       <ImportInsightDialog
         open={!!importInsightTrades}
@@ -878,27 +880,30 @@ export default function Dashboard() {
       <DashboardPeriodProvider>
       {/* Mobile-optimized Header Section */}
       <div className="border-b" style={{ contain: 'layout', transform: 'translate3d(0,0,0)' }}>
-        <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+        <div className="w-full px-3 pt-4 sm:px-6 lg:px-8 sm:pt-5">
           <div className="flex flex-col gap-3">
             {/* Greeting on the left, quick actions on the right */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="min-w-0 space-y-2">
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
+                {getGreeting()}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <p className="text-xs text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
                   day: 'numeric'
                 })}
               </p>
-              <h1 className="font-display text-2xl font-bold tracking-tight" style={{ color: themeColors.primary }}>
-                {getGreeting()}
-              </h1>
+              <div className="hidden sm:block"><HeaderInsightChips trades={analyticsData.trades || []} /></div>
+              </div>
             </div>
 
               {/* Quick actions */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0 sm:justify-end">
-              {isDemo ? (
-                <Link to="/signup" onClick={() => exitDemoMode()}>
+              {isDemo && !isScreenshotPreview(isDemo) ? (
+                <Link to="/signup">
                   <Button
                     size="default"
                     className="gap-2 h-11 touch-manipulation !bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] text-black font-semibold hover:text-black"
@@ -923,38 +928,15 @@ export default function Dashboard() {
                     <span>Add Trade</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="w-[95vw] max-w-md sm:max-w-2xl max-h-[90svh] overflow-y-auto p-0">
-                  <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-lg" style={{ backgroundColor: alpha(themeColors.primary, '15') }}>
-                        <ChartLineUp className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      </div>
-                      <div>
-                        <DialogHeader className="text-left space-y-0.5">
-                          <DialogTitle>Log a Trade</DialogTitle>
-                          <DialogDescription>
-                            Add trades manually or import from your broker.
-                          </DialogDescription>
-                        </DialogHeader>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="px-5 pb-5 sm:px-6 sm:pb-6 mt-4">
+                <TradeDialogContent>
+                  <TradeDialogHeader />
+                  <div>
                   <Tabs value={tradeDialogTab} onValueChange={(v) => setTradeDialogTab(v as 'manual' | 'import')} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 h-9 p-1 mb-5">
-                      <TabsTrigger value="manual" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
-                        <Plus className="h-3.5 w-3.5" />
-                        Manual
-                      </TabsTrigger>
-                      <TabsTrigger value="import" className="text-xs sm:text-sm gap-1.5 flex items-center justify-center">
-                        <UploadSimple className="h-3.5 w-3.5" />
-                        Import
-                      </TabsTrigger>
-                    </TabsList>
+                    <TradeDialogTabs />
 
                     <TabsContent value="manual" className="space-y-4 mt-0">
                     {/* Setup: what did you trade */}
+                    <h3 className="text-sm font-semibold">Trade setup</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="trade-market" className="text-xs text-muted-foreground">Market</Label>
@@ -1010,7 +992,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Profit / Loss -- the hero field */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-2 border-y border-border/60 py-5">
                       <Label htmlFor="trade-pnl" className="text-sm font-medium">Profit / Loss</Label>
                       <div className="relative">
                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-semibold text-muted-foreground pointer-events-none">{getCurrencySymbol()}</span>
@@ -1130,8 +1112,8 @@ export default function Dashboard() {
                     )}
 
                     {/* -- Footer -- */}
-                    <div className="flex items-center justify-between pt-2">
-                      <Link to="/trades" onClick={() => setIsTradeModalOpen(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                    <div className={tradeDialogActions}>
+                      <Link to="/trades" onClick={() => setIsTradeModalOpen(false)} className="mr-auto text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
                         <FileText className="h-3 w-3" />
                         Full trade log
                       </Link>
@@ -1142,7 +1124,7 @@ export default function Dashboard() {
                             {!tradeForm.symbol ? 'Pick a symbol to save' : 'Add a P&L, or entry and exit prices'}
                           </span>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => setIsTradeModalOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsTradeModalOpen(false)}>
                           Cancel
                         </Button>
                         <Button
@@ -1223,83 +1205,54 @@ export default function Dashboard() {
                         </ol>
                       </div>
 
-                      <div className="flex items-center justify-between pt-2">
-                        <Link to="/trades" onClick={() => setIsTradeModalOpen(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                      <div className={tradeDialogActions}>
+                        <Link to="/trades" onClick={() => setIsTradeModalOpen(false)} className="mr-auto text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
                           <FileText className="h-3 w-3" />
                           Full trade log
                         </Link>
-                        <Button variant="ghost" size="sm" onClick={() => setIsTradeModalOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsTradeModalOpen(false)}>
                           Cancel
                         </Button>
                       </div>
                     </TabsContent>
                   </Tabs>
                   </div>
-                </DialogContent>
+                </TradeDialogContent>
               </Dialog>
               </>
               )}
             </div>
             </div>
 
-            {/* Stat chips on the left, period + $/% controls on the right. The chips
-                are desktop-only: on a phone the stat cards just below show the same
-                numbers, and the header was four stacked rows of pills. */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="hidden sm:block">
-                <HeaderInsightChips trades={analyticsData.trades || []} />
-              </div>
-              {tradeCount > 0 && (
-                <div className="flex flex-shrink-0 items-center gap-2">
+            {tradeCount > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t py-3" aria-label="Dashboard display controls">
+                <div className="flex items-center gap-3">
+                  <span className="hidden text-xs font-medium text-muted-foreground md:inline">Performance</span>
                   <DashboardPeriodPills />
-                  <PnlDisplayToggle />
                 </div>
-              )}
-            </div>
+                <PnlDisplayToggle />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile-optimized Main Content — registry-driven, reorderable widget stack */}
-      <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="w-full px-3 py-4 sm:px-6 lg:px-8 sm:py-6 md:py-8 !pb-4 space-y-4 sm:space-y-6 md:space-y-8">
         {/* FreeAIBanner stays outside the registry (per gotchas) — kept above the
             reorderable stack so widget visibility/order changes never affect it. */}
+        <DemoWelcome />
         <FreeAIBanner />
         {tradeCount === 0 && !isDemo && (
-          <div className="rounded-2xl border bg-card/50 px-6 py-10 sm:py-12 text-center flex flex-col items-center">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: alpha(themeColors.primary, '12') }}>
-              <ChartLineUp className="h-6 w-6" style={{ color: themeColors.primary }} />
-            </div>
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight">Log your first trade</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground max-w-md">
-              Your P&L, win rate, and stats come to life the moment you add a trade. It takes about 15 seconds -- just symbol, side, and your result.
-            </p>
-            <div className="mt-5 flex flex-col sm:flex-row items-center gap-2.5">
-              <Button
-                onClick={() => { setTradeDialogTab('manual'); setIsTradeModalOpen(true); }}
-                className="gap-2 h-11 px-5"
-                style={{ backgroundColor: themeColors.primary, color: themeColors.primaryButtonText }}
-              >
-                <Plus className="h-4 w-4" />
-                Log your first trade
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => { setTradeDialogTab('import'); setIsTradeModalOpen(true); }}
-                className="gap-2 h-11 px-5"
-              >
-                <UploadSimple className="h-4 w-4" />
-                Import from broker
-              </Button>
-            </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Once you have a few trades logged, Coach FTJ can analyze them -- you get 5 free AI coaching runs every month, and the automatic tips and prompts don't count.
-            </p>
-          </div>
+          <EmptyState icon={ChartLineUp} title="Turn your trades into a clearer picture" description="Start with a completed trade. Your dashboard will calculate P&L, win rate, and performance from the history you record.">
+            <EmptyStateAction icon={Plus} title="Log a trade" description="Enter the symbol, direction, and result." onClick={() => { setTradeDialogTab('manual'); setIsTradeModalOpen(true); }} />
+            <EmptyStateAction icon={UploadSimple} title="Import your history" description="Bring in trades from a broker CSV." onClick={() => { setTradeDialogTab('import'); setIsTradeModalOpen(true); }} />
+          </EmptyState>
         )}
         <WidgetStack widgets={visibleWidgets} ctx={{ tradeCount, isDemo }} />
       </div>
       </DashboardPeriodProvider>
+
       
       {/* Column Mapping Dialog */}
       <ColumnMappingDialog value={columnMapping} onChange={setColumnMapping} onConfirm={handleMappingConfirm} />
@@ -1327,7 +1280,7 @@ export default function Dashboard() {
       />
 
       </div>
-      <AppFooter />
+      <AppFooter className="mt-0" />
       <SatisfactionPulse tradeCount={tradeCount} />
       <WhatsNewDialog open={showWhatsNew} onOpenChange={setShowWhatsNew} sinceVersion={whatsNewSince} />
     </>
@@ -1367,9 +1320,6 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
     )
   }
 
-  const totalPnl = trades.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
-  const wins = trades.filter((t: { pnl: number }) => t.pnl > 0).length
-  const winRate = Math.round((wins / trades.length) * 100)
 
   const sorted = [...trades].sort((a, b) => b.exitTime.getTime() - a.exitTime.getTime())
   let streak = 0
@@ -1383,14 +1333,10 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
   const thisWeek = trades.filter((t: { exitTime: Date }) => t.exitTime >= weekStart)
   const weekPnl = thisWeek.reduce((s: number, t: { pnl: number }) => s + t.pnl, 0)
 
-  const pnlColor = totalPnl >= 0 ? themeColors.profit : themeColors.loss
   const weekPnlColor = weekPnl >= 0 ? themeColors.profit : themeColors.loss
-  const winRateColor = winRate >= 50 ? themeColors.profit : themeColors.loss
 
   // Neutral counts stay in the text colour; only signed results get profit/loss colour
-  const stats: { key: string; value: string; label: string; color?: string }[] = [
-    { key: 'count', value: String(trades.length), label: 'trades' },
-  ]
+  const stats: { key: string; value: string; label: string; color?: string }[] = []
   if (loggingStreak >= 2) {
     stats.push({ key: 'logstreak', value: String(loggingStreak), label: 'days logged in a row' })
   }
@@ -1399,17 +1345,14 @@ function HeaderInsightChips({ trades: allTrades }: { trades: any[] }) {
   }
   if (thisWeek.length > 0) {
     stats.push({ key: 'week', value: formatCurrency(weekPnl, true), label: 'this week', color: weekPnlColor })
-  } else {
-    stats.push({ key: 'pnl', value: formatCurrency(totalPnl, true), label: 'P&L', color: pnlColor })
   }
-  stats.push({ key: 'wr', value: `${winRate}%`, label: 'win rate', color: winRateColor })
 
   // One outline Badge per stat: value first, label muted. Wraps as chips on phones.
   return (
     <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
       {stats.map((s) => (
         // Smaller on phones so the four chips fit on one line
-        <Badge key={s.key} variant="outline" className="gap-1 rounded-md px-2 py-0.5 text-xs font-normal text-muted-foreground sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-sm">
+        <Badge key={s.key} variant="outline" className="gap-1 rounded-md border-0 bg-muted/60 px-2 py-0.5 text-xs font-normal text-muted-foreground">
           <span className="font-semibold tabular-nums text-foreground" style={s.color ? { color: s.color } : undefined}>
             {s.value}
           </span>

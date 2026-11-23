@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Brain, ArrowCounterClockwise, TrendUp, MagnifyingGlass, Trophy, Warning, Target } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProGate } from '@/components/pro-gate';
@@ -17,6 +18,8 @@ import { getDemoAIResponse, DEMO_AI_TRADE_COUNT, DEMO_AI_USAGE } from '@/lib/dem
 import { trackEvent } from '@/lib/analytics';
 import type { AIAnalysisResponse } from '@/services/ai-analysis';
 import DOMPurify from 'dompurify';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ReferenceLine } from 'recharts';
 
 interface Trade {
   id: string;
@@ -34,6 +37,10 @@ interface Trade {
 }
 
 interface AIAnalysisProps {
+  embedded?: boolean;
+  reportDesign?: boolean;
+  hideReportHeading?: boolean;
+  setupLayout?: 'split' | 'stacked';
   trades: Trade[];
 }
 
@@ -189,21 +196,79 @@ function getSectionConfig(title: string) {
   return { icon: Brain, color: 'hsl(var(--primary))' };
 }
 
-function AnalysisSection({ section }: { section: ParsedSection }) {
+function SnapshotChart({ metric }: { metric: string }) {
+  const { themeColors } = useThemePresets();
+  const text = metric.replace(/\*\*/g, '');
+  const win = /win\s*rate[^\d]*(\d+(?:\.\d+)?)%/i.exec(text);
+  const ratio = /(?:R:R|risk.*reward)[^\d]*(\d+(?:\.\d+)?):1/i.exec(text);
+  const pnl = /(?:P&L|profit)[^\d+\-]*([+\-]?[\s$£€¥]*[\d,]+(?:\.\d+)?)/i.exec(text);
+  if (win) {
+    const value = Number(win[1]);
+    if (value < 0 || value > 100) return null;
+    return <ChartContainer aria-label={`${value}% win rate`} config={{value:{label:'Share'}}} className="h-16 w-16 shrink-0 aspect-square"><PieChart><ChartTooltip content={<ChartTooltipContent hideLabel formatter={(v, name) => `${name}: ${v}%`} />} /><Pie data={[{name:'Wins',value},{name:'Other outcomes',value:100-value}]} dataKey="value" nameKey="name" innerRadius={20} outerRadius={29} strokeWidth={0} isAnimationActive={false}><Cell fill={themeColors.profit} /><Cell fill="hsl(var(--muted))" /></Pie></PieChart></ChartContainer>;
+  }
+  if (ratio) {
+    const reward = Number(ratio[1]);
+    return <ChartContainer aria-label={`Risk 1 to reward ${reward}`} config={{risk:{label:'Risk',color:themeColors.loss},reward:{label:'Reward',color:themeColors.profit}}} className="h-16 w-24 shrink-0 aspect-auto"><BarChart layout="vertical" data={[{risk:1,reward}]} margin={{left:0,right:0}}><XAxis type="number" hide domain={[0,1+reward]} /><YAxis type="category" hide /><ChartTooltip content={<ChartTooltipContent hideLabel formatter={(v,name)=>`${name === 'risk' ? 'Risk' : 'Reward'}: ${v}R`} />} /><Bar dataKey="risk" stackId="ratio" fill="var(--color-risk)" barSize={12} radius={[4,0,0,4]} isAnimationActive={false} /><Bar dataKey="reward" stackId="ratio" fill="var(--color-reward)" barSize={12} radius={[0,4,4,0]} isAnimationActive={false} /></BarChart></ChartContainer>;
+  }
+  if (pnl) {
+    const value = Number(pnl[1].replace(/[^\d.+-]/g,''));
+    const extent = Math.max(Math.abs(value)*1.2,1);
+    return <ChartContainer aria-label={`Net profit and loss ${value}, relative to zero`} config={{value:{label:'Net P&L',color:value>=0?themeColors.profit:themeColors.loss}}} className="h-16 w-16 shrink-0 aspect-square"><BarChart data={[{value}]} margin={{top:3,bottom:3,left:3,right:3}}><XAxis hide /><YAxis hide domain={[-extent,extent]} /><ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" /><ChartTooltip content={<ChartTooltipContent hideLabel />} /><Bar dataKey="value" fill="var(--color-value)" barSize={22} radius={3} isAnimationActive={false} /></BarChart></ChartContainer>;
+  }
+  return null;
+}
+
+function AnalysisSection({ section, report = false }: { section: ParsedSection; report?: boolean }) {
   const config = getSectionConfig(section.title);
   const Icon = config.icon;
+  const snapshot = /snapshot|performance|overview|summary/i.test(section.title);
+  const paired = /strength|improvement|weakness/i.test(section.title);
+
+  if (report) {
+    const patterns = /pattern|detect/i.test(section.title);
+    const action = /action|plan|next|goal/i.test(section.title);
+    const risk = /improv|critical|weak/i.test(section.title);
+    const blocks = section.content.split(/\n+/).map(line => line.trim()).filter(Boolean);
+    const html = (text: string) => ({ __html: renderSectionContent(text) });
+    return (
+      <section className={`${paired ? '' : 'lg:col-span-2'} ${paired ? 'rounded-lg border p-5' : ''}`}>
+        <div className="mb-4 flex items-center gap-2">
+          {!snapshot && <Icon className="h-4 w-4" style={{ color: risk ? 'hsl(var(--destructive))' : config.color }} />}
+          <h3 className="text-sm font-semibold">{section.title}</h3>
+        </div>
+        {snapshot ? (
+          <div className="rounded-lg border overflow-hidden">
+            <div className="grid sm:grid-cols-3 bg-muted/30">
+              {(blocks[0] ?? '').split(' · ').map((metric, index) => <div key={index} className="p-4 sm:p-5 border-b sm:border-b-0 sm:border-r last:border-0 flex items-center justify-between gap-3 min-w-0"><div className="text-sm [&_strong]:block [&_strong]:text-lg [&_strong]:font-semibold [&_p]:!mt-0" dangerouslySetInnerHTML={html(metric)} /><SnapshotChart metric={metric} /></div>)}
+            </div>
+            {blocks.length > 1 && <div className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground [&_strong]:text-foreground" dangerouslySetInnerHTML={html(blocks.slice(1).join('\n\n'))} />}
+          </div>
+        ) : (
+          <div className={patterns ? 'grid gap-3 md:grid-cols-3' : action ? 'divide-y border-y' : 'space-y-4'}>
+            {blocks.map((block, index) => (
+              <div key={index} className={patterns ? 'rounded-lg bg-muted/35 p-4 border border-border/60' : action ? 'flex gap-4 py-4' : 'flex gap-3'}>
+                {action ? <span className="text-xl tabular-nums text-muted-foreground/60 font-medium">{String(index + 1).padStart(2, '0')}</span> : paired ? <span className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${risk ? 'bg-destructive' : 'bg-primary'}`} /> : null}
+                <div className={`text-sm leading-relaxed text-muted-foreground [&_p]:!mt-0 [&_strong]:text-foreground ${patterns ? '[&_strong]:block [&_strong]:mb-2' : ''}`} dangerouslySetInnerHTML={html(block.replace(/^(?:- |\d+\. )/, ''))} />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
-    <div className="py-4 first:pt-0 last:pb-0">
+    <section className={report ? `${paired ? '' : 'lg:col-span-2'} ${snapshot ? 'rounded-lg bg-muted/30 p-4' : 'border-t pt-4'}` : 'py-4 first:pt-0 last:pb-0'}>
       <div className="flex items-center gap-2 mb-2.5">
         <Icon className="h-4 w-4 shrink-0" style={{ color: config.color }} />
         <h3 className="font-semibold text-sm text-foreground">{section.title}</h3>
       </div>
       <div
-        className="text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:py-0.5"
+        className="max-w-[90ch] text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:py-0.5"
         dangerouslySetInnerHTML={{ __html: renderSectionContent(section.content) }}
       />
-    </div>
+    </section>
   );
 }
 
@@ -263,7 +328,7 @@ function SampleAnalysisPreview() {
   );
 }
 
-export function AIAnalysis({ trades }: AIAnalysisProps) {
+export function AIAnalysis({ trades, embedded = false, setupLayout = 'split', reportDesign = false, hideReportHeading = false }: AIAnalysisProps) {
   const { themeColors, alpha } = useThemePresets();
   const { getCurrencySymbol } = useSettings();
   const { hasAIAccess, updateFreeAiQuota } = useProStatus();
@@ -398,18 +463,20 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
   const sections = displayText ? parseAnalysis(displayText) : [];
 
   return (
-    <Card>
+    <Card className={embedded ? "rounded-none border-0 bg-transparent shadow-none" : undefined}>
       <ProGate featureName="AI Trade Analysis" completedAIResult={!!result?.analysis || isStreaming}>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+        {(!embedded || reportDesign || result || isStreaming) && <CardHeader className={embedded ? "px-0 pb-2 pt-0 sm:px-0 sm:pt-0" : "pb-3"}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+            {reportDesign && !hideReportHeading && <><h2 className="text-base font-semibold">AI Trade Analysis</h2><p className="mt-1 text-sm text-muted-foreground">Your results, the patterns behind them, and what to work on next.</p></>}
             <CardTitle className="flex items-center gap-2 text-lg">
-              <div
+              {!embedded && <div
                 className="flex items-center justify-center w-8 h-8 rounded-lg"
                 style={{ backgroundColor: alpha(themeColors.primary, '1f') }}
               >
                 <Brain className="h-4.5 w-4.5" style={{ color: themeColors.primary }} />
-              </div>
-              AI Trade Analysis
+              </div>}
+              {!embedded && 'AI Trade Analysis'}
               {isStreaming && (
                 <span className="ml-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -417,6 +484,7 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                 </span>
               )}
             </CardTitle>
+            </div>
             {result && !isStreaming && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted">
@@ -436,14 +504,14 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
               </div>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
+        </CardHeader>}
+        <CardContent className={embedded ? "px-0 pb-0 sm:px-0 sm:pb-0" : undefined}>
           {!result && !isStreaming && !streamText ? (
-            <div className="space-y-5">
-              <p className="text-sm text-muted-foreground">
+            <div className={setupLayout === 'stacked' ? "space-y-5" : embedded ? "grid gap-5 border-t pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start" : "space-y-5"}>
+              {!embedded && <p className="text-sm text-muted-foreground">
                 Get personalised feedback on your trading patterns, strengths, and areas to improve — powered by AI.
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              </p>}
+              <div className={setupLayout === 'stacked' ? "flex flex-wrap gap-x-5 gap-y-3" : embedded ? "flex flex-wrap content-start gap-2" : "grid grid-cols-2 sm:grid-cols-5 gap-2"}>
                 {[
                   { icon: TrendUp, label: 'Performance' },
                   { icon: MagnifyingGlass, label: 'Patterns' },
@@ -451,19 +519,18 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                   { icon: Warning, label: 'Weaknesses' },
                   { icon: Target, label: 'Action Plan' },
                 ].map(({ icon: Icon, label }) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-2 rounded-lg border px-3 py-2"
-                    style={{ borderColor: alpha(themeColors.primary, '15'), backgroundColor: alpha(themeColors.primary, '05') }}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: themeColors.primary }} />
-                    <span className="text-xs text-muted-foreground">{label}</span>
+                  setupLayout === 'stacked' ? <span key={label} className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <Icon className="h-4 w-4 shrink-0" />{label}
+                  </span> : embedded ? <Badge key={label} variant="secondary" className="gap-1.5 rounded-md px-2 py-1 font-normal">
+                    <Icon className="h-3.5 w-3.5 shrink-0" />{label}
+                  </Badge> : <div key={label} className="flex items-center gap-2 rounded-lg border px-3 py-2" style={{ borderColor: alpha(themeColors.primary, '15'), backgroundColor: alpha(themeColors.primary, '05') }}>
+                    <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: themeColors.primary }} /><span className="text-xs text-muted-foreground">{label}</span>
                   </div>
                 ))}
               </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className={setupLayout === 'stacked' ? "grid gap-3 border-t pt-4 sm:grid-cols-[auto_1fr_auto] sm:items-center" : embedded ? "grid gap-3 sm:grid-cols-2" : "flex flex-col sm:flex-row items-stretch sm:items-center gap-3"}>
                 <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-                  <SelectTrigger className="w-full sm:w-48">
+                  <SelectTrigger aria-label="Analysis period" className={setupLayout === 'stacked' ? "w-full sm:w-48" : embedded ? "w-full" : "w-full sm:w-48"}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -476,12 +543,12 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
                   onClick={handleAnalyze}
                   disabled={filteredTrades.length < 3}
                   style={{ backgroundColor: themeColors.primary }}
-                  className="text-primary-foreground"
+                  className={setupLayout === 'stacked' ? "order-last text-primary-foreground sm:justify-self-end" : "text-primary-foreground"}
                 >
                   <Brain className="mr-2 h-4 w-4" />
                   Analyse My Trades
                 </Button>
-                <span className="text-xs text-muted-foreground sm:ml-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <span className={setupLayout === 'stacked' ? "text-xs text-muted-foreground" : embedded ? "text-xs text-muted-foreground sm:col-span-2" : "text-xs text-muted-foreground sm:ml-1"} style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {filteredTrades.length} trade{filteredTrades.length !== 1 ? 's' : ''} in this period
                   {filteredTrades.length < 3 && ' — need at least 3'}
                   {filteredTrades.length > MAX_ANALYSIS_TRADES && ` — the ${MAX_ANALYSIS_TRADES} most recent are analysed`}
@@ -490,9 +557,9 @@ export function AIAnalysis({ trades }: AIAnalysisProps) {
             </div>
           ) : sections.length > 0 ? (
             <div className="space-y-3">
-              <div className="divide-y divide-border/60">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-5">
                 {sections.map((section, i) => (
-                  <AnalysisSection key={i} section={section} />
+                  <AnalysisSection key={i} section={section} report={reportDesign} />
                 ))}
               </div>
               {!isStreaming && result && (

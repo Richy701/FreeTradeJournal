@@ -128,3 +128,17 @@ describe('computeThemeVars', () => {
     expect(respected['--primary']).toBe(hexToHslString('#3b1d6e'))
   })
 })
+
+
+describe('individual custom surfaces', () => {
+  it('keeps overrides mode-specific and restores derived colours when cleared', () => {
+    const custom = { ...DEFAULT_CUSTOM_COLORS, surfaceDark: '#162032', surfaces: { dark: { card: '#ffffff', sidebar: '#112233' } } }
+    const dark = computeThemeVars('custom', custom, 'dark')
+    expect(dark['--card']).toBe(hexToHslString('#ffffff'))
+    expect(dark['--card-foreground']).toBe('30 10% 8%')
+    expect(dark['--sidebar-background']).toBe(hexToHslString('#112233'))
+    expect(computeThemeVars('custom', custom, 'light')['--card']).toBeUndefined()
+    expect(computeThemeVars('custom', {...custom, surfaces: undefined}, 'dark')['--card']).toBe(deriveSurfaceVars(custom.surfaceDark, 'dark')['--card'])
+    expect(computeThemeVars('default', custom, 'dark')['--sidebar-background']).toBeUndefined()
+  })
+})

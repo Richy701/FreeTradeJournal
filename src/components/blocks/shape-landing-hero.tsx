@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, useMotionValue, useTransform, animate, useReducedMotion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -143,8 +142,8 @@ export function GeometricBackdrop() {
 }
 
 function HeroGeometric({
-    title1 = "Elevate Your Digital Vision",
-    title2 = "Crafting Exceptional Websites",
+    title1 = "Your trading journal",
+    title2 = "Your next useful lesson",
     subtitle,
     showCTA = true,
     cta,
@@ -155,7 +154,6 @@ function HeroGeometric({
     title1?: string;
     title2?: string;
     subtitle?: string;
-    /** Optional pill rendered above the headline (e.g. a time-limited offer). */
     eyebrow?: React.ReactNode;
     homepage?: boolean;
     showCTA?: boolean;
@@ -164,156 +162,29 @@ function HeroGeometric({
 }) {
     const { enterDemoMode } = useAuth();
     const navigate = useNavigate();
-    const shouldReduceMotion = useReducedMotion();
-    // Each block passes its `custom` index so they land one after another
-    // (eyebrow, headline, subtitle, avatars, buttons, small print).
-    const fadeUpVariants = {
-        hidden: shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 },
-        visible: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: shouldReduceMotion ? { duration: 0 } : {
-                duration: 0.8,
-                delay: 0.3 + i * 0.12,
-                ease: [0.22, 1, 0.36, 1] as const,
-            },
-        }),
-    };
-
     return (
-        <div className={`relative ${homepage ? 'min-h-[600px] pt-28 pb-12 sm:min-h-[640px] sm:pt-32 sm:pb-16' : compact ? 'min-h-[60vh]' : 'min-h-dvh'} w-full flex items-center justify-center overflow-hidden bg-background noise-overlay`}>
+        <section className={cn("relative w-full overflow-hidden bg-background noise-overlay", homepage ? "pt-28 pb-12 sm:pt-32 sm:pb-16" : compact ? "py-12 sm:py-16" : "py-16 sm:py-20")}>
             <GeometricBackdrop />
-
-            <div className="relative z-10 container mx-auto px-4 md:px-6">
-                <div className="max-w-3xl mx-auto text-center">
-                    {eyebrow && (
-                        <motion.div
-                            custom={0}
-                            variants={fadeUpVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="mb-5 sm:mb-6 flex justify-center px-2"
-                        >
-                            {eyebrow}
-                        </motion.div>
-                    )}
-
-                    <motion.div
-                        custom={1}
-                        variants={fadeUpVariants}
-                        initial="hidden"
-                        animate="visible"
-                    >
-                        <h1 className={cn("font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 sm:mb-8 md:mb-10 tracking-tight leading-[1.1] sm:leading-tight", homepage && 'text-balance')}>
-                            <span className="bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/80 block">
-                                {title1}
-                            </span>
-                            <span
-                                className={cn(
-                                    "bg-clip-text text-transparent bg-gradient-to-r from-amber-500 via-foreground/90 to-amber-500/70 block mt-1 sm:mt-1"
-                                )}
-                            >
-                                {title2}
-                            </span>
-                        </h1>
-                    </motion.div>
-
-                    <motion.div
-                        custom={2}
-                        variants={fadeUpVariants}
-                        initial="hidden"
-                        animate="visible"
-                    >
-                        <p className={cn("text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 md:mb-12 leading-relaxed font-light tracking-wide max-w-2xl mx-auto px-2 sm:px-4", homepage && 'text-base font-normal tracking-normal text-pretty')}>
-                            {subtitle ?? "Free professional trading journal with AI-powered insights. Track, analyze, and optimize your performance — upgrade to Pro for coaching, trade reviews, and smart alerts."}
-                        </p>
-                    </motion.div>
-
-                    {cta && (
-                      <motion.div
-                        custom={4}
-                        variants={fadeUpVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-                      >
-                        {cta}
-                      </motion.div>
-                    )}
-
-                    {!cta && showCTA && (
-                      <>
-                        {/* Social proof avatars */}
-                        <motion.div
-                            custom={3}
-                            variants={fadeUpVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="flex items-center justify-center gap-3 mb-8 sm:mb-10"
-                        >
-                            <div className="flex -space-x-2.5">
-                                {/* First letters of the reviewers on the testimonials section, in the same order they render */}
-                                {[
-                                    { initials: 'B', bg: 'bg-amber-500' },
-                                    { initials: 'A', bg: 'bg-yellow-600' },
-                                    { initials: 'J', bg: 'bg-amber-600' },
-                                    { initials: 'G', bg: 'bg-yellow-500' },
-                                    { initials: 'R', bg: 'bg-amber-400' },
-                                ].map((user, i) => (
-                                    <div
-                                        key={i}
-                                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ring-2 ring-background ${user.bg} flex items-center justify-center text-[10px] sm:text-xs font-bold text-black`}
-                                    >
-                                        {user.initials}
-                                    </div>
-                                ))}
+            <div className="relative z-10 mx-auto w-full max-w-[1600px] px-5 sm:px-8">
+                {eyebrow && <div className="mb-6">{eyebrow}</div>}
+                <div className="grid min-w-0 grid-cols-1 items-end gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-16">
+                    <h1 className="min-w-0 max-w-4xl font-display text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.1] tracking-[-0.035em] [overflow-wrap:anywhere]">
+                        <span className="block">{title1}</span>
+                        <span className="mt-1 block text-amber-600 dark:text-amber-400">{title2}</span>
+                    </h1>
+                    <div className="min-w-0 max-w-xl space-y-6">
+                        <p className="text-base leading-relaxed text-muted-foreground">{subtitle ?? "Free professional trading journal with AI-powered insights. Track, analyze, and optimize your performance — upgrade to Pro for coaching, trade reviews, and smart alerts."}</p>
+                        {cta ? <div className="flex flex-wrap gap-3 [&>a]:max-w-full [&>a>button]:bg-amber-400 [&>a>button]:text-black [&_button]:h-auto [&_button]:min-h-11 [&_button]:min-w-0 [&_button]:max-w-full [&_button]:whitespace-normal [&_button]:bg-none [&_button]:text-sm [&_button]:shadow-none [&_button]:animate-none">{cta}</div> : showCTA && <>
+                            <div className="flex flex-wrap gap-3">
+                                <Button asChild className="h-auto min-h-11 max-w-full whitespace-normal bg-amber-400 px-5 text-sm text-black hover:bg-amber-300"><Link to="/signup">Sign Up Free</Link></Button>
+                                <Button variant="outline" className="h-auto min-h-11 max-w-full whitespace-normal px-5 text-sm" onClick={() => { enterDemoMode(); navigate('/dashboard'); }}>View Live Demo</Button>
                             </div>
-                            <div className="text-xs sm:text-sm text-muted-foreground">
-                                <span className="font-semibold text-foreground">4,000+</span> traders journaling
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            custom={4}
-                            variants={fadeUpVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-                        >
-                            <Button
-                                onClick={() => {
-                                    enterDemoMode();
-                                    navigate('/dashboard');
-                                }}
-                                className={cn("bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_100%] animate-[shimmer_3s_ease-in-out_infinite] motion-reduce:animate-none text-black font-semibold px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base shadow-lg hover:shadow-xl hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px]", homepage && 'h-12 min-w-[208px] sm:min-w-[208px]')}
-                            >
-                                View Live Demo
-                            </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                className={cn("px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base text-foreground shadow-md hover:shadow-lg hover:scale-[1.02] transition-[transform,box-shadow] duration-300 w-auto min-w-[160px] sm:min-w-[200px] border-2 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/10", homepage && 'h-12 min-w-[208px] sm:min-w-[208px]')}
-                            >
-                                <Link to="/signup">Sign Up Free</Link>
-                            </Button>
-                        </motion.div>
-
-                        <motion.p
-                            custom={5}
-                            variants={fadeUpVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="text-xs text-muted-foreground mt-2"
-                        >
-                            Free plan included · No card required · Cancel anytime
-                        </motion.p>
-                      </>
-                    )}
-
+                            <p className="text-xs leading-relaxed text-muted-foreground">4,000+ traders journaling · Free to start · No credit card required</p>
+                        </>}
+                    </div>
                 </div>
             </div>
-
-        </div>
+        </section>
     );
 }
 

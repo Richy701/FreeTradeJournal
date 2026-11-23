@@ -123,12 +123,12 @@ export function ExitSurveyDialog({ open, onOpenChange, onConfirmDelete, deleting
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
+      <DialogContent className="sm:max-w-md p-0 sm:p-0 overflow-hidden gap-0">
         {step === 'survey' ? (
           <>
-            <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-gradient-to-b from-muted/50 to-transparent">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-500/10 border border-amber-500/20 mb-3">
-                <UserMinus className="h-5 w-5 text-amber-500" />
+            <div className="px-6 pt-6 pb-4 border-b border-border/70 bg-card">
+              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-muted border border-border/60 mb-3">
+                <UserMinus className="h-5 w-5 text-muted-foreground" />
               </div>
               <DialogHeader>
                 <DialogTitle className="text-lg font-semibold">Before you go...</DialogTitle>

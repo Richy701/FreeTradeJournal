@@ -296,12 +296,12 @@ export default function Affiliate() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Partner firms</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-bold leading-[1.1]">
                   Save on your next<br />
                   <span className="text-amber-500">challenge.</span>
                 </h2>
@@ -319,12 +319,12 @@ export default function Affiliate() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">Apps we use</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-bold leading-[1.1]">
                   Beyond the<br />
                   <span className="text-amber-500">journal.</span>
                 </h2>
@@ -342,12 +342,12 @@ export default function Affiliate() {
           </div>
         </section>
 
-        <section className="py-20 px-4 sm:px-6 bg-background">
+        <section className="py-16 px-4 sm:px-6 bg-background">
           <div className="container mx-auto max-w-4xl">
             <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-border/50 pb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-3">At a glance</p>
-                <h2 className="text-4xl sm:text-5xl font-bold leading-[1.1]">
+                <h2 className="text-3xl sm:text-4xl font-bold leading-[1.1]">
                   Compare prop<br />
                   <span className="text-amber-500">firms.</span>
                 </h2>
@@ -411,7 +411,7 @@ export default function Affiliate() {
           </div>
         </section>
 
-        <FAQSection
+        <FAQSection compact
           faqs={AFFILIATE_FAQS}
           title="Prop Firm"
           subtitle="Common questions about prop firm challenges, discounts, and how to track your funded accounts"

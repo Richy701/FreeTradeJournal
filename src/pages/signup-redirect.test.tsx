@@ -29,6 +29,9 @@ vi.mock('@/lib/analytics', () => ({ trackEvent: vi.fn(), demoAttribution: () => 
 vi.mock('@/utils/onboarding', () => ({ clearOnboardingData: vi.fn() }));
 vi.mock('@/lib/firebase-lazy', () => ({ getFirebaseAuth: vi.fn(async () => ({})) }));
 vi.mock('firebase/auth', () => ({}));
+// These tests exercise auth routing, not the public header's independent
+// auth/subscription/theme providers (covered by the browser flow checks).
+vi.mock('@/components/marketing-header', () => ({ MarketingHeader: () => null }));
 
 import Signup from './Signup';
 import Login from './Login';

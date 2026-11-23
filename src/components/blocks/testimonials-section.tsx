@@ -17,7 +17,7 @@ interface Testimonial {
 // Fallback testimonials shown before any are approved in Firestore
 const FALLBACK_TESTIMONIALS: Testimonial[] = [];
 
-export function TestimonialsSection() {
+export function TestimonialsSection({ compact = false }: { compact?: boolean }) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,7 +64,7 @@ export function TestimonialsSection() {
   const averageRating = rated.length ? rated.reduce((sum, t) => sum + t.rating, 0) / rated.length : null;
 
   return (
-    <section className="w-full py-16 sm:py-24 px-4">
+    <section className={cn('w-full px-4', compact ? 'py-12 sm:py-16' : 'py-16 sm:py-24')}>
       <div className="max-w-6xl mx-auto flex flex-col gap-12">
         {/* Header — the average is computed from the reviews shown, never typed in */}
         <div className="flex flex-col items-center gap-3 text-center">
