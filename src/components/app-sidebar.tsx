@@ -28,7 +28,8 @@ import {
   Gift,
   User,
   CaretUpDown,
-  CaretDown,
+  CaretUp,
+  ChatCircleText,
   DotsThree,
 } from '@phosphor-icons/react'
 import { FeedbackButton } from '@/components/feedback-button'
@@ -36,6 +37,8 @@ import { WhatsNewDialog } from '@/components/whats-new-dialog'
 import { ProBadge } from '@/components/pro-badge'
 import { useProStatus } from '@/contexts/pro-context'
 import { useLoggingStreak, isWeekend } from '@/hooks/use-logging-streak'
+import { Button } from '@/components/ui/button'
+import { isBlackFriday, BLACK_FRIDAY_YEARLY_PRICE } from '@/constants/pricing'
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -127,8 +130,8 @@ function SidebarUser() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" className="h-14 rounded-lg border border-sidebar-border/60 bg-background/50 px-2.5" aria-label="Account menu">
-              <Avatar className="h-7 w-7 rounded-full ring-1 ring-border shrink-0">
+            <SidebarMenuButton size="lg" className="h-14 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/50 px-2.5" aria-label="Account menu">
+              <Avatar className="h-7 w-7 rounded-full ring-1 ring-sidebar-border shrink-0">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
                 <AvatarFallback
                   className="rounded-full font-semibold text-white"
@@ -142,7 +145,7 @@ function SidebarUser() {
               </Avatar>
               <div className="grid flex-1 text-left leading-tight min-w-0">
                 <span className="truncate text-sm font-medium">{name}</span>
-                <span className="truncate text-[11px] leading-tight text-muted-foreground">
+                <span className="truncate text-[11px] leading-tight text-sidebar-foreground/60">
                   {isScreenshotPreview(isDemo) ? 'Personal trading journal' : user.email}
                 </span>
               </div>
@@ -191,6 +194,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile, setOpenMobile } = useSidebar()
   const [whatsNewOpen, setWhatsNewOpen] = React.useState(false)
   const [moreOpen, setMoreOpen] = React.useState(false)
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false)
+  const navigate = useNavigate()
+  const goTo = (to: string) => { navigate(to); if (isMobile) setOpenMobile(false) }
   const groups = navGroups
 
   if (!user) {
@@ -253,11 +259,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {streak}-day streak
             </span>
             {!loggedToday && !isWeekend(new Date()) ? (
-              <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap shrink-0">
+              <span className="text-xs text-sidebar-foreground/60 ml-auto whitespace-nowrap shrink-0">
                 Log today!
               </span>
             ) : bestStreak > streak ? (
-              <span className="text-xs text-muted-foreground ml-auto tabular-nums whitespace-nowrap shrink-0">
+              <span className="text-xs text-sidebar-foreground/60 ml-auto tabular-nums whitespace-nowrap shrink-0">
                 Best: {bestStreak}
               </span>
             ) : null}
@@ -265,7 +271,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {!isPro && streak >= 7 && !localStorage.getItem(`pro-nudge-streak-${user.uid}`) && (
             <Link
               to="/pricing"
-              className="block rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="block rounded-lg px-3 py-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
               style={{ backgroundColor: alpha(themeColors.primary, '5') }}
             >
               <span className="font-medium text-amber-500">{streak} days strong.</span>{' '}
@@ -315,19 +321,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ) : (
             <>
               {!isPro && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton size="sm" asChild>
-                    <Link
-                      to="/pricing"
-                      onClick={() => isMobile && setOpenMobile(false)}
-                      className="font-medium"
-                      style={{ backgroundColor: alpha(themeColors.primary, '15') }}
-                    >
-                      <Rocket className="h-4 w-4" style={{ color: themeColors.primary }} />
-                      <span>Upgrade to Pro</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                // A card, not a nav row: as a tinted row it looked exactly like
+                // the active Settings item and read as just another page.
+                <li className="mb-1 list-none rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-3">
+                  <p className="text-sm font-semibold text-sidebar-foreground">Upgrade to Pro</p>
+                  <p className="mt-1 text-xs leading-relaxed text-sidebar-foreground/70">
+                    {isBlackFriday()
+                      ? `Black Friday: Yearly $${BLACK_FRIDAY_YEARLY_PRICE} for the first year.`
+                      : 'Full history, unlimited journal entries and the AI coach.'}
+                  </p>
+                  <Button asChild size="sm" className={`mt-3 w-full ${isMobile ? 'h-11' : ''}`}>
+                    <Link to="/pricing" onClick={() => isMobile && setOpenMobile(false)}>See plans</Link>
+                  </Button>
+                </li>
               )}
               {trialDaysLeft !== null && (
                 <SidebarMenuItem>
@@ -365,73 +371,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuItem>
               {/* Everything below is secondary. Collapsed by default so Settings
                   and the upgrade prompt are not buried in a list of eight links. */}
+              {/* Secondary links live in a pop-up menu so opening them never
+                  changes the sidebar's height. */}
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  size="sm"
-                  onClick={() => setMoreOpen((v) => !v)}
-                  aria-expanded={moreOpen}
-                >
-                  <DotsThree className="h-4 w-4" />
-                  <span>More</span>
-                  <CaretDown
-                    className={`h-3 w-3 ml-auto opacity-60 transition-transform duration-200 ${
-                      moreOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </SidebarMenuButton>
+                <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton size="sm" aria-label="More links">
+                      <DotsThree className="h-4 w-4" />
+                      <span>More</span>
+                      <CaretUp
+                        className={`h-3 w-3 ml-auto opacity-60 transition-transform duration-200 ${
+                          moreOpen ? '' : 'rotate-180'
+                        }`}
+                      />
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-52 rounded-lg">
+                    {([
+                      { label: 'Prop Firm Deals', icon: Tag, onSelect: () => goTo('/affiliate') },
+                      { label: 'Blog', icon: RssSimple, onSelect: () => goTo('/blog') },
+                      { label: 'Help & Docs', icon: Question, onSelect: () => goTo('/documentation') },
+                      { label: 'Invite Friends', icon: Gift, onSelect: () => goTo('/settings?tab=subscription') },
+                      { label: "What's New", icon: Megaphone, onSelect: () => setWhatsNewOpen(true) },
+                      { label: 'Send Feedback', icon: ChatCircleText, onSelect: () => setFeedbackOpen(true) },
+                    ] as const).map(({ label, icon: Icon, onSelect }) => (
+                      <DropdownMenuItem key={label} className={isMobile ? 'h-11' : ''} onSelect={onSelect}>
+                        <Icon className="h-4 w-4 mr-2" />
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </SidebarMenuItem>
-              {moreOpen && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton size="sm" asChild>
-                      <Link to="/affiliate" onClick={() => isMobile && setOpenMobile(false)}>
-                        <Tag className="h-4 w-4" />
-                        <span>Prop Firm Deals</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton size="sm" asChild>
-                      <Link to="/blog" onClick={() => isMobile && setOpenMobile(false)}>
-                        <RssSimple className="h-4 w-4" />
-                        <span>Blog</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton size="sm" asChild>
-                      <Link to="/documentation" onClick={() => isMobile && setOpenMobile(false)}>
-                        <Question className="h-4 w-4" />
-                        <span>Help & Docs</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton size="sm" asChild>
-                      <Link
-                        to="/settings?tab=subscription"
-                        onClick={() => isMobile && setOpenMobile(false)}
-                      >
-                        <Gift className="h-4 w-4" />
-                        <span>Invite Friends</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton size="sm" onClick={() => setWhatsNewOpen(true)}>
-                      <Megaphone className="h-4 w-4" />
-                      <span>What's New</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <FeedbackButton
-                      variant="ghost"
-                      className={`w-full justify-start px-2 text-sm ${isMobile ? "h-11" : "h-8"}`}
-                      buttonText="Send Feedback"
-                    />
-                  </SidebarMenuItem>
-                </>
-              )}
             </>
           )}
         </SidebarMenu>
@@ -443,6 +414,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarFooter>
       <WhatsNewDialog open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
+      <FeedbackButton open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </Sidebar>
   )
 }

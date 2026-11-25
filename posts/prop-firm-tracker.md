@@ -25,7 +25,7 @@ That is not a discipline problem. It is an information problem.
 
 PropTracker is the part of FreeTradeJournal built for this. One screen for every prop firm account you hold.
 
-![PropTracker](https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot.png)
+![PropTracker](https://www.freetradejournal.com/images/screenshots/prop-tracker-screenshot-dark.webp)
 
 What it gives you:
 

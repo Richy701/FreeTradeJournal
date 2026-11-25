@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { trackGateHit } from '@/lib/track-activity'
+import { HISTORY_UPGRADE_URL } from '@/constants/pricing'
 import { LockSimple } from '@phosphor-icons/react'
 import { ALL_PERIODS, PERIOD_LABELS, useDashboardPeriod } from '@/contexts/dashboard-period'
 import { segmentedItemClass, segmentedRootClass } from '@/components/ui/segmented-control'
@@ -20,7 +21,7 @@ export function DashboardPeriodPills() {
             <Tooltip key={p}>
               <TooltipTrigger asChild>
                 <Link
-                  to="/pricing"
+                  to={HISTORY_UPGRADE_URL}
                   className={segmentedItemClass(false, 'outline', 'flex items-center gap-1 text-muted-foreground/70')}
                   onClick={() => trackGateHit('period_pills', { period: p })}
                 >

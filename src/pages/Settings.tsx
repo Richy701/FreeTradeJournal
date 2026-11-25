@@ -22,13 +22,14 @@ import { useAccounts, FREE_TRADING_ACCOUNT_LIMIT, type TradingAccount } from '@/
 import { BROKER_TIMEZONES } from '@/utils/timezone';
 import { useUserStorage } from '@/utils/user-storage';
 import { openCookieSettings } from '@/lib/cookie-consent';
-import { Sliders, Wallet, Gauge, Database, CreditCard, Check, DownloadSimple, UploadSimple, Cookie, Sun, Moon, Monitor, Crown, Bell, PencilSimple, Lock, CircleNotch, Robot, CloudCheck, Infinity as InfinityIcon, Headset, Plus } from '@phosphor-icons/react';
+import { Sliders, Wallet, Gauge, Database, CreditCard, Check, DownloadSimple, UploadSimple, Cookie, Sun, Moon, Monitor, Crown, Bell, PencilSimple, Lock, Robot, CloudCheck, Infinity as InfinityIcon, Headset, Plus } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
 import { SiteHeader } from '@/components/site-header';
 import { AppFooter } from '@/components/app-footer';
 import { useProStatus } from '@/contexts/pro-context';
 import { useSync } from '@/contexts/sync-context';
 import { ProBadge } from '@/components/pro-badge';
+import { SubscriptionBilling, needsBillingRecovery } from '@/components/subscription-billing';
 import { PRO_FEATURES } from '@/constants/pricing';
 import { ReferralCard } from '@/components/referral-card';
 import { PushNotificationPrompt } from '@/components/push-notification-prompt';
@@ -165,7 +166,7 @@ export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProWelcome, setShowProWelcome] = useState(false);
   const [checkoutPending, setCheckoutPending] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
+  const billingRecovery = needsBillingRecovery(subscription);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -1036,29 +1037,7 @@ export default function Settings() {
                             </Button>
                           </SettingRow>
                         )}
-                        {subscription?.stripeCustomerId && (
-                          <SettingRow label="Billing" description="Update your card, download invoices, or cancel">
-                            <Button variant="outline" size="sm" disabled={portalLoading} onClick={async () => {
-                              // Opening the Stripe portal is a Cloud Function + Stripe
-                              // round-trip that can take a few seconds (cold start), so
-                              // show a pending state immediately — otherwise the button
-                              // looks dead and gets clicked repeatedly. Keep the spinner
-                              // through the redirect; only clear it if the call fails.
-                              setPortalLoading(true);
-                              try {
-                                const { redirectToPortal } = await import('@/lib/stripe');
-                                await redirectToPortal();
-                              } catch {
-                                toast.error('Failed to open subscription portal');
-                                setPortalLoading(false);
-                              }
-                            }}>
-                              {portalLoading ? (
-                                <><CircleNotch className="h-4 w-4 animate-spin" /> Opening…</>
-                              ) : 'Manage subscription'}
-                            </Button>
-                          </SettingRow>
-                        )}
+                        <SubscriptionBilling subscription={subscription} isDemo={isDemo} />
                         <SettingRow label="Cloud sync" description={lastSyncTime ? `Last synced ${new Date(lastSyncTime).toLocaleTimeString()}` : 'Your trades sync automatically across all devices'}>
                           <span className="flex items-center gap-2 text-sm">
                             <span className={`h-2 w-2 rounded-full shrink-0${syncStatus === 'syncing' ? ' animate-pulse' : ''}`} style={{ backgroundColor: syncStatus === 'synced' ? themeColors.profit : syncStatus === 'syncing' ? themeColors.primary : syncStatus === 'error' ? themeColors.loss : 'hsl(var(--muted-foreground) / 0.4)' }} />
@@ -1068,12 +1047,16 @@ export default function Settings() {
                       </>
                     ) : (
                       <>
-                        <SettingRow label="Free plan" description="Everything on this device, with the free limits">
-                          <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
+                        <SettingRow
+                          label={billingRecovery ? (subscription?.status === 'paused' ? 'Subscription paused' : 'Payment needs attention') : 'Free plan'}
+                          description={billingRecovery ? 'Pro is currently inactive. Manage your existing subscription below.' : 'Everything on this device, with the free limits'}
+                        >
+                          {!billingRecovery && <Button size="sm" className="font-semibold" onClick={() => navigate('/pricing')}>
                             <Crown className="mr-2 h-3.5 w-3.5" />
                             Upgrade to Pro
-                          </Button>
+                          </Button>}
                         </SettingRow>
+                        <SubscriptionBilling subscription={subscription} isDemo={isDemo} />
                         <div className="px-5 py-4">
                           <p className="text-xs font-medium text-muted-foreground mb-2">Pro unlocks</p>
                           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">

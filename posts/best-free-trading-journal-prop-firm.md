@@ -25,25 +25,25 @@ So I built my own.
 
 **The free plan is a real plan.** Unlimited trades, CSV import from your broker, a written journal, goals and risk rules, a calendar heatmap, and one prop firm account in the tracker. There is no trial clock and no card. The free plan shows analytics for the last 30 days and holds 20 journal entries. Pro removes those two limits for $12.99 a month or $99.99 a year. Most journals in this space charge $30 to $50 a month for their entry tier.
 
-![Trading dashboard](https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot.png)
+![Trading dashboard](https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot-dark.webp)
 
 **It is built around evaluation rules.** Daily loss limit, max drawdown, profit target. The numbers that matter in a combine sit on the front page instead of buried in a layout designed for stock investors.
 
-![Trading journal](https://www.freetradejournal.com/images/screenshots/trading-journal-screenshot.png)
+![Trading journal](https://www.freetradejournal.com/images/screenshots/trading-journal-screenshot-dark.webp)
 
 **It stays out of the way.** No upsell every time you log in. Your trades, your stats, your notes.
 
-![Trade log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot.png)
+![Trade log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot-dark.webp)
 
 ## Spot the pattern before it costs you
 
 The calendar shows your best and worst days at a glance. Two red Fridays in a row is easy to miss in a spreadsheet and impossible to miss here.
 
-![Calendar heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot.png)
+![Calendar heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot-dark.webp)
 
 Goals and risk rules warn you when a day is getting close to a limit you set for yourself.
 
-![Goals and risk management](https://www.freetradejournal.com/images/screenshots/goals-risk-management-screenshot.png)
+![Goals and risk management](https://www.freetradejournal.com/images/screenshots/goals-risk-management-screenshot-dark.webp)
 
 ## Who it is for
 

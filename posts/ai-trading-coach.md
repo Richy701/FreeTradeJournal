@@ -25,7 +25,7 @@ Then you ask it questions. The good ones are the questions you would never sit d
 
 I know my own answers now. My Monday win rate was well below the rest of my week. Skipping Mondays would have been a pay rise. I would have told you Mondays "felt slow". I would not have told you they were costing me money, because I did not know.
 
-![AI trade analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot.png)
+![AI trade analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot-dark.webp)
 
 ## The journal review
 

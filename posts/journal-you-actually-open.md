@@ -20,7 +20,7 @@ Typing trades in by hand is the first thing that kills the habit. Export from yo
 
 A trade note is a sentence. A journal entry is the day. Open the journal after your session and write three things. What you did well, what you did badly, and what you will do differently tomorrow. Link the day's trades to the entry so the numbers sit next to the words.
 
-![Journal entries](https://www.freetradejournal.com/images/screenshots/trading-journal-screenshot.png)
+![Journal entries](https://www.freetradejournal.com/images/screenshots/trading-journal-screenshot-dark.webp)
 
 Tag the setup on each trade and pick an emotion. Two seconds each. In a month, the tag table and the emotion breakdown will tell you things you would swear were not true.
 

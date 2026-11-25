@@ -3,12 +3,12 @@ import {
   hexToHslString,
   perceivedLuma,
   contrastText,
-  contrastRatio,
   deriveChartVars,
   deriveSurfaceVars,
   deriveSeriesPalette,
   SERIES_PALETTE_SIZE,
 } from '@/lib/theme-vars'
+import { suppressTransitionsBriefly } from '@/lib/suppress-transitions'
 
 interface ModeColors {
   profit: string
@@ -151,10 +151,6 @@ const themePresets: Record<string, ThemePreset> = {
     },
     dark: {
       loss: '#f8fafc', // slate-50 - clean white for losses in dark mode
-    },
-    light: {
-      profit: '#d97706', // amber-600 - gold that stays readable on white
-      primary: '#d97706',
     }
   },
 
@@ -184,10 +180,6 @@ const themePresets: Record<string, ThemePreset> = {
       loss: '#e879f9',   // fuchsia-400 - cool magenta
       primary: '#0891b2' // cyan-600 - deep ice
     },
-    light: {
-      profit: '#0e7490', // cyan-700 - ice blue readable on white
-      loss: '#c026d3',   // fuchsia-600
-    }
   },
 
   crimson: {
@@ -196,9 +188,6 @@ const themePresets: Record<string, ThemePreset> = {
       profit: '#fcd34d', // amber-300 - bright gold
       loss: '#dc2626',   // red-600 - crimson but brighter than red-800
       primary: '#dc2626' // red-600 - bold crimson
-    },
-    light: {
-      profit: '#d97706', // amber-600 - gold readable on white
     }
   },
 
@@ -318,10 +307,7 @@ const themePresets: Record<string, ThemePreset> = {
     colors: {
       profit: '#10b981', // emerald-500 - clear positive
       loss: '#ef4444',   // red-500 - familiar loss color
-      primary: '#b31938' // vivid wine red
-    },
-    dark: {
-      primary: '#e82149' // brighter wine for dark surfaces
+      primary: '#e82149' // vivid wine red, same in both modes
     },
     cssOverrides: {
       light: {
@@ -331,7 +317,7 @@ const themePresets: Record<string, ThemePreset> = {
         '--card-foreground': '350 20% 12%',
         '--popover': '0 0% 100%',
         '--popover-foreground': '350 20% 12%',
-        '--primary': '348 75% 40%',
+        '--primary': '355.5 77.6% 56.3%',
         '--primary-foreground': '0 0% 100%',
         '--secondary': '348 12% 93%',
         '--secondary-foreground': '348 75% 40%',
@@ -343,8 +329,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--destructive-foreground': '0 0% 100%',
         '--border': '350 10% 86%',
         '--input': '350 10% 86%',
-        '--ring': '348 75% 40%',
-        '--chart-1': '348 75% 40%',
+        '--ring': '353.7 100% 59.0%',
+        '--chart-1': '355.5 77.6% 56.3%',
         '--chart-2': '355 65% 50%',
         '--chart-3': '340 60% 32%',
         '--chart-4': '350 60% 62%',
@@ -400,17 +386,9 @@ const themePresets: Record<string, ThemePreset> = {
   navy: {
     name: 'Navy Gold',
     colors: {
-      profit: '#f59e0b', // gold = up
-      loss: '#8b97ac',   // muted slate = down — no red, stays on the navy palette
+      profit: '#fbbf24', // amber-400 - bright gold = up, same in both modes
+      loss: '#8ea2cc',   // navy-tinted slate = down — no red, stays on the navy palette
       primary: '#f59e0b' // gold accent on navy
-    },
-    dark: {
-      profit: '#fbbf24', // amber-400 - bright gold on navy
-      loss: '#8ea2cc',   // navy-tinted slate - "down" without red or neutral grey
-    },
-    light: {
-      profit: '#c2820a', // amber-700 - gold readable on light background
-      loss: '#465980',   // navy-slate - "down" tone that stays on the navy palette
     },
     swatch: ['#0e1c3a', '#1f3057', '#f59e0b'], // deep navy, navy, gold
     cssOverrides: {
@@ -421,7 +399,7 @@ const themePresets: Record<string, ThemePreset> = {
         '--card-foreground': '222 47% 12%',
         '--popover': '0 0% 100%',
         '--popover-foreground': '222 47% 12%',
-        '--primary': '40 94% 47%',
+        '--primary': '42 96% 58%',
         '--primary-foreground': '222 60% 12%',
         '--secondary': '217 40% 89%',
         '--secondary-foreground': '222 47% 18%',
@@ -433,8 +411,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--destructive-foreground': '0 0% 100%',
         '--border': '216 34% 83%',
         '--input': '216 34% 83%',
-        '--ring': '40 94% 47%',
-        '--chart-1': '38 92% 48%',
+        '--ring': '42 96% 58%',
+        '--chart-1': '42 96% 58%',
         '--chart-2': '24 88% 50%',
         '--chart-3': '210 80% 48%',
         '--chart-4': '192 80% 42%',
@@ -495,11 +473,6 @@ const themePresets: Record<string, ThemePreset> = {
       loss: '#fb923c',   // orange-400 - warm "down" that stays off harsh red
       primary: '#10b981' // emerald-500
     },
-    light: {
-      profit: '#059669', // emerald-600 - readable on light surfaces
-      loss: '#ea580c',   // orange-600
-      primary: '#047857' // emerald-700
-    },
     swatch: ['#07150e', '#0e2418', '#10b981'],
     cssOverrides: {
       light: {
@@ -509,8 +482,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--card-foreground': '158 30% 8%',
         '--popover': '0 0% 100%',
         '--popover-foreground': '158 30% 8%',
-        '--primary': '161 84% 28%',
-        '--primary-foreground': '0 0% 100%',
+        '--primary': '160 84% 45%',
+        '--primary-foreground': '160 90% 6%',
         '--secondary': '150 18% 92%',
         '--secondary-foreground': '158 30% 12%',
         '--muted': '150 18% 92%',
@@ -521,8 +494,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--destructive-foreground': '0 0% 100%',
         '--border': '150 15% 85%',
         '--input': '150 15% 85%',
-        '--ring': '161 84% 28%',
-        '--chart-1': '161 84% 28%',
+        '--ring': '160 84% 45%',
+        '--chart-1': '160 84% 45%',
         '--chart-2': '160 84% 39%',
         '--chart-3': '25 90% 48%',
         '--chart-4': '84 65% 38%',
@@ -585,9 +558,6 @@ const themePresets: Record<string, ThemePreset> = {
     },
     dark: {
       primary: '#cbd5e1' // slate-300 - steel accent on dark graphite
-    },
-    light: {
-      primary: '#475569' // slate-600
     },
     swatch: ['#111318', '#1f232b', '#94a3b8'],
     cssOverrides: {
@@ -672,11 +642,6 @@ const themePresets: Record<string, ThemePreset> = {
       loss: '#f87171',   // red-400
       primary: '#22c55e' // green-500
     },
-    light: {
-      profit: '#15803d', // green-700
-      loss: '#dc2626',   // red-600
-      primary: '#16a34a' // green-600
-    },
     swatch: ['#020402', '#0a120a', '#22c55e'],
     cssOverrides: {
       light: {
@@ -686,8 +651,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--card-foreground': '140 25% 8%',
         '--popover': '0 0% 100%',
         '--popover-foreground': '140 25% 8%',
-        '--primary': '142 70% 28%',
-        '--primary-foreground': '0 0% 100%',
+        '--primary': '142 71% 45%',
+        '--primary-foreground': '144 80% 5%',
         '--secondary': '130 10% 92%',
         '--secondary-foreground': '140 25% 12%',
         '--muted': '130 10% 92%',
@@ -698,8 +663,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--destructive-foreground': '0 0% 100%',
         '--border': '130 10% 85%',
         '--input': '130 10% 85%',
-        '--ring': '142 70% 28%',
-        '--chart-1': '142 70% 28%',
+        '--ring': '142 71% 45%',
+        '--chart-1': '142 71% 45%',
         '--chart-2': '142 71% 38%',
         '--chart-3': '0 74% 48%',
         '--chart-4': '84 60% 35%',
@@ -760,11 +725,6 @@ const themePresets: Record<string, ThemePreset> = {
       loss: '#fb7185',   // rose-400
       primary: '#8b5cf6' // violet-500
     },
-    light: {
-      profit: '#059669', // emerald-600
-      loss: '#e11d48',   // rose-600
-      primary: '#7c3aed' // violet-600
-    },
     swatch: ['#0b0716', '#1b1230', '#8b5cf6'],
     cssOverrides: {
       light: {
@@ -774,7 +734,7 @@ const themePresets: Record<string, ThemePreset> = {
         '--card-foreground': '258 30% 10%',
         '--popover': '0 0% 100%',
         '--popover-foreground': '258 30% 10%',
-        '--primary': '262 75% 48%',
+        '--primary': '258 88% 66%',
         '--primary-foreground': '0 0% 100%',
         '--secondary': '256 22% 92%',
         '--secondary-foreground': '258 30% 14%',
@@ -786,8 +746,8 @@ const themePresets: Record<string, ThemePreset> = {
         '--destructive-foreground': '0 0% 100%',
         '--border': '256 18% 86%',
         '--input': '256 18% 86%',
-        '--ring': '262 75% 48%',
-        '--chart-1': '262 75% 48%',
+        '--ring': '258 88% 66%',
+        '--chart-1': '258 88% 66%',
         '--chart-2': '160 84% 32%',
         '--chart-3': '347 77% 50%',
         '--chart-4': '290 60% 45%',
@@ -916,29 +876,10 @@ function resolveModeColors(
     if (!explicit.primary && brightness(colors.primary) < 80) {
       colors.primary = brighten(colors.primary, 1.3)
     }
-  } else {
-    // Light-mode mirror of the dark safety net: pale colors (yellows, limes,
-    // light cyans) wash out to grey on white surfaces. Colors without an
-    // explicit light override that fall badly short of readable contrast get
-    // darkened until they reach ~3:1 against white. Uniform RGB scaling keeps
-    // the hue, so a theme keeps its identity.
-    const darken = (hex: string) => {
-      let current = hex
-      for (let i = 0; i < 8 && contrastRatio(current, '#ffffff') < 3; i++) {
-        const ch = (offset: number) =>
-          Math.max(0, Math.round(parseInt(current.slice(offset, offset + 2), 16) * 0.9))
-            .toString(16).padStart(2, '0')
-        current = `#${ch(1)}${ch(3)}${ch(5)}`
-      }
-      return current
-    }
-
-    for (const key of ['primary', 'profit', 'loss'] as const) {
-      if (!explicit[key] && contrastRatio(colors[key], '#ffffff') < 2.2) {
-        colors[key] = darken(colors[key])
-      }
-    }
   }
+  // No light-mode darkening: auto-darkened golds and yellows turned
+  // mustard/brown on white. Light mode shows each theme's real colors; a
+  // preset that needs a different light shade declares it in `light:`.
 
   return colors
 }
@@ -1090,6 +1031,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
   // up. Seeded with whatever the index.html pre-paint script applied, so the
   // first cleanup removes those too (e.g. when demo mode is detected).
   const appliedOverridesRef = React.useRef<string[]>(window.__ftjThemeVars ?? [])
+  const lastAppliedSignatureRef = React.useRef<string | null>(null)
 
   // Update CSS variables when theme changes — useLayoutEffect to sync with inline styles
   useLayoutEffect(() => {
@@ -1121,6 +1063,14 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
 
     const vars = computeThemeVars(currentTheme, customColors, isDarkMode ? 'dark' : 'light')
+
+    // A real color change (not a same-theme route change) lands in one frame:
+    // otherwise transition-colors elements fade in 150ms behind the page.
+    const signature = JSON.stringify(vars)
+    if (lastAppliedSignatureRef.current !== null && lastAppliedSignatureRef.current !== signature) {
+      suppressTransitionsBriefly()
+    }
+    lastAppliedSignatureRef.current = signature
 
     cleanupOverrides()
     const appliedProps: string[] = []

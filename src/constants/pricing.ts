@@ -1,6 +1,8 @@
 import type { PricingPlan } from '@/types/subscription';
 
 export const ANALYSIS_UPGRADE_SOURCE = 'analysis_annual_v1';
+export const HISTORY_UPGRADE_SOURCE = 'history_review_v1';
+export const HISTORY_UPGRADE_URL = `/pricing?plan=monthly&source=${HISTORY_UPGRADE_SOURCE}`;
 
 // Max journal entries a free (non-Pro) account can create. Existing entries are
 // never deleted — users already over the cap keep and can edit them; only

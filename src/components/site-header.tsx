@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeQuickPicker } from "@/components/theme-quick-picker"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { User, SignOut, UserPlus, Eye, ArrowLeft } from '@phosphor-icons/react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -112,7 +113,7 @@ const PUBLIC_PAGES = ['privacy', 'terms', 'cookie-policy', 'documentation', 'cha
 
 export function SiteHeader({ className }: { className?: string }) {
   const { themeColors } = useThemePresets()
-  const { user } = useAuth()
+  const { user, isDemo } = useAuth()
   const location = useLocation()
   const pathname = location.pathname
   
@@ -226,7 +227,8 @@ export function SiteHeader({ className }: { className?: string }) {
         </Button>
       )}
       <div className="ml-auto flex items-center gap-1">
-        <ThemeToggle />
+        {/* Colour themes only apply on app pages outside the demo; elsewhere keep the one-tap mode switch. */}
+        {isPublicPage || isDemo ? <ThemeToggle /> : <ThemeQuickPicker />}
         {/* The account row lives at the bottom of the sidebar, but the sidebar
             starts closed on desktop, so keep the avatar menu up here until it
             is open. Otherwise Profile and Sign out are invisible on load. */}

@@ -32,6 +32,7 @@ import { PostHogTracker } from '@/components/PostHogTracker';
 import { initGA } from '@/lib/analytics';
 import { useReferralTracker } from '@/hooks/use-referral-tracker';
 import { lazyWithRetry } from '@/lib/lazy-with-retry';
+import { ApplyUpdateOnNavigate } from '@/components/apply-update-on-navigate';
 
 // The authenticated app shell (sidebar, upgrade CTA, sonner) — lazy like the
 // pages so logged-out visitors never download it.
@@ -134,6 +135,7 @@ function App() {
                 </div>
               )}
             >
+            <ApplyUpdateOnNavigate />
             <Suspense fallback={<RouteSpinner />}>
               <Routes>
                 {/* Public routes */}

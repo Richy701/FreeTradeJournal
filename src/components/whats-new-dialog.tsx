@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { CaretRight, CaretDown, ArrowSquareOut, ChartBar, BookOpen, Palette } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { FeatureScreenshot } from '@/components/feature-screenshot'
+import { cn } from '@/lib/utils'
 
 function ReleaseIcon({ item }: { item: ChangelogItem }) {
   const Icon = item.icon ? { dashboard: ChartBar, journal: BookOpen, appearance: Palette }[item.icon] : null
@@ -41,12 +42,12 @@ function heroVersion(v: string): string {
 
 // A screenshot-led feature card — the image is the star, with the note and a
 // jump-in link beneath it. Used for items that ship with a screenshot.
-function FeatureCard({ item, onNavigate }: { item: ChangelogItem; onNavigate: () => void }) {
+function FeatureCard({ item, onNavigate, className }: { item: ChangelogItem; onNavigate: () => void; className?: string }) {
   const { themeColors } = useThemePresets()
   const config = typeConfig[item.type]
   return (
     <div
-      className="rounded-lg border border-border/60 bg-card overflow-hidden"
+      className={cn("rounded-lg border border-border/60 bg-card overflow-hidden", className)}
     >
       {item.image && (
         <FeatureScreenshot
@@ -122,12 +123,19 @@ function ReleaseItems({
   const flagged = release.items.filter(i => i.highlight)
   const highlights = flagged.length > 0 ? flagged : release.items.slice(0, 3)
   const rest = release.items.filter(i => !highlights.includes(i))
+  const imageCards = highlights.filter(i => i.image)
   return (
     <>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {highlights.map((item, index) =>
           item.image ? (
-            <FeatureCard key={item.text} item={item} onNavigate={onNavigate} />
+            <FeatureCard
+              key={item.text}
+              item={item}
+              onNavigate={onNavigate}
+              // An odd last picture card spans both columns so the grid ends level.
+              className={imageCards.length % 2 === 1 && item === imageCards[imageCards.length - 1] ? 'md:col-span-2' : undefined}
+            />
           ) : (
             <div key={item.text} className="md:col-span-2 border-t border-border/60 pt-5"><ItemRow item={item} featured={index === 0} onNavigate={onNavigate} /></div>
           )
@@ -171,8 +179,11 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
   const { themeColors } = useThemePresets()
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
-  const release = changelog[0]
-  if (!release) return null
+  const latest = changelog[0]
+  if (!latest) return null
+  // The hero is the latest headline release (a big update stays front and
+  // centre until the next big one), falling back to the newest release.
+  const release = changelog.find(r => r.headline) ?? latest
 
   // Releases to render in full. Auto-open: everything newer than the version
   // the user last dismissed. Manual open (sidebar) or unknown version: the
@@ -183,12 +194,14 @@ export function WhatsNewDialog({ open, onOpenChange, sinceVersion }: WhatsNewDia
       if (sinceIdx > 0) return sinceIdx
     }
     let n = 0
-    while (n < changelog.length && changelog[n].date === release.date) n++
+    while (n < changelog.length && changelog[n].date === latest.date) n++
     return Math.max(1, n)
   })()
-  const full = changelog.slice(0, Math.min(unseenCount, MAX_FULL_RELEASES))
+  const unseen = changelog.slice(0, unseenCount).filter(r => r !== release)
+  // Headline first, then smaller releases since it (newest first).
+  const full = [release, ...unseen.slice(0, MAX_FULL_RELEASES - 1)]
   // Anything unseen beyond the full cap — one line each, never full item lists.
-  const missed = changelog.slice(full.length, unseenCount)
+  const missed = unseen.slice(MAX_FULL_RELEASES - 1)
 
   const handleOpenChange = (next: boolean) => {
     if (!next) setExpanded({})

@@ -20,6 +20,10 @@ export type ChangelogItem = {
 
 export type ChangelogEntry = {
   version: string
+  /** A big release that stays the What's New headline until a newer headline
+   *  release ships. Smaller releases after it show underneath instead of
+   *  replacing it. Mark one per significant release. */
+  headline?: boolean
   title?: string
   date: string
   summary: string
@@ -28,7 +32,39 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.100.2',
+    date: '2026-11-25',
+    summary: 'Manage your billing even when Pro is inactive.',
+    items: [
+      {
+        type: 'fixed',
+        text: 'Update your payment details after a failed payment',
+        description: 'Billing stays accessible in Settings when Pro is inactive. If your payment needs attention, the Pro pricing page also takes you to your existing billing instead of asking you to subscribe again.',
+      },
+    ],
+  },
+  {
+    version: '2.100.1',
+    date: '2026-11-25',
+    summary: 'Themes keep their real colors in light mode, and switching themes is instant.',
+    items: [
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Themes look the same in light mode as in dark mode',
+        description: 'Light mode no longer darkens your theme. Gold, yellow, and other bright colors used to turn brown or muddy on white screens. Your charts, buttons, and highlights now use the same colors in both modes.',
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'Switching themes is instant',
+        description: 'When you change your theme or switch between light and dark mode, the whole page now changes at once. Some buttons used to fade across a moment after everything else.',
+      },
+    ],
+  },
+  {
     version: '2.100.0',
+    headline: true,
     title: 'Your trading workspace, refreshed.',
     date: '2026-11-23',
     summary: 'A refreshed trading workspace, with clearer reviews, more theme controls, and forms that give you room to work.',
@@ -53,18 +89,21 @@ export const changelog: ChangelogEntry[] = [
         type: 'improved', highlight: true,
         text: 'Make the workspace yours',
         icon: 'appearance',
+        image: { src: '/screenshots/settings-appearance-light.png', darkSrc: '/screenshots/settings-appearance-dark.png', alt: 'Appearance settings with light, dark and system modes and a grid of accent color palettes.' },
         description: 'Settings stay together on one page, with clearer theme previews and more appearance controls. Account, risk, and subscription settings are easier to scan.',
         link: { to: '/settings', label: 'Explore settings' },
       },
       {
-        type: 'improved',
+        type: 'improved', highlight: true,
         text: 'Clearer prop account costs and risk tools',
+        image: { src: '/images/screenshots/prop-tracker-screenshot-light.webp', darkSrc: '/images/screenshots/prop-tracker-screenshot-dark.webp', alt: 'PropTracker with total invested, earned and net profit cards above example prop accounts.' },
         description: 'PropTracker account cards, transaction controls, and the risk calculator have more compact layouts so the important numbers are easier to find.',
         link: { to: '/prop-tracker', label: 'Open PropTracker' },
       },
       {
-        type: 'improved',
+        type: 'improved', highlight: true,
         text: 'An easier way to get started',
+        image: { src: '/screenshots/demo-intro-light.png', darkSrc: '/screenshots/demo-intro-dark.png', alt: 'Practice demo welcome card with three suggested first steps: look at a trade, read the reflection, explore a goal.' },
         description: 'Onboarding, the getting-started checklist, and the practice demo have been refreshed. The demo includes a fictional trading history with wins, losses, costs, and journal reflections to explore.',
       },
       {
@@ -3611,4 +3650,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.100.0'
+export const LATEST_CHANGELOG_VERSION = '2.100.2'

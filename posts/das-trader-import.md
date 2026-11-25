@@ -30,7 +30,7 @@ Drop the file onto the Dashboard or the Trade Log. The importer then:
 - **Handles partial exits.** Scale out in pieces and the trade closes where your position actually goes flat.
 - **Handles flips.** Go from long 200 to short 100 in one order and the importer splits it into two trades instead of producing nonsense.
 
-![Trade log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot.png)
+![Trade log](https://www.freetradejournal.com/images/screenshots/trading-log-screenshot-dark.webp)
 
 After a larger import, the AI coach reads the file and gives you a first summary. Win rate, where the losses cluster, which session you trade best. It is a quick way to check everything landed correctly, and it usually tells you something you did not know.
 

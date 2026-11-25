@@ -47,7 +47,7 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
     <>
       {groups.map((group) => (
         <SidebarGroup key={group.label} className="px-3 py-2">
-          <SidebarGroupLabel className="h-7 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">{group.label}</SidebarGroupLabel>
+          <SidebarGroupLabel className="h-7 px-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">{group.label}</SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {group.items.map((item) => {
               const active = isItemActive(item.url, pathname)

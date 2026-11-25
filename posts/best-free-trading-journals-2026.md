@@ -40,7 +40,7 @@ Where it loses: there is no live broker sync yet. You import by CSV or screensho
 
 Where it wins: it is the only one here that gives you an AI coach on the free plan, it treats forex and futures as first-class (pip maths per pair, MetaTrader and Tradovate exports handled without manual mapping, weekday and symbol breakdowns), and it has prop-firm evaluation rules built in rather than bolted on. [See the pricing page](/pricing) for the full free-vs-Pro list.
 
-![FreeTradeJournal dashboard](https://www.freetradejournal.com/images/screenshots/dashboard-analytics-screenshot.png)
+![FreeTradeJournal dashboard](https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot-dark.webp)
 
 ### Tradervue
 

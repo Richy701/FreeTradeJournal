@@ -34,7 +34,7 @@ The importer was built for the mess that MetaTrader exports actually are:
 
 If a file has a layout the importer does not recognise, a mapping dialog lets you match the columns once and you are through. There is also a screenshot import if you would rather not export at all.
 
-![Equity curve](https://www.freetradejournal.com/images/screenshots/equity-curve-screenshot.png)
+![Equity curve](https://www.freetradejournal.com/images/screenshots/equity-curve-screenshot-dark.webp)
 
 ## What you get on the other side
 

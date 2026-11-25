@@ -54,14 +54,15 @@ function SortableRow({ id, label, removable, hidden, onToggle, handleHoverBg }: 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.7 : 1,
+    position: 'relative',
+    zIndex: isDragging ? 10 : undefined,
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 rounded-lg border bg-card p-2"
+      className={`flex items-center gap-2 px-4 py-3 ${isDragging ? 'rounded-lg bg-card shadow-lg ring-1 ring-border' : ''}`}
     >
       <button
         type="button"
@@ -70,7 +71,7 @@ function SortableRow({ id, label, removable, hidden, onToggle, handleHoverBg }: 
         aria-label={`Reorder ${label}`}
         onMouseEnter={() => setHandleHover(true)}
         onMouseLeave={() => setHandleHover(false)}
-        className="flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:cursor-grabbing"
+        className="-ml-2 flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:cursor-grabbing"
         style={{ background: handleHover ? handleHoverBg : undefined }}
       >
         <DotsSixVertical className="h-4 w-4" />
@@ -157,7 +158,7 @@ export function CustomizeSheet() {
             onDragEnd={handleDragEnd}
           >
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
+              <div className="rounded-xl border border-border/70 bg-card divide-y divide-border/50">
                 {ids.map(id => {
                   const widget = WIDGET_BY_ID.get(id)
                   if (!widget) return null
@@ -177,9 +178,11 @@ export function CustomizeSheet() {
             </SortableContext>
           </DndContext>
         </ScrollArea>
-        <Button variant="outline" onClick={reset} className="mt-4 w-full shrink-0">
-          Reset to default
-        </Button>
+        <div className="shrink-0 border-t border-border/60 pt-4">
+          <Button variant="outline" onClick={reset} className="w-full">
+            Reset to default
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   )

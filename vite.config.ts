@@ -142,7 +142,9 @@ export default defineConfig(({ mode }) => {
     devNewsFeed(),
     devGifSearch(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': no forced reload when a new version activates; the app applies
+      // it on the next page change instead (src/lib/sw-update.ts)
+      registerType: 'prompt',
       manifest: false,
       includeAssets: ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png'],
       strategies: 'injectManifest',

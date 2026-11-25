@@ -30,7 +30,7 @@ Each trading account has a broker time zone. It lives in Settings, under Account
 
 Existing accounts keep behaving exactly as before until you pick one, so nothing you have already imported moves.
 
-![Trading sessions](https://www.freetradejournal.com/images/screenshots/dashboard-analytics-screenshot.png)
+![Trading sessions](https://www.freetradejournal.com/images/screenshots/trading-dashboard-screenshot-dark.webp)
 
 ## The guard rail
 

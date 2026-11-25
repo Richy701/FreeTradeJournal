@@ -31,7 +31,7 @@ A fill-level file is not a list of trades. If you bought 2 MNQ, added 1, then so
 
 You can see the result before anything is saved. The preview shows the trades it found and the ones it could not pair.
 
-![Recent trades](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png)
+![Recent trades](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot-dark.webp)
 
 ## The time zone setting that matters
 

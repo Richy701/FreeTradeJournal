@@ -1,15 +1,17 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, createHandlerBoundToURL, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
-import { CacheFirst } from 'workbox-strategies';
+import { CacheFirst, NetworkFirst } from 'workbox-strategies';
+import type { RouteHandlerCallback } from 'workbox-core';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { clientsClaim } from 'workbox-core';
 
 declare const self: ServiceWorkerGlobalScope;
 
-// registerType 'autoUpdate' requires the custom SW to activate immediately:
-// without skipWaiting/clientsClaim a new deploy sits in "waiting" until every
-// tab is closed, so open PWA tabs keep serving stale chunks (the 404 window).
+// Activate a new deploy immediately: without skipWaiting/clientsClaim it sits
+// in "waiting" until every tab is closed, so open tabs keep serving stale
+// chunks (the 404 window). The page then applies the update quietly on the
+// next in-app navigation (src/lib/sw-update.ts) instead of reloading mid-task.
 self.skipWaiting();
 clientsClaim();
 cleanupOutdatedCaches();
@@ -43,10 +45,27 @@ registerRoute(
   })
 );
 
-// SPA navigation fallback. /__/ is Firebase's reserved namespace: the Google
-// sign-in popup opens /__/auth/handler on this origin (proxied in vercel.json)
-// and must reach the network, not the cached app shell.
-const navigationHandler = createHandlerBoundToURL('/index.html');
+// Page loads go to the network first so a refresh always gets the newest
+// deploy (cache-first served the old precached index.html, and users needed
+// several refreshes to pick up a release). The precached shell is only the
+// fallback for offline or a server slower than 3s. /__/ is Firebase's
+// reserved namespace: the Google sign-in popup opens /__/auth/handler on this
+// origin (proxied in vercel.json) and must reach the network.
+const pagesNetworkFirst = new NetworkFirst({
+  cacheName: 'pages',
+  networkTimeoutSeconds: 3,
+  plugins: [new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 7 })],
+});
+const shellFallback = createHandlerBoundToURL('/index.html');
+const navigationHandler: RouteHandlerCallback = async (options) => {
+  try {
+    const response = await pagesNetworkFirst.handle(options);
+    if (response) return response;
+  } catch {
+    // Offline with nothing cached for this URL: fall through to the shell
+  }
+  return shellFallback(options);
+};
 const navigationRoute = new NavigationRoute(navigationHandler, {
   denylist: [/^\/api/, /^\/__\//],
 });

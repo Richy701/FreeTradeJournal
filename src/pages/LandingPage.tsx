@@ -81,10 +81,14 @@ export default function LandingPage() {
       <Suspense fallback={<div className="min-h-[32rem]" aria-hidden="true" />}>
         <BlogStrip compact editorial title={<>Build a better review habit.</>} subtitle="Practical guides to broker imports, prop accounts, and keeping a journal you actually use." />
       </Suspense>
-      <section className="mx-auto max-w-[1600px] px-5 py-12 sm:px-8 sm:py-16">
-        <div className="flex flex-col justify-between gap-7 border-t pt-10 lg:flex-row lg:items-center">
-          <div><h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Start with your next trade.</h2><p className="mt-3 text-base text-muted-foreground">You bring the experience. Give it somewhere to grow.</p></div>
-          <div className="flex min-w-0 flex-wrap gap-3"><Button asChild className="h-auto min-h-11 max-w-full whitespace-normal bg-amber-400 px-5 text-black hover:bg-amber-300"><Link to="/signup">Create a free account<ArrowRight className="ml-2 h-4 w-4" /></Link></Button><Button variant="outline" onClick={openDemo} className="h-auto min-h-11 max-w-full whitespace-normal px-5">Explore the demo</Button></div>
+      <section className="mx-auto grid max-w-[1600px] gap-5 px-5 pb-16 pt-4 sm:px-8 sm:pb-20 lg:grid-cols-2">
+        <h2 className="max-w-xl font-display text-3xl font-semibold tracking-tight sm:text-4xl">Start with your<br className="hidden lg:block" /> next trade.</h2>
+        <div className="max-w-lg lg:justify-self-end lg:pt-2">
+          <p className="text-base leading-relaxed text-muted-foreground">Free plan, no card. Import from MT4/MT5, Tradovate, NinjaTrader or DAS, or add trades by hand.</p>
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Button asChild className="h-auto min-h-11 max-w-full whitespace-normal bg-amber-400 px-5 text-black hover:bg-amber-300"><Link to="/signup">Create a free account<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+            <button type="button" onClick={openDemo} className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">or try the demo</button>
+          </div>
         </div>
       </section>
     </main>

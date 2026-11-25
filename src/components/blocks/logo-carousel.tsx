@@ -75,7 +75,7 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
             >
               {logo.url ? (
                 <img
-                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='64'%3E%3Crect width='180' height='64' fill='%23f3f4f6'/%3E%3C/svg%3E"
+                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='64'%3E%3C/svg%3E"
                   data-src={logo.url}
                   alt={logo.name}
                   width="180"
@@ -85,7 +85,7 @@ export function LogoCarousel({ logos, className }: LogoCarouselProps) {
                   className={cn(
                     // Assets are the brands' white/dark-bg variants: shown as-is
                     // in dark mode, flattened to black for light mode.
-                    "h-16 w-auto max-w-[200px] opacity-60 hover:opacity-100 transition-opacity duration-300 object-contain logo-lazy brightness-0 dark:brightness-100",
+                    "h-16 w-auto max-w-[200px] opacity-[0.85] dark:opacity-60 hover:opacity-100 dark:hover:opacity-100 transition-opacity duration-300 object-contain logo-lazy brightness-0 dark:brightness-100",
                     logo.imgClassName
                   )}
                   onError={(e) => {

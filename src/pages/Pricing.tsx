@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import NumberFlow from '@number-flow/react';
 import { ArrowRight, Check } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/auth-context';
@@ -17,12 +17,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Item, ItemActions, ItemGroup, ItemSeparator, ItemTitle } from '@/components/ui/item';
 import { Spinner } from '@/components/ui/spinner';
-import { ANALYSIS_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, currentLifetimePrice, isBlackFriday, BLACK_FRIDAY_YEARLY_PRICE } from '@/constants/pricing';
+import { ANALYSIS_UPGRADE_SOURCE, HISTORY_UPGRADE_SOURCE, FREE_ANALYTICS_WINDOW_DAYS, FREE_JOURNAL_ENTRY_LIMIT, PLAN_CARD_FREE_FEATURES, PLAN_LIMIT_ROWS, PLAN_PRO_ONLY_ROWS, PRICING_PLANS, isLifetimeOnSale, currentLifetimePrice, isBlackFriday, BLACK_FRIDAY_YEARLY_PRICE } from '@/constants/pricing';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { SEOMeta } from '@/components/seo-meta';
 import { TestimonialsSection } from '@/components/blocks/testimonials-section';
 import { redirectToPortal } from '@/lib/stripe';
+import { needsBillingRecovery } from '@/components/subscription-billing';
 import { SaleCountdown } from '@/components/sale-countdown';
 import { useSaleClock } from '@/hooks/use-sale-clock';
 import {
@@ -217,7 +218,11 @@ export default function Pricing() {
   const { isPro, subscription, openCheckout } = useProStatus();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const offerSource = searchParams.get('source') === ANALYSIS_UPGRADE_SOURCE ? ANALYSIS_UPGRADE_SOURCE : undefined;
+  const requestedSource = searchParams.get('source');
+  const offerSource = requestedSource === ANALYSIS_UPGRADE_SOURCE || requestedSource === HISTORY_UPGRADE_SOURCE
+    ? requestedSource
+    : undefined;
+  const isHistoryOffer = offerSource === HISTORY_UPGRADE_SOURCE && !isPro;
   // Monthly first: yearly checkouts completed 2 of 18 vs monthly 10 of 20
   // (Stripe, 90 days to Oct 2026). ?plan=yearly still opens on yearly.
   const [frequency, setFrequency] = useState<Frequency>(() => searchParams.get('plan') === 'yearly' ? 'yearly' : 'monthly');
@@ -273,6 +278,7 @@ export default function Pricing() {
   // session would stack a second subscription on the same customer (the
   // checkout Cloud Function rejects it too; this path is just better UX).
   const hasActiveSubscription = isPro && (currentPlan === 'monthly' || currentPlan === 'yearly');
+  const billingRecovery = needsBillingRecovery(subscription);
   const handleSwitchPlan = async () => {
     if (portalLoading) return;
     trackEvent('pricing_cta_clicked', { plan: activePlan.interval, source: 'plan_switch_portal' });
@@ -299,7 +305,7 @@ export default function Pricing() {
   // subscribers switch through the billing portal, which applies no code, so
   // they see the regular yearly price.
   const blackFriday = isBlackFriday(now);
-  const yearlyDeal = blackFriday && frequency === 'yearly' && !hasActiveSubscription;
+  const yearlyDeal = blackFriday && frequency === 'yearly' && !hasActiveSubscription && !billingRecovery;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -317,11 +323,21 @@ export default function Pricing() {
                 : '4,000+ traders already journaling'}
             </p>
             <h1 className="max-w-3xl text-[clamp(2.25rem,4vw,3.5rem)] font-semibold leading-[1.08] tracking-[-0.035em]">
-              Start with your trades.<br /><span className="text-amber-600 dark:text-amber-400">Grow into Pro.</span>
+              {isHistoryOffer ? 'Review beyond the last 30 days.' : 'Start with your trades.'}<br />
+              <span className="text-amber-600 dark:text-amber-400">{isHistoryOffer ? 'See your full trading history.' : 'Grow into Pro.'}</span>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
-              The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.
+              {isHistoryOffer
+                ? 'Include your older trades in every chart and statistic. Review 90 days, this year, or all your history to see how your trading has changed. Your complete trade log and exports stay free.'
+                : 'The core journal is free forever. Upgrade to Pro for AI coaching, trade analysis, cloud sync, and tools that help you find your edge faster.'}
             </p>
+            {isHistoryOffer && (
+              <Button asChild variant="link" className="h-auto p-0 text-muted-foreground">
+                <Link to="/dashboard" onClick={() => trackEvent('history_upgrade_returned', { offer_source: HISTORY_UPGRADE_SOURCE })}>
+                  Continue with Free — back to dashboard
+                </Link>
+              </Button>
+            )}
           </div>
 
           <Tabs value={frequency} onValueChange={(value) => setFrequency(value as Frequency)}>
@@ -331,7 +347,7 @@ export default function Pricing() {
                   {freq}
                   {freq === 'yearly' && (
                     <Badge className="border-0 bg-amber-500/15 px-1.5 py-0 text-[11px] text-amber-700 shadow-none hover:bg-amber-500/15 dark:text-amber-400">
-                      {blackFriday && !hasActiveSubscription ? 'Black Friday' : 'Save 36%'}
+                      {blackFriday && !hasActiveSubscription && !billingRecovery ? 'Black Friday' : 'Save 36%'}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -378,20 +394,22 @@ export default function Pricing() {
                   : 'Per year · Save 36%'
             }
             banner={yearlyDeal ? <SaleCountdown plan="yearly" /> : undefined}
-            description="Everything in Free, plus"
+            description={isHistoryOffer ? 'Full-history analytics, plus everything in Pro' : 'Everything in Free, plus'}
             limits={PLAN_LIMIT_ROWS.map((row) => ({ label: row.feature, value: row.pro }))}
             features={PLAN_PRO_ONLY_ROWS}
             cta={
               !user
                 ? 'Get Pro'
-                : hasActiveSubscription
+                : billingRecovery
+                  ? 'Manage billing'
+                  : hasActiveSubscription
                   ? 'Switch plan'
                   : 'Get Pro'
             }
             popular
             isCurrentPlan={isPro && currentPlan === activePlan.interval}
             onCtaClick={() =>
-              hasActiveSubscription
+              hasActiveSubscription || billingRecovery
                 ? handleSwitchPlan()
                 : handleUpgrade(activePlan.priceId, activePlan.interval)
             }

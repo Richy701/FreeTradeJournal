@@ -31,7 +31,7 @@ Every blown combine tells you something:
 
 Each failed month is a cheap data point next to the payout waiting on the other side. Use it.
 
-![Dashboard performance](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot.png)
+![Dashboard performance](https://www.freetradejournal.com/images/screenshots/dashboard-trades-performance-screenshot-dark.webp)
 
 ## What to do after a blown combine
 
@@ -43,7 +43,7 @@ Before you restart, sit down and write up what happened. Not emotionally. Analyt
 
 This is why I built FreeTradeJournal. When every trade is logged and you review the stats, patterns become obvious quickly. You stop repeating the same mistake because it is in front of you in numbers.
 
-![Trade insights](https://www.freetradejournal.com/images/screenshots/trade-insights-screenshot.png)
+![Trade insights](https://www.freetradejournal.com/images/screenshots/trade-insights-screenshot-dark.webp)
 
 ## The combine is cheap. The payout is not.
 
@@ -53,7 +53,7 @@ You cannot simulate the pressure of a funded evaluation. You have to live it. So
 
 The traders who quit after one or two blown combines never find out how close they were.
 
-![AI trade analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot.png)
+![AI trade analysis](https://www.freetradejournal.com/images/screenshots/ai-trade-analysis-screenshot-dark.webp)
 
 ## One rule
 
@@ -63,7 +63,7 @@ Know your daily loss limit before you open a trade. Know your max drawdown. Size
 
 Consistency beats brilliance in an evaluation. You do not need a huge month. You need to not blow up.
 
-![Calendar heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot.png)
+![Calendar heatmap](https://www.freetradejournal.com/images/screenshots/calendar-heatmap-screenshot-dark.webp)
 
 ## Track everything
 

@@ -45,7 +45,7 @@ import { useFirstTradeCelebration } from '@/hooks/use-first-trade-celebration'
 import { recordFirstTradeIfNeeded } from '@/lib/first-trade'
 import { trackTradeLogged } from '@/lib/track-trade'
 import { useMilestoneCelebrations } from '@/hooks/use-milestone-celebrations'
-import { FREE_ANALYTICS_WINDOW_DAYS } from '@/constants/pricing'
+import { FREE_ANALYTICS_WINDOW_DAYS, HISTORY_UPGRADE_URL } from '@/constants/pricing'
 import { ImportInsightDialog } from '@/components/import-insight-dialog'
 import { ImportProgressOverlay, type ImportSummary } from '@/components/import-progress-overlay'
 import { ImportPreviewDialog } from '@/components/import-preview-dialog'
@@ -836,7 +836,7 @@ export default function Dashboard() {
           actions={
             <Button asChild size="sm" variant="outline">
               <Link
-                to="/pricing"
+                to={HISTORY_UPGRADE_URL}
                 onClick={() => trackEvent('pro_gate_cta_clicked', { feature: 'Full Analytics History', source: 'dashboard_window_notice' })}
               >
                 Unlock full history <ArrowRight className="h-3.5 w-3.5" />

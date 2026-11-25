@@ -1,4 +1,5 @@
 import { createContext, useContext, useLayoutEffect, useState } from 'react';
+import { suppressTransitionsBriefly } from '@/lib/suppress-transitions';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -33,6 +34,7 @@ export function ThemeProvider({
   useLayoutEffect(() => {
     const root = window.document.documentElement;
 
+    suppressTransitionsBriefly();
     root.classList.remove('light', 'dark');
 
     if (theme === 'system') {

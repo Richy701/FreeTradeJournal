@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Link, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeQuickPicker } from '@/components/theme-quick-picker';
 import { useUserStorage } from '@/utils/user-storage';
 
 export function MobileHeader({ title }: { title?: string }) {
@@ -86,7 +87,7 @@ export function MobileHeader({ title }: { title?: string }) {
         </div>
 
         <div className="flex items-center gap-1">
-          <ThemeToggle />
+          {isDemo ? <ThemeToggle /> : <ThemeQuickPicker />}
         {isDemo ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

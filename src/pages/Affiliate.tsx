@@ -10,6 +10,7 @@ import { HeroGeometric } from '@/components/blocks/shape-landing-hero';
 import { FAQSection } from '@/components/blocks/faq-section';
 import { ArrowSquareOut, Copy, Check } from '@phosphor-icons/react';
 import { trackEvent } from '@/lib/analytics';
+import { isBlackFriday } from '@/constants/pricing';
 
 const AFFILIATE_FAQS = [
   {
@@ -71,7 +72,9 @@ const FIRMS: PropFirm[] = [
     logo: '/images/partners/the5ers.svg',
     market: 'Forex',
     blurb: 'Instant funding up to $4M with scaling. Trade forex, metals, and indices with flexible evaluation programs and fast payouts.',
-    discount: '5% off your first challenge',
+    discount: isBlackFriday()
+      ? 'Black Friday: 10% off all programs, plus no activation fee on the $20K and $100K Bootcamp. Ends Nov 30.'
+      : '5% off your first challenge',
     code: 'ZBY34',
     url: 'https://www.the5ers.com/?afmc=1buq',
     reviewUrl: '/the5ers-review',
@@ -82,8 +85,19 @@ const FIRMS: PropFirm[] = [
     logo: '/images/partners/ftmo.png',
     market: 'Forex + Futures',
     blurb: 'Industry-leading prop firm with a two-step evaluation. Trade forex, indices, commodities, stocks, and crypto with up to $200K funding.',
-    discount: '',
+    discount: isBlackFriday() ? 'Black Friday: 30% off the smallest account, 20% off all other sizes. Applied automatically.' : '',
     url: 'https://join.ftmo.com/PYpnfPHLxoLexQHIwIhm',
+    reviewUrl: '/ftmo-review',
+  },
+  {
+    id: 'ftmo-futures',
+    name: 'FTMO Futures',
+    logo: '/images/partners/ftmo.png',
+    market: 'Futures',
+    blurb: 'FTMO\'s CME futures product. Single-step Growth and Pro evaluations at $50K, $100K and $150K, end-of-day trailing drawdown, and a 90% profit split.',
+    discount: isBlackFriday() ? 'Black Friday: 30% off $50K, 20% off $100K, 10% off $150K, first month' : '',
+    code: 'PYpnfPHLxoLexQHIwIhm',
+    url: 'https://join.ftmo.com/futures/PYpnfPHLxoLexQHIwIhm',
     reviewUrl: '/ftmo-review',
   },
   {

@@ -9,6 +9,7 @@ import { installThirdPartyErrorFilter } from './lib/suppress-third-party-noise'
 import { installStaleChunkReloadListener } from './lib/lazy-with-retry'
 import { captureReferral } from './lib/referral'
 import { installTranslateDomGuard } from './lib/translate-dom-guard'
+import { watchForUpdates } from './lib/sw-update'
 import { installLoopCrashContext, noteComponentStack } from './lib/loop-crash-context'
 
 // Before React renders: page translators must not be able to crash the app.
@@ -44,8 +45,13 @@ createRoot(document.getElementById('root')!, {
   </StrictMode>,
 )
 
-// Register service worker for PWA offline support
+// Register service worker for PWA offline support. New deploys are picked up
+// quietly: open tabs check periodically and apply the update on the next page
+// change instead of reloading mid-task (see src/lib/sw-update.ts).
 const updateSW = registerSW({
+  onRegisteredSW(_swUrl, registration) {
+    watchForUpdates(registration)
+  },
   onNeedRefresh() {
     window.dispatchEvent(
       new CustomEvent('pwa-update-available', {
