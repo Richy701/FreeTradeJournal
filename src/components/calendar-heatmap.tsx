@@ -23,6 +23,7 @@ import { PropFirmSelect } from '@/components/prop-firm-select'
 import { CalendarDots, CaretLeft, CaretRight, BookOpen } from '@phosphor-icons/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { Link, useNavigate } from "react-router-dom"
 import { UnitInput } from '@/components/money-input'
@@ -818,14 +819,20 @@ export function CalendarHeatmap() {
           {/* Navigation */}
           <div className="flex flex-wrap items-center justify-between sm:justify-start gap-3">
             <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-              <Button variant="ghost" size="sm"
-                onClick={goToPreviousMonth}
-                className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
-                title="Previous month (←)"
-                aria-label="Previous month"
-              >
-                <CaretLeft className="h-3 w-3 text-muted-foreground" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm"
+                      onClick={goToPreviousMonth}
+                      className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
+                      aria-label="Previous month"
+                    >
+                      <CaretLeft className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Previous month (←)</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               <Popover open={isMonthPickerOpen} onOpenChange={(open) => {
                 setIsMonthPickerOpen(open)
@@ -883,14 +890,20 @@ export function CalendarHeatmap() {
                 </PopoverContent>
               </Popover>
 
-              <Button variant="ghost" size="sm"
-                onClick={goToNextMonth}
-                className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
-                title="Next month (→)"
-                aria-label="Next month"
-              >
-                <CaretRight className="h-3 w-3 text-muted-foreground" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm"
+                      onClick={goToNextMonth}
+                      className="h-8 w-8 p-0 rounded-md flex items-center justify-center hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors touch-manipulation"
+                      aria-label="Next month"
+                    >
+                      <CaretRight className="h-3 w-3 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Next month (→)</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <Button variant="ghost" size="sm"
