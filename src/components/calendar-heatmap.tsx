@@ -1182,7 +1182,7 @@ export function CalendarHeatmap() {
             const label = 'text-[11px] text-muted-foreground'
             const value = 'text-xs font-medium tabular-nums text-right'
             return (
-              <div className="rounded-lg border bg-popover text-popover-foreground shadow-md px-3 py-2">
+              <div className="rounded-xl border border-border/70 bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg shadow-black/10 dark:shadow-black/30">
                 <div className="flex items-baseline justify-between gap-3 pb-1.5 border-b border-border/60">
                   <span className="text-xs font-semibold">
                     {hoverDay.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}

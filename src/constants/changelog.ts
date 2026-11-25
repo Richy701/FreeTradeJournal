@@ -32,6 +32,16 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.101.1',
+    date: '2026-11-25',
+    summary: 'Clearer hover hints and chart details.',
+    items: [{
+      type: 'improved',
+      text: 'Cleaner tooltips',
+      description: 'Hover hints and chart details now use softer cards with clearer spacing and colours that match your light or dark theme.',
+    }],
+  },
+  {
     version: '2.101.0',
     date: '2026-11-25',
     summary: 'A calmer equity curve you can switch back, a coach that understands gold, and clearer notifications.',
@@ -3695,4 +3705,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.101.0'
+export const LATEST_CHANGELOG_VERSION = '2.101.1'

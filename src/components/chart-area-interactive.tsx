@@ -83,7 +83,7 @@ function EquityTooltip({ active, payload, profit, loss, symbol }: any) {
   const p = payload[0]?.payload
   if (!p) return null
   return (
-    <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-xs space-y-1.5 min-w-[10rem]">
+    <div className="rounded-xl border border-border/70 bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg shadow-black/10 dark:shadow-black/30 space-y-1.5 min-w-[10rem]">
       <div className="font-medium text-foreground">{p.date} · {p.tradeNo ? `Trade #${p.tradeNo}` : `${p.trades} ${p.trades === 1 ? 'trade' : 'trades'}`}</div>
       <div className="flex items-center justify-between gap-6">
         <span className="text-muted-foreground">{p.tradeNo ? 'This trade' : 'That day'}</span>
@@ -103,7 +103,7 @@ function DailyTooltip({ active, payload, profit, loss, symbol }: any) {
   const p = payload[0]?.payload
   if (!p) return null
   return (
-    <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-xs space-y-1.5 min-w-[9rem]">
+    <div className="rounded-xl border border-border/70 bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg shadow-black/10 dark:shadow-black/30 space-y-1.5 min-w-[9rem]">
       <div className="font-medium text-foreground">{p.date}</div>
       <div className="flex items-center justify-between gap-6">
         <span className="text-muted-foreground">Day&apos;s P&amp;L</span>

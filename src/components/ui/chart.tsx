@@ -177,7 +177,7 @@ const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/70 bg-background px-2.5 py-1.5 text-xs shadow-xl z-[9999]",
+          "grid min-w-[9rem] max-w-[calc(100vw-2rem)] items-start gap-2 rounded-xl border border-border/70 bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg shadow-black/10 dark:shadow-black/30 z-[9999]",
           className
         )}
       >
@@ -226,7 +226,7 @@ const ChartTooltipContent = React.forwardRef<
                     )}
                     <div
                       className={cn(
-                        "flex flex-1 justify-between leading-none",
+                        "flex flex-1 justify-between gap-4 leading-relaxed",
                         nestLabel ? "items-end" : "items-center"
                       )}
                     >

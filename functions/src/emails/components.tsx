@@ -174,7 +174,8 @@ const headerStyle: React.CSSProperties = {
   padding: '24px',
 }
 const logoStyle: React.CSSProperties = {
-  borderRadius: '6px',
+  // 12% of the 32px logo: the same corner as every FTJ tile in the app.
+  borderRadius: '4px',
   display: 'block',
 }
 const brandStyle: React.CSSProperties = {

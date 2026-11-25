@@ -2246,7 +2246,7 @@ export default function PropTracker() {
                                     if (!active || !payload?.length) return null
                                     const m = payload[0].payload as { key: string; fees: number; payouts: number; net: number }
                                     return (
-                                      <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md space-y-1">
+                                      <div className="rounded-xl border border-border/70 bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg shadow-black/10 dark:shadow-black/30 space-y-1">
                                         <p className="font-medium text-foreground">{new Date(m.key + '-02T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                                         <p className="text-muted-foreground tabular-nums">Fees <span className="font-medium" style={{ color: themeColors.loss }}>-{fmt(m.fees, aggregateCurrency)}</span></p>
                                         <p className="text-muted-foreground tabular-nums">Payouts <span className="font-medium" style={{ color: themeColors.profit }}>+{fmt(m.payouts, aggregateCurrency)}</span></p>
@@ -2326,7 +2326,7 @@ export default function PropTracker() {
                                         if (!active || !payload?.length) return null
                                         const v = payload[0].value as number
                                         return (
-                                          <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-md">
+                                          <div className="rounded-xl border border-border/70 bg-popover p-3 text-xs leading-relaxed text-popover-foreground shadow-lg shadow-black/10 dark:shadow-black/30">
                                             <p className="text-muted-foreground">{payload[0].payload.date}</p>
                                             <p className="font-semibold tabular-nums" style={{ color: v >= 0 ? themeColors.profit : themeColors.loss }}>
                                               {v >= 0 ? '+' : '-'}{fmt(Math.abs(v), aggregateCurrency)}
