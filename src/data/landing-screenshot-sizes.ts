@@ -35,7 +35,7 @@ export const SCREENSHOT_HEIGHTS: Record<string, number> = {
   "goals-risk-management-screenshot-light": 1840,
   "trade-insights-screenshot-light": 1840,
   "trade-insights-ideas-screenshot-light": 1840,
-  "ai-trade-analysis-screenshot-light": 2158,
+  "ai-trade-analysis-screenshot-light": 2402,
   "prop-tracker-screenshot-light": 1840,
   "prop-tracker-performance-screenshot-light": 1840,
   "trading-dashboard-screenshot-dark": 1840,
@@ -47,7 +47,7 @@ export const SCREENSHOT_HEIGHTS: Record<string, number> = {
   "goals-risk-management-screenshot-dark": 1840,
   "trade-insights-screenshot-dark": 1840,
   "trade-insights-ideas-screenshot-dark": 1840,
-  "ai-trade-analysis-screenshot-dark": 2158,
+  "ai-trade-analysis-screenshot-dark": 2402,
   "prop-tracker-screenshot-dark": 1840,
   "prop-tracker-performance-screenshot-dark": 1840
 }

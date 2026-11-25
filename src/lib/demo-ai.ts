@@ -1,37 +1,63 @@
 import { DEMO_STATS, DEMO_TRADES } from '@/data/demo-data'
+import { isMistakeTag } from '@/lib/tags'
 
 // Prewritten examples, explicitly labelled; no remote AI request in demo mode.
-const money = (value: number) => `${value < 0 ? '-' : '+'}$${Math.abs(value).toFixed(2)}`
+// Figures are worked out from the example trades so the text always matches
+// what the dashboard shows.
+const money = (value: number) => `${value < 0 ? '-' : '+'}$${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const dollars = (value: number) => `$${Math.round(Math.abs(value)).toLocaleString('en-US')}`
+function sumBy<T extends { pnl: number }>(items: T[], key: (item: T) => string): Map<string, { pnl: number; count: number }> {
+  const out = new Map<string, { pnl: number; count: number }>()
+  for (const item of items) {
+    const k = key(item)
+    const cur = out.get(k) ?? { pnl: 0, count: 0 }
+    cur.pnl += item.pnl
+    cur.count++
+    out.set(k, cur)
+  }
+  return out
+}
 function tradeAnalysis(): string {
+  const symbols = [...sumBy(DEMO_TRADES, t => t.symbol)].sort((a, b) => b[1].pnl - a[1].pnl)
+  const [bestSym, best] = symbols[0]
+  const [worstSym, worst] = symbols[symbols.length - 1]
+  const late = DEMO_TRADES.filter(t => t.entryTime.getHours() * 60 + t.entryTime.getMinutes() >= 16 * 60 + 10)
+  const lateNet = late.reduce((sum, t) => sum + t.pnl, 0)
+  const tagged = DEMO_TRADES.flatMap(t => (t.tags ?? []).filter(tag => isMistakeTag(tag)).map(tag => ({ tag, pnl: t.pnl })))
+  const mistakes = sumBy(tagged, m => m.tag)
+  const movedStop = mistakes.get('!moved-stop')
+  const chased = mistakes.get('!chased')
+  const winLossRatio = DEMO_STATS.averageWin / Math.abs(DEMO_STATS.averageLoss)
   return [
     '## Performance Snapshot',
     `**Win rate: ${DEMO_STATS.winRate}%** across ${DEMO_STATS.totalTrades} trades · Net P&L **${money(DEMO_STATS.netProfit)}** after costs`,
     '',
-    'Example analysis of the original practice history. This is prewritten, not a live AI review; changes you make in the demo are not included.',
+    'Example analysis of the original example history. This is prewritten, not a live AI review; changes you make in the demo are not included.',
     '',
     '## Key Patterns Detected',
-    '- **Costs count** - every example trade includes $0.70 commission, including the trade closed at its entry price.',
-    '- **The losses are part of the story** - the journal includes losing trades and reflections on rushed entries.',
-    '- **Size stays steady** - each trade uses 0.10 lots, making the results easier to compare.',
+    `- **${bestSym} is your best market** - ${money(best.pnl)} from ${best.count} trades, more than everything else combined.`,
+    `- **Late trades give money back** - trades opened after 4pm are ${money(lateNet)} overall. Your profit comes from the London and New York opens.`,
+    `- **${worstSym} is not paying** - ${money(worst.pnl)} over ${worst.count} trades.`,
+    `- **Winners are bigger than losers** - the average win (${dollars(DEMO_STATS.averageWin)}) is ${winLossRatio.toFixed(1)} times the average loss (${dollars(DEMO_STATS.averageLoss)}), so winning about half the time is enough.`,
     '',
     '## Strengths to Double Down On',
-    '- Keep writing down the reason for an entry, even when the result is disappointing.',
-    '- Review decisions alongside results; a winning trade can still reveal a habit to change.',
+    '- Risk stays the same on every trade, so one bad trade never sinks a week.',
+    '- You let winning trades reach their target instead of closing them early.',
     '',
     '## Critical Improvements',
-    '- Add a short reflection to the trades that do not have one yet.',
-    '- This short, fictional history cannot establish a reliable trading edge.',
+    ...(movedStop ? [`- Moving the stop cost ${dollars(movedStop.pnl)} over ${movedStop.count} trades. If you want to move it, close the trade instead.`] : []),
+    ...(chased ? [`- Chasing entries cost ${dollars(chased.pnl)} over ${chased.count} trades. Wait for the setup or skip it.`] : []),
     '',
     '## Action Plan',
-    '1. Open a losing trade and read its note.',
-    '2. Compare it with a trade where the plan was followed.',
-    '3. Pick one process habit to track in your own journal.',
+    '1. Stop trading after 4pm on days that start with a loss.',
+    `2. Only take ${worstSym} on your best setups and give that risk to ${bestSym}.`,
+    '3. Review every trade tagged moved-stop at the end of the week.',
   ].join('\n')
 }
 function goalCoach(): string {
   return [
     '## Where You Stand',
-    'Example coaching for the practice journal. This prewritten response does not update when you edit demo goals.',
+    'Example coaching for the example journal. This prewritten response does not update when you edit demo goals.',
     '',
     '## What Is Working',
     '- The example goals sit alongside loss limits so results and boundaries can be reviewed together.',

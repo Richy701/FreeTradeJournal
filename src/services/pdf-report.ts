@@ -176,7 +176,8 @@ function formatHour(h: number): string {
 // ─── Logo ───────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function drawLogo(doc: any, x: number, y: number, size: number) {
-  const r = size * 0.19;
+  // Same corner as every other FTJ tile: 12% of its width.
+  const r = size * 0.12;
   doc.setFillColor(255, 192, 0);
   doc.roundedRect(x, y, size, size, r, r, 'F');
   doc.setFont('helvetica', 'bold');

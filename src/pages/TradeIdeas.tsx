@@ -703,8 +703,8 @@ export default function TradeIdeas() {
                   <AreaChart data={charts.weeklyPnl} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
                     <defs>
                       <linearGradient id={`weeklyGradient-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={themeColors.primary} stopOpacity={0.3} />
-                        <stop offset="100%" stopColor={themeColors.primary} stopOpacity={0.05} />
+                        <stop offset="0%" stopColor={themeColors.primary} stopOpacity={0.4} />
+                        <stop offset="100%" stopColor={themeColors.primary} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     {chartStyle.grid && <CartesianGrid vertical={false} strokeOpacity={0.1} />}
@@ -726,15 +726,16 @@ export default function TradeIdeas() {
                       }
                     />
                     <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeOpacity={0.3} />
-                    {/* Straight segments: there is one point per week, and a
-                        smoothed curve implies movement between them that
-                        was never measured. */}
+                    {/* Follows Settings > Appearance > Chart style. The smooth
+                        option is monotone, so it never overshoots a week's
+                        real value between points. */}
                     <Area
-                      type="linear"
+                      type={chartStyle.curveType}
                       dataKey="pnl"
                       stroke={themeColors.primary}
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: themeColors.primary, strokeWidth: 0 }}
+                      strokeWidth={1.5}
+                      dot={chartStyle.points === 'trade' ? { r: 3, fill: themeColors.primary, strokeWidth: 0 } : false}
+                      activeDot={{ r: 4, fill: themeColors.primary, stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                       fill={`url(#weeklyGradient-${gradientId})`}
                       fillOpacity={chartStyle.fill ? 1 : 0}
                     />

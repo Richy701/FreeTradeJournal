@@ -131,7 +131,7 @@ export const Footer7 = ({
                     height={40}
                   />
                 ) : (
-                  <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 shrink-0 rounded-[7px]" />
+                  <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 shrink-0 rounded-[12%]" />
                 )}
                 <h2 className="min-w-0 text-lg font-bold tracking-tight [overflow-wrap:anywhere] sm:text-xl">{logo.title}</h2>
               </Link>

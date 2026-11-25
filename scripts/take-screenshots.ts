@@ -99,7 +99,7 @@ try {
     await go(page, '/coach')
     await page.getByRole('button', { name: /AI Trade Analysis/ }).click()
     await page.locator('#trade-analysis').getByText('Performance Snapshot', { exact: true }).waitFor()
-    await page.locator('#trade-analysis [aria-label="58.33% win rate"]').waitFor()
+    await page.locator('#trade-analysis [aria-label$="% win rate"]').waitFor()
     await capture(page, 'ai-trade-analysis-screenshot', mode, page.locator('#trade-analysis'))
     await go(page, '/prop-tracker')
     await page.locator('[data-prop-account]').first().waitFor()

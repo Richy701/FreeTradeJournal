@@ -146,7 +146,7 @@ export function PDFReportDialog({ open, onOpenChange, trades, journalEntries, ac
             />
             <div className="relative">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-md bg-amber-400 flex items-center justify-center">
+                <div className="h-5 w-5 rounded-[12%] bg-amber-400 flex items-center justify-center">
                   <span className="text-[7px] font-bold text-zinc-950">FTJ</span>
                 </div>
                 <span className="text-xs text-zinc-500">FreeTradeJournal</span>

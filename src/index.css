@@ -270,6 +270,45 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     margin-top: 2px;
   }
 
+  /* Toasts are neutral cards; the icon colour is the only severity signal. */
+  /* Sonner injects its CSS after ours, so these repeat [data-styled] to win ties. */
+  [data-sonner-toaster] [data-sonner-toast][data-styled='true'][data-styled='true'] {
+    padding-right: 40px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.18);
+  }
+  [data-sonner-toast][data-type='success'] [data-icon] { color: hsl(var(--profit)); }
+  [data-sonner-toast][data-type='error'] [data-icon] { color: hsl(var(--loss)); }
+  [data-sonner-toast][data-type='warning'] [data-icon] { color: #f59e0b; }
+  [data-sonner-toast][data-type='info'] [data-icon] { color: #3b82f6; }
+  [data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-description] {
+    color: hsl(var(--muted-foreground));
+  }
+  /* Close button sits inside the top-right corner instead of on the edge. */
+  [data-sonner-toaster] [data-sonner-toast][data-styled='true'][data-styled='true'] [data-close-button] {
+    left: auto;
+    right: 10px;
+    top: 10px;
+    transform: none;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+  }
+  [data-sonner-toaster] [data-sonner-toast][data-styled='true'][data-styled='true']:hover [data-close-button]:hover {
+    background: hsl(var(--muted));
+    color: hsl(var(--foreground));
+  }
+  /* Action buttons use the theme colour, like the app's primary buttons. */
+  [data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-button]:not([data-cancel]) {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
   /* Notch/home-indicator clearance for full-screen pages (auth, PWA).
      Backed by --pwa-safe-top/bottom, which resolve to env(safe-area-inset-*)
      in standalone display mode and 0px in the browser. */

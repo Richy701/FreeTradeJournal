@@ -25,7 +25,7 @@ export function MarketingHeader({ overlay = false }: { overlay?: boolean }) {
     <header className={overlay ? 'absolute inset-x-0 top-0 z-50' : 'relative z-50 border-b border-border/60 bg-background'} style={{ paddingTop: 'var(--pwa-safe-top, 0px)' }}>
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-8">
         <Link to="/" className="flex min-w-0 items-center gap-2.5">
-          <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 shrink-0 rounded-[7px]" />
+          <img src="/favicon.svg" alt="FTJ" className="h-9 w-9 shrink-0 rounded-[12%]" />
           <span className="hidden min-[400px]:inline text-base font-bold tracking-tight sm:text-xl">FreeTradeJournal</span>
         </Link>
         <nav aria-label="Main navigation" className="flex max-w-full flex-wrap items-center gap-1 sm:gap-5">

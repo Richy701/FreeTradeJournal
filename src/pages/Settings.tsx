@@ -504,6 +504,38 @@ export default function Settings() {
                         ))}
                       </div>
                     </SettingRow>
+                    <SettingRow stacked label="Chart style" description="How your equity curve and P&L sparkline are drawn">
+                      <div className="flex flex-wrap gap-2">
+                        {([
+                          { value: 'soft', label: 'Soft', hint: 'One point per day, smooth line' },
+                          { value: 'detailed', label: 'Detailed', hint: 'Every trade, straight lines' },
+                        ] as const).map(({ value, label, hint }) => {
+                          const charts = customColors.charts
+                          const isSoft = (charts?.curve ?? 'smooth') === 'smooth' && (charts?.points ?? 'daily') === 'daily'
+                          const isDetailed = charts?.curve === 'straight' && charts?.points === 'trade'
+                          const active = value === 'soft' ? isSoft : isDetailed
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-pressed={active}
+                              onClick={() => {
+                                const next = { ...charts }
+                                if (value === 'soft') { delete next.curve; delete next.points }
+                                else { next.curve = 'straight'; next.points = 'trade' }
+                                setCustomColors({ charts: Object.keys(next).length ? next : undefined })
+                              }}
+                              className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                                active ? 'border-primary/40 bg-primary/10 text-foreground' : 'border-border/40 text-muted-foreground hover:border-border hover:bg-muted/40'
+                              }`}
+                            >
+                              <span className={`block ${active ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+                              <span className="mt-0.5 block text-[11px] text-muted-foreground">{hint}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </SettingRow>
                 </SettingsGroup>
                   <SettingsGroup title="Theme & customization" description="Choose a palette, compare surfaces, or build your own.">
                     <div className="px-5 py-5 space-y-7">

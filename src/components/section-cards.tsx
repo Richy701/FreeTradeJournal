@@ -39,10 +39,10 @@ interface Trade {
 
 export function SectionCards() {
   // Get theme colors and demo data
-  const { themeColors } = useThemePresets()
+  const { themeColors, chartStyle } = useThemePresets()
   const { formatCurrency: formatCurrencyFromSettings, getCurrencySymbol, settings } = useSettings()
   const { scopeStartingBalance } = useAccounts()
-  const { isDemo, getTrades, getAnalyticsTrades } = useDemoData()
+  const { getTrades, getAnalyticsTrades } = useDemoData()
   const { period } = useDashboardPeriod()
   const { mode: pnlMode, formatPnl } = usePnlDisplay()
 
@@ -149,17 +149,30 @@ export function SectionCards() {
     [trades]
   )
 
-  // Mini cumulative P&L sparkline (last 20 trades). Wide and short with a
-  // thin stroke: ten points in a 64px square read as a worm, not a trend.
+  // Mini cumulative P&L sparkline: the last 20 trading days, or the last 20
+  // trades when Chart style is set to Detailed. Wide and short with a thin
+  // stroke: ten points in a 64px square read as a worm, not a trend.
   const pnlSparkline = useMemo(() => {
     const sorted = [...trades].sort((a: Trade, b: Trade) => a.exitTime.getTime() - b.exitTime.getTime())
-    const recent = sorted.slice(-20)
     let cum = 0
-    return recent.map((t: Trade) => {
-      cum += t.pnl
+    if (chartStyle.points === 'trade') {
+      return sorted.slice(-20).map((t: Trade) => {
+        cum += t.pnl
+        return { pnl: cum }
+      })
+    }
+    const byDay: { day: string; pnl: number }[] = []
+    for (const t of sorted) {
+      const day = t.exitTime.toDateString()
+      const last = byDay[byDay.length - 1]
+      if (last && last.day === day) last.pnl += t.pnl
+      else byDay.push({ day, pnl: t.pnl })
+    }
+    return byDay.slice(-20).map(d => {
+      cum += d.pnl
       return { pnl: cum }
     })
-  }, [trades])
+  }, [trades, chartStyle.points])
 
   return (
     <TooltipProvider>
@@ -207,7 +220,7 @@ export function SectionCards() {
                   className="w-full h-full aspect-auto"
                 >
                   <LineChart data={pnlSparkline} margin={{ top: 3, right: 2, bottom: 3, left: 2 }}>
-                    <Line dataKey="pnl" type={isDemo ? "linear" : "monotone"} stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
+                    <Line dataKey="pnl" type={chartStyle.curveType} stroke={pnlPositive ? themeColors.profit : themeColors.loss} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
                   </LineChart>
                 </ChartContainer>
               </div>

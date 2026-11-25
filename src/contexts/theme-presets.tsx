@@ -54,9 +54,13 @@ export interface CustomThemeConfig {
 // back to the accent-derived palette. The style flags apply to every theme,
 // not just Custom, so switching preset never silently changes chart shape.
 export type ChartCurve = 'smooth' | 'straight' | 'step'
+// How finely P&L lines are plotted: one point per trading day (calmer, the
+// default) or one per trade (every move shows).
+export type ChartPoints = 'daily' | 'trade'
 export interface ChartThemeConfig {
   palette?: (string | undefined)[]
   curve?: ChartCurve
+  points?: ChartPoints
   fill?: boolean
   grid?: boolean
 }
@@ -66,6 +70,7 @@ export interface ChartThemeConfig {
 export interface ChartStyle {
   curve: ChartCurve
   curveType: 'monotone' | 'linear' | 'stepAfter'
+  points: ChartPoints
   fill: boolean
   grid: boolean
 }
@@ -81,6 +86,7 @@ export function resolveChartStyle(charts?: ChartThemeConfig): ChartStyle {
   return {
     curve,
     curveType: CURVE_TYPES[curve],
+    points: charts?.points ?? 'daily',
     fill: charts?.fill ?? true,
     grid: charts?.grid ?? true,
   }
@@ -1117,7 +1123,7 @@ export function ThemePresetsProvider({ children }: { children: React.ReactNode }
     }
   }, [currentTheme, isDarkMode, customColors, isDemo])
 
-  const chartStyle = useMemo(() => resolveChartStyle(isDemo ? { ...customColors.charts, curve: 'straight' } : customColors.charts), [customColors.charts, isDemo])
+  const chartStyle = useMemo(() => resolveChartStyle(customColors.charts), [customColors.charts])
 
   const alpha = useCallback((color: string, hexOpacity: string): string => {
     if (isDarkMode) return color + hexOpacity;

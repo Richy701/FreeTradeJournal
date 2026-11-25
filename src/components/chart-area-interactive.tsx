@@ -77,16 +77,16 @@ const fmtMoneyAxis = (n: number, symbol: string) => {
   return `${sign}${symbol}${num}`
 }
 
-// Hover card: which trade, what it made, and where the running total stands.
+// Hover card: which day, what it made, and where the running total stands.
 function EquityTooltip({ active, payload, profit, loss, symbol }: any) {
   if (!active || !payload?.length) return null
   const p = payload[0]?.payload
   if (!p) return null
   return (
     <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-xs space-y-1.5 min-w-[10rem]">
-      <div className="font-medium text-foreground">{p.date} · Trade #{p.trade}</div>
+      <div className="font-medium text-foreground">{p.date} · {p.tradeNo ? `Trade #${p.tradeNo}` : `${p.trades} ${p.trades === 1 ? 'trade' : 'trades'}`}</div>
       <div className="flex items-center justify-between gap-6">
-        <span className="text-muted-foreground">This trade</span>
+        <span className="text-muted-foreground">{p.tradeNo ? 'This trade' : 'That day'}</span>
         <span className="font-semibold tabular-nums" style={{ color: p.pnl >= 0 ? profit : loss }}>{fmtMoney(p.pnl, symbol, true)}</span>
       </div>
       <div className="flex items-center justify-between gap-6">
@@ -171,6 +171,29 @@ export function ChartAreaInteractive() {
     return Array.from(byDay, ([date, day]) => ({ date, pnl: day.pnl, dateShort: day.dateShort }))
   }, [chartData])
 
+  // By default the line plots one point per day (the running total at each
+  // day's close), so it moves in gentle steps instead of zigzagging trade by
+  // trade. Settings > Appearance > Chart style can switch back to every trade.
+  // Peak and Deepest dip below always come from every trade.
+  const equityDays = useMemo(() => {
+    type Point = { date: string; dateShort: string; pnl: number; cumulative: number; trades: number; day: number; tradeNo?: number }
+    if (chartStyle.points === 'trade') {
+      return chartData.map((d): Point => ({ date: d.date, dateShort: d.dateShort, pnl: d.pnl, cumulative: d.cumulative, trades: 1, day: d.trade, tradeNo: d.trade }))
+    }
+    const days: Point[] = []
+    for (const entry of chartData) {
+      const last = days[days.length - 1]
+      if (last && last.date === entry.date) {
+        last.pnl += entry.pnl
+        last.cumulative = entry.cumulative
+        last.trades++
+      } else {
+        days.push({ date: entry.date, dateShort: entry.dateShort, pnl: entry.pnl, cumulative: entry.cumulative, trades: 1, day: days.length + 1 })
+      }
+    }
+    return days
+  }, [chartData, chartStyle.points])
+
   const equityAxis = useMemo(() => {
     let lo = 0, hi = 0
     for (const d of chartData) { lo = Math.min(lo, d.cumulative); hi = Math.max(hi, d.cumulative) }
@@ -193,38 +216,40 @@ export function ChartAreaInteractive() {
 
   // Peak (high-water mark), max drawdown, and where $0 sits in the value range
   // (used to split the curve green-above / red-below the waterline).
-  const { peak, peakTrade, maxDrawdown, gradientOffset } = useMemo(() => {
-    if (chartData.length === 0) return { peak: 0, peakTrade: 0, maxDrawdown: 0, gradientOffset: 1 }
+  const { peak, maxDrawdown } = useMemo(() => {
+    if (chartData.length === 0) return { peak: 0, maxDrawdown: 0 }
     let runningPeak = chartData[0].cumulative
     let dd = 0
-    let lo = chartData[0].cumulative
     let hi = chartData[0].cumulative
-    let hiTrade = chartData[0].trade
     for (const d of chartData) {
       runningPeak = Math.max(runningPeak, d.cumulative)
       dd = Math.min(dd, d.cumulative - runningPeak)
+      hi = Math.max(hi, d.cumulative)
+    }
+    return { peak: hi, maxDrawdown: dd }
+  }, [chartData])
+
+  // Where the plotted line peaks, and where $0 sits in its range (used to split
+  // the curve green-above / red-below the waterline).
+  const { linePeak, linePeakDay, gradientOffset } = useMemo(() => {
+    if (equityDays.length === 0) return { linePeak: 0, linePeakDay: 0, gradientOffset: 1 }
+    let lo = equityDays[0].cumulative
+    let hi = equityDays[0].cumulative
+    let hiDay = equityDays[0].day
+    for (const d of equityDays) {
       lo = Math.min(lo, d.cumulative)
-      if (d.cumulative > hi) {
-        hi = d.cumulative
-        hiTrade = d.trade
-      }
+      if (d.cumulative > hi) { hi = d.cumulative; hiDay = d.day }
     }
     const max = Math.max(hi, 0)
     const min = Math.min(lo, 0)
     const offset = max <= 0 ? 0 : min >= 0 ? 1 : max / (max - min)
-    return { peak: hi, peakTrade: hiTrade, maxDrawdown: dd, gradientOffset: offset }
-  }, [chartData])
+    return { linePeak: hi, linePeakDay: hiDay, gradientOffset: offset }
+  }, [equityDays])
 
   // X-axis labels: one per unique date (no repeats), thinned to ~8 evenly spaced.
   const dateTicks = useMemo(() => {
-    const firstOfDate: { trade: number; date: string }[] = []
     const seen = new Set<string>()
-    for (const d of chartData) {
-      if (!seen.has(d.date)) {
-        seen.add(d.date)
-        firstOfDate.push({ trade: d.trade, date: d.dateShort })
-      }
-    }
+    const firstOfDate = equityDays.filter(d => !seen.has(d.date) && seen.add(d.date)).map(d => ({ trade: d.day, date: d.dateShort }))
     const maxTicks = 8
     let chosen = firstOfDate
     if (firstOfDate.length > maxTicks) {
@@ -234,7 +259,7 @@ export function ChartAreaInteractive() {
     const labelByTrade: Record<number, string> = {}
     chosen.forEach(c => { labelByTrade[c.trade] = c.date })
     return { ticks: chosen.map(c => c.trade), labelByTrade }
-  }, [chartData])
+  }, [equityDays])
 
   const winDays = dailyData.filter(d => d.pnl >= 0).length
   const lossDays = dailyData.filter(d => d.pnl < 0).length
@@ -337,7 +362,7 @@ export function ChartAreaInteractive() {
               <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
                 <AreaChart
                   accessibilityLayer
-                  data={chartData}
+                  data={equityDays}
                   margin={{
                     left: isMobile ? 0 : 20,
                     right: isMobile ? 8 : 20,
@@ -348,10 +373,10 @@ export function ChartAreaInteractive() {
                   <defs>
                     {/* Split both fill and stroke at the $0 waterline: green above, red below. */}
                     <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset={0} stopColor={themeColors.profit} stopOpacity={0.16} />
-                      <stop offset={gradientOffset} stopColor={themeColors.profit} stopOpacity={0.01} />
-                      <stop offset={gradientOffset} stopColor={themeColors.loss} stopOpacity={0.01} />
-                      <stop offset={1} stopColor={themeColors.loss} stopOpacity={0.16} />
+                      <stop offset={0} stopColor={themeColors.profit} stopOpacity={0.4} />
+                      <stop offset={gradientOffset} stopColor={themeColors.profit} stopOpacity={0} />
+                      <stop offset={gradientOffset} stopColor={themeColors.loss} stopOpacity={0} />
+                      <stop offset={1} stopColor={themeColors.loss} stopOpacity={0.4} />
                     </linearGradient>
                     <linearGradient id="equityStroke" x1="0" y1="0" x2="0" y2="1">
                       <stop offset={0} stopColor={themeColors.profit} />
@@ -362,7 +387,7 @@ export function ChartAreaInteractive() {
                   </defs>
                   {chartStyle.grid && <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.25} />}
                   <XAxis
-                    dataKey="trade"
+                    dataKey="day"
                     type="number"
                     domain={['dataMin', 'dataMax']}
                     ticks={dateTicks.ticks}
@@ -382,7 +407,7 @@ export function ChartAreaInteractive() {
                   />
                   <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" strokeWidth={1} />
                   {/* High-water mark: faint dotted line + dot so the Peak stat has a visible anchor */}
-                  <ReferenceLine y={peak} stroke={themeColors.profit} strokeOpacity={0.3} strokeDasharray="2 4" strokeWidth={1} />
+                  <ReferenceLine y={linePeak} stroke={themeColors.profit} strokeOpacity={0.3} strokeDasharray="2 4" strokeWidth={1} />
                   <ChartTooltip
                     cursor={false}
                     content={<EquityTooltip profit={themeColors.profit} loss={themeColors.loss} symbol={symbol} />}
@@ -394,11 +419,12 @@ export function ChartAreaInteractive() {
                     fill="url(#equityFill)"
                     fillOpacity={chartStyle.fill ? 1 : 0}
                     stroke="url(#equityStroke)"
-                    strokeWidth={2}
+                    strokeWidth={1.5}
+                    activeDot={{ r: 4, fill: curveColor, stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                     dot={(props: any) => {
                       const { cx, cy, index, key } = props
                       // Mark only the latest point so "where am I now" reads at a glance.
-                      if (index !== chartData.length - 1) return <g key={key} />
+                      if (index !== equityDays.length - 1) return <g key={key} />
                       return (
                         <circle
                           key={key}
@@ -413,8 +439,8 @@ export function ChartAreaInteractive() {
                     }}
                   />
                   <ReferenceDot
-                    x={peakTrade}
-                    y={peak}
+                    x={linePeakDay}
+                    y={linePeak}
                     r={3}
                     fill={themeColors.profit}
                     stroke="hsl(var(--background))"

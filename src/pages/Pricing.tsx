@@ -459,7 +459,7 @@ export default function Pricing() {
                 <TableRow key={row.name} className={row.own ? "bg-amber-500/[0.06] hover:bg-amber-500/[0.09]" : "hover:bg-muted/30"}>
                   <TableCell>
                     <span className={cn('flex items-center gap-3', row.own ? 'font-semibold' : 'text-foreground/80')}>
-                      <img src={row.logo} alt="" className={cn('h-9 w-9 shrink-0 rounded-md object-contain', !row.own && 'bg-white p-1')} />
+                      <img src={row.logo} alt="" className={cn('h-9 w-9 shrink-0 object-contain', row.own ? 'rounded-[12%]' : 'rounded-md bg-white p-1')} />
                       {row.name}
                     </span>
                   </TableCell>
@@ -481,7 +481,7 @@ export default function Pricing() {
             {COMPETITORS.map((journal) => (
               <Card key={journal.name} className={cn('rounded-xl shadow-none', journal.own && 'border-amber-500/40 bg-amber-500/[0.04]')}>
                 <CardHeader className="flex-row items-center gap-3 space-y-0">
-                  <img src={journal.logo} alt="" className={cn('h-9 w-9 shrink-0 rounded-md object-contain', !journal.own && 'bg-white p-1')} />
+                  <img src={journal.logo} alt="" className={cn('h-9 w-9 shrink-0 object-contain', journal.own ? 'rounded-[12%]' : 'rounded-md bg-white p-1')} />
                   <CardTitle className={cn('text-base', journal.own && 'text-amber-600 dark:text-amber-400')}>{journal.name}</CardTitle>
                 </CardHeader>
                 <CardContent>

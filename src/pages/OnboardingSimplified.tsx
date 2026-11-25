@@ -669,7 +669,7 @@ export default function OnboardingSimplified() {
       <div className="min-h-screen flex flex-col bg-background">
         <header className="flex items-center gap-4 px-6 py-4 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-[6px]" />
+            <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-[12%]" />
             <span className="hidden sm:inline font-bold text-sm">FreeTradeJournal</span>
           </div>
           <div className="flex-1 mx-8">
@@ -702,7 +702,7 @@ export default function OnboardingSimplified() {
       <header className="relative flex items-center gap-4 px-6 py-4 border-b border-border/50 shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2 shrink-0">
-          <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-[6px]" />
+          <img src="/favicon.svg" alt="FTJ" className="w-8 h-8 rounded-[12%]" />
           <span className="hidden sm:inline font-bold text-sm">FreeTradeJournal</span>
         </div>
 

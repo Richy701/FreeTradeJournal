@@ -186,7 +186,7 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   const logoY = 28;
 
   ctx.fillStyle = '#FFC000';
-  rr(ctx, logoX, logoY, logoSize, logoSize, 5);
+  rr(ctx, logoX, logoY, logoSize, logoSize, logoSize * 0.12);
   ctx.fill();
 
   ctx.fillStyle = '#000000';
@@ -445,7 +445,7 @@ function draw(canvas: HTMLCanvasElement, opts: DrawOptions) {
   const startX = (W - totalW) / 2;
 
   ctx.fillStyle = '#FFC000';
-  rr(ctx, startX, footY - 12, miniLogo, miniLogo, 4);
+  rr(ctx, startX, footY - 12, miniLogo, miniLogo, miniLogo * 0.12);
   ctx.fill();
   ctx.fillStyle = '#000000';
   ctx.font = `bold 7px ${F}`;

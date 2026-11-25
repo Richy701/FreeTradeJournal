@@ -9,7 +9,7 @@ export function ProductTour() {
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <ResponsiveImage
         src={`/images/screenshots/trading-dashboard-screenshot-${mode}.webp`}
-        alt="FreeTradeJournal dashboard showing a practice account with 24 trades, net results, win rate, and an equity curve"
+        alt="FreeTradeJournal dashboard showing three months of example trades, net results, win rate, and an equity curve"
         imgClassName="h-auto w-full object-contain"
         sourceWidth={SCREENSHOT_WIDTHS[`trading-dashboard-screenshot-${mode}`]}
         sizes="(max-width: 1192px) calc(100vw - 40px), 1152px"

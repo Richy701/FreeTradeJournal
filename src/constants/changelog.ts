@@ -32,6 +32,51 @@ export type ChangelogEntry = {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '2.101.0',
+    date: '2026-11-25',
+    summary: 'A calmer equity curve you can switch back, a coach that understands gold, and clearer notifications.',
+    items: [
+      {
+        type: 'improved',
+        highlight: true,
+        text: 'A calmer equity curve',
+        icon: 'dashboard',
+        image: { src: '/screenshots/equity-curve-daily-light.png', darkSrc: '/screenshots/equity-curve-daily-dark.png', alt: 'Equity curve drawn as a smooth line with one point per trading day and shading underneath.' },
+        description: 'Your equity curve now shows your running total at the end of each trading day, with a smooth line and fuller shading. Hover any day to see what it made. Your peak and deepest dip still count every trade.',
+        link: { to: '/dashboard', label: 'See your equity curve' },
+      },
+      {
+        type: 'new',
+        highlight: true,
+        text: 'Choose how your charts look',
+        icon: 'appearance',
+        description: 'Prefer seeing every trade? Settings > Appearance now has a Chart style option: Soft shows one point per day, Detailed shows every trade with straight lines. The P&L sparkline follows the same choice.',
+        link: { to: '/settings', label: 'Open Appearance settings' },
+      },
+      {
+        type: 'fixed',
+        highlight: true,
+        text: 'The coach no longer mistakes gold for revenge trading',
+        description: 'Trading gold next to forex could get you warned about revenge trading or inconsistent position sizes, because gold uses smaller lot sizes. The coach now compares each trade with your usual size for that market.',
+      },
+      {
+        type: 'improved',
+        text: 'Clearer notifications',
+        description: 'Pop-up messages now match the rest of the app. The colour of the icon shows whether something worked, needs attention, or failed, and the close button sits inside the message instead of on its edge.',
+      },
+      {
+        type: 'improved',
+        text: 'A tidier sidebar',
+        description: 'Blog, help, invites, What\'s New and feedback now open from a small More menu, so the sidebar no longer grows when you open them.',
+      },
+      {
+        type: 'improved',
+        text: 'A more realistic demo',
+        description: 'The demo now shows three months of an example trader\'s journal on a $50,000 account, including losing weeks, mistakes and costs, so you can see what the app looks like with a real history.',
+      },
+    ],
+  },
+  {
     version: '2.100.2',
     date: '2026-11-25',
     summary: 'Manage your billing even when Pro is inactive.',
@@ -3650,4 +3695,4 @@ export const changelog: ChangelogEntry[] = [
   },
 ]
 
-export const LATEST_CHANGELOG_VERSION = '2.100.2'
+export const LATEST_CHANGELOG_VERSION = '2.101.0'

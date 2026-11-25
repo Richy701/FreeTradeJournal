@@ -106,7 +106,7 @@ function App() {
             <ScrollToTop />
             <SEOMeta />
             <StructuredData />
-            <Toaster richColors closeButton position="top-right" />
+            <Toaster closeButton position="top-right" />
             <Suspense fallback={null}>
               <Analytics />
               <SpeedInsights />

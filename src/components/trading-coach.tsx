@@ -357,6 +357,33 @@ function tipKey(title: string, message: string): string {
 
 // Assigns content keys to a tip list (fresh from the model or read back from
 // cache, which may still hold positional keys written by an older build).
+
+/**
+ * Each trade's size divided by the median size of that trader's trades in the
+ * same symbol (1 = their usual size, 2 = double). 0 when the size is unknown.
+ * Exported for tests.
+ */
+export function relativeSizes(trades: { symbol?: string; lotSize?: number }[]): number[] {
+  const bySymbol = new Map<string, number[]>()
+  for (const t of trades) {
+    if (!t.lotSize || t.lotSize <= 0) continue
+    const key = (t.symbol || '').toUpperCase()
+    const list = bySymbol.get(key) ?? []
+    list.push(t.lotSize)
+    bySymbol.set(key, list)
+  }
+  const median = new Map<string, number>()
+  for (const [key, list] of bySymbol) {
+    const sorted = [...list].sort((a, b) => a - b)
+    const mid = Math.floor(sorted.length / 2)
+    median.set(key, sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2)
+  }
+  return trades.map(t => {
+    const m = median.get((t.symbol || '').toUpperCase())
+    return t.lotSize && t.lotSize > 0 && m ? t.lotSize / m : 0
+  })
+}
+
 export function withTipKeys(tipList: any[]): any[] {
   const seen = new Map<string, number>()
   return tipList.map((tip: any) => {
@@ -676,6 +703,12 @@ export function TradingCoach({ onChooseFocus, dashboard = false, workspace = fal
     })
     patterns.overtrading = Array.from(tradesPerDay.values()).some(count => count > 10)
 
+    // Size relative to the trader's usual size for that symbol. Raw lots can't
+    // be compared across markets: 0.4 lots of gold and 1.5 lots of EURUSD can
+    // risk the same dollars, and comparing them flagged every gold + forex
+    // trader for "revenge sizing" and "inconsistent sizing".
+    const relativeSize = relativeSizes(trades)
+
     // Revenge trading: Quick entries after losses with increased size
     let revengeCount = 0
     let lossFollowUps = 0
@@ -685,9 +718,9 @@ export function TradingCoach({ onChooseFocus, dashboard = false, workspace = fal
       if (trades[i-1].pnl < 0 && currEntry && prevExit) {
         lossFollowUps++
         const timeDiff = (currEntry.getTime() - prevExit.getTime()) / (1000 * 60)
-        const prevVolume = trades[i-1].lotSize || 0
-        const currVolume = trades[i].lotSize || 0
-        if (timeDiff < 30 && currVolume > prevVolume * 1.5) {
+        const prevVolume = relativeSize[i-1]
+        const currVolume = relativeSize[i]
+        if (timeDiff < 30 && prevVolume > 0 && currVolume > prevVolume * 1.5) {
           revengeCount++
         }
       }
@@ -706,9 +739,8 @@ export function TradingCoach({ onChooseFocus, dashboard = false, workspace = fal
     })
     patterns.fomo = highEntries.length > 3
 
-    // Position sizing issues: High variance in trade sizes
-    const volumes: number[] = [];
-    for (const t of trades) { if (t.lotSize) volumes.push(t.lotSize); }
+    // Position sizing issues: High variance in trade sizes (per-symbol relative)
+    const volumes: number[] = relativeSize.filter(v => v > 0);
     if (volumes.length > 5) {
       const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length
       let varianceSum = 0;

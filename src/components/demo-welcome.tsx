@@ -3,6 +3,9 @@ import { ArrowRight } from '@phosphor-icons/react'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { isScreenshotPreview } from '@/lib/screenshot-preview'
+import { DEMO_ACCOUNT, DEMO_STATS } from '@/data/demo-data'
+
+const money = (value: number) => `$${value.toLocaleString('en-US')}`
 
 export function DemoWelcome() {
   const { isDemo } = useAuth()
@@ -11,8 +14,8 @@ export function DemoWelcome() {
     <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
       <div className="max-w-2xl">
         <p className="mb-2 text-xs font-medium text-primary">EXAMPLE JOURNAL · INTERACTIVE DEMO</p>
-        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Small trades. Useful lessons.</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Explore a fictional $2,500 practice account: ordinary wins, losses, costs, and notes about what to do differently. These are examples, not live results.</p>
+        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Three months of Alex’s trading, journaled.</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">An example {money(DEMO_ACCOUNT.startingBalance)} account: {DEMO_STATS.totalTrades} trades across forex and gold, with the losing weeks, mistakes and costs left in. Example data, not live results.</p>
       </div>
       <Button asChild className="shrink-0 self-start lg:self-center"><Link to="/signup">Start my own journal<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
     </div>
